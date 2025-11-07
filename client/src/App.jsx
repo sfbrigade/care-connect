@@ -10,6 +10,7 @@ import { useHead } from '@unhead/react';
 import './App.css';
 
 import AuthContextProvider from './AuthContextProvider';
+import PosthogProvider from './analytics/PosthogProvider';
 import { useStaticContext } from './StaticContext';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
@@ -37,6 +38,7 @@ function App () {
       <MantineProvider theme={AppTheme}>
         <ModalsProvider>
           <AuthContextProvider>
+            <PosthogProvider />
             <AppShell
               header={{ height: 60 }}
               navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}

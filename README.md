@@ -126,6 +126,15 @@ This project includes components with helpful developer tools, such as the follo
 
    Username and password are: minioadmin/minioadmin
 
+## Analytics
+
+This starter includes optional PostHog product analytics instrumentation on the React client.
+
+- Configure `VITE_POSTHOG_KEY` (required) and `VITE_POSTHOG_HOST` (optional, defaults to `https://app.posthog.com`) in `server/.env`. The values are copied into the client bundle at build time.
+- Install the PostHog browser SDK in the client workspace if you have not already run `npm install`: `npm install posthog-js --workspace client`.
+- When the env variables are present, the SPA automatically initializes PostHog on the client, identifying signed-in users by their user ID (and falling back to email) and tracking page views.
+- Leave `VITE_POSTHOG_KEY` blank to disable analytics entirely.
+
 ## Testing
 
 This repo includes a Github Actions workflow for running server tests. To test locally, log in
