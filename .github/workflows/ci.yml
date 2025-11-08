@@ -57,11 +57,6 @@ jobs:
         with:
           images: ${{ vars.REGISTRY_IMAGE }}
 
-      - name: Cloning repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Set up qemu
         uses: docker/setup-qemu-action@v3
 
@@ -74,7 +69,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
           platforms: ${{ matrix.platform }}
