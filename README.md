@@ -126,6 +126,89 @@ This project includes components with helpful developer tools, such as the follo
 
    Username and password are: minioadmin/minioadmin
 
+## Analytics
+
+This starter includes optional PostHog product analytics instrumentation on the React client.
+
+- Configure `VITE_POSTHOG_KEY` (required) and `VITE_POSTHOG_HOST` (optional, defaults to `https://app.posthog.com`) in `server/.env`. The values are copied into the client bundle at build time.
+- Install the PostHog browser SDK in the client workspace if you have not already run `npm install`: `npm install posthog-js --workspace client`.
+- When the env variables are present, the SPA automatically initializes PostHog on the client, identifying signed-in users by their user ID (and falling back to email) and tracking page views.
+- Leave `VITE_POSTHOG_KEY` blank to disable analytics entirely.
+
+## Data Imports
+
+The repository includes a CSV (`clinics.csv`) with draft facility metadata. To load it into the new Prisma models:
+
+```
+cd server
+npm install
+npx prisma migrate dev
+npm run import:clinics -- ../clinics.csv
+```
+
+Flags:
+
+- `--dry-run` — parse the file without writing to the database.
+- `--truncate-snapshots` — clear existing `FacilityCapacitySnapshot` rows before import.
+
+Update the CSV path if you relocate the file.
+
+## Geocoding Facilities
+
+Use the OpenRouteService geocoder (or another provider by overriding the base URL) to backfill latitude/longitude:
+
+```
+cd server
+OPENROUTESERVICE_API_KEY=your_key_here npm run geocode:facilities
+```
+
+Additional flags:
+
+- `--dry-run` — show proposed coordinates without saving.
+- `--force` — re-geocode facilities that already have coordinates.
+- `--limit=10` — only process the first N facilities (useful for testing).
+
+Respect the provider’s rate limits; adjust `GEOCODE_RATE_LIMIT_MS` in `.env` as needed.
+
+## CareConnect
+
+The CareConnect tooling lives inside this repository. After bringing up the Docker stack (`docker compose up`), use the following commands from the repo root to seed local data:
+
+1. **Import clinics**
+
+   ```
+   docker compose exec server bash -l -c 'npm run import:clinics -- ../clinics.csv'
+   ```
+
+   Optional flags (append within the quoted command):
+
+   - `--dry-run` to preview changes
+   - `--truncate-snapshots` to clear historical capacity snapshots
+
+2. **Geocode clinics**
+
+   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`, then run:
+
+   ```
+   docker compose exec server bash -l -c 'npm run geocode:facilities'
+   ```
+
+   Common options:
+
+   - `--dry-run` — log the proposed coordinates without saving
+   - `--force` — overwrite existing latitude/longitude values
+   - `--limit=10` — geocode only the first N facilities (useful for testing)
+
+3. **Restart the server container**
+
+   ```
+   docker compose restart server
+   ```
+
+   Restarting ensures Fastify picks up any schema or dependency changes before you refresh the UI.
+
+Once complete, open http://localhost:5001/ to see the map and facility list sourced from the newly imported data.
+
 ## Testing
 
 This repo includes a Github Actions workflow for running server tests. To test locally, log in

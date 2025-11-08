@@ -15,6 +15,40 @@ datasource db {
   extensions = [citext]
 }
 
+enum PlacementRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELLED
+  EXPIRED
+}
+
+enum FacilityUpdateMethod {
+  INTEGRATION
+  API
+  MANUAL
+  AUTOMATED_CALL
+  AUTOMATED_TEXT
+  WHITEBOARD
+  OTHER
+}
+
+enum FacilityEligibilityType {
+  AGE
+  GENDER
+  AMBULATORY
+  MOBILITY_DEVICES
+  ADL_INDEPENDENT
+  HOUSING_STATUS
+  NEIGHBORHOOD
+  SEXUAL_ORIENTATION
+  RACE
+  LANGUAGE
+  PETS
+  BELONGINGS
+  OTHER
+}
+
 model User {
   id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName               String
@@ -29,6 +63,9 @@ model User {
   createdInvites          Invite[]  @relation("CreatedByUser")
   acceptedInvites         Invite[]  @relation("AcceptedByUser")
   revokedInvites          Invite[]  @relation("RevokedByUser")
+  placementRequestsRequested PlacementRequest[] @relation("RequestedByUser")
+  placementRequestsReviewed  PlacementRequest[] @relation("ReviewedByUser")
+  placementRequestEvents     PlacementRequestEvent[]
   updatedAt               DateTime  @updatedAt
   createdAt               DateTime  @default(now())
 }
@@ -49,4 +86,163 @@ model Invite {
   revokedAt               DateTime?
   revokedBy               User?     @relation("RevokedByUser", fields: [revokedById], references: [id])
   revokedById             String?   @db.Uuid
+}
+
+model Facility {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String?
+  phone             String?
+  email             String?
+  website           String?
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  postalCode        String?
+  latitude          Decimal?                   @db.Decimal(9, 6)
+  longitude         Decimal?                   @db.Decimal(9, 6)
+  timezone          String?
+  isActive          Boolean                    @default(true)
+  updateMethod      FacilityUpdateMethod       @default(MANUAL)
+  updateNotes       String?
+  capacitySnapshots FacilityCapacitySnapshot[]
+  amenities         FacilityAmenity[]
+  services          FacilityService[]
+  eligibility       FacilityEligibility[]
+  contacts          FacilityContact[]
+  placementRequests PlacementRequest[]
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+}
+
+model FacilityContact {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility    Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId  String   @db.Uuid
+  name        String
+  role        String?
+  email       String?
+  phone       String?
+  notes       String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Amenity {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String            @unique
+  description String?
+  facilities  FacilityAmenity[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model FacilityAmenity {
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId String   @db.Uuid
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  amenityId  String   @db.Uuid
+
+  @@id([facilityId, amenityId])
+}
+
+model ServiceType {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String           @unique
+  name        String
+  description String?
+  facilities  FacilityService[]
+  placementRequests PlacementRequest[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model FacilityService {
+  facility        Facility    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId      String      @db.Uuid
+  serviceType     ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+  serviceTypeId   String      @db.Uuid
+  availableBeds   Int         @default(0)
+  reservedBeds    Int         @default(0)
+  description     String?
+
+  @@id([facilityId, serviceTypeId])
+}
+
+model FacilityEligibility {
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility    Facility               @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId  String                 @db.Uuid
+  type        FacilityEligibilityType
+  value       String?
+  notes       String?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([facilityId, type])
+}
+
+model FacilityCapacitySnapshot {
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility         Facility   @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId       String     @db.Uuid
+  totalBeds        Int?
+  availableBeds    Int?
+  reservedBeds     Int?
+  lastSyncSource   String?
+  observedAt       DateTime   @default(now())
+  createdAt        DateTime   @default(now())
+}
+
+model Client {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName       String
+  lastName        String?
+  description     String?
+  pets            String?
+  qualifications  Json?
+  notes           String?
+  placementRequests PlacementRequest[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model PlacementRequest {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referenceCode      String?                @unique
+  facility           Facility               @relation(fields: [facilityId], references: [id], onDelete: Restrict)
+  facilityId         String                 @db.Uuid
+  client             Client                 @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  clientId           String                 @db.Uuid
+  requestedBy        User                   @relation("RequestedByUser", fields: [requestedById], references: [id], onDelete: Restrict)
+  requestedById      String                 @db.Uuid
+  reviewedBy         User?                  @relation("ReviewedByUser", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById       String?                @db.Uuid
+  serviceType        ServiceType?           @relation(fields: [serviceTypeId], references: [id], onDelete: SetNull)
+  serviceTypeId      String?                @db.Uuid
+  status             PlacementRequestStatus @default(PENDING)
+  requestedAt        DateTime               @default(now())
+  respondedAt        DateTime?
+  expiresAt          DateTime?
+  outreachNotes      String?
+  providerNotes      String?
+  metadata           Json?
+  events             PlacementRequestEvent[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+}
+
+model PlacementRequestEvent {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  placementRequest   PlacementRequest       @relation(fields: [placementRequestId], references: [id], onDelete: Cascade)
+  placementRequestId String                 @db.Uuid
+  status             PlacementRequestStatus
+  notes              String?
+  actor              User?                  @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId            String?                @db.Uuid
+  createdAt          DateTime               @default(now())
+
+  @@index([placementRequestId, createdAt])
 }
