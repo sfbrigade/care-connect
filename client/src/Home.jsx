@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Alert, Button, Container, Group, List, Loader, Stack, Text, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from './Api';
+import FacilityMap from './Components/FacilityMap';
 
 function Home () {
   const isClient = typeof window !== 'undefined';
@@ -39,6 +40,9 @@ function Home () {
       <Container>
         <Stack gap='md'>
           <Title>Home</Title>
+          {isClient && (
+            <FacilityMap facilities={facilities} />
+          )}
           <Text>
             Use the button below to fire a PostHog test event. Check your PostHog Live feed to confirm the page
             is instrumented correctly.

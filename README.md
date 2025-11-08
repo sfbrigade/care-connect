@@ -153,6 +153,62 @@ Flags:
 
 Update the CSV path if you relocate the file.
 
+## Geocoding Facilities
+
+Use the OpenRouteService geocoder (or another provider by overriding the base URL) to backfill latitude/longitude:
+
+```
+cd server
+OPENROUTESERVICE_API_KEY=your_key_here npm run geocode:facilities
+```
+
+Additional flags:
+
+- `--dry-run` — show proposed coordinates without saving.
+- `--force` — re-geocode facilities that already have coordinates.
+- `--limit=10` — only process the first N facilities (useful for testing).
+
+Respect the provider’s rate limits; adjust `GEOCODE_RATE_LIMIT_MS` in `.env` as needed.
+
+## CareConnect
+
+The CareConnect tooling lives inside this repository. After bringing up the Docker stack (`docker compose up`), use the following commands from the repo root to seed local data:
+
+1. **Import clinics**
+
+   ```
+   docker compose exec server bash -l -c 'npm run import:clinics -- ../clinics.csv'
+   ```
+
+   Optional flags (append within the quoted command):
+
+   - `--dry-run` to preview changes
+   - `--truncate-snapshots` to clear historical capacity snapshots
+
+2. **Geocode clinics**
+
+   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`, then run:
+
+   ```
+   docker compose exec server bash -l -c 'npm run geocode:facilities'
+   ```
+
+   Common options:
+
+   - `--dry-run` — log the proposed coordinates without saving
+   - `--force` — overwrite existing latitude/longitude values
+   - `--limit=10` — geocode only the first N facilities (useful for testing)
+
+3. **Restart the server container**
+
+   ```
+   docker compose restart server
+   ```
+
+   Restarting ensures Fastify picks up any schema or dependency changes before you refresh the UI.
+
+Once complete, open http://localhost:5001/ to see the map and facility list sourced from the newly imported data.
+
 ## Testing
 
 This repo includes a Github Actions workflow for running server tests. To test locally, log in

@@ -11,6 +11,8 @@ export default async function (fastify, opts) {
             id: z.string().uuid(),
             name: z.string(),
             description: z.string().nullable(),
+            latitude: z.coerce.number().nullable(),
+            longitude: z.coerce.number().nullable(),
           })),
         },
       },
@@ -22,6 +24,8 @@ export default async function (fastify, opts) {
           id: true,
           name: true,
           description: true,
+          latitude: true,
+          longitude: true,
         },
       });
       reply.send(facilities);

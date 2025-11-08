@@ -14,7 +14,8 @@
     "prisma:studio": "prisma studio",
     "start": "fastify start -l info app.js",
     "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
-    "import:clinics": "node bin/import-clinics.js"
+    "import:clinics": "node bin/import-clinics.js",
+    "geocode:facilities": "node bin/geocode-facilities.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
