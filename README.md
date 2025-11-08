@@ -135,6 +135,24 @@ This starter includes optional PostHog product analytics instrumentation on the 
 - When the env variables are present, the SPA automatically initializes PostHog on the client, identifying signed-in users by their user ID (and falling back to email) and tracking page views.
 - Leave `VITE_POSTHOG_KEY` blank to disable analytics entirely.
 
+## Data Imports
+
+The repository includes a CSV (`clinics.csv`) with draft facility metadata. To load it into the new Prisma models:
+
+```
+cd server
+npm install
+npx prisma migrate dev
+npm run import:clinics -- ../clinics.csv
+```
+
+Flags:
+
+- `--dry-run` — parse the file without writing to the database.
+- `--truncate-snapshots` — clear existing `FacilityCapacitySnapshot` rows before import.
+
+Update the CSV path if you relocate the file.
+
 ## Testing
 
 This repo includes a Github Actions workflow for running server tests. To test locally, log in

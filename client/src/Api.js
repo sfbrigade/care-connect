@@ -149,6 +149,11 @@ const Api = {
       return instance.patch(`/api/users/${id}`, data).catch(handleError);
     },
   },
+  facilities: {
+    list () {
+      return instance.get('/api/facilities');
+    },
+  },
 };
 
 export default Api;

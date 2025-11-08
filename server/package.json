@@ -13,7 +13,8 @@
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "start": "fastify start -l info app.js",
-    "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')"
+    "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "import:clinics": "node bin/import-clinics.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
@@ -42,6 +43,7 @@
     "mime-types": "^3.0.1",
     "nodemailer": "^7.0.6",
     "pm2": "^6.0.11",
+    "csv-parse": "^5.6.0",
     "zod": "^4.1.11",
     "zod-openapi": "^5.4.1"
   },
