@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 import { Alert, Button, Container, Group, List, Loader, Stack, Text, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
