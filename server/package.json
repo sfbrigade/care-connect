@@ -9,12 +9,11 @@
   "scripts": {
     "build": "npm run prisma:generate",
     "dev": "prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
-    "start:local": "BASE_URL=http://localhost:5001 fastify start app.js -l info --port 5001",
     "lint": "eslint --fix",
     "pretest": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
-    "start": "BASE_URL=http://localhost:5000 fastify start app.js -l info --port 5000",
+    "start": "fastify start app.js -l info",
     "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
     "import:clinics": "node bin/import-clinics.js",
     "geocode:facilities": "node bin/geocode-facilities.js"

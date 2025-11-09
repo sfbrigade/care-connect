@@ -18,7 +18,7 @@ services:
       - full-stack-starter
     ports:
       - 3000:3000 # fastify
-      - 5001:5000 # vite
+      - 3333:3333 # vite
       - 5555:5555 # prisma studio
     depends_on:
       - db

@@ -86,4 +86,3 @@ function identifyUser (posthog, user) {
 }
 
 export default PosthogProvider;
-
