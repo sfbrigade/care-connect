@@ -168,20 +168,16 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      // Uncomment when ready to serve live data:
-      // const facilities = await fastify.prisma.facility.findMany({
-      //   orderBy: { name: 'asc' },
-      //   select: {
-      //     id: true,
-      //     name: true,
-      //     description: true,
-      //     latitude: true,
-      //     longitude: true,
-      //   },
-      // });
-      // if (facilities.length > 0) {
-      //   return reply.send(facilities);
-      // }
-      reply.send(sampleFacilities);
+      const facilities = await fastify.prisma.facility.findMany({
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          latitude: true,
+          longitude: true,
+        },
+      });
+      return reply.send(facilities);
     });
 }
