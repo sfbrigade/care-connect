@@ -1,30 +1,13 @@
-- **SSR test:** Build once (`npm run build`), then ensure Postgres/Minio/Mail are running (`docker compose up db mail storage`) and launch with `npm run start --workspace server`. The app serves from http://localhost:5000 in the same SSR mode used in production.
-# Full Stack Starter
-
-This repository contains a "starter" project for web application development in JavaScript. This includes the following components, from front-end to back-end:
-
-- React
-- React Router
-- Mantine
-- Vite
-- Fastify
-- Prisma
-- Node.js
-- Postgres
+# Care Connect
 
 ## One-time Setup
 
-1. On Github, "Fork" this git repo to your own account so that you have your own copy.
-
-   Read more about "forking" here:  
-   https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo
-
-2. Clone YOUR copy of the git repo to a "local" directory (on your computer), then change
+1. Clone the repo to a "local" directory (on your computer), then change
    into the directory.
 
    ```
-   git clone https://github.com/YOUR_ACCOUNT_ID/full-stack-starter.git
-   cd full-stack-starter
+   git clone https://github.com/YOUR_ACCOUNT_ID/care-connect.git
+   cd care-connect
    ```
 
 3. Install Docker Desktop: https://www.docker.com/products/docker-desktop
@@ -44,10 +27,10 @@ This repository contains a "starter" project for web application development in 
 
    ```
    full-stack-starter-server-1       | 5:31:23 PM client.1 |    VITE v4.3.9  ready in 327 ms
-   full-stack-starter-server-1       | 5:31:23 PM client.1 |    ➜  Local:   http://localhost:5000/
+   full-stack-starter-server-1       | 5:31:23 PM client.1 |    ➜  Local:   http://localhost:3333/
    ```
 
-5. Now you should be able to open the web app in your browser at: http://localhost:5000/
+5. Now you should be able to open the web app in your browser at: http://localhost:3333/
 
 6. Open a new tab or window of your shell, change into your repo directory as needed, and execute this command:
 
@@ -68,9 +51,9 @@ This repository contains a "starter" project for web application development in 
    If it is successful, you will see something like this:
 
    ```
-   Killing full-stack-starter_db_1           ... done
-   Killing full-stack-starter_server_1       ... done
-   Killing full-stack-starter_mailcatcher_1  ... done
+   Killing care-connect_db_1           ... done
+   Killing care-connect_server_1       ... done
+   Killing care-connect_mailcatcher_1  ... done
    ```
 
    If it is not successful, you may see something like this:
@@ -84,9 +67,9 @@ This repository contains a "starter" project for web application development in 
 
    ```
    docker compose stop
-   Stopping full-stack-starter_db_1          ... done
-   Stopping full-stack-starter_server_1      ... done
-   Stopping full-stack-starter_mailcatcher_1 ... done
+   Stopping care-connect_db_1          ... done
+   Stopping care-connect_server_1      ... done
+   Stopping care-connect_mailcatcher_1 ... done
    ```
 
 8. That's it! After all this setup is complete, the only command you need to run to get
@@ -116,7 +99,7 @@ This project includes components with helpful developer tools, such as the follo
    The Scalar library automatically generates web-based API documentation for the server based on the
    Swagger/OpenAPI schema definitions included with each route, viewable at:
 
-   http://localhost:5000/api/reference
+   http://localhost:3333/api/reference
 
 4. Minio
 
@@ -176,6 +159,7 @@ Respect the provider’s rate limits; adjust `GEOCODE_RATE_LIMIT_MS` in `.env` a
 The CareConnect tooling lives inside this repository. After bringing up the Docker stack (`docker compose up`), use the following commands from the repo root to seed local data:
 
 1. **Import clinics**
+   Ask a team member for a copy of the sample data CSV.
 
    ```
    docker compose exec server bash -l -c 'npm run import:clinics -- ../clinics.csv'
@@ -208,17 +192,22 @@ The CareConnect tooling lives inside this repository. After bringing up the Dock
 
    Restarting ensures Fastify picks up any schema or dependency changes before you refresh the UI.
 
-Once complete, open http://localhost:5001/ to see the map and facility list sourced from the newly imported data.
+Once complete, open http://localhost:3333/ to see the map and facility list sourced from the newly imported data.
 
 > **Quick demo:** If the database is empty, the API automatically falls back to bundled sample facilities (see `server/data/sample-facilities.json`) so the map renders without running the import scripts.
 
 ## Testing
 
-This repo includes a Github Actions workflow for running server tests. To test locally, log in
+1. This repo includes a Github Actions workflow for running server tests. To test locally, log in
 to a running server container as describe above (`docker compose exec server bash -l`) and then run
 `npm test`. The server tests use the Testcontainers library to automatically launch test databases and
 storage servers for testing- if tests terminate unexpectedly, you may have dangling/orphan containers
 running. Use `docker ps` to list and check running containers.
+
+2. To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the
+client through the server at: http://localhost:3000
+
+3. To lint and format your code, log in to a running container and run `npm run lint'.
 
 ## Shell Command Quick Reference
 
@@ -354,7 +343,7 @@ running. Use `docker ps` to list and check running containers.
 
 ## License
 
-Full Stack Starter  
+Care Connect
 Copyright © 2025 SF Civic Tech
 
 This program is free software: you can redistribute it and/or modify

@@ -102,4 +102,3 @@ function FacilityMap ({ facilities }) {
 }
 
 export default FacilityMap;
-
