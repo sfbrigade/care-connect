@@ -43,13 +43,6 @@ function Home () {
           {isClient && (
             <FacilityMap facilities={facilities} />
           )}
-          <Text>
-            Use the button below to fire a PostHog test event. Check your PostHog Live feed to confirm the page
-            is instrumented correctly.
-          </Text>
-          <Button onClick={handlePosthogClick}>
-            Capture PostHog Test Event
-          </Button>
           <Title order={2}>Facilities</Title>
           {!isClient && (
             <Alert color='blue' title='Facilities load in browser'>
@@ -81,6 +74,13 @@ function Home () {
               ))}
             </List>
           )}
+          <Text>
+            Use the button below to fire a PostHog test event. Check your PostHog Live feed to confirm the page
+            is instrumented correctly.
+          </Text>
+          <Button onClick={handlePosthogClick}>
+            Capture PostHog Test Event
+          </Button>
         </Stack>
       </Container>
     </>

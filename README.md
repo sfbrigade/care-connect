@@ -209,6 +209,8 @@ The CareConnect tooling lives inside this repository. After bringing up the Dock
 
 Once complete, open http://localhost:5001/ to see the map and facility list sourced from the newly imported data.
 
+> **Quick demo:** If the database is empty, the API automatically falls back to bundled sample facilities (see `server/data/sample-facilities.json`) so the map renders without running the import scripts.
+
 ## Testing
 
 This repo includes a Github Actions workflow for running server tests. To test locally, log in
