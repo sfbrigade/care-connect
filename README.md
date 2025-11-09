@@ -1,3 +1,4 @@
+- **SSR test:** Build once (`npm run build`), then ensure Postgres/Minio/Mail are running (`docker compose up db mail storage`) and launch with `npm run start --workspace server`. The app serves from http://localhost:5000 in the same SSR mode used in production.
 # Full Stack Starter
 
 This repository contains a "starter" project for web application development in JavaScript. This includes the following components, from front-end to back-end:
