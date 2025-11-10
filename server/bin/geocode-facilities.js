@@ -65,7 +65,10 @@ async function main () {
       if (!coordinates) {
         console.warn(`No geocode result for ${facility.name} (${address})`);
         failureCount += 1;
-      } else if (!dryRun) {
+      } else if (dryRun) {
+        console.info(`[Dry Run] ${facility.name} @ ${address} -> ${coordinates.lat}, ${coordinates.lng}`);
+        successCount += 1;
+      } else {
         await prisma.facility.update({
           where: { id: facility.id },
           data: {
@@ -74,9 +77,6 @@ async function main () {
           },
         });
         console.info(`Updated ${facility.name}: ${coordinates.lat}, ${coordinates.lng}`);
-        successCount += 1;
-      } else {
-        console.info(`[Dry Run] ${facility.name}: ${coordinates.lat}, ${coordinates.lng}`);
         successCount += 1;
       }
     } catch (error) {
