@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
 
-function FacilityMap ({ facilities }) {
+function FacilityMap ({ facilities, height = 350 }) {
   const [leaflet, setLeaflet] = useState(null);
 
   useEffect(() => {
@@ -101,12 +101,12 @@ function FacilityMap ({ facilities }) {
   const { MapContainer, Marker, Popup, TileLayer, markerIcon } = leaflet;
 
   return (
-    <MapContainer
-      center={center}
-      zoom={DEFAULT_ZOOM}
-      style={{ height: '350px', width: '100%' }}
-      scrollWheelZoom={false}
-    >
+      <MapContainer
+        center={center}
+        zoom={DEFAULT_ZOOM}
+        style={{ height: `${height}px`, width: '100%' }}
+        scrollWheelZoom={false}
+      >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
