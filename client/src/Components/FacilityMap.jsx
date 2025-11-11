@@ -114,11 +114,10 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
       return;
     }
 
-    // eslint-disable-next-line no-console
     console.info('[FacilityMap] facilities (raw)', facilities);
-    // eslint-disable-next-line no-console
+
     console.info('[FacilityMap] markers used for centering', facilityMarkers);
-    // eslint-disable-next-line no-console
+
     console.info('[FacilityMap] computed center', center);
     if (facilityMarkers.length) {
       const latitudes = facilityMarkers.map((facility) => facility.latitude);
@@ -129,7 +128,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         lonMin: Math.min(...longitudes),
         lonMax: Math.max(...longitudes),
       };
-      // eslint-disable-next-line no-console
+
       console.info('[FacilityMap] coordinate bounds', stats);
     }
   }, [facilities, facilityMarkers, center]);
@@ -141,12 +140,12 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
   const { MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib } = leaflet;
 
   return (
-      <MapContainer
-        center={center}
-        zoom={DEFAULT_ZOOM}
-        style={{ height: `${height}px`, width: '100%' }}
-        scrollWheelZoom={false}
-      >
+    <MapContainer
+      center={center}
+      zoom={DEFAULT_ZOOM}
+      style={{ height: `${height}px`, width: '100%' }}
+      scrollWheelZoom={false}
+    >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'

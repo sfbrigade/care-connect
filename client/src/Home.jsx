@@ -69,8 +69,8 @@ function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE)
   const dLat = lat2 - lat1;
   const dLon = lon2 - lon1;
 
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_RADIUS_MI * c;
@@ -186,7 +186,6 @@ function createSlug (name) {
 }
 
 function Home () {
-  const isClient = typeof window !== 'undefined';
   const geolocationRequestRef = useRef(false);
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['facilities'],
@@ -197,14 +196,13 @@ function Home () {
       }
       return response.data;
     },
-    enabled: isClient,
   });
 
   const [userCoordinate, setUserCoordinate] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
 
   useEffect(() => {
-    if (!isClient || geolocationRequestRef.current) {
+    if (geolocationRequestRef.current) {
       return;
     }
 
@@ -255,7 +253,7 @@ function Home () {
     return () => {
       cancelled = true;
     };
-  }, [isClient]);
+  }, []);
 
   const referenceCoordinate = userCoordinate ?? DEFAULT_COORDINATE;
 
@@ -373,21 +371,6 @@ function Home () {
 
   const [showMap, setShowMap] = useState(true);
 
-  if (!isClient) {
-    return (
-      <>
-        <Head>
-          <title>Home</title>
-        </Head>
-        <main className='home'>
-          <div className='home__card'>
-            <p className='home__empty-state'>Loading client experience…</p>
-          </div>
-        </main>
-      </>
-    );
-  }
-
   return (
     <>
       <Head>
@@ -457,13 +440,11 @@ function Home () {
               {showMap && (
                 <>
                   <div className='map-panel__canvas'>
-                    {isClient && (
-                          <FacilityMap
-                            facilities={filteredFacilities}
-                            userLocation={userCoordinate}
-                            height={400}
-                          />
-                    )}
+                    <FacilityMap
+                      facilities={filteredFacilities}
+                      userLocation={userCoordinate}
+                      height={400}
+                    />
                   </div>
                   <p className='map-panel__footer'>
                     Last updated {formatUpdatedAt(latestUpdatedAt)}
