@@ -46,6 +46,10 @@ async function main () {
     if (!facilityName) {
       continue;
     }
+    if (isOutOfCounty(record)) {
+      console.info(`Skipping ${facilityName}: address marked as out of county`);
+      continue;
+    }
     const facilityData = buildFacilityData(record);
     let facility = await prisma.facility.findFirst({
       where: { name: facilityName },
@@ -184,6 +188,7 @@ function resolveFilePath (filePath) {
 function buildFacilityData (record) {
   const address = record['DPH Address'] || record['DRAFT Site address'];
   const { city, state, postalCode } = parseAddress(address);
+  const neighborhood = (record.Neighborhood || '').trim() || null;
 
   return {
     description: record['CareConnect MVP'] || record['Capacity Constraints'] || null,
@@ -193,6 +198,7 @@ function buildFacilityData (record) {
     city,
     state,
     postalCode,
+    neighborhood,
     isActive: (record['CareConnect MVP'] || '').toUpperCase().includes('X'),
     updateMethod: mapUpdateMethod(record['Avail management']),
     updateNotes: buildUpdateNotes(record),
@@ -372,6 +378,12 @@ function slugify (value) {
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '') || 'GENERAL';
+}
+
+function isOutOfCounty (record) {
+  const markers = ['out of county', 'out-of-county', 'out_of_county'];
+  const address = (record['DPH Address'] || record['DRAFT Site address'] || '').toLowerCase();
+  return markers.some(marker => address.includes(marker));
 }
 
 process.on('unhandledRejection', (error) => {

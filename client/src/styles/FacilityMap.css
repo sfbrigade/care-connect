@@ -1,0 +1,47 @@
+.facility-map__marker {
+  background: none;
+  border: none;
+}
+
+.facility-map__marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.facility-map__marker-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font: 600 12px/1 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.facility-map__marker-pointer {
+  margin-top: -2px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 6px 4px 0 4px;
+  border-color: #111827 transparent transparent transparent;
+}
+
+.facility-map__marker--user .facility-map__marker-circle,
+.facility-map__marker-circle--user {
+  width: 16px;
+  height: 16px;
+  background: #2563eb;
+}
+
+.facility-map__marker--user .facility-map__marker-wrapper--user {
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.25);
+}
