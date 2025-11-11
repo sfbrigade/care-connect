@@ -1,12 +1,45 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import 'leaflet/dist/leaflet.css';
+import '../styles/FacilityMap.css';
 
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
 
-function FacilityMap ({ facilities, height = 350 }) {
+function createFacilityMarkerIcon (L, number) {
+  const display = Number.isFinite(number) && number > 0 ? String(number) : '';
+
+  return L.divIcon({
+    className: 'facility-map__marker facility-map__marker--facility',
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+    popupAnchor: [0, -30],
+    html: `
+      <div class="facility-map__marker-wrapper">
+        <span class="facility-map__marker-circle">${display}</span>
+        <span class="facility-map__marker-pointer"></span>
+      </div>
+    `,
+  });
+}
+
+function createUserMarkerIcon (L) {
+  return L.divIcon({
+    className: 'facility-map__marker facility-map__marker--user',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -16],
+    html: `
+      <div class="facility-map__marker-wrapper facility-map__marker-wrapper--user">
+        <span class="facility-map__marker-circle facility-map__marker-circle--user"></span>
+      </div>
+    `,
+  });
+}
+
+function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
   const [leaflet, setLeaflet] = useState(null);
+  const markerCacheRef = useRef(new Map());
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -21,24 +54,14 @@ function FacilityMap ({ facilities, height = 350 }) {
         import('leaflet'),
       ]);
 
-      const markerIcon = new L.Icon({
-        iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
-        iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
-        shadowUrl: new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href,
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowAnchor: [12, 41],
-        iconSize: [25, 41],
-        shadowSize: [41, 41],
-      });
-
       if (isMounted) {
         setLeaflet({
           MapContainer,
           Marker,
           Popup,
           TileLayer,
-          markerIcon,
+          leafletLib: L,
+          userIcon: createUserMarkerIcon(L),
         });
       }
     }
@@ -51,23 +74,41 @@ function FacilityMap ({ facilities, height = 350 }) {
   }, []);
 
   const facilityMarkers = useMemo(() => facilities
-    .map((facility) => ({
-      ...facility,
-      latitude: Number(facility.latitude),
-      longitude: Number(facility.longitude),
-    }))
-    .filter((facility) => Number.isFinite(facility.latitude) && Number.isFinite(facility.longitude)), [facilities]);
+    .map((facility) => {
+      const latitude = Number(facility.latitude);
+      const longitude = Number(facility.longitude);
 
-  const center = useMemo(() => (facilityMarkers.length
-    ? facilityMarkers.reduce(
-      (acc, facility, index, array) => {
-        acc[0] += facility.latitude / array.length;
-        acc[1] += facility.longitude / array.length;
-        return acc;
-      },
-      [0, 0]
-    )
-    : DEFAULT_CENTER), [facilityMarkers]);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return null;
+      }
+
+      return {
+        ...facility,
+        latitude,
+        longitude,
+        sequenceNumber: facility.sequenceNumber ?? null,
+      };
+    })
+    .filter(Boolean), [facilities]);
+
+  const center = useMemo(() => {
+    if (userLocation) {
+      return [userLocation.latitude, userLocation.longitude];
+    }
+
+    if (facilityMarkers.length) {
+      return facilityMarkers.reduce(
+        (acc, facility, index, array) => {
+          acc[0] += facility.latitude / array.length;
+          acc[1] += facility.longitude / array.length;
+          return acc;
+        },
+        [0, 0]
+      );
+    }
+
+    return DEFAULT_CENTER;
+  }, [facilityMarkers, userLocation]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -94,11 +135,28 @@ function FacilityMap ({ facilities, height = 350 }) {
     }
   }, [facilities, facilityMarkers, center]);
 
+  const markerIconCache = useMemo(() => {
+    if (!leaflet?.leafletLib) {
+      return markerCacheRef.current;
+    }
+
+    const cache = new Map();
+    facilityMarkers.forEach((facility) => {
+      const key = facility.sequenceNumber ?? 0;
+      if (!cache.has(key)) {
+        cache.set(key, createFacilityMarkerIcon(leaflet.leafletLib, key));
+      }
+    });
+
+    markerCacheRef.current = cache;
+    return cache;
+  }, [facilityMarkers, leaflet]);
+
   if (typeof window === 'undefined' || !leaflet) {
     return null;
   }
 
-  const { MapContainer, Marker, Popup, TileLayer, markerIcon } = leaflet;
+  const { MapContainer, Marker, Popup, TileLayer, userIcon } = leaflet;
 
   return (
       <MapContainer
@@ -111,11 +169,21 @@ function FacilityMap ({ facilities, height = 350 }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
+      {userLocation && userIcon && (
+        <Marker
+          position={[userLocation.latitude, userLocation.longitude]}
+          icon={userIcon}
+        >
+          <Popup>
+            <strong>Your location</strong>
+          </Popup>
+        </Marker>
+      )}
       {facilityMarkers.map((facility) => (
         <Marker
           key={facility.id}
           position={[facility.latitude, facility.longitude]}
-          icon={markerIcon}
+          icon={markerIconCache.get(facility.sequenceNumber ?? 0)}
         >
           <Popup>
             <strong>{facility.name}</strong>

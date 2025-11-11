@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -56,15 +56,15 @@ function toRadians (degrees) {
   return degrees * (Math.PI / 180);
 }
 
-function computeDistanceMiles (latitude, longitude) {
+function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
   }
 
   const lat1 = toRadians(latitude);
   const lon1 = toRadians(longitude);
-  const lat2 = toRadians(DEFAULT_COORDINATE.latitude);
-  const lon2 = toRadians(DEFAULT_COORDINATE.longitude);
+  const lat2 = toRadians(origin.latitude);
+  const lon2 = toRadians(origin.longitude);
 
   const dLat = lat2 - lat1;
   const dLon = lon2 - lon1;
@@ -157,6 +157,7 @@ function getFacilityCategories (facility) {
 
 function Home () {
   const isClient = typeof window !== 'undefined';
+  const geolocationRequestRef = useRef(false);
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
@@ -169,8 +170,67 @@ function Home () {
     enabled: isClient,
   });
 
+  const [userCoordinate, setUserCoordinate] = useState(null);
+  const [geoStatus, setGeoStatus] = useState('idle');
+
+  useEffect(() => {
+    if (!isClient || geolocationRequestRef.current) {
+      return;
+    }
+
+    if (!('geolocation' in navigator)) {
+      setGeoStatus('unsupported');
+      return;
+    }
+
+    geolocationRequestRef.current = true;
+    setGeoStatus('pending');
+
+    let cancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) {
+          return;
+        }
+
+        setUserCoordinate({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setGeoStatus('granted');
+      },
+      (error) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (error.code === error.PERMISSION_DENIED) {
+          setGeoStatus('denied');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setGeoStatus('unavailable');
+        } else if (error.code === error.TIMEOUT) {
+          setGeoStatus('timeout');
+        } else {
+          setGeoStatus('error');
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient]);
+
+  const referenceCoordinate = userCoordinate ?? DEFAULT_COORDINATE;
+
   const facilitiesWithMeta = useMemo(() => facilities.map((facility) => {
-    const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude);
+    const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
     const primaryService = facility.services[0]?.name ?? null;
     const primaryBadge = facility.services[0]?.availableBeds != null
@@ -189,35 +249,38 @@ function Home () {
       primaryContact,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
     };
-  }), [facilities]);
+  }), [facilities, referenceCoordinate]);
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedFacilityId, setSelectedFacilityId] = useState(null);
 
-  useEffect(() => {
-    if (!selectedFacilityId && facilitiesWithMeta.length) {
-      setSelectedFacilityId(facilitiesWithMeta[0].id);
-    }
-  }, [facilitiesWithMeta, selectedFacilityId]);
-
   const filteredFacilities = useMemo(() => {
-    if (activeFilter === 'All') {
-      return facilitiesWithMeta;
-    }
+    const base = activeFilter === 'All'
+      ? facilitiesWithMeta
+      : facilitiesWithMeta.filter((facility) => facility.serviceNames.includes(activeFilter));
 
-    return facilitiesWithMeta.filter((facility) => facility.serviceNames.includes(activeFilter));
+    return [...base].sort((a, b) => {
+      const aDistance = a.distanceMiles ?? Number.POSITIVE_INFINITY;
+      const bDistance = b.distanceMiles ?? Number.POSITIVE_INFINITY;
+      return aDistance - bDistance;
+    });
   }, [facilitiesWithMeta, activeFilter]);
 
+  const numberedFacilities = useMemo(() => filteredFacilities.map((facility, index) => ({
+    ...facility,
+    sequenceNumber: index + 1,
+  })), [filteredFacilities]);
+
   useEffect(() => {
-    if (!filteredFacilities.length) {
+    if (!numberedFacilities.length) {
       return;
     }
 
-    const containsSelection = filteredFacilities.some((facility) => facility.id === selectedFacilityId);
+    const containsSelection = numberedFacilities.some((facility) => facility.id === selectedFacilityId);
     if (!containsSelection) {
-      setSelectedFacilityId(filteredFacilities[0].id);
+      setSelectedFacilityId(numberedFacilities[0].id);
     }
-  }, [filteredFacilities, selectedFacilityId]);
+  }, [numberedFacilities, selectedFacilityId]);
 
   const facilitiesByCategory = useMemo(() => {
     const map = CATEGORY_CONFIG.reduce((accumulator, category) => {
@@ -225,7 +288,7 @@ function Home () {
       return accumulator;
     }, {});
 
-    filteredFacilities.forEach((facility) => {
+    numberedFacilities.forEach((facility) => {
       facility.categories.forEach((categoryId) => {
         if (map[categoryId]) {
           map[categoryId].push(facility);
@@ -234,7 +297,7 @@ function Home () {
     });
 
     return map;
-  }, [filteredFacilities]);
+  }, [numberedFacilities]);
 
   const availableFilters = useMemo(() => {
     const serviceNames = new Set();
@@ -257,6 +320,26 @@ function Home () {
     }
     return new Date(Math.max(...timestamps)).toISOString();
   }, [facilitiesWithMeta]);
+
+  const locationLabel = userCoordinate ? 'Near your location' : 'San Francisco · Downtown';
+  const locationStatusMessage = useMemo(() => {
+    switch (geoStatus) {
+      case 'pending':
+        return 'Detecting your location…';
+      case 'granted':
+        return 'Showing availability near you.';
+      case 'denied':
+        return 'Location access denied — showing San Francisco by default.';
+      case 'unsupported':
+        return 'Location detection not supported; showing San Francisco by default.';
+      case 'unavailable':
+      case 'timeout':
+      case 'error':
+        return 'Couldn’t determine your location — showing San Francisco by default.';
+      default:
+        return null;
+    }
+  }, [geoStatus]);
 
   const [showMap, setShowMap] = useState(true);
 
@@ -308,11 +391,14 @@ function Home () {
             <section className='map-panel map-panel--hero'>
               <div className='home__hero-header'>
                 <div>
-                  <p className='home__hero-subtitle'>San Francisco · Downtown</p>
+                  <p className='home__hero-subtitle'>{locationLabel}</p>
                   <h1 className='home__title'>Available Sites</h1>
                   <p className='home__metrics'>
-                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                    {(numberedFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
                   </p>
+                  {locationStatusMessage && (
+                    <p className='home__location-status'>{locationStatusMessage}</p>
+                  )}
                 </div>
                 <div className={`home__view-switch ${showMap ? 'home__view-switch--on' : 'home__view-switch--off'}`}>
                   <span className='home__view-switch-label'>Map</span>
@@ -342,7 +428,11 @@ function Home () {
                 <>
                   <div className='map-panel__canvas'>
                     {isClient && (
-                      <FacilityMap facilities={facilitiesWithMeta} height={400} />
+                          <FacilityMap
+                            facilities={numberedFacilities}
+                            userLocation={userCoordinate}
+                            height={400}
+                          />
                     )}
                   </div>
                   <p className='map-panel__footer'>
@@ -379,11 +469,14 @@ function Home () {
                             }
                           }}
                         >
-                          <div className='card__row'>
-                            <span className='card__metric'>
-                              {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-                            </span>
-                            <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
+                            <div className='card__row card__row--top'>
+                              <span className='card__index'>{facility.sequenceNumber}</span>
+                              <div className='card__row-meta'>
+                                <span className='card__metric'>
+                                  {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
+                                </span>
+                                <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
+                              </div>
                           </div>
                           <h3 className='card__title'>{facility.name}</h3>
                           {facility.displayAddress && (
@@ -399,7 +492,7 @@ function Home () {
                 );
               })}
 
-              {!filteredFacilities.length && (
+              {!numberedFacilities.length && (
                 <p className='home__empty-state'>
                   No facilities match this filter yet. Try a different category.
                 </p>

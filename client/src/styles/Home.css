@@ -65,6 +65,12 @@
   color: #64748b;
 }
 
+.home__location-status {
+  margin: 4px 0 0;
+  font: 400 12px/16px 'Roboto', sans-serif;
+  color: #94a3b8;
+}
+
 .home__view-switch {
   display: inline-flex;
   align-items: center;
@@ -259,6 +265,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.card__row--top {
+  align-items: flex-start;
+}
+
+.card__row-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  font: 600 14px/20px 'Roboto', sans-serif;
 }
 
 .card__metric {
