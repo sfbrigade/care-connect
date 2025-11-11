@@ -294,6 +294,12 @@
   color: #000000;
 }
 
+.card__neighborhood {
+  margin: 0;
+  font: 500 13px/18px 'Roboto', sans-serif;
+  color: #0f172a;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

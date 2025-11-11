@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
 import process from 'node:process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import { parse } from 'csv-parse/sync';
+import wellknown from 'wellknown';
+import { point } from '@turf/helpers';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,8 +25,11 @@ if (!API_KEY) {
 
 const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
 const RATE_LIMIT_DELAY_MS = Number.parseInt(process.env.GEOCODE_RATE_LIMIT_MS ?? '1100', 10);
+const NEIGHBORHOODS_CSV_PATH = process.env.NEIGHBORHOODS_CSV_PATH
+  ?? path.resolve(__dirname, '..', '..', 'SF_Find_Neighborhoods_20251111.csv');
 
 const prisma = new PrismaClient();
+const neighborhoodFeatures = loadNeighborhoodFeatures();
 
 async function main () {
   const { force, dryRun, limit } = parseArgs(process.argv.slice(2));
@@ -31,8 +39,9 @@ async function main () {
     : {
         OR: [
           { latitude: null },
-          { longitude: null }
-        ]
+          { longitude: null },
+          { neighborhood: null },
+        ],
       };
 
   const facilities = await prisma.facility.findMany({
@@ -59,24 +68,53 @@ async function main () {
       continue;
     }
 
-    try {
-      const coordinates = await geocodeAddress(address);
+    let latitude = facility.latitude != null ? Number(facility.latitude) : null;
+    let longitude = facility.longitude != null ? Number(facility.longitude) : null;
+    let shouldUpdateCoords = false;
 
-      if (!coordinates) {
-        console.warn(`No geocode result for ${facility.name} (${address})`);
-        failureCount += 1;
-      } else if (dryRun) {
-        console.info(`[Dry Run] ${facility.name} @ ${address} -> ${coordinates.lat}, ${coordinates.lng}`);
+    try {
+      if (latitude == null || longitude == null || force) {
+        const coordinates = await geocodeAddress(address);
+        if (!coordinates) {
+          console.warn(`No geocode result for ${facility.name} (${address})`);
+          failureCount += 1;
+          continue;
+        }
+        latitude = coordinates.lat;
+        longitude = coordinates.lng;
+        shouldUpdateCoords = true;
+      }
+
+      let neighborhood = facility.neighborhood ?? null;
+      const resolvedNeighborhood = resolveNeighborhood(latitude, longitude);
+      if (resolvedNeighborhood) {
+        neighborhood = resolvedNeighborhood;
+      } else if (force) {
+        neighborhood = null;
+      }
+
+      if (dryRun) {
+        console.info(`[Dry Run] ${facility.name} @ ${address} -> ${latitude}, ${longitude} (Neighborhood: ${neighborhood ?? 'Unknown'})`);
         successCount += 1;
       } else {
-        await prisma.facility.update({
-          where: { id: facility.id },
-          data: {
-            latitude: coordinates.lat,
-            longitude: coordinates.lng,
-          },
-        });
-        console.info(`Updated ${facility.name}: ${coordinates.lat}, ${coordinates.lng}`);
+        const updateData = {};
+        if (shouldUpdateCoords) {
+          updateData.latitude = latitude;
+          updateData.longitude = longitude;
+        }
+        if (neighborhood !== facility.neighborhood) {
+          updateData.neighborhood = neighborhood;
+        }
+
+        if (Object.keys(updateData).length) {
+          await prisma.facility.update({
+            where: { id: facility.id },
+            data: updateData,
+          });
+          console.info(`Updated ${facility.name}: ${latitude}, ${longitude}${neighborhood ? ` (Neighborhood: ${neighborhood})` : ''}`);
+        } else {
+          console.info(`No changes needed for ${facility.name}.`);
+        }
         successCount += 1;
       }
     } catch (error) {
@@ -84,7 +122,7 @@ async function main () {
       failureCount += 1;
     }
 
-    if (RATE_LIMIT_DELAY_MS > 0) {
+    if (!dryRun && RATE_LIMIT_DELAY_MS > 0) {
       await delay(RATE_LIMIT_DELAY_MS);
     }
   }
@@ -152,6 +190,58 @@ async function geocodeAddress (query) {
   }
 
   return { lat, lng };
+}
+
+function resolveNeighborhood (latitude, longitude) {
+  if (!neighborhoodFeatures.length) {
+    return null;
+  }
+
+  const pointFeature = point([longitude, latitude]);
+  for (const feature of neighborhoodFeatures) {
+    try {
+      if (booleanPointInPolygon(pointFeature, feature.geometry)) {
+        return feature.name ?? null;
+      }
+    } catch (error) {
+      // Ignore malformed polygon
+    }
+  }
+  return null;
+}
+
+function loadNeighborhoodFeatures () {
+  try {
+    if (!fs.existsSync(NEIGHBORHOODS_CSV_PATH)) {
+      console.warn(`Neighborhood CSV not found at ${NEIGHBORHOODS_CSV_PATH}; neighborhood assignment will be skipped.`);
+      return [];
+    }
+
+    const csvContents = fs.readFileSync(NEIGHBORHOODS_CSV_PATH, 'utf8');
+    const records = parse(csvContents, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    return records
+      .map((record) => {
+        const wkt = record.the_geom ?? record.geom ?? null;
+        if (!wkt) {
+          return null;
+        }
+        const geometry = wellknown(wkt);
+        if (!geometry) {
+          return null;
+        }
+        const name = record.name?.trim() || record.link?.trim() || null;
+        return { name, geometry };
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.error('Failed to load neighborhood polygons:', error?.message ?? error);
+    return [];
+  }
 }
 
 function delay (ms) {

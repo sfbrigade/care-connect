@@ -188,6 +188,7 @@ function resolveFilePath (filePath) {
 function buildFacilityData (record) {
   const address = record['DPH Address'] || record['DRAFT Site address'];
   const { city, state, postalCode } = parseAddress(address);
+  const neighborhood = (record.Neighborhood || '').trim() || null;
 
   return {
     description: record['CareConnect MVP'] || record['Capacity Constraints'] || null,
@@ -197,6 +198,7 @@ function buildFacilityData (record) {
     city,
     state,
     postalCode,
+    neighborhood,
     isActive: (record['CareConnect MVP'] || '').toUpperCase().includes('X'),
     updateMethod: mapUpdateMethod(record['Avail management']),
     updateNotes: buildUpdateNotes(record),

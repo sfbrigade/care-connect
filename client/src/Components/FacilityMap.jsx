@@ -187,6 +187,9 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         >
           <Popup>
             <strong>{facility.name}</strong>
+            {facility.neighborhoodLabel && (
+              <div>{facility.neighborhoodLabel}</div>
+            )}
           </Popup>
         </Marker>
       ))}

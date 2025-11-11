@@ -239,6 +239,8 @@ function Home () {
     const displayAddress = formatAddress(facility.address);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
+    const neighborhoodLabel = (facility.neighborhood ?? '').trim() || 'Unknown';
+
     return {
       ...facility,
       categories,
@@ -248,6 +250,7 @@ function Home () {
       displayAddress,
       primaryContact,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
+      neighborhoodLabel,
     };
   }), [facilities, referenceCoordinate]);
 
@@ -257,7 +260,7 @@ function Home () {
   const filteredFacilities = useMemo(() => {
     const base = activeFilter === 'All'
       ? facilitiesWithMeta
-      : facilitiesWithMeta.filter((facility) => facility.serviceNames.includes(activeFilter));
+      : facilitiesWithMeta.filter((facility) => facility.neighborhoodLabel === activeFilter);
 
     return [...base].sort((a, b) => {
       const aDistance = a.distanceMiles ?? Number.POSITIVE_INFINITY;
@@ -300,12 +303,12 @@ function Home () {
   }, [numberedFacilities]);
 
   const availableFilters = useMemo(() => {
-    const serviceNames = new Set();
+    const neighborhoods = new Set();
     facilitiesWithMeta.forEach((facility) => {
-      facility.serviceNames.forEach((name) => serviceNames.add(name));
+      neighborhoods.add(facility.neighborhoodLabel);
     });
 
-    return ['All', ...Array.from(serviceNames).sort((a, b) => a.localeCompare(b))];
+    return ['All', ...Array.from(neighborhoods).sort((a, b) => a.localeCompare(b))];
   }, [facilitiesWithMeta]);
 
   const latestUpdatedAt = useMemo(() => {
@@ -479,6 +482,7 @@ function Home () {
                               </div>
                           </div>
                           <h3 className='card__title'>{facility.name}</h3>
+                          <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>
                           {facility.displayAddress && (
                             <p className='card__subtitle'>{facility.displayAddress}</p>
                           )}
