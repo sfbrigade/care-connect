@@ -267,28 +267,6 @@
   gap: 10px;
 }
 
-.card__row--top {
-  align-items: flex-start;
-}
-
-.card__row-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.card__index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #0f172a;
-  color: #ffffff;
-  font: 600 14px/20px 'Roboto', sans-serif;
-}
-
 .card__metric {
   font: 600 16px/24px 'Roboto', sans-serif;
   color: #000000;
@@ -315,6 +293,26 @@
   margin: 0;
   font: 600 15px/22px 'Roboto', sans-serif;
   color: #212529;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card__title-text {
+  flex: 1;
+}
+
+.card__slug {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font: 600 12px/1 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .card__subtitle,

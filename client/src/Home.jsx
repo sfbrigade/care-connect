@@ -155,6 +155,36 @@ function getFacilityCategories (facility) {
   return matches;
 }
 
+function createSlug (name) {
+  if (!name) {
+    return 'UNK';
+  }
+
+  const words = name.split(/\s+/).filter(Boolean);
+  const letters = words.map((word) => word.replace(/[^A-Za-z0-9]/g, '').charAt(0)).filter(Boolean);
+  let slug = letters.slice(0, 3).join('').toUpperCase();
+
+  if (!slug) {
+    const clean = name.replace(/[^A-Za-z0-9]/g, '');
+    slug = clean.slice(0, 3).toUpperCase();
+  }
+
+  if (!slug) {
+    slug = 'UNK';
+  }
+
+  if (slug.length === 1 && name.length >= 3) {
+    const clean = name.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    slug = clean.slice(0, 3) || slug.repeat(3);
+  }
+
+  if (slug.length < 3) {
+    slug = (slug + slug.slice(-1).repeat(3)).slice(0, 3);
+  }
+
+  return slug.slice(0, 3);
+}
+
 function Home () {
   const isClient = typeof window !== 'undefined';
   const geolocationRequestRef = useRef(false);
@@ -240,6 +270,7 @@ function Home () {
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
     const neighborhoodLabel = (facility.neighborhood ?? '').trim() || 'Unknown';
+    const slug = createSlug(facility.name);
 
     return {
       ...facility,
@@ -249,6 +280,7 @@ function Home () {
       primaryBadge,
       displayAddress,
       primaryContact,
+      slug,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
       neighborhoodLabel,
     };
@@ -269,21 +301,16 @@ function Home () {
     });
   }, [facilitiesWithMeta, activeFilter]);
 
-  const numberedFacilities = useMemo(() => filteredFacilities.map((facility, index) => ({
-    ...facility,
-    sequenceNumber: index + 1,
-  })), [filteredFacilities]);
-
   useEffect(() => {
-    if (!numberedFacilities.length) {
+    if (!filteredFacilities.length) {
       return;
     }
 
-    const containsSelection = numberedFacilities.some((facility) => facility.id === selectedFacilityId);
+    const containsSelection = filteredFacilities.some((facility) => facility.id === selectedFacilityId);
     if (!containsSelection) {
-      setSelectedFacilityId(numberedFacilities[0].id);
+      setSelectedFacilityId(filteredFacilities[0].id);
     }
-  }, [numberedFacilities, selectedFacilityId]);
+  }, [filteredFacilities, selectedFacilityId]);
 
   const facilitiesByCategory = useMemo(() => {
     const map = CATEGORY_CONFIG.reduce((accumulator, category) => {
@@ -291,7 +318,7 @@ function Home () {
       return accumulator;
     }, {});
 
-    numberedFacilities.forEach((facility) => {
+    filteredFacilities.forEach((facility) => {
       facility.categories.forEach((categoryId) => {
         if (map[categoryId]) {
           map[categoryId].push(facility);
@@ -300,7 +327,7 @@ function Home () {
     });
 
     return map;
-  }, [numberedFacilities]);
+  }, [filteredFacilities]);
 
   const availableFilters = useMemo(() => {
     const neighborhoods = new Set();
@@ -397,7 +424,7 @@ function Home () {
                   <p className='home__hero-subtitle'>{locationLabel}</p>
                   <h1 className='home__title'>Available Sites</h1>
                   <p className='home__metrics'>
-                    {(numberedFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
                   </p>
                   {locationStatusMessage && (
                     <p className='home__location-status'>{locationStatusMessage}</p>
@@ -432,7 +459,7 @@ function Home () {
                   <div className='map-panel__canvas'>
                     {isClient && (
                           <FacilityMap
-                            facilities={numberedFacilities}
+                            facilities={filteredFacilities}
                             userLocation={userCoordinate}
                             height={400}
                           />
@@ -472,16 +499,16 @@ function Home () {
                             }
                           }}
                         >
-                            <div className='card__row card__row--top'>
-                              <span className='card__index'>{facility.sequenceNumber}</span>
-                              <div className='card__row-meta'>
-                                <span className='card__metric'>
-                                  {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-                                </span>
-                                <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
-                              </div>
+                          <div className='card__row'>
+                            <span className='card__metric'>
+                              {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
+                            </span>
+                            <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
                           </div>
-                          <h3 className='card__title'>{facility.name}</h3>
+                          <h3 className='card__title'>
+                            <span className='card__slug'>{facility.slug}</span>
+                            <span className='card__title-text'>{facility.name}</span>
+                          </h3>
                           <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>
                           {facility.displayAddress && (
                             <p className='card__subtitle'>{facility.displayAddress}</p>
@@ -496,7 +523,7 @@ function Home () {
                 );
               })}
 
-              {!numberedFacilities.length && (
+              {!filteredFacilities.length && (
                 <p className='home__empty-state'>
                   No facilities match this filter yet. Try a different category.
                 </p>

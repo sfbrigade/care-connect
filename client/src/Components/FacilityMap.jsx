@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import 'leaflet/dist/leaflet.css';
 import '../styles/FacilityMap.css';
@@ -6,8 +6,8 @@ import '../styles/FacilityMap.css';
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
 
-function createFacilityMarkerIcon (L, number) {
-  const display = Number.isFinite(number) && number > 0 ? String(number) : '';
+function createFacilityMarkerIcon (L, slug) {
+  const display = (slug ?? '').toString().slice(0, 3).toUpperCase();
 
   return L.divIcon({
     className: 'facility-map__marker facility-map__marker--facility',
@@ -39,7 +39,6 @@ function createUserMarkerIcon (L) {
 
 function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
   const [leaflet, setLeaflet] = useState(null);
-  const markerCacheRef = useRef(new Map());
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -86,7 +85,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         ...facility,
         latitude,
         longitude,
-        sequenceNumber: facility.sequenceNumber ?? null,
+        slug: facility.slug,
       };
     })
     .filter(Boolean), [facilities]);
@@ -135,28 +134,11 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     }
   }, [facilities, facilityMarkers, center]);
 
-  const markerIconCache = useMemo(() => {
-    if (!leaflet?.leafletLib) {
-      return markerCacheRef.current;
-    }
-
-    const cache = new Map();
-    facilityMarkers.forEach((facility) => {
-      const key = facility.sequenceNumber ?? 0;
-      if (!cache.has(key)) {
-        cache.set(key, createFacilityMarkerIcon(leaflet.leafletLib, key));
-      }
-    });
-
-    markerCacheRef.current = cache;
-    return cache;
-  }, [facilityMarkers, leaflet]);
-
   if (typeof window === 'undefined' || !leaflet) {
     return null;
   }
 
-  const { MapContainer, Marker, Popup, TileLayer, userIcon } = leaflet;
+  const { MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib } = leaflet;
 
   return (
       <MapContainer
@@ -183,7 +165,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         <Marker
           key={facility.id}
           position={[facility.latitude, facility.longitude]}
-          icon={markerIconCache.get(facility.sequenceNumber ?? 0)}
+          icon={createFacilityMarkerIcon(leafletLib, facility.slug)}
         >
           <Popup>
             <strong>{facility.name}</strong>

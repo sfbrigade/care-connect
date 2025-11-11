@@ -15,12 +15,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: #111827;
   color: #ffffff;
-  font: 600 12px/18px 'Roboto', sans-serif;
+  font: 600 12px/1 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .facility-map__marker-pointer {
