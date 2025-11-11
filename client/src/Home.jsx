@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -92,6 +92,36 @@ function formatUpdatedAt (isoString) {
   }
 }
 
+function formatRelativeTime (isoString) {
+  if (!isoString) {
+    return 'just now';
+  }
+
+  const timestamp = Date.parse(isoString);
+  if (Number.isNaN(timestamp)) {
+    return 'just now';
+  }
+
+  const diffMs = Date.now() - timestamp;
+  const diffMinutes = Math.floor(diffMs / 60000);
+
+  if (diffMinutes <= 0) {
+    return 'just now';
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min${diffMinutes === 1 ? '' : 's'} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
+
 function formatAddress (address) {
   if (!address) {
     return '';
@@ -178,6 +208,17 @@ function Home () {
     return facilitiesWithMeta.filter((facility) => facility.serviceNames.includes(activeFilter));
   }, [facilitiesWithMeta, activeFilter]);
 
+  useEffect(() => {
+    if (!filteredFacilities.length) {
+      return;
+    }
+
+    const containsSelection = filteredFacilities.some((facility) => facility.id === selectedFacilityId);
+    if (!containsSelection) {
+      setSelectedFacilityId(filteredFacilities[0].id);
+    }
+  }, [filteredFacilities, selectedFacilityId]);
+
   const facilitiesByCategory = useMemo(() => {
     const map = CATEGORY_CONFIG.reduce((accumulator, category) => {
       accumulator[category.id] = [];
@@ -204,9 +245,6 @@ function Home () {
     return ['All', ...Array.from(serviceNames).sort((a, b) => a.localeCompare(b))];
   }, [facilitiesWithMeta]);
 
-  const selectedFacility = useMemo(() => facilitiesWithMeta.find((facility) => facility.id === selectedFacilityId) ?? null,
-    [facilitiesWithMeta, selectedFacilityId]);
-
   const latestUpdatedAt = useMemo(() => {
     if (!facilitiesWithMeta.length) {
       return null;
@@ -220,16 +258,7 @@ function Home () {
     return new Date(Math.max(...timestamps)).toISOString();
   }, [facilitiesWithMeta]);
 
-  const handlePosthogClick = useCallback(() => {
-    if (typeof window !== 'undefined' && window.posthog?.capture) {
-      window.posthog.capture('home_test_button_clicked', {
-        page: 'home',
-        label: 'Test PostHog Capture',
-      });
-    } else {
-      console.info('PostHog not initialized; skipping capture.');
-    }
-  }, []);
+  const [showMap, setShowMap] = useState(true);
 
   if (!isClient) {
     return (
@@ -252,6 +281,7 @@ function Home () {
         <title>Home</title>
       </Head>
       <main className='home'>
+
         {isLoading && (
           <div className='home__card'>
             <p className='home__empty-state'>Loading facility data…</p>
@@ -276,216 +306,105 @@ function Home () {
         {!isLoading && !isError && (
           <>
             <section className='map-panel map-panel--hero'>
-              <header className='home__header'>
-                <h2 className='home__title'>Map View</h2>
-              </header>
-              <div className='map-panel__canvas'>
-                {isClient && (
-                  <FacilityMap facilities={facilitiesWithMeta} height={520} />
-                )}
+              <div className='home__hero-header'>
+                <div>
+                  <p className='home__hero-subtitle'>San Francisco · Downtown</p>
+                  <h1 className='home__title'>Available Sites</h1>
+                  <p className='home__metrics'>
+                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                  </p>
+                </div>
+                <div className={`home__view-switch ${showMap ? 'home__view-switch--on' : 'home__view-switch--off'}`}>
+                  <span className='home__view-switch-label'>Map</span>
+                  <button
+                    type='button'
+                    className='home__toggle'
+                    aria-pressed={showMap}
+                    onClick={() => setShowMap((previous) => !previous)}
+                  >
+                    <span className='home__toggle-thumb' aria-hidden='true' />
+                  </button>
+                </div>
               </div>
-              <p className='map-panel__footer'>
-                Last updated&nbsp;
-                {formatUpdatedAt(latestUpdatedAt)}
-              </p>
+              <div className='home__filters-scroll'>
+                {availableFilters.map((filter) => (
+                  <button
+                    key={filter}
+                    type='button'
+                    className={`chip ${filter === activeFilter ? 'chip--active' : ''}`}
+                    onClick={() => setActiveFilter(filter)}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+              {showMap && (
+                <>
+                  <div className='map-panel__canvas'>
+                    {isClient && (
+                      <FacilityMap facilities={facilitiesWithMeta} height={400} />
+                    )}
+                  </div>
+                  <p className='map-panel__footer'>
+                    Last updated {formatUpdatedAt(latestUpdatedAt)}
+                  </p>
+                </>
+              )}
             </section>
 
-            <div className='home__grid'>
-              <section className='home__card'>
-                <header className='home__header'>
-                  <h1 className='home__title'>Available Sites</h1>
-                  {availableFilters.length > 1 && (
-                    <div className='home__filters'>
-                      {availableFilters.map((filter) => (
-                        <button
-                          key={filter}
-                          type='button'
-                          className={`chip ${filter === activeFilter ? 'chip--active' : ''}`}
-                          onClick={() => setActiveFilter(filter)}
+            <section className='home__categories'>
+              {CATEGORY_CONFIG.map((category) => {
+                const categoryFacilities = facilitiesByCategory[category.id] ?? [];
+                if (!categoryFacilities.length) {
+                  return null;
+                }
+
+                return (
+                  <section key={category.id} className='home__category-section'>
+                    <header className='home__category-header'>
+                      <span className='home__category-icon' aria-hidden='true'>{category.icon}</span>
+                      <h2 className='home__category-title'>{category.label}</h2>
+                    </header>
+                    <div className='home__list'>
+                      {categoryFacilities.map((facility) => (
+                        <article
+                          key={facility.id}
+                          className={`card ${selectedFacilityId === facility.id ? 'card--selected' : ''}`}
+                          role='button'
+                          tabIndex={0}
+                          onClick={() => setSelectedFacilityId(facility.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              setSelectedFacilityId(facility.id);
+                            }
+                          }}
                         >
-                          {filter}
-                        </button>
+                          <div className='card__row'>
+                            <span className='card__metric'>
+                              {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
+                            </span>
+                            <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
+                          </div>
+                          <h3 className='card__title'>{facility.name}</h3>
+                          {facility.displayAddress && (
+                            <p className='card__subtitle'>{facility.displayAddress}</p>
+                          )}
+                          {facility.primaryService && (
+                            <p className='card__meta'>{facility.primaryService}</p>
+                          )}
+                        </article>
                       ))}
                     </div>
-                  )}
-                </header>
+                  </section>
+                );
+              })}
 
-                {CATEGORY_CONFIG.map((category) => {
-                  const categoryFacilities = facilitiesByCategory[category.id] ?? [];
-                  if (!categoryFacilities.length) {
-                    return null;
-                  }
-
-                  return (
-                    <section key={category.id} className='home__category'>
-                      <h2 className='home__category-title'>
-                        <span aria-hidden='true'>{category.icon}</span>
-                        {category.label}
-                      </h2>
-                      <div className='home__list'>
-                        {categoryFacilities.map((facility) => (
-                          <article
-                            key={facility.id}
-                            className={`card ${selectedFacilityId === facility.id ? 'card--selected' : ''}`}
-                            onClick={() => {
-                              setSelectedFacilityId(facility.id);
-                            }}
-                            role='button'
-                            tabIndex={0}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                setSelectedFacilityId(facility.id);
-                              }
-                            }}
-                          >
-                            <div className='card__row'>
-                              <span className='card__metric'>
-                                {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-                              </span>
-                              {facility.primaryBadge && (
-                                <span className='badge'>{facility.primaryBadge}</span>
-                              )}
-                            </div>
-                            <h3 className='card__title'>{facility.name}</h3>
-                            {facility.displayAddress && (
-                              <p className='card__subtitle'>{facility.displayAddress}</p>
-                            )}
-                            {facility.primaryService && (
-                              <p className='card__meta'>{facility.primaryService}</p>
-                            )}
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
-
-                {!filteredFacilities.length && (
-                  <p className='home__empty-state'>
-                    No facilities match this filter yet. Try a different category.
-                  </p>
-                )}
-              </section>
-
-              <aside className='details-panel'>
-                {!selectedFacility && (
-                  <p className='home__empty-state'>
-                    Select a facility from the list to explore detailed information.
-                  </p>
-                )}
-
-                {selectedFacility && (
-                  <>
-                    <header className='details-panel__header'>
-                      <h2 className='details-panel__title'>{selectedFacility.name}</h2>
-                      {selectedFacility.primaryService && (
-                        <p className='details-panel__subtitle'>{selectedFacility.primaryService}</p>
-                      )}
-                    </header>
-
-                    <section className='details-panel__section'>
-                      <h3 className='details-panel__section-title'>At a glance</h3>
-                      <ul className='details-panel__list'>
-                        <li className='details-panel__list-item'>
-                          {selectedFacility.distanceMiles != null
-                            ? `≈ ${selectedFacility.distanceMiles.toFixed(1)} miles from downtown`
-                            : 'Distance unavailable'}
-                        </li>
-                        <li className='details-panel__list-item'>
-                          {selectedFacility.displayAddress || <span className='details-panel__muted'>Address not provided</span>}
-                        </li>
-                        <li className='details-panel__list-item'>
-                          {selectedFacility.primaryContact?.phone
-                            || selectedFacility.phone
-                            || <span className='details-panel__muted'>Phone not provided</span>}
-                        </li>
-                      </ul>
-                    </section>
-
-                    {selectedFacility.services.length > 0 && (
-                      <section className='details-panel__section'>
-                        <h3 className='details-panel__section-title'>Services</h3>
-                        <ul className='details-panel__list'>
-                          {selectedFacility.services.map((service) => (
-                            <li key={service.id} className='details-panel__list-item'>
-                              <strong>{service.name}</strong>
-                              {service.availableBeds != null && ` · ${service.availableBeds} beds`}
-                              {service.description && ` — ${service.description}`}
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-
-                    {selectedFacility.eligibility.length > 0 && (
-                      <section className='details-panel__section'>
-                        <h3 className='details-panel__section-title'>Eligibility</h3>
-                        <ul className='details-panel__list'>
-                          {selectedFacility.eligibility.map((item) => (
-                            <li key={item.id} className='details-panel__list-item'>
-                              <strong>{item.type.replace(/_/g, ' ')}</strong>
-                              {item.value && `: ${item.value}`}
-                              {!item.value && item.notes && `: ${item.notes}`}
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-
-                    {selectedFacility.amenities.length > 0 && (
-                      <section className='details-panel__section'>
-                        <h3 className='details-panel__section-title'>Site amenities</h3>
-                        <ul className='details-panel__list'>
-                          {selectedFacility.amenities.map((item) => (
-                            <li key={item.id} className='details-panel__list-item'>
-                              {item.name}
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-
-                    {selectedFacility.primaryContact && (
-                      <section className='details-panel__section'>
-                        <h3 className='details-panel__section-title'>Primary contact</h3>
-                        <ul className='details-panel__list'>
-                          <li className='details-panel__list-item'>
-                            {selectedFacility.primaryContact.name}
-                            {selectedFacility.primaryContact.role && ` — ${selectedFacility.primaryContact.role}`}
-                          </li>
-                          {selectedFacility.primaryContact.phone && (
-                            <li className='details-panel__list-item'>
-                              {selectedFacility.primaryContact.phone}
-                            </li>
-                          )}
-                          {selectedFacility.primaryContact.email && (
-                            <li className='details-panel__list-item'>
-                              {selectedFacility.primaryContact.email}
-                            </li>
-                          )}
-                          {selectedFacility.primaryContact.notes && (
-                            <li className='details-panel__list-item'>
-                              {selectedFacility.primaryContact.notes}
-                            </li>
-                          )}
-                        </ul>
-                      </section>
-                    )}
-
-                    <button
-                      type='button'
-                      className='cta-button cta-button--primary'
-                      onClick={handlePosthogClick}
-                    >
-                      Capture PostHog Test Event
-                    </button>
-                    <p className='details-panel__footer'>
-                      Last updated {formatUpdatedAt(selectedFacility.updatedAt)}
-                    </p>
-                  </>
-                )}
-              </aside>
-            </div>
+              {!filteredFacilities.length && (
+                <p className='home__empty-state'>
+                  No facilities match this filter yet. Try a different category.
+                </p>
+              )}
+            </section>
           </>
         )}
       </main>
