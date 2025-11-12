@@ -412,7 +412,7 @@ function Home () {
               <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
             </Group>
             <Chip.Group value={activeFilter} onChange={setActiveFilter}>
-              <Group mb='md' gap='xs'>
+              <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
                 {availableFilters.map((filter) => (
                   <Chip
                     key={filter}
