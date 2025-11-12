@@ -4,6 +4,7 @@ import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from './Api';
+import Facility from './Components/Facility';
 import FacilityMap from './Components/FacilityMap';
 import './styles/Home.css';
 
@@ -436,36 +437,7 @@ function Home () {
                       <Stack key={category.id}>
                         <Text size='lg'><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Text>
                         {categoryFacilities.map((facility) => (
-                          <article
-                            key={facility.id}
-                            className={`card ${selectedFacilityId === facility.id ? 'card--selected' : ''}`}
-                            role='button'
-                            tabIndex={0}
-                            onClick={() => setSelectedFacilityId(facility.id)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                setSelectedFacilityId(facility.id);
-                              }
-                            }}
-                          >
-                            <div className='card__row'>
-                              <span className='card__metric'>
-                                {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-                              </span>
-                              <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
-                            </div>
-                            <h3 className='card__title'>
-                              <span className='card__slug'>{facility.slug}</span>
-                              <span className='card__title-text'>{facility.name}</span>
-                            </h3>
-                            <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>
-                            {facility.displayAddress && (
-                              <p className='card__subtitle'>{facility.displayAddress}</p>
-                            )}
-                            {facility.primaryService && (
-                              <p className='card__meta'>{facility.primaryService}</p>
-                            )}
-                          </article>
+                          <Facility key={facility.id} facility={facility} isSelected={selectedFacilityId === facility.id} onSelect={setSelectedFacilityId} />
                         ))}
                       </Stack>
                     );
