@@ -1,3 +1,5 @@
+import './Facility.css';
+
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (
     <article

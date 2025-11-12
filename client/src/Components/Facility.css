@@ -1,0 +1,85 @@
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.card:hover {
+  border-color: rgba(34, 139, 230, 0.4);
+  box-shadow: 0 14px 30px rgba(34, 139, 230, 0.12);
+}
+
+.card--selected {
+  border-color: #228be6;
+  box-shadow: 0 14px 30px rgba(34, 139, 230, 0.2);
+}
+
+.card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card__metric {
+  font: 600 16px/24px 'Roboto', sans-serif;
+  color: #000000;
+}
+
+.card__neighborhood {
+  margin: 0;
+  font: 500 13px/18px 'Roboto', sans-serif;
+  color: #0f172a;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 18px;
+  font: 400 11px/14px 'Roboto', sans-serif;
+  color: #12b886;
+  background: rgba(18, 184, 134, 0.1);
+}
+
+.card__title {
+  margin: 0;
+  font: 600 15px/22px 'Roboto', sans-serif;
+  color: #212529;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card__title-text {
+  flex: 1;
+}
+
+.card__slug {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font: 600 12px/1 'Roboto', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.card__subtitle,
+.card__meta {
+  margin: 0;
+  font: 400 13px/20px 'Roboto', sans-serif;
+  color: #868e96;
+}
