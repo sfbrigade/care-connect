@@ -5,7 +5,7 @@ import '../styles/FacilityMap.css';
 
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
-const DISTRICT_DATA_PATH = '/data/street_team_coverage.geojson';
+const DISTRICT_DATA_PATH = '/static-data/street_team_coverage.geojson';
 
 function createFacilityMarkerIcon (L, slug) {
   const display = (slug ?? '').toString().slice(0, 3).toUpperCase();

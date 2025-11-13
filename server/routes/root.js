@@ -23,6 +23,13 @@ export default async function (fastify, opts) {
     index: false,
   });
 
+  fastify.register(fastifyStatic, {
+    root: path.resolve(__dirname, '../static-data'),
+    prefix: '/static-data/',
+    decorateReply: false,
+    schemaHide: true,
+  });
+
   fastify.get('/*',
     {
       schema: {

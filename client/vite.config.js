@@ -14,6 +14,11 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://0.0.0.0:3000',
+        changeOrigin: true,
+      },
+      '/static-data': {
+        target: 'http://0.0.0.0:3000',
+        changeOrigin: true,
       }
     }
   }
