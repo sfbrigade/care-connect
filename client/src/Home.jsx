@@ -252,79 +252,88 @@ function Home () {
       return () => {};
     }
 
-    const addInteractionListeners = () => {
-      const handler = () => {
-        cleanupInteractionListeners();
-        requestLocation();
-      };
+    let watchId;
 
-      const cleanupInteractionListeners = () => {
-        window.removeEventListener('pointerdown', handler);
-        window.removeEventListener('keydown', handler);
-      };
+    const startWatch = () => {
+      if (watchId != null) {
+        return;
+      }
 
-      window.addEventListener('pointerdown', handler, { once: true });
-      window.addEventListener('keydown', handler, { once: true });
+      geolocationRequestRef.current = true;
+      setGeoStatus((prev) => prev === 'granted' ? prev : 'pending');
 
-      return cleanupInteractionListeners;
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          geolocationRequestRef.current = false;
+          setUserCoordinate({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setGeoStatus('granted');
+        },
+        (error) => {
+          geolocationRequestRef.current = false;
+
+          if (error.code === error.PERMISSION_DENIED) {
+            setGeoStatus('denied');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            setGeoStatus('unavailable');
+          } else if (error.code === error.TIMEOUT) {
+            setGeoStatus('timeout');
+          } else {
+            setGeoStatus('error');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000,
+        }
+      );
     };
 
-    let cleanupCombined = () => {};
-    let cleanupInteraction = () => {};
-
     if ('permissions' in navigator && typeof navigator.permissions.query === 'function') {
-      navigator.permissions.query({ name: 'geolocation' }).then((status) => {
-        permissionStatusRef.current = status;
+      navigator.permissions.query({ name: 'geolocation' })
+        .then((status) => {
+          permissionStatusRef.current = status;
 
-        const ensureInteractionListener = () => {
-          cleanupInteraction();
-          cleanupInteraction = addInteractionListeners();
-        };
-
-        if (status.state === 'granted') {
-          requestLocation();
-        } else {
-          if (status.state === 'denied') {
-            setGeoStatus('denied');
-            cleanupInteraction();
-          } else {
-            setGeoStatus('idle');
-            ensureInteractionListener();
-          }
-        }
-
-        const handlePermissionChange = () => {
-          if (status.state === 'granted') {
-            cleanupInteraction();
-            requestLocation();
+          if (status.state === 'granted' || status.state === 'prompt') {
+            startWatch();
           } else if (status.state === 'denied') {
             setGeoStatus('denied');
-            cleanupInteraction();
-          } else {
-            setGeoStatus('idle');
-            ensureInteractionListener();
           }
-        };
 
-        status.addEventListener('change', handlePermissionChange);
+          const handlePermissionChange = () => {
+            if (status.state === 'granted' || status.state === 'prompt') {
+              startWatch();
+            } else if (status.state === 'denied') {
+              setGeoStatus('denied');
+              if (watchId != null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = undefined;
+              }
+            }
+          };
 
-        cleanupCombined = () => {
-          status.removeEventListener('change', handlePermissionChange);
-          cleanupInteraction();
-        };
-      }).catch(() => {
-        setGeoStatus('idle');
-        cleanupInteraction = addInteractionListeners();
-      });
+          status.addEventListener('change', handlePermissionChange);
+
+          return () => {
+            status.removeEventListener('change', handlePermissionChange);
+          };
+        })
+        .catch(() => {
+          startWatch();
+        });
     } else {
-      cleanupInteraction = addInteractionListeners();
+      startWatch();
     }
 
     return () => {
-      cleanupCombined();
-      cleanupInteraction();
+      if (watchId != null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
-  }, [isClient, requestLocation]);
+  }, [isClient]);
 
   const referenceCoordinate = userCoordinate ?? DEFAULT_COORDINATE;
 
