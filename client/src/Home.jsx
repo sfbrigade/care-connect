@@ -539,7 +539,7 @@ function Home () {
                           <FacilityMap
                             facilities={filteredFacilities}
                             userLocation={userCoordinate}
-                            height={400}
+                            height={320}
                           />
                     )}
                   </div>
