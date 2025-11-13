@@ -48,7 +48,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     let isMounted = true;
 
     async function loadLeaflet () {
-      const [{ MapContainer, Marker, Popup, TileLayer }, L] = await Promise.all([
+      const [{ MapContainer, Marker, Popup, TileLayer, useMap }, L] = await Promise.all([
         import('react-leaflet'),
         import('leaflet'),
       ]);
@@ -59,6 +59,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
           Marker,
           Popup,
           TileLayer,
+          useMap,
           leafletLib: L,
           userIcon: createUserMarkerIcon(L),
         });
@@ -138,7 +139,27 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     return null;
   }
 
-  const { MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib } = leaflet;
+  const { MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib, useMap } = leaflet;
+
+  function RecenterOnChange ({ position }) {
+    const map = useMap();
+
+    useEffect(() => {
+      if (!Array.isArray(position) || position.length !== 2) {
+        return;
+      }
+
+      const [lat, lng] = position;
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return;
+      }
+
+      map.flyTo([lat, lng], map.getZoom(), { animate: true });
+    }, [map, position]);
+
+    return null;
+  }
 
   return (
       <MapContainer
@@ -151,6 +172,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
+      <RecenterOnChange position={center} />
       {userLocation && userIcon && (
         <Marker
           position={[userLocation.latitude, userLocation.longitude]}
