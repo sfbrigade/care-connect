@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -188,6 +188,7 @@ function createSlug (name) {
 function Home () {
   const isClient = typeof window !== 'undefined';
   const geolocationRequestRef = useRef(false);
+  const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
@@ -203,27 +204,17 @@ function Home () {
   const [userCoordinate, setUserCoordinate] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
 
-  useEffect(() => {
-    if (!isClient || geolocationRequestRef.current) {
-      return;
-    }
-
-    if (!('geolocation' in navigator)) {
-      setGeoStatus('unsupported');
+  const requestLocation = useCallback(() => {
+    if (!isClient || geolocationRequestRef.current || !('geolocation' in navigator)) {
       return;
     }
 
     geolocationRequestRef.current = true;
     setGeoStatus('pending');
 
-    let cancelled = false;
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        if (cancelled) {
-          return;
-        }
-
+        geolocationRequestRef.current = false;
         setUserCoordinate({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -231,9 +222,7 @@ function Home () {
         setGeoStatus('granted');
       },
       (error) => {
-        if (cancelled) {
-          return;
-        }
+        geolocationRequestRef.current = false;
 
         if (error.code === error.PERMISSION_DENIED) {
           setGeoStatus('denied');
@@ -251,11 +240,91 @@ function Home () {
         maximumAge: 300000,
       }
     );
+  }, [isClient]);
+
+  useEffect(() => {
+    if (!isClient) {
+      return () => {};
+    }
+
+    if (!('geolocation' in navigator)) {
+      setGeoStatus('unsupported');
+      return () => {};
+    }
+
+    const addInteractionListeners = () => {
+      const handler = () => {
+        cleanupInteractionListeners();
+        requestLocation();
+      };
+
+      const cleanupInteractionListeners = () => {
+        window.removeEventListener('pointerdown', handler);
+        window.removeEventListener('keydown', handler);
+      };
+
+      window.addEventListener('pointerdown', handler, { once: true });
+      window.addEventListener('keydown', handler, { once: true });
+
+      return cleanupInteractionListeners;
+    };
+
+    let cleanupCombined = () => {};
+    let cleanupInteraction = () => {};
+
+    if ('permissions' in navigator && typeof navigator.permissions.query === 'function') {
+      navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+        permissionStatusRef.current = status;
+
+        const ensureInteractionListener = () => {
+          cleanupInteraction();
+          cleanupInteraction = addInteractionListeners();
+        };
+
+        if (status.state === 'granted') {
+          requestLocation();
+        } else {
+          if (status.state === 'denied') {
+            setGeoStatus('denied');
+            cleanupInteraction();
+          } else {
+            setGeoStatus('idle');
+            ensureInteractionListener();
+          }
+        }
+
+        const handlePermissionChange = () => {
+          if (status.state === 'granted') {
+            cleanupInteraction();
+            requestLocation();
+          } else if (status.state === 'denied') {
+            setGeoStatus('denied');
+            cleanupInteraction();
+          } else {
+            setGeoStatus('idle');
+            ensureInteractionListener();
+          }
+        };
+
+        status.addEventListener('change', handlePermissionChange);
+
+        cleanupCombined = () => {
+          status.removeEventListener('change', handlePermissionChange);
+          cleanupInteraction();
+        };
+      }).catch(() => {
+        setGeoStatus('idle');
+        cleanupInteraction = addInteractionListeners();
+      });
+    } else {
+      cleanupInteraction = addInteractionListeners();
+    }
 
     return () => {
-      cancelled = true;
+      cleanupCombined();
+      cleanupInteraction();
     };
-  }, [isClient]);
+  }, [isClient, requestLocation]);
 
   const referenceCoordinate = userCoordinate ?? DEFAULT_COORDINATE;
 

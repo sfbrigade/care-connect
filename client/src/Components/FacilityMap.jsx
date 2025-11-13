@@ -5,6 +5,7 @@ import '../styles/FacilityMap.css';
 
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
+const DISTRICT_DATA_PATH = '/data/street_team_coverage.geojson';
 
 function createFacilityMarkerIcon (L, slug) {
   const display = (slug ?? '').toString().slice(0, 3).toUpperCase();
@@ -31,7 +32,7 @@ function createUserMarkerIcon (L) {
     popupAnchor: [0, -16],
     html: `
       <div class="facility-map__marker-wrapper facility-map__marker-wrapper--user">
-        <span class="facility-map__marker-circle facility-map__marker-circle--user"></span>
+        <span class="facility-map__marker-circle facility-map__marker-circle--user\"></span>
       </div>
     `,
   });
@@ -39,6 +40,8 @@ function createUserMarkerIcon (L) {
 
 function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
   const [leaflet, setLeaflet] = useState(null);
+  const [districtCollection, setDistrictCollection] = useState(null);
+  const [districtLoadError, setDistrictLoadError] = useState(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -48,13 +51,14 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     let isMounted = true;
 
     async function loadLeaflet () {
-      const [{ MapContainer, Marker, Popup, TileLayer, useMap }, L] = await Promise.all([
+      const [{ GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap }, L] = await Promise.all([
         import('react-leaflet'),
         import('leaflet'),
       ]);
 
       if (isMounted) {
         setLeaflet({
+          GeoJSON,
           MapContainer,
           Marker,
           Popup,
@@ -70,6 +74,42 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let isActive = true;
+
+    async function loadDistricts () {
+      try {
+        const response = await fetch(DISTRICT_DATA_PATH, { cache: 'reload' });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load NST districts (${response.status})`);
+        }
+
+        const json = await response.json();
+
+        if (isActive) {
+          setDistrictCollection(json);
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[FacilityMap] failed to load NST districts', error);
+        if (isActive) {
+          setDistrictLoadError(error);
+        }
+      }
+    }
+
+    loadDistricts();
+
+    return () => {
+      isActive = false;
     };
   }, []);
 
@@ -90,6 +130,17 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
       };
     })
     .filter(Boolean), [facilities]);
+
+  const districtStyle = useMemo(
+    () => ({
+      color: '#84c8bb',
+      weight: 1,
+      opacity: 0.35,
+      fillOpacity: 0.06,
+      fillColor: '#bfe5db'
+    }),
+    []
+  );
 
   const center = useMemo(() => {
     if (userLocation) {
@@ -135,11 +186,18 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     }
   }, [facilities, facilityMarkers, center]);
 
+  useEffect(() => {
+    if (districtLoadError) {
+      // eslint-disable-next-line no-console
+      console.warn('[FacilityMap] NST district overlay unavailable', districtLoadError);
+    }
+  }, [districtLoadError]);
+
   if (typeof window === 'undefined' || !leaflet) {
     return null;
   }
 
-  const { MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib, useMap } = leaflet;
+  const { GeoJSON, MapContainer, Marker, Popup, TileLayer, userIcon, leafletLib, useMap } = leaflet;
 
   function RecenterOnChange ({ position }) {
     const map = useMap();
@@ -172,6 +230,9 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
+      {districtCollection && (
+        <GeoJSON data={districtCollection} style={districtStyle} />
+      )}
       <RecenterOnChange position={center} />
       {userLocation && userIcon && (
         <Marker
