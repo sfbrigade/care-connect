@@ -134,6 +134,31 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
     }
   }, [facilities, facilityMarkers, center]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    // eslint-disable-next-line no-console
+    console.info('[FacilityMap] facilities (raw)', facilities);
+    // eslint-disable-next-line no-console
+    console.info('[FacilityMap] markers used for centering', facilityMarkers);
+    // eslint-disable-next-line no-console
+    console.info('[FacilityMap] computed center', center);
+    if (facilityMarkers.length) {
+      const latitudes = facilityMarkers.map((facility) => facility.latitude);
+      const longitudes = facilityMarkers.map((facility) => facility.longitude);
+      const stats = {
+        latMin: Math.min(...latitudes),
+        latMax: Math.max(...latitudes),
+        lonMin: Math.min(...longitudes),
+        lonMax: Math.max(...longitudes),
+      };
+      // eslint-disable-next-line no-console
+      console.info('[FacilityMap] coordinate bounds', stats);
+    }
+  }, [facilities, facilityMarkers, center]);
+
   if (typeof window === 'undefined' || !leaflet) {
     return null;
   }
