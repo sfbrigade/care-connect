@@ -32,7 +32,7 @@ function createUserMarkerIcon (L) {
     popupAnchor: [0, -16],
     html: `
       <div class="facility-map__marker-wrapper facility-map__marker-wrapper--user">
-        <span class="facility-map__marker-circle facility-map__marker-circle--user\"></span>
+        <span class="facility-map__marker-circle facility-map__marker-circle--user"></span>
       </div>
     `,
   });

@@ -204,44 +204,6 @@ function Home () {
   const [userCoordinate, setUserCoordinate] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
 
-  const requestLocation = useCallback(() => {
-    if (!isClient || geolocationRequestRef.current || !('geolocation' in navigator)) {
-      return;
-    }
-
-    geolocationRequestRef.current = true;
-    setGeoStatus('pending');
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        geolocationRequestRef.current = false;
-        setUserCoordinate({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setGeoStatus('granted');
-      },
-      (error) => {
-        geolocationRequestRef.current = false;
-
-        if (error.code === error.PERMISSION_DENIED) {
-          setGeoStatus('denied');
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setGeoStatus('unavailable');
-        } else if (error.code === error.TIMEOUT) {
-          setGeoStatus('timeout');
-        } else {
-          setGeoStatus('error');
-        }
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 300000,
-      }
-    );
-  }, [isClient]);
-
   useEffect(() => {
     if (!isClient) {
       return () => {};
