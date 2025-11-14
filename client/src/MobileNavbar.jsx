@@ -4,7 +4,7 @@ function MobileNavbar () {
   return (
     <Paper withBorder p='sm' radius='md'>
       <Stack gap={2}>
-        <Text size='sm'>version: 1.0.1</Text>
+        <Text size='sm'>version: 1.0.2</Text>
         <Text size='sm'>support: Beaudry.kock@sfgov.org</Text>
       </Stack>
     </Paper>

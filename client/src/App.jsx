@@ -31,7 +31,7 @@ function App () {
   const [opened, { close, toggle }] = useDisclosure();
   const staticContext = useStaticContext();
   useHead({
-    titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? ''}`
+    titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? 'CareConnectSF'}`
   });
 
   return (

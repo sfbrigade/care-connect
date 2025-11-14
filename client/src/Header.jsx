@@ -39,7 +39,7 @@ function Header ({ opened, close, toggle }) {
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
-          <Title size='xl'>CareConnect</Title>
+          <Title size='xl'>CareConnectSF</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
