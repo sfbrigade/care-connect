@@ -543,7 +543,6 @@ function Home () {
                             <span className='card__metric'>
                               {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
                             </span>
-                            <span className='badge'>{facility.primaryBadge ?? 'Open'}</span>
                           </div>
                           <h3 className='card__title'>
                             <span className='card__slug'>{facility.slug}</span>
