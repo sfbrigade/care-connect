@@ -69,8 +69,8 @@ function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE)
   const dLat = lat2 - lat1;
   const dLon = lon2 - lon1;
 
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_RADIUS_MI * c;
@@ -188,6 +188,7 @@ function createSlug (name) {
 function Home () {
   const isClient = typeof window !== 'undefined';
   const geolocationRequestRef = useRef(false);
+  const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
@@ -204,56 +205,95 @@ function Home () {
   const [geoStatus, setGeoStatus] = useState('idle');
 
   useEffect(() => {
-    if (!isClient || geolocationRequestRef.current) {
-      return;
+    if (!isClient) {
+      return () => {};
     }
 
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
-      return;
+      return () => {};
     }
 
-    geolocationRequestRef.current = true;
-    setGeoStatus('pending');
+    let watchId;
 
-    let cancelled = false;
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (cancelled) {
-          return;
-        }
-
-        setUserCoordinate({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setGeoStatus('granted');
-      },
-      (error) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (error.code === error.PERMISSION_DENIED) {
-          setGeoStatus('denied');
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setGeoStatus('unavailable');
-        } else if (error.code === error.TIMEOUT) {
-          setGeoStatus('timeout');
-        } else {
-          setGeoStatus('error');
-        }
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 300000,
+    const startWatch = () => {
+      if (watchId != null) {
+        return;
       }
-    );
+
+      geolocationRequestRef.current = true;
+      setGeoStatus((prev) => prev === 'granted' ? prev : 'pending');
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          geolocationRequestRef.current = false;
+          setUserCoordinate({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setGeoStatus('granted');
+        },
+        (error) => {
+          geolocationRequestRef.current = false;
+
+          if (error.code === error.PERMISSION_DENIED) {
+            setGeoStatus('denied');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            setGeoStatus('unavailable');
+          } else if (error.code === error.TIMEOUT) {
+            setGeoStatus('timeout');
+          } else {
+            setGeoStatus('error');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000,
+        }
+      );
+    };
+
+    if ('permissions' in navigator && typeof navigator.permissions.query === 'function') {
+      navigator.permissions.query({ name: 'geolocation' })
+        .then((status) => {
+          permissionStatusRef.current = status;
+
+          if (status.state === 'granted' || status.state === 'prompt') {
+            startWatch();
+          } else if (status.state === 'denied') {
+            setGeoStatus('denied');
+          }
+
+          const handlePermissionChange = () => {
+            if (status.state === 'granted' || status.state === 'prompt') {
+              startWatch();
+            } else if (status.state === 'denied') {
+              setGeoStatus('denied');
+              if (watchId != null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = undefined;
+              }
+            }
+          };
+
+          status.addEventListener('change', handlePermissionChange);
+
+          return () => {
+            status.removeEventListener('change', handlePermissionChange);
+          };
+        })
+        .catch(() => {
+          startWatch();
+        });
+    } else {
+      startWatch();
+    }
 
     return () => {
-      cancelled = true;
+      if (watchId != null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
   }, [isClient]);
 
@@ -458,11 +498,11 @@ function Home () {
                 <>
                   <div className='map-panel__canvas'>
                     {isClient && (
-                          <FacilityMap
-                            facilities={filteredFacilities}
-                            userLocation={userCoordinate}
-                            height={400}
-                          />
+                      <FacilityMap
+                        facilities={filteredFacilities}
+                        userLocation={userCoordinate}
+                        height={320}
+                      />
                     )}
                   </div>
                   <p className='map-panel__footer'>

@@ -172,7 +172,7 @@ function parseArgs (args) {
   }
 
   return {
-    filePath: filePath ?? path.resolve(__dirname, '..', '..', 'clinics.csv'),
+    filePath: filePath ?? path.resolve(__dirname, '..', 'static-data', 'treatment_centers.csv'),
     dryRun,
     truncateSnapshots,
   };

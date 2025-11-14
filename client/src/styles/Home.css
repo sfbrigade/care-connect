@@ -323,7 +323,7 @@
 }
 
 .map-panel__canvas {
-  height: 360px;
+  height: 320px;
   width: 100vw;
   margin-left: 50%;
   transform: translateX(-50%);
@@ -339,7 +339,7 @@
 }
 
 .map-panel--hero .map-panel__canvas {
-  height: 400px;
+  height: 320px;
 }
 
 .map-panel__footer,
