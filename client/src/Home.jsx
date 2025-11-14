@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -69,8 +69,8 @@ function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE)
   const dLat = lat2 - lat1;
   const dLon = lon2 - lon1;
 
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * (Math.sin(dLon / 2) ** 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_RADIUS_MI * c;
@@ -498,11 +498,11 @@ function Home () {
                 <>
                   <div className='map-panel__canvas'>
                     {isClient && (
-                          <FacilityMap
-                            facilities={filteredFacilities}
-                            userLocation={userCoordinate}
-                            height={320}
-                          />
+                      <FacilityMap
+                        facilities={filteredFacilities}
+                        userLocation={userCoordinate}
+                        height={320}
+                      />
                     )}
                   </div>
                   <p className='map-panel__footer'>

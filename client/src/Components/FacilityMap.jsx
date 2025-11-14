@@ -100,7 +100,6 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
           setDistrictCollection(json);
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('[FacilityMap] failed to load NST districts', error);
         if (isActive) {
           setDistrictLoadError(error);
@@ -268,11 +267,10 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
       return;
     }
 
-    // eslint-disable-next-line no-console
     console.info('[FacilityMap] facilities (raw)', facilities);
-    // eslint-disable-next-line no-console
+
     console.info('[FacilityMap] markers used for centering', facilityMarkers);
-    // eslint-disable-next-line no-console
+
     console.info('[FacilityMap] computed center', center);
     if (facilityMarkers.length) {
       const latitudes = facilityMarkers.map((facility) => facility.latitude);
@@ -283,14 +281,13 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         lonMin: Math.min(...longitudes),
         lonMax: Math.max(...longitudes),
       };
-      // eslint-disable-next-line no-console
+
       console.info('[FacilityMap] coordinate bounds', stats);
     }
   }, [facilities, facilityMarkers, center]);
 
   useEffect(() => {
     if (districtLoadError) {
-      // eslint-disable-next-line no-console
       console.warn('[FacilityMap] NST district overlay unavailable', districtLoadError);
     }
   }, [districtLoadError]);
@@ -322,42 +319,42 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
           previousCenterRef.current = center;
         }}
       >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-      />
-      {districtCollection && showDistricts && (
-        <GeoJSON
-          data={districtCollection}
-          style={getDistrictStyle}
-          onEachFeature={renderDistrictLabel}
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         />
-      )}
-      {userLocation && userIcon && (
-        <Marker
-          position={[userLocation.latitude, userLocation.longitude]}
-          icon={userIcon}
-        >
-          <Popup>
-            <strong>Your location</strong>
-          </Popup>
-        </Marker>
-      )}
-      {facilityMarkers.map((facility) => (
-        <Marker
-          key={facility.id}
-          position={[facility.latitude, facility.longitude]}
-          icon={createFacilityMarkerIcon(leafletLib, facility.slug)}
-        >
-          <Popup>
-            <strong>{facility.name}</strong>
-            {facility.displayAddress && (
-              <div>{facility.displayAddress}</div>
-            )}
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+        {districtCollection && showDistricts && (
+          <GeoJSON
+            data={districtCollection}
+            style={getDistrictStyle}
+            onEachFeature={renderDistrictLabel}
+          />
+        )}
+        {userLocation && userIcon && (
+          <Marker
+            position={[userLocation.latitude, userLocation.longitude]}
+            icon={userIcon}
+          >
+            <Popup>
+              <strong>Your location</strong>
+            </Popup>
+          </Marker>
+        )}
+        {facilityMarkers.map((facility) => (
+          <Marker
+            key={facility.id}
+            position={[facility.latitude, facility.longitude]}
+            icon={createFacilityMarkerIcon(leafletLib, facility.slug)}
+          >
+            <Popup>
+              <strong>{facility.name}</strong>
+              {facility.displayAddress && (
+                <div>{facility.displayAddress}</div>
+              )}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   );
 }
