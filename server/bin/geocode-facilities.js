@@ -25,8 +25,8 @@ if (!API_KEY) {
 
 const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
 const RATE_LIMIT_DELAY_MS = Number.parseInt(process.env.GEOCODE_RATE_LIMIT_MS ?? '1100', 10);
-const NEIGHBORHOODS_CSV_PATH = process.env.NEIGHBORHOODS_CSV_PATH
-  ?? path.resolve(__dirname, '..', '..', 'SF_Find_Neighborhoods_20251111.csv');
+const NEIGHBORHOODS_CSV_PATH = process.env.NEIGHBORHOODS_CSV_PATH ??
+  path.resolve(__dirname, '..', 'static-data', 'SF_Find_Neighborhoods_20251111.csv');
 
 const prisma = new PrismaClient();
 const neighborhoodFeatures = loadNeighborhoodFeatures();

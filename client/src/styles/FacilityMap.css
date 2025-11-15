@@ -1,3 +1,63 @@
+.facility-map {
+  position: relative;
+}
+
+.facility-map__controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+}
+
+.facility-map__control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: none;
+  background: #dee2e6;
+  color: #000000;
+  font: 400 14px/20px 'Roboto', sans-serif;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.facility-map__control-button:hover,
+.facility-map__control-button:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.facility-map__control-button--active {
+  background: #343a40;
+  color: #ffffff;
+}
+
+.facility-map__district-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  font: 700 11px/1 'Roboto', sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  text-align: center;
+}
+
+.facility-map__district-label span {
+  display: inline-block;
+  line-height: 1.2;
+}
+
 .facility-map__marker {
   background: none;
   border: none;
@@ -44,4 +104,10 @@
   padding: 3px;
   border-radius: 999px;
   background: rgba(37, 99, 235, 0.25);
+}
+
+@media (max-width: 768px) {
+  .facility-map .leaflet-control-zoom {
+    display: none;
+  }
 }
