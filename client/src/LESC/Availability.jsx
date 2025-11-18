@@ -1,10 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { Container, Title, Card, Text, Badge, Stack, Group, Loader, Alert } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Container, Title, Card, Text, Badge, Stack, Group, Loader, Alert, Button } from '@mantine/core';
+import { IconAlertCircle, IconLock } from '@tabler/icons-react';
 
 import Api from '../Api';
 
 function Availability () {
+  const queryClient = useQueryClient();
+  const [processingCard, setProcessingCard] = useState(null);
+  const [errorCard, setErrorCard] = useState(null);
+  
   const { data, isLoading, error } = useQuery({
     queryKey: ['lesc-availability'],
     queryFn: async () => {
@@ -12,6 +17,38 @@ function Availability () {
       return response.data;
     },
   });
+
+  const createHoldMutation = useMutation({
+    mutationFn: ({ facilityId, serviceTypeId }) => 
+      Api.lesc.holds.create({
+        facilityId,
+        serviceTypeId,
+        bedsRequested: 1,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+      setProcessingCard(null);
+      setErrorCard(null);
+    },
+    onError: () => {
+      setProcessingCard(null);
+    },
+  });
+
+  const handleCreateHold = (facilityId, serviceTypeId) => {
+    const cardKey = `${facilityId}-${serviceTypeId}`;
+    setProcessingCard(cardKey);
+    setErrorCard(null);
+    createHoldMutation.mutate(
+      { facilityId, serviceTypeId },
+      {
+        onError: () => {
+          setErrorCard(cardKey);
+        },
+      }
+    );
+  };
 
   if (isLoading) {
     return (
@@ -73,6 +110,22 @@ function Availability () {
                 <Text fw={700}>{item.activeHolds}</Text>
               </div>
             </Group>
+            <Group mt='md' justify='flex-end'>
+              <Button
+                leftSection={<IconLock size={18} />}
+                onClick={() => handleCreateHold(item.facilityId, item.serviceTypeId)}
+                disabled={item.calculatedAvailable <= 0}
+                loading={processingCard === `${item.facilityId}-${item.serviceTypeId}`}
+                variant='light'
+              >
+                Hold
+              </Button>
+            </Group>
+            {errorCard === `${item.facilityId}-${item.serviceTypeId}` && createHoldMutation.error?.response?.data?.error && (
+              <Alert icon={<IconAlertCircle />} title='Error' color='red' mt='md'>
+                {createHoldMutation.error.response.data.error}
+              </Alert>
+            )}
           </Card>
         ))}
       </Stack>

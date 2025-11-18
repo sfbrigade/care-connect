@@ -117,8 +117,11 @@ export default async function (fastify, opts) {
         facility.services.forEach(service => {
           const key = `${facility.id}-${service.serviceTypeId}`;
           const activeHoldsCount = holdsMap.get(key) || 0;
-          const totalBeds = (service.availableBeds || 0) + (service.reservedBeds || 0);
-          const calculatedAvailable = Math.max(0, (service.availableBeds || 0) - activeHoldsCount);
+          // availableBeds in the database represents total capacity
+          const totalBeds = service.availableBeds || 0;
+          const reservedBeds = service.reservedBeds || 0;
+          // Calculated available = total - reserved - holds
+          const calculatedAvailable = Math.max(0, totalBeds - reservedBeds - activeHoldsCount);
 
           response.push({
             facilityId: facility.id,
@@ -127,8 +130,8 @@ export default async function (fastify, opts) {
             serviceTypeCode: service.serviceType.code,
             serviceTypeName: service.serviceType.name,
             totalBeds: totalBeds > 0 ? totalBeds : null,
-            availableBeds: service.availableBeds,
-            reservedBeds: service.reservedBeds,
+            availableBeds: calculatedAvailable, // Show calculated available instead of raw availableBeds
+            reservedBeds: reservedBeds,
             activeHolds: activeHoldsCount,
             calculatedAvailable,
           });

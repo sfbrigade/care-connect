@@ -75,7 +75,10 @@ export default async function (fastify, opts) {
       });
 
       const currentHolds = activeHolds._sum.bedsRequested || 0;
-      const availableBeds = (service.availableBeds || 0) - currentHolds;
+      // availableBeds represents total capacity, so available = total - reserved - holds
+      const totalBeds = service.availableBeds || 0;
+      const reservedBeds = service.reservedBeds || 0;
+      const availableBeds = Math.max(0, totalBeds - reservedBeds - currentHolds);
 
       if (bedsRequested > availableBeds) {
         return reply.code(StatusCodes.BAD_REQUEST).send({
@@ -100,20 +103,8 @@ export default async function (fastify, opts) {
         },
       });
 
-      // Update FacilityService reservedBeds
-      await fastify.prisma.facilityService.update({
-        where: {
-          facilityId_serviceTypeId: {
-            facilityId,
-            serviceTypeId,
-          },
-        },
-        data: {
-          reservedBeds: {
-            increment: bedsRequested,
-          },
-        },
-      });
+      // Note: Holds do NOT affect reservedBeds - they only reduce available beds
+      // reservedBeds represents beds actually reserved for admissions, not temporary holds
 
       return reply.code(StatusCodes.CREATED).send({
         id: hold.id,

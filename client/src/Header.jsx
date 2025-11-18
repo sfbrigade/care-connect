@@ -48,6 +48,9 @@ function Header ({ opened, close, toggle }) {
           <Anchor component={NavLink} to='/lesc' onClick={close}>
             LESC
           </Anchor>
+          <Anchor component={NavLink} to='/admin/facilities' onClick={close}>
+            List
+          </Anchor>
           {user && (
             <>
               {user.isAdmin && (
@@ -75,11 +78,6 @@ function Header ({ opened, close, toggle }) {
                 Log out
               </Anchor>
             </>
-          )}
-          {!user && (
-            <Anchor component={NavLink} to='/login' onClick={close}>
-              Log in
-            </Anchor>
           )}
         </Group>
         <Burger opened={opened} onClick={toggle} hiddenFrom='sm' size='sm' />

@@ -46,20 +46,8 @@ export default async function (fastify, opts) {
         },
       });
 
-      // Update FacilityService reservedBeds
-      await fastify.prisma.facilityService.update({
-        where: {
-          facilityId_serviceTypeId: {
-            facilityId: hold.facilityId,
-            serviceTypeId: hold.serviceTypeId,
-          },
-        },
-        data: {
-          reservedBeds: {
-            decrement: hold.bedsRequested,
-          },
-        },
-      });
+      // Note: Holds do NOT affect reservedBeds - they only reduce available beds
+      // reservedBeds represents beds actually reserved for admissions, not temporary holds
 
       return reply.send({
         id: updated.id,

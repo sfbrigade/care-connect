@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Stack, Select, NumberInput, Textarea, Button, Alert } from '@mantine/core';
+import { Stack, Select, Textarea, Button, Alert } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '../Api';
 
 function HoldForm ({ onSuccess }) {
   const [facilityId, setFacilityId] = useState('');
-  const [serviceTypeId, setServiceTypeId] = useState('');
-  const [bedsRequested, setBedsRequested] = useState(1);
   const [notes, setNotes] = useState('');
 
   const { data: availability } = useQuery({
@@ -26,37 +24,49 @@ function HoldForm ({ onSuccess }) {
     },
   });
 
-  // Get unique facilities from availability data
-  const facilities = availability ? [...new Map(availability.map(item => [item.facilityId, { id: item.facilityId, name: item.facilityName }])).values()] : [];
-
-  // Get service types for selected facility
-  const serviceTypes = availability
-    ? availability
-        .filter(item => item.facilityId === facilityId)
-        .map(item => ({
-          value: item.serviceTypeId,
-          label: item.serviceTypeName,
-          available: item.calculatedAvailable,
-        }))
+  // Get unique facilities from availability data, showing max available beds
+  const facilities = availability
+    ? [...new Map(availability.map(item => [item.facilityId, {
+      id: item.facilityId,
+      name: item.facilityName,
+    }])).values()]
+        .map(f => {
+          // Find all service types for this facility and get the one with most availability
+          const facilityServices = availability.filter(item => item.facilityId === f.id);
+          const maxAvailable = Math.max(...facilityServices.map(s => s.calculatedAvailable));
+          return {
+            value: f.id,
+            label: `${f.name} (${maxAvailable} available)`,
+          };
+        })
     : [];
 
-  // Reset service type when facility changes
-  useEffect(() => {
-    setServiceTypeId('');
-  }, [facilityId]);
+  // Get the service type with most availability for the selected facility
+  const getServiceTypeForFacility = (facId) => {
+    if (!availability || !facId) return null;
+    const facilityServices = availability.filter(item => item.facilityId === facId);
+    if (facilityServices.length === 0) return null;
+    // Return the service type with the most available beds
+    return facilityServices.reduce((best, current) => 
+      current.calculatedAvailable > best.calculatedAvailable ? current : best
+    );
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const serviceInfo = getServiceTypeForFacility(facilityId);
+    
+    if (!serviceInfo) {
+      return;
+    }
+
     createMutation.mutate({
       facilityId,
-      serviceTypeId,
-      bedsRequested,
+      serviceTypeId: serviceInfo.serviceTypeId,
+      bedsRequested: 1, // Default to 1 bed
       notes: notes || undefined,
     });
   };
-
-  const selectedService = serviceTypes.find(st => st.value === serviceTypeId);
-  const maxBeds = selectedService ? selectedService.available : 0;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -70,38 +80,12 @@ function HoldForm ({ onSuccess }) {
         <Select
           label='Facility'
           placeholder='Select facility'
-          data={facilities.map(f => ({ value: f.id, label: f.name }))}
+          data={facilities}
           value={facilityId}
           onChange={setFacilityId}
           required
+          searchable
         />
-
-        {facilityId && (
-          <Select
-            label='Service Type'
-            placeholder='Select service type'
-            data={serviceTypes.map(st => ({
-              value: st.value,
-              label: `${st.label} (${st.available} available)`,
-            }))}
-            value={serviceTypeId}
-            onChange={setServiceTypeId}
-            required
-            disabled={serviceTypes.length === 0}
-          />
-        )}
-
-        {serviceTypeId && (
-          <NumberInput
-            label='Beds Requested'
-            placeholder='Number of beds'
-            value={bedsRequested}
-            onChange={setBedsRequested}
-            min={1}
-            max={maxBeds}
-            required
-          />
-        )}
 
         <Textarea
           label='Notes (optional)'
@@ -111,7 +95,7 @@ function HoldForm ({ onSuccess }) {
           rows={3}
         />
 
-        <Button type='submit' loading={createMutation.isPending} disabled={!facilityId || !serviceTypeId}>
+        <Button type='submit' loading={createMutation.isPending} disabled={!facilityId}>
           Create Hold
         </Button>
       </Stack>
