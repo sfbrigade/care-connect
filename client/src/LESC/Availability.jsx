@@ -105,9 +105,23 @@ function Availability () {
   // Get active holds for a specific facility/service type
   const getHoldsForCard = (facilityId, serviceTypeId) => {
     if (!holds) return [];
-    return holds.filter(hold => 
-      hold.facilityId === facilityId && hold.serviceTypeId === serviceTypeId
-    );
+    const now = new Date();
+    return holds.filter(hold => {
+      // Filter by facility and service type
+      if (hold.facilityId !== facilityId || hold.serviceTypeId !== serviceTypeId) {
+        return false;
+      }
+      // Filter out expired holds
+      const expiresAt = new Date(hold.expiresAt);
+      if (expiresAt <= now) {
+        return false;
+      }
+      // Filter out EXPIRED status holds
+      if (hold.status === 'EXPIRED' || hold.status === 'CANCELLED') {
+        return false;
+      }
+      return true;
+    });
   };
 
   // Format remaining time for a hold

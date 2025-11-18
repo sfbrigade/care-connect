@@ -49,7 +49,7 @@ function Header ({ opened, close, toggle }) {
             LESC
           </Anchor>
           <Anchor component={NavLink} to='/admin/facilities' onClick={close}>
-            List
+            Facilities
           </Anchor>
           {user && (
             <>

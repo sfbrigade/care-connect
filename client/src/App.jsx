@@ -50,7 +50,7 @@ function App () {
                 <Header opened={opened} close={close} toggle={toggle} />
               </AppShell.Header>
               <AppShell.Navbar p='md'>
-                <MobileNavbar />
+                <MobileNavbar close={close} />
               </AppShell.Navbar>
               <AppShell.Main px={0}>
                 <Routes>
