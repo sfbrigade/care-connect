@@ -25,6 +25,21 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const now = new Date();
 
+      // Auto-expire holds that have passed their expiration time
+      await fastify.prisma.bedHold.updateMany({
+        where: {
+          status: {
+            in: ['ACTIVE', 'EXTENDED'],
+          },
+          expiresAt: {
+            lte: now,
+          },
+        },
+        data: {
+          status: 'EXPIRED',
+        },
+      });
+
       // Find LESC facilities (identified by ServiceType code "LESC" or "SOBERING")
       const lescServiceTypes = await fastify.prisma.serviceType.findMany({
         where: {

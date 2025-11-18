@@ -30,6 +30,21 @@ export default async function (fastify, opts) {
       const { facilityId } = request.query;
       const now = new Date();
 
+      // Auto-expire holds that have passed their expiration time
+      await fastify.prisma.bedHold.updateMany({
+        where: {
+          status: {
+            in: ['ACTIVE', 'EXTENDED'],
+          },
+          expiresAt: {
+            lte: now,
+          },
+        },
+        data: {
+          status: 'EXPIRED',
+        },
+      });
+
       const where = {
         status: {
           in: ['ACTIVE', 'EXTENDED'],
