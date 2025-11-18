@@ -49,6 +49,13 @@ enum FacilityEligibilityType {
   OTHER
 }
 
+enum BedHoldStatus {
+  ACTIVE
+  EXTENDED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName               String
@@ -66,6 +73,8 @@ model User {
   placementRequestsRequested PlacementRequest[] @relation("RequestedByUser")
   placementRequestsReviewed  PlacementRequest[] @relation("ReviewedByUser")
   placementRequestEvents     PlacementRequestEvent[]
+  bedHoldsCreated            BedHold[]            @relation("CreatedByUser")
+  bedHoldsCancelled          BedHold[]           @relation("CancelledByUser")
   updatedAt               DateTime  @updatedAt
   createdAt               DateTime  @default(now())
 }
@@ -113,6 +122,7 @@ model Facility {
   eligibility       FacilityEligibility[]
   contacts          FacilityContact[]
   placementRequests PlacementRequest[]
+  bedHolds          BedHold[]
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
 }
@@ -156,6 +166,7 @@ model ServiceType {
   description String?
   facilities  FacilityService[]
   placementRequests PlacementRequest[]
+  bedHolds    BedHold[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -246,4 +257,28 @@ model PlacementRequestEvent {
   createdAt          DateTime               @default(now())
 
   @@index([placementRequestId, createdAt])
+}
+
+model BedHold {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility      Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId    String         @db.Uuid
+  serviceType   ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+  serviceTypeId String         @db.Uuid
+  bedsRequested Int
+  expiresAt     DateTime
+  status        BedHoldStatus  @default(ACTIVE)
+  createdBy     User?          @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById   String?        @db.Uuid
+  cancelledAt   DateTime?
+  cancelledBy   User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledById String?        @db.Uuid
+  extendedAt    DateTime?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([facilityId])
+  @@index([expiresAt])
+  @@index([status])
 }

@@ -24,6 +24,7 @@ import Register from './Register';
 import UsersRoutes from './Users/UsersRoutes';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
+const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,13 @@ function App () {
                           <Route path='/invites/*' element={<InvitesRoutes />} />
                           {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
                           <Route path='/account/*' element={<UsersRoutes />} />
+                          <Route
+                            path='/lesc/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <LESCRoutes />
+                              </Suspense>
+                            }
+                          />
                           <Route
                             path='/admin/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>

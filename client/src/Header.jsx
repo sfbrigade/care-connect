@@ -45,6 +45,9 @@ function Header ({ opened, close, toggle }) {
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
             Home
           </Anchor>
+          <Anchor component={NavLink} to='/lesc' onClick={close}>
+            LESC
+          </Anchor>
           {user && (
             <>
               {user.isAdmin && (
@@ -55,6 +58,7 @@ function Header ({ opened, close, toggle }) {
                   <Menu.Dropdown>
                     <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
                     <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
+                    <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
               )}

@@ -154,6 +154,58 @@ const Api = {
       return instance.get('/api/facilities');
     },
   },
+  lesc: {
+    availability () {
+      return instance.get('/api/lesc/availability');
+    },
+    holds: {
+      list (facilityId) {
+        return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
+      },
+      create (data) {
+        return instance.post('/api/lesc/holds', data).catch(handleError);
+      },
+      extend (id) {
+        return instance.patch(`/api/lesc/holds/${id}/extend`).catch(handleError);
+      },
+      cancel (id) {
+        return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);
+      },
+    },
+  },
+  admin: {
+    facilities: {
+      list () {
+        return instance.get('/api/admin/facilities');
+      },
+      get (id) {
+        return instance.get(`/api/admin/facilities/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/admin/facilities', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/admin/facilities/${id}`, data).catch(handleError);
+      },
+      updateBeds (id, data) {
+        return instance.patch(`/api/admin/facilities/${id}/beds`, data).catch(handleError);
+      },
+      addService (id, data) {
+        return instance.post(`/api/admin/facilities/${id}/services`, data).catch(handleError);
+      },
+      removeService (id, serviceTypeId) {
+        return instance.delete(`/api/admin/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
+      },
+    },
+  },
+  serviceTypes: {
+    list () {
+      return instance.get('/api/service-types');
+    },
+    create (data) {
+      return instance.post('/api/service-types', data).catch(handleError);
+    },
+  },
 };
 
 export default Api;
