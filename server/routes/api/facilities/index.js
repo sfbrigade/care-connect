@@ -13,6 +13,7 @@ export default async function (fastify, opts) {
             description: z.string().nullable(),
             phone: z.string().nullable(),
             neighborhood: z.string().nullable(),
+            nstDistrict: z.string().nullable(),
             address: z.object({
               line1: z.string().nullable(),
               line2: z.string().nullable(),
@@ -63,6 +64,7 @@ export default async function (fastify, opts) {
           description: true,
           phone: true,
           neighborhood: true,
+          nstDistrict: true,
           addressLine1: true,
           addressLine2: true,
           city: true,
@@ -124,6 +126,7 @@ export default async function (fastify, opts) {
         description: facility.description ?? null,
         phone: facility.phone ?? null,
         neighborhood: facility.neighborhood ?? null,
+        nstDistrict: facility.nstDistrict ?? null,
         address: {
           line1: facility.addressLine1 ?? null,
           line2: facility.addressLine2 ?? null,

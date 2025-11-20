@@ -101,6 +101,7 @@ model Facility {
   state             String?
   postalCode        String?
   neighborhood      String?
+  nstDistrict       String?
   latitude          Decimal?                   @db.Decimal(9, 6)
   longitude         Decimal?                   @db.Decimal(9, 6)
   timezone          String?

@@ -309,7 +309,7 @@ function Home () {
     const displayAddress = formatAddress(facility.address);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
-    const neighborhoodLabel = (facility.neighborhood ?? '').trim() || 'Unknown';
+    const districtLabel = (facility.nstDistrict ?? '').trim() || 'Unknown';
     const slug = createSlug(facility.name);
 
     return {
@@ -322,7 +322,7 @@ function Home () {
       primaryContact,
       slug,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
-      neighborhoodLabel,
+      districtLabel,
     };
   }), [facilities, referenceCoordinate]);
 
@@ -332,7 +332,7 @@ function Home () {
   const filteredFacilities = useMemo(() => {
     const base = activeFilter === 'All'
       ? facilitiesWithMeta
-      : facilitiesWithMeta.filter((facility) => facility.neighborhoodLabel === activeFilter);
+      : facilitiesWithMeta.filter((facility) => facility.districtLabel === activeFilter);
 
     return [...base].sort((a, b) => {
       const aDistance = a.distanceMiles ?? Number.POSITIVE_INFINITY;
@@ -370,12 +370,12 @@ function Home () {
   }, [filteredFacilities]);
 
   const availableFilters = useMemo(() => {
-    const neighborhoods = new Set();
+    const districts = new Set();
     facilitiesWithMeta.forEach((facility) => {
-      neighborhoods.add(facility.neighborhoodLabel);
+      districts.add(facility.districtLabel);
     });
 
-    return ['All', ...Array.from(neighborhoods).sort((a, b) => a.localeCompare(b))];
+    return ['All', ...Array.from(districts).sort((a, b) => a.localeCompare(b))];
   }, [facilitiesWithMeta]);
 
   const latestUpdatedAt = useMemo(() => {
@@ -548,7 +548,7 @@ function Home () {
                             <span className='card__slug'>{facility.slug}</span>
                             <span className='card__title-text'>{facility.name}</span>
                           </h3>
-                          <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>
+                          <p className='card__neighborhood'>{facility.districtLabel}</p>
                           {facility.displayAddress && (
                             <p className='card__subtitle'>{facility.displayAddress}</p>
                           )}
