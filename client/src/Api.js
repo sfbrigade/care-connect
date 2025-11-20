@@ -154,6 +154,14 @@ const Api = {
       return instance.get('/api/facilities');
     },
   },
+  feedback: {
+    create (data) {
+      return instance.post('/api/feedback', data).catch(handleError);
+    },
+    list (page = 1) {
+      return instance.get('/api/feedback', { params: { page } });
+    },
+  },
 };
 
 export default Api;

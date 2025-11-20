@@ -8,13 +8,18 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { parse } from 'csv-parse/sync';
 import { PrismaClient, FacilityUpdateMethod, FacilityEligibilityType } from '@prisma/client';
+import { point } from '@turf/helpers';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
+const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '..', 'static-data', 'street_team_coverage.geojson');
+
 const prisma = new PrismaClient();
+const nstDistrictFeatures = loadNSTDistrictFeatures();
 
 async function main () {
   const { filePath, dryRun, truncateSnapshots } = parseArgs(process.argv.slice(2));
@@ -54,6 +59,18 @@ async function main () {
     let facility = await prisma.facility.findFirst({
       where: { name: facilityName },
     });
+
+    // Resolve NST district if coordinates are available
+    if (facility?.latitude != null && facility?.longitude != null) {
+      const latitude = Number(facility.latitude);
+      const longitude = Number(facility.longitude);
+      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        const resolvedDistrict = resolveNSTDistrict(latitude, longitude);
+        if (resolvedDistrict) {
+          facilityData.nstDistrict = resolvedDistrict;
+        }
+      }
+    }
 
     if (dryRun) {
       facility = facility ?? { id: '<dry-run-id>' };
@@ -384,6 +401,54 @@ function isOutOfCounty (record) {
   const markers = ['out of county', 'out-of-county', 'out_of_county'];
   const address = (record['DPH Address'] || record['DRAFT Site address'] || '').toLowerCase();
   return markers.some(marker => address.includes(marker));
+}
+
+function resolveNSTDistrict (latitude, longitude) {
+  if (!nstDistrictFeatures.length) {
+    return null;
+  }
+
+  const pointFeature = point([longitude, latitude]);
+  for (const feature of nstDistrictFeatures) {
+    try {
+      if (booleanPointInPolygon(pointFeature, feature.geometry)) {
+        return feature.name ?? null;
+      }
+    } catch (error) {
+      // Ignore malformed polygon
+    }
+  }
+  return null;
+}
+
+function loadNSTDistrictFeatures () {
+  try {
+    if (!fs.existsSync(NST_DISTRICTS_GEOJSON_PATH)) {
+      console.warn(`NST districts GeoJSON not found at ${NST_DISTRICTS_GEOJSON_PATH}; NST district assignment will be skipped.`);
+      return [];
+    }
+
+    const geojsonContents = fs.readFileSync(NST_DISTRICTS_GEOJSON_PATH, 'utf8');
+    const geojson = JSON.parse(geojsonContents);
+
+    if (!geojson.features || !Array.isArray(geojson.features)) {
+      console.warn('Invalid GeoJSON structure for NST districts');
+      return [];
+    }
+
+    return geojson.features
+      .map((feature) => {
+        if (!feature.geometry || !feature.properties) {
+          return null;
+        }
+        const name = feature.properties.streetteam?.trim() || null;
+        return { name, geometry: feature.geometry };
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.error('Failed to load NST district polygons:', error?.message ?? error);
+    return [];
+  }
 }
 
 process.on('unhandledRejection', (error) => {

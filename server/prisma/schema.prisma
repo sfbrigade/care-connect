@@ -101,6 +101,7 @@ model Facility {
   state             String?
   postalCode        String?
   neighborhood      String?
+  nstDistrict       String?
   latitude          Decimal?                   @db.Decimal(9, 6)
   longitude         Decimal?                   @db.Decimal(9, 6)
   timezone          String?
@@ -246,4 +247,15 @@ model PlacementRequestEvent {
   createdAt          DateTime               @default(now())
 
   @@index([placementRequestId, createdAt])
+}
+
+model Feedback {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message   String
+  userEmail String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import Api from './Api';
 import Facility from './Components/Facility';
 import FacilityMap from './Components/FacilityMap';
+import CategoryIcon from './Components/CategoryIcon';
 import './styles/Home.css';
 
 const DEFAULT_COORDINATE = {
@@ -54,11 +55,11 @@ const CATEGORY_CONFIG = [
 
 const EARTH_RADIUS_MI = 3958.8;
 
-function toRadians (degrees) {
+function toRadians(degrees) {
   return degrees * (Math.PI / 180);
 }
 
-function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE) {
+function computeDistanceMiles(latitude, longitude, origin = DEFAULT_COORDINATE) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
   }
@@ -83,7 +84,7 @@ const updatedFormatter = new Intl.DateTimeFormat('en-US', {
   timeStyle: 'short',
 });
 
-function formatUpdatedAt (isoString) {
+function formatUpdatedAt(isoString) {
   if (!isoString) {
     return 'Unknown';
   }
@@ -94,7 +95,7 @@ function formatUpdatedAt (isoString) {
   }
 }
 
-function formatRelativeTime (isoString) {
+function formatRelativeTime(isoString) {
   if (!isoString) {
     return 'just now';
   }
@@ -124,7 +125,7 @@ function formatRelativeTime (isoString) {
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 }
 
-function formatAddress (address) {
+function formatAddress(address) {
   if (!address) {
     return '';
   }
@@ -139,25 +140,79 @@ function formatAddress (address) {
   return segments.join(', ');
 }
 
-function getFacilityCategories (facility) {
+function getFacilityCategories(facility) {
   const searchableText = [
     facility.description ?? '',
     ...facility.services.map((service) => service.name ?? ''),
     ...facility.services.map((service) => service.description ?? ''),
   ].join(' ').toLowerCase();
 
-  const matches = CATEGORY_CONFIG
+  const matches = [];
+
+  // Check service type names and abbreviations
+  for (const service of facility.services) {
+    const serviceName = (service.name ?? '').toLowerCase();
+
+    // Medical/Health services
+    if (serviceName.includes('mh') || serviceName.includes('acute') ||
+      serviceName.includes('sud') || serviceName.includes('subacute') ||
+      serviceName.includes('detox') || serviceName.includes('crisis') ||
+      serviceName.includes('sobering') || serviceName.includes('lesc') ||
+      serviceName.includes('medical') || serviceName.includes('mental health')) {
+      if (!matches.includes('medical')) {
+        matches.push('medical');
+      }
+    }
+
+    // Shelter/Respite services
+    if (serviceName.includes('respite') || serviceName.includes('shelter') ||
+      serviceName.includes('housing') || serviceName.includes('stabilization')) {
+      if (!matches.includes('shelter')) {
+        matches.push('shelter');
+      }
+    }
+
+    // Basic services
+    if (serviceName.includes('shower') || serviceName.includes('food') ||
+      serviceName.includes('hygiene') || serviceName.includes('laundry')) {
+      if (!matches.includes('basic')) {
+        matches.push('basic');
+      }
+    }
+
+    // Mobile services
+    if (serviceName.includes('mobile') || serviceName.includes('van') ||
+      serviceName.includes('outreach')) {
+      if (!matches.includes('mobile')) {
+        matches.push('mobile');
+      }
+    }
+
+    // Ongoing support
+    if (serviceName.includes('case') || serviceName.includes('navigation') ||
+      serviceName.includes('support') || serviceName.includes('coordination')) {
+      if (!matches.includes('ongoing')) {
+        matches.push('ongoing');
+      }
+    }
+  }
+
+  // Also check keywords in description and service descriptions
+  const keywordMatches = CATEGORY_CONFIG
     .filter(({ keywords, id }) => id !== 'other' && keywords.some((keyword) => searchableText.includes(keyword)))
     .map(({ id }) => id);
 
-  if (!matches.length) {
-    matches.push('other');
+  // Combine matches
+  const allMatches = [...new Set([...matches, ...keywordMatches])];
+
+  if (!allMatches.length) {
+    allMatches.push('other');
   }
 
-  return matches;
+  return allMatches;
 }
 
-function createSlug (name) {
+function createSlug(name) {
   if (!name) {
     return 'UNK';
   }
@@ -187,7 +242,7 @@ function createSlug (name) {
   return slug.slice(0, 3);
 }
 
-function Home () {
+function Home() {
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
@@ -207,7 +262,7 @@ function Home () {
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
-      return () => {};
+      return () => { };
     }
 
     let watchId;
@@ -298,6 +353,7 @@ function Home () {
   const facilitiesWithMeta = useMemo(() => facilities.map((facility) => {
     const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
+    const primaryCategory = categories[0] ?? 'other';
     const primaryService = facility.services[0]?.name ?? null;
     const primaryBadge = facility.services[0]?.availableBeds != null
       ? `${facility.services[0].availableBeds} beds`
@@ -305,12 +361,13 @@ function Home () {
     const displayAddress = formatAddress(facility.address);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
-    const neighborhoodLabel = (facility.neighborhood ?? '').trim() || 'Unknown';
+    const districtLabel = (facility.nstDistrict ?? '').trim() || 'Unknown';
     const slug = createSlug(facility.name);
 
     return {
       ...facility,
       categories,
+      primaryCategory,
       distanceMiles,
       primaryService,
       primaryBadge,
@@ -318,7 +375,7 @@ function Home () {
       primaryContact,
       slug,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
-      neighborhoodLabel,
+      districtLabel,
     };
   }), [facilities, referenceCoordinate]);
 
@@ -328,7 +385,7 @@ function Home () {
   const filteredFacilities = useMemo(() => {
     const base = activeFilter === 'All'
       ? facilitiesWithMeta
-      : facilitiesWithMeta.filter((facility) => facility.neighborhoodLabel === activeFilter);
+      : facilitiesWithMeta.filter((facility) => facility.districtLabel === activeFilter);
 
     return [...base].sort((a, b) => {
       const aDistance = a.distanceMiles ?? Number.POSITIVE_INFINITY;
@@ -366,12 +423,12 @@ function Home () {
   }, [filteredFacilities]);
 
   const availableFilters = useMemo(() => {
-    const neighborhoods = new Set();
+    const districts = new Set();
     facilitiesWithMeta.forEach((facility) => {
-      neighborhoods.add(facility.neighborhoodLabel);
+      districts.add(facility.districtLabel);
     });
 
-    return ['All', ...Array.from(neighborhoods).sort((a, b) => a.localeCompare(b))];
+    return ['All', ...Array.from(districts).sort((a, b) => a.localeCompare(b))];
   }, [facilitiesWithMeta]);
 
   const latestUpdatedAt = useMemo(() => {

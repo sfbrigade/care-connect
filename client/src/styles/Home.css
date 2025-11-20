@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  background: rgba(12, 36, 97, 0.08);
+  background: transparent;
   border-radius: 12px;
 }
 
@@ -35,8 +35,7 @@
 .card__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card__metric {
