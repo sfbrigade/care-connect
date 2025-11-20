@@ -13,6 +13,7 @@ const DISTRICT_DATA_PATH = '/static-data/street_team_coverage.geojson';
 
 // Extract path data from SVG strings
 function extractPathData (svgString) {
+  // eslint-disable-next-line no-undef
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
   const path = doc.querySelector('path');

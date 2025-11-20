@@ -4,6 +4,7 @@ import nurseSvg from '../assets/icons/nurse.svg?raw';
 
 // Parse SVG strings to extract viewBox and path attributes
 function parseSvg (svgString) {
+  // eslint-disable-next-line no-undef
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgString, 'image/svg+xml');
   const svg = doc.querySelector('svg');
