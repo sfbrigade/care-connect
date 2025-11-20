@@ -7,8 +7,6 @@ import { fileURLToPath } from 'node:url';
 
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
-import { parse } from 'csv-parse/sync';
-import wellknown from 'wellknown';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
@@ -25,12 +23,9 @@ if (!API_KEY) {
 
 const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
 const RATE_LIMIT_DELAY_MS = Number.parseInt(process.env.GEOCODE_RATE_LIMIT_MS ?? '1100', 10);
-const NEIGHBORHOODS_CSV_PATH = process.env.NEIGHBORHOODS_CSV_PATH ??
-  path.resolve(__dirname, '..', 'static-data', 'SF_Find_Neighborhoods_20251111.csv');
 const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '..', 'static-data', 'street_team_coverage.geojson');
 
 const prisma = new PrismaClient();
-const neighborhoodFeatures = loadNeighborhoodFeatures();
 const nstDistrictFeatures = loadNSTDistrictFeatures();
 
 async function main () {
@@ -42,7 +37,6 @@ async function main () {
         OR: [
           { latitude: null },
           { longitude: null },
-          { neighborhood: null },
           { nstDistrict: null },
         ],
       };
@@ -88,14 +82,6 @@ async function main () {
         shouldUpdateCoords = true;
       }
 
-      let neighborhood = facility.neighborhood ?? null;
-      const resolvedNeighborhood = resolveNeighborhood(latitude, longitude);
-      if (resolvedNeighborhood) {
-        neighborhood = resolvedNeighborhood;
-      } else if (force) {
-        neighborhood = null;
-      }
-
       let nstDistrict = facility.nstDistrict ?? null;
       const resolvedNSTDistrict = resolveNSTDistrict(latitude, longitude);
       if (resolvedNSTDistrict) {
@@ -105,16 +91,13 @@ async function main () {
       }
 
       if (dryRun) {
-        console.info(`[Dry Run] ${facility.name} @ ${address} -> ${latitude}, ${longitude} (Neighborhood: ${neighborhood ?? 'Unknown'}, NST District: ${nstDistrict ?? 'Unknown'})`);
+        console.info(`[Dry Run] ${facility.name} @ ${address} -> ${latitude}, ${longitude} (NST District: ${nstDistrict ?? 'Unknown'})`);
         successCount += 1;
       } else {
         const updateData = {};
         if (shouldUpdateCoords) {
           updateData.latitude = latitude;
           updateData.longitude = longitude;
-        }
-        if (neighborhood !== facility.neighborhood) {
-          updateData.neighborhood = neighborhood;
         }
         if (nstDistrict !== facility.nstDistrict) {
           updateData.nstDistrict = nstDistrict;
@@ -125,7 +108,7 @@ async function main () {
             where: { id: facility.id },
             data: updateData,
           });
-          console.info(`Updated ${facility.name}: ${latitude}, ${longitude}${neighborhood ? ` (Neighborhood: ${neighborhood})` : ''}${nstDistrict ? ` (NST District: ${nstDistrict})` : ''}`);
+          console.info(`Updated ${facility.name}: ${latitude}, ${longitude}${nstDistrict ? ` (NST District: ${nstDistrict})` : ''}`);
         } else {
           console.info(`No changes needed for ${facility.name}.`);
         }
@@ -206,24 +189,6 @@ async function geocodeAddress (query) {
   return { lat, lng };
 }
 
-function resolveNeighborhood (latitude, longitude) {
-  if (!neighborhoodFeatures.length) {
-    return null;
-  }
-
-  const pointFeature = point([longitude, latitude]);
-  for (const feature of neighborhoodFeatures) {
-    try {
-      if (booleanPointInPolygon(pointFeature, feature.geometry)) {
-        return feature.name ?? null;
-      }
-    } catch (error) {
-      // Ignore malformed polygon
-    }
-  }
-  return null;
-}
-
 function resolveNSTDistrict (latitude, longitude) {
   if (!nstDistrictFeatures.length) {
     return null;
@@ -268,40 +233,6 @@ function loadNSTDistrictFeatures () {
       .filter(Boolean);
   } catch (error) {
     console.error('Failed to load NST district polygons:', error?.message ?? error);
-    return [];
-  }
-}
-
-function loadNeighborhoodFeatures () {
-  try {
-    if (!fs.existsSync(NEIGHBORHOODS_CSV_PATH)) {
-      console.warn(`Neighborhood CSV not found at ${NEIGHBORHOODS_CSV_PATH}; neighborhood assignment will be skipped.`);
-      return [];
-    }
-
-    const csvContents = fs.readFileSync(NEIGHBORHOODS_CSV_PATH, 'utf8');
-    const records = parse(csvContents, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-    });
-
-    return records
-      .map((record) => {
-        const wkt = record.the_geom ?? record.geom ?? null;
-        if (!wkt) {
-          return null;
-        }
-        const geometry = wellknown(wkt);
-        if (!geometry) {
-          return null;
-        }
-        const name = record.name?.trim() || record.link?.trim() || null;
-        return { name, geometry };
-      })
-      .filter(Boolean);
-  } catch (error) {
-    console.error('Failed to load neighborhood polygons:', error?.message ?? error);
     return [];
   }
 }

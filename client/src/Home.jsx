@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import Api from './Api';
 import FacilityMap from './Components/FacilityMap';
+import CategoryIcon from './Components/CategoryIcon';
 import './styles/Home.css';
 
 const DEFAULT_COORDINATE = {
@@ -144,15 +145,69 @@ function getFacilityCategories (facility) {
     ...facility.services.map((service) => service.description ?? ''),
   ].join(' ').toLowerCase();
 
-  const matches = CATEGORY_CONFIG
+  const matches = [];
+
+  // Check service type names and abbreviations
+  for (const service of facility.services) {
+    const serviceName = (service.name ?? '').toLowerCase();
+    
+    // Medical/Health services
+    if (serviceName.includes('mh') || serviceName.includes('acute') || 
+        serviceName.includes('sud') || serviceName.includes('subacute') ||
+        serviceName.includes('detox') || serviceName.includes('crisis') ||
+        serviceName.includes('sobering') || serviceName.includes('lesc') ||
+        serviceName.includes('medical') || serviceName.includes('mental health')) {
+      if (!matches.includes('medical')) {
+        matches.push('medical');
+      }
+    }
+    
+    // Shelter/Respite services
+    if (serviceName.includes('respite') || serviceName.includes('shelter') ||
+        serviceName.includes('housing') || serviceName.includes('stabilization')) {
+      if (!matches.includes('shelter')) {
+        matches.push('shelter');
+      }
+    }
+    
+    // Basic services
+    if (serviceName.includes('shower') || serviceName.includes('food') ||
+        serviceName.includes('hygiene') || serviceName.includes('laundry')) {
+      if (!matches.includes('basic')) {
+        matches.push('basic');
+      }
+    }
+    
+    // Mobile services
+    if (serviceName.includes('mobile') || serviceName.includes('van') ||
+        serviceName.includes('outreach')) {
+      if (!matches.includes('mobile')) {
+        matches.push('mobile');
+      }
+    }
+    
+    // Ongoing support
+    if (serviceName.includes('case') || serviceName.includes('navigation') ||
+        serviceName.includes('support') || serviceName.includes('coordination')) {
+      if (!matches.includes('ongoing')) {
+        matches.push('ongoing');
+      }
+    }
+  }
+
+  // Also check keywords in description and service descriptions
+  const keywordMatches = CATEGORY_CONFIG
     .filter(({ keywords, id }) => id !== 'other' && keywords.some((keyword) => searchableText.includes(keyword)))
     .map(({ id }) => id);
 
-  if (!matches.length) {
-    matches.push('other');
+  // Combine matches
+  const allMatches = [...new Set([...matches, ...keywordMatches])];
+
+  if (!allMatches.length) {
+    allMatches.push('other');
   }
 
-  return matches;
+  return allMatches;
 }
 
 function createSlug (name) {
@@ -302,6 +357,7 @@ function Home () {
   const facilitiesWithMeta = useMemo(() => facilities.map((facility) => {
     const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
+    const primaryCategory = categories[0] ?? 'other';
     const primaryService = facility.services[0]?.name ?? null;
     const primaryBadge = facility.services[0]?.availableBeds != null
       ? `${facility.services[0].availableBeds} beds`
@@ -315,6 +371,7 @@ function Home () {
     return {
       ...facility,
       categories,
+      primaryCategory,
       distanceMiles,
       primaryService,
       primaryBadge,
@@ -540,12 +597,12 @@ function Home () {
                           }}
                         >
                           <div className='card__row'>
+                            <CategoryIcon categoryId={facility.primaryCategory} variant='card' />
                             <span className='card__metric'>
                               {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
                             </span>
                           </div>
                           <h3 className='card__title'>
-                            <span className='card__slug'>{facility.slug}</span>
                             <span className='card__title-text'>{facility.name}</span>
                           </h3>
                           <p className='card__neighborhood'>{facility.districtLabel}</p>
