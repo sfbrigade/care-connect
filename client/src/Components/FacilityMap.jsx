@@ -49,9 +49,16 @@ const CATEGORY_ICON_CONFIG = {
 
 function createFacilityMarkerIcon (L, categoryId = 'other') {
   const config = CATEGORY_ICON_CONFIG[categoryId] || CATEGORY_ICON_CONFIG.other;
-  const circleSize = 34;
-  const iconSize = 24;
-  const iconOffset = (circleSize - iconSize) / 2;
+  // Scale down by 20%: original is 52x60, so 20% smaller is ~42x48
+  const scale = 0.8;
+  const pinWidth = 52 * scale; // ~42px
+  const pinHeight = 60 * scale; // ~48px
+  const iconSize = 19; // Scaled proportionally
+  // Colored circle center in viewBox: x=26, y=25 (circle goes from 9 to 43 horizontally, centered at 26)
+  const iconCenterX = 26; // Center X in viewBox coordinates
+  const iconCenterY = 25; // Center Y in viewBox coordinates
+  const iconOffsetX = iconCenterX - iconSize / 2;
+  const iconOffsetY = iconCenterY - iconSize / 2;
   const fillColor = 'white';
   // Nurse icon (ongoing, other) and Health Recognition icon (shelter) use fill
   const useFill = categoryId === 'shelter' || categoryId === 'ongoing' || categoryId === 'other';
@@ -62,16 +69,50 @@ function createFacilityMarkerIcon (L, categoryId = 'other') {
     ? `<path fill-rule="evenodd" clip-rule="evenodd" d="${config.path}" fill="${fillColor}"/>`
     : `<path d="${config.path}" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
 
+  // Generate unique filter IDs to avoid conflicts when multiple pins are rendered
+  const filterId0 = `filter0_f_358_9886_${categoryId}`;
+  const filterId1 = `filter1_d_358_9886_${categoryId}`;
+
   return L.divIcon({
     className: 'facility-map__marker facility-map__marker--facility',
-    iconSize: [circleSize, circleSize],
-    iconAnchor: [circleSize / 2, circleSize / 2],
-    popupAnchor: [0, -circleSize / 2],
+    iconSize: [pinWidth, pinHeight],
+    iconAnchor: [pinWidth / 2, pinHeight], // Anchor at the tip of the pin
+    popupAnchor: [0, -pinHeight],
     html: `
-      <div class="facility-map__marker-wrapper" style="position: relative; width: ${circleSize}px; height: ${circleSize}px;">
-        <div class="facility-map__marker-circle" style="position: absolute; left: 0; top: 0; width: ${circleSize}px; height: ${circleSize}px; border-radius: 50%; background-color: ${config.color};"></div>
-        <svg width="${iconSize}" height="${iconSize}" viewBox="${config.viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; left: ${iconOffset}px; top: ${iconOffset}px;">
-          ${svgPath}
+      <div class="facility-map__marker-wrapper" style="position: relative; width: ${pinWidth}px; height: ${pinHeight}px;">
+        <svg width="${pinWidth}" height="${pinHeight}" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; left: 0; top: 0;">
+          <!-- Shadow -->
+          <g filter="url(#${filterId0})">
+            <ellipse cx="26" cy="53.5" rx="7" ry="2.5" fill="black" fill-opacity="0.2"/>
+          </g>
+          <!-- White pin shape with drop shadow -->
+          <g filter="url(#${filterId1})">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M26 4C37.598 4 47 13.402 47 25C47 33.8926 41.4727 41.4942 33.6663 44.5567L27.1961 53.4007C27.0612 53.5858 26.8821 53.7369 26.6739 53.8412C26.4657 53.9455 26.2346 54 26 54C25.7654 54 25.5343 53.9455 25.3261 53.8412C25.1179 53.7369 24.9388 53.5858 24.8039 53.4007L18.3337 44.5567C10.5273 41.4941 5 33.8926 5 25C5 13.402 14.402 4 26 4Z" fill="white"/>
+          </g>
+          <!-- Colored circle (category color) -->
+          <path d="M43 25C43 15.6112 35.3888 8 26 8C16.6112 8 9 15.6112 9 25C9 34.3888 16.6112 42 26 42C35.3888 42 43 34.3888 43 25Z" fill="${config.color}"/>
+          <!-- Category icon -->
+          <svg width="${iconSize}" height="${iconSize}" viewBox="${config.viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg" x="${iconOffsetX}" y="${iconOffsetY}">
+            ${svgPath}
+          </svg>
+          <!-- Filters -->
+          <defs>
+            <filter id="${filterId0}" x="17" y="49" width="18" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+              <feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_358_9886"/>
+            </filter>
+            <filter id="${filterId1}" x="0" y="0" width="52" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+              <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+              <feOffset dy="1"/>
+              <feGaussianBlur stdDeviation="2.5"/>
+              <feComposite in2="hardAlpha" operator="out"/>
+              <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+              <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_358_9886"/>
+              <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_358_9886" result="shape"/>
+            </filter>
+          </defs>
         </svg>
       </div>
     `,
