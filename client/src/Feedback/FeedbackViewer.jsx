@@ -1,4 +1,4 @@
-import { Container, Paper, Stack } from '@mantine/core';
+import { Container, Paper } from '@mantine/core';
 
 import FeedbackForm from './FeedbackForm';
 

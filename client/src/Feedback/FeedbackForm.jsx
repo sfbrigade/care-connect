@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Stack, Text, Textarea, TextInput, Alert } from '@mantine/core';
-import { StatusCodes } from 'http-status-codes';
 
 import Api from '../Api';
 
