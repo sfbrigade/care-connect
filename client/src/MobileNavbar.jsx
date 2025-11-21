@@ -22,7 +22,7 @@ function MobileNavbar () {
             <FeedbackForm />
           </Paper>
         </Stack>
-        <Text size='sm'>version: 1.0.3</Text>
+        <Text size='sm'>version: v1.0.4</Text>
       </Stack>
     </Paper>
   );
