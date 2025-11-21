@@ -7,6 +7,7 @@ import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react
 import Api from '../Api';
 import HoldForm from './HoldForm';
 import Card from '../Components/Card';
+import Chip from '../Components/Chip';
 
 function Holds () {
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
@@ -100,6 +101,13 @@ function Holds () {
         <Button leftSection={<IconPlus />} onClick={openCreateModal}>
           Create Hold
         </Button>
+      </Group>
+
+      {/* Filter chips */}
+      <Group gap='sm' mb='md'>
+        <Chip active={true}>Current holds</Chip>
+        <Chip active={false}>This week</Chip>
+        <Chip active={false}>History</Chip>
       </Group>
 
       <Modal 
