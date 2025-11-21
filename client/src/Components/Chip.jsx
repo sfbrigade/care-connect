@@ -45,6 +45,7 @@ function Chip ({
   return (
     <Box
       component={onClick ? 'button' : 'div'}
+      type={onClick ? 'button' : undefined}
       onClick={onClick}
       style={styles}
       {...props}

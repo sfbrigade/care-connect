@@ -13,7 +13,7 @@ export default async function (fastify, opts) {
           notes: z.string().optional(),
         }),
         response: {
-          [StatusCodes.CREATED]: z.object({
+          [StatusCodes.CREATED]: z.array(z.object({
             id: z.string().uuid(),
             facilityId: z.string().uuid(),
             serviceTypeId: z.string().uuid(),
@@ -21,7 +21,7 @@ export default async function (fastify, opts) {
             expiresAt: z.string(),
             status: z.string(),
             createdAt: z.string(),
-          }),
+          })),
         },
       },
     },
@@ -88,33 +88,40 @@ export default async function (fastify, opts) {
         });
       }
 
-      // Create hold with 30 minute expiration
+      // Create multiple holds (one per bed) with 30 minute expiration
       const expiresAt = new Date(now.getTime() + 30 * 60 * 1000);
 
-      const hold = await fastify.prisma.bedHold.create({
-        data: {
-          facilityId,
-          serviceTypeId,
-          bedsRequested,
-          expiresAt,
-          status: 'ACTIVE',
-          createdById: userId,
-          notes: notes || null,
-        },
-      });
+      // Use a transaction to create all holds atomically
+      const holds = await fastify.prisma.$transaction(
+        Array.from({ length: bedsRequested }, () =>
+          fastify.prisma.bedHold.create({
+            data: {
+              facilityId,
+              serviceTypeId,
+              bedsRequested: 1, // Each hold is for 1 bed
+              expiresAt,
+              status: 'ACTIVE',
+              createdById: userId,
+              notes: notes || null,
+            },
+          })
+        )
+      );
 
       // Note: Holds do NOT affect reservedBeds - they only reduce available beds
       // reservedBeds represents beds actually reserved for admissions, not temporary holds
 
-      return reply.code(StatusCodes.CREATED).send({
-        id: hold.id,
-        facilityId: hold.facilityId,
-        serviceTypeId: hold.serviceTypeId,
-        bedsRequested: hold.bedsRequested,
-        expiresAt: hold.expiresAt.toISOString(),
-        status: hold.status,
-        createdAt: hold.createdAt.toISOString(),
-      });
+      return reply.code(StatusCodes.CREATED).send(
+        holds.map(hold => ({
+          id: hold.id,
+          facilityId: hold.facilityId,
+          serviceTypeId: hold.serviceTypeId,
+          bedsRequested: hold.bedsRequested,
+          expiresAt: hold.expiresAt.toISOString(),
+          status: hold.status,
+          createdAt: hold.createdAt.toISOString(),
+        }))
+      );
     });
 }
 

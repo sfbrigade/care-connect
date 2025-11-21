@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -7,9 +7,9 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import Api from '../Api';
 import Chip from '../Components/Chip';
 
-function HoldForm ({ onSuccess }) {
+function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeId }) {
   const navigate = useNavigate();
-  const [facilityId, setFacilityId] = useState('');
+  const [facilityId, setFacilityId] = useState(initialFacilityId || '');
   const [notes, setNotes] = useState('');
   const [bedsRequested, setBedsRequested] = useState(1);
 
@@ -25,10 +25,11 @@ function HoldForm ({ onSuccess }) {
     mutationFn: (data) => Api.lesc.holds.create(data),
     onSuccess: (data) => {
       onSuccess?.();
-      // Navigate to success screen
+      // Navigate to success screen with the first hold (or all holds)
       navigate('/lesc/success', {
         state: {
-          holdData: data.data,
+          holdData: Array.isArray(data.data) ? data.data[0] : data.data,
+          holdsCreated: Array.isArray(data.data) ? data.data.length : 1,
         },
       });
     },
@@ -51,6 +52,13 @@ function HoldForm ({ onSuccess }) {
         })
     : [];
 
+  // Auto-populate facility if there's only one available and no initialFacilityId is provided
+  useEffect(() => {
+    if (!initialFacilityId && facilities.length === 1 && !facilityId) {
+      setFacilityId(facilities[0].value);
+    }
+  }, [facilities, initialFacilityId, facilityId]);
+
   // Get the service type with most availability for the selected facility
   const getServiceTypeForFacility = (facId) => {
     if (!availability || !facId) return null;
@@ -64,15 +72,20 @@ function HoldForm ({ onSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const serviceInfo = getServiceTypeForFacility(facilityId);
     
-    if (!serviceInfo) {
-      return;
+    // Use initialServiceTypeId if provided, otherwise find the service type with most availability
+    let serviceTypeId = initialServiceTypeId;
+    if (!serviceTypeId) {
+      const serviceInfo = getServiceTypeForFacility(facilityId);
+      if (!serviceInfo) {
+        return;
+      }
+      serviceTypeId = serviceInfo.serviceTypeId;
     }
 
     createMutation.mutate({
       facilityId,
-      serviceTypeId: serviceInfo.serviceTypeId,
+      serviceTypeId: serviceTypeId,
       bedsRequested: bedsRequested,
       notes: notes || undefined,
     });
@@ -102,15 +115,34 @@ function HoldForm ({ onSuccess }) {
           </Text>
         </div>
 
-        <Select
-          label='Facility'
-          placeholder='Select facility'
-          data={facilities}
-          value={facilityId}
-          onChange={setFacilityId}
-          required
-          searchable
-        />
+        {!initialFacilityId && (
+          <Select
+            label='Facility'
+            placeholder='Select facility'
+            data={facilities}
+            value={facilityId}
+            onChange={setFacilityId}
+            required
+            searchable
+            comboboxProps={{ withinPortal: true }}
+            maxDropdownHeight={200}
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent mobile zoom on focus
+              },
+              dropdown: {
+                maxHeight: '200px',
+                overflowY: 'auto',
+              },
+            }}
+          />
+        )}
+        
+        {initialFacilityId && facilityId && availability && (
+          <Text size='sm' c='dimmed'>
+            Facility: {availability.find(item => item.facilityId === facilityId)?.facilityName || facilityId}
+          </Text>
+        )}
 
         <Stack gap='sm'>
           <Text
@@ -176,7 +208,7 @@ function HoldForm ({ onSuccess }) {
         </Text>
 
         <Group justify='flex-end' gap='sm'>
-          <Button variant='light' type='button' onClick={() => onSuccess?.()}>
+          <Button variant='light' type='button' onClick={() => onCancel?.() || onSuccess?.()}>
             Cancel
           </Button>
           <Button type='submit' loading={createMutation.isPending} disabled={!facilityId}>

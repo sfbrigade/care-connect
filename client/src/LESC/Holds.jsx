@@ -64,8 +64,37 @@ function Holds () {
     );
   }
 
+  // Format created date
+  const formatCreatedAt = (createdAt) => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMs = now.getTime() - created.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) {
+      return 'Just now';
+    } else if (diffMins < 60) {
+      return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      // Format as date
+      const month = created.toLocaleString('default', { month: 'short' });
+      const day = created.getDate();
+      const year = created.getFullYear();
+      const isCurrentYear = year === now.getFullYear();
+      return isCurrentYear ? `${month} ${day}` : `${month} ${day}, ${year}`;
+    }
+  };
+
   return (
-    <Container>
+    <Container size="sm" py="md" px="md">
       <Group justify='space-between' mb='md'>
         <Title order={2}>Active Bed Holds</Title>
         <Button leftSection={<IconPlus />} onClick={openCreateModal}>
@@ -73,7 +102,26 @@ function Holds () {
         </Button>
       </Group>
 
-      <Modal opened={createModalOpened} onClose={closeCreateModal} title='Create Bed Hold'>
+      <Modal 
+        opened={createModalOpened} 
+        onClose={closeCreateModal} 
+        title='Create Bed Hold'
+        size="auto"
+        centered
+        lockScroll
+        styles={{
+          content: {
+            borderRadius: '16px',
+            maxHeight: '90vh',
+            maxWidth: '100vw',
+          },
+          body: {
+            maxHeight: 'calc(90vh - 120px)',
+            overflowY: 'auto',
+            padding: '20px',
+          },
+        }}
+      >
         <HoldForm onSuccess={() => { closeCreateModal(); queryClient.invalidateQueries({ queryKey: ['lesc-holds'] }); queryClient.invalidateQueries({ queryKey: ['lesc-availability'] }); }} />
       </Modal>
 
@@ -84,36 +132,13 @@ function Holds () {
           {holds?.map((hold) => {
             const expiresAt = new Date(hold.expiresAt);
             const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
-            
-            // Format time remaining
-            const diffMs = expiresAt.getTime() - Date.now();
-            const diffMins = Math.floor(diffMs / 60000);
-            let timeRemaining;
-            if (diffMins < 0) {
-              timeRemaining = 'Expired';
-            } else if (diffMins < 60) {
-              timeRemaining = `${diffMins} mins`;
-            } else {
-              const hours = Math.floor(diffMins / 60);
-              const mins = diffMins % 60;
-              timeRemaining = `${hours}h ${mins}m`;
-            }
-            
-            // Format time until
-            const displayHours = expiresAt.getHours();
-            const displayMinutes = expiresAt.getMinutes();
-            const ampm = displayHours >= 12 ? 'AM' : 'AM';
-            const displayH = displayHours % 12 || 12;
-            const displayM = displayMinutes.toString().padStart(2, '0');
-            const timeUntil = `Until ${displayH}:${displayM} ${ampm}`;
 
             return (
               <Card
                 key={hold.id}
-                timeRemaining={timeRemaining}
-                timeUntil={timeUntil}
+                title={hold.facilityName}
+                subtitle={formatCreatedAt(hold.createdAt)}
                 badgeStatus={isExpiringSoon ? 'warning' : 'active'}
-                details={hold.notes || 'Details/Notes ????'}
                 actions={
                   <>
                     <Button

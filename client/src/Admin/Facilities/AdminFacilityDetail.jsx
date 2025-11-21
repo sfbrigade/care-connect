@@ -63,6 +63,11 @@ function AdminFacilityDetail () {
     },
   });
 
+  // For new facility creation - single service type
+  const [serviceTypeId, setServiceTypeId] = useState('');
+  const [availableBeds, setAvailableBeds] = useState(0);
+  const [reservedBeds, setReservedBeds] = useState(0);
+
 
   useEffect(() => {
     if (facility && !isNew) {
@@ -138,12 +143,6 @@ function AdminFacilityDetail () {
     },
   });
 
-  // For new facility creation - single service type
-  const [serviceTypeId, setServiceTypeId] = useState('');
-  const [availableBeds, setAvailableBeds] = useState(0);
-  const [reservedBeds, setReservedBeds] = useState(0);
-  
-  // For editing existing facilities
   const [newServiceTypeId, setNewServiceTypeId] = useState('');
   const [newServiceAvailableBeds, setNewServiceAvailableBeds] = useState(0);
   const [newServiceReservedBeds, setNewServiceReservedBeds] = useState(0);
@@ -166,7 +165,7 @@ function AdminFacilityDetail () {
     }
   };
 
-  // Filter out service types that are already added (for editing only)
+  // Filter out service types that are already added
   const availableServiceTypesToAdd = availableServiceTypes?.filter(
     st => !facility?.services?.some(s => s.serviceTypeId === st.id)
   ) || [];
@@ -212,11 +211,11 @@ function AdminFacilityDetail () {
             ) : null}
 
             <TextInput
-              label='Name'
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-            />
+                label='Name'
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
             <Textarea
               label='Description'
               value={formData.description}

@@ -23,7 +23,7 @@ function HoldSuccess () {
   const expiresTime = `${displayH}:${displayM} ${ampm}`;
 
   return (
-    <Container>
+    <Container size="sm" py="md" px="md">
       <Stack gap='md' align='center' style={{ paddingTop: '40px' }}>
         <div
           style={{
@@ -41,7 +41,7 @@ function HoldSuccess () {
           <Text size='xl'>✓</Text>
         </div>
 
-        <Stack gap='md' style={{ width: '335px', textAlign: 'center' }}>
+        <Stack gap='md' style={{ maxWidth: '335px', width: '100%', textAlign: 'center' }}>
           <Text
             style={{
               fontSize: '16px',
