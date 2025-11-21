@@ -11,13 +11,11 @@ const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
 const DISTRICT_DATA_PATH = '/static-data/street_team_coverage.geojson';
 
-// Extract path data from SVG strings
+// Extract path data from SVG strings (works in both Node.js and browser)
 function extractPathData (svgString) {
-  // eslint-disable-next-line no-undef
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const path = doc.querySelector('path');
-  return path?.getAttribute('d') || '';
+  // Use regex to extract the 'd' attribute from the path element
+  const pathMatch = svgString.match(/<path[^>]*\sd="([^"]+)"/);
+  return pathMatch ? pathMatch[1] : '';
 }
 
 const STETHOSCOPE_PATH = extractPathData(stethoscopeSvg);
