@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Card, Text, Button, Stack, Group, Loader, Alert, Badge, Modal, TextInput, NumberInput } from '@mantine/core';
+import { Container, Title, Text, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
 
 import Api from '../Api';
 import HoldForm from './HoldForm';
+import Card from '../Components/Card';
 
 function Holds () {
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
@@ -82,65 +83,61 @@ function Holds () {
         <Stack gap='md'>
           {holds?.map((hold) => {
             const expiresAt = new Date(hold.expiresAt);
-            const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000; // Less than 15 minutes
+            const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
+            
+            // Format time remaining
+            const diffMs = expiresAt.getTime() - Date.now();
+            const diffMins = Math.floor(diffMs / 60000);
+            let timeRemaining;
+            if (diffMins < 0) {
+              timeRemaining = 'Expired';
+            } else if (diffMins < 60) {
+              timeRemaining = `${diffMins} mins`;
+            } else {
+              const hours = Math.floor(diffMins / 60);
+              const mins = diffMins % 60;
+              timeRemaining = `${hours}h ${mins}m`;
+            }
+            
+            // Format time until
+            const displayHours = expiresAt.getHours();
+            const displayMinutes = expiresAt.getMinutes();
+            const ampm = displayHours >= 12 ? 'AM' : 'AM';
+            const displayH = displayHours % 12 || 12;
+            const displayM = displayMinutes.toString().padStart(2, '0');
+            const timeUntil = `Until ${displayH}:${displayM} ${ampm}`;
 
             return (
-              <Card key={hold.id} shadow='sm' padding='lg' radius='md' withBorder>
-                <Group justify='space-between' mb='xs'>
-                  <div>
-                    <Title order={4}>{hold.facilityName}</Title>
-                    <Text size='sm' c='dimmed'>{hold.serviceTypeName}</Text>
-                  </div>
-                  <Badge color={isExpiringSoon ? 'yellow' : 'blue'} size='lg'>
-                    {hold.bedsRequested} {hold.bedsRequested === 1 ? 'Bed' : 'Beds'}
-                  </Badge>
-                </Group>
-                <Group gap='xl' mb='md'>
-                  <div>
-                    <Text size='xs' c='dimmed'>Expires</Text>
-                    <Text fw={700}>
-                      {(() => {
-                        const diffMs = expiresAt.getTime() - Date.now();
-                        const diffMins = Math.floor(diffMs / 60000);
-                        if (diffMins < 0) return 'Expired';
-                        if (diffMins < 60) return `in ${diffMins} min`;
-                        const hours = Math.floor(diffMins / 60);
-                        const mins = diffMins % 60;
-                        return `in ${hours}h ${mins}m`;
-                      })()}
-                    </Text>
-                  </div>
-                  <div>
-                    <Text size='xs' c='dimmed'>Status</Text>
-                    <Text fw={700}>{hold.status}</Text>
-                  </div>
-                  {hold.notes && (
-                    <div>
-                      <Text size='xs' c='dimmed'>Notes</Text>
-                      <Text size='sm'>{hold.notes}</Text>
-                    </div>
-                  )}
-                </Group>
-                <Group>
-                  <Button
-                    leftSection={<IconClock />}
-                    variant='light'
-                    onClick={() => handleExtend(hold.id)}
-                    loading={extendMutation.isPending}
-                  >
-                    Extend 30 min
-                  </Button>
-                  <Button
-                    leftSection={<IconX />}
-                    variant='light'
-                    color='red'
-                    onClick={() => handleCancel(hold.id)}
-                    loading={cancelMutation.isPending}
-                  >
-                    Cancel
-                  </Button>
-                </Group>
-              </Card>
+              <Card
+                key={hold.id}
+                timeRemaining={timeRemaining}
+                timeUntil={timeUntil}
+                badgeStatus={isExpiringSoon ? 'warning' : 'active'}
+                details={hold.notes || 'Details/Notes ????'}
+                actions={
+                  <>
+                    <Button
+                      leftSection={<IconClock size={18} />}
+                      variant='light'
+                      size='sm'
+                      onClick={() => handleExtend(hold.id)}
+                      loading={extendMutation.isPending}
+                    >
+                      Extend 30 min
+                    </Button>
+                    <Button
+                      leftSection={<IconX size={18} />}
+                      variant='light'
+                      color='red'
+                      size='sm'
+                      onClick={() => handleCancel(hold.id)}
+                      loading={cancelMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                }
+              />
             );
           })}
         </Stack>

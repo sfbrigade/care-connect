@@ -13,12 +13,7 @@ async function main () {
       code: 'LESC',
       name: 'Law Enforcement Sobering Center',
       description: 'Law Enforcement Sobering Center service type',
-    },
-    {
-      code: 'SOBERING',
-      name: 'Sobering Center',
-      description: 'Sobering Center service type',
-    },
+    }
   ];
 
   for (const st of serviceTypes) {

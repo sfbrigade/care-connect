@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Stack, Select, Textarea, Button, Alert } from '@mantine/core';
+import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
+import { useNavigate } from 'react-router';
 import { IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '../Api';
+import Chip from '../Components/Chip';
 
 function HoldForm ({ onSuccess }) {
+  const navigate = useNavigate();
   const [facilityId, setFacilityId] = useState('');
   const [notes, setNotes] = useState('');
+  const [bedsRequested, setBedsRequested] = useState(1);
 
   const { data: availability } = useQuery({
     queryKey: ['lesc-availability'],
@@ -19,8 +23,14 @@ function HoldForm ({ onSuccess }) {
 
   const createMutation = useMutation({
     mutationFn: (data) => Api.lesc.holds.create(data),
-    onSuccess: () => {
-      onSuccess();
+    onSuccess: (data) => {
+      onSuccess?.();
+      // Navigate to success screen
+      navigate('/lesc/success', {
+        state: {
+          holdData: data.data,
+        },
+      });
     },
   });
 
@@ -63,19 +73,34 @@ function HoldForm ({ onSuccess }) {
     createMutation.mutate({
       facilityId,
       serviceTypeId: serviceInfo.serviceTypeId,
-      bedsRequested: 1, // Default to 1 bed
+      bedsRequested: bedsRequested,
       notes: notes || undefined,
     });
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <Stack>
+      <Stack gap='xl'>
         {createMutation.error && (
           <Alert icon={<IconAlertCircle />} title='Error' color='red'>
             {createMutation.error.response?.data?.error || 'Failed to create hold'}
           </Alert>
         )}
+
+        <div>
+          <Text
+            style={{
+              fontSize: '18px',
+              lineHeight: '28px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#000000',
+              marginBottom: '8px',
+            }}
+          >
+            Hold Details
+          </Text>
+        </div>
 
         <Select
           label='Facility'
@@ -87,17 +112,77 @@ function HoldForm ({ onSuccess }) {
           searchable
         />
 
-        <Textarea
-          label='Notes (optional)'
-          placeholder='Additional notes'
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-        />
+        <Stack gap='sm'>
+          <Text
+            style={{
+              fontSize: '18px',
+              lineHeight: '28px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#000000',
+            }}
+          >
+            For how many people?
+          </Text>
+          <Group gap='sm'>
+            {[1, 2, 3, 4, 5].map((num) => (
+              <Chip
+                key={num}
+                active={bedsRequested === num}
+                onClick={() => setBedsRequested(num)}
+              >
+                {num}
+              </Chip>
+            ))}
+          </Group>
+        </Stack>
 
-        <Button type='submit' loading={createMutation.isPending} disabled={!facilityId}>
-          Create Hold
-        </Button>
+        <div>
+          <Text
+            style={{
+              fontSize: '18px',
+              lineHeight: '28px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#000000',
+              marginBottom: '8px',
+            }}
+          >
+            Notes (optional)
+          </Text>
+          <Textarea
+            placeholder='2 individuals sobering, no medical clearance needed'
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+            styles={{
+              input: {
+                borderRadius: '16px',
+              },
+            }}
+          />
+        </div>
+
+        <Text
+          style={{
+            fontSize: '14px',
+            lineHeight: '20px',
+            fontFamily: 'Roboto, sans-serif',
+            fontWeight: 400,
+            color: '#868e96',
+          }}
+        >
+          Holds will expire automatically after selected time unless extended.
+        </Text>
+
+        <Group justify='flex-end' gap='sm'>
+          <Button variant='light' type='button' onClick={() => onSuccess?.()}>
+            Cancel
+          </Button>
+          <Button type='submit' loading={createMutation.isPending} disabled={!facilityId}>
+            Create Hold
+          </Button>
+        </Group>
       </Stack>
     </form>
   );

@@ -55,7 +55,7 @@ function AdminFacilityDetail () {
     enabled: !isNew,
   });
 
-  const { data: availableServiceTypes } = useQuery({
+  const { data: availableServiceTypes, isLoading: isLoadingServiceTypes, error: serviceTypesError } = useQuery({
     queryKey: ['service-types'],
     queryFn: async () => {
       const response = await Api.serviceTypes.list();
@@ -86,9 +86,21 @@ function AdminFacilityDetail () {
   }, [facility, isNew]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       if (isNew) {
-        return Api.admin.facilities.create(data);
+        const response = await Api.admin.facilities.create(data);
+        const facilityId = response.data.id;
+        
+        // Add service type if provided
+        if (serviceTypeId) {
+          await Api.admin.facilities.addService(facilityId, {
+            serviceTypeId,
+            availableBeds,
+            reservedBeds,
+          });
+        }
+        
+        return response;
       }
       return Api.admin.facilities.update(id, data);
     },
@@ -126,6 +138,12 @@ function AdminFacilityDetail () {
     },
   });
 
+  // For new facility creation - single service type
+  const [serviceTypeId, setServiceTypeId] = useState('');
+  const [availableBeds, setAvailableBeds] = useState(0);
+  const [reservedBeds, setReservedBeds] = useState(0);
+  
+  // For editing existing facilities
   const [newServiceTypeId, setNewServiceTypeId] = useState('');
   const [newServiceAvailableBeds, setNewServiceAvailableBeds] = useState(0);
   const [newServiceReservedBeds, setNewServiceReservedBeds] = useState(0);
@@ -148,7 +166,7 @@ function AdminFacilityDetail () {
     }
   };
 
-  // Filter out service types that are already added
+  // Filter out service types that are already added (for editing only)
   const availableServiceTypesToAdd = availableServiceTypes?.filter(
     st => !facility?.services?.some(s => s.serviceTypeId === st.id)
   ) || [];
@@ -176,128 +194,260 @@ function AdminFacilityDetail () {
       <Title order={2} mb='md'>{isNew ? 'New Facility' : facility?.name}</Title>
 
       <form onSubmit={handleSubmit}>
-        <Tabs defaultValue='details'>
-          <Tabs.List>
-            <Tabs.Tab value='details'>Details</Tabs.Tab>
-            <Tabs.Tab value='services'>Services & Beds</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value='details' pt='md'>
-            <Stack>
-              {!isNew && facility?.services && facility.services.length > 0 && (
-                <div>
-                  <Text size='sm' fw={500} mb='xs'>Service Types</Text>
-                  <Group gap='xs'>
-                    {facility.services.map((service) => (
-                      <Badge key={service.serviceTypeId} size='lg' variant='light'>
-                        {service.serviceTypeName} ({service.serviceTypeCode})
-                      </Badge>
-                    ))}
-                  </Group>
-                </div>
-              )}
-
-              {!isNew && (!facility?.services || facility.services.length === 0) && (
-                <div>
-                  <Text size='sm' fw={500} mb='xs'>Service Types</Text>
-                  <Text size='sm' c='dimmed'>No service types configured. Add them in the Services & Beds tab.</Text>
-                </div>
-              )}
-
-              <TextInput
-                label='Name'
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-              <Textarea
-                label='Description'
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-              <Group grow>
-                <TextInput
-                  label='Phone'
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-                <TextInput
-                  label='Email'
-                  type='email'
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </Group>
-              <TextInput
-                label='Website'
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              />
-              <TextInput
-                label='Address Line 1'
-                value={formData.addressLine1}
-                onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
-              />
-              <TextInput
-                label='Address Line 2'
-                value={formData.addressLine2}
-                onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
-              />
-              <Group grow>
-                <TextInput
-                  label='City'
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                />
-                <TextInput
-                  label='State'
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                />
-                <TextInput
-                  label='Postal Code'
-                  value={formData.postalCode}
-                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                />
-              </Group>
-              <TextInput
-                label='Neighborhood'
-                value={formData.neighborhood}
-                onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
-              />
-              <Group grow>
-                <NumberInput
-                  label='Latitude'
-                  value={formData.latitude ? parseFloat(formData.latitude) : null}
-                  onChange={(value) => setFormData({ ...formData, latitude: value?.toString() || '' })}
-                  decimalScale={6}
-                />
-                <NumberInput
-                  label='Longitude'
-                  value={formData.longitude ? parseFloat(formData.longitude) : null}
-                  onChange={(value) => setFormData({ ...formData, longitude: value?.toString() || '' })}
-                  decimalScale={6}
-                />
-              </Group>
-
-              <Group mt='md'>
-                <Button type='submit' leftSection={<IconDeviceFloppy />} loading={updateMutation.isPending}>
-                  {isNew ? 'Create' : 'Save'}
-                </Button>
-                <Button variant='light' onClick={() => navigate('/admin/facilities')}>
-                  Cancel
-                </Button>
-              </Group>
-            </Stack>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='services' pt='md'>
-            {isNew ? (
-              <Alert icon={<IconAlertCircle />} title='Create Facility First'>
-                Please create the facility first, then you can add service types and configure bed counts.
+        {isNew ? (
+          // Single page for new facility creation
+          <Stack>
+            {isLoadingServiceTypes ? (
+              <Alert icon={<IconAlertCircle />} color='yellow' title='Loading'>
+                Loading service types...
               </Alert>
-            ) : (
+            ) : serviceTypesError ? (
+              <Alert icon={<IconAlertCircle />} color='red' title='Error'>
+                Failed to load service types. Please refresh the page.
+              </Alert>
+            ) : availableServiceTypes && availableServiceTypes.length === 0 ? (
+              <Alert icon={<IconAlertCircle />} color='yellow' title='No Service Types'>
+                No service types found. Please seed service types first by running: <code>node server/bin/seed-service-types.js</code>
+              </Alert>
+            ) : null}
+
+            <TextInput
+              label='Name'
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+            <Textarea
+              label='Description'
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+            />
+            
+            {/* Service Type and Beds - after description, before phone/email */}
+            {availableServiceTypes && availableServiceTypes.length > 0 && (
+              <>
+                <Select
+                  label='Service Type'
+                  placeholder='Select a service type (e.g., LESC)'
+                  data={availableServiceTypes.map(st => ({
+                    value: st.id,
+                    label: `${st.name} (${st.code})`,
+                  }))}
+                  value={serviceTypeId}
+                  onChange={setServiceTypeId}
+                  searchable
+                />
+                <Group grow>
+                  <NumberInput
+                    label='Available Beds'
+                    value={availableBeds}
+                    onChange={(value) => setAvailableBeds(value ?? 0)}
+                    min={0}
+                  />
+                  <NumberInput
+                    label='Reserved Beds'
+                    value={reservedBeds}
+                    onChange={(value) => setReservedBeds(value ?? 0)}
+                    min={0}
+                  />
+                </Group>
+              </>
+            )}
+            
+            <Group grow>
+              <TextInput
+                label='Phone'
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              <TextInput
+                label='Email'
+                type='email'
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </Group>
+            <TextInput
+              label='Website'
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+            />
+            <TextInput
+              label='Address Line 1'
+              value={formData.addressLine1}
+              onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+            />
+            <TextInput
+              label='Address Line 2'
+              value={formData.addressLine2}
+              onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+            />
+            <Group grow>
+              <TextInput
+                label='City'
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              />
+              <TextInput
+                label='State'
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              />
+              <TextInput
+                label='Postal Code'
+                value={formData.postalCode}
+                onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+              />
+            </Group>
+            <TextInput
+              label='Neighborhood'
+              value={formData.neighborhood}
+              onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+            />
+            <Group grow>
+              <NumberInput
+                label='Latitude'
+                value={formData.latitude ? parseFloat(formData.latitude) : null}
+                onChange={(value) => setFormData({ ...formData, latitude: value?.toString() || '' })}
+                decimalScale={6}
+              />
+              <NumberInput
+                label='Longitude'
+                value={formData.longitude ? parseFloat(formData.longitude) : null}
+                onChange={(value) => setFormData({ ...formData, longitude: value?.toString() || '' })}
+                decimalScale={6}
+              />
+            </Group>
+
+            <Group mt='md'>
+              <Button type='submit' leftSection={<IconDeviceFloppy />} loading={updateMutation.isPending}>
+                Create
+              </Button>
+              <Button variant='light' onClick={() => navigate('/admin/facilities')}>
+                Cancel
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
+          // Tabs for editing existing facility
+          <Tabs defaultValue='details'>
+            <Tabs.List>
+              <Tabs.Tab value='details'>Details</Tabs.Tab>
+              <Tabs.Tab value='services'>Services & Beds</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value='details' pt='md'>
+              <Stack>
+                {facility?.services && facility.services.length > 0 && (
+                  <div>
+                    <Text size='sm' fw={500} mb='xs'>Service Types</Text>
+                    <Group gap='xs'>
+                      {facility.services.map((service) => (
+                        <Badge key={service.serviceTypeId} size='lg' variant='light'>
+                          {service.serviceTypeName} ({service.serviceTypeCode})
+                        </Badge>
+                      ))}
+                    </Group>
+                  </div>
+                )}
+
+                {(!facility?.services || facility.services.length === 0) && (
+                  <div>
+                    <Text size='sm' fw={500} mb='xs'>Service Types</Text>
+                    <Text size='sm' c='dimmed'>No service types configured. Add them in the Services & Beds tab.</Text>
+                  </div>
+                )}
+
+                <TextInput
+                  label='Name'
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+                <Textarea
+                  label='Description'
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                />
+                <Group grow>
+                  <TextInput
+                    label='Phone'
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                  <TextInput
+                    label='Email'
+                    type='email'
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </Group>
+                <TextInput
+                  label='Website'
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                />
+                <TextInput
+                  label='Address Line 1'
+                  value={formData.addressLine1}
+                  onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+                />
+                <TextInput
+                  label='Address Line 2'
+                  value={formData.addressLine2}
+                  onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+                />
+                <Group grow>
+                  <TextInput
+                    label='City'
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  />
+                  <TextInput
+                    label='State'
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  />
+                  <TextInput
+                    label='Postal Code'
+                    value={formData.postalCode}
+                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                  />
+                </Group>
+                <TextInput
+                  label='Neighborhood'
+                  value={formData.neighborhood}
+                  onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                />
+                <Group grow>
+                  <NumberInput
+                    label='Latitude'
+                    value={formData.latitude ? parseFloat(formData.latitude) : null}
+                    onChange={(value) => setFormData({ ...formData, latitude: value?.toString() || '' })}
+                    decimalScale={6}
+                  />
+                  <NumberInput
+                    label='Longitude'
+                    value={formData.longitude ? parseFloat(formData.longitude) : null}
+                    onChange={(value) => setFormData({ ...formData, longitude: value?.toString() || '' })}
+                    decimalScale={6}
+                  />
+                </Group>
+
+                <Group mt='md'>
+                  <Button type='submit' leftSection={<IconDeviceFloppy />} loading={updateMutation.isPending}>
+                    Save
+                  </Button>
+                  <Button variant='light' onClick={() => navigate('/admin/facilities')}>
+                    Cancel
+                  </Button>
+                </Group>
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='services' pt='md'>
               <Stack>
                 {facility?.services?.map((service) => (
                   <Card key={service.serviceTypeId} padding='md' withBorder>
@@ -397,9 +547,9 @@ function AdminFacilityDetail () {
                   </Alert>
                 )}
               </Stack>
-            )}
-          </Tabs.Panel>
-        </Tabs>
+            </Tabs.Panel>
+          </Tabs>
+        )}
       </form>
     </Container>
   );

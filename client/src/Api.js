@@ -172,6 +172,22 @@ const Api = {
         return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);
       },
     },
+    intake: {
+      create (data) {
+        return instance.post('/api/lesc/intake', data).catch(handleError);
+      },
+      list () {
+        return instance.get('/api/lesc/intake').catch(handleError);
+      },
+      get (id) {
+        return instance.get(`/api/lesc/intake/${id}`).catch(handleError);
+      },
+    },
+    checkin: {
+      create (holdId, data) {
+        return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
+      },
+    },
   },
   admin: {
     facilities: {

@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Card, Text, Badge, Stack, Group, Loader, Alert, Button, Modal, Textarea } from '@mantine/core';
+import { Container, Title, Text, Stack, Group, Loader, Alert, Button, Modal, Textarea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { useNavigate } from 'react-router';
 import { IconAlertCircle, IconLock, IconX, IconClock } from '@tabler/icons-react';
 
 import Api from '../Api';
+import LESCCard from '../Components/LESCCard';
+import Chip from '../Components/Chip';
+import Card from '../Components/Card';
+import StatusBadge from '../Components/StatusBadge';
 
 function Availability () {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [processingCard, setProcessingCard] = useState(null);
   const [errorCard, setErrorCard] = useState(null);
@@ -31,20 +37,26 @@ function Availability () {
   });
 
   const createHoldMutation = useMutation({
-    mutationFn: ({ facilityId, serviceTypeId, notes }) => 
+    mutationFn: ({ facilityId, serviceTypeId, notes, bedsRequested }) => 
       Api.lesc.holds.create({
         facilityId,
         serviceTypeId,
-        bedsRequested: 1,
+        bedsRequested: bedsRequested || 1,
         notes: notes || undefined,
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
       setProcessingCard(null);
       setErrorCard(null);
       setNotes('');
       closeModal();
+      // Navigate to success screen
+      navigate('/lesc/success', {
+        state: {
+          holdData: data.data,
+        },
+      });
     },
     onError: () => {
       setProcessingCard(null);
@@ -83,6 +95,7 @@ function Availability () {
         facilityId: selectedCard.facilityId, 
         serviceTypeId: selectedCard.serviceTypeId,
         notes,
+        bedsRequested: 1, // Default to 1 for modal (bed selector is in HoldForm)
       },
       {
         onError: () => {
@@ -136,6 +149,17 @@ function Availability () {
     return `${hours}h ${mins}m`;
   };
 
+  // Format last updated time
+  const formatLastUpdated = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    return `${displayHours}:${displayMinutes} ${ampm}`;
+  };
+
   if (isLoading) {
     return (
       <Container>
@@ -157,88 +181,141 @@ function Availability () {
   if (!data || data.length === 0) {
     return (
       <Container>
-        <Title order={2} mb='md'>LESC Bed Availability</Title>
-        <Alert>No LESC facilities found. Please ensure facilities are configured with LESC or SOBERING service types.</Alert>
+        <Stack gap='md'>
+          <LESCCard
+            facilityName='LESC'
+            address='No facilities available'
+            bedCount={0}
+            status='closed'
+            intakeHours='24/7'
+            lastUpdated={formatLastUpdated()}
+          />
+          <Alert>No LESC facilities found. Please ensure facilities are configured with LESC or SOBERING service types.</Alert>
+        </Stack>
       </Container>
     );
   }
 
+  // Get first facility for LESCCard (or aggregate if multiple)
+  const primaryFacility = data && data.length > 0 ? data[0] : null;
+  const totalBeds = data?.reduce((sum, item) => sum + (item.totalBeds || 0), 0) || 0;
+  const totalAvailable = data?.reduce((sum, item) => sum + item.calculatedAvailable, 0) || 0;
+
   return (
     <Container>
-      <Title order={2} mb='md'>LESC Bed Availability</Title>
       <Stack gap='md'>
-        {data.map((item) => (
-          <Card key={`${item.facilityId}-${item.serviceTypeId}`} shadow='sm' padding='lg' radius='md' withBorder>
-            <Group justify='space-between' mb='xs'>
-              <Title order={3}>{item.facilityName}</Title>
-              <Badge color={item.calculatedAvailable > 0 ? 'green' : 'red'} size='lg'>
-                {item.calculatedAvailable} Available
-              </Badge>
-            </Group>
-            <Text size='sm' c='dimmed' mb='md'>
-              {item.serviceTypeName}
-            </Text>
-            <Group gap='xl'>
-              <div>
-                <Text size='xs' c='dimmed'>Total Beds</Text>
-                <Text fw={700}>{item.totalBeds ?? 'N/A'}</Text>
-              </div>
-              <div>
-                <Text size='xs' c='dimmed'>Available</Text>
-                <Text fw={700}>{item.availableBeds ?? 'N/A'}</Text>
-              </div>
-              <div>
-                <Text size='xs' c='dimmed'>Reserved</Text>
-                <Text fw={700}>{item.reservedBeds ?? 'N/A'}</Text>
-              </div>
-              <div>
-                <Text size='xs' c='dimmed'>Active Holds</Text>
-                <Text fw={700}>{item.activeHolds}</Text>
-              </div>
-            </Group>
-            <Group mt='md' justify='flex-end'>
-              {getHoldsForCard(item.facilityId, item.serviceTypeId).map((hold) => (
-                <Group key={hold.id} gap='xs'>
-                  <Button
-                    leftSection={<IconClock size={18} />}
-                    onClick={() => handleExtendHold(hold.id)}
-                    loading={extendHoldMutation.isPending}
-                    variant='light'
-                    size='sm'
-                  >
-                    Extend 30 min
-                  </Button>
-                  <Button
-                    leftSection={<IconX size={18} />}
-                    onClick={() => handleCancelHold(hold.id)}
-                    loading={cancelHoldMutation.isPending}
-                    variant='light'
-                    color='red'
-                    size='sm'
-                  >
-                    Cancel ({formatRemainingTime(hold.expiresAt)})
-                  </Button>
-                </Group>
-              ))}
-              <Button
-                leftSection={<IconLock size={18} />}
-                onClick={() => handleHoldClick(item)}
-                disabled={item.calculatedAvailable <= 0}
-                variant='light'
-              >
-                Hold
-              </Button>
-            </Group>
-          </Card>
-        ))}
+        {/* LESCCard at top */}
+        {primaryFacility && (
+          <LESCCard
+            facilityName={primaryFacility.facilityName}
+            address={primaryFacility.facilityName} // Using facility name as placeholder for address
+            bedCount={totalBeds || totalAvailable}
+            status={totalAvailable > 0 ? 'open' : 'closed'}
+            intakeHours='24/7'
+            lastUpdated={formatLastUpdated()}
+          />
+        )}
+        
+        {/* Filter chips */}
+        <Group gap='sm'>
+          <Chip active={true}>Current holds</Chip>
+          <Chip active={false}>This week</Chip>
+          <Chip active={false}>History</Chip>
+        </Group>
+        
+        {/* Active holds cards */}
+        {holds && holds.length > 0 && (
+          <Stack gap='md'>
+            {holds
+              .filter(hold => {
+                const expiresAt = new Date(hold.expiresAt);
+                return expiresAt > new Date() && hold.status !== 'EXPIRED' && hold.status !== 'CANCELLED';
+              })
+              .map((hold) => {
+                const expiresAt = new Date(hold.expiresAt);
+                const diffMs = expiresAt.getTime() - Date.now();
+                const diffMins = Math.floor(diffMs / 60000);
+                const hours = Math.floor(diffMins / 60);
+                const mins = diffMins % 60;
+                const timeRemaining = diffMins < 60 ? `${diffMins}m` : `${hours}h ${mins}m`;
+                const displayHours = expiresAt.getHours();
+                const displayMinutes = expiresAt.getMinutes();
+                const ampm = displayHours >= 12 ? 'PM' : 'AM';
+                const displayH = displayHours % 12 || 12;
+                const displayM = displayMinutes.toString().padStart(2, '0');
+                const timeUntil = `Until ${displayH}:${displayM} ${ampm}`;
+                
+                return (
+                  <Card
+                    key={hold.id}
+                    timeRemaining={timeRemaining}
+                    timeUntil={timeUntil}
+                    badgeStatus='active'
+                    details={hold.notes || 'Details/Notes ????'}
+                    actions={
+                      <>
+                        <Button
+                          leftSection={<IconClock size={18} />}
+                          onClick={() => handleExtendHold(hold.id)}
+                          loading={extendHoldMutation.isPending}
+                          variant='light'
+                          size='sm'
+                        >
+                          Extend 30 min
+                        </Button>
+                        <Button
+                          leftSection={<IconX size={18} />}
+                          onClick={() => handleCancelHold(hold.id)}
+                          loading={cancelHoldMutation.isPending}
+                          variant='light'
+                          color='red'
+                          size='sm'
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    }
+                  />
+                );
+              })}
+          </Stack>
+        )}
+        
+        {/* Facility availability cards */}
+        <Stack gap='md'>
+          {data.map((item) => (
+            <Card
+              key={`${item.facilityId}-${item.serviceTypeId}`}
+              title={item.facilityName}
+              subtitle={item.serviceTypeName}
+              badgeStatus={item.calculatedAvailable > 0 ? 'open' : 'expired'}
+              details={`${item.calculatedAvailable} Available`}
+              actions={
+                <Button
+                  leftSection={<IconLock size={18} />}
+                  onClick={() => handleHoldClick(item)}
+                  disabled={item.calculatedAvailable <= 0}
+                  variant='light'
+                >
+                  Hold
+                </Button>
+              }
+            />
+          ))}
+        </Stack>
       </Stack>
 
       <Modal
         opened={modalOpened}
         onClose={closeModal}
         title={selectedCard ? `Create Hold - ${selectedCard.facilityName}` : 'Create Hold'}
+        styles={{
+          content: {
+            borderRadius: '16px',
+          },
+        }}
       >
-        <Stack>
+        <Stack gap='md'>
           {selectedCard && (
             <Text size='sm' c='dimmed'>
               Service Type: {selectedCard.serviceTypeName}
@@ -250,13 +327,18 @@ function Availability () {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
+            styles={{
+              input: {
+                borderRadius: '16px',
+              },
+            }}
           />
           {errorCard && selectedCard && errorCard === `${selectedCard.facilityId}-${selectedCard.serviceTypeId}` && createHoldMutation.error?.response?.data?.error && (
             <Alert icon={<IconAlertCircle />} title='Error' color='red'>
               {createHoldMutation.error.response.data.error}
             </Alert>
           )}
-          <Group justify='flex-end' mt='md'>
+          <Group justify='flex-end' mt='md' gap='sm'>
             <Button variant='light' onClick={closeModal}>
               Cancel
             </Button>
