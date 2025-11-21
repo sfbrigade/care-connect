@@ -24,7 +24,7 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { message, userEmail } = request.body;
       const userAgent = request.headers['user-agent'] ?? null;
-      
+
       const data = await fastify.prisma.feedback.create({
         data: {
           message,
@@ -101,4 +101,3 @@ export default async function (fastify, opts) {
       });
     });
 }
-

@@ -2,21 +2,24 @@ import stethoscopeSvg from '../assets/icons/stethoscope.svg?raw';
 import healthRecognitionSvg from '../assets/icons/health-recognition.svg?raw';
 import nurseSvg from '../assets/icons/nurse.svg?raw';
 
-// Parse SVG strings to extract viewBox and path attributes
+// Parse SVG strings to extract viewBox and path attributes (works in both Node.js and browser)
 function parseSvg (svgString) {
-  // eslint-disable-next-line no-undef
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, 'image/svg+xml');
-  const svg = doc.querySelector('svg');
-  const path = doc.querySelector('path');
+  const svgMatch = svgString.match(/<svg[^>]*\sviewBox="([^"]+)"/);
+  const pathMatch = svgString.match(/<path[^>]*\sd="([^"]+)"/);
+  const fillRuleMatch = svgString.match(/fill-rule="([^"]+)"/);
+  const clipRuleMatch = svgString.match(/clip-rule="([^"]+)"/);
+  const strokeWidthMatch = svgString.match(/stroke-width="([^"]+)"/);
+  const strokeLinecapMatch = svgString.match(/stroke-linecap="([^"]+)"/);
+  const strokeLinejoinMatch = svgString.match(/stroke-linejoin="([^"]+)"/);
+
   return {
-    viewBox: svg?.getAttribute('viewBox') || '',
-    d: path?.getAttribute('d') || '',
-    fillRule: path?.getAttribute('fill-rule') || null,
-    clipRule: path?.getAttribute('clip-rule') || null,
-    strokeWidth: path?.getAttribute('stroke-width') || null,
-    strokeLinecap: path?.getAttribute('stroke-linecap') || null,
-    strokeLinejoin: path?.getAttribute('stroke-linejoin') || null,
+    viewBox: svgMatch ? svgMatch[1] : '',
+    d: pathMatch ? pathMatch[1] : '',
+    fillRule: fillRuleMatch ? fillRuleMatch[1] : null,
+    clipRule: clipRuleMatch ? clipRuleMatch[1] : null,
+    strokeWidth: strokeWidthMatch ? strokeWidthMatch[1] : null,
+    strokeLinecap: strokeLinecapMatch ? strokeLinecapMatch[1] : null,
+    strokeLinejoin: strokeLinejoinMatch ? strokeLinejoinMatch[1] : null,
   };
 }
 
@@ -26,14 +29,14 @@ const nurseData = parseSvg(nurseSvg);
 
 const StethoscopeIcon = ({ color = 'white', size = 24 }) => (
   <svg
-    preserveAspectRatio="none"
+    preserveAspectRatio='none'
     width={size}
     height={size}
-    overflow="visible"
+    overflow='visible'
     style={{ display: 'block', color }}
     viewBox={stethoscopeData.viewBox}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
   >
     <path
       d={stethoscopeData.d}
@@ -47,14 +50,14 @@ const StethoscopeIcon = ({ color = 'white', size = 24 }) => (
 
 const HealthRecognitionIcon = ({ color = 'white', size = 24 }) => (
   <svg
-    preserveAspectRatio="none"
+    preserveAspectRatio='none'
     width={size}
     height={size}
-    overflow="visible"
+    overflow='visible'
     style={{ display: 'block', color }}
     viewBox={healthRecognitionData.viewBox}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
   >
     <path
       d={healthRecognitionData.d}
@@ -67,14 +70,14 @@ const HealthRecognitionIcon = ({ color = 'white', size = 24 }) => (
 
 const NurseIcon = ({ color = 'white', size = 24 }) => (
   <svg
-    preserveAspectRatio="none"
+    preserveAspectRatio='none'
     width={size}
     height={size}
-    overflow="visible"
+    overflow='visible'
     style={{ display: 'block', color }}
     viewBox={nurseData.viewBox}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
   >
     <path
       d={nurseData.d}
@@ -161,4 +164,3 @@ function CategoryIcon ({ categoryId, variant = 'header', size = 24 }) {
 }
 
 export default CategoryIcon;
-

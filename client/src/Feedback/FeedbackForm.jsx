@@ -112,4 +112,3 @@ function FeedbackForm ({ onSuccess }) {
 }
 
 export default FeedbackForm;
-

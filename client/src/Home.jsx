@@ -150,9 +150,9 @@ function getFacilityCategories (facility) {
   // Check service type names and abbreviations
   for (const service of facility.services) {
     const serviceName = (service.name ?? '').toLowerCase();
-    
+
     // Medical/Health services
-    if (serviceName.includes('mh') || serviceName.includes('acute') || 
+    if (serviceName.includes('mh') || serviceName.includes('acute') ||
         serviceName.includes('sud') || serviceName.includes('subacute') ||
         serviceName.includes('detox') || serviceName.includes('crisis') ||
         serviceName.includes('sobering') || serviceName.includes('lesc') ||
@@ -161,7 +161,7 @@ function getFacilityCategories (facility) {
         matches.push('medical');
       }
     }
-    
+
     // Shelter/Respite services
     if (serviceName.includes('respite') || serviceName.includes('shelter') ||
         serviceName.includes('housing') || serviceName.includes('stabilization')) {
@@ -169,7 +169,7 @@ function getFacilityCategories (facility) {
         matches.push('shelter');
       }
     }
-    
+
     // Basic services
     if (serviceName.includes('shower') || serviceName.includes('food') ||
         serviceName.includes('hygiene') || serviceName.includes('laundry')) {
@@ -177,7 +177,7 @@ function getFacilityCategories (facility) {
         matches.push('basic');
       }
     }
-    
+
     // Mobile services
     if (serviceName.includes('mobile') || serviceName.includes('van') ||
         serviceName.includes('outreach')) {
@@ -185,7 +185,7 @@ function getFacilityCategories (facility) {
         matches.push('mobile');
       }
     }
-    
+
     // Ongoing support
     if (serviceName.includes('case') || serviceName.includes('navigation') ||
         serviceName.includes('support') || serviceName.includes('coordination')) {
