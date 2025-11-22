@@ -67,7 +67,7 @@ function HoldSuccess () {
           </Text>
 
           <Group justify='center' gap='sm' mt='md'>
-            <Button variant='light' onClick={() => navigate('/lesc/availability')}>
+            <Button variant='light' onClick={() => navigate('/lesc/holds')}>
               No
             </Button>
             <Button onClick={() => navigate('/lesc/intake', { state: { holdId: holdData.id } })}>

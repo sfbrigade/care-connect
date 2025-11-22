@@ -88,7 +88,7 @@ function CheckIn () {
           <Button variant='light' onClick={() => navigate('/lesc/intake', { state: { holdId: hold.id } })}>
             Start Intake
           </Button>
-          <Button variant='light' color='red' onClick={() => navigate('/lesc/availability')}>
+          <Button variant='light' color='red' onClick={() => navigate('/lesc/holds')}>
             Cancel
           </Button>
         </Group>

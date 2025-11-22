@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
-import { useNavigate } from 'react-router';
 import { IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '../Api';
 import Chip from '../Components/Chip';
 
 function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeId }) {
-  const navigate = useNavigate();
   const [facilityId, setFacilityId] = useState(initialFacilityId || '');
   const [notes, setNotes] = useState('');
   const [bedsRequested, setBedsRequested] = useState(1);
@@ -25,13 +23,7 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
     mutationFn: (data) => Api.lesc.holds.create(data),
     onSuccess: (data) => {
       onSuccess?.();
-      // Navigate to success screen with the first hold (or all holds)
-      navigate('/lesc/success', {
-        state: {
-          holdData: Array.isArray(data.data) ? data.data[0] : data.data,
-          holdsCreated: Array.isArray(data.data) ? data.data.length : 1,
-        },
-      });
+      // Don't navigate - stay on the holds page, modal will be closed by onSuccess
     },
   });
 

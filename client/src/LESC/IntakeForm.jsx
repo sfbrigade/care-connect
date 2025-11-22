@@ -40,7 +40,7 @@ function IntakeForm () {
         holdId,
         ...formData,
       });
-      navigate('/lesc/availability');
+      navigate('/lesc/holds');
     } catch (error) {
       console.error('Failed to submit intake form', error);
       // Would show error message to user

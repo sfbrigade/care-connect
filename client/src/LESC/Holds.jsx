@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Text, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { useLocation } from 'react-router';
 import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
 
 import Api from '../Api';
@@ -10,8 +11,16 @@ import Card from '../Components/Card';
 import Chip from '../Components/Chip';
 
 function Holds () {
+  const location = useLocation();
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const queryClient = useQueryClient();
+  
+  // Auto-open modal if navigating with facilityId
+  useEffect(() => {
+    if (location.state?.facilityId) {
+      openCreateModal();
+    }
+  }, [location.state?.facilityId, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
     queryKey: ['lesc-holds'],
@@ -130,7 +139,14 @@ function Holds () {
           },
         }}
       >
-        <HoldForm onSuccess={() => { closeCreateModal(); queryClient.invalidateQueries({ queryKey: ['lesc-holds'] }); queryClient.invalidateQueries({ queryKey: ['lesc-availability'] }); }} />
+        <HoldForm 
+          onSuccess={() => { 
+            closeCreateModal(); 
+            queryClient.invalidateQueries({ queryKey: ['lesc-holds'] }); 
+            queryClient.invalidateQueries({ queryKey: ['lesc-availability'] }); 
+          }} 
+          initialFacilityId={location.state?.facilityId}
+        />
       </Modal>
 
       {holds && holds.length === 0 ? (

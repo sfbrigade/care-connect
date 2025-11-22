@@ -51,7 +51,6 @@ function AdminFacilitiesList () {
             <Table.Tr>
               <Table.Th>Name</Table.Th>
               <Table.Th>Neighborhood</Table.Th>
-              <Table.Th>Phone</Table.Th>
               <Table.Th>Status</Table.Th>
               <Table.Th>Actions</Table.Th>
             </Table.Tr>
@@ -61,16 +60,20 @@ function AdminFacilitiesList () {
               <Table.Tr key={facility.id}>
                 <Table.Td>{facility.name}</Table.Td>
                 <Table.Td>{facility.neighborhood || '-'}</Table.Td>
-                <Table.Td>{facility.phone || '-'}</Table.Td>
                 <Table.Td>
                   <Badge color={facility.isActive ? 'green' : 'gray'}>
                     {facility.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </Table.Td>
                 <Table.Td>
-                  <Button variant='light' size='xs' onClick={() => navigate(`/admin/facilities/${facility.id}`)}>
-                    Edit
-                  </Button>
+                  <Group gap='xs'>
+                    <Button variant='light' size='xs' onClick={() => navigate(`/admin/facilities/${facility.id}`)}>
+                      Edit
+                    </Button>
+                    <Button variant='light' size='xs' onClick={() => navigate('/lesc/holds', { state: { facilityId: facility.id } })}>
+                      Hold
+                    </Button>
+                  </Group>
                 </Table.Td>
               </Table.Tr>
             ))}
