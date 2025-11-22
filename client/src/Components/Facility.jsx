@@ -1,4 +1,5 @@
 import './Facility.css';
+import CategoryIcon from './CategoryIcon';
 
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (
@@ -15,12 +16,12 @@ export default function Facility ({ facility, isSelected, onSelect }) {
       }}
     >
       <div className='card__row'>
+        <CategoryIcon categoryId={facility.primaryCategory} variant='card' />
         <span className='card__metric'>
           {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
         </span>
       </div>
       <h3 className='card__title'>
-        <span className='card__slug'>{facility.slug}</span>
         <span className='card__title-text'>{facility.name}</span>
       </h3>
       <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>

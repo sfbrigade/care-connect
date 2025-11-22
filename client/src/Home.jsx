@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import Api from './Api';
 import Facility from './Components/Facility';
 import FacilityMap from './Components/FacilityMap';
-import CategoryIcon from './Components/CategoryIcon';
 import './styles/Home.css';
 
 const DEFAULT_COORDINATE = {
@@ -55,11 +54,11 @@ const CATEGORY_CONFIG = [
 
 const EARTH_RADIUS_MI = 3958.8;
 
-function toRadians(degrees) {
+function toRadians (degrees) {
   return degrees * (Math.PI / 180);
 }
 
-function computeDistanceMiles(latitude, longitude, origin = DEFAULT_COORDINATE) {
+function computeDistanceMiles (latitude, longitude, origin = DEFAULT_COORDINATE) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
   }
@@ -84,7 +83,7 @@ const updatedFormatter = new Intl.DateTimeFormat('en-US', {
   timeStyle: 'short',
 });
 
-function formatUpdatedAt(isoString) {
+function formatUpdatedAt (isoString) {
   if (!isoString) {
     return 'Unknown';
   }
@@ -95,7 +94,7 @@ function formatUpdatedAt(isoString) {
   }
 }
 
-function formatRelativeTime(isoString) {
+function formatRelativeTime (isoString) {
   if (!isoString) {
     return 'just now';
   }
@@ -125,7 +124,7 @@ function formatRelativeTime(isoString) {
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 }
 
-function formatAddress(address) {
+function formatAddress (address) {
   if (!address) {
     return '';
   }
@@ -140,7 +139,7 @@ function formatAddress(address) {
   return segments.join(', ');
 }
 
-function getFacilityCategories(facility) {
+function getFacilityCategories (facility) {
   const searchableText = [
     facility.description ?? '',
     ...facility.services.map((service) => service.name ?? ''),
@@ -212,7 +211,7 @@ function getFacilityCategories(facility) {
   return allMatches;
 }
 
-function createSlug(name) {
+function createSlug (name) {
   if (!name) {
     return 'UNK';
   }
@@ -242,7 +241,7 @@ function createSlug(name) {
   return slug.slice(0, 3);
 }
 
-function Home() {
+function Home () {
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
@@ -493,18 +492,18 @@ function Home() {
             <Stack gap='0'>
               <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
               <Title>Available Sites</Title>
+              <Group align='flex-start' justify='space-between'>
+                <Stack gap='0'>
+                  <Text size='md' c='dimmed'>
+                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                  </Text>
+                  {locationStatusMessage && (
+                    <Text size='sm' c='dimmed'>{locationStatusMessage}</Text>
+                  )}
+                </Stack>
+                <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
+              </Group>
             </Stack>
-            <Group align='flex-start' justify='space-between'>
-              <Stack gap='0'>
-                <Text size='md' c='dimmed'>
-                  {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
-                </Text>
-                {locationStatusMessage && (
-                  <Text size='sm' c='dimmed'>{locationStatusMessage}</Text>
-                )}
-              </Stack>
-              <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
-            </Group>
             <Chip.Group value={activeFilter} onChange={setActiveFilter}>
               <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
                 {availableFilters.map((filter) => (
@@ -528,7 +527,7 @@ function Home() {
 
                     return (
                       <Stack key={category.id}>
-                        <Text size='lg'><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Text>
+                        <Title order={3}><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Title>
                         {categoryFacilities.map((facility) => (
                           <Facility key={facility.id} facility={facility} isSelected={selectedFacilityId === facility.id} onSelect={setSelectedFacilityId} />
                         ))}
