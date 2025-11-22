@@ -155,10 +155,17 @@ function getFacilityCategories(facility) {
 
     // Medical/Health services
     if (serviceName.includes('mh') || serviceName.includes('acute') ||
+<<<<<<< HEAD
       serviceName.includes('sud') || serviceName.includes('subacute') ||
       serviceName.includes('detox') || serviceName.includes('crisis') ||
       serviceName.includes('sobering') || serviceName.includes('lesc') ||
       serviceName.includes('medical') || serviceName.includes('mental health')) {
+=======
+        serviceName.includes('sud') || serviceName.includes('subacute') ||
+        serviceName.includes('detox') || serviceName.includes('crisis') ||
+        serviceName.includes('sobering') || serviceName.includes('lesc') ||
+        serviceName.includes('medical') || serviceName.includes('mental health')) {
+>>>>>>> main
       if (!matches.includes('medical')) {
         matches.push('medical');
       }
