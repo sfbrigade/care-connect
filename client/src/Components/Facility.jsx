@@ -24,7 +24,7 @@ export default function Facility ({ facility, isSelected, onSelect }) {
       <h3 className='card__title'>
         <span className='card__title-text'>{facility.name}</span>
       </h3>
-      <p className='card__neighborhood'>{facility.neighborhoodLabel}</p>
+      <p className='card__neighborhood'>{facility.districtLabel}</p>
       {facility.displayAddress && (
         <p className='card__subtitle'>{facility.displayAddress}</p>
       )}
