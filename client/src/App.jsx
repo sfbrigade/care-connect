@@ -22,6 +22,8 @@ import InvitesRoutes from './Invites/InvitesRoutes';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
 import Register from './Register';
 import UsersRoutes from './Users/UsersRoutes';
+import FeedbackViewer from './Feedback/FeedbackViewer';
+import FeedbackList from './Feedback/FeedbackList';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
@@ -65,6 +67,8 @@ function App () {
                           <Route path='/invites/*' element={<InvitesRoutes />} />
                           {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
                           <Route path='/account/*' element={<UsersRoutes />} />
+                          <Route path='/feedback' element={<FeedbackViewer />} />
+                          <Route path='/feedback/list' element={<FeedbackList />} />
                           <Route
                             path='/lesc/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>

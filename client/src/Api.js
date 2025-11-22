@@ -222,6 +222,14 @@ const Api = {
       return instance.post('/api/service-types', data).catch(handleError);
     },
   },
+  feedback: {
+    create (data) {
+      return instance.post('/api/feedback', data).catch(handleError);
+    },
+    list (page = 1) {
+      return instance.get('/api/feedback', { params: { page } });
+    },
+  },
 };
 
 export default Api;

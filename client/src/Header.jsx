@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
-import { Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { ActionIcon, Anchor, Avatar, Container, Group, Menu, Title } from '@mantine/core';
+import { IconMessages } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
@@ -80,7 +81,15 @@ function Header ({ opened, close, toggle }) {
             </>
           )}
         </Group>
-        <Burger opened={opened} onClick={toggle} hiddenFrom='sm' size='sm' />
+        <ActionIcon
+          variant='subtle'
+          onClick={toggle}
+          hiddenFrom='sm'
+          size='lg'
+          aria-label='Feedback'
+        >
+          <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+        </ActionIcon>
       </Group>
     </Container>
   );

@@ -2,6 +2,16 @@
   position: relative;
 }
 
+/* Style the Leaflet map container */
+.facility-map .leaflet-container {
+  background-color: #f8f9fa;
+}
+
+/* Apply subtle filters to map tiles */
+.facility-map .leaflet-tile-container img {
+  filter: brightness(1.05) contrast(0.95);
+}
+
 .facility-map__controls {
   position: absolute;
   right: 16px;
@@ -40,16 +50,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
   color: #0f172a;
   font: 700 11px/1 'Roboto', sans-serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   pointer-events: none;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  box-shadow: none;
   text-align: center;
 }
 

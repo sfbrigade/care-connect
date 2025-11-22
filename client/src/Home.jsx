@@ -146,15 +146,69 @@ function getFacilityCategories (facility) {
     ...facility.services.map((service) => service.description ?? ''),
   ].join(' ').toLowerCase();
 
-  const matches = CATEGORY_CONFIG
+  const matches = [];
+
+  // Check service type names and abbreviations
+  for (const service of facility.services) {
+    const serviceName = (service.name ?? '').toLowerCase();
+
+    // Medical/Health services
+    if (serviceName.includes('mh') || serviceName.includes('acute') ||
+        serviceName.includes('sud') || serviceName.includes('subacute') ||
+        serviceName.includes('detox') || serviceName.includes('crisis') ||
+        serviceName.includes('sobering') || serviceName.includes('lesc') ||
+        serviceName.includes('medical') || serviceName.includes('mental health')) {
+      if (!matches.includes('medical')) {
+        matches.push('medical');
+      }
+    }
+
+    // Shelter/Respite services
+    if (serviceName.includes('respite') || serviceName.includes('shelter') ||
+      serviceName.includes('housing') || serviceName.includes('stabilization')) {
+      if (!matches.includes('shelter')) {
+        matches.push('shelter');
+      }
+    }
+
+    // Basic services
+    if (serviceName.includes('shower') || serviceName.includes('food') ||
+      serviceName.includes('hygiene') || serviceName.includes('laundry')) {
+      if (!matches.includes('basic')) {
+        matches.push('basic');
+      }
+    }
+
+    // Mobile services
+    if (serviceName.includes('mobile') || serviceName.includes('van') ||
+      serviceName.includes('outreach')) {
+      if (!matches.includes('mobile')) {
+        matches.push('mobile');
+      }
+    }
+
+    // Ongoing support
+    if (serviceName.includes('case') || serviceName.includes('navigation') ||
+      serviceName.includes('support') || serviceName.includes('coordination')) {
+      if (!matches.includes('ongoing')) {
+        matches.push('ongoing');
+      }
+    }
+  }
+
+  // Also check keywords in description and service descriptions
+  const keywordMatches = CATEGORY_CONFIG
     .filter(({ keywords, id }) => id !== 'other' && keywords.some((keyword) => searchableText.includes(keyword)))
     .map(({ id }) => id);
 
-  if (!matches.length) {
-    matches.push('other');
+  // Combine matches
+  const allMatches = [...new Set([...matches, ...keywordMatches])];
+
+  if (!allMatches.length) {
+    allMatches.push('other');
   }
 
-  return matches;
+  return allMatches;
 }
 
 function createSlug (name) {
@@ -207,7 +261,7 @@ function Home () {
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
-      return () => {};
+      return () => { };
     }
 
     let watchId;
@@ -298,6 +352,7 @@ function Home () {
   const facilitiesWithMeta = useMemo(() => facilities.map((facility) => {
     const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
+    const primaryCategory = categories[0] ?? 'other';
     const primaryService = facility.services[0]?.name ?? null;
     const primaryBadge = facility.services[0]?.availableBeds != null
       ? `${facility.services[0].availableBeds} beds`
@@ -305,12 +360,13 @@ function Home () {
     const displayAddress = formatAddress(facility.address);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
-    const neighborhoodLabel = (facility.neighborhood ?? '').trim() || 'Unknown';
+    const districtLabel = (facility.nstDistrict ?? '').trim() || 'Unknown';
     const slug = createSlug(facility.name);
 
     return {
       ...facility,
       categories,
+      primaryCategory,
       distanceMiles,
       primaryService,
       primaryBadge,
@@ -318,7 +374,7 @@ function Home () {
       primaryContact,
       slug,
       serviceNames: facility.services.map((service) => service.name).filter(Boolean),
-      neighborhoodLabel,
+      districtLabel,
     };
   }), [facilities, referenceCoordinate]);
 
@@ -328,7 +384,7 @@ function Home () {
   const filteredFacilities = useMemo(() => {
     const base = activeFilter === 'All'
       ? facilitiesWithMeta
-      : facilitiesWithMeta.filter((facility) => facility.neighborhoodLabel === activeFilter);
+      : facilitiesWithMeta.filter((facility) => facility.districtLabel === activeFilter);
 
     return [...base].sort((a, b) => {
       const aDistance = a.distanceMiles ?? Number.POSITIVE_INFINITY;
@@ -366,12 +422,12 @@ function Home () {
   }, [filteredFacilities]);
 
   const availableFilters = useMemo(() => {
-    const neighborhoods = new Set();
+    const districts = new Set();
     facilitiesWithMeta.forEach((facility) => {
-      neighborhoods.add(facility.neighborhoodLabel);
+      districts.add(facility.districtLabel);
     });
 
-    return ['All', ...Array.from(neighborhoods).sort((a, b) => a.localeCompare(b))];
+    return ['All', ...Array.from(districts).sort((a, b) => a.localeCompare(b))];
   }, [facilitiesWithMeta]);
 
   const latestUpdatedAt = useMemo(() => {
@@ -432,34 +488,36 @@ function Home () {
         )}
 
         {!isLoading && !isError &&
-          <Stack>
-            <Stack gap='0'>
-              <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
-              <Title>Available Sites</Title>
+          <>
+            <Stack>
+              <Box>
+                <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
+                <Title>Available Sites</Title>
+                <Group align='flex-start' justify='space-between'>
+                  <Box>
+                    <Text size='sm' c='dark'>
+                      {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                    </Text>
+                    {locationStatusMessage && (
+                      <Text size='xs' c='dimmed'>{locationStatusMessage}</Text>
+                    )}
+                  </Box>
+                  <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
+                </Group>
+              </Box>
+              <Chip.Group value={activeFilter} onChange={setActiveFilter}>
+                <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
+                  {availableFilters.map((filter) => (
+                    <Chip
+                      key={filter}
+                      value={filter}
+                    >
+                      {filter}
+                    </Chip>
+                  ))}
+                </Group>
+              </Chip.Group>
             </Stack>
-            <Group align='flex-start' justify='space-between'>
-              <Stack gap='0'>
-                <Text size='md' c='dimmed'>
-                  {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
-                </Text>
-                {locationStatusMessage && (
-                  <Text size='sm' c='dimmed'>{locationStatusMessage}</Text>
-                )}
-              </Stack>
-              <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
-            </Group>
-            <Chip.Group value={activeFilter} onChange={setActiveFilter}>
-              <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
-                {availableFilters.map((filter) => (
-                  <Chip
-                    key={filter}
-                    value={filter}
-                  >
-                    {filter}
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
             <Grid>
               <Grid.Col span={{ base: 12, md: showMap ? 4 : 12 }} order={{ base: 2, md: 1 }}>
                 <Stack>
@@ -471,7 +529,7 @@ function Home () {
 
                     return (
                       <Stack key={category.id}>
-                        <Text size='lg'><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Text>
+                        <Title order={3}><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Title>
                         {categoryFacilities.map((facility) => (
                           <Facility key={facility.id} facility={facility} isSelected={selectedFacilityId === facility.id} onSelect={setSelectedFacilityId} />
                         ))}
@@ -487,7 +545,7 @@ function Home () {
               </Grid.Col>
               {showMap &&
                 <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 1, md: 2 }}>
-                  <Stack>
+                  <Stack gap='xs'>
                     <Box mx={{ base: '-md', md: 0 }}>
                       <FacilityMap
                         facilities={filteredFacilities}
@@ -501,7 +559,7 @@ function Home () {
                   </Stack>
                 </Grid.Col>}
             </Grid>
-          </Stack>}
+          </>}
       </Container>
     </>
   );

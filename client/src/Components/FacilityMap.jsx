@@ -3,22 +3,125 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import '../styles/FacilityMap.css';
 
+import stethoscopeSvg from '../assets/icons/stethoscope.svg?raw';
+import healthRecognitionSvg from '../assets/icons/health-recognition.svg?raw';
+import nurseSvg from '../assets/icons/nurse.svg?raw';
+
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;
 const DISTRICT_DATA_PATH = '/static-data/street_team_coverage.geojson';
 
-function createFacilityMarkerIcon (L, slug) {
-  const display = (slug ?? '').toString().slice(0, 3).toUpperCase();
+// Extract path data from SVG strings (works in both Node.js and browser)
+function extractPathData (svgString) {
+  // Use regex to extract the 'd' attribute from the path element
+  const pathMatch = svgString.match(/<path[^>]*\sd="([^"]+)"/);
+  return pathMatch ? pathMatch[1] : '';
+}
+
+const STETHOSCOPE_PATH = extractPathData(stethoscopeSvg);
+const HEALTH_RECOGNITION_PATH = extractPathData(healthRecognitionSvg);
+const NURSE_PATH = extractPathData(nurseSvg);
+
+const CATEGORY_ICON_CONFIG = {
+  medical: {
+    path: STETHOSCOPE_PATH,
+    viewBox: '0 0 21 20',
+    color: '#15AABF',
+  },
+  shelter: {
+    path: HEALTH_RECOGNITION_PATH,
+    viewBox: '0 0 18 18',
+    color: '#F06595',
+  },
+  ongoing: {
+    path: NURSE_PATH,
+    viewBox: '0 0 18 14',
+    color: '#FFA94D',
+  },
+  basic: {
+    path: STETHOSCOPE_PATH,
+    viewBox: '0 0 21 20',
+    color: '#748FFC',
+  },
+  mobile: {
+    path: STETHOSCOPE_PATH,
+    viewBox: '0 0 21 20',
+    color: '#1C7ED6',
+  },
+  other: {
+    path: NURSE_PATH,
+    viewBox: '0 0 18 14',
+    color: '#FFA94D',
+  },
+};
+
+function createFacilityMarkerIcon (L, categoryId = 'other') {
+  const config = CATEGORY_ICON_CONFIG[categoryId] || CATEGORY_ICON_CONFIG.other;
+  // Scale down by 20%: original is 52x60, so 20% smaller is ~42x48
+  const scale = 0.8;
+  const pinWidth = 52 * scale; // ~42px
+  const pinHeight = 60 * scale; // ~48px
+  const iconSize = 19; // Scaled proportionally
+  // Colored circle center in viewBox: x=26, y=25 (circle goes from 9 to 43 horizontally, centered at 26)
+  const iconCenterX = 26; // Center X in viewBox coordinates
+  const iconCenterY = 25; // Center Y in viewBox coordinates
+  const iconOffsetX = iconCenterX - iconSize / 2;
+  const iconOffsetY = iconCenterY - iconSize / 2;
+  const fillColor = 'white';
+  // Nurse icon (ongoing, other) and Health Recognition icon (shelter) use fill
+  const useFill = categoryId === 'shelter' || categoryId === 'ongoing' || categoryId === 'other';
+  // Stethoscope icons (medical, basic, mobile) use stroke
+  const strokeColor = useFill ? 'none' : 'white';
+
+  const svgPath = useFill
+    ? `<path fill-rule="evenodd" clip-rule="evenodd" d="${config.path}" fill="${fillColor}"/>`
+    : `<path d="${config.path}" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+
+  // Generate unique filter IDs to avoid conflicts when multiple pins are rendered
+  const filterId0 = `filter0_f_358_9886_${categoryId}`;
+  const filterId1 = `filter1_d_358_9886_${categoryId}`;
 
   return L.divIcon({
     className: 'facility-map__marker facility-map__marker--facility',
-    iconSize: [28, 36],
-    iconAnchor: [14, 34],
-    popupAnchor: [0, -30],
+    iconSize: [pinWidth, pinHeight],
+    iconAnchor: [pinWidth / 2, pinHeight], // Anchor at the tip of the pin
+    popupAnchor: [0, -pinHeight],
     html: `
-      <div class="facility-map__marker-wrapper">
-        <span class="facility-map__marker-circle">${display}</span>
-        <span class="facility-map__marker-pointer"></span>
+      <div class="facility-map__marker-wrapper" style="position: relative; width: ${pinWidth}px; height: ${pinHeight}px;">
+        <svg width="${pinWidth}" height="${pinHeight}" viewBox="0 0 52 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; left: 0; top: 0;">
+          <!-- Shadow -->
+          <g filter="url(#${filterId0})">
+            <ellipse cx="26" cy="53.5" rx="7" ry="2.5" fill="black" fill-opacity="0.2"/>
+          </g>
+          <!-- White pin shape with drop shadow -->
+          <g filter="url(#${filterId1})">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M26 4C37.598 4 47 13.402 47 25C47 33.8926 41.4727 41.4942 33.6663 44.5567L27.1961 53.4007C27.0612 53.5858 26.8821 53.7369 26.6739 53.8412C26.4657 53.9455 26.2346 54 26 54C25.7654 54 25.5343 53.9455 25.3261 53.8412C25.1179 53.7369 24.9388 53.5858 24.8039 53.4007L18.3337 44.5567C10.5273 41.4941 5 33.8926 5 25C5 13.402 14.402 4 26 4Z" fill="white"/>
+          </g>
+          <!-- Colored circle (category color) -->
+          <path d="M43 25C43 15.6112 35.3888 8 26 8C16.6112 8 9 15.6112 9 25C9 34.3888 16.6112 42 26 42C35.3888 42 43 34.3888 43 25Z" fill="${config.color}"/>
+          <!-- Category icon -->
+          <svg width="${iconSize}" height="${iconSize}" viewBox="${config.viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg" x="${iconOffsetX}" y="${iconOffsetY}">
+            ${svgPath}
+          </svg>
+          <!-- Filters -->
+          <defs>
+            <filter id="${filterId0}" x="17" y="49" width="18" height="9" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+              <feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_358_9886"/>
+            </filter>
+            <filter id="${filterId1}" x="0" y="0" width="52" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+              <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+              <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+              <feOffset dy="1"/>
+              <feGaussianBlur stdDeviation="2.5"/>
+              <feComposite in2="hardAlpha" operator="out"/>
+              <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+              <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_358_9886"/>
+              <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_358_9886" result="shape"/>
+            </filter>
+          </defs>
+        </svg>
       </div>
     `,
   });
@@ -263,30 +366,6 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
   }, [center]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    console.info('[FacilityMap] facilities (raw)', facilities);
-
-    console.info('[FacilityMap] markers used for centering', facilityMarkers);
-
-    console.info('[FacilityMap] computed center', center);
-    if (facilityMarkers.length) {
-      const latitudes = facilityMarkers.map((facility) => facility.latitude);
-      const longitudes = facilityMarkers.map((facility) => facility.longitude);
-      const stats = {
-        latMin: Math.min(...latitudes),
-        latMax: Math.max(...latitudes),
-        lonMin: Math.min(...longitudes),
-        lonMax: Math.max(...longitudes),
-      };
-
-      console.info('[FacilityMap] coordinate bounds', stats);
-    }
-  }, [facilities, facilityMarkers, center]);
-
-  useEffect(() => {
     if (districtLoadError) {
       console.warn('[FacilityMap] NST district overlay unavailable', districtLoadError);
     }
@@ -320,8 +399,8 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
         }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
         />
         {districtCollection && showDistricts && (
           <GeoJSON
@@ -344,7 +423,7 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
           <Marker
             key={facility.id}
             position={[facility.latitude, facility.longitude]}
-            icon={createFacilityMarkerIcon(leafletLib, facility.slug)}
+            icon={createFacilityMarkerIcon(leafletLib, facility.primaryCategory || 'other')}
           >
             <Popup>
               <strong>{facility.name}</strong>
