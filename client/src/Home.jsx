@@ -488,34 +488,36 @@ function Home () {
         )}
 
         {!isLoading && !isError &&
-          <Stack>
-            <Stack gap='0'>
-              <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
-              <Title>Available Sites</Title>
-              <Group align='flex-start' justify='space-between'>
-                <Stack gap='0'>
-                  <Text size='md' c='dimmed'>
-                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
-                  </Text>
-                  {locationStatusMessage && (
-                    <Text size='sm' c='dimmed'>{locationStatusMessage}</Text>
-                  )}
-                </Stack>
-                <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
-              </Group>
+          <>
+            <Stack>
+              <Box>
+                <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
+                <Title>Available Sites</Title>
+                <Group align='flex-start' justify='space-between'>
+                  <Box>
+                    <Text size='sm' c='dark'>
+                      {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                    </Text>
+                    {locationStatusMessage && (
+                      <Text size='xs' c='dimmed'>{locationStatusMessage}</Text>
+                    )}
+                  </Box>
+                  <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
+                </Group>
+              </Box>
+              <Chip.Group value={activeFilter} onChange={setActiveFilter}>
+                <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
+                  {availableFilters.map((filter) => (
+                    <Chip
+                      key={filter}
+                      value={filter}
+                    >
+                      {filter}
+                    </Chip>
+                  ))}
+                </Group>
+              </Chip.Group>
             </Stack>
-            <Chip.Group value={activeFilter} onChange={setActiveFilter}>
-              <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
-                {availableFilters.map((filter) => (
-                  <Chip
-                    key={filter}
-                    value={filter}
-                  >
-                    {filter}
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
             <Grid>
               <Grid.Col span={{ base: 12, md: showMap ? 4 : 12 }} order={{ base: 2, md: 1 }}>
                 <Stack>
@@ -543,12 +545,12 @@ function Home () {
               </Grid.Col>
               {showMap &&
                 <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 1, md: 2 }}>
-                  <Stack>
+                  <Stack gap='xs'>
                     <Box mx={{ base: '-md', md: 0 }}>
                       <FacilityMap
                         facilities={filteredFacilities}
                         userLocation={userCoordinate}
-                        height={400}
+                        height={320}
                       />
                     </Box>
                     <Text size='xs' c='dimmed'>
@@ -557,7 +559,7 @@ function Home () {
                   </Stack>
                 </Grid.Col>}
             </Grid>
-          </Stack>}
+          </>}
       </Container>
     </>
   );
