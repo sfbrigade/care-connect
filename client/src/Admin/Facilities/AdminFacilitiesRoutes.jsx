@@ -13,4 +13,3 @@ function AdminFacilitiesRoutes () {
 }
 
 export default AdminFacilitiesRoutes;
-

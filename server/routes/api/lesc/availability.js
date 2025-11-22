@@ -146,7 +146,7 @@ export default async function (fastify, opts) {
             serviceTypeName: service.serviceType.name,
             totalBeds: totalBeds > 0 ? totalBeds : null,
             availableBeds: calculatedAvailable, // Show calculated available instead of raw availableBeds
-            reservedBeds: reservedBeds,
+            reservedBeds,
             activeHolds: activeHoldsCount,
             calculatedAvailable,
           });
@@ -156,4 +156,3 @@ export default async function (fastify, opts) {
       return reply.send(response);
     });
 }
-

@@ -68,7 +68,6 @@ function AdminFacilityDetail () {
   const [availableBeds, setAvailableBeds] = useState(0);
   const [reservedBeds, setReservedBeds] = useState(0);
 
-
   useEffect(() => {
     if (facility && !isNew) {
       setFormData({
@@ -95,7 +94,7 @@ function AdminFacilityDetail () {
       if (isNew) {
         const response = await Api.admin.facilities.create(data);
         const facilityId = response.data.id;
-        
+
         // Add service type if provided
         if (serviceTypeId) {
           await Api.admin.facilities.addService(facilityId, {
@@ -104,7 +103,7 @@ function AdminFacilityDetail () {
             reservedBeds,
           });
         }
-        
+
         return response;
       }
       return Api.admin.facilities.update(id, data);
@@ -196,33 +195,39 @@ function AdminFacilityDetail () {
         {isNew ? (
           // Single page for new facility creation
           <Stack>
-            {isLoadingServiceTypes ? (
-              <Alert icon={<IconAlertCircle />} color='yellow' title='Loading'>
-                Loading service types...
-              </Alert>
-            ) : serviceTypesError ? (
-              <Alert icon={<IconAlertCircle />} color='red' title='Error'>
-                Failed to load service types. Please refresh the page.
-              </Alert>
-            ) : availableServiceTypes && availableServiceTypes.length === 0 ? (
-              <Alert icon={<IconAlertCircle />} color='yellow' title='No Service Types'>
-                No service types found. Please seed service types first by running: <code>node server/bin/seed-service-types.js</code>
-              </Alert>
-            ) : null}
+            {isLoadingServiceTypes
+              ? (
+                <Alert icon={<IconAlertCircle />} color='yellow' title='Loading'>
+                  Loading service types...
+                </Alert>
+                )
+              : serviceTypesError
+                ? (
+                  <Alert icon={<IconAlertCircle />} color='red' title='Error'>
+                    Failed to load service types. Please refresh the page.
+                  </Alert>
+                  )
+                : availableServiceTypes && availableServiceTypes.length === 0
+                  ? (
+                    <Alert icon={<IconAlertCircle />} color='yellow' title='No Service Types'>
+                      No service types found. Please seed service types first by running: <code>node server/bin/seed-service-types.js</code>
+                    </Alert>
+                    )
+                  : null}
 
             <TextInput
-                label='Name'
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
+              label='Name'
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
             <Textarea
               label='Description'
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
             />
-            
+
             {/* Service Type and Beds - after description, before phone/email */}
             {availableServiceTypes && availableServiceTypes.length > 0 && (
               <>
@@ -253,7 +258,7 @@ function AdminFacilityDetail () {
                 </Group>
               </>
             )}
-            
+
             <Group grow>
               <TextInput
                 label='Phone'
@@ -555,4 +560,3 @@ function AdminFacilityDetail () {
 }
 
 export default AdminFacilityDetail;
-

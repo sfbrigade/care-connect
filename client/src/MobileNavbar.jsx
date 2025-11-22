@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router';
-import { Divider, NavLink as MantineNavLink, Stack, Text, Collapse } from '@mantine/core';
+import { Divider, NavLink as MantineNavLink, Paper, Stack, Text, Collapse } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
 import { useAuthContext } from './AuthContext';
@@ -34,7 +34,7 @@ function MobileNavbar ({ close }) {
         </Stack>
       </Paper>
       <MantineNavLink component={NavLink} to='/' onClick={close} label='Home' />
-      
+
       {/* LESC with submenu */}
       <MantineNavLink
         label='LESC'

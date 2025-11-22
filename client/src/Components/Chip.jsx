@@ -4,12 +4,12 @@ import { Box } from '@mantine/core';
  * Chip component for filters and selections
  * Matches Figma design with active/inactive states
  */
-function Chip ({ 
-  children, 
-  active = false, 
+function Chip ({
+  children,
+  active = false,
   onClick,
   variant = 'filter', // 'filter' or 'selection'
-  ...props 
+  ...props
 }) {
   const baseStyles = {
     display: 'inline-flex',
@@ -56,4 +56,3 @@ function Chip ({
 }
 
 export default Chip;
-

@@ -14,7 +14,7 @@ function Holds () {
   const location = useLocation();
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const queryClient = useQueryClient();
-  
+
   // Auto-open modal if navigating with facilityId
   useEffect(() => {
     if (location.state?.facilityId) {
@@ -104,7 +104,7 @@ function Holds () {
   };
 
   return (
-    <Container size="sm" py="md" px="md">
+    <Container size='sm' py='md' px='md'>
       <Group justify='space-between' mb='md'>
         <Title order={2}>Active Bed Holds</Title>
         <Button leftSection={<IconPlus />} onClick={openCreateModal}>
@@ -114,16 +114,16 @@ function Holds () {
 
       {/* Filter chips */}
       <Group gap='sm' mb='md'>
-        <Chip active={true}>Current holds</Chip>
+        <Chip active>Current holds</Chip>
         <Chip active={false}>This week</Chip>
         <Chip active={false}>History</Chip>
       </Group>
 
-      <Modal 
-        opened={createModalOpened} 
-        onClose={closeCreateModal} 
+      <Modal
+        opened={createModalOpened}
+        onClose={closeCreateModal}
         title='Create Bed Hold'
-        size="auto"
+        size='auto'
         centered
         lockScroll
         styles={{
@@ -139,61 +139,62 @@ function Holds () {
           },
         }}
       >
-        <HoldForm 
-          onSuccess={() => { 
-            closeCreateModal(); 
-            queryClient.invalidateQueries({ queryKey: ['lesc-holds'] }); 
-            queryClient.invalidateQueries({ queryKey: ['lesc-availability'] }); 
-          }} 
+        <HoldForm
+          onSuccess={() => {
+            closeCreateModal();
+            queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+            queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+          }}
           initialFacilityId={location.state?.facilityId}
         />
       </Modal>
 
-      {holds && holds.length === 0 ? (
-        <Alert>No active holds.</Alert>
-      ) : (
-        <Stack gap='md'>
-          {holds?.map((hold) => {
-            const expiresAt = new Date(hold.expiresAt);
-            const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
+      {holds && holds.length === 0
+        ? (
+          <Alert>No active holds.</Alert>
+          )
+        : (
+          <Stack gap='md'>
+            {holds?.map((hold) => {
+              const expiresAt = new Date(hold.expiresAt);
+              const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
 
-            return (
-              <Card
-                key={hold.id}
-                title={hold.facilityName}
-                subtitle={formatCreatedAt(hold.createdAt)}
-                badgeStatus={isExpiringSoon ? 'warning' : 'active'}
-                actions={
-                  <>
-                    <Button
-                      leftSection={<IconClock size={18} />}
-                      variant='light'
-                      size='sm'
-                      onClick={() => handleExtend(hold.id)}
-                      loading={extendMutation.isPending}
-                    >
-                      Extend 30 min
-                    </Button>
-                    <Button
-                      leftSection={<IconX size={18} />}
-                      variant='light'
-                      color='red'
-                      size='sm'
-                      onClick={() => handleCancel(hold.id)}
-                      loading={cancelMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                  </>
+              return (
+                <Card
+                  key={hold.id}
+                  title={hold.facilityName}
+                  subtitle={formatCreatedAt(hold.createdAt)}
+                  badgeStatus={isExpiringSoon ? 'warning' : 'active'}
+                  actions={
+                    <>
+                      <Button
+                        leftSection={<IconClock size={18} />}
+                        variant='light'
+                        size='sm'
+                        onClick={() => handleExtend(hold.id)}
+                        loading={extendMutation.isPending}
+                      >
+                        Extend 30 min
+                      </Button>
+                      <Button
+                        leftSection={<IconX size={18} />}
+                        variant='light'
+                        color='red'
+                        size='sm'
+                        onClick={() => handleCancel(hold.id)}
+                        loading={cancelMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </>
                 }
-              />
-            );
-          })}
-        </Stack>
-      )}
+                />
+              );
+            })}
+          </Stack>
+          )}
     </Container>
   );
 }
 
 export default Holds;
-

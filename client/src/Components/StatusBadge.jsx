@@ -4,10 +4,10 @@ import { Box } from '@mantine/core';
  * StatusBadge component for status indicators
  * Matches Figma design with different status variants
  */
-function StatusBadge ({ 
+function StatusBadge ({
   status = 'active', // 'active', 'open', 'expired', 'warning'
   children,
-  ...props 
+  ...props
 }) {
   const statusConfig = {
     active: {
@@ -58,4 +58,3 @@ function StatusBadge ({
 }
 
 export default StatusBadge;
-

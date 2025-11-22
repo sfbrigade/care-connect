@@ -37,7 +37,7 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       // Placeholder implementation - would create intake record in database
       const intakeId = crypto.randomUUID();
-      
+
       return reply.code(StatusCodes.CREATED).send({
         id: intakeId,
         message: 'Intake record created (placeholder)',

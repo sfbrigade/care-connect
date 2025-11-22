@@ -44,4 +44,3 @@ export default async function (fastify, opts) {
       return reply.code(StatusCodes.NO_CONTENT).send();
     });
 }
-

@@ -3,13 +3,13 @@ import { createTheme, Chip, Container, Button, Card, Badge } from '@mantine/core
 const AppTheme = createTheme({
   /** Your theme override here */
   cursorType: 'pointer',
-  
+
   // Font family - Roboto
   fontFamily: 'Roboto, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-  
+
   // Note: Custom colors are defined in component styles, not in theme colors
   // Mantine requires colors to be arrays of 10 shades
-  
+
   // Spacing scale from Figma (4px, 8px, 12px, 16px, 20px, 24px)
   spacing: {
     xs: '4px',
@@ -19,14 +19,14 @@ const AppTheme = createTheme({
     xl: '20px',
     '2xl': '24px',
   },
-  
+
   // Border radius from Figma
   radius: {
     md: '8px',
     lg: '16px',
     xl: '24px',
   },
-  
+
   // Typography scale
   fontSizes: {
     xs: '12px',
@@ -35,7 +35,7 @@ const AppTheme = createTheme({
     lg: '18px',
     xl: '20px',
   },
-  
+
   // Line heights
   lineHeights: {
     xs: '16px',
@@ -44,7 +44,7 @@ const AppTheme = createTheme({
     lg: '28px',
     xl: '32px',
   },
-  
+
   components: {
     Chip: Chip.extend({
       defaultProps: {

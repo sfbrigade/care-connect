@@ -65,27 +65,28 @@ function HoldsHistory () {
           </Chip>
         </Group>
 
-        {holds && holds.length === 0 ? (
-          <Text c='dimmed' ta='center' py='xl'>
-            No historical holds found.
-          </Text>
-        ) : (
-          <Stack gap='md'>
-            {holds?.map((hold) => (
-              <Card
-                key={hold.id}
-                timeRemaining={formatTimeRemaining(hold.expiresAt)}
-                timeUntil={formatTimeUntil(hold.expiresAt)}
-                badgeStatus={hold.status === 'EXPIRED' || hold.status === 'CANCELLED' ? 'expired' : 'active'}
-                details={hold.notes || 'Details/Notes ????'}
-              />
-            ))}
-          </Stack>
-        )}
+        {holds && holds.length === 0
+          ? (
+            <Text c='dimmed' ta='center' py='xl'>
+              No historical holds found.
+            </Text>
+            )
+          : (
+            <Stack gap='md'>
+              {holds?.map((hold) => (
+                <Card
+                  key={hold.id}
+                  timeRemaining={formatTimeRemaining(hold.expiresAt)}
+                  timeUntil={formatTimeUntil(hold.expiresAt)}
+                  badgeStatus={hold.status === 'EXPIRED' || hold.status === 'CANCELLED' ? 'expired' : 'active'}
+                  details={hold.notes || 'Details/Notes ????'}
+                />
+              ))}
+            </Stack>
+            )}
       </Stack>
     </Container>
   );
 }
 
 export default HoldsHistory;
-

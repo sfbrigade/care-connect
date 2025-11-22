@@ -98,4 +98,3 @@ export default async function (fastify, opts) {
   await fastify.register(import('./extend.js'));
   await fastify.register(import('./cancel.js'));
 }
-

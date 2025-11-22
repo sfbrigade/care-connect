@@ -5,7 +5,7 @@ import StatusBadge from './StatusBadge';
  * LESCCard component for displaying LESC facility information
  * Matches Figma _LESCCard design
  */
-function LESCCard ({ 
+function LESCCard ({
   facilityName = 'LESC',
   address = '123 Main St, San Francisco',
   bedCount = 10,
@@ -13,7 +13,7 @@ function LESCCard ({
   intakeHours = '24/7',
   lastUpdated,
   actions,
-  ...props 
+  ...props
 }) {
   const formatLastUpdated = () => {
     if (lastUpdated) {
@@ -41,9 +41,9 @@ function LESCCard ({
       }}
       {...props}
     >
-      <Group justify="space-between" align="flex-start">
+      <Group justify='space-between' align='flex-start'>
         <Box style={{ flex: 1 }}>
-          <Group justify="space-between" mb="8px">
+          <Group justify='space-between' mb='8px'>
             <Text
               style={{
                 fontSize: '24px',
@@ -57,7 +57,7 @@ function LESCCard ({
             </Text>
             <StatusBadge status={status === 'open' ? 'open' : 'expired'} />
           </Group>
-          
+
           <Text
             style={{
               fontSize: '16px',
@@ -70,7 +70,7 @@ function LESCCard ({
           >
             {facilityName}
           </Text>
-          
+
           <Text
             style={{
               fontSize: '14px',
@@ -82,7 +82,7 @@ function LESCCard ({
           >
             {address}
           </Text>
-          
+
           <Text
             style={{
               fontSize: '14px',
@@ -96,13 +96,13 @@ function LESCCard ({
           </Text>
         </Box>
       </Group>
-      
+
       {actions && (
-        <Group justify="flex-end" gap="8px">
+        <Group justify='flex-end' gap='8px'>
           {actions}
         </Group>
       )}
-      
+
       {lastUpdated !== false && (
         <Text
           style={{
@@ -121,4 +121,3 @@ function LESCCard ({
 }
 
 export default LESCCard;
-

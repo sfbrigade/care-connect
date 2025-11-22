@@ -5,7 +5,7 @@ import StatusBadge from './StatusBadge';
  * Card component matching Figma _Card design
  * Used for hold cards and other card-based layouts
  */
-function Card ({ 
+function Card ({
   title,
   subtitle,
   badge,
@@ -15,7 +15,7 @@ function Card ({
   details,
   actions,
   children,
-  ...props 
+  ...props
 }) {
   return (
     <Box
@@ -31,7 +31,7 @@ function Card ({
       {...props}
     >
       {(title || badge || badgeStatus) && (
-        <Group justify="space-between" align="flex-start">
+        <Group justify='space-between' align='flex-start'>
           <Box style={{ flex: 1 }}>
             {title && (
               <Text
@@ -90,16 +90,18 @@ function Card ({
           </Box>
           {(badge || badgeStatus) && (
             <Box>
-              {badgeStatus ? (
-                <StatusBadge status={badgeStatus} />
-              ) : (
-                badge
-              )}
+              {badgeStatus
+                ? (
+                  <StatusBadge status={badgeStatus} />
+                  )
+                : (
+                    badge
+                  )}
             </Box>
           )}
         </Group>
       )}
-      
+
       {details && (
         <Text
           style={{
@@ -113,11 +115,11 @@ function Card ({
           {details}
         </Text>
       )}
-      
+
       {children}
-      
+
       {actions && (
-        <Group justify="flex-end" gap="8px" mt="8px">
+        <Group justify='flex-end' gap='8px' mt='8px'>
           {actions}
         </Group>
       )}
@@ -126,4 +128,3 @@ function Card ({
 }
 
 export default Card;
-

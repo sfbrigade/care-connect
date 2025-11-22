@@ -30,9 +30,9 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
   // Get unique facilities from availability data, showing max available beds
   const facilities = availability
     ? [...new Map(availability.map(item => [item.facilityId, {
-      id: item.facilityId,
-      name: item.facilityName,
-    }])).values()]
+        id: item.facilityId,
+        name: item.facilityName,
+      }])).values()]
         .map(f => {
           // Find all service types for this facility and get the one with most availability
           const facilityServices = availability.filter(item => item.facilityId === f.id);
@@ -57,14 +57,14 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
     const facilityServices = availability.filter(item => item.facilityId === facId);
     if (facilityServices.length === 0) return null;
     // Return the service type with the most available beds
-    return facilityServices.reduce((best, current) => 
+    return facilityServices.reduce((best, current) =>
       current.calculatedAvailable > best.calculatedAvailable ? current : best
     );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Use initialServiceTypeId if provided, otherwise find the service type with most availability
     let serviceTypeId = initialServiceTypeId;
     if (!serviceTypeId) {
@@ -77,8 +77,8 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
 
     createMutation.mutate({
       facilityId,
-      serviceTypeId: serviceTypeId,
-      bedsRequested: bedsRequested,
+      serviceTypeId,
+      bedsRequested,
       notes: notes || undefined,
     });
   };
@@ -129,7 +129,7 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
             }}
           />
         )}
-        
+
         {initialFacilityId && facilityId && availability && (
           <Text size='sm' c='dimmed'>
             Facility: {availability.find(item => item.facilityId === facilityId)?.facilityName || facilityId}
@@ -213,4 +213,3 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
 }
 
 export default HoldForm;
-

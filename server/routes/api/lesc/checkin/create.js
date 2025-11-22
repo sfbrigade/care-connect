@@ -23,10 +23,10 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { holdId } = request.params;
-      
+
       // Placeholder implementation - would link hold to intake record
       const checkinId = crypto.randomUUID();
-      
+
       return reply.code(StatusCodes.CREATED).send({
         id: checkinId,
         holdId,
@@ -35,4 +35,3 @@ export default async function (fastify, opts) {
     }
   );
 }
-

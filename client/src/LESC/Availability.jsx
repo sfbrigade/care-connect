@@ -12,7 +12,7 @@ import HoldForm from './HoldForm';
 function Availability () {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
-  
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['lesc-availability'],
     queryFn: async () => {
@@ -29,7 +29,6 @@ function Availability () {
     },
   });
 
-
   const cancelHoldMutation = useMutation({
     mutationFn: (holdId) => Api.lesc.holds.cancel(holdId),
     onSuccess: () => {
@@ -45,7 +44,6 @@ function Availability () {
       queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
     },
   });
-
 
   const handleCancelHold = (holdId) => {
     if (confirm('Are you sure you want to cancel this hold?')) {
@@ -115,11 +113,11 @@ function Availability () {
       <Stack gap='md'>
         {/* Filter chips */}
         <Group gap='sm'>
-          <Chip active={true}>Current holds</Chip>
+          <Chip active>Current holds</Chip>
           <Chip active={false}>This week</Chip>
           <Chip active={false}>History</Chip>
         </Group>
-        
+
         {/* Active holds cards */}
         {holds && holds.length > 0 && (
           <Stack gap='md'>
@@ -132,7 +130,7 @@ function Availability () {
                 const expiresAt = new Date(hold.expiresAt);
                 const createdAt = new Date(hold.createdAt);
                 const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
-                
+
                 // Format time helper
                 const formatTime = (date) => {
                   const hours = date.getHours();
@@ -142,11 +140,11 @@ function Availability () {
                   const displayM = minutes.toString().padStart(2, '0');
                   return `${displayH}:${displayM} ${ampm}`;
                 };
-                
+
                 const createdTime = formatTime(createdAt);
                 const expiresTime = formatTime(expiresAt);
                 const subtitle = `Created at ${createdTime}, expires at ${expiresTime}`;
-                
+
                 return (
                   <Card
                     key={hold.id}
@@ -182,7 +180,7 @@ function Availability () {
               })}
           </Stack>
         )}
-        
+
         {/* Create Hold button */}
         <Button
           leftSection={<IconLock size={18} />}
@@ -199,7 +197,7 @@ function Availability () {
         opened={modalOpened}
         onClose={closeModal}
         title='Create Hold'
-        size="auto"
+        size='auto'
         centered
         lockScroll
         styles={{
@@ -215,7 +213,7 @@ function Availability () {
           },
         }}
       >
-        <HoldForm 
+        <HoldForm
           onSuccess={() => {
             closeModal();
             queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
@@ -229,4 +227,3 @@ function Availability () {
 }
 
 export default Availability;
-
