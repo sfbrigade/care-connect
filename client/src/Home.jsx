@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Button, Chip, Container, Grid, Group, Stack, Switch, Text, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from './Api';
+import Facility from './Components/Facility';
 import FacilityMap from './Components/FacilityMap';
-import CategoryIcon from './Components/CategoryIcon';
 import './styles/Home.css';
 
 const DEFAULT_COORDINATE = {
@@ -164,7 +165,7 @@ function getFacilityCategories (facility) {
 
     // Shelter/Respite services
     if (serviceName.includes('respite') || serviceName.includes('shelter') ||
-        serviceName.includes('housing') || serviceName.includes('stabilization')) {
+      serviceName.includes('housing') || serviceName.includes('stabilization')) {
       if (!matches.includes('shelter')) {
         matches.push('shelter');
       }
@@ -172,7 +173,7 @@ function getFacilityCategories (facility) {
 
     // Basic services
     if (serviceName.includes('shower') || serviceName.includes('food') ||
-        serviceName.includes('hygiene') || serviceName.includes('laundry')) {
+      serviceName.includes('hygiene') || serviceName.includes('laundry')) {
       if (!matches.includes('basic')) {
         matches.push('basic');
       }
@@ -180,7 +181,7 @@ function getFacilityCategories (facility) {
 
     // Mobile services
     if (serviceName.includes('mobile') || serviceName.includes('van') ||
-        serviceName.includes('outreach')) {
+      serviceName.includes('outreach')) {
       if (!matches.includes('mobile')) {
         matches.push('mobile');
       }
@@ -188,7 +189,7 @@ function getFacilityCategories (facility) {
 
     // Ongoing support
     if (serviceName.includes('case') || serviceName.includes('navigation') ||
-        serviceName.includes('support') || serviceName.includes('coordination')) {
+      serviceName.includes('support') || serviceName.includes('coordination')) {
       if (!matches.includes('ongoing')) {
         matches.push('ongoing');
       }
@@ -241,7 +242,6 @@ function createSlug (name) {
 }
 
 function Home () {
-  const isClient = typeof window !== 'undefined';
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
@@ -253,20 +253,15 @@ function Home () {
       }
       return response.data;
     },
-    enabled: isClient,
   });
 
   const [userCoordinate, setUserCoordinate] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
 
   useEffect(() => {
-    if (!isClient) {
-      return () => {};
-    }
-
     if (!('geolocation' in navigator)) {
       setGeoStatus('unsupported');
-      return () => {};
+      return () => { };
     }
 
     let watchId;
@@ -350,7 +345,7 @@ function Home () {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [isClient]);
+  }, []);
 
   const referenceCoordinate = userCoordinate ?? DEFAULT_COORDINATE;
 
@@ -470,164 +465,102 @@ function Home () {
 
   const [showMap, setShowMap] = useState(true);
 
-  if (!isClient) {
-    return (
-      <>
-        <Head>
-          <title>Home</title>
-        </Head>
-        <main className='home'>
-          <div className='home__card'>
-            <p className='home__empty-state'>Loading client experience…</p>
-          </div>
-        </main>
-      </>
-    );
-  }
-
   return (
     <>
       <Head>
         <title>Home</title>
       </Head>
-      <main className='home'>
+      <Container>
 
         {isLoading && (
-          <div className='home__card'>
-            <p className='home__empty-state'>Loading facility data…</p>
-          </div>
+          <Text>Loading facility data…</Text>
         )}
 
         {isError && (
-          <div className='home__card'>
-            <p className='home__empty-state'>
+          <Stack>
+            <Text>
               We couldn&rsquo;t load facilities right now. Please refresh to try again.
-            </p>
-            <button
-              type='button'
-              className='cta-button cta-button--secondary'
-              onClick={() => window.location.reload()}
-            >
+            </Text>
+            <Button onClick={() => window.location.reload()}>
               Retry
-            </button>
-          </div>
+            </Button>
+          </Stack>
         )}
 
-        {!isLoading && !isError && (
+        {!isLoading && !isError &&
           <>
-            <section className='map-panel map-panel--hero'>
-              <div className='home__hero-header'>
-                <div>
-                  <p className='home__hero-subtitle'>{locationLabel}</p>
-                  <h1 className='home__title'>Available Sites</h1>
-                  <p className='home__metrics'>
-                    {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
-                  </p>
-                  {locationStatusMessage && (
-                    <p className='home__location-status'>{locationStatusMessage}</p>
+            <Stack>
+              <Box>
+                <Text c='gray' tt='uppercase' size='sm'>{locationLabel}</Text>
+                <Title>Available Sites</Title>
+                <Group align='flex-start' justify='space-between'>
+                  <Box>
+                    <Text size='sm' c='dark'>
+                      {(filteredFacilities.length || facilitiesWithMeta.length)} sites open · updated {formatRelativeTime(latestUpdatedAt)}
+                    </Text>
+                    {locationStatusMessage && (
+                      <Text size='xs' c='dimmed'>{locationStatusMessage}</Text>
+                    )}
+                  </Box>
+                  <Switch defaultChecked onChange={() => setShowMap((previous) => !previous)} label='Map' labelPosition='left' size='md' color='black' withThumbIndicator={false} />
+                </Group>
+              </Box>
+              <Chip.Group value={activeFilter} onChange={setActiveFilter}>
+                <Group mb='md' gap='xs' wrap='nowrap' style={{ overflowX: 'scroll' }}>
+                  {availableFilters.map((filter) => (
+                    <Chip
+                      key={filter}
+                      value={filter}
+                    >
+                      {filter}
+                    </Chip>
+                  ))}
+                </Group>
+              </Chip.Group>
+            </Stack>
+            <Grid>
+              <Grid.Col span={{ base: 12, md: showMap ? 4 : 12 }} order={{ base: 2, md: 1 }}>
+                <Stack>
+                  {CATEGORY_CONFIG.map((category) => {
+                    const categoryFacilities = facilitiesByCategory[category.id] ?? [];
+                    if (!categoryFacilities.length) {
+                      return null;
+                    }
+
+                    return (
+                      <Stack key={category.id}>
+                        <Title order={3}><span className='home__category-icon' aria-hidden='true'>{category.icon}</span>&nbsp;&nbsp;{category.label}</Title>
+                        {categoryFacilities.map((facility) => (
+                          <Facility key={facility.id} facility={facility} isSelected={selectedFacilityId === facility.id} onSelect={setSelectedFacilityId} />
+                        ))}
+                      </Stack>
+                    );
+                  })}
+                  {!filteredFacilities.length && (
+                    <Text>
+                      No facilities match this filter yet. Try a different category.
+                    </Text>
                   )}
-                </div>
-                <div className={`home__view-switch ${showMap ? 'home__view-switch--on' : 'home__view-switch--off'}`}>
-                  <span className='home__view-switch-label'>Map</span>
-                  <button
-                    type='button'
-                    className='home__toggle'
-                    aria-pressed={showMap}
-                    onClick={() => setShowMap((previous) => !previous)}
-                  >
-                    <span className='home__toggle-thumb' aria-hidden='true' />
-                  </button>
-                </div>
-              </div>
-              <div className='home__filters-scroll'>
-                {availableFilters.map((filter) => (
-                  <button
-                    key={filter}
-                    type='button'
-                    className={`chip ${filter === activeFilter ? 'chip--active' : ''}`}
-                    onClick={() => setActiveFilter(filter)}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
-              {showMap && (
-                <>
-                  <div className='map-panel__canvas'>
-                    {isClient && (
+                </Stack>
+              </Grid.Col>
+              {showMap &&
+                <Grid.Col span={{ base: 12, md: 8 }} order={{ base: 1, md: 2 }}>
+                  <Stack gap='xs'>
+                    <Box mx={{ base: '-md', md: 0 }}>
                       <FacilityMap
                         facilities={filteredFacilities}
                         userLocation={userCoordinate}
                         height={320}
                       />
-                    )}
-                  </div>
-                  <p className='map-panel__footer'>
-                    Last updated {formatUpdatedAt(latestUpdatedAt)}
-                  </p>
-                </>
-              )}
-            </section>
-
-            <section className='home__categories'>
-              {CATEGORY_CONFIG.map((category) => {
-                const categoryFacilities = facilitiesByCategory[category.id] ?? [];
-                if (!categoryFacilities.length) {
-                  return null;
-                }
-
-                return (
-                  <section key={category.id} className='home__category-section'>
-                    <header className='home__category-header'>
-                      <span className='home__category-icon' aria-hidden='true'>{category.icon}</span>
-                      <h2 className='home__category-title'>{category.label}</h2>
-                    </header>
-                    <div className='home__list'>
-                      {categoryFacilities.map((facility) => (
-                        <article
-                          key={facility.id}
-                          className={`card ${selectedFacilityId === facility.id ? 'card--selected' : ''}`}
-                          role='button'
-                          tabIndex={0}
-                          onClick={() => setSelectedFacilityId(facility.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              setSelectedFacilityId(facility.id);
-                            }
-                          }}
-                        >
-                          <div className='card__row'>
-                            <CategoryIcon categoryId={facility.primaryCategory} variant='card' />
-                            <span className='card__metric'>
-                              {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-                            </span>
-                          </div>
-                          <h3 className='card__title'>
-                            <span className='card__title-text'>{facility.name}</span>
-                          </h3>
-                          <p className='card__neighborhood'>{facility.districtLabel}</p>
-                          {facility.displayAddress && (
-                            <p className='card__subtitle'>{facility.displayAddress}</p>
-                          )}
-                          {facility.primaryService && (
-                            <p className='card__meta'>{facility.primaryService}</p>
-                          )}
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
-
-              {!filteredFacilities.length && (
-                <p className='home__empty-state'>
-                  No facilities match this filter yet. Try a different category.
-                </p>
-              )}
-            </section>
-          </>
-        )}
-      </main>
+                    </Box>
+                    <Text size='xs' c='dimmed'>
+                      Last updated {formatUpdatedAt(latestUpdatedAt)}
+                    </Text>
+                  </Stack>
+                </Grid.Col>}
+            </Grid>
+          </>}
+      </Container>
     </>
   );
 }

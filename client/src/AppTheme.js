@@ -1,14 +1,19 @@
-import { createTheme, Text } from '@mantine/core';
+import { createTheme, Chip, Container } from '@mantine/core';
 
 const AppTheme = createTheme({
   /** Your theme override here */
   cursorType: 'pointer',
   components: {
-    Text: Text.extend({
+    Chip: Chip.extend({
       defaultProps: {
-        inherit: true
+        color: 'black',
       }
-    })
+    }),
+    Container: Container.extend({
+      defaultProps: {
+        size: 'xl'
+      }
+    }),
   }
 });
 

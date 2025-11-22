@@ -20,6 +20,7 @@ services:
       - 3000:3000 # fastify
       - 3333:3333 # vite
       - 5555:5555 # prisma studio
+      - 6006:6006 # storybook
     depends_on:
       - db
       - mail
