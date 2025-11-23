@@ -29,7 +29,7 @@ const config = {
     name: getAbsolutePath('@storybook/react-vite'),
     options: {}
   },
-  async viteFinal(config, { configType }) {
+  async viteFinal (config, { configType }) {
     const mergedConfig = mergeConfig(config, {
       esbuild: {
         ...config.esbuild,
@@ -40,7 +40,7 @@ const config = {
         }
       }
     });
-    
+
     // Ensure optimizeDeps also uses jsx loader
     if (!mergedConfig.optimizeDeps) {
       mergedConfig.optimizeDeps = {};
@@ -53,7 +53,7 @@ const config = {
     }
     mergedConfig.optimizeDeps.esbuildOptions.loader['.js'] = 'jsx';
     mergedConfig.optimizeDeps.esbuildOptions.loader['.mjs'] = 'jsx';
-    
+
     return mergedConfig;
   }
 };

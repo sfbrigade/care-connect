@@ -40,10 +40,10 @@ export const HoldCard = {
     details: 'Details/Notes ????',
     actions: (
       <>
-        <Button variant="light" size="sm" leftSection={<IconClock size={18} />}>
+        <Button variant='light' size='sm' leftSection={<IconClock size={18} />}>
           Extend
         </Button>
-        <Button variant="light" size="sm" leftSection={<IconX size={18} />}>
+        <Button variant='light' size='sm' leftSection={<IconX size={18} />}>
           Cancel
         </Button>
       </>
@@ -81,4 +81,3 @@ export const EmptyCard = {
     children: <div>Card content goes here</div>,
   },
 };
-

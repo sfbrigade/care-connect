@@ -21,74 +21,74 @@ export default function Facility ({ facility, isSelected, onSelect }) {
       role='button'
     >
       <Card>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <CategoryIcon categoryId={facility.primaryCategory} variant='card' />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CategoryIcon categoryId={facility.primaryCategory} variant='card' />
+          <span
+            style={{
+              fontSize: '16px',
+              lineHeight: '24px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 600,
+              color: '#000000',
+            }}
+          >
+            {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
+          </span>
+        </div>
         <span
           style={{
-            fontSize: '16px',
-            lineHeight: '24px',
+            fontSize: '15px',
+            lineHeight: '22px',
             fontFamily: 'Roboto, sans-serif',
             fontWeight: 600,
-            color: '#000000',
-          }}
-        >
-          {facility.distanceMiles != null ? `${facility.distanceMiles.toFixed(1)} mi` : 'Distance n/a'}
-        </span>
-      </div>
-      <span
-        style={{
-          fontSize: '15px',
-          lineHeight: '22px',
-          fontFamily: 'Roboto, sans-serif',
-          fontWeight: 600,
-          color: '#212529',
-          margin: 0,
-        }}
-      >
-        {facility.name}
-      </span>
-      {facility.districtLabel && (
-        <span
-          style={{
-            fontSize: '13px',
-            lineHeight: '18px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 500,
-            color: '#0f172a',
+            color: '#212529',
             margin: 0,
           }}
         >
-          {facility.districtLabel}
+          {facility.name}
         </span>
-      )}
-      {facility.displayAddress && (
-        <span
-          style={{
-            fontSize: '13px',
-            lineHeight: '20px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 400,
-            color: '#868e96',
-            margin: 0,
-          }}
-        >
-          {facility.displayAddress}
-        </span>
-      )}
-      {facility.primaryService && (
-        <span
-          style={{
-            fontSize: '13px',
-            lineHeight: '20px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 400,
-            color: '#868e96',
-            margin: 0,
-          }}
-        >
-          {facility.primaryService}
-        </span>
-      )}
+        {facility.districtLabel && (
+          <span
+            style={{
+              fontSize: '13px',
+              lineHeight: '18px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 500,
+              color: '#0f172a',
+              margin: 0,
+            }}
+          >
+            {facility.districtLabel}
+          </span>
+        )}
+        {facility.displayAddress && (
+          <span
+            style={{
+              fontSize: '13px',
+              lineHeight: '20px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#868e96',
+              margin: 0,
+            }}
+          >
+            {facility.displayAddress}
+          </span>
+        )}
+        {facility.primaryService && (
+          <span
+            style={{
+              fontSize: '13px',
+              lineHeight: '20px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#868e96',
+              margin: 0,
+            }}
+          >
+            {facility.primaryService}
+          </span>
+        )}
       </Card>
     </div>
   );
