@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { Container, Title, Button, Table, Group, Badge, Loader, Alert, Stack } from '@mantine/core';
+import { Container, Title, Button, Table, Group, Badge, Loader, Alert } from '@mantine/core';
 import { IconPlus, IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '../../Api';

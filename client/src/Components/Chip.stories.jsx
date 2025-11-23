@@ -79,7 +79,7 @@ export const SelectionChipActive = {
 export const MultipleChips = {
   render: () => (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      <Chip active={true}>Current holds</Chip>
+      <Chip active>Current holds</Chip>
       <Chip active={false}>This week</Chip>
       <Chip active={false}>History</Chip>
     </div>
@@ -90,11 +90,10 @@ export const BedCountChips = {
   render: () => (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       <Chip active={false}>1</Chip>
-      <Chip active={true}>2</Chip>
+      <Chip active>2</Chip>
       <Chip active={false}>3</Chip>
       <Chip active={false}>4</Chip>
       <Chip active={false}>5</Chip>
     </div>
   ),
 };
-

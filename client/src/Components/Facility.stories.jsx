@@ -37,10 +37,10 @@ const mockFacilities = [
 export const Default = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
+      <Stack gap='16px'>
         <Title order={2}>Facilities</Title>
-        
-        <Stack gap="16px">
+
+        <Stack gap='16px'>
           {mockFacilities.map((facility) => (
             <Facility
               key={facility.id}
@@ -58,10 +58,10 @@ export const Default = {
 export const Selected = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
+      <Stack gap='16px'>
         <Title order={2}>Facilities</Title>
-        
-        <Stack gap="16px">
+
+        <Stack gap='16px'>
           {mockFacilities.map((facility, index) => (
             <Facility
               key={facility.id}

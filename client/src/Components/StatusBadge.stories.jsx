@@ -50,11 +50,10 @@ export const CustomText = {
 export const AllStatuses = {
   render: () => (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      <StatusBadge status="active" />
-      <StatusBadge status="open" />
-      <StatusBadge status="expired" />
-      <StatusBadge status="warning" />
+      <StatusBadge status='active' />
+      <StatusBadge status='open' />
+      <StatusBadge status='expired' />
+      <StatusBadge status='warning' />
     </div>
   ),
 };
-

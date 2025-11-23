@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route } from 'react-router';
 
 import AdminFacilitiesList from './AdminFacilitiesList';
 import AdminFacilityDetail from './AdminFacilityDetail';

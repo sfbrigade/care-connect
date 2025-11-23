@@ -44,8 +44,8 @@ export const WithActions = {
     intakeHours: '24/7',
     actions: (
       <>
-        <Button variant="light" size="sm">Action 1</Button>
-        <Button variant="light" size="sm">Action 2</Button>
+        <Button variant='light' size='sm'>Action 1</Button>
+        <Button variant='light' size='sm'>Action 2</Button>
       </>
     ),
   },
@@ -82,4 +82,3 @@ export const NoLastUpdated = {
     lastUpdated: false,
   },
 };
-
