@@ -1,6 +1,5 @@
 import { Container, Stack, Text, Group, Button } from '@mantine/core';
 import { useNavigate, useLocation } from 'react-router';
-import Card from '../Components/Card';
 
 /**
  * Hold Success screen - shown after successful hold creation

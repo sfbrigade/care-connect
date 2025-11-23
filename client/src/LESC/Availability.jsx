@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Text, Stack, Group, Loader, Alert, Button, Modal } from '@mantine/core';
+import { Container, Stack, Group, Loader, Button, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconAlertCircle, IconLock, IconX, IconClock } from '@tabler/icons-react';
+import { IconLock, IconX, IconClock } from '@tabler/icons-react';
 
 import Api from '../Api';
 import Chip from '../Components/Chip';
@@ -13,7 +12,7 @@ function Availability () {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
 
-  const { data, isLoading, error } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['lesc-availability'],
     queryFn: async () => {
       const response = await Api.lesc.availability();
@@ -46,7 +45,7 @@ function Availability () {
   });
 
   const handleCancelHold = (holdId) => {
-    if (confirm('Are you sure you want to cancel this hold?')) {
+    if (window.confirm('Are you sure you want to cancel this hold?')) {
       cancelHoldMutation.mutate(holdId);
     }
   };
@@ -55,6 +54,7 @@ function Availability () {
     extendHoldMutation.mutate(holdId);
   };
 
+  /*
   // Get active holds for a specific facility/service type
   const getHoldsForCard = (facilityId, serviceTypeId) => {
     if (!holds) return [];
@@ -99,6 +99,7 @@ function Availability () {
     const displayMinutes = minutes.toString().padStart(2, '0');
     return `${displayHours}:${displayMinutes} ${ampm}`;
   };
+  */
 
   if (isLoading) {
     return (

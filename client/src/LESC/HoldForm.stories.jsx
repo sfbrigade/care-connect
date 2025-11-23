@@ -1,5 +1,5 @@
 import { fn } from '@storybook/test';
-import { Stack, Textarea, Button, Select, Text } from '@mantine/core';
+import { Group, Stack, Textarea, Button, Select, Text } from '@mantine/core';
 import Chip from '../Components/Chip';
 import { useState } from 'react';
 
@@ -15,10 +15,10 @@ export const Default = {
   render: () => {
     const [bedsRequested, setBedsRequested] = useState(1);
     const [notes, setNotes] = useState('');
-    
+
     return (
       <div style={{ width: '335px', padding: '20px' }}>
-        <Stack gap="24px">
+        <Stack gap='24px'>
           <div>
             <Text
               style={{
@@ -33,8 +33,8 @@ export const Default = {
               Hold Details
             </Text>
           </div>
-          
-          <Stack gap="8px">
+
+          <Stack gap='8px'>
             <Text
               style={{
                 fontSize: '18px',
@@ -58,7 +58,7 @@ export const Default = {
               ))}
             </div>
           </Stack>
-          
+
           <div>
             <Text
               style={{
@@ -73,7 +73,7 @@ export const Default = {
               Notes (optional)
             </Text>
             <Textarea
-              placeholder="2 individuals sobering, no medical clearance needed"
+              placeholder='2 individuals sobering, no medical clearance needed'
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
@@ -82,7 +82,7 @@ export const Default = {
               }}
             />
           </div>
-          
+
           <Text
             style={{
               fontSize: '14px',
@@ -94,9 +94,9 @@ export const Default = {
           >
             Holds will expire automatically after selected time unless extended.
           </Text>
-          
-          <Group justify="flex-end" gap="8px">
-            <Button variant="light" onClick={fn()}>
+
+          <Group justify='flex-end' gap='8px'>
+            <Button variant='light' onClick={fn()}>
               Cancel
             </Button>
             <Button onClick={fn()}>
@@ -114,15 +114,15 @@ export const WithFacilitySelect = {
     const [facilityId, setFacilityId] = useState('');
     const [bedsRequested, setBedsRequested] = useState(1);
     const [notes, setNotes] = useState('');
-    
+
     const facilities = [
       { value: '1', label: 'LESC (8 available)' },
       { value: '2', label: 'Other Facility (5 available)' },
     ];
-    
+
     return (
       <div style={{ width: '335px', padding: '20px' }}>
-        <Stack gap="24px">
+        <Stack gap='24px'>
           <div>
             <Text
               style={{
@@ -137,18 +137,18 @@ export const WithFacilitySelect = {
               Hold Details
             </Text>
           </div>
-          
+
           <Select
-            label="Facility"
-            placeholder="Select facility"
+            label='Facility'
+            placeholder='Select facility'
             data={facilities}
             value={facilityId}
             onChange={setFacilityId}
             required
             searchable
           />
-          
-          <Stack gap="8px">
+
+          <Stack gap='8px'>
             <Text
               style={{
                 fontSize: '18px',
@@ -172,7 +172,7 @@ export const WithFacilitySelect = {
               ))}
             </div>
           </Stack>
-          
+
           <div>
             <Text
               style={{
@@ -187,7 +187,7 @@ export const WithFacilitySelect = {
               Notes (optional)
             </Text>
             <Textarea
-              placeholder="Additional notes"
+              placeholder='Additional notes'
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
@@ -196,7 +196,7 @@ export const WithFacilitySelect = {
               }}
             />
           </div>
-          
+
           <Text
             style={{
               fontSize: '14px',
@@ -208,9 +208,9 @@ export const WithFacilitySelect = {
           >
             Holds will expire automatically after selected time unless extended.
           </Text>
-          
-          <Group justify="flex-end" gap="8px">
-            <Button variant="light" onClick={fn()}>
+
+          <Group justify='flex-end' gap='8px'>
+            <Button variant='light' onClick={fn()}>
               Cancel
             </Button>
             <Button onClick={fn()} disabled={!facilityId}>
@@ -227,10 +227,10 @@ export const FilledForm = {
   render: () => {
     const [bedsRequested] = useState(2);
     const [notes] = useState('2 individuals sobering, no medical clearance needed');
-    
+
     return (
       <div style={{ width: '335px', padding: '20px' }}>
-        <Stack gap="24px">
+        <Stack gap='24px'>
           <div>
             <Text
               style={{
@@ -245,8 +245,8 @@ export const FilledForm = {
               Hold Details
             </Text>
           </div>
-          
-          <Stack gap="8px">
+
+          <Stack gap='8px'>
             <Text
               style={{
                 fontSize: '18px',
@@ -270,7 +270,7 @@ export const FilledForm = {
               ))}
             </div>
           </Stack>
-          
+
           <div>
             <Text
               style={{
@@ -293,7 +293,7 @@ export const FilledForm = {
               }}
             />
           </div>
-          
+
           <Text
             style={{
               fontSize: '14px',
@@ -305,9 +305,9 @@ export const FilledForm = {
           >
             Holds will expire automatically after selected time unless extended.
           </Text>
-          
-          <Group justify="flex-end" gap="8px">
-            <Button variant="light" onClick={fn()}>
+
+          <Group justify='flex-end' gap='8px'>
+            <Button variant='light' onClick={fn()}>
               Cancel
             </Button>
             <Button onClick={fn()} loading={false}>
@@ -319,4 +319,3 @@ export const FilledForm = {
     );
   },
 };
-

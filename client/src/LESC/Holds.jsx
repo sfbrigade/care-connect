@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Text, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
+import { Container, Title, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useLocation } from 'react-router';
 import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
@@ -51,7 +51,7 @@ function Holds () {
   };
 
   const handleCancel = (id) => {
-    if (confirm('Are you sure you want to cancel this hold?')) {
+    if (window.confirm('Are you sure you want to cancel this hold?')) {
       cancelMutation.mutate(id);
     }
   };

@@ -1,4 +1,4 @@
-import { Container, Stack, Text, Group, Title } from '@mantine/core';
+import { Container, Stack, Text, Group } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import Api from '../Api';
 import Chip from '../Components/Chip';

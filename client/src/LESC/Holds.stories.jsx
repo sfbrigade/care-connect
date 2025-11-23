@@ -56,18 +56,18 @@ const formatTimeUntil = (expiresAt) => {
 export const Default = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
-        <Group justify="space-between">
+      <Stack gap='16px'>
+        <Group justify='space-between'>
           <Title order={2}>Active Bed Holds</Title>
           <Button leftSection={<IconPlus size={18} />} onClick={fn()}>
             Create Hold
           </Button>
         </Group>
-        
-        <Stack gap="16px">
+
+        <Stack gap='16px'>
           {mockHolds.map((hold) => {
             const isExpiringSoon = new Date(hold.expiresAt).getTime() - Date.now() < 15 * 60 * 1000;
-            
+
             return (
               <Card
                 key={hold.id}
@@ -79,17 +79,17 @@ export const Default = {
                   <>
                     <Button
                       leftSection={<IconClock size={18} />}
-                      variant="light"
-                      size="sm"
+                      variant='light'
+                      size='sm'
                       onClick={fn()}
                     >
                       Extend 30 min
                     </Button>
                     <Button
                       leftSection={<IconX size={18} />}
-                      variant="light"
-                      color="red"
-                      size="sm"
+                      variant='light'
+                      color='red'
+                      size='sm'
                       onClick={fn()}
                     >
                       Cancel
@@ -108,14 +108,14 @@ export const Default = {
 export const EmptyState = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
-        <Group justify="space-between">
+      <Stack gap='16px'>
+        <Group justify='space-between'>
           <Title order={2}>Active Bed Holds</Title>
           <Button leftSection={<IconPlus size={18} />} onClick={fn()}>
             Create Hold
           </Button>
         </Group>
-        
+
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#868e96' }}>
           No active holds.
         </div>
@@ -135,37 +135,37 @@ export const ExpiringSoon = {
       status: 'ACTIVE',
       notes: 'Expiring soon',
     };
-    
+
     return (
       <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-        <Stack gap="16px">
-          <Group justify="space-between">
+        <Stack gap='16px'>
+          <Group justify='space-between'>
             <Title order={2}>Active Bed Holds</Title>
             <Button leftSection={<IconPlus size={18} />} onClick={fn()}>
               Create Hold
             </Button>
           </Group>
-          
+
           <Card
             timeRemaining={formatTimeRemaining(expiringHold.expiresAt)}
             timeUntil={formatTimeUntil(expiringHold.expiresAt)}
-            badgeStatus="warning"
+            badgeStatus='warning'
             details={expiringHold.notes}
             actions={
               <>
                 <Button
                   leftSection={<IconClock size={18} />}
-                  variant="light"
-                  size="sm"
+                  variant='light'
+                  size='sm'
                   onClick={fn()}
                 >
                   Extend 30 min
                 </Button>
                 <Button
                   leftSection={<IconX size={18} />}
-                  variant="light"
-                  color="red"
-                  size="sm"
+                  variant='light'
+                  color='red'
+                  size='sm'
                   onClick={fn()}
                 >
                   Cancel
@@ -178,4 +178,3 @@ export const ExpiringSoon = {
     );
   },
 };
-

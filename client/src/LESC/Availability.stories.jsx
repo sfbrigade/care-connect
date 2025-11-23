@@ -1,9 +1,8 @@
 import { fn } from '@storybook/test';
-import { Stack, Group } from '@mantine/core';
+import { Stack, Group, Button } from '@mantine/core';
 import LESCCard from '../Components/LESCCard';
 import Chip from '../Components/Chip';
 import Card from '../Components/Card';
-import { Button } from '@mantine/core';
 import { IconLock, IconClock, IconX } from '@tabler/icons-react';
 
 export default {
@@ -51,34 +50,34 @@ const mockHolds = [
 export const Default = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
+      <Stack gap='16px'>
         <LESCCard
           facilityName={mockFacility.facilityName}
           address={mockFacility.address}
           bedCount={mockFacility.bedCount}
           status={mockFacility.status}
           intakeHours={mockFacility.intakeHours}
-          lastUpdated="10:42 AM"
+          lastUpdated='10:42 AM'
         />
-        
-        <Group gap="8px">
-          <Chip active={true} onClick={fn()}>Current holds</Chip>
+
+        <Group gap='8px'>
+          <Chip active onClick={fn()}>Current holds</Chip>
           <Chip active={false} onClick={fn()}>This week</Chip>
           <Chip active={false} onClick={fn()}>History</Chip>
         </Group>
-        
+
         {mockAvailabilityData.map((item) => (
           <Card
             key={item.facilityId}
             title={item.facilityName}
             subtitle={item.serviceTypeName}
-            badgeStatus="open"
+            badgeStatus='open'
             details={`${item.calculatedAvailable} Available`}
             actions={
               <Button
                 leftSection={<IconLock size={18} />}
                 onClick={fn()}
-                variant="light"
+                variant='light'
               >
                 Hold
               </Button>
@@ -93,44 +92,44 @@ export const Default = {
 export const WithActiveHolds = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
+      <Stack gap='16px'>
         <LESCCard
           facilityName={mockFacility.facilityName}
           address={mockFacility.address}
           bedCount={mockFacility.bedCount}
           status={mockFacility.status}
           intakeHours={mockFacility.intakeHours}
-          lastUpdated="10:42 AM"
+          lastUpdated='10:42 AM'
         />
-        
-        <Group gap="8px">
-          <Chip active={true} onClick={fn()}>Current holds</Chip>
+
+        <Group gap='8px'>
+          <Chip active onClick={fn()}>Current holds</Chip>
           <Chip active={false} onClick={fn()}>This week</Chip>
           <Chip active={false} onClick={fn()}>History</Chip>
         </Group>
-        
+
         {mockHolds.map((hold) => (
           <Card
             key={hold.id}
-            timeRemaining="59 mins"
-            timeUntil="Until 11:15 AM"
-            badgeStatus="active"
-            details="Details/Notes ????"
+            timeRemaining='59 mins'
+            timeUntil='Until 11:15 AM'
+            badgeStatus='active'
+            details='Details/Notes ????'
             actions={
               <>
                 <Button
                   leftSection={<IconClock size={18} />}
-                  variant="light"
-                  size="sm"
+                  variant='light'
+                  size='sm'
                   onClick={fn()}
                 >
                   Extend 30 min
                 </Button>
                 <Button
                   leftSection={<IconX size={18} />}
-                  variant="light"
-                  color="red"
-                  size="sm"
+                  variant='light'
+                  color='red'
+                  size='sm'
                   onClick={fn()}
                 >
                   Cancel
@@ -139,19 +138,19 @@ export const WithActiveHolds = {
             }
           />
         ))}
-        
+
         {mockAvailabilityData.map((item) => (
           <Card
             key={item.facilityId}
             title={item.facilityName}
             subtitle={item.serviceTypeName}
-            badgeStatus="open"
+            badgeStatus='open'
             details={`${item.calculatedAvailable} Available`}
             actions={
               <Button
                 leftSection={<IconLock size={18} />}
                 onClick={fn()}
-                variant="light"
+                variant='light'
               >
                 Hold
               </Button>
@@ -166,22 +165,22 @@ export const WithActiveHolds = {
 export const EmptyState = {
   render: () => (
     <div style={{ padding: '20px', maxWidth: '375px', margin: '0 auto' }}>
-      <Stack gap="16px">
+      <Stack gap='16px'>
         <LESCCard
           facilityName={mockFacility.facilityName}
           address={mockFacility.address}
           bedCount={0}
-          status="closed"
-          intakeHours="24/7"
-          lastUpdated="10:42 AM"
+          status='closed'
+          intakeHours='24/7'
+          lastUpdated='10:42 AM'
         />
-        
-        <Group gap="8px">
-          <Chip active={true} onClick={fn()}>Current holds</Chip>
+
+        <Group gap='8px'>
+          <Chip active onClick={fn()}>Current holds</Chip>
           <Chip active={false} onClick={fn()}>This week</Chip>
           <Chip active={false} onClick={fn()}>History</Chip>
         </Group>
-        
+
         <div style={{ textAlign: 'center', padding: '40px 20px', color: '#868e96' }}>
           No LESC facilities found.
         </div>
@@ -189,4 +188,3 @@ export const EmptyState = {
     </div>
   ),
 };
-
