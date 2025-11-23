@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 import { Group, Stack, Textarea, Button, Select, Text } from '@mantine/core';
 import Chip from '../Components/Chip';
 import { useState } from 'react';

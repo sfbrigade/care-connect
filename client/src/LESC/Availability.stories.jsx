@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 import { Stack, Group, Button } from '@mantine/core';
 import LESCCard from '../Components/LESCCard';
 import Chip from '../Components/Chip';

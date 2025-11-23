@@ -1,4 +1,4 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 import { Stack, Title } from '@mantine/core';
 import Facility from './Facility';
 
