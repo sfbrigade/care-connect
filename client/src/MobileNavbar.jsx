@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router';
-import { Divider, NavLink as MantineNavLink, Paper, Stack, Text, Collapse } from '@mantine/core';
+import { Divider, NavLink as MantineNavLink, Stack, Collapse } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
 import { useAuthContext } from './AuthContext';
-import FeedbackForm from './Feedback/FeedbackForm';
 
 function MobileNavbar ({ close }) {
   const { user } = useAuthContext();
@@ -12,27 +11,6 @@ function MobileNavbar ({ close }) {
 
   return (
     <Stack gap='md'>
-      <Paper withBorder p='sm' radius='md'>
-        <Stack gap='md'>
-          <Stack gap={4}>
-            <Text size='sm' fw={600}>
-              Feedback
-            </Text>
-            <Paper
-              p='md'
-              radius={12}
-              style={{
-                boxShadow: '0px 4px 4px 0px rgba(0,0,0,0.25)',
-                backgroundColor: '#ffffff',
-                borderTop: '1px solid #dee2e6',
-              }}
-            >
-              <FeedbackForm />
-            </Paper>
-          </Stack>
-          <Text size='sm'>version: v1.0.4</Text>
-        </Stack>
-      </Paper>
       <MantineNavLink component={NavLink} to='/' onClick={close} label='Home' />
 
       {/* LESC with submenu */}

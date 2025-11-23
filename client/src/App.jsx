@@ -54,7 +54,7 @@ function App () {
               <AppShell.Navbar p='md'>
                 <MobileNavbar close={close} />
               </AppShell.Navbar>
-              <AppShell.Main px={0}>
+              <AppShell.Main px={0} style={{ paddingTop: '3px' }}>
                 <Routes>
                   <Route
                     path='*'

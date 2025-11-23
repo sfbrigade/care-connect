@@ -4,7 +4,7 @@ import FeedbackForm from './FeedbackForm';
 
 function FeedbackViewer () {
   return (
-    <Container size='md' py='xl'>
+    <Container size='md' pt={0} pb='xl'>
       <Paper
         p='xl'
         radius={12}
