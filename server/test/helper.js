@@ -11,7 +11,7 @@ import YAML from 'yaml';
 import { StatusCodes } from 'http-status-codes';
 import * as nodemailerMock from 'nodemailer-mock';
 
-// import { GenericContainer } from 'testcontainers'; // Commented out - not needed for holds tests
+import { GenericContainer } from 'testcontainers';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import {
   Builder,
@@ -72,8 +72,6 @@ async function build (t) {
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
   // set up a new storage container
-  // Commented out - not needed for holds tests
-  /*
   let storageContainer = new GenericContainer(compose.services.storage.image)
     .withEntrypoint(['minio', 'server', '/data'])
     .withExposedPorts(9000);
@@ -86,29 +84,7 @@ async function build (t) {
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
   process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
-
-  // Reset S3 client to ensure it uses the new environment variables
-  s3.reset();
-
-  // Wait for MinIO to be ready
-  await sleep(2000);
-
-  // Retry creating bucket in case MinIO isn't ready yet
-  let retries = 5;
-  while (retries > 0) {
-    try {
-      await s3.createBucket(process.env.AWS_S3_BUCKET);
-      break;
-    } catch (error) {
-      console.warn(`MinIO bucket creation failed, retrying... (${error.message})`);
-      retries--;
-      await sleep(1000); // Wait a bit before retrying
-    }
-  }
-  if (retries === 0) {
-    throw new Error('Failed to create MinIO bucket after multiple retries.');
-  }
-  */
+  await s3.createBucket(process.env.AWS_S3_BUCKET);
 
   // you can set all the options supported by the fastify CLI command
   const argv = [AppPath];
@@ -134,8 +110,7 @@ async function build (t) {
     // clear sent mail
     nodemailerMock.mock.reset();
     // clear test assets
-    // Commented out - not needed for holds tests
-    // await s3.deleteObjects('_test/');
+    await s3.deleteObjects('_test/');
     // reset test database after each test
     return recreateDb();
   });
@@ -144,8 +119,7 @@ async function build (t) {
   t.after(async () => {
     await app.close();
     await startedDbContainer.stop();
-    // Commented out - not needed for holds tests
-    // await startedStorageContainer.stop();
+    await startedStorageContainer.stop();
   });
 
   return app;
