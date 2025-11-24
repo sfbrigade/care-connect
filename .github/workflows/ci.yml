@@ -54,13 +54,13 @@ jobs:
         id: environment
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "environment=dido" >> $GITHUB_ENV
+            echo "environment=dido" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "dev" ]]; then
-            echo "environment=dido-dev" >> $GITHUB_ENV
+            echo "environment=dido-dev" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "lesc-main" ]]; then
-            echo "environment=lesc" >> $GITHUB_ENV
+            echo "environment=lesc" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "lesc-dev" ]]; then
-            echo "environment=lesc-dev" >> $GITHUB_ENV
+            echo "environment=lesc-dev" >> "$GITHUB_OUTPUT"
           fi
       - name: Docker meta
         id: meta
