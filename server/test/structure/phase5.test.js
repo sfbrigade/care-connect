@@ -97,7 +97,7 @@ test('Phase 5: Location utility exports correct functions', async () => {
   );
 });
 
-test('Phase 5: Backward compatibility - /lesc/* and /dido/* paths work', async () => {
+test('Phase 5: Path-based routing - /lesc/* and /dido/* paths work', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   
@@ -108,6 +108,32 @@ test('Phase 5: Backward compatibility - /lesc/* and /dido/* paths work', async (
   assert.ok(
     appJsxContent.includes("path='/dido/*'"),
     'App.jsx should have /dido/* route'
+  );
+});
+
+test('Phase 5: Root path returns 404 (no backward compatibility)', async () => {
+  const appJsxPath = join(rootDir, 'client/src/App.jsx');
+  const appJsxContent = readFileSync(appJsxPath, 'utf8');
+  const registryPath = join(rootDir, 'server/core/api/locations/registry.js');
+  const registryContent = readFileSync(registryPath, 'utf8');
+  
+  // Verify root path is not in DIDO paths
+  assert.ok(
+    !registryContent.includes("paths: ['/dido', '/']") && !registryContent.includes('paths: ["/dido", "/"]'),
+    'Location registry should not include root path / in DIDO paths'
+  );
+  
+  // Verify NotFound component exists
+  const notFoundPath = join(rootDir, 'client/src/NotFound.jsx');
+  assert.ok(
+    existsSync(notFoundPath),
+    'NotFound.jsx should exist for 404 handling'
+  );
+  
+  // Verify App.jsx imports NotFound
+  assert.ok(
+    appJsxContent.includes('NotFound') || appJsxContent.includes('notFound'),
+    'App.jsx should import NotFound component'
   );
 });
 

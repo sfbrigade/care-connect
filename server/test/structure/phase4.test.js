@@ -38,6 +38,13 @@ test('Phase 4: client/src/App.jsx loads DIDO routes', async () => {
     appJsxContent.includes("path='/dido/*'"),
     'client/src/App.jsx should route DIDO at /dido/*'
   );
+  // Verify root path doesn't default to DIDO (should not have path='/' with DIDORoutes)
+  const hasRootPathWithDIDO = appJsxContent.includes("path='/'") && 
+    (appJsxContent.includes('<DIDORoutes') || appJsxContent.includes('DIDORoutes />'));
+  assert.ok(
+    !hasRootPathWithDIDO,
+    'client/src/App.jsx should not have root path (/) defaulting to DIDO'
+  );
   assert.ok(
     !appJsxContent.includes("import Home from './Home'"),
     'client/src/App.jsx should not import Home directly'

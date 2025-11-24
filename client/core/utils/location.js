@@ -52,12 +52,17 @@ export function getLocation (staticContext) {
     };
   }
 
-  // Default to DIDO (for root path /)
-  return {
-    location: 'DIDO',
-    appType: 'dido',
-    method: 'path',
-  };
+  // Check for DIDO subdomain (www or no subdomain)
+  if (subdomain === 'www' || subdomain === '') {
+    return {
+      location: 'DIDO',
+      appType: 'dido',
+      method: 'subdomain',
+    };
+  }
+
+  // No location found - return null (will result in 404)
+  return null;
 }
 
 /**

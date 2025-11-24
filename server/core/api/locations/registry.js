@@ -8,7 +8,7 @@ const LOCATIONS = {
     name: 'DIDO',
     appType: 'dido',
     subdomains: ['dido', 'www', ''], // empty string means no subdomain (default)
-    paths: ['/dido', '/'], // Support both /dido/* and / for backward compatibility
+    paths: ['/dido'], // Only /dido/* path, no root path
   },
   LESC: {
     name: 'LESC',
@@ -42,7 +42,7 @@ export function detectLocationFromSubdomain (host) {
 
 /**
  * Detect location from path
- * @param {string} pathname - The pathname from the request (e.g., "/lesc/availability" or "/")
+ * @param {string} pathname - The pathname from the request (e.g., "/lesc/availability" or "/dido")
  * @returns {string|null} - Location name or null if not found
  */
 export function detectLocationFromPath (pathname) {
@@ -56,8 +56,8 @@ export function detectLocationFromPath (pathname) {
     }
   }
 
-  // Default to DIDO if no path match
-  return 'DIDO';
+  // No path match - return null (will result in 404)
+  return null;
 }
 
 /**
@@ -73,7 +73,7 @@ export function getAppTypeForLocation (locationName) {
 /**
  * Detect location from request (checks both subdomain and path)
  * @param {object} request - Fastify request object
- * @returns {object} - { location: string, appType: string, method: 'subdomain' | 'path' }
+ * @returns {object|null} - { location: string, appType: string, method: 'subdomain' | 'path' } or null if not found
  */
 export function detectLocation (request) {
   const host = request.headers.host || '';
@@ -81,7 +81,7 @@ export function detectLocation (request) {
 
   // First try subdomain detection
   const subdomainLocation = detectLocationFromSubdomain(host);
-  if (subdomainLocation && subdomainLocation !== 'DIDO') {
+  if (subdomainLocation) {
     return {
       location: subdomainLocation,
       appType: getAppTypeForLocation(subdomainLocation),
@@ -91,11 +91,16 @@ export function detectLocation (request) {
 
   // Then try path detection
   const pathLocation = detectLocationFromPath(pathname);
-  return {
-    location: pathLocation || 'DIDO',
-    appType: getAppTypeForLocation(pathLocation || 'DIDO'),
-    method: 'path',
-  };
+  if (pathLocation) {
+    return {
+      location: pathLocation,
+      appType: getAppTypeForLocation(pathLocation),
+      method: 'path',
+    };
+  }
+
+  // No location found - return null (will result in 404)
+  return null;
 }
 
 export default {

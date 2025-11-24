@@ -24,6 +24,7 @@ import Register from './Register';
 import UsersRoutes from './Users/UsersRoutes';
 import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
+import NotFound from './NotFound';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
@@ -42,8 +43,9 @@ function App () {
 
   // Determine which app routes to use based on location
   const AppRoutes = useMemo(() => {
+    if (!location) return null; // No location found - will show 404
     return location.appType === 'lesc' ? LESCRoutes : DIDORoutes;
-  }, [location.appType]);
+  }, [location]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -99,22 +101,18 @@ function App () {
                               </Suspense>
                             }
                           />
-                          {/* Root path - default to DIDO for backward compatibility */}
-                          <Route
-                            path='/' element={
-                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                                <DIDORoutes />
-                              </Suspense>
-                            }
-                          />
-                          {/* App routes - location-aware routing for other paths */}
-                          <Route
-                            path='/*' element={
-                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                                <AppRoutes />
-                              </Suspense>
-                            }
-                          />
+                          {/* App routes - location-aware routing for subdomain-based access */}
+                          {AppRoutes ? (
+                            <Route
+                              path='/*' element={
+                                <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                  <AppRoutes />
+                                </Suspense>
+                              }
+                            />
+                          ) : (
+                            <Route path='/*' element={<NotFound />} />
+                          )}
                         </Routes>
                       </AppRedirects>
                     }
