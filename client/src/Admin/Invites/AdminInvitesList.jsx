@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
-import Api from '../../Api';
+import Api from '../../../core/Api';
 import Pagination from '../../../core/components/Pagination';
 
 function AdminInvitesList () {

@@ -1,7 +1,7 @@
 import { fn } from 'storybook/test';
 import { Stack, Group, Title, Button } from '@mantine/core';
 import { IconPlus, IconClock, IconX } from '@tabler/icons-react';
-import Card from '../../core/components/Card';
+import Card from '../../../core/components/Card';
 
 export default {
   title: 'LESC/Holds',
@@ -47,7 +47,7 @@ const formatTimeUntil = (expiresAt) => {
   const expires = new Date(expiresAt);
   const hours = expires.getHours();
   const minutes = expires.getMinutes();
-  const ampm = hours >= 12 ? 'AM' : 'AM';
+  const ampm = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
   const displayMinutes = minutes.toString().padStart(2, '0');
   return `Until ${displayHours}:${displayMinutes} ${ampm}`;

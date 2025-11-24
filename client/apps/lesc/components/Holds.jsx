@@ -5,10 +5,11 @@ import { useDisclosure } from '@mantine/hooks';
 import { useLocation } from 'react-router';
 import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
 
-import Api from '../../core/Api';
+import Api from '../../../core/Api';
 import HoldForm from './HoldForm';
-import Card from '../../core/components/Card';
-import Chip from '../../core/components/Chip';
+import Card from '../../../core/components/Card';
+import Chip from '../../../core/components/Chip';
+import { formatCreatedAt } from '../../../core/utils/dateTime';
 
 function Holds () {
   const location = useLocation();
@@ -73,35 +74,6 @@ function Holds () {
       </Container>
     );
   }
-
-  // Format created date
-  const formatCreatedAt = (createdAt) => {
-    const created = new Date(createdAt);
-    const now = new Date();
-    const diffMs = now.getTime() - created.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) {
-      return 'Just now';
-    } else if (diffMins < 60) {
-      return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      // Format as date
-      const month = created.toLocaleString('default', { month: 'short' });
-      const day = created.getDate();
-      const year = created.getFullYear();
-      const isCurrentYear = year === now.getFullYear();
-      return isCurrentYear ? `${month} ${day}` : `${month} ${day}, ${year}`;
-    }
-  };
 
   return (
     <Container size='sm' py='md' px='md'>

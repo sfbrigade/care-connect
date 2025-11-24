@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Container, Stack, Text, Textarea, Button, Group, Select, TextInput } from '@mantine/core';
 import { useNavigate, useLocation } from 'react-router';
 import { IconArrowLeft } from '@tabler/icons-react';
-import Api from '../../core/Api';
+import Api from '../../../core/Api';
 
 /**
  * Intake Form component - matches Figma "Start Report / Intake Form" design

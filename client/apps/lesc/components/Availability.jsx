@@ -3,10 +3,11 @@ import { Container, Stack, Group, Loader, Button, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconLock, IconX, IconClock } from '@tabler/icons-react';
 
-import Api from '../../core/Api';
-import Chip from '../../core/components/Chip';
-import Card from '../../core/components/Card';
+import Api from '../../../core/Api';
+import Chip from '../../../core/components/Chip';
+import Card from '../../../core/components/Card';
 import HoldForm from './HoldForm';
+import { formatTime } from '../../../core/utils/dateTime';
 
 function Availability () {
   const queryClient = useQueryClient();
@@ -131,16 +132,6 @@ function Availability () {
                 const expiresAt = new Date(hold.expiresAt);
                 const createdAt = new Date(hold.createdAt);
                 const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
-
-                // Format time helper
-                const formatTime = (date) => {
-                  const hours = date.getHours();
-                  const minutes = date.getMinutes();
-                  const ampm = hours >= 12 ? 'PM' : 'AM';
-                  const displayH = hours % 12 || 12;
-                  const displayM = minutes.toString().padStart(2, '0');
-                  return `${displayH}:${displayM} ${ampm}`;
-                };
 
                 const createdTime = formatTime(createdAt);
                 const expiresTime = formatTime(expiresAt);

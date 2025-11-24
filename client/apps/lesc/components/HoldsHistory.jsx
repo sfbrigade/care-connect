@@ -1,9 +1,10 @@
 import { Container, Stack, Text, Group } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import Api from '../../core/Api';
-import Chip from '../../core/components/Chip';
-import Card from '../../core/components/Card';
+import Api from '../../../core/Api';
+import Chip from '../../../core/components/Chip';
+import Card from '../../../core/components/Card';
 import { useState } from 'react';
+import { formatTimeRemaining, formatTimeUntil } from '../../../core/utils/dateTime';
 
 /**
  * History view for holds - matches Figma "Availability Screen — History" design
@@ -31,27 +32,6 @@ function HoldsHistory () {
       </Container>
     );
   }
-
-  const formatTimeRemaining = (expiresAt) => {
-    const expires = new Date(expiresAt);
-    const diffMs = expires.getTime() - Date.now();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 0) return 'Expired';
-    if (diffMins < 60) return `${diffMins} mins`;
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  const formatTimeUntil = (expiresAt) => {
-    const expires = new Date(expiresAt);
-    const displayHours = expires.getHours();
-    const displayMinutes = expires.getMinutes();
-    const ampm = displayHours >= 12 ? 'AM' : 'PM';
-    const displayH = displayHours % 12 || 12;
-    const displayM = displayMinutes.toString().padStart(2, '0');
-    return `Until ${displayH}:${displayM} ${ampm}`;
-  };
 
   return (
     <Container>

@@ -1,8 +1,8 @@
 import { fn } from 'storybook/test';
 import { Stack, Group, Button } from '@mantine/core';
 import LESCCard from './LESCCard';
-import Chip from '../../core/components/Chip';
-import Card from '../../core/components/Card';
+import Chip from '../../../core/components/Chip';
+import Card from '../../../core/components/Card';
 import { IconLock, IconClock, IconX } from '@tabler/icons-react';
 
 export default {

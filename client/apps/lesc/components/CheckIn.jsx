@@ -2,7 +2,8 @@ import { Container, Stack, Text, Group, Button } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
-import Card from '../../core/components/Card';
+import Card from '../../../core/components/Card';
+import { formatTimeRemaining, formatTimeUntil } from '../../../core/utils/dateTime';
 
 /**
  * Check-in screen - matches Figma "Check-in" design
@@ -47,12 +48,7 @@ function CheckIn () {
   const diffMs = expiresAt.getTime() - Date.now();
   const diffMins = Math.floor(diffMs / 60000);
   const timeRemaining = diffMins < 60 ? `${diffMins} mins` : `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-  const displayHours = expiresAt.getHours();
-  const displayMinutes = expiresAt.getMinutes();
-  const ampm = displayHours >= 12 ? 'AM' : 'PM';
-  const displayH = displayHours % 12 || 12;
-  const displayM = displayMinutes.toString().padStart(2, '0');
-  const timeUntil = `Until ${displayH}:${displayM} ${ampm}`;
+  const timeUntil = formatTimeUntil(hold.expiresAt);
 
   return (
     <Container>

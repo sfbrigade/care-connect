@@ -1,5 +1,6 @@
 import { Box, Text, Group } from '@mantine/core';
 import StatusBadge from '../../../core/components/StatusBadge';
+import { formatTime } from '../../../core/utils/dateTime';
 
 /**
  * LESCCard component for displaying LESC facility information
@@ -19,13 +20,7 @@ function LESCCard ({
     if (lastUpdated) {
       return lastUpdated;
     }
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const displayMinutes = minutes.toString().padStart(2, '0');
-    return `${displayHours}:${displayMinutes} ${ampm}`;
+    return formatTime(new Date());
   };
 
   return (
