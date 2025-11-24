@@ -113,3 +113,70 @@ test('Phase 6: Server package.json has build script', async () => {
   );
 });
 
+test('Phase 6: DateTime utility exists and exports correct functions', async () => {
+  const dateTimeUtilPath = join(rootDir, 'client/core/utils/dateTime.js');
+  assert.ok(existsSync(dateTimeUtilPath), 'dateTime.js utility should exist');
+  
+  const dateTimeUtilContent = readFileSync(dateTimeUtilPath, 'utf8');
+  assert.ok(
+    dateTimeUtilContent.includes('formatTimeRemaining'),
+    'dateTime.js should export formatTimeRemaining'
+  );
+  assert.ok(
+    dateTimeUtilContent.includes('formatTimeUntil'),
+    'dateTime.js should export formatTimeUntil'
+  );
+  assert.ok(
+    dateTimeUtilContent.includes('formatTime'),
+    'dateTime.js should export formatTime'
+  );
+  assert.ok(
+    dateTimeUtilContent.includes('formatCreatedAt'),
+    'dateTime.js should export formatCreatedAt'
+  );
+});
+
+test('Phase 6: DateTime utility test file exists', async () => {
+  const dateTimeTestPath = join(rootDir, 'client/core/utils/dateTime.test.js');
+  assert.ok(existsSync(dateTimeTestPath), 'dateTime.test.js should exist');
+  
+  const dateTimeTestContent = readFileSync(dateTimeTestPath, 'utf8');
+  assert.ok(
+    dateTimeTestContent.includes('formatTimeRemaining'),
+    'dateTime.test.js should test formatTimeRemaining'
+  );
+  assert.ok(
+    dateTimeTestContent.includes('formatTimeUntil'),
+    'dateTime.test.js should test formatTimeUntil'
+  );
+  assert.ok(
+    dateTimeTestContent.includes('formatTime'),
+    'dateTime.test.js should test formatTime'
+  );
+  assert.ok(
+    dateTimeTestContent.includes('formatCreatedAt'),
+    'dateTime.test.js should test formatCreatedAt'
+  );
+});
+
+test('Phase 6: LESC components use shared datetime utilities', async () => {
+  const componentsToCheck = [
+    'client/apps/lesc/components/CheckIn.jsx',
+    'client/apps/lesc/components/HoldsHistory.jsx',
+    'client/apps/lesc/components/Availability.jsx',
+    'client/apps/lesc/components/LESCCard.jsx',
+    'client/apps/lesc/components/Holds.jsx',
+  ];
+
+  for (const componentPath of componentsToCheck) {
+    const fullPath = join(rootDir, componentPath);
+    if (existsSync(fullPath)) {
+      const content = readFileSync(fullPath, 'utf8');
+      assert.ok(
+        content.includes('core/utils/dateTime'),
+        `${componentPath} should import from core/utils/dateTime`
+      );
+    }
+  }
+});
+
