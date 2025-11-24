@@ -48,6 +48,7 @@ jobs:
       tag_names: ${{ steps.meta.outputs.tag_names }}
       tag_exists: ${{ steps.check-image.outputs.tag_exists }}
       json: ${{ steps.meta.outputs.json }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Set environment variable based on branch
         id: environment
