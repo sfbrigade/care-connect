@@ -9,9 +9,9 @@ import { useHead } from '@unhead/react';
 
 import './App.css';
 
-import AuthContextProvider from './AuthContextProvider';
+import AuthContextProvider from './core/AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
-import { useStaticContext } from './StaticContext';
+import { useStaticContext } from './core/StaticContext';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';

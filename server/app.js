@@ -28,4 +28,7 @@ export default async function (fastify, opts) {
     dir: path.join(__dirname, 'routes'),
     options: Object.assign({}, opts)
   });
+
+  // Load core API routes
+  await fastify.register(import('./core/api/index.js'), opts);
 }

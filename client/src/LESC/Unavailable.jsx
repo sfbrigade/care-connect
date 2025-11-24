@@ -1,5 +1,5 @@
 import { Container, Stack, Text, Title } from '@mantine/core';
-import LESCCard from '../Components/LESCCard';
+import LESCCard from '../../core/components/LESCCard';
 
 /**
  * Unavailable screen - shown when LESC has no availability

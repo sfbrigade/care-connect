@@ -5,7 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { StatusCodes } from 'http-status-codes';
 
-import Api from '../Api';
+import Api from '../../core/Api';
 
 function ResetPassword () {
   const navigate = useNavigate();

@@ -15,7 +15,7 @@ export default defineConfig({
   resolve: {
     alias: {
       src: '/src',
-      components: '/src/Components'
+      components: '/src/core/components'
     }
   },
   server: {

@@ -1,7 +1,7 @@
 import { fn } from 'storybook/test';
 import { Stack, Group, Title, Button } from '@mantine/core';
 import { IconPlus, IconClock, IconX } from '@tabler/icons-react';
-import Card from '../Components/Card';
+import Card from '../../core/components/Card';
 
 export default {
   title: 'LESC/Holds',

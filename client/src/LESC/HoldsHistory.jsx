@@ -1,8 +1,8 @@
 import { Container, Stack, Text, Group } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import Api from '../Api';
-import Chip from '../Components/Chip';
-import Card from '../Components/Card';
+import Api from '../../core/Api';
+import Chip from '../../core/components/Chip';
+import Card from '../../core/components/Card';
 import { useState } from 'react';
 
 /**

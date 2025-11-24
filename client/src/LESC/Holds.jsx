@@ -5,10 +5,10 @@ import { useDisclosure } from '@mantine/hooks';
 import { useLocation } from 'react-router';
 import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
 
-import Api from '../Api';
+import Api from '../../core/Api';
 import HoldForm from './HoldForm';
-import Card from '../Components/Card';
-import Chip from '../Components/Chip';
+import Card from '../../core/components/Card';
+import Chip from '../../core/components/Chip';
 
 function Holds () {
   const location = useLocation();

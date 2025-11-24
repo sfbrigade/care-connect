@@ -2,7 +2,7 @@ import { Container, Stack, Text, Group, Button } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
-import Card from '../Components/Card';
+import Card from '../../core/components/Card';
 
 /**
  * Check-in screen - matches Figma "Check-in" design

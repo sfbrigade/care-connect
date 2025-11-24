@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '../../Api';
-import Pagination from '../../Components/Pagination';
+import Pagination from '../../../core/components/Pagination';
 
 function AdminInvitesList () {
   const queryClient = useQueryClient();

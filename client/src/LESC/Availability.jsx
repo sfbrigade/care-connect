@@ -3,9 +3,9 @@ import { Container, Stack, Group, Loader, Button, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconLock, IconX, IconClock } from '@tabler/icons-react';
 
-import Api from '../Api';
-import Chip from '../Components/Chip';
-import Card from '../Components/Card';
+import Api from '../../core/Api';
+import Chip from '../../core/components/Chip';
+import Card from '../../core/components/Card';
 import HoldForm from './HoldForm';
 
 function Availability () {
