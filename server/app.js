@@ -15,7 +15,7 @@ export default async function (fastify, opts) {
   // Do not touch the following lines
 
   // Register location detection plugin (must be early to detect location on all requests)
-  await fastify.register(import('./core/api/locations/index.js'));
+  fastify.register(import('./core/api/locations/index.js'));
 
   // This loads all plugins defined in plugins
   // those should be support plugins that are reused
@@ -33,8 +33,8 @@ export default async function (fastify, opts) {
   });
 
   // Load core API routes
-  await fastify.register(import('./core/api/index.js'), opts);
+  fastify.register(import('./core/api/index.js'), opts);
 
   // Load LESC app API routes
-  await fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
+  fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
 }

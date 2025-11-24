@@ -94,7 +94,7 @@ export default async function (fastify, opts) {
       })));
     });
 
-  await fastify.register(import('./create.js'));
-  await fastify.register(import('./extend.js'));
-  await fastify.register(import('./cancel.js'));
+  fastify.register(import('./create.js'));
+  fastify.register(import('./extend.js'));
+  fastify.register(import('./cancel.js'));
 }
