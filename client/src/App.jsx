@@ -16,7 +16,6 @@ import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
 import MobileNavbar from './MobileNavbar';
-import Home from './Home';
 import Login from './Login';
 import InvitesRoutes from './Invites/InvitesRoutes';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
@@ -27,6 +26,7 @@ import FeedbackList from './Feedback/FeedbackList';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
+const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
 
 const queryClient = new QueryClient();
 
@@ -61,7 +61,6 @@ function App () {
                     element={
                       <AppRedirects>
                         <Routes>
-                          <Route path='/' element={<Home />} />
                           <Route path='/login' element={<Login />} />
                           <Route path='/passwords/*' element={<PasswordsRoutes />} />
                           <Route path='/invites/*' element={<InvitesRoutes />} />
@@ -80,6 +79,13 @@ function App () {
                             path='/admin/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                 <AdminRoutes />
+                              </Suspense>
+                            }
+                          />
+                          <Route
+                            path='/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <DIDORoutes />
                               </Suspense>
                             }
                           />

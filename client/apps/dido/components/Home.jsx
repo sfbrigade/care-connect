@@ -3,10 +3,10 @@ import { Box, Button, Chip, Container, Grid, Group, Stack, Switch, Text, Title }
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
-import Api from '../core/Api';
-import Facility from '../core/components/Facility';
-import FacilityMap from '../core/components/FacilityMap';
-import './styles/Home.css';
+import Api from '../../../core/Api';
+import Facility from '../../../core/components/Facility';
+import FacilityMap from '../../../core/components/FacilityMap';
+import '../styles/Home.css';
 
 const DEFAULT_COORDINATE = {
   latitude: 37.7749,
