@@ -133,7 +133,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs:
-      - build
+      - [ meta, build ]
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
