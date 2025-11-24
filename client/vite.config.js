@@ -18,6 +18,19 @@ export default defineConfig({
       components: '/src/core/components'
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core platform - shared across all apps
+          'core-vendor': ['react', 'react-dom', 'react-router'],
+          'core-ui': ['@mantine/core', '@mantine/hooks', '@mantine/modals'],
+          'core-utils': ['axios', '@tanstack/react-query'],
+          // App-specific chunks will be created automatically via dynamic imports
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {
