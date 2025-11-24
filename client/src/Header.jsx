@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate, Link, NavLink } from 'react-router';
+import { useNavigate, Link, NavLink, useLocation } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
 import { ActionIcon, Anchor, Avatar, Container, Group, Menu, Title } from '@mantine/core';
-import { IconMessages } from '@tabler/icons-react';
+import { IconMenu2, IconMessages } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
@@ -10,6 +10,7 @@ import { useAuthContext } from './AuthContext';
 
 function Header ({ opened, close, toggle }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, setUser } = useAuthContext();
   const queryClient = useQueryClient();
 
@@ -36,6 +37,17 @@ function Header ({ opened, close, toggle }) {
     navigate('/');
   }
 
+  const isFeedbackPage = location.pathname === '/feedback';
+
+  function handleFeedbackToggle () {
+    if (isFeedbackPage) {
+      navigate(-1); // Go back to the previous page
+    } else {
+      navigate('/feedback');
+    }
+    close(); // Close the mobile navbar if open
+  }
+
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between'>
@@ -45,6 +57,12 @@ function Header ({ opened, close, toggle }) {
         <Group visibleFrom='sm' gap='xl'>
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
             Home
+          </Anchor>
+          <Anchor component={NavLink} to='/lesc' onClick={close}>
+            LESC
+          </Anchor>
+          <Anchor component={NavLink} to='/admin/facilities' onClick={close}>
+            Facilities
           </Anchor>
           {user && (
             <>
@@ -56,6 +74,7 @@ function Header ({ opened, close, toggle }) {
                   <Menu.Dropdown>
                     <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
                     <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
+                    <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
               )}
@@ -73,21 +92,28 @@ function Header ({ opened, close, toggle }) {
               </Anchor>
             </>
           )}
-          {!user && (
-            <Anchor component={NavLink} to='/login' onClick={close}>
-              Log in
-            </Anchor>
-          )}
         </Group>
-        <ActionIcon
-          variant='subtle'
-          onClick={toggle}
-          hiddenFrom='sm'
-          size='lg'
-          aria-label='Feedback'
-        >
-          <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
-        </ActionIcon>
+        <Group hiddenFrom='sm' gap='xs'>
+          <ActionIcon
+            variant='subtle'
+            onClick={handleFeedbackToggle}
+            size='lg'
+            aria-label='Feedback'
+            style={{
+              backgroundColor: isFeedbackPage ? 'var(--mantine-color-gray-2)' : 'transparent',
+            }}
+          >
+            <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+          </ActionIcon>
+          <ActionIcon
+            variant='subtle'
+            onClick={toggle}
+            size='lg'
+            aria-label='Menu'
+          >
+            <IconMenu2 size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+          </ActionIcon>
+        </Group>
       </Group>
     </Container>
   );

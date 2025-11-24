@@ -1,7 +1,5 @@
 import { createContext, useContext } from 'react';
 
-export const staticContext = createContext();
-
 export const defaultValue = {
   authContext: {
     user: null,
@@ -13,6 +11,8 @@ export const defaultValue = {
     VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
   },
 };
+
+export const staticContext = createContext(defaultValue);
 
 export function useStaticContext () {
   return useContext(staticContext);

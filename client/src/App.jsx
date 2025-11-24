@@ -26,6 +26,7 @@ import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
+const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
 
 const queryClient = new QueryClient();
 
@@ -51,9 +52,9 @@ function App () {
                 <Header opened={opened} close={close} toggle={toggle} />
               </AppShell.Header>
               <AppShell.Navbar p='md'>
-                <MobileNavbar />
+                <MobileNavbar close={close} />
               </AppShell.Navbar>
-              <AppShell.Main px={0}>
+              <AppShell.Main px={0} style={{ paddingTop: '3px' }}>
                 <Routes>
                   <Route
                     path='*'
@@ -68,6 +69,13 @@ function App () {
                           <Route path='/account/*' element={<UsersRoutes />} />
                           <Route path='/feedback' element={<FeedbackViewer />} />
                           <Route path='/feedback/list' element={<FeedbackList />} />
+                          <Route
+                            path='/lesc/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <LESCRoutes />
+                              </Suspense>
+                            }
+                          />
                           <Route
                             path='/admin/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>

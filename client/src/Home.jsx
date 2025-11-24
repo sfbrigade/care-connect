@@ -550,7 +550,7 @@ function Home () {
                       <FacilityMap
                         facilities={filteredFacilities}
                         userLocation={userCoordinate}
-                        height={320}
+                        height={400}
                       />
                     </Box>
                     <Text size='xs' c='dimmed'>

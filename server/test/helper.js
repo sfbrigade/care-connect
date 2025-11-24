@@ -84,7 +84,28 @@ async function build (t) {
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
   process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
-  await s3.createBucket(process.env.AWS_S3_BUCKET);
+
+  // Reset S3 client to ensure it uses the new environment variables
+  s3.reset();
+
+  // Wait for MinIO to be ready
+  await sleep(2000);
+
+  // Retry creating bucket in case MinIO isn't ready yet
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      await s3.createBucket(process.env.AWS_S3_BUCKET);
+      break;
+    } catch (error) {
+      console.warn(`MinIO bucket creation failed, retrying... (${error.message})`);
+      retries--;
+      await sleep(1000); // Wait a bit before retrying
+    }
+  }
+  if (retries === 0) {
+    throw new Error('Failed to create MinIO bucket after multiple retries.');
+  }
 
   // you can set all the options supported by the fastify CLI command
   const argv = [AppPath];
@@ -109,8 +130,15 @@ async function build (t) {
   t.afterEach(async () => {
     // clear sent mail
     nodemailerMock.mock.reset();
-    // clear test assets
-    await s3.deleteObjects('_test/');
+    // clear test assets (only if MinIO is initialized)
+    try {
+      await s3.deleteObjects('_test/');
+    } catch (error) {
+      // Ignore errors if MinIO isn't available
+      if (!error.message.includes('not initialized')) {
+        throw error;
+      }
+    }
     // reset test database after each test
     return recreateDb();
   });

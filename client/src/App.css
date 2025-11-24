@@ -8,3 +8,32 @@ a {
 .clickable {
   cursor: pointer;
 }
+
+/* Ensure mobile navbar appears above Leaflet map */
+/* Leaflet maps use z-index around 400-500, so navbar needs to be higher */
+.mantine-AppShell-navbar {
+  z-index: 2000 !important;
+}
+
+/* Ensure header appears above Leaflet map */
+.mantine-AppShell-header {
+  z-index: 1500 !important;
+  position: relative;
+}
+
+/* Lower Leaflet map z-index to ensure it doesn't cover other content */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  z-index: 400 !important;
+}
+
+.leaflet-control {
+  z-index: 401 !important;
+}

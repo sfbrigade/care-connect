@@ -165,6 +165,11 @@ function putObject (Key, filePath) {
   );
 }
 
+function reset () {
+  client = undefined;
+  signerClient = undefined;
+}
+
 export default {
   copyObject,
   createBucket,
@@ -175,4 +180,5 @@ export default {
   getSignedUploadUrl,
   objectExists,
   putObject,
+  reset,
 };
