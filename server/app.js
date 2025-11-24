@@ -31,4 +31,7 @@ export default async function (fastify, opts) {
 
   // Load core API routes
   await fastify.register(import('./core/api/index.js'), opts);
+
+  // Load LESC app API routes
+  await fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
 }

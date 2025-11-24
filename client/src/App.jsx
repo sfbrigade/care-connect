@@ -26,7 +26,7 @@ import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
-const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
+const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
 
 const queryClient = new QueryClient();
 

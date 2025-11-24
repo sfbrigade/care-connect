@@ -1,12 +1,12 @@
 import { Routes, Route, Navigate } from 'react-router';
 
-import Availability from './Availability';
-import Holds from './Holds';
-import HoldSuccess from './HoldSuccess';
-import IntakeForm from './IntakeForm';
-import CheckIn from './CheckIn';
-import HoldsHistory from './HoldsHistory';
-import Unavailable from './Unavailable';
+import Availability from '../components/Availability';
+import Holds from '../components/Holds';
+import HoldSuccess from '../components/HoldSuccess';
+import IntakeForm from '../components/IntakeForm';
+import CheckIn from '../components/CheckIn';
+import HoldsHistory from '../components/HoldsHistory';
+import Unavailable from '../components/Unavailable';
 
 function LESCRoutes () {
   return (
