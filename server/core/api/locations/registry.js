@@ -8,7 +8,7 @@ const LOCATIONS = {
     name: 'DIDO',
     appType: 'dido',
     subdomains: ['dido', 'www', ''], // empty string means no subdomain (default)
-    paths: ['/'],
+    paths: ['/dido', '/'], // Support both /dido/* and / for backward compatibility
   },
   LESC: {
     name: 'LESC',

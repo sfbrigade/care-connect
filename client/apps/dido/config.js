@@ -3,7 +3,7 @@ export default {
   displayName: 'DIDO',
   description: 'Default app for facility browsing and mapping',
   routes: {
-    prefix: '/',
+    prefix: '/dido',
   },
 };
 

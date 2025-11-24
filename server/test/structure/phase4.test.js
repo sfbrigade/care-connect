@@ -35,6 +35,10 @@ test('Phase 4: client/src/App.jsx loads DIDO routes', async () => {
     'client/src/App.jsx should import DIDORoutes from apps/dido/routes'
   );
   assert.ok(
+    appJsxContent.includes("path='/dido/*'"),
+    'client/src/App.jsx should route DIDO at /dido/*'
+  );
+  assert.ok(
     !appJsxContent.includes("import Home from './Home'"),
     'client/src/App.jsx should not import Home directly'
   );

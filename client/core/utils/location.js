@@ -43,7 +43,16 @@ export function getLocation (staticContext) {
     };
   }
 
-  // Default to DIDO
+  // Check for DIDO path
+  if (pathname.startsWith('/dido')) {
+    return {
+      location: 'DIDO',
+      appType: 'dido',
+      method: 'path',
+    };
+  }
+
+  // Default to DIDO (for root path /)
   return {
     location: 'DIDO',
     appType: 'dido',

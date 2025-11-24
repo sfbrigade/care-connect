@@ -76,6 +76,14 @@ function App () {
                           <Route path='/account/*' element={<UsersRoutes />} />
                           <Route path='/feedback' element={<FeedbackViewer />} />
                           <Route path='/feedback/list' element={<FeedbackList />} />
+                          {/* DIDO routes - support both subdomain and path-based routing */}
+                          <Route
+                            path='/dido/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <DIDORoutes />
+                              </Suspense>
+                            }
+                          />
                           {/* LESC routes - support both subdomain and path-based routing */}
                           <Route
                             path='/lesc/*' element={
@@ -91,7 +99,15 @@ function App () {
                               </Suspense>
                             }
                           />
-                          {/* App routes - location-aware routing */}
+                          {/* Root path - default to DIDO for backward compatibility */}
+                          <Route
+                            path='/' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <DIDORoutes />
+                              </Suspense>
+                            }
+                          />
+                          {/* App routes - location-aware routing for other paths */}
                           <Route
                             path='/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>

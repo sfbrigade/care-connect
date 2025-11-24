@@ -97,13 +97,17 @@ test('Phase 5: Location utility exports correct functions', async () => {
   );
 });
 
-test('Phase 5: Backward compatibility - /lesc/* path still works', async () => {
+test('Phase 5: Backward compatibility - /lesc/* and /dido/* paths work', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   
   assert.ok(
     appJsxContent.includes("path='/lesc/*'"),
-    'App.jsx should still have /lesc/* route for backward compatibility'
+    'App.jsx should have /lesc/* route'
+  );
+  assert.ok(
+    appJsxContent.includes("path='/dido/*'"),
+    'App.jsx should have /dido/* route'
   );
 });
 
