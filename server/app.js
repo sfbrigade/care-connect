@@ -14,6 +14,9 @@ export default async function (fastify, opts) {
 
   // Do not touch the following lines
 
+  // Register location detection plugin (must be early to detect location on all requests)
+  await fastify.register(import('./core/api/locations/index.js'));
+
   // This loads all plugins defined in plugins
   // those should be support plugins that are reused
   // through your application

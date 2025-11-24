@@ -1,0 +1,26 @@
+import fp from 'fastify-plugin';
+import { detectLocation } from './registry.js';
+
+/**
+ * Location detection plugin
+ * Adds location and appType to the request object based on subdomain or path
+ */
+export default fp(async function (fastify) {
+  // Add location detection hook
+  fastify.addHook('onRequest', async (request) => {
+    const locationInfo = detectLocation(request);
+    request.location = locationInfo.location;
+    request.appType = locationInfo.appType;
+    request.locationMethod = locationInfo.method;
+  });
+
+  // Decorate request with location info getter
+  fastify.decorateRequest('getLocation', function () {
+    return {
+      location: this.location,
+      appType: this.appType,
+      method: this.locationMethod,
+    };
+  });
+});
+

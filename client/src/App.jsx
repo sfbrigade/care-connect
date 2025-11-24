@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route } from 'react-router';
 import '@mantine/core/styles.css';
 import { AppShell, Container, Loader, MantineProvider } from '@mantine/core';
@@ -12,6 +12,7 @@ import './App.css';
 import AuthContextProvider from './core/AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
 import { useStaticContext } from './core/StaticContext';
+import { getLocation } from './core/utils/location';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
@@ -33,9 +34,16 @@ const queryClient = new QueryClient();
 function App () {
   const [opened, { close, toggle }] = useDisclosure();
   const staticContext = useStaticContext();
+  const location = useMemo(() => getLocation(staticContext), [staticContext]);
+  
   useHead({
     titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? 'CareConnectSF'}`
   });
+
+  // Determine which app routes to use based on location
+  const AppRoutes = useMemo(() => {
+    return location.appType === 'lesc' ? LESCRoutes : DIDORoutes;
+  }, [location.appType]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -68,6 +76,7 @@ function App () {
                           <Route path='/account/*' element={<UsersRoutes />} />
                           <Route path='/feedback' element={<FeedbackViewer />} />
                           <Route path='/feedback/list' element={<FeedbackList />} />
+                          {/* LESC routes - support both subdomain and path-based routing */}
                           <Route
                             path='/lesc/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>
@@ -82,10 +91,11 @@ function App () {
                               </Suspense>
                             }
                           />
+                          {/* App routes - location-aware routing */}
                           <Route
                             path='/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                                <DIDORoutes />
+                                <AppRoutes />
                               </Suspense>
                             }
                           />
