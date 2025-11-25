@@ -29,6 +29,10 @@ import NotFound from './NotFound';
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
 const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
+const DIDOHeader = lazy(() => import('../apps/dido/components/DIDOHeader'));
+const LESCHeader = lazy(() => import('../apps/lesc/components/LESCHeader'));
+const DIDOMobileNavbar = lazy(() => import('../apps/dido/components/DIDOMobileNavbar'));
+const LESCMobileNavbar = lazy(() => import('../apps/lesc/components/LESCMobileNavbar'));
 
 const queryClient = new QueryClient();
 
@@ -47,6 +51,17 @@ function App () {
     return location.appType === 'lesc' ? LESCRoutes : DIDORoutes;
   }, [location]);
 
+  // Determine which header and navbar to use based on location
+  const HeaderComponent = useMemo(() => {
+    if (!location) return Header; // Default header for shared routes (login, account, etc.)
+    return location.appType === 'lesc' ? LESCHeader : DIDOHeader;
+  }, [location]);
+
+  const MobileNavbarComponent = useMemo(() => {
+    if (!location) return MobileNavbar; // Default navbar for shared routes
+    return location.appType === 'lesc' ? LESCMobileNavbar : DIDOMobileNavbar;
+  }, [location]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <MantineProvider theme={AppTheme}>
@@ -59,10 +74,14 @@ function App () {
               padding='md'
             >
               <AppShell.Header>
-                <Header opened={opened} close={close} toggle={toggle} />
+                <Suspense fallback={<Container h='100%'><Loader /></Container>}>
+                  <HeaderComponent opened={opened} close={close} toggle={toggle} />
+                </Suspense>
               </AppShell.Header>
               <AppShell.Navbar p='md'>
-                <MobileNavbar close={close} />
+                <Suspense fallback={<Loader />}>
+                  <MobileNavbarComponent close={close} />
+                </Suspense>
               </AppShell.Navbar>
               <AppShell.Main px={0} style={{ paddingTop: '3px' }}>
                 <Routes>
