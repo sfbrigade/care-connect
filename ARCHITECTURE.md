@@ -6,8 +6,8 @@ Care Connect is a multi-app platform that serves multiple location-specific appl
 
 ## Applications
 
-### DIDO (Downtown Information & Directory Online)
-- **Purpose**: General facility directory and information
+### DIDO (Drop in, Drop off)
+- **Purpose**: Drop in centers
 - **Location Code**: `DIDO`
 - **App Type**: `dido`
 
