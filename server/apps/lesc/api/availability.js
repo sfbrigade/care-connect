@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import { autoExpireHolds } from '../lib/holds.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -26,26 +27,12 @@ export default async function (fastify, opts) {
       const now = new Date();
 
       // Auto-expire holds that have passed their expiration time
-      await fastify.prisma.bedHold.updateMany({
-        where: {
-          status: {
-            in: ['ACTIVE', 'EXTENDED'],
-          },
-          expiresAt: {
-            lte: now,
-          },
-        },
-        data: {
-          status: 'EXPIRED',
-        },
-      });
+      await autoExpireHolds(fastify.prisma, now);
 
-      // Find LESC facilities (identified by ServiceType code "LESC" or "SOBERING")
-      const lescServiceTypes = await fastify.prisma.serviceType.findMany({
+      // Find LESC facilities (identified by ServiceType code "LESC")
+      const lescServiceType = await fastify.prisma.serviceType.findUnique({
         where: {
-          code: {
-            in: ['LESC', 'SOBERING'],
-          },
+          code: 'LESC',
         },
         select: {
           id: true,
@@ -54,11 +41,11 @@ export default async function (fastify, opts) {
         },
       });
 
-      if (lescServiceTypes.length === 0) {
+      if (!lescServiceType) {
         return reply.send([]);
       }
 
-      const serviceTypeIds = lescServiceTypes.map(st => st.id);
+      const serviceTypeIds = [lescServiceType.id];
 
       // Get facilities with LESC services
       const facilities = await fastify.prisma.facility.findMany({

@@ -60,13 +60,17 @@ export default async function (fastify, opts) {
       let whereClause = {};
       const appType = request.appType;
 
+      // Extract LESC service type lookup before the if/else to avoid duplication
+      // Only query when needed (lesc or dido app) - skip query for admin/shared routes (appType === null)
+      const lescServiceType = (appType === 'lesc' || appType === 'dido')
+        ? await fastify.prisma.serviceType.findUnique({
+            where: { code: 'LESC' },
+            select: { id: true },
+          })
+        : null;
+
       if (appType === 'lesc') {
         // LESC app: Only show facilities with LESC service type
-        const lescServiceType = await fastify.prisma.serviceType.findUnique({
-          where: { code: 'LESC' },
-          select: { id: true },
-        });
-
         if (lescServiceType) {
           whereClause = {
             services: {
@@ -81,11 +85,6 @@ export default async function (fastify, opts) {
         }
       } else if (appType === 'dido') {
         // DIDO app: Exclude facilities with LESC service type
-        const lescServiceType = await fastify.prisma.serviceType.findUnique({
-          where: { code: 'LESC' },
-          select: { id: true },
-        });
-
         if (lescServiceType) {
           whereClause = {
             services: {

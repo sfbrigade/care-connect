@@ -52,7 +52,7 @@ export default async function (fastify, opts) {
       }
 
       // Verify it's a LESC service type
-      if (!['LESC', 'SOBERING'].includes(service.serviceType.code)) {
+      if (service.serviceType.code !== 'LESC') {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Service type is not a LESC service' });
       }
 

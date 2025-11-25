@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import { autoExpireHolds } from '../../lib/holds.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -31,19 +32,7 @@ export default async function (fastify, opts) {
       const now = new Date();
 
       // Auto-expire holds that have passed their expiration time
-      await fastify.prisma.bedHold.updateMany({
-        where: {
-          status: {
-            in: ['ACTIVE', 'EXTENDED'],
-          },
-          expiresAt: {
-            lte: now,
-          },
-        },
-        data: {
-          status: 'EXPIRED',
-        },
-      });
+      await autoExpireHolds(fastify.prisma, now);
 
       const where = {
         status: {
