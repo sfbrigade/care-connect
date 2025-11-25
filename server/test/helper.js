@@ -54,7 +54,10 @@ async function build (t) {
   // set up the default template (template1) with the schema and fixtures
   const TEMPLATE_DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`;
   // run the migrations
-  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push`);
+  const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
+  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
+    cwd: path.join(__dirname, '..'),
+  });
   const prisma = new PrismaClient({
     datasourceUrl: TEMPLATE_DATABASE_URL,
   });

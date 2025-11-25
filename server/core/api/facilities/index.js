@@ -56,7 +56,51 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
+      // Filter facilities based on app type
+      let whereClause = {};
+      const appType = request.appType;
+
+      if (appType === 'lesc') {
+        // LESC app: Only show facilities with LESC service type
+        const lescServiceType = await fastify.prisma.serviceType.findUnique({
+          where: { code: 'LESC' },
+          select: { id: true },
+        });
+
+        if (lescServiceType) {
+          whereClause = {
+            services: {
+              some: {
+                serviceTypeId: lescServiceType.id,
+              },
+            },
+          };
+        } else {
+          // No LESC service type exists, return empty array
+          return reply.send([]);
+        }
+      } else if (appType === 'dido') {
+        // DIDO app: Exclude facilities with LESC service type
+        const lescServiceType = await fastify.prisma.serviceType.findUnique({
+          where: { code: 'LESC' },
+          select: { id: true },
+        });
+
+        if (lescServiceType) {
+          whereClause = {
+            services: {
+              none: {
+                serviceTypeId: lescServiceType.id,
+              },
+            },
+          };
+        }
+        // If LESC service type doesn't exist, show all facilities (no filter)
+      }
+      // If appType is null (admin/shared routes), show all facilities (no filter)
+
       const facilities = await fastify.prisma.facility.findMany({
+        where: whereClause,
         orderBy: { name: 'asc' },
         select: {
           id: true,

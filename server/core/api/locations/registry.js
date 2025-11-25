@@ -72,13 +72,14 @@ export function getAppTypeForLocation (locationName) {
 }
 
 /**
- * Detect location from request (checks both subdomain and path)
+ * Detect location from request (checks subdomain, path, and Referer header)
  * @param {object} request - Fastify request object
- * @returns {object|null} - { location: string, appType: string, method: 'subdomain' | 'path' } or null if not found
+ * @returns {object|null} - { location: string, appType: string, method: 'subdomain' | 'path' | 'referer' } or null if not found
  */
 export function detectLocation (request) {
   const host = request.headers.host || '';
   const pathname = request.urlData('path') || request.url.split('?')[0];
+  const referer = request.headers.referer || request.headers.referrer || '';
 
   // First try subdomain detection
   const subdomainLocation = detectLocationFromSubdomain(host);
@@ -98,6 +99,26 @@ export function detectLocation (request) {
       appType: getAppTypeForLocation(pathLocation),
       method: 'path',
     };
+  }
+
+  // For API routes, check Referer header to detect app type
+  // API routes like /api/facilities don't have /dido or /lesc in the path,
+  // but the Referer header will contain the app path
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      const refererPath = refererUrl.pathname;
+      const refererLocation = detectLocationFromPath(refererPath);
+      if (refererLocation) {
+        return {
+          location: refererLocation,
+          appType: getAppTypeForLocation(refererLocation),
+          method: 'referer',
+        };
+      }
+    } catch (e) {
+      // Invalid URL in Referer header, ignore
+    }
   }
 
   // No location found - return null (will result in 404)
