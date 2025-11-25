@@ -64,7 +64,7 @@ test('Location sync: Client location detection matches server LOCATIONS registry
 
   await t.test('Client returns correct location names matching server LOCATIONS', () => {
     // Verify location names match
-    for (const [locationName, location] of Object.entries(LOCATIONS)) {
+    for (const [locationName] of Object.entries(LOCATIONS)) {
       const locationNameRegex = new RegExp(`location:\\s*['"]${locationName}['"]`);
       assert.ok(
         locationNameRegex.test(clientLocationContent),
@@ -93,4 +93,3 @@ test('Location sync: Client location detection matches server LOCATIONS registry
     assert.ok(pathMethodMatch, 'Client should use "path" method');
   });
 });
-

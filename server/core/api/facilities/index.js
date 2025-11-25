@@ -64,9 +64,9 @@ export default async function (fastify, opts) {
       // Only query when needed (lesc or dido app) - skip query for admin/shared routes (appType === null)
       const lescServiceType = (appType === 'lesc' || appType === 'dido')
         ? await fastify.prisma.serviceType.findUnique({
-            where: { code: 'LESC' },
-            select: { id: true },
-          })
+          where: { code: 'LESC' },
+          select: { id: true },
+        })
         : null;
 
       if (appType === 'lesc') {

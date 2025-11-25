@@ -118,7 +118,7 @@ test('/api/lesc/availability', async (t) => {
 
   await t.test('GET /', async (t) => {
     await t.test('returns LESC facilities with availability', async () => {
-      const { facility1, facility2, lescServiceType, soberingServiceType } = await createTestData();
+      const { facility1, facility2, lescServiceType } = await createTestData();
 
       const response = await app.inject().get('/api/lesc/availability').headers(userHeaders);
 

@@ -95,7 +95,7 @@ test('/api/facilities', async (t) => {
 
   await t.test('GET / - filters by app type', async (t) => {
     await t.test('LESC app returns only facilities with LESC service type', async () => {
-      const testData = await createTestData();
+      await createTestData();
       // Simulate request from LESC app via Referer header
       const response = await app.inject()
         .get('/api/facilities')
@@ -121,7 +121,7 @@ test('/api/facilities', async (t) => {
     });
 
     await t.test('DIDO app excludes facilities with LESC service type', async () => {
-      const testData = await createTestData();
+      await createTestData();
       // Simulate request from DIDO app via Referer header
       const response = await app.inject()
         .get('/api/facilities')
@@ -147,7 +147,7 @@ test('/api/facilities', async (t) => {
     });
 
     await t.test('Admin/shared routes return all facilities', async () => {
-      const testData = await createTestData();
+      await createTestData();
       // No Referer header or app-specific path - should return all facilities
       const response = await app.inject()
         .get('/api/facilities')
@@ -167,7 +167,7 @@ test('/api/facilities', async (t) => {
     });
 
     await t.test('LESC app via subdomain returns only LESC facilities', async () => {
-      const testData = await createTestData();
+      await createTestData();
       // Simulate request from LESC subdomain
       const response = await app.inject()
         .get('/api/facilities')
@@ -189,7 +189,7 @@ test('/api/facilities', async (t) => {
     });
 
     await t.test('DIDO app via subdomain excludes LESC facilities', async () => {
-      const testData = await createTestData();
+      await createTestData();
       // Simulate request from DIDO subdomain
       const response = await app.inject()
         .get('/api/facilities')
@@ -210,4 +210,3 @@ test('/api/facilities', async (t) => {
     });
   });
 });
-

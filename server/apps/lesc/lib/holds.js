@@ -26,4 +26,3 @@ export async function autoExpireHolds (prisma, now = new Date()) {
 
   return result.count;
 }
-
