@@ -29,7 +29,7 @@ test('Phase 6: Build configuration files exist', async (t) => {
 test('Phase 6: Root package.json has build script', async () => {
   const packageJsonPath = join(rootDir, 'package.json');
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-  
+
   assert.ok(
     packageJson.scripts && packageJson.scripts.build,
     'package.json should have build script'
@@ -43,7 +43,7 @@ test('Phase 6: Root package.json has build script', async () => {
 test('Phase 6: Client vite.config.js has build optimization', async () => {
   const viteConfigPath = join(rootDir, 'client/vite.config.js');
   assert.ok(existsSync(viteConfigPath), 'vite.config.js should exist');
-  
+
   const viteConfigContent = readFileSync(viteConfigPath, 'utf8');
   assert.ok(
     viteConfigContent.includes('manualChunks'),
@@ -58,7 +58,7 @@ test('Phase 6: Client vite.config.js has build optimization', async () => {
 test('Phase 6: Dockerfile builds client and server', async () => {
   const dockerfilePath = join(rootDir, 'Dockerfile');
   assert.ok(existsSync(dockerfilePath), 'Dockerfile should exist');
-  
+
   const dockerfileContent = readFileSync(dockerfilePath, 'utf8');
   assert.ok(
     dockerfileContent.includes('npm run build -w client'),
@@ -73,7 +73,7 @@ test('Phase 6: Dockerfile builds client and server', async () => {
 test('Phase 6: BUILD.md documents multi-app structure', async () => {
   const buildMdPath = join(rootDir, 'BUILD.md');
   assert.ok(existsSync(buildMdPath), 'BUILD.md should exist');
-  
+
   const buildMdContent = readFileSync(buildMdPath, 'utf8');
   assert.ok(
     buildMdContent.includes('Multi-App Architecture') || buildMdContent.includes('multi-app'),
@@ -88,7 +88,7 @@ test('Phase 6: BUILD.md documents multi-app structure', async () => {
 test('Phase 6: Client package.json has correct build scripts', async () => {
   const clientPackageJsonPath = join(rootDir, 'client/package.json');
   const clientPackageJson = JSON.parse(readFileSync(clientPackageJsonPath, 'utf8'));
-  
+
   assert.ok(
     clientPackageJson.scripts && clientPackageJson.scripts.build,
     'client/package.json should have build script'
@@ -102,7 +102,7 @@ test('Phase 6: Client package.json has correct build scripts', async () => {
 test('Phase 6: Server package.json has build script', async () => {
   const serverPackageJsonPath = join(rootDir, 'server/package.json');
   const serverPackageJson = JSON.parse(readFileSync(serverPackageJsonPath, 'utf8'));
-  
+
   assert.ok(
     serverPackageJson.scripts && serverPackageJson.scripts.build,
     'server/package.json should have build script'
@@ -116,7 +116,7 @@ test('Phase 6: Server package.json has build script', async () => {
 test('Phase 6: DateTime utility exists and exports correct functions', async () => {
   const dateTimeUtilPath = join(rootDir, 'client/core/utils/dateTime.js');
   assert.ok(existsSync(dateTimeUtilPath), 'dateTime.js utility should exist');
-  
+
   const dateTimeUtilContent = readFileSync(dateTimeUtilPath, 'utf8');
   assert.ok(
     dateTimeUtilContent.includes('formatTimeRemaining'),
@@ -139,7 +139,7 @@ test('Phase 6: DateTime utility exists and exports correct functions', async () 
 test('Phase 6: DateTime utility test file exists', async () => {
   const dateTimeTestPath = join(rootDir, 'client/core/utils/dateTime.test.js');
   assert.ok(existsSync(dateTimeTestPath), 'dateTime.test.js should exist');
-  
+
   const dateTimeTestContent = readFileSync(dateTimeTestPath, 'utf8');
   assert.ok(
     dateTimeTestContent.includes('formatTimeRemaining'),
@@ -179,4 +179,3 @@ test('Phase 6: LESC components use shared datetime utilities', async () => {
     }
   }
 });
-

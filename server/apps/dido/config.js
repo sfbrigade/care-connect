@@ -7,4 +7,3 @@ export default {
   },
   // Note: DIDO uses shared core/api/facilities routes, no app-specific routes
 };
-

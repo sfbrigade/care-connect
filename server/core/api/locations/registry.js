@@ -110,4 +110,3 @@ export default {
   getAppTypeForLocation,
   detectLocation,
 };
-

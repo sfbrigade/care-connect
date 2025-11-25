@@ -93,8 +93,4 @@ export default async function (fastify, opts) {
         notes: hold.notes,
       })));
     });
-
-  fastify.register(import('./create.js'));
-  fastify.register(import('./extend.js'));
-  fastify.register(import('./cancel.js'));
 }

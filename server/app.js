@@ -25,16 +25,16 @@ export default async function (fastify, opts) {
     options: Object.assign({}, opts)
   });
 
-  // This loads all plugins defined in routes
+  // Load core API routes (before catch-all route)
+  fastify.register(import('./core/api/index.js'), opts);
+
+  // Load LESC app API routes (before catch-all route)
+  fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
+
+  // This loads all plugins defined in routes (catch-all route comes last)
   // define your routes in one of these
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
     options: Object.assign({}, opts)
   });
-
-  // Load core API routes
-  fastify.register(import('./core/api/index.js'), opts);
-
-  // Load LESC app API routes
-  fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
 }

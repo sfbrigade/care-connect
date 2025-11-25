@@ -30,4 +30,3 @@ export default fp(async function (fastify) {
     };
   });
 });
-

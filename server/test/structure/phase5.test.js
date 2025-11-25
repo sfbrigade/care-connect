@@ -26,7 +26,7 @@ test('Phase 5: Location registry files exist', async (t) => {
 test('Phase 5: Location registry exports correct functions', async () => {
   const registryPath = join(rootDir, 'server/core/api/locations/registry.js');
   const registryContent = readFileSync(registryPath, 'utf8');
-  
+
   assert.ok(
     registryContent.includes('detectLocationFromSubdomain'),
     'registry.js should export detectLocationFromSubdomain'
@@ -48,7 +48,7 @@ test('Phase 5: Location registry exports correct functions', async () => {
 test('Phase 5: Location plugin registered in server/app.js', async () => {
   const appJsPath = join(rootDir, 'server/app.js');
   assert.ok(existsSync(appJsPath), 'server/app.js should exist');
-  
+
   const appJsContent = readFileSync(appJsPath, 'utf8');
   assert.ok(
     appJsContent.includes('core/api/locations'),
@@ -59,7 +59,7 @@ test('Phase 5: Location plugin registered in server/app.js', async () => {
 test('Phase 5: Root route passes location to static context', async () => {
   const rootJsPath = join(rootDir, 'server/routes/root.js');
   assert.ok(existsSync(rootJsPath), 'server/routes/root.js should exist');
-  
+
   const rootJsContent = readFileSync(rootJsPath, 'utf8');
   assert.ok(
     rootJsContent.includes('staticContext.context.location'),
@@ -70,7 +70,7 @@ test('Phase 5: Root route passes location to static context', async () => {
 test('Phase 5: Frontend App.jsx uses location-based routing', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   assert.ok(existsSync(appJsxPath), 'client/src/App.jsx should exist');
-  
+
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   assert.ok(
     appJsxContent.includes('getLocation'),
@@ -85,7 +85,7 @@ test('Phase 5: Frontend App.jsx uses location-based routing', async () => {
 test('Phase 5: Location utility exports correct functions', async () => {
   const locationUtilPath = join(rootDir, 'client/core/utils/location.js');
   assert.ok(existsSync(locationUtilPath), 'location.js should exist');
-  
+
   const locationUtilContent = readFileSync(locationUtilPath, 'utf8');
   assert.ok(
     locationUtilContent.includes('getLocation'),
@@ -100,7 +100,7 @@ test('Phase 5: Location utility exports correct functions', async () => {
 test('Phase 5: Path-based routing - /lesc/* and /dido/* paths work', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
-  
+
   assert.ok(
     appJsxContent.includes("path='/lesc/*'"),
     'App.jsx should have /lesc/* route'
@@ -116,24 +116,23 @@ test('Phase 5: Root path returns 404 (no backward compatibility)', async () => {
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   const registryPath = join(rootDir, 'server/core/api/locations/registry.js');
   const registryContent = readFileSync(registryPath, 'utf8');
-  
+
   // Verify root path is not in DIDO paths
   assert.ok(
     !registryContent.includes("paths: ['/dido', '/']") && !registryContent.includes('paths: ["/dido", "/"]'),
     'Location registry should not include root path / in DIDO paths'
   );
-  
+
   // Verify NotFound component exists
   const notFoundPath = join(rootDir, 'client/src/NotFound.jsx');
   assert.ok(
     existsSync(notFoundPath),
     'NotFound.jsx should exist for 404 handling'
   );
-  
+
   // Verify App.jsx imports NotFound
   assert.ok(
     appJsxContent.includes('NotFound') || appJsxContent.includes('notFound'),
     'App.jsx should import NotFound component'
   );
 });
-

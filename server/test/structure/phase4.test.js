@@ -28,7 +28,7 @@ test('Phase 4: DIDO components migrated', async (t) => {
 test('Phase 4: client/src/App.jsx loads DIDO routes', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   assert.ok(existsSync(appJsxPath), 'client/src/App.jsx should exist');
-  
+
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   assert.ok(
     appJsxContent.includes('apps/dido/routes/DIDORoutes'),
@@ -39,7 +39,7 @@ test('Phase 4: client/src/App.jsx loads DIDO routes', async () => {
     'client/src/App.jsx should route DIDO at /dido/*'
   );
   // Verify root path doesn't default to DIDO (should not have path='/' with DIDORoutes)
-  const hasRootPathWithDIDO = appJsxContent.includes("path='/'") && 
+  const hasRootPathWithDIDO = appJsxContent.includes("path='/'") &&
     (appJsxContent.includes('<DIDORoutes') || appJsxContent.includes('DIDORoutes />'));
   assert.ok(
     !hasRootPathWithDIDO,
@@ -54,7 +54,7 @@ test('Phase 4: client/src/App.jsx loads DIDO routes', async () => {
 test('Phase 4: DIDORoutes component structure', async () => {
   const didoRoutesPath = join(rootDir, 'client/apps/dido/routes/DIDORoutes.jsx');
   assert.ok(existsSync(didoRoutesPath), 'DIDORoutes.jsx should exist');
-  
+
   const didoRoutesContent = readFileSync(didoRoutesPath, 'utf8');
   assert.ok(
     didoRoutesContent.includes("import Home from '../components/Home'"),
@@ -69,7 +69,7 @@ test('Phase 4: DIDORoutes component structure', async () => {
 test('Phase 4: Home component imports updated', async () => {
   const homePath = join(rootDir, 'client/apps/dido/components/Home.jsx');
   assert.ok(existsSync(homePath), 'Home.jsx should exist');
-  
+
   const homeContent = readFileSync(homePath, 'utf8');
   assert.ok(
     homeContent.includes("from '../../../core/Api'"),
@@ -91,7 +91,7 @@ test('Phase 4: Old Home location should not exist', async () => {
     !existsSync(oldHomePath),
     'Old client/src/Home.jsx should not exist (moved to apps/dido/components)'
   );
-  
+
   const oldHomeCssPath = join(rootDir, 'client/src/styles/Home.css');
   assert.ok(
     !existsSync(oldHomeCssPath),
@@ -101,7 +101,6 @@ test('Phase 4: Old Home location should not exist', async () => {
 
 test('Phase 4: DIDO uses core facilities API', async () => {
   // DIDO doesn't have app-specific backend routes - it uses core/api/facilities
-  const didoApiPath = join(rootDir, 'server/apps/dido/api');
   // It's okay if this doesn't exist - DIDO uses core routes
   const coreFacilitiesPath = join(rootDir, 'server/core/api/facilities');
   assert.ok(
@@ -109,4 +108,3 @@ test('Phase 4: DIDO uses core facilities API', async () => {
     'DIDO should use core/api/facilities (shared route)'
   );
 });
-

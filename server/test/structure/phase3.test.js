@@ -72,7 +72,7 @@ test('Phase 3: LESC routes and config migrated', async (t) => {
 test('Phase 3: server/app.js loads LESC routes', async () => {
   const appJsPath = join(rootDir, 'server/app.js');
   assert.ok(existsSync(appJsPath), 'server/app.js should exist');
-  
+
   const appJsContent = readFileSync(appJsPath, 'utf8');
   assert.ok(
     appJsContent.includes('apps/lesc/api'),
@@ -83,7 +83,7 @@ test('Phase 3: server/app.js loads LESC routes', async () => {
 test('Phase 3: client/src/App.jsx loads LESC routes', async () => {
   const appJsxPath = join(rootDir, 'client/src/App.jsx');
   assert.ok(existsSync(appJsxPath), 'client/src/App.jsx should exist');
-  
+
   const appJsxContent = readFileSync(appJsxPath, 'utf8');
   assert.ok(
     appJsxContent.includes('apps/lesc/routes/LESCRoutes'),
@@ -97,7 +97,7 @@ test('Phase 3: Old LESC directory should not exist', async () => {
     !existsSync(oldLESCPath),
     'Old client/src/LESC should not exist (moved to apps/lesc/components)'
   );
-  
+
   const oldLESCApiPath = join(rootDir, 'server/routes/api/lesc');
   assert.ok(
     !existsSync(oldLESCApiPath),
@@ -111,11 +111,10 @@ test('Phase 3: LESCCard should be in LESC app, not core', async () => {
     existsSync(lescCardPath),
     'LESCCard should exist in apps/lesc/components'
   );
-  
+
   const coreLESCCardPath = join(rootDir, 'client/core/components/LESCCard.jsx');
   assert.ok(
     !existsSync(coreLESCCardPath),
     'LESCCard should not exist in core/components (it is LESC-specific)'
   );
 });
-

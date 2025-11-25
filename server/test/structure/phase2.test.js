@@ -82,7 +82,7 @@ test('Phase 2: Core files migrated', async (t) => {
 test('Phase 2: server/app.js loads core API routes', async () => {
   const appJsPath = join(rootDir, 'server/app.js');
   assert.ok(existsSync(appJsPath), 'server/app.js should exist');
-  
+
   const appJsContent = readFileSync(appJsPath, 'utf8');
   assert.ok(
     appJsContent.includes('core/api'),
@@ -96,7 +96,7 @@ test('Phase 2: Old routes directory should not contain migrated routes', async (
     !existsSync(oldAuthPath),
     'Old server/routes/api/auth should not exist (moved to core/api/auth)'
   );
-  
+
   const oldFacilitiesPath = join(rootDir, 'server/routes/api/facilities');
   assert.ok(
     !existsSync(oldFacilitiesPath),
@@ -110,11 +110,10 @@ test('Phase 2: Old Components directory should not contain migrated components',
     !existsSync(oldCardPath),
     'Old client/src/Components/Card.jsx should not exist (moved to core/components)'
   );
-  
+
   const oldApiPath = join(rootDir, 'client/src/Api.js');
   assert.ok(
     !existsSync(oldApiPath),
     'Old client/src/Api.js should not exist (moved to core/Api.js)'
   );
 });
-
