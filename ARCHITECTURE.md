@@ -96,33 +96,44 @@ The client follows the same priority:
 
 #### Practical Examples
 
-**Example 1: Subdomain takes precedence**
+**Example 1: Staging environment hosting both apps**
 ```
-URL: dido.example.com/lesc/availability
-Host header: "dido.example.com"
-Path: "/lesc/availability"
+URL: lesc-dev.careconnectsf.org/lesc
+Host header: "lesc-dev.careconnectsf.org"
+Subdomain: "lesc-dev" (doesn't match configured subdomains: "dido" or "lesc")
+Path: "/lesc" → Matches LESC path
 
-Result: Detected as DIDO (subdomain wins, path ignored for detection)
+Result: Detected as LESC (path-based routing used as fallback)
+
+URL: lesc-dev.careconnectsf.org/dido
+Host header: "lesc-dev.careconnectsf.org"
+Subdomain: "lesc-dev" (doesn't match configured subdomains)
+Path: "/dido" → Matches DIDO path
+
+Result: Detected as DIDO (path-based routing used as fallback)
 ```
 
-**Example 2: Path used when no subdomain**
-```
-URL: example.com/lesc/availability
-Host header: "example.com" (no subdomain)
-Path: "/lesc/availability"
+**Why this works**: The staging subdomain `lesc-dev` doesn't match any configured location subdomains (`dido` or `lesc`), so subdomain detection returns `null`. The system then falls back to path-based detection, which matches `/lesc` or `/dido`. This allows a single staging domain (`lesc-dev.careconnectsf.org`) to host both apps via path-based routing, without requiring separate subdomains for each app.
 
-Result: Detected as LESC (path used)
+**Example 2: Accessing different app path from subdomain**
+```
+URL: lesc.careconnectsf.org/dido
+Host header: "lesc.careconnectsf.org"
+Subdomain: "lesc" → Matches LESC location
+Path: "/dido" → Would match DIDO if subdomain didn't match
+
+Detection Result: Detected as LESC (subdomain wins, path ignored for location detection)
+
+Routing Result: 
+- App is set to LESC (LESCRoutes component loaded)
+- Path "/dido" is passed to LESCRoutes
+- LESCRoutes has no route matching "/dido"
+- Result: 404 Not Found (or blank page)
 ```
 
-**Example 3: API request with Referer**
-```
-Request URL: /api/facilities
-Host header: "example.com" (no subdomain)
-Path: "/api/facilities" (no app path)
-Referer header: "http://example.com/dido/facilities"
+**Why this happens**: Subdomain detection takes priority. Even though the path suggests DIDO, the `lesc` subdomain matches first, so the app is detected as LESC. The `/dido` path is then passed to `LESCRoutes`, which has no matching route (it only has routes like `/availability`, `/holds`, etc.), resulting in a 404.
 
-Result: Detected as DIDO (Referer header used)
-```
+**Note**: To access the DIDO app from `lesc.careconnectsf.org`, users would need to navigate to `dido.careconnectsf.org` (the correct subdomain) or use a path-based URL if accessing from a domain without a matching subdomain.
 
 #### Why This Design?
 
