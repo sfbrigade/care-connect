@@ -7,7 +7,7 @@ const LOCATIONS = {
   DIDO: {
     name: 'DIDO',
     appType: 'dido',
-    subdomains: ['dido', 'www', ''], // empty string means no subdomain (default)
+    subdomains: ['dido'], // Only 'dido' subdomain, no default fallback
     paths: ['/dido'], // Only /dido/* path, no root path
   },
   LESC: {
@@ -36,8 +36,9 @@ export function detectLocationFromSubdomain (host) {
     }
   }
 
-  // Default to DIDO if no subdomain match
-  return 'DIDO';
+  // No subdomain match - return null (will result in 404)
+  // Root domain (no subdomain) should return 404, not default to DIDO
+  return null;
 }
 
 /**

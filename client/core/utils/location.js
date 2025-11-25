@@ -18,7 +18,12 @@ export function getLocation (staticContext) {
     };
   }
 
-  // Fallback: detect from window location
+  // Fallback: detect from window location (only in browser)
+  if (typeof window === 'undefined') {
+    // Server-side rendering - no window object, return null
+    return null;
+  }
+
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
 
@@ -26,10 +31,20 @@ export function getLocation (staticContext) {
   const parts = hostname.split('.');
   const subdomain = parts.length > 1 ? parts[0].toLowerCase() : '';
 
+  // Check for LESC subdomain
   if (subdomain === 'lesc') {
     return {
       location: 'LESC',
       appType: 'lesc',
+      method: 'subdomain',
+    };
+  }
+
+  // Check for DIDO subdomain (only 'dido', not 'www' or empty)
+  if (subdomain === 'dido') {
+    return {
+      location: 'DIDO',
+      appType: 'dido',
       method: 'subdomain',
     };
   }
@@ -49,15 +64,6 @@ export function getLocation (staticContext) {
       location: 'DIDO',
       appType: 'dido',
       method: 'path',
-    };
-  }
-
-  // Check for DIDO subdomain (www or no subdomain)
-  if (subdomain === 'www' || subdomain === '') {
-    return {
-      location: 'DIDO',
-      appType: 'dido',
-      method: 'subdomain',
     };
   }
 
