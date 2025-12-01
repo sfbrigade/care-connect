@@ -203,6 +203,9 @@ const Api = {
       update (id, data) {
         return instance.patch(`/api/admin/facilities/${id}`, data).catch(handleError);
       },
+      delete (id) {
+        return instance.delete(`/api/admin/facilities/${id}`).catch(handleError);
+      },
       updateBeds (id, data) {
         return instance.patch(`/api/admin/facilities/${id}/beds`, data).catch(handleError);
       },

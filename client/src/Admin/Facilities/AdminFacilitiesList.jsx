@@ -1,12 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { Container, Title, Button, Table, Group, Badge, Loader, Alert } from '@mantine/core';
-import { IconPlus, IconAlertCircle } from '@tabler/icons-react';
+import { Container, Title, Button, Table, Group, Badge, Loader, Alert, Text } from '@mantine/core';
+import { modals } from '@mantine/modals';
+import { IconPlus, IconAlertCircle, IconTrash } from '@tabler/icons-react';
 
 import Api from '../../../core/Api';
 
 function AdminFacilitiesList () {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: facilities, isLoading, error } = useQuery({
     queryKey: ['admin-facilities'],
@@ -15,6 +17,36 @@ function AdminFacilitiesList () {
       return response.data;
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => Api.admin.facilities.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-facilities'] });
+    },
+  });
+
+  function handleDelete (facility) {
+    modals.openConfirmModal({
+      title: 'Delete Facility',
+      centered: true,
+      children: (
+        <Text>
+          Are you sure you want to delete <b>{facility.name}</b>?
+          <br />
+          <br />
+          This action cannot be undone.
+        </Text>
+      ),
+      labels: {
+        confirm: 'Delete',
+        cancel: 'Cancel',
+      },
+      confirmProps: { color: 'red' },
+      onConfirm: () => {
+        deleteMutation.mutate(facility.id);
+      },
+    });
+  }
 
   if (isLoading) {
     return (
@@ -74,6 +106,16 @@ function AdminFacilitiesList () {
                       </Button>
                       <Button variant='light' size='xs' onClick={() => navigate('/lesc/holds', { state: { facilityId: facility.id } })}>
                         Hold
+                      </Button>
+                      <Button
+                        variant='light'
+                        color='red'
+                        size='xs'
+                        leftSection={<IconTrash size={14} />}
+                        onClick={() => handleDelete(facility)}
+                        loading={deleteMutation.isPending}
+                      >
+                        Delete
                       </Button>
                     </Group>
                   </Table.Td>
