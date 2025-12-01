@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Stack, Group, Loader, Button, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -7,11 +8,14 @@ import Api from '../../../core/Api';
 import Chip from '../../../core/components/Chip';
 import Card from '../../../core/components/Card';
 import HoldForm from './HoldForm';
+import CancelHoldModal from './CancelHoldModal';
 import { formatTime } from '../../../core/utils/dateTime';
 
 function Availability () {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
+  const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
+  const [selectedHold, setSelectedHold] = useState(null);
 
   const { isLoading } = useQuery({
     queryKey: ['lesc-availability'],
@@ -45,9 +49,19 @@ function Availability () {
     },
   });
 
-  const handleCancelHold = (holdId) => {
-    if (window.confirm('Are you sure you want to cancel this hold?')) {
-      cancelHoldMutation.mutate(holdId);
+  const handleCancelHold = (hold) => {
+    setSelectedHold(hold);
+    openCancelModal();
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedHold) {
+      cancelHoldMutation.mutate(selectedHold.id, {
+        onSuccess: () => {
+          closeCancelModal();
+          setSelectedHold(null);
+        },
+      });
     }
   };
 
@@ -157,7 +171,7 @@ function Availability () {
                         </Button>
                         <Button
                           leftSection={<IconX size={18} />}
-                          onClick={() => handleCancelHold(hold.id)}
+                          onClick={() => handleCancelHold(hold)}
                           loading={cancelHoldMutation.isPending}
                           variant='light'
                           color='red'
@@ -214,6 +228,18 @@ function Availability () {
           onCancel={closeModal}
         />
       </Modal>
+
+      <CancelHoldModal
+        opened={cancelModalOpened}
+        onClose={() => {
+          closeCancelModal();
+          setSelectedHold(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        holdIdentifier={selectedHold?.id?.slice(0, 8).toUpperCase() || '001'}
+        holdName={selectedHold?.notes || selectedHold?.facilityName || 'this hold'}
+        loading={cancelHoldMutation.isPending}
+      />
     </Container>
   );
 }

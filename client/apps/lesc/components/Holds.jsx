@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -7,6 +7,7 @@ import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react
 
 import Api from '../../../core/Api';
 import HoldForm from './HoldForm';
+import CancelHoldModal from './CancelHoldModal';
 import Card from '../../../core/components/Card';
 import Chip from '../../../core/components/Chip';
 import { formatCreatedAt } from '../../../core/utils/dateTime';
@@ -14,6 +15,8 @@ import { formatCreatedAt } from '../../../core/utils/dateTime';
 function Holds () {
   const location = useLocation();
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
+  const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
+  const [selectedHold, setSelectedHold] = useState(null);
   const queryClient = useQueryClient();
 
   // Auto-open modal if navigating with facilityId
@@ -51,9 +54,19 @@ function Holds () {
     extendMutation.mutate(id);
   };
 
-  const handleCancel = (id) => {
-    if (window.confirm('Are you sure you want to cancel this hold?')) {
-      cancelMutation.mutate(id);
+  const handleCancel = (hold) => {
+    setSelectedHold(hold);
+    openCancelModal();
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedHold) {
+      cancelMutation.mutate(selectedHold.id, {
+        onSuccess: () => {
+          closeCancelModal();
+          setSelectedHold(null);
+        },
+      });
     }
   };
 
@@ -121,6 +134,18 @@ function Holds () {
         />
       </Modal>
 
+      <CancelHoldModal
+        opened={cancelModalOpened}
+        onClose={() => {
+          closeCancelModal();
+          setSelectedHold(null);
+        }}
+        onConfirm={handleConfirmCancel}
+        holdIdentifier={selectedHold?.id?.slice(0, 8).toUpperCase() || '001'}
+        holdName={selectedHold?.notes || selectedHold?.facilityName || 'this hold'}
+        loading={cancelMutation.isPending}
+      />
+
       {holds && holds.length === 0
         ? (
           <Alert>No active holds.</Alert>
@@ -153,7 +178,7 @@ function Holds () {
                         variant='light'
                         color='red'
                         size='sm'
-                        onClick={() => handleCancel(hold.id)}
+                        onClick={() => handleCancel(hold)}
                         loading={cancelMutation.isPending}
                       >
                         Cancel
