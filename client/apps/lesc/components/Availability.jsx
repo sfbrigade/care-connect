@@ -9,6 +9,7 @@ import Chip from '../../../core/components/Chip';
 import Card from '../../../core/components/Card';
 import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
+import { useToast } from '../../../core/components/ToastContext';
 import { formatTime } from '../../../core/utils/dateTime';
 
 function Availability () {
@@ -16,6 +17,7 @@ function Availability () {
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
   const [selectedHold, setSelectedHold] = useState(null);
+  const { showToast } = useToast();
 
   const { isLoading } = useQuery({
     queryKey: ['lesc-availability'],
@@ -56,10 +58,12 @@ function Availability () {
 
   const handleConfirmCancel = () => {
     if (selectedHold) {
+      const holdName = selectedHold.notes || selectedHold.facilityName || 'this hold';
       cancelHoldMutation.mutate(selectedHold.id, {
         onSuccess: () => {
           closeCancelModal();
           setSelectedHold(null);
+          showToast(`Hold canceled for ${holdName}`, 'success');
         },
       });
     }

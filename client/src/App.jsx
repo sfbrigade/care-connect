@@ -13,6 +13,8 @@ import AuthContextProvider from '../core/AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
 import { useStaticContext } from '../core/StaticContext';
 import { getLocation } from '../core/utils/location';
+import { ToastProvider } from '../core/components/ToastContext';
+import ToastContainer from '../core/components/ToastContainer';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
@@ -66,9 +68,11 @@ function App () {
     <QueryClientProvider client={queryClient}>
       <MantineProvider theme={AppTheme}>
         <ModalsProvider>
-          <AuthContextProvider>
-            <PosthogProvider />
-            <AppShell
+          <ToastProvider>
+            <AuthContextProvider>
+              <PosthogProvider />
+              <ToastContainer />
+              <AppShell
               header={{ height: 60 }}
               navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
               padding='md'
@@ -140,6 +144,7 @@ function App () {
               </AppShell.Main>
             </AppShell>
           </AuthContextProvider>
+          </ToastProvider>
         </ModalsProvider>
       </MantineProvider>
     </QueryClientProvider>

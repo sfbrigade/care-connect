@@ -10,6 +10,7 @@ import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import Card from '../../../core/components/Card';
 import Chip from '../../../core/components/Chip';
+import { useToast } from '../../../core/components/ToastContext';
 import { formatCreatedAt } from '../../../core/utils/dateTime';
 
 function Holds () {
@@ -18,6 +19,7 @@ function Holds () {
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
   const [selectedHold, setSelectedHold] = useState(null);
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // Auto-open modal if navigating with facilityId
   useEffect(() => {
@@ -61,10 +63,12 @@ function Holds () {
 
   const handleConfirmCancel = () => {
     if (selectedHold) {
+      const holdName = selectedHold.notes || selectedHold.facilityName || 'this hold';
       cancelMutation.mutate(selectedHold.id, {
         onSuccess: () => {
           closeCancelModal();
           setSelectedHold(null);
+          showToast(`Hold canceled for ${holdName}`, 'success');
         },
       });
     }
