@@ -1,5 +1,3 @@
-import { Box } from '@mantine/core';
-
 /**
  * Chip component for filters and selections
  * Matches Figma design with active/inactive states
@@ -24,7 +22,7 @@ function Chip ({
     cursor: onClick ? 'pointer' : 'default',
     transition: 'all 0.2s ease',
     border: 'none',
-    ...props.style,
+    outline: 'none',
   };
 
   const activeStyles = {
@@ -37,21 +35,36 @@ function Chip ({
     color: '#212529',
   };
 
+  // Merge styles: baseStyles, then props.style, then active/inactive, then ensure backgroundColor/color are last
+  const { style: propsStyle, ...restProps } = props;
   const styles = {
     ...baseStyles,
+    ...propsStyle,
     ...(active ? activeStyles : inactiveStyles),
+    backgroundColor: active ? '#343a40' : '#f8f9fa', // Set last to prevent overrides
+    color: active ? '#ffffff' : '#212529', // Set last to prevent overrides
   };
 
+  if (onClick) {
+    return (
+      <button
+        type='button'
+        onClick={onClick}
+        style={styles}
+        {...restProps}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <Box
-      component={onClick ? 'button' : 'div'}
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
+    <div
       style={styles}
-      {...props}
+      {...restProps}
     >
       {children}
-    </Box>
+    </div>
   );
 }
 

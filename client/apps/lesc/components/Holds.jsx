@@ -21,17 +21,20 @@ function Holds () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  // Auto-open modal if navigating with facilityId
+  const facilityId = location.state?.facilityId;
+  const shouldOpenCreateModal = location.state?.openCreateModal;
+
+  // Auto-open modal only if explicitly requested (e.g., via "Hold a Bed" button)
   useEffect(() => {
-    if (location.state?.facilityId) {
+    if (shouldOpenCreateModal) {
       openCreateModal();
     }
-  }, [location.state?.facilityId, openCreateModal]);
+  }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
-    queryKey: ['lesc-holds'],
+    queryKey: ['lesc-holds', facilityId],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list();
+      const response = await Api.lesc.holds.list(facilityId);
       return response.data;
     },
   });
