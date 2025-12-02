@@ -13,6 +13,7 @@ function LESCRoutes () {
   return (
     <Routes>
       <Route path='availability' element={<Availability />} />
+      <Route path='holds/:facilityId' element={<Holds />} />
       <Route path='holds' element={<Holds />} />
       <Route path='success' element={<HoldSuccess />} />
       <Route path='intake' element={<IntakeForm />} />
