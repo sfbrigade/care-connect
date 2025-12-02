@@ -21,6 +21,13 @@ export default async function (fastify, opts) {
             bedsRequested: z.number(),
             expiresAt: z.string(),
             status: z.string(),
+            transferredAt: z.string().nullable(),
+            transferredBy: z.object({
+              id: z.string().uuid(),
+              firstName: z.string(),
+              lastName: z.string(),
+              email: z.string(),
+            }).nullable(),
             createdAt: z.string(),
             notes: z.string().nullable(),
           })),
@@ -62,6 +69,14 @@ export default async function (fastify, opts) {
               name: true,
             },
           },
+          transferredBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -78,6 +93,8 @@ export default async function (fastify, opts) {
         bedsRequested: hold.bedsRequested,
         expiresAt: hold.expiresAt.toISOString(),
         status: hold.status,
+        transferredAt: hold.transferredAt?.toISOString() || null,
+        transferredBy: hold.transferredBy || null,
         createdAt: hold.createdAt.toISOString(),
         notes: hold.notes,
       })));

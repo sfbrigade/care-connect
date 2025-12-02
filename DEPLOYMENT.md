@@ -134,38 +134,44 @@ node --test server/test/structure/phase6.test.js
 
 ### 3.2 Unit Tests (API Route Tests)
 
-These tests require Docker to be running (they use Testcontainers):
+**Fast Local Testing with SQLite (Recommended for Development)**
 
-**Option A: Run from host machine (requires dependencies installed)**
+Tests run much faster using SQLite instead of Docker containers:
 
 ```bash
 # Install dependencies first (if not already installed)
 npm install
 
-# Run all server tests
-npm test --workspace server
+# Run all server tests with SQLite (fast, no Docker required)
+cd server
+npm test
 
 # Or run specific test files
-cd server
 npm test -- test/routes/api/auth.test.js
 npm test -- test/routes/api/users.test.js
 npm test -- test/routes/api/invites.test.js
 npm test -- test/routes/api/passwords.test.js
 npm test -- test/routes/api/feedback.test.js
-npm test -- test/routes/api/assets.test.js
 ```
 
-**Option B: Run from Docker container (recommended)**
+**Note:** Tests that require S3/MinIO storage (like `assets.test.js` and parts of `users.test.js`) will be skipped unless MinIO is enabled:
 
 ```bash
-# Enter the server container
+# Run tests with MinIO support (requires Docker)
+npm run test:minio
+```
+
+**PostgreSQL + Docker Testing (For CI or Full Integration Tests)**
+
+For tests that require PostgreSQL-specific features or full Docker setup:
+
+```bash
+# Run tests with PostgreSQL and MinIO (requires Docker)
+npm run test:postgres
+
+# Or run from Docker container
 docker compose exec server bash -l
-
-# Inside container, run tests
-npm test
-
-# Or run specific test files
-npm test -- test/routes/api/auth.test.js
+npm run test:postgres
 ```
 
 ### 3.3 Test Categories
@@ -180,8 +186,10 @@ npm test -- test/routes/api/auth.test.js
    - `invites.test.js` - Invite system
    - `passwords.test.js` - Password reset
    - `feedback.test.js` - Feedback system
-   - `assets.test.js` - File uploads
-   - Requires: Docker running, Testcontainers will spin up test DB/storage
+   - `assets.test.js` - File uploads (requires MinIO)
+   - **Default**: Uses SQLite for fast local testing (no Docker required)
+   - **PostgreSQL mode**: Use `npm run test:postgres` for full Docker/PostgreSQL testing
+   - **MinIO mode**: Use `npm run test:minio` for tests requiring S3 storage
 
 ## Step 4: Verify Application Functionality
 
