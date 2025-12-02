@@ -1,4 +1,4 @@
-import { Container, Stack, Text, Group, Button } from '@mantine/core';
+import { Container, Stack, Text, Group, Button, Box } from '@mantine/core';
 import { useNavigate, useLocation } from 'react-router';
 
 /**
@@ -21,36 +21,49 @@ function HoldSuccess () {
   const displayM = displayMinutes.toString().padStart(2, '0');
   const expiresTime = `${displayH}:${displayM} ${ampm}`;
 
+  // Calculate minutes until expiration
+  const now = new Date();
+  const minutesUntilExpiration = Math.round((expiresAt.getTime() - now.getTime()) / (60 * 1000));
+
   return (
-    <Container size='sm' py='md' px='md'>
-      <Stack gap='md' align='center' style={{ paddingTop: '40px' }}>
-        <div
+    <Container size='sm' py='md' px='md' style={{ position: 'relative', minHeight: '100vh' }}>
+      <Stack
+        gap='24px'
+        align='center'
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 'calc(100% - 40px)',
+          maxWidth: '335px',
+        }}
+      >
+        {/* Circular placeholder */}
+        <Box
           style={{
             width: '160px',
             height: '160px',
-            borderRadius: '16px',
-            backgroundColor: '#f8f9fa',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '24px',
+            borderRadius: '99px',
+            backgroundColor: '#f1f3f5',
+            flexShrink: 0,
           }}
-        >
-          {/* Placeholder for success icon/area */}
-          <Text size='xl'>✓</Text>
-        </div>
+        />
 
-        <Stack gap='md' style={{ maxWidth: '335px', width: '100%', textAlign: 'center' }}>
+        {/* Text content */}
+        <Stack gap='12px' style={{ width: '100%' }}>
           <Text
             style={{
-              fontSize: '16px',
-              lineHeight: '24px',
+              fontSize: '24px',
+              lineHeight: '32px',
               fontFamily: 'Roboto, sans-serif',
-              fontWeight: 400,
-              color: '#212529',
+              fontWeight: 700,
+              color: '#000000',
+              width: '100%',
+              textAlign: 'center',
             }}
           >
-            Hold placed for {holdData.bedsRequested} {holdData.bedsRequested === 1 ? 'bed' : 'beds'}, expires in 60 minutes at {expiresTime}.
+            Hold placed for {holdData.bedsRequested} {holdData.bedsRequested === 1 ? 'bed' : 'beds'}, expires in {minutesUntilExpiration} {minutesUntilExpiration === 1 ? 'minute' : 'minutes'} at {expiresTime}.
           </Text>
 
           <Text
@@ -59,21 +72,48 @@ function HoldSuccess () {
               lineHeight: '28px',
               fontFamily: 'Roboto, sans-serif',
               fontWeight: 400,
-              color: '#000000',
+              color: '#868e96',
+              width: '100%',
+              textAlign: 'center',
             }}
           >
             Do you want to start the intake form now?
           </Text>
-
-          <Group justify='center' gap='sm' mt='md'>
-            <Button variant='light' onClick={() => navigate('/lesc/holds')}>
-              No
-            </Button>
-            <Button onClick={() => navigate('/lesc/intake', { state: { holdId: holdData.id } })}>
-              Yes
-            </Button>
-          </Group>
         </Stack>
+
+        {/* Buttons */}
+        <Group gap='8px' justify='center' style={{ width: '100%' }}>
+          <Button
+            onClick={() => navigate('/lesc/holds')}
+            style={{
+              backgroundColor: '#dee2e6',
+              color: '#000000',
+              borderRadius: '24px',
+              padding: '6px 20px',
+              fontSize: '16px',
+              lineHeight: '24px',
+              fontWeight: 400,
+              flex: '0 1 auto',
+            }}
+          >
+            Later
+          </Button>
+          <Button
+            onClick={() => navigate('/lesc/intake', { state: { holdId: holdData.id } })}
+            style={{
+              backgroundColor: '#000000',
+              color: '#ffffff',
+              borderRadius: '24px',
+              padding: '6px 20px',
+              fontSize: '16px',
+              lineHeight: '24px',
+              fontWeight: 400,
+              flex: '0 1 auto',
+            }}
+          >
+            Start Form
+          </Button>
+        </Group>
       </Stack>
     </Container>
   );
