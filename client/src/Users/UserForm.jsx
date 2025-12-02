@@ -5,9 +5,9 @@ import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../Api';
-import { useAuthContext } from '../AuthContext';
-import PhotoInput from '../Components/PhotoInput';
+import Api from '../../core/Api';
+import { useAuthContext } from '../../core/AuthContext';
+import PhotoInput from '../../core/components/PhotoInput';
 
 function UserForm () {
   const authContext = useAuthContext();

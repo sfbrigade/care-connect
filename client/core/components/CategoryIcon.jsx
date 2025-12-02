@@ -1,6 +1,6 @@
-import stethoscopeSvg from '../assets/icons/stethoscope.svg?raw';
-import healthRecognitionSvg from '../assets/icons/health-recognition.svg?raw';
-import nurseSvg from '../assets/icons/nurse.svg?raw';
+import stethoscopeSvg from '../../src/assets/icons/stethoscope.svg?raw';
+import healthRecognitionSvg from '../../src/assets/icons/health-recognition.svg?raw';
+import nurseSvg from '../../src/assets/icons/nurse.svg?raw';
 
 // Parse SVG strings to extract viewBox and path attributes (works in both Node.js and browser)
 function parseSvg (svgString) {

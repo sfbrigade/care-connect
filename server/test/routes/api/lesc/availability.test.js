@@ -118,7 +118,11 @@ test('/api/lesc/availability', async (t) => {
 
   await t.test('GET /', async (t) => {
     await t.test('returns LESC facilities with availability', async () => {
+<<<<<<< HEAD
       const { facility1, facility2, lescServiceType, soberingServiceType } = await createTestData();
+=======
+      const { facility1, facility2, lescServiceType } = await createTestData();
+>>>>>>> origin/multiapp
 
       const response = await app.inject().get('/api/lesc/availability').headers(userHeaders);
 
@@ -126,7 +130,11 @@ test('/api/lesc/availability', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
+<<<<<<< HEAD
       assert.deepStrictEqual(data.length, 3); // facility1 LESC, facility1 SOBERING, facility2 LESC
+=======
+      assert.deepStrictEqual(data.length, 2); // facility1 LESC, facility2 LESC (SOBERING no longer included)
+>>>>>>> origin/multiapp
 
       // Find facility1 LESC service
       const facility1Lesc = data.find(
@@ -141,6 +149,7 @@ test('/api/lesc/availability', async (t) => {
       assert.deepStrictEqual(facility1Lesc.activeHolds, 0);
       assert.deepStrictEqual(facility1Lesc.calculatedAvailable, 8); // 10 - 2 - 0
 
+<<<<<<< HEAD
       // Find facility1 SOBERING service
       const facility1Sobering = data.find(
         item => item.facilityId === facility1.id && item.serviceTypeCode === 'SOBERING'
@@ -151,6 +160,13 @@ test('/api/lesc/availability', async (t) => {
       assert.deepStrictEqual(facility1Sobering.totalBeds, 5);
       assert.deepStrictEqual(facility1Sobering.reservedBeds, 1);
       assert.deepStrictEqual(facility1Sobering.calculatedAvailable, 4); // 5 - 1 - 0
+=======
+      // Verify SOBERING service is NOT included (only LESC is used now)
+      const facility1Sobering = data.find(
+        item => item.facilityId === facility1.id && item.serviceTypeCode === 'SOBERING'
+      );
+      assert.ok(!facility1Sobering, 'SOBERING service should not be included (only LESC is used)');
+>>>>>>> origin/multiapp
 
       // Find facility2 LESC service
       const facility2Lesc = data.find(
@@ -184,10 +200,20 @@ test('/api/lesc/availability', async (t) => {
 
       const data = JSON.parse(response.body);
       const facility1Data = data.filter(item => item.facilityId === facility1.id);
+<<<<<<< HEAD
       // Should only have LESC and SOBERING, not SHELTER
       assert.deepStrictEqual(facility1Data.length, 2);
       const shelterService = facility1Data.find(item => item.serviceTypeCode === 'SHELTER');
       assert.ok(!shelterService, 'Non-LESC service should not appear');
+=======
+      // Should only have LESC, not SOBERING or SHELTER
+      assert.deepStrictEqual(facility1Data.length, 1);
+      assert.deepStrictEqual(facility1Data[0].serviceTypeCode, 'LESC');
+      const shelterService = facility1Data.find(item => item.serviceTypeCode === 'SHELTER');
+      assert.ok(!shelterService, 'Non-LESC service should not appear');
+      const soberingService = facility1Data.find(item => item.serviceTypeCode === 'SOBERING');
+      assert.ok(!soberingService, 'SOBERING service should not appear (only LESC is used)');
+>>>>>>> origin/multiapp
     });
 
     await t.test('accounts for active holds when calculating availability', async () => {

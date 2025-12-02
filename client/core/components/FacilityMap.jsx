@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import 'leaflet/dist/leaflet.css';
-import '../styles/FacilityMap.css';
+import '../../src/styles/FacilityMap.css';
 
-import stethoscopeSvg from '../assets/icons/stethoscope.svg?raw';
-import healthRecognitionSvg from '../assets/icons/health-recognition.svg?raw';
-import nurseSvg from '../assets/icons/nurse.svg?raw';
+import stethoscopeSvg from '../../src/assets/icons/stethoscope.svg?raw';
+import healthRecognitionSvg from '../../src/assets/icons/health-recognition.svg?raw';
+import nurseSvg from '../../src/assets/icons/nurse.svg?raw';
 
 const DEFAULT_CENTER = [37.7749, -122.4194]; // San Francisco
 const DEFAULT_ZOOM = 12;

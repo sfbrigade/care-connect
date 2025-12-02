@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router';
-import { useAuthContext } from './AuthContext';
+import { useAuthContext } from '../core/AuthContext';
 import { handleRedirects } from './AppRedirectsConfig';
 
 function AppRedirects ({ children }) {

@@ -2,8 +2,8 @@ import ReactDOMServer from 'react-dom/server';
 import { StaticRouter } from 'react-router';
 import { createHead, UnheadProvider, renderSSRHead } from '@unhead/react/server';
 
-import { defaultValue } from './StaticContext';
-import StaticContextProvider from './StaticContextProvider';
+import { defaultValue } from '../core/StaticContext';
+import StaticContextProvider from '../core/StaticContextProvider';
 import { handleRedirects } from './AppRedirectsConfig';
 import App from './App';
 

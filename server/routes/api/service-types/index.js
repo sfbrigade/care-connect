@@ -35,5 +35,9 @@ export default async function (fastify, opts) {
       })));
     });
 
+<<<<<<< HEAD
   await fastify.register(import('./create.js'));
+=======
+  fastify.register(import('./create.js'));
+>>>>>>> origin/multiapp
 }

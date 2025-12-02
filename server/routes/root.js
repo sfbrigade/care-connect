@@ -47,6 +47,16 @@ export default async function (fastify, opts) {
               staticContext.context.env[key] = process.env[key];
             }
           });
+          // Add location info to static context (null if no location found)
+          if (request.location) {
+            staticContext.context.location = {
+              name: request.location,
+              appType: request.appType,
+              method: request.locationMethod,
+            };
+          } else {
+            staticContext.context.location = null;
+          }
           const { head, html } = await render(request, reply, staticContext);
           if (head && html) {
             reply.header('Content-Type', 'text/html');

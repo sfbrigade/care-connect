@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route } from 'react-router';
 import '@mantine/core/styles.css';
 import { AppShell, Container, Loader, MantineProvider } from '@mantine/core';
@@ -9,14 +9,14 @@ import { useHead } from '@unhead/react';
 
 import './App.css';
 
-import AuthContextProvider from './AuthContextProvider';
+import AuthContextProvider from '../core/AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
-import { useStaticContext } from './StaticContext';
+import { useStaticContext } from '../core/StaticContext';
+import { getLocation } from '../core/utils/location';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
 import MobileNavbar from './MobileNavbar';
-import Home from './Home';
 import Login from './Login';
 import InvitesRoutes from './Invites/InvitesRoutes';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
@@ -24,18 +24,47 @@ import Register from './Register';
 import UsersRoutes from './Users/UsersRoutes';
 import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
+import NotFound from './NotFound';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
+<<<<<<< HEAD
 const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
+=======
+const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
+const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
+const DIDOHeader = lazy(() => import('../apps/dido/components/DIDOHeader'));
+const LESCHeader = lazy(() => import('../apps/lesc/components/LESCHeader'));
+const DIDOMobileNavbar = lazy(() => import('../apps/dido/components/DIDOMobileNavbar'));
+const LESCMobileNavbar = lazy(() => import('../apps/lesc/components/LESCMobileNavbar'));
+>>>>>>> origin/multiapp
 
 const queryClient = new QueryClient();
 
 function App () {
   const [opened, { close, toggle }] = useDisclosure();
   const staticContext = useStaticContext();
+  const location = useMemo(() => getLocation(staticContext), [staticContext]);
+  
   useHead({
     titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? 'CareConnectSF'}`
   });
+
+  // Determine which app routes to use based on location
+  const AppRoutes = useMemo(() => {
+    if (!location) return null; // No location found - will show 404
+    return location.appType === 'lesc' ? LESCRoutes : DIDORoutes;
+  }, [location]);
+
+  // Determine which header and navbar to use based on location
+  const HeaderComponent = useMemo(() => {
+    if (!location) return Header; // Default header for shared routes (login, account, etc.)
+    return location.appType === 'lesc' ? LESCHeader : DIDOHeader;
+  }, [location]);
+
+  const MobileNavbarComponent = useMemo(() => {
+    if (!location) return MobileNavbar; // Default navbar for shared routes
+    return location.appType === 'lesc' ? LESCMobileNavbar : DIDOMobileNavbar;
+  }, [location]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -49,10 +78,18 @@ function App () {
               padding='md'
             >
               <AppShell.Header>
-                <Header opened={opened} close={close} toggle={toggle} />
+                <Suspense fallback={<Container h='100%'><Loader /></Container>}>
+                  <HeaderComponent opened={opened} close={close} toggle={toggle} />
+                </Suspense>
               </AppShell.Header>
               <AppShell.Navbar p='md'>
+<<<<<<< HEAD
                 <MobileNavbar close={close} />
+=======
+                <Suspense fallback={<Loader />}>
+                  <MobileNavbarComponent close={close} />
+                </Suspense>
+>>>>>>> origin/multiapp
               </AppShell.Navbar>
               <AppShell.Main px={0} style={{ paddingTop: '3px' }}>
                 <Routes>
@@ -61,7 +98,6 @@ function App () {
                     element={
                       <AppRedirects>
                         <Routes>
-                          <Route path='/' element={<Home />} />
                           <Route path='/login' element={<Login />} />
                           <Route path='/passwords/*' element={<PasswordsRoutes />} />
                           <Route path='/invites/*' element={<InvitesRoutes />} />
@@ -69,6 +105,22 @@ function App () {
                           <Route path='/account/*' element={<UsersRoutes />} />
                           <Route path='/feedback' element={<FeedbackViewer />} />
                           <Route path='/feedback/list' element={<FeedbackList />} />
+                          {/* DIDO routes - support both subdomain and path-based routing */}
+                          <Route
+                            path='/dido/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <DIDORoutes />
+                              </Suspense>
+                            }
+                          />
+                          {/* LESC routes - support both subdomain and path-based routing */}
+                          <Route
+                            path='/lesc/*' element={
+                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                <LESCRoutes />
+                              </Suspense>
+                            }
+                          />
                           <Route
                             path='/lesc/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>
@@ -83,6 +135,18 @@ function App () {
                               </Suspense>
                             }
                           />
+                          {/* App routes - location-aware routing for subdomain-based access */}
+                          {AppRoutes ? (
+                            <Route
+                              path='/*' element={
+                                <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                                  <AppRoutes />
+                                </Suspense>
+                              }
+                            />
+                          ) : (
+                            <Route path='/*' element={<NotFound />} />
+                          )}
                         </Routes>
                       </AppRedirects>
                     }
