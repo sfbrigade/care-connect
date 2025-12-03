@@ -203,7 +203,6 @@ function Holds () {
 
   return (
     <Container size='sm' py='md' px='md'>
-
       <Group justify='space-between' mb='md'>
         <Title order={2}>Active Bed Holds</Title>
         <Button leftSection={<IconPlus />} onClick={openCreateModal}>

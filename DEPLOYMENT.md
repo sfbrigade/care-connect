@@ -172,6 +172,20 @@ npm run test:postgres
 # Or run from Docker container
 docker compose exec server bash -l
 npm run test:postgres
+npm test -- test/routes/api/assets.test.js
+```
+
+**Option B: Run from Docker container (recommended)**
+
+```bash
+# Enter the server container
+docker compose exec server bash -l
+
+# Inside container, run tests
+npm test
+
+# Or run specific test files
+npm test -- test/routes/api/auth.test.js
 ```
 
 ### 3.3 Test Categories
@@ -184,12 +198,11 @@ npm run test:postgres
    - `auth.test.js` - Authentication (login, register, logout)
    - `users.test.js` - User management
    - `invites.test.js` - Invite system
-   - `passwords.test.js` - Password reset
-   - `feedback.test.js` - Feedback system
    - `assets.test.js` - File uploads (requires MinIO)
    - **Default**: Uses SQLite for fast local testing (no Docker required)
    - **PostgreSQL mode**: Use `npm run test:postgres` for full Docker/PostgreSQL testing
    - **MinIO mode**: Use `npm run test:minio` for tests requiring S3 storage
+   - **Docker mode**: Requires Docker running, Testcontainers will spin up test DB/storage
 
 ## Step 4: Verify Application Functionality
 

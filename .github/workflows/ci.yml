@@ -45,20 +45,22 @@ jobs:
       environment: ${{ steps.environment.outputs.environment }}
       labels: ${{ steps.meta.outputs.labels }}
       tag: ${{ steps.meta.outputs.tags }}
+      tag_names: ${{ steps.meta.outputs.tag_names }}
       tag_exists: ${{ steps.check-image.outputs.tag_exists }}
       json: ${{ steps.meta.outputs.json }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Set environment variable based on branch
         id: environment
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "environment=dido" >> $GITHUB_ENV
+            echo "environment=dido" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "dev" ]]; then
-            echo "environment=dido-dev" >> $GITHUB_ENV
+            echo "environment=dido-dev" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "lesc-main" ]]; then
-            echo "environment=lesc" >> $GITHUB_ENV
+            echo "environment=lesc" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "lesc-dev" ]]; then
-            echo "environment=lesc-dev" >> $GITHUB_ENV
+            echo "environment=lesc-dev" >> "$GITHUB_OUTPUT"
           fi
       - name: Docker meta
         id: meta
@@ -132,8 +134,13 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
-    needs:
-      - build
+    needs: [ meta, build ]
+    env:
+      DOCKER_METADATA_OUTPUT_VERSION: ${{ needs.meta.outputs.version }}
+      DOCKER_METADATA_OUTPUT_TAGS: ${{ needs.meta.outputs.tag }}
+      DOCKER_METADATA_OUTPUT_TAG_NAMES: ${{ needs.meta.outputs.tag_names }}
+      DOCKER_METADATA_OUTPUT_LABELS: ${{ needs.meta.outputs.labels }}
+      DOCKER_METADATA_OUTPUT_JSON: ${{ needs.meta.outputs.json }}
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4

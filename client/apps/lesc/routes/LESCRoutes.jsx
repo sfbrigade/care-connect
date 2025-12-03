@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 
 import Availability from '../components/Availability';
 import Holds from '../components/Holds';

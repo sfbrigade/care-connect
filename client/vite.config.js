@@ -23,7 +23,9 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       }
     },
     build: {
-      rollupOptions: isSSRBuild ? {} : {
+      rollupOptions: isSSRBuild
+        ? {}
+        : {
         output: {
           // Only apply manualChunks for client builds, not SSR builds
           // SSR builds mark React as external, so it can't be in manualChunks
