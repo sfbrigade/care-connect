@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Card from '../../../core/components/Card';
-import { formatTimeRemaining, formatTimeUntil } from '../../../core/utils/dateTime';
+import { formatTimeUntil } from '../../../core/utils/dateTime';
 
 /**
  * Check-in screen - matches Figma "Check-in" design
