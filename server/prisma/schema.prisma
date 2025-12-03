@@ -9,6 +9,13 @@ generator client {
   previewFeatures = ["postgresqlExtensions"]
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+  output = "./ERD.md"
+  theme = "default"
+  includeRelationFromFields = true
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

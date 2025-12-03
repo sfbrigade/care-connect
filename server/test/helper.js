@@ -119,9 +119,11 @@ async function build (t) {
   async function recreateDb () {
     await t.prisma.$disconnect();
     await app.prisma.$disconnect();
-    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS ${startedDbContainer.getDatabase()} WITH (FORCE)`);
+    const dbName = startedDbContainer.getDatabase();
+    // Properly quote database name to handle special characters
+    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     await sleep(100);
-    await prisma.$executeRawUnsafe(`CREATE DATABASE ${startedDbContainer.getDatabase()} `);
+    await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     await app.prisma.$connect();
     await t.prisma.$connect();
   }

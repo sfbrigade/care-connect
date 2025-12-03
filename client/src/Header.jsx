@@ -5,8 +5,8 @@ import { ActionIcon, Anchor, Avatar, Container, Group, Menu, Title } from '@mant
 import { IconMenu2, IconMessages } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import Api from './Api';
-import { useAuthContext } from './AuthContext';
+import Api from '../core/Api';
+import { useAuthContext } from '../core/AuthContext';
 
 function Header ({ opened, close, toggle }) {
   const navigate = useNavigate();

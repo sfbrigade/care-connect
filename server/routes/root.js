@@ -17,11 +17,15 @@ function readIndexFile () {
 const HTML = readIndexFile();
 
 export default async function (fastify, opts) {
-  fastify.register(fastifyStatic, {
-    root: path.resolve(__dirname, '../../client/dist/client/assets'),
-    prefix: '/assets/',
-    index: false,
-  });
+  // Only register static assets if the directory exists (client has been built)
+  const assetsPath = path.resolve(__dirname, '../../client/dist/client/assets');
+  if (fs.existsSync(assetsPath)) {
+    fastify.register(fastifyStatic, {
+      root: assetsPath,
+      prefix: '/assets/',
+      index: false,
+    });
+  }
 
   fastify.register(fastifyStatic, {
     root: path.resolve(__dirname, '../static-data'),
@@ -47,6 +51,16 @@ export default async function (fastify, opts) {
               staticContext.context.env[key] = process.env[key];
             }
           });
+          // Add location info to static context (null if no location found)
+          if (request.location) {
+            staticContext.context.location = {
+              name: request.location,
+              appType: request.appType,
+              method: request.locationMethod,
+            };
+          } else {
+            staticContext.context.location = null;
+          }
           const { head, html } = await render(request, reply, staticContext);
           if (head && html) {
             reply.header('Content-Type', 'text/html');

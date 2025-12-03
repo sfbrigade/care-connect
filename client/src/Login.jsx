@@ -5,9 +5,9 @@ import { hasLength, isEmail, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from './Api';
-import { useAuthContext } from './AuthContext';
-import { useStaticContext } from './StaticContext';
+import Api from '../core/Api';
+import { useAuthContext } from '../core/AuthContext';
+import { useStaticContext } from '../core/StaticContext';
 
 function Login () {
   const staticContext = useStaticContext();

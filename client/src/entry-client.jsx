@@ -4,8 +4,8 @@ import { BrowserRouter } from 'react-router';
 import { createHead, UnheadProvider } from '@unhead/react/client';
 
 import App from './App';
-import { defaultValue } from './StaticContext';
-import StaticContextProvider from './StaticContextProvider';
+import { defaultValue } from '../core/StaticContext';
+import StaticContextProvider from '../core/StaticContextProvider';
 
 const head = createHead();
 
