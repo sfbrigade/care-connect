@@ -3,11 +3,7 @@ import { NavLink } from 'react-router';
 import { Divider, NavLink as MantineNavLink, Stack, Collapse } from '@mantine/core';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 
-<<<<<<< HEAD
-import { useAuthContext } from './AuthContext';
-=======
 import { useAuthContext } from '../core/AuthContext';
->>>>>>> origin/multiapp
 
 function MobileNavbar ({ close }) {
   const { user } = useAuthContext();

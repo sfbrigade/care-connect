@@ -27,16 +27,12 @@ import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
-<<<<<<< HEAD
-const LESCRoutes = lazy(() => import('./LESC/LESCRoutes'));
-=======
 const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
 const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
 const DIDOHeader = lazy(() => import('../apps/dido/components/DIDOHeader'));
 const LESCHeader = lazy(() => import('../apps/lesc/components/LESCHeader'));
 const DIDOMobileNavbar = lazy(() => import('../apps/dido/components/DIDOMobileNavbar'));
 const LESCMobileNavbar = lazy(() => import('../apps/lesc/components/LESCMobileNavbar'));
->>>>>>> origin/multiapp
 
 const queryClient = new QueryClient();
 
@@ -83,13 +79,9 @@ function App () {
                 </Suspense>
               </AppShell.Header>
               <AppShell.Navbar p='md'>
-<<<<<<< HEAD
-                <MobileNavbar close={close} />
-=======
                 <Suspense fallback={<Loader />}>
                   <MobileNavbarComponent close={close} />
                 </Suspense>
->>>>>>> origin/multiapp
               </AppShell.Navbar>
               <AppShell.Main px={0} style={{ paddingTop: '3px' }}>
                 <Routes>

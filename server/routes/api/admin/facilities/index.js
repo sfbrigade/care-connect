@@ -74,19 +74,10 @@ export default async function (fastify, opts) {
       })));
     });
 
-<<<<<<< HEAD
-  await fastify.register(import('./get.js'));
-  await fastify.register(import('./create.js'));
-  await fastify.register(import('./patch.js'));
-  await fastify.register(import('./update-beds.js'));
-  await fastify.register(import('./add-service.js'));
-  await fastify.register(import('./remove-service.js'));
-=======
   fastify.register(import('./get.js'));
   fastify.register(import('./create.js'));
   fastify.register(import('./patch.js'));
   fastify.register(import('./update-beds.js'));
   fastify.register(import('./add-service.js'));
   fastify.register(import('./remove-service.js'));
->>>>>>> origin/multiapp
 }

@@ -17,11 +17,15 @@ function readIndexFile () {
 const HTML = readIndexFile();
 
 export default async function (fastify, opts) {
-  fastify.register(fastifyStatic, {
-    root: path.resolve(__dirname, '../../client/dist/client/assets'),
-    prefix: '/assets/',
-    index: false,
-  });
+  // Only register static assets if the directory exists (client has been built)
+  const assetsPath = path.resolve(__dirname, '../../client/dist/client/assets');
+  if (fs.existsSync(assetsPath)) {
+    fastify.register(fastifyStatic, {
+      root: assetsPath,
+      prefix: '/assets/',
+      index: false,
+    });
+  }
 
   fastify.register(fastifyStatic, {
     root: path.resolve(__dirname, '../static-data'),

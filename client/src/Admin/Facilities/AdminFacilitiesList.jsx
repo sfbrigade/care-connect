@@ -3,11 +3,7 @@ import { useNavigate } from 'react-router';
 import { Container, Title, Button, Table, Group, Badge, Loader, Alert } from '@mantine/core';
 import { IconPlus, IconAlertCircle } from '@tabler/icons-react';
 
-<<<<<<< HEAD
-import Api from '../../Api';
-=======
 import Api from '../../../core/Api';
->>>>>>> origin/multiapp
 
 function AdminFacilitiesList () {
   const navigate = useNavigate();

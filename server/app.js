@@ -31,10 +31,23 @@ export default async function (fastify, opts) {
   // Load LESC app API routes (before catch-all route)
   fastify.register(import('./apps/lesc/api/index.js'), { prefix: '/api/lesc' });
 
+  // Manually register routes/api routes BEFORE AutoLoad to avoid double registration
+  // Only register index.js files which manually register their sub-routes
+  fastify.register(import('./routes/api/admin/facilities/index.js'), { prefix: '/api/admin/facilities' });
+  fastify.register(import('./routes/api/service-types/index.js'), { prefix: '/api/service-types' });
+
   // This loads all plugins defined in routes (catch-all route comes last)
   // define your routes in one of these
+  // Exclude routes/api from AutoLoad - those routes are loaded manually above
+  // AutoLoad would load both index.js and individual files, causing double registration
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
+    matchFilter: (file) => {
+      // Exclude anything under routes/api - those are loaded manually above
+      // File paths start with '/' so check for '/api/' or 'api/'
+      const shouldExclude = file.startsWith('/api/') || file.startsWith('api/');
+      return !shouldExclude;
+    },
     options: Object.assign({}, opts)
   });
 }
