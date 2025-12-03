@@ -8,10 +8,8 @@ const __dirname = path.dirname(__filename);
 export default async function (fastify, opts) {
   // Register each API subdirectory with its /api prefix
   // AutoLoad will use the directory structure to create routes
-  // Register auth routes directly (instead of through auth/index.js)
-  fastify.register(import('./auth/login.js'), { prefix: '/api/auth' });
-  fastify.register(import('./auth/logout.js'), { prefix: '/api/auth' });
-  fastify.register(import('./auth/register.js'), { prefix: '/api/auth' });
+  // Register auth routes through auth/index.js
+  fastify.register(import('./auth/index.js'), { prefix: '/api/auth' });
   fastify.register(import('./facilities/index.js'), { prefix: '/api/facilities' });
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'users'),

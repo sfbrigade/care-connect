@@ -171,6 +171,15 @@ const Api = {
       cancel (id) {
         return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);
       },
+      qr (id) {
+        return instance.get(`/api/lesc/holds/${id}/qr`);
+      },
+      transfer (id, token) {
+        return instance.post(`/api/lesc/holds/${id}/transfer`, { token }).catch(handleError);
+      },
+      transferStatus (id) {
+        return instance.get(`/api/lesc/holds/${id}/transfer-status`);
+      },
     },
     intake: {
       create (data) {

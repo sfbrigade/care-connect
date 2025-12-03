@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { IconAlertCircle, IconPlus, IconClock, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconPlus, IconClock, IconX, IconQrcode } from '@tabler/icons-react';
 
 import Api from '../../../core/Api';
 import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
+import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import Card from '../../../core/components/Card';
 import Chip from '../../../core/components/Chip';
@@ -21,6 +22,7 @@ function Holds () {
   const [searchParams] = useSearchParams();
   const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
+  const [qrModalOpened, { open: openQRModal, close: closeQRModal }] = useDisclosure(false);
   const [selectedHold, setSelectedHold] = useState(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -163,6 +165,11 @@ function Holds () {
     openCancelModal();
   };
 
+  const handleShowQR = (hold) => {
+    setSelectedHold(hold);
+    openQRModal();
+  };
+
   const handleConfirmCancel = () => {
     if (selectedHold) {
       const holdName = selectedHold.notes || selectedHold.facilityName || 'this hold';
@@ -253,6 +260,15 @@ function Holds () {
         loading={cancelMutation.isPending}
       />
 
+      <HoldQRCode
+        holdId={selectedHold?.id}
+        opened={qrModalOpened}
+        onClose={() => {
+          closeQRModal();
+          setSelectedHold(null);
+        }}
+      />
+
       {holds && holds.length === 0
         ? (
           <Alert>No active holds.</Alert>
@@ -288,6 +304,14 @@ function Holds () {
                     badgeStatus={isExpiringSoon ? 'warning' : 'active'}
                     actions={
                       <>
+                        <Button
+                          leftSection={<IconQrcode size={18} />}
+                          variant='light'
+                          size='sm'
+                          onClick={() => handleShowQR(hold)}
+                        >
+                          QR Code
+                        </Button>
                         <Button
                           leftSection={<IconClock size={18} />}
                           variant='light'
@@ -346,6 +370,14 @@ function Holds () {
                           actions={
                             <>
                               <Button
+                                leftSection={<IconQrcode size={18} />}
+                                variant='light'
+                                size='sm'
+                                onClick={() => handleShowQR(hold)}
+                              >
+                                QR Code
+                              </Button>
+                              <Button
                                 leftSection={<IconClock size={18} />}
                                 variant='light'
                                 size='sm'
@@ -365,7 +397,7 @@ function Holds () {
                                 Cancel
                               </Button>
                             </>
-                        }
+                          }
                         />
                       );
                     })}

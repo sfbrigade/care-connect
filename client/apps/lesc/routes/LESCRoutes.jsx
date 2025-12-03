@@ -8,6 +8,7 @@ import CheckIn from '../components/CheckIn';
 import HoldsHistory from '../components/HoldsHistory';
 import Unavailable from '../components/Unavailable';
 import Facilities from '../components/Facilities';
+import Transfer from '../components/Transfer';
 
 function LESCRoutes () {
   return (
@@ -19,6 +20,8 @@ function LESCRoutes () {
       <Route path='intake' element={<IntakeForm />} />
       <Route path='intake/:holdId' element={<IntakeForm />} />
       <Route path='checkin/:holdId' element={<CheckIn />} />
+      <Route path='transfer/:holdId' element={<Transfer />} />
+      <Route path='transfer' element={<Transfer />} />
       <Route path='history' element={<HoldsHistory />} />
       <Route path='unavailable' element={<Unavailable />} />
       <Route path='' element={<Facilities />} />
