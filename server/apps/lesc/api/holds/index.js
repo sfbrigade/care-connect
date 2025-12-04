@@ -5,6 +5,7 @@ import { autoExpireHolds } from '../../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'List active holds, optionally filtered by facility.',
         querystring: z.object({

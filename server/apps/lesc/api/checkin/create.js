@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 export default async function (fastify, opts) {
   fastify.post('/:holdId',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Check in a subject with a hold (placeholder implementation)',
         params: z.object({

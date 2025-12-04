@@ -24,8 +24,10 @@ export default async function (fastify, opts) {
               },
             },
           }),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
         },
       },
+      attachValidation: true,
     },
     async function (request, reply) {
       const { email, password } = request.body;

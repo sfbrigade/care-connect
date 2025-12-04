@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.patch('/:id/extend',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Extend a hold by 30 minutes.',
         params: z.object({

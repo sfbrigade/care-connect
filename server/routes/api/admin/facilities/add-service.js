@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.post('/:id/services',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Add a service type to a facility (admin only).',
         params: z.object({

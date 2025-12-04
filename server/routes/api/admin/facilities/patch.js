@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.patch('/:id',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Update a facility (admin only).',
         params: z.object({

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.delete('/:id',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Delete a facility (admin only).',
         params: z.object({

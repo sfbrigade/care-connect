@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.delete('/:id',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Cancel a bed hold.',
         params: z.object({
@@ -20,7 +21,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const userId = request.user?.id || null;
+      const userId = request.user.id;
 
       const hold = await fastify.prisma.bedHold.findUnique({
         where: { id },

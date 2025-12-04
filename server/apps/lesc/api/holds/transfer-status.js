@@ -5,6 +5,7 @@ import { autoExpireHolds } from '../../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/:id/transfer-status',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Gets the transfer status of a bed hold.',
         params: z.object({

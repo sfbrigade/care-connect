@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.delete('/:id/services/:serviceTypeId',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Remove a service type from a facility (admin only).',
         params: z.object({

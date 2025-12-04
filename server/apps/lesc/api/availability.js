@@ -5,6 +5,7 @@ import { autoExpireHolds } from '../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Returns LESC facilities with current bed availability.',
         response: {

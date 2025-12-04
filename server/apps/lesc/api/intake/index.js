@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Create an intake record (placeholder implementation)',
         body: z.object({
@@ -47,6 +48,7 @@ export default async function (fastify, opts) {
 
   fastify.get('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'List intake records (placeholder implementation)',
         response: {
@@ -66,6 +68,7 @@ export default async function (fastify, opts) {
 
   fastify.get('/:id',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Get intake record by ID (placeholder implementation)',
         params: z.object({

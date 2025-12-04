@@ -6,6 +6,7 @@ import { autoExpireHolds } from '../../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/:id/qr',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Generates or refreshes a QR code transfer token for a bed hold.',
         params: z.object({

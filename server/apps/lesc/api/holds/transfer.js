@@ -5,6 +5,7 @@ import { autoExpireHolds } from '../../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.post('/:id/transfer',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Transfers a bed hold using a QR code token.',
         params: z.object({
@@ -30,7 +31,7 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const { token } = request.body;
-      const userId = request.user?.id || null; // Optional - can be null if no user
+      const userId = request.user.id;
       const now = new Date();
 
       await autoExpireHolds(fastify.prisma, now);

@@ -8,6 +8,8 @@ import { Head } from '@unhead/react';
 import Api from '../core/Api';
 import { useAuthContext } from '../core/AuthContext';
 import { useStaticContext } from '../core/StaticContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { StatusCodes } from 'http-status-codes';
 
 function Login () {
   const staticContext = useStaticContext();
@@ -15,6 +17,7 @@ function Login () {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const from = location.state?.from || searchParams.get('from') || '/';
 
@@ -38,7 +41,15 @@ function Login () {
 
   const onSubmitMutation = useMutation({
     mutationFn: ({ email, password }) => Api.auth.login(email, password),
-    onSuccess: () => navigate(from, { replace: true }),
+    onSuccess: async (response) => {
+      // Update user state immediately from login response
+      if (response.status === StatusCodes.OK && response.data) {
+        authContext.setUser(response.data);
+      }
+      // Invalidate and refetch user query to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      navigate(from, { replace: true });
+    },
     onError: (errors) => form.setErrors(errors),
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });

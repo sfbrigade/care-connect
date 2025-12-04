@@ -79,6 +79,15 @@ const Api = {
     login (email, password) {
       return instance.post('/api/auth/login', { email, password })
         .catch((error) => {
+          // Check if it's a validation error with details
+          if (error.response?.status === StatusCodes.UNPROCESSABLE_ENTITY && error.response?.data?.errors) {
+            // Handle validation errors (e.g., invalid email format)
+            const validationErrors = {};
+            for (const err of error.response.data.errors) {
+              validationErrors[err.path] = err.message;
+            }
+            throw validationErrors;
+          }
           switch (error.response?.status) {
             case StatusCodes.NOT_FOUND:
             case StatusCodes.UNPROCESSABLE_ENTITY:

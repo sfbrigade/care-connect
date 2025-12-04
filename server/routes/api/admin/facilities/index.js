@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'List all facilities (admin only).',
         response: {
