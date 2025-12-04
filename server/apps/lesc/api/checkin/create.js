@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import crypto from 'node:crypto';
 
 export default async function (fastify, opts) {
   fastify.post('/:holdId',

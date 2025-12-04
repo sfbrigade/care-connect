@@ -20,11 +20,12 @@ function LESCRoutes () {
       <Route path='intake' element={<IntakeForm />} />
       <Route path='intake/:holdId' element={<IntakeForm />} />
       <Route path='checkin/:holdId' element={<CheckIn />} />
+      <Route path='checkin' element={<CheckIn />} />
       <Route path='transfer/:holdId' element={<Transfer />} />
       <Route path='transfer' element={<Transfer />} />
       <Route path='history' element={<HoldsHistory />} />
       <Route path='unavailable' element={<Unavailable />} />
-      <Route path='' element={<Facilities />} />
+      <Route path='' element={<Navigate to='availability' />} />
     </Routes>
   );
 }

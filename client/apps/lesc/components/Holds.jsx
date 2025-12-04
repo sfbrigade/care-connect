@@ -145,6 +145,11 @@ function Holds () {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      showToast('Hold extended by 30 minutes', 'success');
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || 'Failed to extend hold';
+      showToast(errorMessage, 'error');
     },
   });
 
@@ -153,6 +158,10 @@ function Holds () {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || 'Failed to cancel hold';
+      showToast(errorMessage, 'error');
     },
   });
 
@@ -178,6 +187,10 @@ function Holds () {
           closeCancelModal();
           setSelectedHold(null);
           showToast(`Hold canceled for ${holdName}`, 'success');
+        },
+        onError: (error) => {
+          const errorMessage = error.response?.data?.error || 'Failed to cancel hold';
+          showToast(errorMessage, 'error');
         },
       });
     }

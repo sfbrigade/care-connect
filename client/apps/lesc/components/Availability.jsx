@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Stack, Group, Loader, Button, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconLock, IconX, IconClock } from '@tabler/icons-react';
+import { IconLock, IconX, IconClock, IconQrcode } from '@tabler/icons-react';
 
 import Api from '../../../core/Api';
 import Chip from '../../../core/components/Chip';
 import Card from '../../../core/components/Card';
 import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
+import HoldQRCode from './HoldQRCode';
 import { useToast } from '../../../core/components/ToastContext';
 import { formatTime } from '../../../core/utils/dateTime';
 
@@ -16,6 +17,7 @@ function Availability () {
   const queryClient = useQueryClient();
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
+  const [qrModalOpened, { open: openQRModal, close: closeQRModal }] = useDisclosure(false);
   const [selectedHold, setSelectedHold] = useState(null);
   const { showToast } = useToast();
 
@@ -71,6 +73,11 @@ function Availability () {
 
   const handleExtendHold = (holdId) => {
     extendHoldMutation.mutate(holdId);
+  };
+
+  const handleShowQR = (hold) => {
+    setSelectedHold(hold);
+    openQRModal();
   };
 
   /*
@@ -165,6 +172,14 @@ function Availability () {
                     actions={
                       <>
                         <Button
+                          leftSection={<IconQrcode size={18} />}
+                          variant='light'
+                          size='sm'
+                          onClick={() => handleShowQR(hold)}
+                        >
+                          QR Code
+                        </Button>
+                        <Button
                           leftSection={<IconClock size={18} />}
                           onClick={() => handleExtendHold(hold.id)}
                           loading={extendHoldMutation.isPending}
@@ -243,6 +258,15 @@ function Availability () {
         holdIdentifier={selectedHold?.id?.slice(0, 8).toUpperCase() || '001'}
         holdName={selectedHold?.notes || selectedHold?.facilityName || 'this hold'}
         loading={cancelHoldMutation.isPending}
+      />
+
+      <HoldQRCode
+        holdId={selectedHold?.id}
+        opened={qrModalOpened}
+        onClose={() => {
+          closeQRModal();
+          setSelectedHold(null);
+        }}
       />
     </Container>
   );
