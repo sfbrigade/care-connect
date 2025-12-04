@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Alert, TextInput } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -20,8 +20,15 @@ function CheckIn () {
   const { showToast } = useToast();
 
   const [holdId, setHoldId] = useState(holdIdParam || '');
-  const [showScanner, setShowScanner] = useState(false);
+  const [showScanner, setShowScanner] = useState(!holdIdParam); // Auto-show scanner if no holdId
   const [manualEntry, setManualEntry] = useState(false);
+
+  // Auto-show scanner when there's no holdId
+  useEffect(() => {
+    if (!holdIdParam && !manualEntry) {
+      setShowScanner(true);
+    }
+  }, [holdIdParam, manualEntry]);
 
   // Fetch holds list to get the specific hold
   const { data: holdsData, isLoading: isLoadingHolds } = useQuery({
@@ -116,6 +123,7 @@ function CheckIn () {
               <Stack gap="md">
                 <Text fw={500}>Scan QR Code</Text>
                 <QRScanner
+                  autoStart={true}
                   onScanSuccess={handleQRScan}
                   onScanError={(err) => {
                     if (!err.includes('No QR code found')) {

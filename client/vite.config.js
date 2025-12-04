@@ -40,6 +40,19 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       },
     },
     server: {
+      // Enable HTTPS for camera access on iOS
+      // Vite will auto-generate self-signed certificates
+      // Set VITE_HTTPS=true to enable, or use --https flag
+      https: process.env.VITE_HTTPS === 'true' || process.argv.includes('--https'),
+      // Allow external hosts (needed for ngrok and mobile device access)
+      host: true, // Listen on all addresses
+      // Allow all hosts to prevent "Invalid Host header" errors with ngrok
+      strictPort: false,
+      // Allow ngrok domain and localhost
+      allowedHosts: [
+        'localhost',
+        'unlustrous-christiane-didactic.ngrok-free.dev'
+      ],
       proxy: {
         '/api': {
           target: 'http://localhost:3000',
