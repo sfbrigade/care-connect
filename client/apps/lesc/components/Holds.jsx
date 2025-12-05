@@ -10,7 +10,7 @@ import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
-import Card from '../../../core/components/Card';
+import LESCHold from './LESCHold';
 import Chip from '../../../core/components/Chip';
 import { useToast } from '../../../core/components/ToastContext';
 import { formatCreatedAt, formatTime } from '../../../core/utils/dateTime';
@@ -140,6 +140,35 @@ function Holds () {
     }).filter(Boolean);
   }, [holdsByFacility, facilitiesData, availabilityData]);
 
+  // Get the single LESC facility info for the LESCCard
+  const lescFacilityInfo = useMemo(() => {
+    if (!facilitiesData || !availabilityData) return null;
+
+    // Since there's only 1 LESC clinic, get the first facility
+    const facility = facilitiesData[0];
+    if (!facility) return null;
+
+    // Calculate total available beds
+    const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
+    const totalAvailable = facilityAvailability.reduce((sum, item) => {
+      return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
+    }, 0);
+
+    // Format address
+    const addressParts = [];
+    if (facility.address?.line1) addressParts.push(facility.address.line1);
+    if (facility.address?.city) addressParts.push(facility.address.city);
+    if (facility.address?.state) addressParts.push(facility.address.state);
+    const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
+
+    return {
+      name: facility.name,
+      address,
+      bedCount: totalAvailable,
+      updatedAt: facility.updatedAt,
+    };
+  }, [facilitiesData, availabilityData]);
+
   const extendMutation = useMutation({
     mutationFn: (id) => Api.lesc.holds.extend(id),
     onSuccess: () => {
@@ -215,7 +244,7 @@ function Holds () {
   }
 
   return (
-    <Container size='sm' py='md' px='md'>
+    <Container size='sm' py='md' px='md' style={{ backgroundColor: '#F8F9FA', minHeight: '100vh' }}>
       <Group justify='space-between' mb='md'>
         <Title order={2}>Active Bed Holds</Title>
         <Button leftSection={<IconPlus />} onClick={openCreateModal}>
@@ -283,7 +312,19 @@ function Holds () {
 
       {holds && holds.length === 0
         ? (
-          <Alert>No active holds.</Alert>
+          <Stack gap='md'>
+            {lescFacilityInfo && (
+              <LESCFacility
+                facilityName={lescFacilityInfo.name}
+                address={lescFacilityInfo.address}
+                bedCount={lescFacilityInfo.bedCount}
+                intakeHours='24/7'
+                lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
+                onHoldClick={() => openCreateModal()}
+              />
+            )}
+            <Alert>No active holds.</Alert>
+          </Stack>
           )
         : facilityId
           ? (
@@ -304,118 +345,50 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {holds?.map((hold) => {
-                const expiresAt = new Date(hold.expiresAt);
-                const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
-
-                return (
-                  <Card
+                {holds?.map((hold) => (
+                  <LESCHold
                     key={hold.id}
-                    title={hold.facilityName}
-                    subtitle={formatCreatedAt(hold.createdAt)}
-                    badgeStatus={isExpiringSoon ? 'warning' : 'active'}
-                    actions={
-                      <>
-                        <Button
-                          leftSection={<IconQrcode size={18} />}
-                          variant='light'
-                          size='sm'
-                          onClick={() => handleShowQR(hold)}
-                        >
-                          QR Code
-                        </Button>
-                        <Button
-                          leftSection={<IconClock size={18} />}
-                          variant='light'
-                          size='sm'
-                          onClick={() => handleExtend(hold.id)}
-                          loading={extendMutation.isPending}
-                        >
-                          Extend 30 min
-                        </Button>
-                        <Button
-                          leftSection={<IconX size={18} />}
-                          variant='light'
-                          color='red'
-                          size='sm'
-                          onClick={() => handleCancel(hold)}
-                          loading={cancelMutation.isPending}
-                        >
-                          Cancel
-                        </Button>
-                      </>
-                  }
+                    hold={hold}
+                    onTransfer={() => handleShowQR(hold)}
+                    onExtend={() => handleExtend(hold.id)}
+                    onCancel={() => handleCancel(hold)}
+                    onViewDetails={() => {
+                      // TODO: Navigate to hold details page or open modal
+                      console.log('View details for hold:', hold.id);
+                    }}
                   />
-                );
-              })}
+                ))}
               </Stack>
             </Stack>
             )
           : (
-            // All holds view - group by facility with facility cards
+            // All holds view - show LESCFacility then holds
             <Stack gap='xl'>
-              {facilitiesWithHolds.map((facility) => (
-                <Stack key={facility.id} gap='md'>
-                  <LESCFacility
-                    facilityName={facility.name}
-                    address={facility.address}
-                    bedCount={facility.bedCount}
-                    intakeHours='24/7'
-                    lastUpdated={facility.updatedAt ? formatTime(new Date(facility.updatedAt)) : undefined}
-                    onCallClick={() => {
-                      // TODO: Implement call functionality
-                      console.log('Call facility:', facility.name);
+              {lescFacilityInfo && (
+                <LESCFacility
+                  facilityName={lescFacilityInfo.name}
+                  address={lescFacilityInfo.address}
+                  bedCount={lescFacilityInfo.bedCount}
+                  intakeHours='24/7'
+                  lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
+                  onHoldClick={() => openCreateModal()}
+                />
+              )}
+              <Stack gap='md'>
+                {holds?.map((hold) => (
+                  <LESCHold
+                    key={hold.id}
+                    hold={hold}
+                    onTransfer={() => handleShowQR(hold)}
+                    onExtend={() => handleExtend(hold.id)}
+                    onCancel={() => handleCancel(hold)}
+                    onViewDetails={() => {
+                      // TODO: Navigate to hold details page or open modal
+                      console.log('View details for hold:', hold.id);
                     }}
-                    onHoldClick={() => navigate(`/lesc/holds/${facility.id}?create=true`)}
                   />
-                  <Stack gap='md'>
-                    {facility.holds.map((hold) => {
-                      const expiresAt = new Date(hold.expiresAt);
-                      const isExpiringSoon = expiresAt.getTime() - Date.now() < 15 * 60 * 1000;
-
-                      return (
-                        <Card
-                          key={hold.id}
-                          title={hold.facilityName}
-                          subtitle={formatCreatedAt(hold.createdAt)}
-                          badgeStatus={isExpiringSoon ? 'warning' : 'active'}
-                          actions={
-                            <>
-                              <Button
-                                leftSection={<IconQrcode size={18} />}
-                                variant='light'
-                                size='sm'
-                                onClick={() => handleShowQR(hold)}
-                              >
-                                QR Code
-                              </Button>
-                              <Button
-                                leftSection={<IconClock size={18} />}
-                                variant='light'
-                                size='sm'
-                                onClick={() => handleExtend(hold.id)}
-                                loading={extendMutation.isPending}
-                              >
-                                Extend 30 min
-                              </Button>
-                              <Button
-                                leftSection={<IconX size={18} />}
-                                variant='light'
-                                color='red'
-                                size='sm'
-                                onClick={() => handleCancel(hold)}
-                                loading={cancelMutation.isPending}
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          }
-                        />
-                      );
-                    })}
-                  </Stack>
-                </Stack>
-              ))}
+                ))}
+              </Stack>
             </Stack>
             )}
     </Container>
