@@ -36,12 +36,46 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      // Placeholder implementation - would create intake record in database
-      const intakeId = crypto.randomUUID();
+      const {
+        holdId,
+        fullName,
+        dateOfBirth,
+        sex,
+        race,
+        personallyIdentifiable,
+      } = request.body;
+
+      // Parse full name into first and last name
+      const nameParts = fullName ? fullName.trim().split(/\s+/) : [];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+      // Parse date of birth string to DateTime
+      const dob = dateOfBirth ? new Date(dateOfBirth) : null;
+
+      // Create Client record
+      const client = await fastify.prisma.client.create({
+        data: {
+          firstName,
+          lastName,
+          dateOfBirth: dob,
+          sex,
+          race,
+          personallyIdentifiable,
+        },
+      });
+
+      // Link client to hold if holdId is provided
+      if (holdId) {
+        await fastify.prisma.bedHold.update({
+          where: { id: holdId },
+          data: { clientId: client.id },
+        });
+      }
 
       return reply.code(StatusCodes.CREATED).send({
-        id: intakeId,
-        message: 'Intake record created (placeholder)',
+        id: client.id,
+        message: 'Client record created',
       });
     }
   );

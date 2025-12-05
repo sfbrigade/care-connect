@@ -77,7 +77,7 @@ function HoldSuccess () {
               textAlign: 'center',
             }}
           >
-            Do you want to start the intake form now?
+            Do you want to enter data now?
           </Text>
         </Stack>
 
@@ -111,7 +111,7 @@ function HoldSuccess () {
               flex: '0 1 auto',
             }}
           >
-            Start Form
+            Enter Data
           </Button>
         </Group>
       </Stack>

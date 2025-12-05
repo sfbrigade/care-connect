@@ -219,16 +219,21 @@ model FacilityCapacitySnapshot {
 }
 
 model Client {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName       String
-  lastName        String?
-  description     String?
-  pets            String?
-  qualifications  Json?
-  notes           String?
-  placementRequests PlacementRequest[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName           String
+  lastName            String?
+  dateOfBirth         DateTime?
+  sex                 String?
+  race                String?
+  personallyIdentifiable String?
+  description         String?
+  pets                String?
+  qualifications      Json?
+  notes               String?
+  placementRequests   PlacementRequest[]
+  bedHolds            BedHold[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model PlacementRequest {
@@ -275,6 +280,8 @@ model BedHold {
   facilityId            String         @db.Uuid
   serviceType           ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
   serviceTypeId         String         @db.Uuid
+  client                Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId              String?        @db.Uuid
   bedsRequested         Int
   expiresAt             DateTime
   status                BedHoldStatus  @default(ACTIVE)

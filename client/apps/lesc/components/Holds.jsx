@@ -11,7 +11,6 @@ import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
-import Chip from '../../../core/components/Chip';
 import { useToast } from '../../../core/components/ToastContext';
 import { formatCreatedAt, formatTime } from '../../../core/utils/dateTime';
 
@@ -245,19 +244,7 @@ function Holds () {
 
   return (
     <Container size='sm' py='md' px='md' style={{ backgroundColor: '#F8F9FA', minHeight: '100vh' }}>
-      <Group justify='space-between' mb='md'>
-        <Title order={2}>Active Bed Holds</Title>
-        <Button leftSection={<IconPlus />} onClick={openCreateModal}>
-          Create Hold
-        </Button>
-      </Group>
-
-      {/* Filter chips */}
-      <Group gap='sm' mb='md'>
-        <Chip active>Current holds</Chip>
-        <Chip active={false}>This week</Chip>
-        <Chip active={false}>History</Chip>
-      </Group>
+      <Title order={2} mb='md'>Active Bed Holds</Title>
 
       <Modal
         opened={createModalOpened}
@@ -345,19 +332,32 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {holds?.map((hold) => (
-                  <LESCHold
-                    key={hold.id}
-                    hold={hold}
-                    onTransfer={() => handleShowQR(hold)}
-                    onExtend={() => handleExtend(hold.id)}
-                    onCancel={() => handleCancel(hold)}
-                    onViewDetails={() => {
-                      // TODO: Navigate to hold details page or open modal
-                      console.log('View details for hold:', hold.id);
-                    }}
-                  />
-                ))}
+                {holds?.map((hold) => {
+                  // Calculate age from dateOfBirth if available
+                  const age = hold.client?.dateOfBirth
+                    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                    : null;
+
+                  return (
+                    <LESCHold
+                      key={hold.id}
+                      hold={hold}
+                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                      patientDob={hold.client?.dateOfBirth}
+                      patientAge={age}
+                      patientSex={hold.client?.sex}
+                      patientRace={hold.client?.race}
+                      onTransfer={() => handleShowQR(hold)}
+                      onExtend={() => handleExtend(hold.id)}
+                      onCancel={() => handleCancel(hold)}
+                      onViewDetails={() => {
+                        // TODO: Navigate to hold details page or open modal
+                        console.log('View details for hold:', hold.id);
+                      }}
+                    />
+                  );
+                })}
               </Stack>
             </Stack>
             )
@@ -375,19 +375,32 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {holds?.map((hold) => (
-                  <LESCHold
-                    key={hold.id}
-                    hold={hold}
-                    onTransfer={() => handleShowQR(hold)}
-                    onExtend={() => handleExtend(hold.id)}
-                    onCancel={() => handleCancel(hold)}
-                    onViewDetails={() => {
-                      // TODO: Navigate to hold details page or open modal
-                      console.log('View details for hold:', hold.id);
-                    }}
-                  />
-                ))}
+                {holds?.map((hold) => {
+                  // Calculate age from dateOfBirth if available
+                  const age = hold.client?.dateOfBirth
+                    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+                    : null;
+
+                  return (
+                    <LESCHold
+                      key={hold.id}
+                      hold={hold}
+                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                      patientDob={hold.client?.dateOfBirth}
+                      patientAge={age}
+                      patientSex={hold.client?.sex}
+                      patientRace={hold.client?.race}
+                      onTransfer={() => handleShowQR(hold)}
+                      onExtend={() => handleExtend(hold.id)}
+                      onCancel={() => handleCancel(hold)}
+                      onViewDetails={() => {
+                        // TODO: Navigate to hold details page or open modal
+                        console.log('View details for hold:', hold.id);
+                      }}
+                    />
+                  );
+                })}
               </Stack>
             </Stack>
             )}
