@@ -123,7 +123,7 @@ test('/api/lesc/holds - Regression: QR Endpoint', async (t) => {
       });
 
       // Generate QR token
-      const qrResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/qr`);
+      const qrResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/qr`).headers(userHeaders);
       assert.deepStrictEqual(qrResponse.statusCode, StatusCodes.OK);
 
       // Should still be able to extend
@@ -144,7 +144,7 @@ test('/api/lesc/holds - Regression: QR Endpoint', async (t) => {
       });
 
       // Generate QR token
-      const qrResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/qr`);
+      const qrResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/qr`).headers(userHeaders);
       assert.deepStrictEqual(qrResponse.statusCode, StatusCodes.OK);
 
       // Should still be able to cancel

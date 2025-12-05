@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
+import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title, Text } from '@mantine/core';
 import { hasLength, isEmail, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -8,6 +8,7 @@ import { Head } from '@unhead/react';
 import Api from '../core/Api';
 import { useAuthContext } from '../core/AuthContext';
 import { useStaticContext } from '../core/StaticContext';
+import { getLocation } from '../core/utils/location';
 import { useQueryClient } from '@tanstack/react-query';
 import { StatusCodes } from 'http-status-codes';
 
@@ -20,6 +21,35 @@ function Login () {
   const queryClient = useQueryClient();
 
   const from = location.state?.from || searchParams.get('from') || '/';
+  // Extract pathname from Location object or use string directly
+  const fromPath = useMemo(() => {
+    if (!from) return '/';
+    if (typeof from === 'string') return from;
+    if (typeof from === 'object' && from.pathname) return from.pathname;
+    return '/';
+  }, [from]);
+  
+  // Determine which app we're logging into
+  // Check from parameter first, then current pathname, then static context
+  const appName = useMemo(() => {
+    // Check if 'from' parameter indicates an app
+    if (fromPath && fromPath.startsWith('/lesc')) {
+      return 'LESC';
+    }
+    if (fromPath && fromPath.startsWith('/dido')) {
+      return 'DIDO';
+    }
+    // Check current pathname
+    if (location.pathname.startsWith('/lesc')) {
+      return 'LESC';
+    }
+    if (location.pathname.startsWith('/dido')) {
+      return 'DIDO';
+    }
+    // Fallback to location detection
+    const appLocation = getLocation(staticContext);
+    return appLocation?.location || null;
+  }, [fromPath, location.pathname, staticContext]);
 
   useEffect(() => {
     if (authContext.user) {
@@ -57,7 +87,7 @@ function Login () {
   return (
     <>
       <Head>
-        <title>Log in</title>
+        <title>{appName ? `Log in - ${appName}` : 'Log in'}</title>
       </Head>
       <Container>
         <Title mb='md'>Log in</Title>
