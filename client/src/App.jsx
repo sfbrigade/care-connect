@@ -110,7 +110,8 @@ function App () {
                           {/* App routes - location-aware routing for subdomain-based access */}
                           {AppRoutes ? (
                             <Route
-                              path='/*' element={
+                              path='/*'
+                              element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                   <AppRoutes />
                                 </Suspense>
