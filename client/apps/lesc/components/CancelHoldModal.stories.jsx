@@ -1,5 +1,4 @@
 import { fn } from 'storybook/test';
-import { useState } from 'react';
 import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
 import CancelHoldModal from './CancelHoldModal';

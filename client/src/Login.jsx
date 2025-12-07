@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title, Text } from '@mantine/core';
+import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';

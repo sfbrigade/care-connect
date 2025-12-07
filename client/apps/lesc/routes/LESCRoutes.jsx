@@ -6,7 +6,6 @@ import IntakeForm from '../components/IntakeForm';
 import CheckIn from '../components/CheckIn';
 import HoldsHistory from '../components/HoldsHistory';
 import Unavailable from '../components/Unavailable';
-import Facilities from '../components/Facilities';
 import Transfer from '../components/Transfer';
 
 function LESCRoutes () {

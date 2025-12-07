@@ -63,7 +63,6 @@ function IntakeForm () {
         race: client.race || '',
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id]);
 
   const updateClientMutation = useMutation({

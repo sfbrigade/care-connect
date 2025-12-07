@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Button, Stack, Group, Loader, Alert, Modal } from '@mantine/core';
+import { Container, Title, Stack, Loader, Alert, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { IconAlertCircle, IconPlus, IconClock, IconX, IconQrcode } from '@tabler/icons-react';
+import { IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '../../../core/Api';
 import HoldForm from './HoldForm';
@@ -12,7 +12,7 @@ import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
 import { useToast } from '../../../core/components/ToastContext';
-import { formatCreatedAt, formatTime } from '../../../core/utils/dateTime';
+import { formatTime } from '../../../core/utils/dateTime';
 
 function Holds () {
   const location = useLocation();
@@ -109,35 +109,6 @@ function Holds () {
     return Array.from(grouped.values());
   }, [holds, facilityId]);
 
-  // Get facility info for each facility in the grouped holds
-  const facilitiesWithHolds = useMemo(() => {
-    if (!holdsByFacility || !facilitiesData || !availabilityData) return [];
-
-    return holdsByFacility.map((group) => {
-      const facility = facilitiesData.find(f => f.id === group.facilityId);
-      if (!facility) return null;
-
-      // Calculate total available beds for this facility
-      const facilityAvailability = availabilityData.filter(item => item.facilityId === group.facilityId);
-      const totalAvailable = facilityAvailability.reduce((sum, item) => {
-        return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
-      }, 0);
-
-      // Format address
-      const addressParts = [];
-      if (facility.address?.line1) addressParts.push(facility.address.line1);
-      if (facility.address?.city) addressParts.push(facility.address.city);
-      if (facility.address?.state) addressParts.push(facility.address.state);
-      const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
-
-      return {
-        ...facility,
-        address,
-        bedCount: totalAvailable,
-        holds: group.holds,
-      };
-    }).filter(Boolean);
-  }, [holdsByFacility, facilitiesData, availabilityData]);
 
   // Get the single LESC facility info for the LESCCard
   const lescFacilityInfo = useMemo(() => {

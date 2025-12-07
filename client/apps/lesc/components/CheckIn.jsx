@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { IconArrowLeft, IconQrcode, IconAlertCircle } from '@tabler/icons-react';
 import Card from '../../../core/components/Card';
-import { formatTimeRemaining, formatTimeUntil } from '../../../core/utils/dateTime';
+import { formatTimeUntil } from '../../../core/utils/dateTime';
 import Api from '../../../core/Api';
 import QRScanner from '../../../core/components/QRScanner';
 import { useToast } from '../../../core/components/ToastContext';
