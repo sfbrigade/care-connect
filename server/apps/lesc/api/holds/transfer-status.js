@@ -48,6 +48,11 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
       }
 
+      // Only the user who created the hold can check its transfer status
+      if (hold.createdById !== request.user.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only check transfer status for your own holds' });
+      }
+
       return reply.send({
         id: hold.id,
         isTransferred: hold.status === 'TRANSFERRED',

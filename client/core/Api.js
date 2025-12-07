@@ -171,6 +171,9 @@ const Api = {
       list (facilityId) {
         return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
       },
+      get (id) {
+        return instance.get(`/api/lesc/holds/${id}`).catch(handleError);
+      },
       create (data) {
         return instance.post('/api/lesc/holds', data).catch(handleError);
       },
@@ -204,6 +207,14 @@ const Api = {
     checkin: {
       create (holdId, data) {
         return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
+      },
+    },
+    clients: {
+      get (id) {
+        return instance.get(`/api/lesc/clients/${id}`).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
       },
     },
   },

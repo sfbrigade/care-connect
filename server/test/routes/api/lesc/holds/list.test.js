@@ -9,6 +9,12 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
+  // Get the authenticated user ID
+  const user = await prisma.user.findUnique({
+    where: { email: 'regular.user@test.com' },
+  });
+  const userId = user.id;
+
   // Helper function to create test data
   async function createTestData () {
     const facility = await prisma.facility.create({
@@ -47,6 +53,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
         notes: 'Test notes',
+        createdById: userId,
       },
     });
 
@@ -76,6 +83,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -87,6 +95,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'TRANSFERRED',
         transferredAt: new Date(),
+        createdById: userId,
       },
     });
 
@@ -128,6 +137,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -138,6 +148,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -165,6 +176,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -176,6 +188,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(now.getTime() - 1000), // Expired
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -202,6 +215,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -214,6 +228,7 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'TRANSFERRED',
         transferredAt: new Date(),
+        createdById: userId,
       },
     });
 
@@ -227,5 +242,50 @@ test('/api/lesc/holds - Regression: Holds List Endpoint', async (t) => {
 
     assert.ok(activeFound, 'Active hold should be in list');
     assert.strictEqual(transferredFound, undefined, 'Transferred hold should not be in list even if not expired');
+  });
+
+  await t.test('verify holds are filtered by user', async () => {
+    const { facility, lescServiceType } = await createTestData();
+
+    // Get another user (admin user)
+    const otherUser = await prisma.user.findUnique({
+      where: { email: 'admin.user@test.com' },
+    });
+    const otherUserId = otherUser.id;
+
+    // Create hold for the authenticated user
+    const userHold = await prisma.bedHold.create({
+      data: {
+        facilityId: facility.id,
+        serviceTypeId: lescServiceType.id,
+        bedsRequested: 1,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        status: 'ACTIVE',
+        createdById: userId,
+      },
+    });
+
+    // Create hold for another user
+    const otherUserHold = await prisma.bedHold.create({
+      data: {
+        facilityId: facility.id,
+        serviceTypeId: lescServiceType.id,
+        bedsRequested: 1,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        status: 'ACTIVE',
+        createdById: otherUserId,
+      },
+    });
+
+    // List should only return holds created by the authenticated user
+    const response = await app.inject().get('/api/lesc/holds').headers(userHeaders);
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+    const data = JSON.parse(response.body);
+
+    const userHoldFound = data.find(h => h.id === userHold.id);
+    const otherUserHoldFound = data.find(h => h.id === otherUserHold.id);
+
+    assert.ok(userHoldFound, 'Hold created by authenticated user should be in list');
+    assert.strictEqual(otherUserHoldFound, undefined, 'Hold created by another user should not be in list');
   });
 });

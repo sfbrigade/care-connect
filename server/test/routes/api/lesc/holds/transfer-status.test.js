@@ -9,6 +9,12 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
+  // Get the authenticated user ID
+  const user = await prisma.user.findUnique({
+    where: { email: 'regular.user@test.com' },
+  });
+  const userId = user.id;
+
   // Helper function to create test data
   async function createTestData () {
     const facility = await prisma.facility.create({
@@ -47,6 +53,7 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -77,6 +84,7 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -93,6 +101,7 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -112,6 +121,7 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 
@@ -124,6 +134,7 @@ test('/api/lesc/holds - Regression: Transfer Status Endpoint', async (t) => {
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         status: 'TRANSFERRED',
         transferredAt: new Date(),
+        createdById: userId,
       },
     });
 

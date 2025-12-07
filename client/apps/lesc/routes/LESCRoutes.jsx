@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router';
 
-import Availability from '../components/Availability';
 import Holds from '../components/Holds';
 import HoldSuccess from '../components/HoldSuccess';
 import IntakeForm from '../components/IntakeForm';
@@ -13,7 +12,6 @@ import Transfer from '../components/Transfer';
 function LESCRoutes () {
   return (
     <Routes>
-      <Route path='availability' element={<Availability />} />
       <Route path='holds/:facilityId' element={<Holds />} />
       <Route path='holds' element={<Holds />} />
       <Route path='success' element={<HoldSuccess />} />
@@ -25,7 +23,8 @@ function LESCRoutes () {
       <Route path='transfer' element={<Transfer />} />
       <Route path='history' element={<HoldsHistory />} />
       <Route path='unavailable' element={<Unavailable />} />
-      <Route path='' element={<Navigate to='availability' />} />
+      <Route path='clients/:clientId' element={<IntakeForm />} />
+      <Route path='' element={<Navigate to='holds' />} />
     </Routes>
   );
 }

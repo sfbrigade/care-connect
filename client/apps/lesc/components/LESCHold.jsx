@@ -1,4 +1,4 @@
-import { Box, Text, Group } from '@mantine/core';
+import { Box, Text, Group, Anchor } from '@mantine/core';
 import StatusBadge from '../../../core/components/StatusBadge';
 
 /**
@@ -279,9 +279,14 @@ function LESCHold ({
                 </Text>
               )}
               {onViewDetails && (
-                <Text
+                <Anchor
                   component='button'
-                  onClick={onViewDetails}
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onViewDetails();
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '32px',
@@ -303,7 +308,7 @@ function LESCHold ({
                   }}
                 >
                   View details
-                </Text>
+                </Anchor>
               )}
               {onCancel && (
                 <Text

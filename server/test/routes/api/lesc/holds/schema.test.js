@@ -9,6 +9,12 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
+  // Get the authenticated user ID
+  const user = await prisma.user.findUnique({
+    where: { email: 'regular.user@test.com' },
+  });
+  const userId = user.id;
+
   // Helper function to create test data
   async function createTestData () {
     const facility = await prisma.facility.create({
@@ -61,6 +67,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -79,6 +86,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -99,6 +107,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -229,6 +238,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
         {
           facilityId: facility.id,
@@ -237,6 +247,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'CANCELLED',
           cancelledAt: new Date(),
+          createdById: userId,
         },
         {
           facilityId: facility.id,
@@ -245,6 +256,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'TRANSFERRED',
           transferredAt: new Date(),
+          createdById: userId,
         },
       ],
     });
@@ -270,6 +282,7 @@ test('/api/lesc/holds - Regression: Schema Changes', async (t) => {
         bedsRequested: 1,
         expiresAt: new Date(now.getTime() - 1000), // Expired 1 second ago
         status: 'ACTIVE',
+        createdById: userId,
       },
     });
 

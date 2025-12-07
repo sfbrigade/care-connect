@@ -258,6 +258,7 @@ function Holds () {
             borderRadius: '16px',
             maxHeight: '90vh',
             maxWidth: '100vw',
+            marginTop: '80px',
           },
           body: {
             maxHeight: 'calc(90vh - 120px)',
@@ -284,7 +285,11 @@ function Holds () {
         }}
         onConfirm={handleConfirmCancel}
         holdIdentifier={selectedHold?.id?.slice(0, 8).toUpperCase() || '001'}
-        holdName={selectedHold?.notes || selectedHold?.facilityName || 'this hold'}
+        holdName={
+          selectedHold?.client
+            ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
+            : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
+        }
         loading={cancelMutation.isPending}
       />
 
@@ -352,8 +357,7 @@ function Holds () {
                       onExtend={() => handleExtend(hold.id)}
                       onCancel={() => handleCancel(hold)}
                       onViewDetails={() => {
-                        // TODO: Navigate to hold details page or open modal
-                        console.log('View details for hold:', hold.id);
+                        navigate(`/lesc/intake/${hold.id}`);
                       }}
                     />
                   );
@@ -395,8 +399,7 @@ function Holds () {
                       onExtend={() => handleExtend(hold.id)}
                       onCancel={() => handleCancel(hold)}
                       onViewDetails={() => {
-                        // TODO: Navigate to hold details page or open modal
-                        console.log('View details for hold:', hold.id);
+                        navigate(`/lesc/intake/${hold.id}`);
                       }}
                     />
                   );

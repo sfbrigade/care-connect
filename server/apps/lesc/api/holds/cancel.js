@@ -31,6 +31,11 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
       }
 
+      // Only the user who created the hold can cancel it
+      if (hold.createdById !== request.user.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only cancel your own holds' });
+      }
+
       if (hold.status === 'CANCELLED') {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Hold is already cancelled' });
       }

@@ -55,9 +55,6 @@ function LESCHeader ({ opened, close, toggle }) {
           <Title size='xl'>LESC</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
-          <Anchor component={NavLink} to='/lesc/availability' onClick={close}>
-            Availability
-          </Anchor>
           <Anchor component={NavLink} to='/lesc/holds' onClick={close}>
             Holds
           </Anchor>

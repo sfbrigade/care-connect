@@ -35,6 +35,11 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
       }
 
+      // Only the user who created the hold can generate QR codes
+      if (hold.createdById !== request.user.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only generate QR codes for your own holds' });
+      }
+
       if (!['ACTIVE', 'EXTENDED'].includes(hold.status)) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Hold is not in a transferable status' });
       }

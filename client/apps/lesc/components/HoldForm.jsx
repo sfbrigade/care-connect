@@ -78,6 +78,22 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
     );
   };
 
+  // Get available beds for the selected facility
+  const getAvailableBeds = () => {
+    if (!availability || !facilityId) return null;
+    const serviceInfo = getServiceTypeForFacility(facilityId);
+    return serviceInfo ? serviceInfo.calculatedAvailable : null;
+  };
+
+  const availableBeds = getAvailableBeds();
+
+  // Reset bedsRequested if it exceeds available beds when availability changes
+  useEffect(() => {
+    if (availableBeds !== null && bedsRequested > availableBeds) {
+      setBedsRequested(Math.min(bedsRequested, availableBeds));
+    }
+  }, [availableBeds, bedsRequested]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -165,15 +181,19 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
             For how many people?
           </Text>
           <Group gap='sm'>
-            {[1, 2, 3, 4, 5].map((num) => (
-              <Chip
-                key={num}
-                active={bedsRequested === num}
-                onClick={() => setBedsRequested(num)}
-              >
-                {num}
-              </Chip>
-            ))}
+            {[1, 2, 3, 4, 5].map((num) => {
+              const isDisabled = availableBeds !== null && availableBeds < 5 && num > availableBeds;
+              return (
+                <Chip
+                  key={num}
+                  active={bedsRequested === num}
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && setBedsRequested(num)}
+                >
+                  {num}
+                </Chip>
+              );
+            })}
           </Group>
         </Stack>
 

@@ -3,16 +3,16 @@ import { z } from 'zod';
 import { autoExpireHolds } from '../../lib/holds.js';
 
 export default async function (fastify, opts) {
-  fastify.get('/',
+  fastify.get('/:id',
     {
       preHandler: fastify.requireUser,
       schema: {
-        description: 'List active holds, optionally filtered by facility.',
-        querystring: z.object({
-          facilityId: z.string().uuid().optional(),
+        description: 'Get hold by ID',
+        params: z.object({
+          id: z.string().uuid(),
         }),
         response: {
-          [StatusCodes.OK]: z.array(z.object({
+          [StatusCodes.OK]: z.object({
             id: z.string().uuid(),
             facilityId: z.string().uuid(),
             facilityName: z.string(),
@@ -33,33 +33,18 @@ export default async function (fastify, opts) {
               race: z.string().nullable(),
               personallyIdentifiable: z.string().nullable(),
             }).nullable(),
-          })),
+          }),
         },
       },
     },
     async function (request, reply) {
-      const { facilityId } = request.query;
+      const { id } = request.params;
       const now = new Date();
 
-      // Auto-expire holds that have passed their expiration time
       await autoExpireHolds(fastify.prisma, now);
 
-      const where = {
-        status: {
-          in: ['ACTIVE', 'EXTENDED'],
-        },
-        expiresAt: {
-          gt: now,
-        },
-        createdById: request.user.id,
-      };
-
-      if (facilityId) {
-        where.facilityId = facilityId;
-      }
-
-      const holds = await fastify.prisma.bedHold.findMany({
-        where,
+      const hold = await fastify.prisma.bedHold.findUnique({
+        where: { id },
         include: {
           facility: {
             select: {
@@ -85,12 +70,18 @@ export default async function (fastify, opts) {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
       });
 
-      return reply.send(holds.map(hold => ({
+      if (!hold) {
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
+      }
+
+      // Only the user who created the hold can view it
+      if (hold.createdById !== request.user.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only view your own holds' });
+      }
+
+      return reply.send({
         id: hold.id,
         facilityId: hold.facilityId,
         facilityName: hold.facility.name,
@@ -113,6 +104,6 @@ export default async function (fastify, opts) {
               personallyIdentifiable: hold.client.personallyIdentifiable,
             }
           : null,
-      })));
+      });
     });
 }
