@@ -90,26 +90,6 @@ function Holds () {
     };
   }, [facilityId, facilitiesData, availabilityData]);
 
-  // Group holds by facility for the all holds view
-  const holdsByFacility = useMemo(() => {
-    if (!holds || facilityId) return null;
-
-    const grouped = new Map();
-    holds.forEach((hold) => {
-      if (!grouped.has(hold.facilityId)) {
-        grouped.set(hold.facilityId, {
-          facilityId: hold.facilityId,
-          facilityName: hold.facilityName,
-          holds: [],
-        });
-      }
-      grouped.get(hold.facilityId).holds.push(hold);
-    });
-
-    return Array.from(grouped.values());
-  }, [holds, facilityId]);
-
-
   // Get the single LESC facility info for the LESCCard
   const lescFacilityInfo = useMemo(() => {
     if (!facilitiesData || !availabilityData) return null;
