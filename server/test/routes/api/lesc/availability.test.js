@@ -413,5 +413,99 @@ test('/api/lesc/availability', async (t) => {
       assert.deepStrictEqual(facility1Lesc.calculatedAvailable, 0);
       assert.ok(facility1Lesc.calculatedAvailable >= 0);
     });
+
+    await t.test('counts beds correctly when different users have holds', async () => {
+      const { facility1, lescServiceType } = await createTestData();
+
+      // Get user IDs for different users
+      const user1 = await prisma.user.findUnique({
+        where: { email: 'regular.user@test.com' },
+      });
+      const user2 = await prisma.user.findUnique({
+        where: { email: 'admin.user@test.com' },
+      });
+
+      // Create holds for different users
+      await prisma.bedHold.createMany({
+        data: [
+          {
+            facilityId: facility1.id,
+            serviceTypeId: lescServiceType.id,
+            bedsRequested: 2,
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+            status: 'ACTIVE',
+            createdById: user1.id,
+          },
+          {
+            facilityId: facility1.id,
+            serviceTypeId: lescServiceType.id,
+            bedsRequested: 3,
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+            status: 'ACTIVE',
+            createdById: user2.id,
+          },
+          {
+            facilityId: facility1.id,
+            serviceTypeId: lescServiceType.id,
+            bedsRequested: 1,
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+            status: 'EXTENDED',
+            createdById: user1.id,
+          },
+        ],
+      });
+
+      // Both users should see the same availability (all holds counted)
+      const user1Headers = await authenticate(app, 'regular.user@test.com', 'test');
+      const user2Headers = await authenticate(app, 'admin.user@test.com', 'test');
+
+      const user1Response = await app.inject().get('/api/lesc/availability').headers(user1Headers);
+      const user2Response = await app.inject().get('/api/lesc/availability').headers(user2Headers);
+
+      assert.deepStrictEqual(user1Response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(user2Response.statusCode, StatusCodes.OK);
+
+      const user1Data = JSON.parse(user1Response.body);
+      const user2Data = JSON.parse(user2Response.body);
+
+      const facility1LescUser1 = user1Data.find(
+        item => item.facilityId === facility1.id && item.serviceTypeCode === 'LESC'
+      );
+      const facility1LescUser2 = user2Data.find(
+        item => item.facilityId === facility1.id && item.serviceTypeCode === 'LESC'
+      );
+
+      assert.ok(facility1LescUser1);
+      assert.ok(facility1LescUser2);
+
+      // Both users should see the same availability count (all holds from all users)
+      // Total: 10 beds, Reserved: 2, Holds: 2+3+1=6
+      // Available: 10 - 2 - 6 = 2
+      assert.deepStrictEqual(facility1LescUser1.activeHolds, 6); // All holds counted
+      assert.deepStrictEqual(facility1LescUser1.calculatedAvailable, 2); // 10 - 2 - 6
+      assert.deepStrictEqual(facility1LescUser2.activeHolds, 6); // Same for user 2
+      assert.deepStrictEqual(facility1LescUser2.calculatedAvailable, 2); // Same for user 2
+
+      // Verify holds list endpoint filters by user
+      const user1HoldsResponse = await app.inject().get('/api/lesc/holds').headers(user1Headers);
+      const user2HoldsResponse = await app.inject().get('/api/lesc/holds').headers(user2Headers);
+
+      assert.deepStrictEqual(user1HoldsResponse.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(user2HoldsResponse.statusCode, StatusCodes.OK);
+
+      const user1Holds = JSON.parse(user1HoldsResponse.body);
+      const user2Holds = JSON.parse(user2HoldsResponse.body);
+
+      // User 1 should see 2 holds (2 beds + 1 bed = 3 beds total in their holds)
+      // User 2 should see 1 hold (3 beds)
+      assert.deepStrictEqual(user1Holds.length, 2, 'User 1 should see 2 holds');
+      assert.deepStrictEqual(user2Holds.length, 1, 'User 2 should see 1 hold');
+
+      // Verify bed counts in holds
+      const user1TotalBeds = user1Holds.reduce((sum, hold) => sum + hold.bedsRequested, 0);
+      const user2TotalBeds = user2Holds.reduce((sum, hold) => sum + hold.bedsRequested, 0);
+      assert.deepStrictEqual(user1TotalBeds, 3, 'User 1 should have 3 beds in holds (2+1)');
+      assert.deepStrictEqual(user2TotalBeds, 3, 'User 2 should have 3 beds in holds');
+    });
   });
 });
