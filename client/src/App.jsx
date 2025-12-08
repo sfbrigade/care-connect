@@ -1,3 +1,6 @@
+/* eslint-disable @stylistic/jsx-indent */
+/* eslint-disable @stylistic/jsx-closing-tag-location */
+
 import { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, useLocation } from 'react-router';
 import '@mantine/core/styles.css';
@@ -108,7 +111,6 @@ function App () {
                             }
                           />
                           {/* App routes - location-aware routing for subdomain-based access */}
-                          {/* eslint-disable @stylistic/jsx-indent, @stylistic/jsx-closing-tag-location */}
                           {AppRoutes ? (
                             <Route
                               path='/*' element={
@@ -120,7 +122,6 @@ function App () {
                           ) : (
                             <Route path='/*' element={<NotFound />} />
                           )}
-                          {/* eslint-enable @stylistic/jsx-indent, @stylistic/jsx-closing-tag-location */}
                         </Routes>
                       </AppRedirects>
                     }
