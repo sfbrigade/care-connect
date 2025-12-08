@@ -11,6 +11,9 @@ class Base {
     }
     const changes = new Set();
     this.changes = changes;
+    // Store fields and data for toJSON() method
+    this.__fields = fields;
+    this.__data = data;
 
     this.update = function (attributes) {
       _.forIn(attributes, (value, key) => {
@@ -120,6 +123,24 @@ class Base {
         await callback(this.id, prevPath, newPath);
       }
     };
+  }
+
+  toJSON () {
+    // Return a copy of the internal data object
+    // The Proxy pattern stores data in __data, so we return that directly
+    if (this.__data) {
+      return { ...this.__data };
+    }
+    // Fallback: extract properties through the proxy
+    const result = {};
+    if (this.__fields) {
+      for (const key in this.__fields) {
+        if (Object.hasOwn(this.__fields, key)) {
+          result[key] = this[key];
+        }
+      }
+    }
+    return result;
   }
 }
 export default Base;
