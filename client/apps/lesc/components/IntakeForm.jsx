@@ -1,51 +1,153 @@
-import { useState } from 'react';
-import { Container, Stack, Text, Textarea, Button, Group, Select, TextInput } from '@mantine/core';
-import { useNavigate, useLocation } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Container, Stack, Text, Button, Group, Select, TextInput, Loader } from '@mantine/core';
+import { useNavigate, useLocation, useParams } from 'react-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Api from '../../../core/Api';
 
 /**
  * Intake Form component - matches Figma "Start Report / Intake Form" design
- * Placeholder implementation matching design structure
+ * Can be used for creating new intake records or editing existing clients
  */
 function IntakeForm () {
   const navigate = useNavigate();
   const location = useLocation();
-  const holdId = location.state?.holdId;
+  const params = useParams();
+  const clientId = params.clientId;
+  const holdIdParam = params.holdId;
+  const holdId = location.state?.holdId || holdIdParam;
+  const queryClient = useQueryClient();
+  const isEditMode = !!clientId;
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    dateOfBirth: '',
-    sex: '',
-    race: '',
-    personallyIdentifiable: '',
-    observedBehavior: '',
-    observationDetails: '',
-    faceNormal: '',
-    speechClear: '',
-    odorOfAlcohol: '',
-    medicalClearance: '',
-    itemsTracked: '',
-    arrestType: '',
-    cadNumber: '',
-    officerId: '',
-    locationOfArrest: '',
-    timeOfArrest: '',
+  const [formData, setFormData] = useState(() => {
+    return {
+      fullName: '',
+      dateOfBirth: '',
+      sex: '',
+      race: '',
+    };
+  });
+
+  // Fetch client data if editing by clientId
+  const { data: clientResponse, isLoading: isLoadingClient } = useQuery({
+    queryKey: ['clients', clientId],
+    queryFn: () => Api.lesc.clients.get(clientId),
+    enabled: isEditMode && !!clientId,
+  });
+
+  // Fetch hold data if accessed via holdId to check for existing client
+  const { data: holdResponse, isLoading: isLoadingHold } = useQuery({
+    queryKey: ['lesc-hold', holdId],
+    queryFn: () => Api.lesc.holds.get(holdId),
+    enabled: !isEditMode && !!holdId,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // Populate form with data when it becomes available (only if form is empty)
+  useEffect(() => {
+    if (isEditMode && clientResponse?.data && !formData.fullName) {
+      const client = clientResponse.data;
+      setFormData({
+        fullName: `${client.firstName} ${client.lastName || ''}`.trim(),
+        dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
+        sex: client.sex || '',
+        race: client.race || '',
+      });
+    } else if (!isEditMode && holdResponse?.data?.client && !formData.fullName) {
+      const client = holdResponse.data.client;
+      setFormData({
+        fullName: `${client.firstName} ${client.lastName || ''}`.trim(),
+        dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
+        sex: client.sex || '',
+        race: client.race || '',
+      });
+    }
+  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id]);
+
+  const updateClientMutation = useMutation({
+    mutationFn: (data) => {
+      // Parse full name into first and last name
+      const nameParts = data.fullName ? data.fullName.trim().split(/\s+/) : [];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+      return Api.lesc.clients.update(clientId, {
+        firstName,
+        lastName,
+        dateOfBirth: data.dateOfBirth || null,
+        sex: data.sex || null,
+        race: data.race || null,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+      navigate('/lesc/holds');
+    },
+    onError: (error) => {
+      console.error('Failed to update client', error);
+    },
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await Api.lesc.intake.create({
-        holdId,
-        ...formData,
-      });
-      navigate('/lesc/holds');
-    } catch (error) {
-      console.error('Failed to submit intake form', error);
-      // Would show error message to user
+    
+    if (isEditMode) {
+      // Update existing client
+      updateClientMutation.mutate(formData);
+    } else {
+      // Check if hold has existing client
+      const existingClientId = holdResponse?.data?.client?.id;
+      
+      if (existingClientId) {
+        // Update existing client linked to hold
+        try {
+          // Parse full name into first and last name
+          const nameParts = formData.fullName ? formData.fullName.trim().split(/\s+/) : [];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+
+          await Api.lesc.clients.update(existingClientId, {
+            firstName,
+            lastName,
+            dateOfBirth: formData.dateOfBirth || null,
+            sex: formData.sex || null,
+            race: formData.race || null,
+          });
+          
+          queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+          queryClient.invalidateQueries({ queryKey: ['lesc-hold', holdId] });
+          queryClient.invalidateQueries({ queryKey: ['clients', existingClientId] });
+          navigate('/lesc/holds');
+        } catch (error) {
+          console.error('Failed to update client', error);
+        }
+      } else {
+        // Create new intake record
+        try {
+          await Api.lesc.intake.create({
+            holdId,
+            ...formData,
+          });
+          queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+          queryClient.invalidateQueries({ queryKey: ['lesc-hold', holdId] });
+          navigate('/lesc/holds');
+        } catch (error) {
+          console.error('Failed to submit intake form', error);
+          // Would show error message to user
+        }
+      }
     }
   };
+
+  if ((isEditMode && isLoadingClient) || (!isEditMode && isLoadingHold)) {
+    return (
+      <Container>
+        <Loader />
+      </Container>
+    );
+  }
 
   return (
     <Container>
@@ -78,202 +180,42 @@ function IntakeForm () {
                 label='Full Name (FN / LN)'
                 placeholder='Enter full name'
                 value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
               />
               <TextInput
                 label='Date of Birth'
                 type='date'
                 value={formData.dateOfBirth}
-                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+                  },
+                }}
               />
               <Select
                 label='Sex'
                 placeholder='Select sex'
                 data={['Male', 'Female', 'Other']}
                 value={formData.sex}
-                onChange={(value) => setFormData({ ...formData, sex: value })}
+                onChange={(value) => setFormData(prev => ({ ...prev, sex: value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+                  },
+                }}
               />
               <Select
                 label='Race'
                 placeholder='Select race'
                 data={['White', 'Black', 'Hispanic', 'Asian', 'Other']}
                 value={formData.race}
-                onChange={(value) => setFormData({ ...formData, race: value })}
-              />
-              <Select
-                label='Is subject personally identifiable?'
-                placeholder='Select'
-                data={['Yes', 'No']}
-                value={formData.personallyIdentifiable}
-                onChange={(value) => setFormData({ ...formData, personallyIdentifiable: value })}
-              />
-            </Stack>
-
-            {/* Observation */}
-            <Stack gap='sm'>
-              <Text
-                style={{
-                  fontSize: '24px',
-                  lineHeight: '32px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 700,
-                  color: '#000000',
+                onChange={(value) => setFormData(prev => ({ ...prev, race: value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+                  },
                 }}
-              >
-                Observation (Reason for 647f)
-              </Text>
-              <TextInput
-                label='Observed behavior'
-                placeholder='Enter observed behavior'
-                value={formData.observedBehavior}
-                onChange={(e) => setFormData({ ...formData, observedBehavior: e.target.value })}
-              />
-              <Textarea
-                label='Observation details (optional)'
-                placeholder='Enter details'
-                value={formData.observationDetails}
-                onChange={(e) => setFormData({ ...formData, observationDetails: e.target.value })}
-                rows={3}
-              />
-              <Text
-                style={{
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 400,
-                  color: '#000000',
-                }}
-              >
-                Photo evidence (optional)
-              </Text>
-            </Stack>
-
-            {/* Medical and Safety Check */}
-            <Stack gap='sm'>
-              <Text
-                style={{
-                  fontSize: '24px',
-                  lineHeight: '32px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 700,
-                  color: '#000000',
-                }}
-              >
-                Medical and Safety Check
-              </Text>
-              <Select
-                label='Face appears normal?'
-                placeholder='Select'
-                data={['Yes', 'No']}
-                value={formData.faceNormal}
-                onChange={(value) => setFormData({ ...formData, faceNormal: value })}
-              />
-              <Select
-                label='Speech is clear?'
-                placeholder='Select'
-                data={['Yes', 'No']}
-                value={formData.speechClear}
-                onChange={(value) => setFormData({ ...formData, speechClear: value })}
-              />
-              <Select
-                label='Odor of alcohol?'
-                placeholder='Select'
-                data={['Yes', 'No']}
-                value={formData.odorOfAlcohol}
-                onChange={(value) => setFormData({ ...formData, odorOfAlcohol: value })}
-              />
-              <Select
-                label='Medical clearance obtained?'
-                placeholder='Select'
-                data={['Yes', 'No']}
-                value={formData.medicalClearance}
-                onChange={(value) => setFormData({ ...formData, medicalClearance: value })}
-              />
-            </Stack>
-
-            {/* Belongings */}
-            <Stack gap='sm'>
-              <Text
-                style={{
-                  fontSize: '24px',
-                  lineHeight: '32px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 700,
-                  color: '#000000',
-                }}
-              >
-                Belongings (optional)
-              </Text>
-              <TextInput
-                label='Items being tracked'
-                placeholder='Enter items'
-                value={formData.itemsTracked}
-                onChange={(e) => setFormData({ ...formData, itemsTracked: e.target.value })}
-              />
-              <Text
-                style={{
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 400,
-                  color: '#000000',
-                }}
-              >
-                Upload photos
-              </Text>
-            </Stack>
-
-            {/* Arrest Info */}
-            <Stack gap='sm'>
-              <Text
-                style={{
-                  fontSize: '24px',
-                  lineHeight: '32px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 700,
-                  color: '#000000',
-                }}
-              >
-                Arrest Info
-              </Text>
-              <Text
-                style={{
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  fontFamily: 'Roboto, sans-serif',
-                  fontWeight: 400,
-                  color: '#000000',
-                }}
-              >
-                Arrest Type
-              </Text>
-              <ul style={{ marginLeft: '20px', paddingLeft: '8px' }}>
-                <li>647(f) PC RWS</li>
-                <li>849(b) (if released at center)</li>
-              </ul>
-              <TextInput
-                label='CAD # (Call ID for evidence tagging)'
-                placeholder='Enter CAD number'
-                value={formData.cadNumber}
-                onChange={(e) => setFormData({ ...formData, cadNumber: e.target.value })}
-              />
-              <TextInput
-                label='Officer ID / Badge #'
-                placeholder='Enter officer ID'
-                value={formData.officerId}
-                onChange={(e) => setFormData({ ...formData, officerId: e.target.value })}
-              />
-              <TextInput
-                label='Location of arrest'
-                placeholder='Enter location'
-                value={formData.locationOfArrest}
-                onChange={(e) => setFormData({ ...formData, locationOfArrest: e.target.value })}
-              />
-              <TextInput
-                label='Time of arrest'
-                type='datetime-local'
-                value={formData.timeOfArrest}
-                onChange={(e) => setFormData({ ...formData, timeOfArrest: e.target.value })}
               />
             </Stack>
 

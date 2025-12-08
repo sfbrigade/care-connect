@@ -21,12 +21,23 @@ export default fp(async function (fastify) {
     // first check cookie-based session
     const id = request.session.get('userId');
     if (id) {
-      const data = await fastify.prisma.user.findUnique({ where: { id } });
-      if (data) {
-        request.user = new User(data);
-      } else {
-        // session data is invalid, delete
-        request.session.delete();
+      try {
+        const data = await fastify.prisma.user.findUnique({ where: { id } });
+        if (data) {
+          request.user = new User(data);
+        } else {
+          // session data is invalid, delete
+          request.session.delete();
+        }
+      } catch (error) {
+        // If database is in recovery mode, skip user lookup for this request
+        // This is a transient error that will resolve once PostgreSQL finishes recovery
+        if (error.message?.includes('recovery mode')) {
+          fastify.log.warn({ err: error }, 'Database in recovery mode, skipping user lookup');
+          return;
+        }
+        // Re-throw other errors
+        throw error;
       }
     }
   });

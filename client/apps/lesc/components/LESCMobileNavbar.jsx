@@ -10,20 +10,16 @@ function LESCMobileNavbar ({ close }) {
     <Stack gap='md'>
       <MantineNavLink component={NavLink} to='/lesc/holds' onClick={close} label='Holds' />
       <MantineNavLink component={NavLink} to='/admin/facilities' onClick={close} label='Facilities' />
-      
+      <MantineNavLink component={NavLink} to='/lesc/checkin' onClick={close} label='Check-in' />
+      <Divider />
       {user && (
-        <>
-          <Divider />
-          <MantineNavLink component={NavLink} to='/account' onClick={close} label='Account' />
-          {user.isAdmin && (
-            <>
-              <MantineNavLink component={NavLink} to='/admin/invites' onClick={close} label='Invites' />
-              <MantineNavLink component={NavLink} to='/admin/users' onClick={close} label='Users' />
-            </>
-          )}
-        </>
+        <MantineNavLink
+          component={NavLink}
+          to='/account'
+          onClick={close}
+          label={user.email ? `Account (${user.email})` : 'Account'}
+        />
       )}
-
       {!user && (
         <MantineNavLink component={NavLink} to='/login' onClick={close} label='Login' />
       )}

@@ -61,6 +61,7 @@ enum BedHoldStatus {
   EXTENDED
   CANCELLED
   EXPIRED
+  TRANSFERRED
 }
 
 model User {
@@ -82,6 +83,7 @@ model User {
   placementRequestEvents     PlacementRequestEvent[]
   bedHoldsCreated            BedHold[]            @relation("CreatedByUser")
   bedHoldsCancelled          BedHold[]           @relation("CancelledByUser")
+  bedHoldsTransferred        BedHold[]           @relation("TransferredByUser")
   updatedAt               DateTime  @updatedAt
   createdAt               DateTime  @default(now())
 }
@@ -217,16 +219,21 @@ model FacilityCapacitySnapshot {
 }
 
 model Client {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName       String
-  lastName        String?
-  description     String?
-  pets            String?
-  qualifications  Json?
-  notes           String?
-  placementRequests PlacementRequest[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName           String
+  lastName            String?
+  dateOfBirth         DateTime?
+  sex                 String?
+  race                String?
+  personallyIdentifiable String?
+  description         String?
+  pets                String?
+  qualifications      Json?
+  notes               String?
+  placementRequests   PlacementRequest[]
+  bedHolds            BedHold[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model PlacementRequest {
@@ -268,23 +275,30 @@ model PlacementRequestEvent {
 }
 
 model BedHold {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility      Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId    String         @db.Uuid
-  serviceType   ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId String         @db.Uuid
-  bedsRequested Int
-  expiresAt     DateTime
-  status        BedHoldStatus  @default(ACTIVE)
-  createdBy     User?          @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById   String?        @db.Uuid
-  cancelledAt   DateTime?
-  cancelledBy   User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
-  cancelledById String?        @db.Uuid
-  extendedAt    DateTime?
-  notes         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility              Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId            String         @db.Uuid
+  serviceType           ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+  serviceTypeId         String         @db.Uuid
+  client                Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId              String?        @db.Uuid
+  bedsRequested         Int
+  expiresAt             DateTime
+  status                BedHoldStatus  @default(ACTIVE)
+  createdBy             User?          @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById           String?        @db.Uuid
+  cancelledAt           DateTime?
+  cancelledBy           User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledById         String?        @db.Uuid
+  extendedAt            DateTime?
+  transferredAt         DateTime?
+  transferredBy         User?          @relation("TransferredByUser", fields: [transferredById], references: [id], onDelete: SetNull)
+  transferredById       String?        @db.Uuid
+  transferToken         String?        @unique
+  transferTokenExpiresAt DateTime?
+  notes                 String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 
   @@index([facilityId])
   @@index([expiresAt])

@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Create a new facility (admin only).',
         body: z.object({

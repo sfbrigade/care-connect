@@ -79,6 +79,15 @@ const Api = {
     login (email, password) {
       return instance.post('/api/auth/login', { email, password })
         .catch((error) => {
+          // Check if it's a validation error with details
+          if (error.response?.status === StatusCodes.UNPROCESSABLE_ENTITY && error.response?.data?.errors) {
+            // Handle validation errors (e.g., invalid email format)
+            const validationErrors = {};
+            for (const err of error.response.data.errors) {
+              validationErrors[err.path] = err.message;
+            }
+            throw validationErrors;
+          }
           switch (error.response?.status) {
             case StatusCodes.NOT_FOUND:
             case StatusCodes.UNPROCESSABLE_ENTITY:
@@ -162,6 +171,9 @@ const Api = {
       list (facilityId) {
         return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
       },
+      get (id) {
+        return instance.get(`/api/lesc/holds/${id}`).catch(handleError);
+      },
       create (data) {
         return instance.post('/api/lesc/holds', data).catch(handleError);
       },
@@ -170,6 +182,15 @@ const Api = {
       },
       cancel (id) {
         return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);
+      },
+      qr (id) {
+        return instance.get(`/api/lesc/holds/${id}/qr`);
+      },
+      transfer (id, token) {
+        return instance.post(`/api/lesc/holds/${id}/transfer`, { token }).catch(handleError);
+      },
+      transferStatus (id) {
+        return instance.get(`/api/lesc/holds/${id}/transfer-status`);
       },
     },
     intake: {
@@ -188,6 +209,14 @@ const Api = {
         return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
       },
     },
+    clients: {
+      get (id) {
+        return instance.get(`/api/lesc/clients/${id}`).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
+      },
+    },
   },
   admin: {
     facilities: {
@@ -202,6 +231,9 @@ const Api = {
       },
       update (id, data) {
         return instance.patch(`/api/admin/facilities/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/admin/facilities/${id}`).catch(handleError);
       },
       updateBeds (id, data) {
         return instance.patch(`/api/admin/facilities/${id}/beds`, data).catch(handleError);

@@ -1,25 +1,29 @@
 import { Routes, Route, Navigate } from 'react-router';
 
-import Availability from '../components/Availability';
 import Holds from '../components/Holds';
 import HoldSuccess from '../components/HoldSuccess';
 import IntakeForm from '../components/IntakeForm';
 import CheckIn from '../components/CheckIn';
 import HoldsHistory from '../components/HoldsHistory';
 import Unavailable from '../components/Unavailable';
+import Transfer from '../components/Transfer';
 
 function LESCRoutes () {
   return (
     <Routes>
-      <Route path='availability' element={<Availability />} />
+      <Route path='holds/:facilityId' element={<Holds />} />
       <Route path='holds' element={<Holds />} />
       <Route path='success' element={<HoldSuccess />} />
       <Route path='intake' element={<IntakeForm />} />
       <Route path='intake/:holdId' element={<IntakeForm />} />
       <Route path='checkin/:holdId' element={<CheckIn />} />
+      <Route path='checkin' element={<CheckIn />} />
+      <Route path='transfer/:holdId' element={<Transfer />} />
+      <Route path='transfer' element={<Transfer />} />
       <Route path='history' element={<HoldsHistory />} />
       <Route path='unavailable' element={<Unavailable />} />
-      <Route path='' element={<Navigate to='availability' />} />
+      <Route path='clients/:clientId' element={<IntakeForm />} />
+      <Route path='' element={<Navigate to='holds' />} />
     </Routes>
   );
 }

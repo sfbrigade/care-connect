@@ -198,11 +198,32 @@ Once complete, open http://localhost:3333/ to see the map and facility list sour
 
 ## Testing
 
-1. This repo includes a Github Actions workflow for running server tests. To test locally, log in
-to a running server container as describe above (`docker compose exec server bash -l`) and then run
-`npm test`. The server tests use the Testcontainers library to automatically launch test databases and
-storage servers for testing- if tests terminate unexpectedly, you may have dangling/orphan containers
-running. Use `docker ps` to list and check running containers.
+### Fast Local Testing (SQLite - Recommended)
+
+For faster local development, tests use SQLite instead of Docker containers:
+
+```bash
+cd server
+npm test
+```
+
+This runs tests much faster without requiring Docker. Tests that need S3/MinIO storage are skipped unless you run `npm run test:minio`.
+
+### Full Integration Testing (PostgreSQL + Docker)
+
+For complete integration tests with PostgreSQL and MinIO:
+
+```bash
+# From host machine
+cd server
+npm run test:postgres
+
+# Or from Docker container
+docker compose exec server bash -l
+npm run test:postgres
+```
+
+**Note:** If tests terminate unexpectedly, you may have dangling/orphan containers running. Use `docker ps` to list and check running containers.
 
 2. To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the
 client through the server at: http://localhost:3000

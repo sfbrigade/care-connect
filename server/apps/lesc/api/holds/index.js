@@ -5,6 +5,7 @@ import { autoExpireHolds } from '../../lib/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'List active holds, optionally filtered by facility.',
         querystring: z.object({
@@ -23,6 +24,15 @@ export default async function (fastify, opts) {
             status: z.string(),
             createdAt: z.string(),
             notes: z.string().nullable(),
+            client: z.object({
+              id: z.string().uuid(),
+              firstName: z.string(),
+              lastName: z.string().nullable(),
+              dateOfBirth: z.string().nullable(),
+              sex: z.string().nullable(),
+              race: z.string().nullable(),
+              personallyIdentifiable: z.string().nullable(),
+            }).nullable(),
           })),
         },
       },
@@ -41,6 +51,7 @@ export default async function (fastify, opts) {
         expiresAt: {
           gt: now,
         },
+        createdById: request.user.id,
       };
 
       if (facilityId) {
@@ -62,6 +73,17 @@ export default async function (fastify, opts) {
               name: true,
             },
           },
+          client: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              dateOfBirth: true,
+              sex: true,
+              race: true,
+              personallyIdentifiable: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -80,6 +102,17 @@ export default async function (fastify, opts) {
         status: hold.status,
         createdAt: hold.createdAt.toISOString(),
         notes: hold.notes,
+        client: hold.client
+          ? {
+              id: hold.client.id,
+              firstName: hold.client.firstName,
+              lastName: hold.client.lastName,
+              dateOfBirth: hold.client.dateOfBirth?.toISOString(),
+              sex: hold.client.sex,
+              race: hold.client.race,
+              personallyIdentifiable: hold.client.personallyIdentifiable,
+            }
+          : null,
       })));
     });
 }

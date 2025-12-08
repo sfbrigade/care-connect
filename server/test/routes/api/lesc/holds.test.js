@@ -9,6 +9,12 @@ test('/api/lesc/holds', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
+  // Get the authenticated user ID
+  const user = await prisma.user.findUnique({
+    where: { email: 'regular.user@test.com' },
+  });
+  const userId = user.id;
+
   // Helper function to create test data
   async function createTestData () {
     // Create a facility
@@ -174,6 +180,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         })),
       });
 
@@ -230,6 +237,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -268,6 +276,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -310,6 +319,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -338,6 +348,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 
@@ -367,6 +378,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
       const response = await app.inject().delete(`/api/lesc/holds/${hold.id}`).headers(userHeaders);
@@ -405,6 +417,7 @@ test('/api/lesc/holds', async (t) => {
           bedsRequested: 1,
           expiresAt: new Date(Date.now() + 30 * 60 * 1000),
           status: 'ACTIVE',
+          createdById: userId,
         },
       });
 

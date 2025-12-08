@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Create a bed hold with 30 minute default expiration.',
         body: z.object({
@@ -27,7 +28,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { facilityId, serviceTypeId, bedsRequested, notes } = request.body;
-      const userId = request.user?.id || null;
+      const userId = request.user.id;
 
       // Verify facility and service type exist and are LESC
       const facility = await fastify.prisma.facility.findUnique({

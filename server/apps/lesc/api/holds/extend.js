@@ -4,6 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.patch('/:id/extend',
     {
+      preHandler: fastify.requireUser,
       schema: {
         description: 'Extend a hold by 30 minutes.',
         params: z.object({
@@ -28,6 +29,11 @@ export default async function (fastify, opts) {
 
       if (!hold) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
+      }
+
+      // Only the user who created the hold can extend it
+      if (hold.createdById !== request.user.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only extend your own holds' });
       }
 
       if (hold.status !== 'ACTIVE' && hold.status !== 'EXTENDED') {

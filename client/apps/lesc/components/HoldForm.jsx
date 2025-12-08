@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
@@ -7,6 +8,7 @@ import Api from '../../../core/Api';
 import Chip from '../../../core/components/Chip';
 
 function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeId }) {
+  const navigate = useNavigate();
   const [facilityId, setFacilityId] = useState(initialFacilityId || '');
   const [notes, setNotes] = useState('');
   const [bedsRequested, setBedsRequested] = useState(1);
@@ -21,9 +23,23 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
 
   const createMutation = useMutation({
     mutationFn: (data) => Api.lesc.holds.create(data),
-    onSuccess: (data) => {
+    onSuccess: (response, variables) => {
+      // API returns an array of holds (one per bed), use the first one for navigation
+      const holds = response.data;
+      if (holds && holds.length > 0) {
+        const firstHold = holds[0];
+        // Navigate to success page with hold data
+        navigate('/lesc/success', {
+          state: {
+            holdData: {
+              id: firstHold.id,
+              bedsRequested: variables.bedsRequested, // Use the requested amount, not individual hold amount
+              expiresAt: firstHold.expiresAt,
+            },
+          },
+        });
+      }
       onSuccess?.();
-      // Don't navigate - stay on the holds page, modal will be closed by onSuccess
     },
   });
 
@@ -61,6 +77,22 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
       current.calculatedAvailable > best.calculatedAvailable ? current : best
     );
   };
+
+  // Get available beds for the selected facility
+  const getAvailableBeds = () => {
+    if (!availability || !facilityId) return null;
+    const serviceInfo = getServiceTypeForFacility(facilityId);
+    return serviceInfo ? serviceInfo.calculatedAvailable : null;
+  };
+
+  const availableBeds = getAvailableBeds();
+
+  // Reset bedsRequested if it exceeds available beds when availability changes
+  useEffect(() => {
+    if (availableBeds !== null && bedsRequested > availableBeds) {
+      setBedsRequested(Math.min(bedsRequested, availableBeds));
+    }
+  }, [availableBeds, bedsRequested]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -149,15 +181,19 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
             For how many people?
           </Text>
           <Group gap='sm'>
-            {[1, 2, 3, 4, 5].map((num) => (
-              <Chip
-                key={num}
-                active={bedsRequested === num}
-                onClick={() => setBedsRequested(num)}
-              >
-                {num}
-              </Chip>
-            ))}
+            {[1, 2, 3, 4, 5].map((num) => {
+              const isDisabled = availableBeds !== null && availableBeds < 5 && num > availableBeds;
+              return (
+                <Chip
+                  key={num}
+                  active={bedsRequested === num}
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && setBedsRequested(num)}
+                >
+                  {num}
+                </Chip>
+              );
+            })}
           </Group>
         </Stack>
 

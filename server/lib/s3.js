@@ -74,23 +74,31 @@ function deleteObject (Key) {
 
 async function deleteObjects (Prefix) {
   init();
-  const response = await client.send(
-    new ListObjectsV2Command({
-      Bucket: process.env.AWS_S3_BUCKET,
-      Prefix,
-    })
-  );
-  if (response.Contents) {
-    return client.send(
-      new DeleteObjectsCommand({
+  try {
+    const response = await client.send(
+      new ListObjectsV2Command({
         Bucket: process.env.AWS_S3_BUCKET,
-        Delete: {
-          Objects: response.Contents.map((obj) => ({ Key: obj.Key })),
-        },
+        Prefix,
       })
     );
+    if (response.Contents) {
+      return client.send(
+        new DeleteObjectsCommand({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Delete: {
+            Objects: response.Contents.map((obj) => ({ Key: obj.Key })),
+          },
+        })
+      );
+    }
+    return Promise.resolve();
+  } catch (error) {
+    // If MinIO isn't initialized yet, just return (no objects to delete)
+    if (error.message?.includes('not initialized')) {
+      return Promise.resolve();
+    }
+    throw error;
   }
-  return Promise.resolve();
 }
 
 async function getObject (Key) {
@@ -165,12 +173,35 @@ function putObject (Key, filePath) {
   );
 }
 
+async function checkReady () {
+  init();
+  try {
+    // Try to list objects in the bucket to verify MinIO is ready
+    await client.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.AWS_S3_BUCKET,
+        MaxKeys: 1,
+      })
+    );
+    return true;
+  } catch (error) {
+    // If we get "Server not initialized yet", MinIO isn't ready
+    const errorMessage = error.message || error.toString() || '';
+    if (errorMessage.includes('not initialized') || errorMessage.includes('Server not initialized')) {
+      return false;
+    }
+    // Other errors (like bucket doesn't exist or NoSuchBucket) are OK - MinIO is ready
+    return true;
+  }
+}
+
 function reset () {
   client = undefined;
   signerClient = undefined;
 }
 
 export default {
+  checkReady,
   copyObject,
   createBucket,
   deleteObject,

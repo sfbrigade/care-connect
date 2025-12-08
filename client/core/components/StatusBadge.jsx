@@ -30,6 +30,11 @@ function StatusBadge ({
       color: '#ffc107',
       text: 'Warning',
     },
+    'in-transit': {
+      backgroundColor: 'rgba(76, 110, 245, 0.1)', // #4c6ef5 with 10% opacity
+      color: '#4c6ef5',
+      text: 'In transit',
+    },
   };
 
   const config = statusConfig[status] || statusConfig.active;
