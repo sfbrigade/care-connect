@@ -9,6 +9,7 @@ export default async function (fastify, opts) {
   fastify.register(import('./holds/qr.js'), { prefix: '/holds' });
   fastify.register(import('./holds/transfer.js'), { prefix: '/holds' });
   fastify.register(import('./holds/transfer-status.js'), { prefix: '/holds' });
+  fastify.register(import('./holds/for-checkin.js'), { prefix: '/holds' });
   fastify.register(import('./intake/index.js'), { prefix: '/intake' });
   fastify.register(import('./clients/index.js'), { prefix: '/clients' });
   // Register checkin routes directly (index.js only registers create.js)

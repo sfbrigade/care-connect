@@ -192,6 +192,9 @@ const Api = {
       transferStatus (id) {
         return instance.get(`/api/lesc/holds/${id}/transfer-status`);
       },
+      forCheckin (id) {
+        return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
+      },
     },
     intake: {
       create (data) {
