@@ -114,13 +114,6 @@ function App () {
                             }
                           />
                           <Route
-                            path='/lesc/*' element={
-                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                                <LESCRoutes />
-                              </Suspense>
-                            }
-                          />
-                          <Route
                             path='/admin/*' element={
                               <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                 <AdminRoutes />
