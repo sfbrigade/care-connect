@@ -3,7 +3,7 @@ import { useNavigate, Link, NavLink, useLocation } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
 import { ActionIcon, Anchor, Container, Group, Menu, Title } from '@mantine/core';
 import { IconMessages } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import Api from '../../../core/Api';
 import { useAuthContext } from '../../../core/AuthContext';
@@ -12,7 +12,6 @@ function DIDOHeader ({ opened, close, toggle }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, setUser } = useAuthContext();
-  const queryClient = useQueryClient();
 
   // DIDO doesn't require login, but we still check for admin users
   const { data, isSuccess } = useQuery({
