@@ -108,18 +108,19 @@ function App () {
                             }
                           />
                           {/* App routes - location-aware routing for subdomain-based access */}
+                          {/* eslint-disable @stylistic/jsx-indent, @stylistic/jsx-closing-tag-location */}
                           {AppRoutes ? (
                             <Route
-                              path='/*'
-                              element={
+                              path='/*' element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                   <AppRoutes />
-                        </Suspense>
-                      }
+                                </Suspense>
+                              }
                             />
                           ) : (
                             <Route path='/*' element={<NotFound />} />
                           )}
+                          {/* eslint-enable @stylistic/jsx-indent, @stylistic/jsx-closing-tag-location */}
                         </Routes>
                       </AppRedirects>
                     }
