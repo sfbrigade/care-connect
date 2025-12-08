@@ -102,15 +102,16 @@ function App () {
                           />
                           <Route
                             path='/admin/*' element={
-                              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                                <AdminRoutes />
-                              </Suspense>
+                            <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                              <AdminRoutes />
+                            </Suspense>
                             }
                           />
                           {/* App routes - location-aware routing for subdomain-based access */}
                           {AppRoutes ? (
-                              <Route
-                              path='/*' element={
+                            <Route
+                              path='/*'
+                              element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                   <AppRoutes />
                                 </Suspense>
