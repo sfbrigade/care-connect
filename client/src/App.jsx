@@ -114,8 +114,8 @@ function App () {
                               element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
                                   <AppRoutes />
-                                </Suspense>
-                              }
+                        </Suspense>
+                      }
                             />
                           ) : (
                             <Route path='/*' element={<NotFound />} />
