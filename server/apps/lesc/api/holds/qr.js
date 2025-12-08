@@ -32,20 +32,47 @@ export default async function (fastify, opts) {
       });
 
       if (!hold) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
+        return reply.code(StatusCodes.NOT_FOUND).send({
+          error: 'Hold not found. The hold ID may be incorrect or the hold may have been deleted.'
+        });
       }
 
       // Only the user who created the hold can generate QR codes
       if (hold.createdById !== request.user.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only generate QR codes for your own holds' });
+        return reply.code(StatusCodes.FORBIDDEN).send({
+          error: 'You can only generate QR codes for your own holds. This hold was created by another user.'
+        });
+      }
+
+      // Check if hold has expired first (before status check)
+      if (hold.expiresAt < now) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: `Hold has expired. The hold expired on ${hold.expiresAt.toISOString()}. Expired holds cannot generate QR codes.`
+        });
+      }
+
+      if (hold.status === 'EXPIRED') {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has expired and cannot generate QR codes.'
+        });
+      }
+
+      if (hold.status === 'CANCELLED') {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has been cancelled and cannot generate QR codes.'
+        });
+      }
+
+      if (hold.status === 'TRANSFERRED') {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has already been transferred and cannot generate QR codes.'
+        });
       }
 
       if (!['ACTIVE', 'EXTENDED'].includes(hold.status)) {
-        return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Hold is not in a transferable status' });
-      }
-
-      if (hold.expiresAt < now) {
-        return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Hold has expired' });
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: `Hold is in ${hold.status} status and cannot generate QR codes. Only ACTIVE or EXTENDED holds can generate QR codes.`
+        });
       }
 
       // Generate new token and expiration

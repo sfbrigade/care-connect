@@ -55,20 +55,65 @@ export default async function (fastify, opts) {
       });
 
       if (!hold) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Hold not found' });
+        return reply.code(StatusCodes.NOT_FOUND).send({
+          error: 'Hold not found. The hold ID may be incorrect or the hold may have been deleted.'
+        });
       }
 
       // Only the user who created the hold can transfer it
       if (hold.createdById !== request.user.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only transfer your own holds' });
+        return reply.code(StatusCodes.FORBIDDEN).send({
+          error: 'You can only transfer your own holds. This hold was created by another user.'
+        });
+      }
+
+      // Check if hold has expired
+      if (hold.expiresAt < now) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: `Hold has expired. The hold expired on ${hold.expiresAt.toISOString()}. Expired holds cannot be transferred.`
+        });
       }
 
       if (hold.status === 'TRANSFERRED') {
-        return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Hold has already been transferred' });
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has already been transferred and cannot be transferred again.'
+        });
       }
 
-      if (hold.transferToken !== token || !hold.transferTokenExpiresAt || hold.transferTokenExpiresAt < now) {
-        return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Invalid transfer token' });
+      if (hold.status === 'CANCELLED') {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has been cancelled and cannot be transferred.'
+        });
+      }
+
+      if (hold.status === 'EXPIRED') {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Hold has expired and cannot be transferred.'
+        });
+      }
+
+      if (!hold.transferToken) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'No transfer token found for this hold. Please generate a new QR code.'
+        });
+      }
+
+      if (hold.transferToken !== token) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Invalid transfer token. The token does not match this hold. Please scan the QR code again or generate a new one.'
+        });
+      }
+
+      if (!hold.transferTokenExpiresAt) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: 'Transfer token has no expiration date. Please generate a new QR code.'
+        });
+      }
+
+      if (hold.transferTokenExpiresAt < now) {
+        return reply.code(StatusCodes.BAD_REQUEST).send({
+          error: `Transfer token has expired. The token expired on ${hold.transferTokenExpiresAt.toISOString()}. Please generate a new QR code.`
+        });
       }
 
       const updatedHold = await fastify.prisma.bedHold.update({

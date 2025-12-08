@@ -65,6 +65,11 @@ function UserForm () {
   });
   const [success, setSuccess] = useState(false);
 
+  function handleCancel () {
+    // Navigate back to previous page
+    navigate(-1);
+  }
+
   async function onLogout (event) {
     event.preventDefault();
     await Api.auth.logout();
@@ -128,6 +133,13 @@ function UserForm () {
               )}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
+                <Button 
+                  variant="light" 
+                  onClick={handleCancel}
+                  disabled={onSubmitMutation.isPending}
+                >
+                  Cancel
+                </Button>
                 <Button 
                   variant="outline" 
                   color="red" 

@@ -19,21 +19,34 @@ function Header ({ opened, close, toggle }) {
   const queryClient = useQueryClient();
 
   // Determine which app we're in based on location or from parameter
-  const appName = useMemo(() => {
+  const appInfo = useMemo(() => {
     // Check if we're on a login page and have a 'from' parameter
     if (location.pathname === '/login') {
       const from = location.state?.from || searchParams.get('from') || '/';
       const fromPath = typeof from === 'string' ? from : (typeof from === 'object' && from.pathname ? from.pathname : '/');
-      if (fromPath.startsWith('/lesc')) return 'LESC';
-      if (fromPath.startsWith('/dido')) return 'DIDO';
+      if (fromPath.startsWith('/lesc')) return { name: 'LESC', type: 'lesc' };
+      if (fromPath.startsWith('/dido')) return { name: 'DIDO', type: 'dido' };
     }
     // Check current pathname
-    if (location.pathname.startsWith('/lesc')) return 'LESC';
-    if (location.pathname.startsWith('/dido')) return 'DIDO';
+    if (location.pathname.startsWith('/lesc')) return { name: 'LESC', type: 'lesc' };
+    if (location.pathname.startsWith('/dido')) return { name: 'DIDO', type: 'dido' };
     // Fallback to location detection
     const appLocation = getLocation(staticContext);
-    return appLocation?.location || null;
+    if (appLocation) {
+      return { name: appLocation.location, type: appLocation.appType };
+    }
+    return null;
   }, [location.pathname, location.state, searchParams, staticContext]);
+
+  const appName = appInfo?.name || null;
+  const appType = appInfo?.type || null;
+
+  // Determine home link based on active app
+  const homeLink = useMemo(() => {
+    if (appType === 'lesc') return '/lesc/';
+    if (appType === 'dido') return '/dido/';
+    return '/';
+  }, [appType]);
 
   const { data, isSuccess } = useQuery({
     queryKey: ['users', 'me'],
@@ -74,11 +87,11 @@ function Header ({ opened, close, toggle }) {
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between'>
-        <Link to='/' onClick={close}>
+        <Link to={homeLink} onClick={close}>
           <Title size='xl'>{appName || 'CareConnectSF'}</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
-          <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
+          <Anchor component={NavLink} aria-current='page' to={homeLink} onClick={close}>
             Home
           </Anchor>
           <Anchor component={NavLink} to='/lesc' onClick={close}>
@@ -87,20 +100,20 @@ function Header ({ opened, close, toggle }) {
           <Anchor component={NavLink} to='/admin/facilities' onClick={close}>
             Facilities
           </Anchor>
-          {user && (
+          {user?.isAdmin && (
+            <Menu trigger='hover' transitionProps={{ exitDuration: 0 }} withinPortal>
+              <Menu.Target>
+                <Anchor component={NavLink} to='/admin'>Admin</Anchor>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
+                <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
+                <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          )}
+          {user && appType === 'lesc' && (
             <>
-              {user.isAdmin && (
-                <Menu trigger='hover' transitionProps={{ exitDuration: 0 }} withinPortal>
-                  <Menu.Target>
-                    <Anchor component={NavLink} to='/admin'>Admin</Anchor>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
-                    <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
-                    <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              )}
               <Group gap='xs'>
                 <span>
                   Hello,{' '}

@@ -20,8 +20,10 @@ function CheckIn () {
   const { showToast } = useToast();
 
   const [holdId, setHoldId] = useState(holdIdParam || '');
+  const [manualHoldId, setManualHoldId] = useState(''); // Separate state for manual entry input
   const [showScanner, setShowScanner] = useState(!holdIdParam); // Auto-show scanner if no holdId
   const [manualEntry, setManualEntry] = useState(false);
+  const [shouldFetchHold, setShouldFetchHold] = useState(!!holdIdParam); // Only fetch if we have holdId from URL
 
   // Auto-show scanner when there's no holdId
   useEffect(() => {
@@ -30,18 +32,18 @@ function CheckIn () {
     }
   }, [holdIdParam, manualEntry]);
 
-  // Fetch holds list to get the specific hold
-  const { data: holdsData, isLoading: isLoadingHolds } = useQuery({
-    queryKey: ['lesc-holds'],
+  // Fetch hold directly by ID for check-in (allows any authenticated user)
+  const { data: holdData, isLoading: isLoadingHold, error: holdError } = useQuery({
+    queryKey: ['lesc-hold-for-checkin', holdId],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list();
+      const response = await Api.lesc.holds.forCheckin(holdId);
       return response.data;
     },
-    enabled: !!holdId && !manualEntry,
+    enabled: !!holdId && shouldFetchHold,
+    retry: false,
   });
 
-  // Find the specific hold
-  const hold = holdsData?.find(h => h.id === holdId);
+  const hold = holdData;
 
   // Fetch facility details if we have hold data
   const { data: facilitiesData } = useQuery({
@@ -74,11 +76,13 @@ function CheckIn () {
   };
 
   const handleManualSubmit = () => {
-    if (!holdId) {
+    if (!manualHoldId) {
       showToast('Please enter Hold ID', 'error');
       return;
     }
-    navigate(`/lesc/checkin/${holdId}`, { replace: true });
+    setHoldId(manualHoldId);
+    setShouldFetchHold(true);
+    navigate(`/lesc/checkin/${manualHoldId}`, { replace: true });
     setManualEntry(false);
   };
 
@@ -131,8 +135,11 @@ function CheckIn () {
                     }
                   }}
                 />
-                <Button variant="outline" onClick={() => setShowScanner(false)}>
-                  Cancel
+                <Button variant="outline" onClick={() => {
+                  setShowScanner(false);
+                  setManualEntry(true);
+                }}>
+                  Enter Hold ID
                 </Button>
               </Stack>
             </MantineCard>
@@ -144,15 +151,30 @@ function CheckIn () {
                 <Text fw={500}>Enter Hold ID</Text>
                 <TextInput
                   label="Hold ID"
-                  placeholder="Enter hold ID"
-                  value={holdId}
-                  onChange={(e) => setHoldId(e.target.value)}
+                  placeholder="Enter 3-character code (e.g., A21)"
+                  value={manualHoldId}
+                  onChange={(e) => setManualHoldId(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleManualSubmit();
+                    }
+                  }}
+                  maxLength={36} // Allow both 3-char codes and full UUIDs
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+                    },
+                  }}
                 />
                 <Group>
                   <Button onClick={handleManualSubmit}>
-                    Continue
+                    Submit
                   </Button>
-                  <Button variant="outline" onClick={() => setManualEntry(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setManualEntry(false);
+                    setManualHoldId('');
+                  }}>
                     Cancel
                   </Button>
                 </Group>
@@ -164,7 +186,7 @@ function CheckIn () {
     );
   }
 
-  if (isLoadingHolds) {
+  if (isLoadingHold) {
     return (
       <Container>
         <Stack gap='md'>
@@ -184,7 +206,37 @@ function CheckIn () {
     );
   }
 
-  if (!hold) {
+  // Handle errors with precise messages
+  if (holdError || !hold) {
+    let errorTitle = 'Hold Not Found';
+    let errorMessage = `The hold with ID ${holdId} was not found.`;
+    let errorColor = 'red';
+
+    if (holdError?.response) {
+      const errorData = holdError.response.data;
+      const status = holdError.response.status;
+
+      if (status === 422) {
+        // Validation error - invalid format
+        errorTitle = 'Invalid Hold ID Format';
+        errorMessage = 'Please enter a 3-character code (e.g., A21) or a full hold ID.';
+        errorColor = 'orange';
+      } else if (status === 404) {
+        errorTitle = 'Hold Not Found';
+        errorMessage = errorData?.error || `The hold with ID ${holdId} was not found. The hold ID may be incorrect or the hold may have been deleted.`;
+      } else if (status === 400) {
+        errorTitle = 'Hold Cannot Be Used';
+        errorMessage = errorData?.error || 'This hold cannot be used for check-in.';
+        errorColor = 'orange';
+      } else if (status === 403) {
+        errorTitle = 'Access Denied';
+        errorMessage = 'You do not have permission to view this hold.';
+      } else {
+        errorTitle = 'Error Loading Hold';
+        errorMessage = errorData?.error || 'An error occurred while loading the hold.';
+      }
+    }
+
     return (
       <Container>
         <Stack gap='md'>
@@ -196,13 +248,15 @@ function CheckIn () {
           >
             Back
           </Button>
-          <Alert icon={<IconAlertCircle size={16} />} color="red" title="Hold Not Found">
-            <Text size="sm">The hold with ID {holdId} was not found or may have expired.</Text>
+          <Alert icon={<IconAlertCircle size={16} />} color={errorColor} title={errorTitle}>
+            <Text size="sm">{errorMessage}</Text>
           </Alert>
           <Button onClick={() => {
             setHoldId('');
+            setManualHoldId('');
             setManualEntry(false);
             setShowScanner(false);
+            setShouldFetchHold(false);
           }}>
             Try Again
           </Button>

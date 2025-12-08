@@ -34,23 +34,43 @@ function RegistrationForm ({ onSubmitMutation }) {
             {...form.getInputProps('firstName')}
             key={form.key('firstName')}
             label='First name'
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+              },
+            }}
           />
           <TextInput
             {...form.getInputProps('lastName')}
             key={form.key('lastName')}
             label='Last name'
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+              },
+            }}
           />
           <TextInput
             {...form.getInputProps('email')}
             key={form.key('email')}
             type='email'
             label='Email'
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+              },
+            }}
           />
           <TextInput
             {...form.getInputProps('password')}
             key={form.key('password')}
             type='password'
             label='Password'
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
+              },
+            }}
           />
           <Group>
             <Button type='submit'>Submit</Button>

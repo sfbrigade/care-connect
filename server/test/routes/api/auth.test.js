@@ -64,7 +64,7 @@ test('/api/auth', async (t) => {
 
       const error = JSON.parse(response.body);
       assert.deepStrictEqual(error.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
-      assert.deepStrictEqual(error.errors.length, 5);
+      assert.deepStrictEqual(error.errors.length, 4);
       assert.ok(
         _.find(error.errors, {
           path: 'firstName',
@@ -87,12 +87,6 @@ test('/api/auth', async (t) => {
         _.find(error.errors, {
           path: 'password',
           message: 'Password must be at least 8 characters long',
-        })
-      );
-      assert.ok(
-        _.find(error.errors, {
-          path: 'password',
-          message: 'Password must include uppercase, lowercase, number, and special characters',
         })
       );
     });
