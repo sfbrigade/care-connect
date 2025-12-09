@@ -3,8 +3,6 @@ import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Ale
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft, IconQrcode, IconAlertCircle } from '@tabler/icons-react';
-import Card from '../../../core/components/Card';
-import { formatTimeUntil } from '../../../core/utils/dateTime';
 import Api from '../../../core/Api';
 import QRScanner from '../../../core/components/QRScanner';
 import { useToast } from '../../../core/components/ToastContext';
@@ -249,7 +247,6 @@ function CheckIn () {
     let errorTitle = 'Hold Not Found';
     let errorMessage = `The hold with ID ${holdId} was not found.`;
     let errorColor = 'red';
-    let showTryAgain = true;
 
     if (holdError?.response) {
       const errorData = holdError.response.data;
@@ -328,7 +325,6 @@ function CheckIn () {
   const diffMs = expiresAt.getTime() - Date.now();
   const diffMins = Math.floor(diffMs / 60000);
   const timeRemaining = diffMins < 60 ? `${diffMins} mins` : `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-  const timeUntil = formatTimeUntil(hold.expiresAt);
 
   // Calculate age from dateOfBirth if available
   const age = hold.client?.dateOfBirth
