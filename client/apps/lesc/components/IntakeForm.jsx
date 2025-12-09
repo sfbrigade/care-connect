@@ -1,9 +1,139 @@
 import { useState, useEffect } from 'react';
-import { Container, Stack, Text, Button, Group, Select, TextInput, Loader } from '@mantine/core';
+import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, NumberInput } from '@mantine/core';
 import { useNavigate, useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Api from '../../../core/Api';
+
+/**
+ * Date input component with spinners for month, day, and year
+ * Converts between YYYY-MM-DD format (for API) and separate month/day/year fields
+ */
+function DateInput ({ label, value, onChange, ...props }) {
+  // Parse YYYY-MM-DD format into month, day, year
+  const parseDate = (dateStr) => {
+    if (!dateStr) return { month: null, day: null, year: null };
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return {
+        year: parseInt(parts[0], 10) || null,
+        month: parseInt(parts[1], 10) || null,
+        day: parseInt(parts[2], 10) || null,
+      };
+    }
+    return { month: null, day: null, year: null };
+  };
+
+  // Format month, day, year into YYYY-MM-DD
+  const formatDate = (month, day, year) => {
+    if (!month || !day || !year) return '';
+    const monthStr = String(month).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const yearStr = String(year);
+    return `${yearStr}-${monthStr}-${dayStr}`;
+  };
+
+  const initialDate = parseDate(value);
+  const [month, setMonth] = useState(initialDate.month);
+  const [day, setDay] = useState(initialDate.day);
+  const [year, setYear] = useState(initialDate.year);
+
+  // Update local state when value prop changes
+  useEffect(() => {
+    const parsed = parseDate(value);
+    setMonth(parsed.month);
+    setDay(parsed.day);
+    setYear(parsed.year);
+  }, [value]);
+
+  // Validate and update parent when any field changes
+  const handleChange = (field, newValue) => {
+    let newMonth = month;
+    let newDay = day;
+    let newYear = year;
+
+    if (field === 'month') {
+      newMonth = newValue;
+      setMonth(newValue);
+    } else if (field === 'day') {
+      newDay = newValue;
+      setDay(newValue);
+    } else if (field === 'year') {
+      newYear = newValue;
+      setYear(newValue);
+    }
+
+    // Validate date
+    if (newMonth && newDay && newYear) {
+      // Check if date is valid
+      const date = new Date(newYear, newMonth - 1, newDay);
+      if (
+        date.getFullYear() === newYear &&
+        date.getMonth() === newMonth - 1 &&
+        date.getDate() === newDay
+      ) {
+        const formatted = formatDate(newMonth, newDay, newYear);
+        onChange?.({ target: { value: formatted } });
+      }
+    } else if (newMonth === null && newDay === null && newYear === null) {
+      // All fields cleared
+      onChange?.({ target: { value: '' } });
+    }
+  };
+
+  return (
+    <div>
+      <Text size="sm" fw={500} mb={4}>{label}</Text>
+      <Group gap="xs" align="flex-start">
+        <NumberInput
+          label="Month"
+          placeholder="MM"
+          value={month}
+          onChange={(val) => handleChange('month', val)}
+          min={1}
+          max={12}
+          style={{ flex: 1 }}
+          styles={{
+            input: {
+              fontSize: '16px', // Prevent iOS zoom
+            },
+          }}
+          {...props}
+        />
+        <NumberInput
+          label="Day"
+          placeholder="DD"
+          value={day}
+          onChange={(val) => handleChange('day', val)}
+          min={1}
+          max={31}
+          style={{ flex: 1 }}
+          styles={{
+            input: {
+              fontSize: '16px', // Prevent iOS zoom
+            },
+          }}
+          {...props}
+        />
+        <NumberInput
+          label="Year"
+          placeholder="YYYY"
+          value={year}
+          onChange={(val) => handleChange('year', val)}
+          min={1900}
+          max={new Date().getFullYear()}
+          style={{ flex: 2 }}
+          styles={{
+            input: {
+              fontSize: '16px', // Prevent iOS zoom
+            },
+          }}
+          {...props}
+        />
+      </Group>
+    </div>
+  );
+}
 
 /**
  * Intake Form component - matches Figma "Start Report / Intake Form" design
@@ -181,17 +311,16 @@ function IntakeForm () {
                 placeholder='Enter full name'
                 value={formData.fullName}
                 onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-              />
-              <TextInput
-                label='Date of Birth'
-                type='date'
-                value={formData.dateOfBirth}
-                onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                 styles={{
                   input: {
                     fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
                   },
                 }}
+              />
+              <DateInput
+                label='Date of Birth'
+                value={formData.dateOfBirth}
+                onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
               />
               <Select
                 label='Sex'

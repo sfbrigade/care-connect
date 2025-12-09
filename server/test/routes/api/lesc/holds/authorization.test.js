@@ -369,8 +369,20 @@ test('/api/lesc/holds - Authorization: User Filtering', async (t) => {
     const user1Response = await app.inject().post(`/api/lesc/checkin/${user1Hold.id}`).payload({}).headers(user1Headers);
     assert.deepStrictEqual(user1Response.statusCode, StatusCodes.CREATED);
 
-    // User 2 can also check in a client for user 1's hold (checkin is accessible to all users)
-    const user2Response = await app.inject().post(`/api/lesc/checkin/${user1Hold.id}`).payload({}).headers(user2Headers);
+    // Create a second hold for user 2 to check in (can't check in the same hold twice)
+    const user2Hold = await prisma.bedHold.create({
+      data: {
+        facilityId: facility.id,
+        serviceTypeId: lescServiceType.id,
+        bedsRequested: 1,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        status: 'ACTIVE',
+        createdById: user1Id, // Can be created by user1, but user2 can check it in
+      },
+    });
+
+    // User 2 can also check in a client (for a different hold - checkin is accessible to all users)
+    const user2Response = await app.inject().post(`/api/lesc/checkin/${user2Hold.id}`).payload({}).headers(user2Headers);
     assert.deepStrictEqual(user2Response.statusCode, StatusCodes.CREATED);
   });
 });
