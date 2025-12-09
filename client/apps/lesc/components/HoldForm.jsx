@@ -218,6 +218,7 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
             styles={{
               input: {
                 borderRadius: '16px',
+                fontSize: '16px', // Prevent iOS zoom
               },
             }}
           />

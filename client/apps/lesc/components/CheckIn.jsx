@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Alert, TextInput } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft, IconQrcode, IconAlertCircle } from '@tabler/icons-react';
-import Card from '../../../core/components/Card';
-import { formatTimeUntil } from '../../../core/utils/dateTime';
 import Api from '../../../core/Api';
 import QRScanner from '../../../core/components/QRScanner';
 import { useToast } from '../../../core/components/ToastContext';
@@ -18,6 +16,7 @@ function CheckIn () {
   const navigate = useNavigate();
   const { holdId: holdIdParam } = useParams();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const [holdId, setHoldId] = useState(holdIdParam || '');
   const [manualHoldId, setManualHoldId] = useState(''); // Separate state for manual entry input
@@ -31,6 +30,14 @@ function CheckIn () {
       setShowScanner(true);
     }
   }, [holdIdParam, manualEntry]);
+
+  // Ensure query runs when holdIdParam changes (e.g., from URL navigation)
+  useEffect(() => {
+    if (holdIdParam) {
+      setHoldId(holdIdParam);
+      setShouldFetchHold(true);
+    }
+  }, [holdIdParam]);
 
   // Fetch hold directly by ID for check-in (allows any authenticated user)
   const { data: holdData, isLoading: isLoadingHold, error: holdError } = useQuery({
@@ -65,6 +72,7 @@ function CheckIn () {
 
       if (holdIdFromQR) {
         setHoldId(holdIdFromQR);
+        setShouldFetchHold(true); // Enable the query
         setShowScanner(false);
         navigate(`/lesc/checkin/${holdIdFromQR}`, { replace: true });
       } else {
@@ -87,6 +95,34 @@ function CheckIn () {
   };
 
   const facility = facilitiesData?.facilities?.find(f => f.id === hold?.facilityId);
+
+  // Mutation to create check-in
+  const checkInMutation = useMutation({
+    mutationFn: (holdId) => Api.lesc.checkin.create(holdId, {}),
+    onSuccess: () => {
+      // Show success toast
+      const clientName = hold?.client
+        ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim()
+        : null;
+      const displayName = clientName || hold?.id?.substring(0, 8).toUpperCase() || 'client';
+      showToast(`Successfully checked in ${displayName}`, 'success');
+      // Invalidate holds and availability to refresh data
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      // Navigate back to holds list
+      navigate('/lesc/holds');
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || 'Failed to check in. Please try again.';
+      showToast(errorMessage, 'error');
+    },
+  });
+
+  const handleCheckIn = () => {
+    if (hold?.id) {
+      checkInMutation.mutate(hold.id);
+    }
+  };
 
   // If no holdId, show QR scanner or manual entry
   if (!holdId || (manualEntry && !holdId)) {
@@ -223,18 +259,38 @@ function CheckIn () {
         errorColor = 'orange';
       } else if (status === 404) {
         errorTitle = 'Hold Not Found';
-        errorMessage = errorData?.error || `The hold with ID ${holdId} was not found. The hold ID may be incorrect or the hold may have been deleted.`;
+        const fullHoldId = errorData?.holdId || holdId;
+        errorMessage = errorData?.error || `The hold with ID ${fullHoldId.substring(0, 8).toUpperCase()}... (${fullHoldId}) was not found. The hold ID may be incorrect or the hold may have been deleted.`;
+        // Provide helpful guidance
+        if (holdId.length === 3) {
+          errorMessage += ' Make sure you\'re using the correct 3-character code from the holds list.';
+        } else {
+          errorMessage += ' Please verify the hold ID and try again.';
+        }
       } else if (status === 400) {
-        errorTitle = 'Hold Cannot Be Used';
-        errorMessage = errorData?.error || 'This hold cannot be used for check-in.';
+        errorTitle = 'Hold Cannot Be Used for Check-In';
+        const fullHoldId = errorData?.holdId || holdId;
+        errorMessage = errorData?.error || `Hold ${fullHoldId.substring(0, 8).toUpperCase()}... (${fullHoldId}) cannot be used for check-in.`;
         errorColor = 'orange';
+        // If the error mentions expired/cancelled/transferred, suggest requesting a new hold
+        if (errorData?.error && (
+          errorData.error.toLowerCase().includes('expired') ||
+          errorData.error.toLowerCase().includes('cancelled') ||
+          errorData.error.toLowerCase().includes('transferred')
+        )) {
+          errorMessage += ' You may need to request a new hold.';
+        }
       } else if (status === 403) {
         errorTitle = 'Access Denied';
         errorMessage = 'You do not have permission to view this hold.';
       } else {
         errorTitle = 'Error Loading Hold';
-        errorMessage = errorData?.error || 'An error occurred while loading the hold.';
+        errorMessage = errorData?.error || 'An error occurred while loading the hold. Please try again.';
       }
+    } else if (!hold && !holdError) {
+      // No error response but no hold data
+      errorTitle = 'Hold Not Found';
+      errorMessage = `The hold with ID ${holdId.substring(0, 8).toUpperCase()}... (${holdId}) was not found. Please verify the hold ID and try again.`;
     }
 
     return (
@@ -269,7 +325,32 @@ function CheckIn () {
   const diffMs = expiresAt.getTime() - Date.now();
   const diffMins = Math.floor(diffMs / 60000);
   const timeRemaining = diffMins < 60 ? `${diffMins} mins` : `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-  const timeUntil = formatTimeUntil(hold.expiresAt);
+
+  // Calculate age from dateOfBirth if available
+  const age = hold.client?.dateOfBirth
+    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+
+  // Format DOB
+  const formatDob = (dob) => {
+    if (!dob) return null;
+    const dobDate = new Date(dob);
+    const month = String(dobDate.getMonth() + 1).padStart(2, '0');
+    const day = String(dobDate.getDate()).padStart(2, '0');
+    const year = dobDate.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  // Format time
+  const formatTime = (date) => {
+    const d = new Date(date);
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayH = hours % 12 || 12;
+    const displayM = minutes.toString().padStart(2, '0');
+    return `${displayH}:${displayM} ${ampm}`;
+  };
 
   return (
     <Container>
@@ -283,64 +364,122 @@ function CheckIn () {
           Back
         </Button>
 
+        {/* Subject Information Card */}
+        <MantineCard p="md">
+          <Stack gap="md">
+            <Text fw={500} size="lg">Subject Information</Text>
+            
+            <Group align="flex-start" gap="md">
+              {/* Photo placeholder */}
+              <div
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '8px',
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #dee2e6',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Text size="sm" c="dimmed" ta="center" p="xs">Photo</Text>
+              </div>
+
+              {/* Subject details */}
+              <Stack gap="xs" style={{ flex: 1 }}>
+                <div>
+                  <Text size="xs" c="dimmed" fw={500} mb={4}>Name</Text>
+                  <Text size="md" fw={500}>
+                    {hold.client
+                      ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim()
+                      : 'No name provided'}
+                  </Text>
+                </div>
+
+                {hold.client?.dateOfBirth && (
+                  <div>
+                    <Text size="xs" c="dimmed" fw={500} mb={4}>Date of Birth</Text>
+                    <Text size="md">
+                      {formatDob(hold.client.dateOfBirth)}
+                      {age !== null && ` (${age} yrs old)`}
+                    </Text>
+                  </div>
+                )}
+
+                {hold.client?.sex && (
+                  <div>
+                    <Text size="xs" c="dimmed" fw={500} mb={4}>Sex</Text>
+                    <Text size="md">{hold.client.sex}</Text>
+                  </div>
+                )}
+              </Stack>
+            </Group>
+          </Stack>
+        </MantineCard>
+
         {facility && (
           <MantineCard p="md">
             <Stack gap="sm">
-              <Text fw={500} size="lg">Hold Details</Text>
+              <Text fw={500} size="lg">Facility</Text>
               <LESCFacility facility={facility} />
-              <Group>
-                <Text size="sm" c="dimmed">Hold ID:</Text>
-                <Text size="sm" fw={500}>{hold.id}</Text>
-              </Group>
             </Stack>
           </MantineCard>
         )}
 
-        <div
-          style={{
-            width: '230px',
-            height: '230px',
-            borderRadius: '16px',
-            backgroundColor: '#f8f9fa',
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+        {/* Hold Summary Card */}
+        <MantineCard p="md">
+          <Stack gap="md">
+            <Text fw={500} size="lg">Hold Summary</Text>
+            
+            <Stack gap="xs">
+              <Group>
+                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Hold ID:</Text>
+                <Text size="sm" fw={500}>{hold.id.substring(0, 8).toUpperCase()}...</Text>
+              </Group>
+
+              {hold.createdBy && (
+                <Group>
+                  <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Holder:</Text>
+                  <Text size="sm">{hold.createdBy.firstName} {hold.createdBy.lastName}</Text>
+                </Group>
+              )}
+
+              <Group>
+                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Service Type:</Text>
+                <Text size="sm">{hold.serviceTypeName}</Text>
+              </Group>
+
+              <Group>
+                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Beds:</Text>
+                <Text size="sm">{hold.bedsRequested}</Text>
+              </Group>
+
+              <Group>
+                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Expires:</Text>
+                <Text size="sm">{formatTime(hold.expiresAt)} ({timeRemaining})</Text>
+              </Group>
+
+              {hold.notes && (
+                <Group>
+                  <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Notes:</Text>
+                  <Text size="sm">{hold.notes}</Text>
+                </Group>
+              )}
+            </Stack>
+          </Stack>
+        </MantineCard>
+
+        <Button
+          onClick={handleCheckIn}
+          loading={checkInMutation.isPending}
+          disabled={checkInMutation.isPending}
+          size='xl'
+          fullWidth
+          style={{ marginTop: '20px' }}
         >
-          {/* Placeholder for photo */}
-          <Text size='lg' c='dimmed'>Photo</Text>
-        </div>
-
-        <Group justify='space-between' gap='sm'>
-          <Button variant='light' onClick={() => navigate('/lesc/intake', { state: { holdId: hold.id } })}>
-            Start Intake
-          </Button>
-          <Button variant='light' color='red' onClick={() => navigate('/lesc/holds')}>
-            Cancel
-          </Button>
-        </Group>
-
-        <Card
-          timeRemaining={timeRemaining}
-          timeUntil={timeUntil}
-          badgeStatus='active'
-        />
-
-        <Text
-          style={{
-            fontSize: '16px',
-            lineHeight: '24px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 400,
-            color: '#212529',
-          }}
-        >
-          Details from form?
-        </Text>
-
-        <Button variant='light' onClick={() => navigate('/lesc/intake', { state: { holdId: hold.id } })}>
-          View Details
+          Check In
         </Button>
       </Stack>
     </Container>

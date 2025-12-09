@@ -208,7 +208,7 @@ const Api = {
       },
     },
     checkin: {
-      create (holdId, data) {
+      create (holdId, data = {}) {
         return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
       },
     },

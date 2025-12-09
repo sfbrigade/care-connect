@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, Modal } from '@mantine/core';
+import { Container, Title, Stack, Loader, Alert, Modal, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '../../../core/Api';
 import HoldForm from './HoldForm';
@@ -13,6 +13,7 @@ import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
 import { useToast } from '../../../core/components/ToastContext';
 import { formatTime } from '../../../core/utils/dateTime';
+import { useAuthContext } from '../../../core/AuthContext';
 
 function Holds () {
   const location = useLocation();
@@ -25,6 +26,7 @@ function Holds () {
   const [selectedHold, setSelectedHold] = useState(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { user } = useAuthContext();
 
   // Prioritize URL param over location.state for facilityId
   const facilityId = facilityIdParam || location.state?.facilityId;
@@ -175,6 +177,26 @@ function Holds () {
     }
   };
 
+  // Filter holds to only show current user's holds
+  const userHolds = useMemo(() => {
+    if (!holds || !user) return [];
+    return holds.filter(hold => hold.createdBy?.id === user.id);
+  }, [holds, user]);
+
+  // Group ALL holds by creator and count them (for banner display)
+  const holdsByUser = useMemo(() => {
+    if (!holds) return {};
+    const grouped = {};
+    holds.forEach(hold => {
+      if (hold.createdBy) {
+        const userName = `${hold.createdBy.firstName} ${hold.createdBy.lastName}`.trim();
+        grouped[userName] = (grouped[userName] || 0) + 1;
+      }
+    });
+    return grouped;
+  }, [holds]);
+
+  // Early returns MUST come after all hooks
   if (isLoading) {
     return (
       <Container>
@@ -196,6 +218,24 @@ function Holds () {
   return (
     <Container size='sm' py='md' px='md' style={{ backgroundColor: '#F8F9FA', minHeight: '100vh' }}>
       <Title order={2} mb='md'>Active Bed Holds</Title>
+
+      {/* Active holds breakdown by user */}
+      {Object.keys(holdsByUser).length > 0 && (
+        <Alert icon={<IconInfoCircle size={16} />} color="blue" mb="md">
+          <Text size="sm" fw={500} mb={4}>
+            Active holds
+          </Text>
+          <Stack gap={2}>
+            {Object.entries(holdsByUser)
+              .sort(([, a], [, b]) => b - a) // Sort by count descending
+              .map(([userName, count]) => (
+                <Text key={userName} size="sm">
+                  {userName}: <strong>{count}</strong>
+                </Text>
+              ))}
+          </Stack>
+        </Alert>
+      )}
 
       <Modal
         opened={createModalOpened}
@@ -251,9 +291,14 @@ function Holds () {
           closeQRModal();
           setSelectedHold(null);
         }}
+        onDone={() => {
+          // Reload the hold list
+          queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+          queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+        }}
       />
 
-      {holds && holds.length === 0
+      {userHolds && userHolds.length === 0
         ? (
           <Stack gap='md'>
             {lescFacilityInfo && (
@@ -288,7 +333,7 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {holds?.map((hold) => {
+                {userHolds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
                   const age = hold.client?.dateOfBirth
                     ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -330,7 +375,7 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {holds?.map((hold) => {
+                {userHolds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
                   const age = hold.client?.dateOfBirth
                     ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))

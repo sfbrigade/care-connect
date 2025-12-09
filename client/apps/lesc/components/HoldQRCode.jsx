@@ -12,7 +12,7 @@ import { useToast } from '../../../core/components/ToastContext';
  * Component for displaying QR code for a bed hold
  * Shows QR code, expiration countdown, and refresh button
  */
-export default function HoldQRCode ({ holdId, opened, onClose }) {
+export default function HoldQRCode ({ holdId, opened, onClose, onDone }) {
   const [expiresAt, setExpiresAt] = useState(null);
   const { showToast } = useToast();
 
@@ -104,13 +104,23 @@ export default function HoldQRCode ({ holdId, opened, onClose }) {
               </Group>
             )}
 
-            <Group justify="flex-end">
+            <Group justify="space-between">
               <Button
                 variant="outline"
                 leftSection={<IconRefresh size={16} />}
                 onClick={handleRefresh}
               >
                 Refresh QR Code
+              </Button>
+              <Button
+                onClick={() => {
+                  if (onDone) {
+                    onDone();
+                  }
+                  onClose();
+                }}
+              >
+                Done
               </Button>
             </Group>
           </>

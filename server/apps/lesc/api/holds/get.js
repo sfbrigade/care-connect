@@ -98,7 +98,7 @@ export default async function (fastify, opts) {
               id: hold.client.id,
               firstName: hold.client.firstName,
               lastName: hold.client.lastName,
-              dateOfBirth: hold.client.dateOfBirth?.toISOString(),
+              dateOfBirth: hold.client.dateOfBirth?.toISOString() ?? null,
               sex: hold.client.sex,
               race: hold.client.race,
               personallyIdentifiable: hold.client.personallyIdentifiable,
