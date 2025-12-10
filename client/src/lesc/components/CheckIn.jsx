@@ -6,7 +6,7 @@ import { IconArrowLeft, IconQrcode, IconAlertCircle, IconFileDownload } from '@t
 import Api from '@/Api';
 import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
-import { calculateAge, formatTime } from '@/utils/dateTime';
+import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
