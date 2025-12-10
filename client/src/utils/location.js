@@ -3,6 +3,8 @@
  * Detects and manages location/app routing
  */
 
+import { detectLocationFromSubdomain, detectLocationFromPath, getAppTypeForLocation } from './locationRegistry.js';
+
 /**
  * Get location from static context or window location
  * @param {object} staticContext - Static context from server
@@ -27,42 +29,22 @@ export function getLocation (staticContext) {
   const hostname = window.location.hostname;
   const pathname = window.location.pathname;
 
-  // Check subdomain
-  const parts = hostname.split('.');
-  const subdomain = parts.length > 1 ? parts[0].toLowerCase() : '';
-
-  // Check for LESC subdomain
-  if (subdomain === 'lesc') {
+  // First try subdomain detection
+  const subdomainLocation = detectLocationFromSubdomain(hostname);
+  if (subdomainLocation) {
     return {
-      location: 'LESC',
-      appType: 'lesc',
+      location: subdomainLocation,
+      appType: getAppTypeForLocation(subdomainLocation),
       method: 'subdomain',
     };
   }
 
-  // Check for DIDO subdomain (only 'dido', not 'www' or empty)
-  if (subdomain === 'dido') {
+  // Then try path detection
+  const pathLocation = detectLocationFromPath(pathname);
+  if (pathLocation) {
     return {
-      location: 'DIDO',
-      appType: 'dido',
-      method: 'subdomain',
-    };
-  }
-
-  // Check path
-  if (pathname.startsWith('/lesc')) {
-    return {
-      location: 'LESC',
-      appType: 'lesc',
-      method: 'path',
-    };
-  }
-
-  // Check for DIDO path
-  if (pathname.startsWith('/dido')) {
-    return {
-      location: 'DIDO',
-      appType: 'dido',
+      location: pathLocation,
+      appType: getAppTypeForLocation(pathLocation),
       method: 'path',
     };
   }

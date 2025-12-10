@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Alert, TextInput } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { IconArrowLeft, IconQrcode, IconAlertCircle } from '@tabler/icons-react';
+import { IconArrowLeft, IconQrcode, IconAlertCircle, IconFileDownload } from '@tabler/icons-react';
+import { jsPDF } from 'jspdf';
 import Api from '@/Api';
 import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
+import { calculateAge } from '@/utils/dateTime';
 import LESCFacility from './LESCFacility';
 
 /**
@@ -332,9 +334,7 @@ function CheckIn () {
   const timeRemaining = diffMins < 60 ? `${diffMins} mins` : `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
 
   // Calculate age from dateOfBirth if available
-  const age = hold.client?.dateOfBirth
-    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : null;
+  const age = calculateAge(hold.client?.dateOfBirth);
 
   // Format DOB
   const formatDob = (dob) => {
@@ -357,6 +357,159 @@ function CheckIn () {
     return `${displayH}:${displayM} ${ampm}`;
   };
 
+  // Generate PDF with client information
+  const generatePDF = () => {
+    if (!hold || !hold.client) {
+      showToast('No client information available', 'error');
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line new-cap
+      const doc = new jsPDF();
+      let yPos = 20;
+
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Client Information', 20, yPos);
+      yPos += 15;
+
+      // Subject Information Section
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Subject Information', 20, yPos);
+      yPos += 10;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+
+      // Name
+      const clientName = hold.client
+        ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim()
+        : 'No name provided';
+      doc.text(`Name: ${clientName}`, 20, yPos);
+      yPos += 7;
+
+      // Date of Birth
+      if (hold.client?.dateOfBirth) {
+        const dobFormatted = formatDob(hold.client.dateOfBirth);
+        const ageText = age !== null ? ` (${age} yrs old)` : '';
+        doc.text(`Date of Birth: ${dobFormatted}${ageText}`, 20, yPos);
+        yPos += 7;
+      }
+
+      // Sex
+      if (hold.client?.sex) {
+        doc.text(`Sex: ${hold.client.sex}`, 20, yPos);
+        yPos += 7;
+      }
+
+      // Race
+      if (hold.client?.race) {
+        doc.text(`Race: ${hold.client.race}`, 20, yPos);
+        yPos += 7;
+      }
+
+      yPos += 5;
+
+      // Hold Summary Section
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Hold Summary', 20, yPos);
+      yPos += 10;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+
+      // Hold ID
+      doc.text(`Hold ID: ${hold.id.substring(0, 8).toUpperCase()}...`, 20, yPos);
+      yPos += 7;
+
+      // Holder
+      if (hold.createdBy) {
+        doc.text(`Holder: ${hold.createdBy.firstName} ${hold.createdBy.lastName}`, 20, yPos);
+        yPos += 7;
+      }
+
+      // Service Type
+      if (hold.serviceTypeName) {
+        doc.text(`Service Type: ${hold.serviceTypeName}`, 20, yPos);
+        yPos += 7;
+      }
+
+      // Beds
+      doc.text(`Beds Requested: ${hold.bedsRequested}`, 20, yPos);
+      yPos += 7;
+
+      // Expires
+      const expiresFormatted = formatTime(hold.expiresAt);
+      doc.text(`Expires: ${expiresFormatted} (${timeRemaining})`, 20, yPos);
+      yPos += 7;
+
+      // Notes
+      if (hold.notes) {
+        doc.text(`Notes: ${hold.notes}`, 20, yPos);
+        yPos += 7;
+      }
+
+      yPos += 5;
+
+      // Facility Information Section
+      if (facility) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Facility Information', 20, yPos);
+        yPos += 10;
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+
+        if (facility.name) {
+          doc.text(`Facility: ${facility.name}`, 20, yPos);
+          yPos += 7;
+        }
+
+        if (facility.addressLine1) {
+          let address = facility.addressLine1;
+          if (facility.addressLine2) {
+            address += `, ${facility.addressLine2}`;
+          }
+          if (facility.city) {
+            address += `, ${facility.city}`;
+          }
+          if (facility.state) {
+            address += `, ${facility.state}`;
+          }
+          if (facility.postalCode) {
+            address += ` ${facility.postalCode}`;
+          }
+          doc.text(`Address: ${address}`, 20, yPos);
+          yPos += 7;
+        }
+
+        if (facility.phone) {
+          doc.text(`Phone: ${facility.phone}`, 20, yPos);
+          yPos += 7;
+        }
+      }
+
+      // Footer
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 20, pageHeight - 10);
+
+      // Save the PDF
+      const fileName = `client-info-${hold.id.substring(0, 8)}.pdf`;
+      doc.save(fileName);
+      showToast('PDF generated successfully', 'success');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast('Failed to generate PDF', 'error');
+    }
+  };
+
   return (
     <Container>
       <Stack gap='md'>
@@ -372,7 +525,17 @@ function CheckIn () {
         {/* Subject Information Card */}
         <MantineCard p='md'>
           <Stack gap='md'>
-            <Text fw={500} size='lg'>Subject Information</Text>
+            <Group justify='space-between' align='center'>
+              <Text fw={500} size='lg'>Subject Information</Text>
+              <Button
+                leftSection={<IconFileDownload size={16} />}
+                variant='outline'
+                size='sm'
+                onClick={generatePDF}
+              >
+                Generate PDF
+              </Button>
+            </Group>
 
             <Group align='flex-start' gap='md'>
               {/* Photo placeholder */}

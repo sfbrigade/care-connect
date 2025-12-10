@@ -12,7 +12,7 @@ import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
 import { useToast } from '@/components/ToastContext';
-import { formatTime } from '@/utils/dateTime';
+import { formatTime, calculateAge } from '@/utils/dateTime';
 import { useAuthContext } from '@/AuthContext';
 
 function Holds () {
@@ -335,9 +335,7 @@ function Holds () {
               <Stack gap='md'>
                 {userHolds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
-                  const age = hold.client?.dateOfBirth
-                    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-                    : null;
+                  const age = calculateAge(hold.client?.dateOfBirth);
 
                   return (
                     <LESCHold
@@ -377,9 +375,7 @@ function Holds () {
               <Stack gap='md'>
                 {userHolds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
-                  const age = hold.client?.dateOfBirth
-                    ? Math.floor((Date.now() - new Date(hold.client.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-                    : null;
+                  const age = calculateAge(hold.client?.dateOfBirth);
 
                   return (
                     <LESCHold

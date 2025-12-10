@@ -14,7 +14,7 @@ const instance = axios.create({
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response.status === StatusCodes.UNAUTHORIZED) {
+    if (error.response?.status === StatusCodes.UNAUTHORIZED) {
       window.location = '/login';
     }
     return Promise.reject(error);

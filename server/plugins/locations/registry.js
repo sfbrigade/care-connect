@@ -3,7 +3,7 @@
  * Maps subdomains and paths to locations and app types
  */
 
-const LOCATIONS = {
+export const LOCATIONS = {
   DIDO: {
     name: 'DIDO',
     appType: 'dido',

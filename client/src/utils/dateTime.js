@@ -83,3 +83,19 @@ export function formatCreatedAt (createdAt) {
     return isCurrentYear ? `${month} ${day}` : `${month} ${day}, ${year}`;
   }
 }
+
+/**
+ * Calculate age from date of birth
+ * @param {string|Date} dateOfBirth - Date of birth
+ * @returns {number|null} - Age in years, or null if dateOfBirth is invalid
+ */
+export function calculateAge (dateOfBirth) {
+  if (!dateOfBirth) return null;
+  try {
+    const dob = new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) return null;
+    return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  } catch {
+    return null;
+  }
+}
