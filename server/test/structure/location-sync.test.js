@@ -14,11 +14,11 @@ const __dirname = dirname(__filename);
 test('location registry sync', async (t) => {
   await t.test('client and server LOCATIONS registries match', () => {
     // Read server registry
-    const serverRegistryPath = join(__dirname, '../../core/api/locations/registry.js');
+    const serverRegistryPath = join(__dirname, '../../plugins/locations/registry.js');
     const serverRegistryCode = readFileSync(serverRegistryPath, 'utf-8');
 
     // Read client registry
-    const clientRegistryPath = join(__dirname, '../../../client/core/utils/locationRegistry.js');
+    const clientRegistryPath = join(__dirname, '../../../client/src/utils/locationRegistry.js');
     const clientRegistryCode = readFileSync(clientRegistryPath, 'utf-8');
 
     // Extract LOCATIONS objects using regex (simple approach)
@@ -64,7 +64,7 @@ test('location registry sync', async (t) => {
   });
 
   await t.test('client location.js uses registry functions', () => {
-    const clientLocationPath = join(__dirname, '../../../client/core/utils/location.js');
+    const clientLocationPath = join(__dirname, '../../../client/src/utils/location.js');
     const clientLocationCode = readFileSync(clientLocationPath, 'utf-8');
 
     // Verify it imports from locationRegistry
