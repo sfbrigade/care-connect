@@ -3,11 +3,11 @@ import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Ale
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft, IconQrcode, IconAlertCircle, IconFileDownload } from '@tabler/icons-react';
-import { jsPDF } from 'jspdf';
 import Api from '@/Api';
 import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
-import { calculateAge } from '@/utils/dateTime';
+import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
+import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
 /**
@@ -336,174 +336,18 @@ function CheckIn () {
   // Calculate age from dateOfBirth if available
   const age = calculateAge(hold.client?.dateOfBirth);
 
-  // Format DOB
-  const formatDob = (dob) => {
-    if (!dob) return null;
-    const dobDate = new Date(dob);
-    const month = String(dobDate.getMonth() + 1).padStart(2, '0');
-    const day = String(dobDate.getDate()).padStart(2, '0');
-    const year = dobDate.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
-  // Format time
-  const formatTime = (date) => {
-    const d = new Date(date);
-    const hours = d.getHours();
-    const minutes = d.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayH = hours % 12 || 12;
-    const displayM = minutes.toString().padStart(2, '0');
-    return `${displayH}:${displayM} ${ampm}`;
-  };
-
-  // Generate PDF with client information
+  // Generate 647(f) Transfer Form PDF
   const generatePDF = () => {
-    if (!hold || !hold.client) {
-      showToast('No client information available', 'error');
+    if (!hold) {
+      showToast('No hold information available', 'error');
       return;
     }
 
     try {
-      // eslint-disable-next-line new-cap
-      const doc = new jsPDF();
-      let yPos = 20;
-
-      // Title
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Client Information', 20, yPos);
-      yPos += 15;
-
-      // Subject Information Section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Subject Information', 20, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-
-      // Name
-      const clientName = hold.client
-        ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim()
-        : 'No name provided';
-      doc.text(`Name: ${clientName}`, 20, yPos);
-      yPos += 7;
-
-      // Date of Birth
-      if (hold.client?.dateOfBirth) {
-        const dobFormatted = formatDob(hold.client.dateOfBirth);
-        const ageText = age !== null ? ` (${age} yrs old)` : '';
-        doc.text(`Date of Birth: ${dobFormatted}${ageText}`, 20, yPos);
-        yPos += 7;
-      }
-
-      // Sex
-      if (hold.client?.sex) {
-        doc.text(`Sex: ${hold.client.sex}`, 20, yPos);
-        yPos += 7;
-      }
-
-      // Race
-      if (hold.client?.race) {
-        doc.text(`Race: ${hold.client.race}`, 20, yPos);
-        yPos += 7;
-      }
-
-      yPos += 5;
-
-      // Hold Summary Section
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Hold Summary', 20, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-
-      // Hold ID
-      doc.text(`Hold ID: ${hold.id.substring(0, 8).toUpperCase()}...`, 20, yPos);
-      yPos += 7;
-
-      // Holder
-      if (hold.createdBy) {
-        doc.text(`Holder: ${hold.createdBy.firstName} ${hold.createdBy.lastName}`, 20, yPos);
-        yPos += 7;
-      }
-
-      // Service Type
-      if (hold.serviceTypeName) {
-        doc.text(`Service Type: ${hold.serviceTypeName}`, 20, yPos);
-        yPos += 7;
-      }
-
-      // Beds
-      doc.text(`Beds Requested: ${hold.bedsRequested}`, 20, yPos);
-      yPos += 7;
-
-      // Expires
-      const expiresFormatted = formatTime(hold.expiresAt);
-      doc.text(`Expires: ${expiresFormatted} (${timeRemaining})`, 20, yPos);
-      yPos += 7;
-
-      // Notes
-      if (hold.notes) {
-        doc.text(`Notes: ${hold.notes}`, 20, yPos);
-        yPos += 7;
-      }
-
-      yPos += 5;
-
-      // Facility Information Section
-      if (facility) {
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Facility Information', 20, yPos);
-        yPos += 10;
-
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-
-        if (facility.name) {
-          doc.text(`Facility: ${facility.name}`, 20, yPos);
-          yPos += 7;
-        }
-
-        if (facility.addressLine1) {
-          let address = facility.addressLine1;
-          if (facility.addressLine2) {
-            address += `, ${facility.addressLine2}`;
-          }
-          if (facility.city) {
-            address += `, ${facility.city}`;
-          }
-          if (facility.state) {
-            address += `, ${facility.state}`;
-          }
-          if (facility.postalCode) {
-            address += ` ${facility.postalCode}`;
-          }
-          doc.text(`Address: ${address}`, 20, yPos);
-          yPos += 7;
-        }
-
-        if (facility.phone) {
-          doc.text(`Phone: ${facility.phone}`, 20, yPos);
-          yPos += 7;
-        }
-      }
-
-      // Footer
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'italic');
-      doc.text(`Generated: ${new Date().toLocaleString()}`, 20, pageHeight - 10);
-
-      // Save the PDF
-      const fileName = `client-info-${hold.id.substring(0, 8)}.pdf`;
-      doc.save(fileName);
-      showToast('PDF generated successfully', 'success');
+      const doc = generate647fTransferFormPDF(hold, facility);
+      // Open PDF in browser
+      doc.output('dataurlnewwindow');
+      showToast('647(f) Transfer Form opened in new window', 'success');
     } catch (error) {
       console.error('Error generating PDF:', error);
       showToast('Failed to generate PDF', 'error');
