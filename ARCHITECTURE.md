@@ -204,7 +204,7 @@ In summary, keeping both methods provides development convenience while maintain
 
 ### Implementation
 
-Location detection happens in the `server/core/api/locations/index.js` plugin, which:
+Location detection happens in the `server/plugins/locations/index.js` plugin, which:
 - Runs on every request via Fastify `onRequest` hook
 - Sets `request.location`, `request.appType`, and `request.locationMethod`
 - Sets these to `null` if no location is detected (results in 404)
@@ -213,7 +213,7 @@ Location detection happens in the `server/core/api/locations/index.js` plugin, w
 
 ### Detection Flow
 
-The client uses `client/core/utils/location.js` to detect the current application:
+The client uses `client/src/utils/location.js` to detect the current application:
 
 1. **SSR Check**: Returns `null` if `window` is undefined (server-side rendering)
 2. **Subdomain Check**: Extract subdomain from `window.location.hostname`
@@ -287,7 +287,7 @@ function MyComponent() {
 
 ### Backend Filtering
 
-Facility filtering happens in `server/core/api/facilities/index.js`:
+Facility filtering happens in `server/routes/api/facilities/index.js`:
 
 ```javascript
 // LESC app: Only facilities with LESC service type
@@ -342,7 +342,7 @@ export async function autoExpireHolds(prisma, now = new Date()) {
 
 ### Date/Time Utilities
 
-**Location**: `client/core/utils/dateTime.js`
+**Location**: `client/src/utils/dateTime.js`
 
 Shared date/time formatting functions:
 - `formatTimeRemaining`: Time until expiration
@@ -393,7 +393,7 @@ care-connect/
 
 **File**: `server/test/structure/location-sync.test.js`
 
-Ensures client-side location detection (`client/core/utils/location.js`) stays in sync with server-side location registry (`server/core/api/locations/registry.js`).
+Ensures client-side location detection (`client/src/utils/location.js`) stays in sync with server-side location registry (`server/plugins/locations/registry.js`).
 
 ### Facility Filtering Test
 
@@ -473,7 +473,7 @@ To add a third application (e.g., "SHELTER"), follow these steps:
 
 ### Step 1: Update Location Registry
 
-**File**: `server/core/api/locations/registry.js`
+**File**: `server/plugins/locations/registry.js`
 
 Add the new location to the `LOCATIONS` object:
 
@@ -499,7 +499,7 @@ export const LOCATIONS = {
 
 ### Step 2: Update Client Location Detection
 
-**File**: `client/core/utils/location.js`
+**File**: `client/src/utils/location.js`
 
 Add detection logic for the new app:
 
@@ -678,7 +678,7 @@ Add route for the new app:
 
 ### Step 8: Add Facility Filtering (If Needed)
 
-**File**: `server/core/api/facilities/index.js`
+**File**: `server/routes/api/facilities/index.js`
 
 If the new app needs facility filtering, update the filtering logic:
 

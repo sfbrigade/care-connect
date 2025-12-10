@@ -99,4 +99,3 @@ export function calculateAge (dateOfBirth) {
     return null;
   }
 }
-

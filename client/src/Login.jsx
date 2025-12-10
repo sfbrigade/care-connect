@@ -175,7 +175,7 @@ function Login () {
             <Stack gap='xs'>
               {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
               {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
-              
+
               {/* Email Input */}
               <Box>
                 <Text
@@ -249,11 +249,13 @@ function Login () {
                       onClick={() => setPasswordVisible(!passwordVisible)}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                     >
-                      {passwordVisible ? (
-                        <IconEyeOff size={24} color='#868e96' />
-                      ) : (
-                        <IconEye size={24} color='#868e96' />
-                      )}
+                      {passwordVisible
+                        ? (
+                          <IconEyeOff size={24} color='#868e96' />
+                          )
+                        : (
+                          <IconEye size={24} color='#868e96' />
+                          )}
                     </Box>
                   }
                   styles={{

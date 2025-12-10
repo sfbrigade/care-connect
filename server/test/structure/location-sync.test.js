@@ -70,7 +70,7 @@ test('location registry sync', async (t) => {
     // Verify it imports from locationRegistry
     assert.ok(
       clientLocationCode.includes('locationRegistry'),
-      'client/core/utils/location.js should import from locationRegistry'
+      'client/src/utils/location.js should import from locationRegistry'
     );
 
     // Verify it uses the registry functions instead of hardcoded checks
@@ -138,4 +138,3 @@ function extractLocationsFromCode (code) {
 
   return locations;
 }
-

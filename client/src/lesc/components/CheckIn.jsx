@@ -365,6 +365,7 @@ function CheckIn () {
     }
 
     try {
+      // eslint-disable-next-line new-cap
       const doc = new jsPDF();
       let yPos = 20;
 
@@ -522,21 +523,21 @@ function CheckIn () {
         </Button>
 
         {/* Subject Information Card */}
-        <MantineCard p="md">
-          <Stack gap="md">
-            <Group justify="space-between" align="center">
-              <Text fw={500} size="lg">Subject Information</Text>
+        <MantineCard p='md'>
+          <Stack gap='md'>
+            <Group justify='space-between' align='center'>
+              <Text fw={500} size='lg'>Subject Information</Text>
               <Button
                 leftSection={<IconFileDownload size={16} />}
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onClick={generatePDF}
               >
                 Generate PDF
               </Button>
             </Group>
-            
-            <Group align="flex-start" gap="md">
+
+            <Group align='flex-start' gap='md'>
               {/* Photo placeholder */}
               <div
                 style={{

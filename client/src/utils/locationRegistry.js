@@ -1,7 +1,7 @@
 /**
  * Location Registry
  * Maps subdomains and paths to locations and app types
- * This should stay in sync with server/core/api/locations/registry.js
+ * This should stay in sync with server/plugins/locations/registry.js
  */
 
 export const LOCATIONS = {
@@ -67,4 +67,3 @@ export function getAppTypeForLocation (locationName) {
   const location = LOCATIONS[locationName];
   return location ? location.appType : null;
 }
-

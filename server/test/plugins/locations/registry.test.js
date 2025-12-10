@@ -6,7 +6,7 @@ import {
   detectLocationFromPath,
   getAppTypeForLocation,
   detectLocation,
-} from '../../../../core/api/locations/registry.js';
+} from '../../../plugins/locations/registry.js';
 
 test('location registry', async (t) => {
   await t.test('LOCATIONS contains DIDO and LESC', () => {
@@ -152,4 +152,3 @@ test('location registry', async (t) => {
     });
   });
 });
-
