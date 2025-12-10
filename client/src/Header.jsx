@@ -5,10 +5,10 @@ import { ActionIcon, Anchor, Avatar, Container, Group, Menu, Title } from '@mant
 import { IconMenu2, IconMessages } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import Api from '../core/Api';
-import { useAuthContext } from '../core/AuthContext';
-import { useStaticContext } from '../core/StaticContext';
-import { getLocation } from '../core/utils/location';
+import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
+import { useStaticContext } from '@/StaticContext';
+import { getLocation } from '@/utils/location';
 
 function Header ({ opened, close, toggle }) {
   const navigate = useNavigate();

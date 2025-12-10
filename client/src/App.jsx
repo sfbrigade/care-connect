@@ -1,5 +1,4 @@
 /* eslint-disable @stylistic/jsx-indent */
-/* eslint-disable @stylistic/jsx-closing-tag-location */
 
 import { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, useLocation } from 'react-router';
@@ -12,12 +11,12 @@ import { useHead } from '@unhead/react';
 
 import './App.css';
 
-import AuthContextProvider from '../core/AuthContextProvider';
+import AuthContextProvider from './AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
-import { useStaticContext } from '../core/StaticContext';
-import { getLocation } from '../core/utils/location';
-import { ToastProvider } from '../core/components/ToastContext';
-import ToastContainer from '../core/components/ToastContainer';
+import { useStaticContext } from './StaticContext';
+import { getLocation } from './utils/location';
+import { ToastProvider } from './components/ToastContext';
+import ToastContainer from './components/ToastContainer';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
@@ -33,12 +32,12 @@ import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
-const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
-const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
-const DIDOHeader = lazy(() => import('../apps/dido/components/DIDOHeader'));
-const LESCHeader = lazy(() => import('../apps/lesc/components/LESCHeader'));
-const DIDOMobileNavbar = lazy(() => import('../apps/dido/components/DIDOMobileNavbar'));
-const LESCMobileNavbar = lazy(() => import('../apps/lesc/components/LESCMobileNavbar'));
+const LESCRoutes = lazy(() => import('./lesc/routes/LESCRoutes'));
+const DIDORoutes = lazy(() => import('./dido/routes/DIDORoutes'));
+const DIDOHeader = lazy(() => import('./dido/components/DIDOHeader'));
+const LESCHeader = lazy(() => import('./lesc/components/LESCHeader'));
+const DIDOMobileNavbar = lazy(() => import('./dido/components/DIDOMobileNavbar'));
+const LESCMobileNavbar = lazy(() => import('./lesc/components/LESCMobileNavbar'));
 
 const queryClient = new QueryClient();
 
@@ -47,7 +46,7 @@ function App () {
   const staticContext = useStaticContext();
   const location = useMemo(() => getLocation(staticContext), [staticContext]);
   const routeLocation = useLocation();
-  
+
   useHead({
     titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? 'CareConnectSF'}`
   });
@@ -79,7 +78,7 @@ function App () {
                     element={
                       <AppRedirects>
                         <Routes>
-                          <Route path='/' element={<Home />} />
+                          {!location && <Route path='/' element={<Home />} />}
                           <Route path='/login' element={<Login />} />
                           <Route path='/passwords/*' element={<PasswordsRoutes />} />
                           <Route path='/invites/*' element={<InvitesRoutes />} />
@@ -111,7 +110,8 @@ function App () {
                             }
                           />
                           {/* App routes - location-aware routing for subdomain-based access */}
-                          {AppRoutes ? (
+                          {AppRoutes
+                            ? (
                             <Route
                               path='/*' element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
@@ -119,9 +119,10 @@ function App () {
                                 </Suspense>
                               }
                             />
-                          ) : (
+                              )
+                            : (
                             <Route path='/*' element={<NotFound />} />
-                          )}
+                              )}
                         </Routes>
                       </AppRedirects>
                     }
@@ -137,7 +138,8 @@ function App () {
             <AuthContextProvider>
               <PosthogProvider />
               <ToastContainer />
-              {isDIDORoute ? (
+              {isDIDORoute
+                ? (
                 <AppShell
                   header={{ height: 60 }}
                   padding='md'
@@ -151,7 +153,8 @@ function App () {
                     {appContent}
                   </AppShell.Main>
                 </AppShell>
-              ) : (
+                  )
+                : (
                 <AppShell
                   header={{ height: 60 }}
                   navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
@@ -171,7 +174,7 @@ function App () {
                     {appContent}
                   </AppShell.Main>
                 </AppShell>
-              )}
+                  )}
             </AuthContextProvider>
           </ToastProvider>
         </ModalsProvider>

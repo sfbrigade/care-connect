@@ -4,7 +4,7 @@ import { isEmail, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../../core/Api';
+import Api from '@/Api';
 
 function ForgotPassword () {
   const navigate = useNavigate();

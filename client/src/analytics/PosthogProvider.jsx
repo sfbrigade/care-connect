@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import { useAuthContext } from '../../core/AuthContext';
-import { useStaticContext } from '../../core/StaticContext';
+import { useAuthContext } from '@/AuthContext';
+import { useStaticContext } from '@/StaticContext';
 
 const DEFAULT_API_HOST = 'https://app.posthog.com';
 

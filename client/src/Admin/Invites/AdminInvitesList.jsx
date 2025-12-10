@@ -6,8 +6,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
-import Api from '../../../core/Api';
-import Pagination from '../../../core/components/Pagination';
+import Api from '@/Api';
+import Pagination from '@/components/Pagination';
 
 function AdminInvitesList () {
   const queryClient = useQueryClient();

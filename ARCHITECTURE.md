@@ -20,7 +20,7 @@ Care Connect is a multi-app platform that serves multiple location-specific appl
 
 ### Location Registry
 
-The location configuration is defined in `server/core/api/locations/registry.js`:
+The location configuration is defined in `server/plugins/locations/registry.js`:
 
 ```javascript
 export const LOCATIONS = {
@@ -223,7 +223,7 @@ The client uses `client/core/utils/location.js` to detect the current applicatio
 ### Usage in React Components
 
 ```javascript
-import { getLocation } from '../core/utils/location';
+import { getLocation } from '@/utils/location';
 
 function MyComponent() {
   const location = getLocation();
@@ -326,7 +326,7 @@ else if (appType === 'dido') {
 
 ### Auto-Expire Holds
 
-**Location**: `server/apps/lesc/lib/holds.js`
+**Location**: `server/lib/lesc/lib/holds.js`
 
 Shared utility function for auto-expiring bed holds:
 
@@ -337,8 +337,8 @@ export async function autoExpireHolds(prisma, now = new Date()) {
 ```
 
 **Used by**:
-- `server/apps/lesc/api/availability.js`
-- `server/apps/lesc/api/holds/index.js`
+- `server/routes/api/lesc/availability/list.js`
+- `server/routes/api/lesc/holds/*.js`
 
 ### Date/Time Utilities
 
@@ -355,38 +355,36 @@ Shared date/time formatting functions:
 ```
 care-connect/
 ├── client/
-│   ├── apps/
-│   │   ├── dido/
-│   │   │   ├── components/     # DIDO-specific components
-│   │   │   ├── routes/         # DIDO routes
-│   │   │   └── config.js       # DIDO configuration
-│   │   └── lesc/
-│   │       ├── components/     # LESC-specific components
-│   │       ├── routes/          # LESC routes
-│   │       └── config.js        # LESC configuration
-│   ├── core/
-│   │   ├── components/         # Shared components
-│   │   ├── utils/
-│   │   │   ├── location.js     # Client location detection
-│   │   │   └── dateTime.js     # Date/time utilities
-│   │   └── Api.js              # API client
 │   └── src/
-│       └── App.jsx              # Main app router
+│       ├── components/         # Shared components
+│       ├── dido/
+│       │   ├── components/     # DIDO-specific components
+│       │   ├── routes/         # DIDO routes
+│       └── lesc/
+│       │   ├── components/     # LESC-specific components
+│       │   ├── routes/         # LESC routes
+│       ├── utils/
+│       │   ├── location.js     # Client location detection
+│       │   └── dateTime.js     # Date/time utilities
+│       ├── Api.js              # API client
+│       └── App.jsx             # Main app router
 └── server/
-    ├── apps/
+    ├── lib/
     │   └── lesc/
-    │       ├── api/             # LESC API routes
-    │       └── lib/
-    │           └── holds.js      # Shared hold utilities
-    ├── core/
-    │   └── api/
-    │       ├── locations/
-    │       │   ├── registry.js  # Location configuration
-    │       │   └── index.js     # Location detection plugin
-    │       └── facilities/
-    │           └── index.js      # Facility API with filtering
+    │           └── holds.js    # LESC hold utilities
+    ├── plugins/
+    │   └── locations/
+    │       ├── registry.js     # Location configuration
+    │       └── index.js        # Location detection plugin
     └── routes/
-        └── root.js              # Root route handler (SSR)
+        └── api/
+        │   ├── lesc/           # LESC API routes
+        │   ├── locations/
+        │   │   ├── registry.js # Location configuration
+        │   │   └── index.js    # Location detection plugin
+        │   └── facilities/
+        │       └── index.js    # Facility API with filtering
+        └── root.js             # Root route handler (SSR)
 ```
 
 ## Testing

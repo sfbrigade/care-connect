@@ -2,14 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, useForm } from '@mantine/form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../core/Api';
-import { useAuthContext } from '../core/AuthContext';
-import { useStaticContext } from '../core/StaticContext';
-import { getLocation } from '../core/utils/location';
-import { useQueryClient } from '@tanstack/react-query';
+import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
+import { useStaticContext } from '@/StaticContext';
+import { getLocation } from '@/utils/location';
 import { StatusCodes } from 'http-status-codes';
 
 function Login () {
@@ -28,7 +27,7 @@ function Login () {
     if (typeof from === 'object' && from.pathname) return from.pathname;
     return '/';
   }, [from]);
-  
+
   // Determine which app we're logging into
   // Check from parameter first, then current pathname, then static context
   const appName = useMemo(() => {

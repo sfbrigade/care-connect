@@ -13,31 +13,31 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 export default defineConfig(({ command, ssrBuild, mode }) => {
   // Check if this is an SSR build - ssrBuild should be true when building with --ssr flag
   const isSSRBuild = ssrBuild === true || (command === 'build' && process.argv.includes('--ssr'));
-  
+
   return {
     plugins: [react()],
     resolve: {
       alias: {
-        src: '/src',
-        components: '/src/core/components'
+        '@': '/src',
+        components: '/src/components'
       }
     },
     build: {
       rollupOptions: isSSRBuild
         ? {}
         : {
-        output: {
-          // Only apply manualChunks for client builds, not SSR builds
-          // SSR builds mark React as external, so it can't be in manualChunks
-          manualChunks: {
-            // Core platform - shared across all apps
-            'core-vendor': ['react', 'react-dom', 'react-router'],
-            'core-ui': ['@mantine/core', '@mantine/hooks', '@mantine/modals'],
-            'core-utils': ['axios', '@tanstack/react-query'],
-            // App-specific chunks will be created automatically via dynamic imports
+            output: {
+              // Only apply manualChunks for client builds, not SSR builds
+              // SSR builds mark React as external, so it can't be in manualChunks
+              manualChunks: {
+                // Core platform - shared across all apps
+                'core-vendor': ['react', 'react-dom', 'react-router'],
+                'core-ui': ['@mantine/core', '@mantine/hooks', '@mantine/modals'],
+                'core-utils': ['axios', '@tanstack/react-query'],
+                // App-specific chunks will be created automatically via dynamic imports
+              },
+            },
           },
-        },
-      },
     },
     server: {
       // Enable HTTPS for camera access on iOS
@@ -66,26 +66,26 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
     },
     test: {
       projects: [{
-      extends: true,
-      plugins: [
-      // The plugin will run tests for the stories defined in your Storybook config
-      // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-        storybookTest({
-          configDir: path.join(dirname, '.storybook')
-        })],
-      test: {
-        name: 'storybook',
-        browser: {
-          enabled: true,
-          headless: true,
-          provider: playwright({}),
-          instances: [{
-            browser: 'chromium'
-          }]
-        },
-        setupFiles: ['.storybook/vitest.setup.js']
-      }
-    }]
+        extends: true,
+        plugins: [
+          // The plugin will run tests for the stories defined in your Storybook config
+          // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+          storybookTest({
+            configDir: path.join(dirname, '.storybook')
+          })],
+        test: {
+          name: 'storybook',
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [{
+              browser: 'chromium'
+            }]
+          },
+          setupFiles: ['.storybook/vitest.setup.js']
+        }
+      }]
     }
   };
 });

@@ -3,7 +3,7 @@ import { Container, Paper, Stack, Table, Text, Pagination, Loader, Center } from
 import { StatusCodes } from 'http-status-codes';
 import { useState } from 'react';
 
-import Api from '../../core/Api';
+import Api from '@/Api';
 
 function FeedbackList () {
   const [page, setPage] = useState(1);

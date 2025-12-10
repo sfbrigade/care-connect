@@ -4,11 +4,11 @@
 
 This application uses a **multi-app platform architecture** that supports multiple location-specific app instances from a shared codebase:
 
-- **Core Platform** (`client/core/`, `server/core/`): Shared components, utilities, API routes, and authentication
-- **DIDO App** (`client/apps/dido/`, `server/apps/dido/`): Default app for facility browsing and mapping
+- **Core Platform**: Shared components, utilities, API routes, and authentication
+- **DIDO App**: Default app for facility browsing and mapping
   - Accessible at: `/dido/*` or via subdomain (`dido.example.com`, `www.example.com`)
   - Uses core facilities API
-- **LESC App** (`client/apps/lesc/`, `server/apps/lesc/`): Location-specific app for availability and intake
+- **LESC App**: Location-specific app for availability and intake
   - Accessible at: `/lesc/*` or via subdomain (`lesc.example.com`)
   - Has app-specific API routes (`/api/lesc/*`)
 
