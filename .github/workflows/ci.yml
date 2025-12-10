@@ -4,8 +4,6 @@ on:
     branches:
       - "dev"
       - "main"
-      - "lesc-dev"
-      - "lesc-main"
   pull_request:
     types: [opened, reopened, synchronize]
   
@@ -39,7 +37,7 @@ jobs:
   meta:
     name: Generate and check metadata
     needs: test
-    if: ${{ github.ref_name == 'dev' || github.ref_name == 'main' || github.ref_name == 'lesc-dev' || github.ref_name == 'lesc-main' }}
+    if: ${{ github.ref_name == 'dev' || github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.environment.outputs.environment }}
@@ -54,13 +52,9 @@ jobs:
         id: environment
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "environment=dido" >> "$GITHUB_OUTPUT"
+            echo "environment=main" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.ref_name }}" == "dev" ]]; then
-            echo "environment=dido-dev" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.ref_name }}" == "lesc-main" ]]; then
-            echo "environment=lesc" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.ref_name }}" == "lesc-dev" ]]; then
-            echo "environment=lesc-dev" >> "$GITHUB_OUTPUT"
+            echo "environment=dev" >> "$GITHUB_OUTPUT"
           fi
       - name: Docker meta
         id: meta
