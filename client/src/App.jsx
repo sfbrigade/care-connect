@@ -32,12 +32,12 @@ import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
 
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
-const LESCRoutes = lazy(() => import('../apps/lesc/routes/LESCRoutes'));
-const DIDORoutes = lazy(() => import('../apps/dido/routes/DIDORoutes'));
-const DIDOHeader = lazy(() => import('../apps/dido/components/DIDOHeader'));
-const LESCHeader = lazy(() => import('../apps/lesc/components/LESCHeader'));
-const DIDOMobileNavbar = lazy(() => import('../apps/dido/components/DIDOMobileNavbar'));
-const LESCMobileNavbar = lazy(() => import('../apps/lesc/components/LESCMobileNavbar'));
+const LESCRoutes = lazy(() => import('./lesc/routes/LESCRoutes'));
+const DIDORoutes = lazy(() => import('./dido/routes/DIDORoutes'));
+const DIDOHeader = lazy(() => import('./dido/components/DIDOHeader'));
+const LESCHeader = lazy(() => import('./lesc/components/LESCHeader'));
+const DIDOMobileNavbar = lazy(() => import('./dido/components/DIDOMobileNavbar'));
+const LESCMobileNavbar = lazy(() => import('./lesc/components/LESCMobileNavbar'));
 
 const queryClient = new QueryClient();
 

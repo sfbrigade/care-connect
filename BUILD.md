@@ -4,9 +4,9 @@
 
 This application uses a multi-app architecture with a shared core platform:
 
-- **Core Platform** (`core/`): Shared API routes, UI components, and utilities
-- **DIDO App** (`apps/dido/`): Default app for facility browsing
-- **LESC App** (`apps/lesc/`): Law Enforcement Sobering Center app
+- **Core Platform**: Shared API routes, UI components, and utilities
+- **DIDO App**: Default app for facility browsing
+- **LESC App**: Law Enforcement Sobering Center app
 
 ## Build Process
 

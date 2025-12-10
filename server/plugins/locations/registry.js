@@ -80,6 +80,7 @@ export function detectLocation (request) {
   const host = request.headers.host || '';
   const pathname = request.urlData('path') || request.url.split('?')[0];
   const referer = request.headers.referer || request.headers.referrer || '';
+  console.log('!!!', host, pathname, referer);
 
   // First try subdomain detection
   const subdomainLocation = detectLocationFromSubdomain(host);

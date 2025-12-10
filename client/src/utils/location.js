@@ -79,9 +79,9 @@ export function getLocation (staticContext) {
 export async function getAppRoutes (appType) {
   switch (appType) {
     case 'lesc':
-      return (await import('../../apps/lesc/routes/LESCRoutes')).default;
+      return (await import('../lesc/routes/LESCRoutes')).default;
     case 'dido':
     default:
-      return (await import('../../apps/dido/routes/DIDORoutes')).default;
+      return (await import('../dido/routes/DIDORoutes')).default;
   }
 }
