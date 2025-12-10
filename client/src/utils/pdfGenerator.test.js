@@ -129,7 +129,6 @@ describe('PDF Generator', () => {
 
       const doc = generate647fTransferFormPDF(holdWithoutClient);
 
-      const textCalls = doc.text.mock.calls.map(call => call[0]);
       // Should still generate PDF but with TBD values
       expect(doc).toBeDefined();
     });
