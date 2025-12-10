@@ -9,7 +9,6 @@ export default fp(async function (fastify) {
   // Add location detection hook
   fastify.addHook('onRequest', async (request) => {
     const locationInfo = detectLocation(request);
-    console.log("???", locationInfo);
     if (locationInfo) {
       request.location = locationInfo.location;
       request.appType = locationInfo.appType;
