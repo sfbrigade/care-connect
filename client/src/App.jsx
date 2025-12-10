@@ -78,7 +78,7 @@ function App () {
                     element={
                       <AppRedirects>
                         <Routes>
-                          <Route path='/' element={<Home />} />
+                          {!location && <Route path='/' element={<Home />} />}
                           <Route path='/login' element={<Login />} />
                           <Route path='/passwords/*' element={<PasswordsRoutes />} />
                           <Route path='/invites/*' element={<InvitesRoutes />} />
