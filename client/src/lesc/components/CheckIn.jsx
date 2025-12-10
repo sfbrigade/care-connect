@@ -6,8 +6,8 @@ import { IconArrowLeft, IconQrcode, IconAlertCircle, IconFileDownload } from '@t
 import Api from '@/Api';
 import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
-import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
-import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
+import { calculateAge, formatTime } from '@/utils/dateTime';
+import { generate647fTransferFormPDF, fillSFSOFormP04 } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
 /**
@@ -354,6 +354,31 @@ function CheckIn () {
     }
   };
 
+  // Generate SFSO Form P04 PDF
+  const generateSFSOForm = async () => {
+    if (!hold) {
+      showToast('No hold information available', 'error');
+      return;
+    }
+
+    try {
+      const pdfBytes = await fillSFSOFormP04(hold, facility);
+      
+      // Create a blob and open in new window
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Clean up the URL after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      showToast('SFSO Form P04 opened in new window', 'success');
+    } catch (error) {
+      console.error('Error generating SFSO form PDF:', error);
+      showToast('Failed to generate SFSO form PDF', 'error');
+    }
+  };
+
   return (
     <Container>
       <Stack gap='md'>
@@ -369,17 +394,7 @@ function CheckIn () {
         {/* Subject Information Card */}
         <MantineCard p='md'>
           <Stack gap='md'>
-            <Group justify='space-between' align='center'>
-              <Text fw={500} size='lg'>Subject Information</Text>
-              <Button
-                leftSection={<IconFileDownload size={16} />}
-                variant='outline'
-                size='sm'
-                onClick={generatePDF}
-              >
-                Generate PDF
-              </Button>
-            </Group>
+            <Text fw={500} size='lg'>Subject Information</Text>
 
             <Group align='flex-start' gap='md'>
               {/* Photo placeholder */}
@@ -427,6 +442,26 @@ function CheckIn () {
                   </div>
                 )}
               </Stack>
+            </Group>
+
+            {/* PDF Buttons below photo */}
+            <Group gap='lg'>
+              <Button
+                leftSection={<IconFileDownload size={16} />}
+                variant='outline'
+                size='sm'
+                onClick={generatePDF}
+              >
+                647(f) PDF
+              </Button>
+              <Button
+                leftSection={<IconFileDownload size={16} />}
+                variant='outline'
+                size='sm'
+                onClick={generateSFSOForm}
+              >
+                849 PDF
+              </Button>
             </Group>
           </Stack>
         </MantineCard>
