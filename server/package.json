@@ -12,9 +12,11 @@
     "lint": "eslint --fix",
     "pretest": "eslint",
     "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
     "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "test:minio": "TEST_USE_MINIO=true node --test-concurrency 1 --test $(find test -name '*.test.js')",
     "import:clinics": "node bin/import-clinics.js",
     "geocode:facilities": "node bin/geocode-facilities.js"
   },

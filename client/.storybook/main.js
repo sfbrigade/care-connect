@@ -1,4 +1,5 @@
 import { dirname } from 'path';
+import { mergeConfig } from 'vite';
 
 import { fileURLToPath } from 'url';
 
@@ -14,7 +15,9 @@ function getAbsolutePath (value) {
 const config = {
   stories: [
     '../src/**/*.mdx',
-    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../core/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    '../apps/**/*.stories.@(js|jsx|mjs|ts|tsx)'
   ],
   addons: [
     getAbsolutePath('@chromatic-com/storybook'),
@@ -27,6 +30,33 @@ const config = {
   framework: {
     name: getAbsolutePath('@storybook/react-vite'),
     options: {}
+  },
+  async viteFinal (config, { configType }) {
+    const mergedConfig = mergeConfig(config, {
+      esbuild: {
+        ...config.esbuild,
+        loader: {
+          ...config.esbuild?.loader,
+          '.js': 'jsx',
+          '.mjs': 'jsx'
+        }
+      }
+    });
+
+    // Ensure optimizeDeps also uses jsx loader
+    if (!mergedConfig.optimizeDeps) {
+      mergedConfig.optimizeDeps = {};
+    }
+    if (!mergedConfig.optimizeDeps.esbuildOptions) {
+      mergedConfig.optimizeDeps.esbuildOptions = {};
+    }
+    if (!mergedConfig.optimizeDeps.esbuildOptions.loader) {
+      mergedConfig.optimizeDeps.esbuildOptions.loader = {};
+    }
+    mergedConfig.optimizeDeps.esbuildOptions.loader['.js'] = 'jsx';
+    mergedConfig.optimizeDeps.esbuildOptions.loader['.mjs'] = 'jsx';
+
+    return mergedConfig;
   }
 };
 export default config;

@@ -42,6 +42,11 @@ function config () {
 
 // automatically build and tear down our instance
 async function build (t) {
+  // PostgreSQL + Docker containers mode
+  return await buildPostgres(t);
+}
+
+async function buildPostgres (t) {
   // disable the ryuk cleanup container, cannot connect from the compose network
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
@@ -54,7 +59,10 @@ async function build (t) {
   // set up the default template (template1) with the schema and fixtures
   const TEMPLATE_DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`;
   // run the migrations
-  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push`);
+  const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
+  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
+    cwd: path.join(__dirname, '..'),
+  });
   const prisma = new PrismaClient({
     datasourceUrl: TEMPLATE_DATABASE_URL,
   });
@@ -84,7 +92,45 @@ async function build (t) {
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
   process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
-  await s3.createBucket(process.env.AWS_S3_BUCKET);
+
+  // Reset S3 client to ensure it uses the new environment variables
+  s3.reset();
+
+  // Wait for MinIO to be ready and verify it's initialized
+  let readyRetries = 15;
+  while (readyRetries > 0) {
+    const isReady = await s3.checkReady();
+    if (isReady) {
+      // Wait a bit more to ensure MinIO is fully stable
+      await sleep(500);
+      break;
+    }
+    readyRetries--;
+    await sleep(500); // Check every 500ms
+  }
+  if (readyRetries === 0) {
+    throw new Error('MinIO server did not become ready after multiple attempts.');
+  }
+
+  // Retry creating bucket in case it doesn't exist yet
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      await s3.createBucket(process.env.AWS_S3_BUCKET);
+      break;
+    } catch (error) {
+      // Bucket might already exist, which is fine
+      if (error.name === 'BucketAlreadyOwnedByYou' || error.name === 'BucketAlreadyExists') {
+        break;
+      }
+      console.warn(`MinIO bucket creation failed, retrying... (${error.message})`);
+      retries--;
+      await sleep(1000); // Wait a bit before retrying
+    }
+  }
+  if (retries === 0) {
+    throw new Error('Failed to create MinIO bucket after multiple retries.');
+  }
 
   // you can set all the options supported by the fastify CLI command
   const argv = [AppPath];
@@ -98,9 +144,13 @@ async function build (t) {
   async function recreateDb () {
     await t.prisma.$disconnect();
     await app.prisma.$disconnect();
-    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS ${startedDbContainer.getDatabase()} WITH (FORCE)`);
+    // Ensure prisma client is connected to template1 before executing raw SQL
+    await prisma.$connect();
+    const dbName = startedDbContainer.getDatabase();
+    // Quote database name to handle special characters and ensure proper SQL escaping
+    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     await sleep(100);
-    await prisma.$executeRawUnsafe(`CREATE DATABASE ${startedDbContainer.getDatabase()} `);
+    await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     await app.prisma.$connect();
     await t.prisma.$connect();
   }
@@ -109,8 +159,15 @@ async function build (t) {
   t.afterEach(async () => {
     // clear sent mail
     nodemailerMock.mock.reset();
-    // clear test assets
-    await s3.deleteObjects('_test/');
+    // clear test assets (only if MinIO is initialized)
+    try {
+      await s3.deleteObjects('_test/');
+    } catch (error) {
+      // Ignore errors if MinIO isn't available
+      if (!error.message?.includes('not initialized')) {
+        throw error;
+      }
+    }
     // reset test database after each test
     return recreateDb();
   });

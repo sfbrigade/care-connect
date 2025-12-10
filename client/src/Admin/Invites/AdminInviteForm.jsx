@@ -4,7 +4,7 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../../Api';
+import Api from '../../../core/Api';
 
 function AdminInviteForm () {
   const navigate = useNavigate();

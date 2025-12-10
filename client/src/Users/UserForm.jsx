@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useLocation, useParams, useNavigate } from 'react-router';
 import { Alert, Button, Checkbox, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../Api';
-import { useAuthContext } from '../AuthContext';
-import PhotoInput from '../Components/PhotoInput';
+import Api from '../../core/Api';
+import { useAuthContext } from '../../core/AuthContext';
+import PhotoInput from '../../core/components/PhotoInput';
 
 function UserForm () {
   const authContext = useAuthContext();
   const location = useLocation();
   const params = useParams();
-  const userId = params.userId ?? authContext.user.id;
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const userId = params.userId ?? authContext.user?.id;
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -53,7 +55,7 @@ function UserForm () {
     mutationFn: (values) => Api.users.update(userId, values),
     onMutate: () => setSuccess(false),
     onSuccess: (response) => {
-      if (userId === authContext.user.id) {
+      if (userId === authContext.user?.id) {
         authContext.setUser(response.data);
       }
       setSuccess(true);
@@ -62,6 +64,24 @@ function UserForm () {
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
   const [success, setSuccess] = useState(false);
+
+  function handleCancel () {
+    // Navigate back to previous page
+    navigate(-1);
+  }
+
+  async function onLogout (event) {
+    event.preventDefault();
+    await Api.auth.logout();
+    queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    authContext.setUser(null);
+    navigate('/');
+  }
+
+  // Don't render if user is not loaded yet or userId is missing
+  if (!authContext.user || !userId) {
+    return null;
+  }
 
   return (
     <>
@@ -102,8 +122,9 @@ function UserForm () {
                 key={form.key('password')}
                 label='Password'
                 type='password'
+                autoComplete="new-password"
               />
-              {authContext.user.isAdmin && (
+              {authContext.user?.isAdmin && (
                 <Checkbox
                   {...form.getInputProps('isAdmin', { type: 'checkbox' })}
                   key={form.key('isAdmin')}
@@ -112,6 +133,20 @@ function UserForm () {
               )}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
+                <Button 
+                  variant="light" 
+                  onClick={handleCancel}
+                  disabled={onSubmitMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="outline" 
+                  color="red" 
+                  onClick={onLogout}
+                >
+                  Log Out
+                </Button>
               </Group>
             </Stack>
           </Fieldset>

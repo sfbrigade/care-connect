@@ -1,10 +1,12 @@
 .facility-map {
   position: relative;
+  z-index: 400;
 }
 
 /* Style the Leaflet map container */
 .facility-map .leaflet-container {
   background-color: #f8f9fa;
+  z-index: 400;
 }
 
 /* Apply subtle filters to map tiles */
