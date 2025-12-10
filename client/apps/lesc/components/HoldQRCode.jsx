@@ -4,9 +4,9 @@ import { Modal, Stack, Text, Button, Group, Loader, Alert } from '@mantine/core'
 import { IconRefresh, IconClock, IconAlertCircle } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 
-import Api from '../../../core/Api';
-import QRCode from '../../../core/components/QRCode';
-import { useToast } from '../../../core/components/ToastContext';
+import Api from '@/Api';
+import QRCode from '@/components/QRCode';
+import { useToast } from '@/components/ToastContext';
 
 /**
  * Component for displaying QR code for a bed hold
@@ -67,46 +67,46 @@ export default function HoldQRCode ({ holdId, opened, onClose, onDone }) {
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Transfer QR Code"
-      size="md"
+      title='Transfer QR Code'
+      size='md'
       centered
     >
-      <Stack gap="md">
+      <Stack gap='md'>
         {isLoading && (
-          <Group justify="center" p="xl">
+          <Group justify='center' p='xl'>
             <Loader />
           </Group>
         )}
 
         {error && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red">
+          <Alert icon={<IconAlertCircle size={16} />} color='red'>
             {error.response?.data?.error || 'Failed to generate QR code'}
           </Alert>
         )}
 
         {data && (
           <>
-            <Stack align="center" gap="md">
+            <Stack align='center' gap='md'>
               <QRCode value={data.qrUrl} size={256} />
-              <Text size="sm" c="dimmed" ta="center">
+              <Text size='sm' c='dimmed' ta='center'>
                 Scan this QR code to transfer the hold
               </Text>
             </Stack>
 
             {timeRemaining && (
-              <Group justify="space-between" p="md" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                <Group gap="xs">
+              <Group justify='space-between' p='md' style={{ backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                <Group gap='xs'>
                   <IconClock size={16} />
-                  <Text size="sm" fw={500}>
+                  <Text size='sm' fw={500}>
                     Expires in: {timeRemaining}
                   </Text>
                 </Group>
               </Group>
             )}
 
-            <Group justify="space-between">
+            <Group justify='space-between'>
               <Button
-                variant="outline"
+                variant='outline'
                 leftSection={<IconRefresh size={16} />}
                 onClick={handleRefresh}
               >
@@ -129,4 +129,3 @@ export default function HoldQRCode ({ holdId, opened, onClose, onDone }) {
     </Modal>
   );
 }
-

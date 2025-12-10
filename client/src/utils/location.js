@@ -85,4 +85,3 @@ export async function getAppRoutes (appType) {
       return (await import('../../apps/dido/routes/DIDORoutes')).default;
   }
 }
-

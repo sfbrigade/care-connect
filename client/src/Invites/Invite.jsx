@@ -3,8 +3,8 @@ import { Box, Container, Stack, Title } from '@mantine/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../../core/Api';
-import { useAuthContext } from '../../core/AuthContext';
+import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import RegistrationForm from '../RegistrationForm';
 
 function Invite () {

@@ -5,11 +5,11 @@ import { Container, Stack, Title, Text, Button, Group, Loader, Alert, Card, Text
 import { IconAlertCircle, IconCheck, IconQrcode } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
 
-import Api from '../../../core/Api';
+import Api from '@/Api';
 import LESCFacility from './LESCFacility';
-import QRScanner from '../../../core/components/QRScanner';
-import { useToast } from '../../../core/components/ToastContext';
-import { formatTime } from '../../../core/utils/dateTime';
+import QRScanner from '@/components/QRScanner';
+import { useToast } from '@/components/ToastContext';
+import { formatTime } from '@/utils/dateTime';
 
 /**
  * Transfer page component
@@ -123,12 +123,12 @@ export default function Transfer () {
   // If hold is already transferred, show message
   if (transferStatusData?.isTransferred) {
     return (
-      <Container size="md" py="xl">
-        <Stack gap="md">
-          <Alert icon={<IconAlertCircle size={16} />} color="yellow" title="Already Transferred">
+      <Container size='md' py='xl'>
+        <Stack gap='md'>
+          <Alert icon={<IconAlertCircle size={16} />} color='yellow' title='Already Transferred'>
             This hold has already been transferred.
             {transferStatusData.transferredAt && (
-              <Text size="sm" mt="xs">
+              <Text size='sm' mt='xs'>
                 Transferred at: {DateTime.fromISO(transferStatusData.transferredAt).toLocaleString(DateTime.DATETIME_MED)}
               </Text>
             )}
@@ -144,12 +144,12 @@ export default function Transfer () {
   const facility = facilitiesData?.facilities?.find(f => f.id === holdData?.facilityId);
 
   return (
-    <Container size="md" py="xl">
-      <Stack gap="lg">
+    <Container size='md' py='xl'>
+      <Stack gap='lg'>
         <Title order={2}>Transfer Bed Hold</Title>
 
         {!holdId && !showScanner && !manualEntry && (
-          <Stack gap="md">
+          <Stack gap='md'>
             <Text>Scan a QR code or enter hold details manually.</Text>
             <Group>
               <Button
@@ -159,7 +159,7 @@ export default function Transfer () {
                 Scan QR Code
               </Button>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={() => setManualEntry(true)}
               >
                 Enter Manually
@@ -169,8 +169,8 @@ export default function Transfer () {
         )}
 
         {showScanner && (
-          <Card p="md">
-            <Stack gap="md">
+          <Card p='md'>
+            <Stack gap='md'>
               <Text fw={500}>Scan QR Code</Text>
               <QRScanner
                 onScanSuccess={handleQRScan}
@@ -180,7 +180,7 @@ export default function Transfer () {
                   }
                 }}
               />
-              <Button variant="outline" onClick={() => setShowScanner(false)}>
+              <Button variant='outline' onClick={() => setShowScanner(false)}>
                 Cancel
               </Button>
             </Stack>
@@ -188,18 +188,18 @@ export default function Transfer () {
         )}
 
         {manualEntry && (
-          <Card p="md">
-            <Stack gap="md">
+          <Card p='md'>
+            <Stack gap='md'>
               <Text fw={500}>Enter Hold Details</Text>
               <TextInput
-                label="Hold ID"
-                placeholder="Enter hold ID"
+                label='Hold ID'
+                placeholder='Enter hold ID'
                 value={holdId}
                 onChange={(e) => setHoldId(e.target.value)}
               />
               <TextInput
-                label="Transfer Token"
-                placeholder="Enter transfer token"
+                label='Transfer Token'
+                placeholder='Enter transfer token'
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
               />
@@ -207,7 +207,7 @@ export default function Transfer () {
                 <Button onClick={handleManualSubmit}>
                   Continue
                 </Button>
-                <Button variant="outline" onClick={() => setManualEntry(false)}>
+                <Button variant='outline' onClick={() => setManualEntry(false)}>
                   Cancel
                 </Button>
               </Group>
@@ -218,32 +218,32 @@ export default function Transfer () {
         {holdId && token && !showScanner && !manualEntry && (
           <>
             {isLoadingHolds && (
-              <Group justify="center" p="xl">
+              <Group justify='center' p='xl'>
                 <Loader />
               </Group>
             )}
 
             {holdData && facility && (
-              <Stack gap="md">
-                <Card p="md">
-                  <Stack gap="sm">
-                    <Text fw={500} size="lg">Hold Details</Text>
+              <Stack gap='md'>
+                <Card p='md'>
+                  <Stack gap='sm'>
+                    <Text fw={500} size='lg'>Hold Details</Text>
                     <LESCFacility facility={facility} />
                     <Group>
-                      <Text size="sm" c="dimmed">Hold ID:</Text>
-                      <Text size="sm" fw={500}>{holdId}</Text>
+                      <Text size='sm' c='dimmed'>Hold ID:</Text>
+                      <Text size='sm' fw={500}>{holdId}</Text>
                     </Group>
                     {holdData.expiresAt && (
                       <Group>
-                        <Text size="sm" c="dimmed">Expires:</Text>
-                        <Text size="sm">{formatTime(holdData.expiresAt)}</Text>
+                        <Text size='sm' c='dimmed'>Expires:</Text>
+                        <Text size='sm'>{formatTime(holdData.expiresAt)}</Text>
                       </Group>
                     )}
                   </Stack>
                 </Card>
 
-                <Alert icon={<IconAlertCircle size={16} />} color="blue">
-                  <Text size="sm">
+                <Alert icon={<IconAlertCircle size={16} />} color='blue'>
+                  <Text size='sm'>
                     Confirm that you want to transfer this hold. This action cannot be undone.
                   </Text>
                 </Alert>
@@ -256,7 +256,7 @@ export default function Transfer () {
                   >
                     Confirm Transfer
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/lesc/holds')}>
+                  <Button variant='outline' onClick={() => navigate('/lesc/holds')}>
                     Cancel
                   </Button>
                 </Group>
@@ -268,4 +268,3 @@ export default function Transfer () {
     </Container>
   );
 }
-

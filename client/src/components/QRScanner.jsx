@@ -23,8 +23,8 @@ function isCameraSupported () {
  * Check if running over HTTPS or localhost
  */
 function isSecureContext () {
-  return window.isSecureContext || 
-    window.location.protocol === 'https:' || 
+  return window.isSecureContext ||
+    window.location.protocol === 'https:' ||
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1';
 }
@@ -64,7 +64,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
     try {
       setError(null);
       setShowStartButton(false);
-      
+
       // Check browser support first
       if (!isCameraSupported()) {
         throw new Error('Camera access is not supported by this browser. Please use a modern browser like Safari, Chrome, or Firefox.');
@@ -74,7 +74,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       if (!isSecureContext()) {
         throw new Error('Camera access requires HTTPS. Please access this page over HTTPS or from localhost.');
       }
-      
+
       // Ensure the div exists
       if (!scannerRef.current) {
         throw new Error('Scanner container not found');
@@ -97,15 +97,15 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       try {
         const cameras = await Html5Qrcode.getCameras();
         console.log('Available cameras:', cameras);
-        
+
         if (cameras && cameras.length > 0) {
           // Try to find back camera (environment facing)
-          const backCamera = cameras.find(cam => 
-            cam.label.toLowerCase().includes('back') || 
+          const backCamera = cameras.find(cam =>
+            cam.label.toLowerCase().includes('back') ||
             cam.label.toLowerCase().includes('rear') ||
             cam.label.toLowerCase().includes('environment')
           );
-          
+
           // Use back camera if found, otherwise use first available
           cameraId = backCamera ? backCamera.id : cameras[0].id;
           console.log('Using camera:', cameraId);
@@ -128,12 +128,12 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
             },
             (errorMessage) => {
               // Filter out normal scanning errors - these happen continuously while scanning
-              const isScanError = 
+              const isScanError =
                 errorMessage.includes('No QR code found') ||
                 errorMessage.includes('NotFoundException') ||
                 errorMessage.includes('No multi-format reads') ||
                 errorMessage.includes('QR code parse error');
-              
+
               if (!isScanError) {
                 onScanError?.(errorMessage);
               }
@@ -150,12 +150,12 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
             },
             (errorMessage) => {
               // Filter out normal scanning errors - these happen continuously while scanning
-              const isScanError = 
+              const isScanError =
                 errorMessage.includes('No QR code found') ||
                 errorMessage.includes('NotFoundException') ||
                 errorMessage.includes('No multi-format reads') ||
                 errorMessage.includes('QR code parse error');
-              
+
               if (!isScanError) {
                 onScanError?.(errorMessage);
               }
@@ -167,11 +167,11 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
         if (cameraId) {
           try {
             const cameras = await Html5Qrcode.getCameras();
-            const frontCamera = cameras.find(cam => 
-              cam.label.toLowerCase().includes('front') || 
+            const frontCamera = cameras.find(cam =>
+              cam.label.toLowerCase().includes('front') ||
               cam.label.toLowerCase().includes('user')
             );
-            
+
             if (frontCamera && frontCamera.id !== cameraId) {
               console.log('Retrying with front camera:', frontCamera.id);
               await html5QrCode.start(
@@ -183,12 +183,12 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
                 },
                 (errorMessage) => {
                   // Filter out normal scanning errors - these happen continuously while scanning
-                  const isScanError = 
+                  const isScanError =
                     errorMessage.includes('No QR code found') ||
                     errorMessage.includes('NotFoundException') ||
                     errorMessage.includes('No multi-format reads') ||
                     errorMessage.includes('QR code parse error');
-                  
+
                   if (!isScanError) {
                     onScanError?.(errorMessage);
                   }
@@ -206,7 +206,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       }
     } catch (err) {
       let errorMsg = err.message || 'Failed to start camera';
-      
+
       // Provide more helpful error messages
       if (errorMsg.includes('NotAllowedError') || errorMsg.includes('Permission')) {
         errorMsg = 'Camera permission denied. Please allow camera access in your browser settings.';
@@ -231,7 +231,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       } else if (errorMsg.includes('Camera access requires HTTPS')) {
         // Keep the custom message
       }
-      
+
       setError(errorMsg);
       setIsScanning(false);
       setShowStartButton(true);
@@ -270,55 +270,55 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
   return (
     <div className={className}>
-      <div id="qr-reader" ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
-      
+      <div id='qr-reader' ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
+
       {error && (
-        <Alert icon={<IconAlertCircle size={16} />} title="Camera Error" color="red" mt="md">
-          <Text size="sm">{error}</Text>
+        <Alert icon={<IconAlertCircle size={16} />} title='Camera Error' color='red' mt='md'>
+          <Text size='sm'>{error}</Text>
           {error.includes('permission') && (
-            <Text size="xs" mt="xs">
+            <Text size='xs' mt='xs'>
               On iOS: Go to Settings → Safari → Camera → Allow
             </Text>
           )}
           {error.includes('HTTPS') && (
-            <Text size="xs" mt="xs">
+            <Text size='xs' mt='xs'>
               If accessing from iPhone, you need HTTPS. Try using your Mac's IP address with HTTPS, or use a tool like ngrok.
             </Text>
           )}
           {error.includes('not supported by this browser') && (
-            <Text size="xs" mt="xs">
+            <Text size='xs' mt='xs'>
               Make sure you're using Safari on iOS, or Chrome/Firefox/Safari on desktop.
             </Text>
           )}
         </Alert>
       )}
-      
+
       {!isScanning && showStartButton && (
-        <Button 
-          onClick={startScanning} 
-          type="button" 
-          fullWidth 
-          mt="md"
-          size="lg"
+        <Button
+          onClick={startScanning}
+          type='button'
+          fullWidth
+          mt='md'
+          size='lg'
         >
           {isIOSDevice ? 'Tap to Start Camera' : 'Start Camera'}
         </Button>
       )}
-      
+
       {isScanning && (
-        <Button 
-          onClick={stopScanning} 
-          type="button" 
-          variant="outline" 
-          fullWidth 
-          mt="md"
+        <Button
+          onClick={stopScanning}
+          type='button'
+          variant='outline'
+          fullWidth
+          mt='md'
         >
           Stop Camera
         </Button>
       )}
-      
+
       {isIOSDevice && !isScanning && !error && (
-        <Text size="xs" c="dimmed" mt="xs" ta="center">
+        <Text size='xs' c='dimmed' mt='xs' ta='center'>
           Tap the button above to start the camera
         </Text>
       )}
@@ -332,4 +332,3 @@ QRScanner.propTypes = {
   className: PropTypes.string,
   autoStart: PropTypes.bool,
 };
-

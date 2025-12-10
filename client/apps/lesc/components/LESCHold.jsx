@@ -1,5 +1,5 @@
 import { Box, Text, Group, Anchor } from '@mantine/core';
-import StatusBadge from '../../../core/components/StatusBadge';
+import StatusBadge from '@/components/StatusBadge';
 
 /**
  * LESCHold component for displaying individual bed hold cards
@@ -26,10 +26,10 @@ function LESCHold ({
 }) {
   // Extract hold ID for display (first 3 characters or full ID)
   const displayId = hold?.id ? hold.id.slice(0, 3).toUpperCase() : patientId || '001';
-  
+
   // Use patient name if provided, otherwise use hold notes or fallback
   const displayName = patientName || hold?.notes || 'Hold';
-  
+
   // Format DOB if provided
   const formatDob = (dob, age) => {
     if (!dob) return null;

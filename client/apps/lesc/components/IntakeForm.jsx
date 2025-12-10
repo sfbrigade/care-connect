@@ -3,7 +3,7 @@ import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, Numbe
 import { useNavigate, useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
-import Api from '../../../core/Api';
+import Api from '@/Api';
 
 /**
  * Date input component with spinners for month, day, and year
@@ -83,11 +83,11 @@ function DateInput ({ label, value, onChange, ...props }) {
 
   return (
     <div>
-      <Text size="sm" fw={500} mb={4}>{label}</Text>
-      <Group gap="xs" align="flex-start">
+      <Text size='sm' fw={500} mb={4}>{label}</Text>
+      <Group gap='xs' align='flex-start'>
         <NumberInput
-          label="Month"
-          placeholder="MM"
+          label='Month'
+          placeholder='MM'
           value={month}
           onChange={(val) => handleChange('month', val)}
           min={1}
@@ -101,8 +101,8 @@ function DateInput ({ label, value, onChange, ...props }) {
           {...props}
         />
         <NumberInput
-          label="Day"
-          placeholder="DD"
+          label='Day'
+          placeholder='DD'
           value={day}
           onChange={(val) => handleChange('day', val)}
           min={1}
@@ -116,8 +116,8 @@ function DateInput ({ label, value, onChange, ...props }) {
           {...props}
         />
         <NumberInput
-          label="Year"
-          placeholder="YYYY"
+          label='Year'
+          placeholder='YYYY'
           value={year}
           onChange={(val) => handleChange('year', val)}
           min={1900}
@@ -222,14 +222,14 @@ function IntakeForm () {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (isEditMode) {
       // Update existing client
       updateClientMutation.mutate(formData);
     } else {
       // Check if hold has existing client
       const existingClientId = holdResponse?.data?.client?.id;
-      
+
       if (existingClientId) {
         // Update existing client linked to hold
         try {
@@ -245,7 +245,7 @@ function IntakeForm () {
             sex: formData.sex || null,
             race: formData.race || null,
           });
-          
+
           queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
           queryClient.invalidateQueries({ queryKey: ['lesc-hold', holdId] });
           queryClient.invalidateQueries({ queryKey: ['clients', existingClientId] });

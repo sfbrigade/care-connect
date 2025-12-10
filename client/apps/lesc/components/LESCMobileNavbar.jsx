@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
 
-import { useAuthContext } from '../../../core/AuthContext';
+import { useAuthContext } from '@/AuthContext';
 
 function LESCMobileNavbar ({ close }) {
   const { user } = useAuthContext();
@@ -28,4 +28,3 @@ function LESCMobileNavbar ({ close }) {
 }
 
 export default LESCMobileNavbar;
-

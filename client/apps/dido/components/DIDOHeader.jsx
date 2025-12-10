@@ -5,8 +5,8 @@ import { ActionIcon, Anchor, Container, Group, Menu, Title } from '@mantine/core
 import { IconMessages } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
-import Api from '../../../core/Api';
-import { useAuthContext } from '../../../core/AuthContext';
+import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 
 function DIDOHeader ({ opened, close, toggle }) {
   const navigate = useNavigate();
@@ -87,4 +87,3 @@ function DIDOHeader ({ opened, close, toggle }) {
 }
 
 export default DIDOHeader;
-

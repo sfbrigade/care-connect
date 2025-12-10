@@ -47,4 +47,3 @@ function ToastContainer () {
 }
 
 export default ToastContainer;
-

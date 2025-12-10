@@ -1,6 +1,6 @@
 import { fn } from 'storybook/test';
 import { Group, Stack, Textarea, Button, Select, Text } from '@mantine/core';
-import Chip from '../../../core/components/Chip';
+import Chip from '@/components/Chip';
 import { useState } from 'react';
 
 export default {

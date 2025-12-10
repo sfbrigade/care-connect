@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { StatusCodes } from 'http-status-codes';
 import { Loader, Container } from '@mantine/core';
 
-import { useAuthContext } from '../core/AuthContext';
+import { useAuthContext } from '@/AuthContext';
 import { handleRedirects } from './AppRedirectsConfig';
-import Api from '../core/Api';
+import Api from '@/Api';
 
 function AppRedirects ({ children }) {
   const location = useLocation();
@@ -22,7 +22,7 @@ function AppRedirects ({ children }) {
   // Show loading while checking auth state
   if (isLoading && !authContext.user) {
     return (
-      <Container ta="center" py="xl">
+      <Container ta='center' py='xl'>
         <Loader />
       </Container>
     );

@@ -1,5 +1,4 @@
 /* eslint-disable @stylistic/jsx-indent */
-/* eslint-disable @stylistic/jsx-closing-tag-location */
 
 import { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, useLocation } from 'react-router';
@@ -12,12 +11,12 @@ import { useHead } from '@unhead/react';
 
 import './App.css';
 
-import AuthContextProvider from '../core/AuthContextProvider';
+import AuthContextProvider from './AuthContextProvider';
 import PosthogProvider from './analytics/PosthogProvider';
-import { useStaticContext } from '../core/StaticContext';
-import { getLocation } from '../core/utils/location';
-import { ToastProvider } from '../core/components/ToastContext';
-import ToastContainer from '../core/components/ToastContainer';
+import { useStaticContext } from './StaticContext';
+import { getLocation } from './utils/location';
+import { ToastProvider } from './components/ToastContext';
+import ToastContainer from './components/ToastContainer';
 import AppRedirects from './AppRedirects';
 import AppTheme from './AppTheme';
 import Header from './Header';
@@ -47,7 +46,7 @@ function App () {
   const staticContext = useStaticContext();
   const location = useMemo(() => getLocation(staticContext), [staticContext]);
   const routeLocation = useLocation();
-  
+
   useHead({
     titleTemplate: `%s - ${staticContext?.env?.VITE_SITE_TITLE ?? 'CareConnectSF'}`
   });
@@ -111,7 +110,8 @@ function App () {
                             }
                           />
                           {/* App routes - location-aware routing for subdomain-based access */}
-                          {AppRoutes ? (
+                          {AppRoutes
+                            ? (
                             <Route
                               path='/*' element={
                                 <Suspense fallback={<Container ta='center'><Loader /></Container>}>
@@ -119,9 +119,10 @@ function App () {
                                 </Suspense>
                               }
                             />
-                          ) : (
+                              )
+                            : (
                             <Route path='/*' element={<NotFound />} />
-                          )}
+                              )}
                         </Routes>
                       </AppRedirects>
                     }
@@ -137,7 +138,8 @@ function App () {
             <AuthContextProvider>
               <PosthogProvider />
               <ToastContainer />
-              {isDIDORoute ? (
+              {isDIDORoute
+                ? (
                 <AppShell
                   header={{ height: 60 }}
                   padding='md'
@@ -151,7 +153,8 @@ function App () {
                     {appContent}
                   </AppShell.Main>
                 </AppShell>
-              ) : (
+                  )
+                : (
                 <AppShell
                   header={{ height: 60 }}
                   navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
@@ -171,7 +174,7 @@ function App () {
                     {appContent}
                   </AppShell.Main>
                 </AppShell>
-              )}
+                  )}
             </AuthContextProvider>
           </ToastProvider>
         </ModalsProvider>

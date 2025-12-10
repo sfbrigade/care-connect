@@ -38,7 +38,7 @@ export const Default = {
   args: {
     opened: true
   },
-  render:() => {
+  render: () => {
     const [opened, { open, close }] = useDisclosure(false);
     return (
       <>
@@ -97,7 +97,7 @@ export const Loading = {
           })}
           holdIdentifier='001'
           holdName='John Doe'
-          loading={true}
+          loading
         />
       </>
     );

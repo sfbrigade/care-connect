@@ -4,7 +4,7 @@ import { Container, Title, Button, Table, Group, Badge, Loader, Alert, Text } fr
 import { modals } from '@mantine/modals';
 import { IconPlus, IconAlertCircle, IconTrash } from '@tabler/icons-react';
 
-import Api from '../../../core/Api';
+import Api from '@/Api';
 
 function AdminFacilitiesList () {
   const navigate = useNavigate();

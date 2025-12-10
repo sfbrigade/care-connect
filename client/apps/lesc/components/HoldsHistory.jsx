@@ -1,10 +1,10 @@
 import { Container, Stack, Text, Group } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import Api from '../../../core/Api';
-import Chip from '../../../core/components/Chip';
-import Card from '../../../core/components/Card';
+import Api from '@/Api';
+import Chip from '@/components/Chip';
+import Card from '@/components/Card';
 import { useState } from 'react';
-import { formatTimeRemaining, formatTimeUntil } from '../../../core/utils/dateTime';
+import { formatTimeRemaining, formatTimeUntil } from '@/utils/dateTime';
 
 /**
  * History view for holds - matches Figma "Availability Screen — History" design

@@ -4,8 +4,8 @@ import { Anchor, Button, Container, Group, Loader, Table, Title } from '@mantine
 import { useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../../../core/Api';
-import Pagination from '../../../core/components/Pagination';
+import Api from '@/Api';
+import Pagination from '@/components/Pagination';
 
 function AdminUsersList () {
   const { search } = useLocation();

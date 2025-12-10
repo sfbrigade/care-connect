@@ -12,10 +12,10 @@ export function formatTimeRemaining (expiresAt) {
   const expires = new Date(expiresAt);
   const diffMs = expires.getTime() - Date.now();
   const diffMins = Math.floor(diffMs / 60000);
-  
+
   if (diffMins < 0) return 'Expired';
   if (diffMins < 60) return `${diffMins} mins`;
-  
+
   const hours = Math.floor(diffMins / 60);
   const mins = diffMins % 60;
   return `${hours}h ${mins}m`;
@@ -83,4 +83,3 @@ export function formatCreatedAt (createdAt) {
     return isCurrentYear ? `${month} ${day}` : `${month} ${day}, ${year}`;
   }
 }
-

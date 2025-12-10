@@ -3,9 +3,9 @@ import { Container, Stack, Text, Group, Button, Card as MantineCard, Loader, Ale
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft, IconQrcode, IconAlertCircle } from '@tabler/icons-react';
-import Api from '../../../core/Api';
-import QRScanner from '../../../core/components/QRScanner';
-import { useToast } from '../../../core/components/ToastContext';
+import Api from '@/Api';
+import QRScanner from '@/components/QRScanner';
+import { useToast } from '@/components/ToastContext';
 import LESCFacility from './LESCFacility';
 
 /**
@@ -139,7 +139,7 @@ function CheckIn () {
           </Button>
 
           {!showScanner && !manualEntry && (
-            <Stack gap="md">
+            <Stack gap='md'>
               <Text>Scan a QR code or enter hold ID manually to check in.</Text>
               <Group>
                 <Button
@@ -149,7 +149,7 @@ function CheckIn () {
                   Scan QR Code
                 </Button>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={() => setManualEntry(true)}
                 >
                   Enter Hold ID
@@ -159,11 +159,11 @@ function CheckIn () {
           )}
 
           {showScanner && (
-            <MantineCard p="md">
-              <Stack gap="md">
+            <MantineCard p='md'>
+              <Stack gap='md'>
                 <Text fw={500}>Scan QR Code</Text>
                 <QRScanner
-                  autoStart={true}
+                  autoStart
                   onScanSuccess={handleQRScan}
                   onScanError={(err) => {
                     if (!err.includes('No QR code found')) {
@@ -171,10 +171,12 @@ function CheckIn () {
                     }
                   }}
                 />
-                <Button variant="outline" onClick={() => {
-                  setShowScanner(false);
-                  setManualEntry(true);
-                }}>
+                <Button
+                  variant='outline' onClick={() => {
+                    setShowScanner(false);
+                    setManualEntry(true);
+                  }}
+                >
                   Enter Hold ID
                 </Button>
               </Stack>
@@ -182,12 +184,12 @@ function CheckIn () {
           )}
 
           {manualEntry && (
-            <MantineCard p="md">
-              <Stack gap="md">
+            <MantineCard p='md'>
+              <Stack gap='md'>
                 <Text fw={500}>Enter Hold ID</Text>
                 <TextInput
-                  label="Hold ID"
-                  placeholder="Enter 3-character code (e.g., A21)"
+                  label='Hold ID'
+                  placeholder='Enter 3-character code (e.g., A21)'
                   value={manualHoldId}
                   onChange={(e) => setManualHoldId(e.target.value)}
                   onKeyDown={(e) => {
@@ -207,10 +209,12 @@ function CheckIn () {
                   <Button onClick={handleManualSubmit}>
                     Submit
                   </Button>
-                  <Button variant="outline" onClick={() => {
-                    setManualEntry(false);
-                    setManualHoldId('');
-                  }}>
+                  <Button
+                    variant='outline' onClick={() => {
+                      setManualEntry(false);
+                      setManualHoldId('');
+                    }}
+                  >
                     Cancel
                   </Button>
                 </Group>
@@ -234,7 +238,7 @@ function CheckIn () {
           >
             Back
           </Button>
-          <Group justify="center" p="xl">
+          <Group justify='center' p='xl'>
             <Loader />
           </Group>
         </Stack>
@@ -305,7 +309,7 @@ function CheckIn () {
             Back
           </Button>
           <Alert icon={<IconAlertCircle size={16} />} color={errorColor} title={errorTitle}>
-            <Text size="sm">{errorMessage}</Text>
+            <Text size='sm'>{errorMessage}</Text>
           </Alert>
           <Button onClick={() => {
             setHoldId('');
@@ -313,7 +317,8 @@ function CheckIn () {
             setManualEntry(false);
             setShowScanner(false);
             setShouldFetchHold(false);
-          }}>
+          }}
+          >
             Try Again
           </Button>
         </Stack>
@@ -365,11 +370,11 @@ function CheckIn () {
         </Button>
 
         {/* Subject Information Card */}
-        <MantineCard p="md">
-          <Stack gap="md">
-            <Text fw={500} size="lg">Subject Information</Text>
-            
-            <Group align="flex-start" gap="md">
+        <MantineCard p='md'>
+          <Stack gap='md'>
+            <Text fw={500} size='lg'>Subject Information</Text>
+
+            <Group align='flex-start' gap='md'>
               {/* Photo placeholder */}
               <div
                 style={{
@@ -384,14 +389,14 @@ function CheckIn () {
                   flexShrink: 0,
                 }}
               >
-                <Text size="sm" c="dimmed" ta="center" p="xs">Photo</Text>
+                <Text size='sm' c='dimmed' ta='center' p='xs'>Photo</Text>
               </div>
 
               {/* Subject details */}
-              <Stack gap="xs" style={{ flex: 1 }}>
+              <Stack gap='xs' style={{ flex: 1 }}>
                 <div>
-                  <Text size="xs" c="dimmed" fw={500} mb={4}>Name</Text>
-                  <Text size="md" fw={500}>
+                  <Text size='xs' c='dimmed' fw={500} mb={4}>Name</Text>
+                  <Text size='md' fw={500}>
                     {hold.client
                       ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim()
                       : 'No name provided'}
@@ -400,8 +405,8 @@ function CheckIn () {
 
                 {hold.client?.dateOfBirth && (
                   <div>
-                    <Text size="xs" c="dimmed" fw={500} mb={4}>Date of Birth</Text>
-                    <Text size="md">
+                    <Text size='xs' c='dimmed' fw={500} mb={4}>Date of Birth</Text>
+                    <Text size='md'>
                       {formatDob(hold.client.dateOfBirth)}
                       {age !== null && ` (${age} yrs old)`}
                     </Text>
@@ -410,8 +415,8 @@ function CheckIn () {
 
                 {hold.client?.sex && (
                   <div>
-                    <Text size="xs" c="dimmed" fw={500} mb={4}>Sex</Text>
-                    <Text size="md">{hold.client.sex}</Text>
+                    <Text size='xs' c='dimmed' fw={500} mb={4}>Sex</Text>
+                    <Text size='md'>{hold.client.sex}</Text>
                   </div>
                 )}
               </Stack>
@@ -420,51 +425,51 @@ function CheckIn () {
         </MantineCard>
 
         {facility && (
-          <MantineCard p="md">
-            <Stack gap="sm">
-              <Text fw={500} size="lg">Facility</Text>
+          <MantineCard p='md'>
+            <Stack gap='sm'>
+              <Text fw={500} size='lg'>Facility</Text>
               <LESCFacility facility={facility} />
             </Stack>
           </MantineCard>
         )}
 
         {/* Hold Summary Card */}
-        <MantineCard p="md">
-          <Stack gap="md">
-            <Text fw={500} size="lg">Hold Summary</Text>
-            
-            <Stack gap="xs">
+        <MantineCard p='md'>
+          <Stack gap='md'>
+            <Text fw={500} size='lg'>Hold Summary</Text>
+
+            <Stack gap='xs'>
               <Group>
-                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Hold ID:</Text>
-                <Text size="sm" fw={500}>{hold.id.substring(0, 8).toUpperCase()}...</Text>
+                <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Hold ID:</Text>
+                <Text size='sm' fw={500}>{hold.id.substring(0, 8).toUpperCase()}...</Text>
               </Group>
 
               {hold.createdBy && (
                 <Group>
-                  <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Holder:</Text>
-                  <Text size="sm">{hold.createdBy.firstName} {hold.createdBy.lastName}</Text>
+                  <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Holder:</Text>
+                  <Text size='sm'>{hold.createdBy.firstName} {hold.createdBy.lastName}</Text>
                 </Group>
               )}
 
               <Group>
-                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Service Type:</Text>
-                <Text size="sm">{hold.serviceTypeName}</Text>
+                <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Service Type:</Text>
+                <Text size='sm'>{hold.serviceTypeName}</Text>
               </Group>
 
               <Group>
-                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Beds:</Text>
-                <Text size="sm">{hold.bedsRequested}</Text>
+                <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Beds:</Text>
+                <Text size='sm'>{hold.bedsRequested}</Text>
               </Group>
 
               <Group>
-                <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Expires:</Text>
-                <Text size="sm">{formatTime(hold.expiresAt)} ({timeRemaining})</Text>
+                <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Expires:</Text>
+                <Text size='sm'>{formatTime(hold.expiresAt)} ({timeRemaining})</Text>
               </Group>
 
               {hold.notes && (
                 <Group>
-                  <Text size="sm" c="dimmed" style={{ minWidth: '100px' }}>Notes:</Text>
-                  <Text size="sm">{hold.notes}</Text>
+                  <Text size='sm' c='dimmed' style={{ minWidth: '100px' }}>Notes:</Text>
+                  <Text size='sm'>{hold.notes}</Text>
                 </Group>
               )}
             </Stack>

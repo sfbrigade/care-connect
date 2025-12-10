@@ -5,15 +5,15 @@ import { useDisclosure } from '@mantine/hooks';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
-import Api from '../../../core/Api';
+import Api from '@/Api';
 import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
-import { useToast } from '../../../core/components/ToastContext';
-import { formatTime } from '../../../core/utils/dateTime';
-import { useAuthContext } from '../../../core/AuthContext';
+import { useToast } from '@/components/ToastContext';
+import { formatTime } from '@/utils/dateTime';
+import { useAuthContext } from '@/AuthContext';
 
 function Holds () {
   const location = useLocation();
@@ -221,15 +221,15 @@ function Holds () {
 
       {/* Active holds breakdown by user */}
       {Object.keys(holdsByUser).length > 0 && (
-        <Alert icon={<IconInfoCircle size={16} />} color="blue" mb="md">
-          <Text size="sm" fw={500} mb={4}>
+        <Alert icon={<IconInfoCircle size={16} />} color='blue' mb='md'>
+          <Text size='sm' fw={500} mb={4}>
             Active holds
           </Text>
           <Stack gap={2}>
             {Object.entries(holdsByUser)
               .sort(([, a], [, b]) => b - a) // Sort by count descending
               .map(([userName, count]) => (
-                <Text key={userName} size="sm">
+                <Text key={userName} size='sm'>
                   {userName}: <strong>{count}</strong>
                 </Text>
               ))}

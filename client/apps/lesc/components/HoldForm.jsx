@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router';
 import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
-import Api from '../../../core/Api';
-import Chip from '../../../core/components/Chip';
+import Api from '@/Api';
+import Chip from '@/components/Chip';
 
 function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeId }) {
   const navigate = useNavigate();

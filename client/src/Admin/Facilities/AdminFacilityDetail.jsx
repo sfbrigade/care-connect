@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 
-import Api from '../../../core/Api';
+import Api from '@/Api';
 
 function AdminFacilityDetail () {
   const { id } = useParams();

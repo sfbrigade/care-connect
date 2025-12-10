@@ -1,6 +1,6 @@
 import { Box, Text, Group } from '@mantine/core';
-import StatusBadge from '../../../core/components/StatusBadge';
-import { formatTime } from '../../../core/utils/dateTime';
+import StatusBadge from '@/components/StatusBadge';
+import { formatTime } from '@/utils/dateTime';
 
 /**
  * LESCCard component for displaying LESC facility information

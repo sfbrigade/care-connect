@@ -4,9 +4,9 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router';
 import { useMemo } from 'react';
 
-import Api from '../../../core/Api';
+import Api from '@/Api';
 import LESCFacility from './LESCFacility';
-import { formatTime } from '../../../core/utils/dateTime';
+import { formatTime } from '@/utils/dateTime';
 
 function Facilities () {
   const navigate = useNavigate();
@@ -98,27 +98,27 @@ function Facilities () {
             <Alert>No LESC facilities found.</Alert>
             )
           : (
-            facilities?.map((facility) => {
-              const availableBeds = facility.calculatedAvailableBeds ?? 0;
-              const address = formatAddress(facility);
+              facilities?.map((facility) => {
+                const availableBeds = facility.calculatedAvailableBeds ?? 0;
+                const address = formatAddress(facility);
 
-              return (
-                <LESCFacility
-                  key={facility.id}
-                  facilityName={facility.name}
-                  address={address}
-                  bedCount={availableBeds}
-                  intakeHours='24/7'
-                  lastUpdated={facility.updatedAt ? formatTime(new Date(facility.updatedAt)) : undefined}
-                  onCurrentHoldsClick={() => navigate(`/lesc/holds/${facility.id}`)}
-                  onCallClick={() => {
+                return (
+                  <LESCFacility
+                    key={facility.id}
+                    facilityName={facility.name}
+                    address={address}
+                    bedCount={availableBeds}
+                    intakeHours='24/7'
+                    lastUpdated={facility.updatedAt ? formatTime(new Date(facility.updatedAt)) : undefined}
+                    onCurrentHoldsClick={() => navigate(`/lesc/holds/${facility.id}`)}
+                    onCallClick={() => {
                     // TODO: Implement call functionality
-                    console.log('Call facility:', facility.name);
-                  }}
-                  onHoldClick={() => navigate(`/lesc/holds/${facility.id}?create=true`)}
-                />
-              );
-            })
+                      console.log('Call facility:', facility.name);
+                    }}
+                    onHoldClick={() => navigate(`/lesc/holds/${facility.id}?create=true`)}
+                  />
+                );
+              })
             )}
       </Stack>
     </Container>
@@ -126,4 +126,3 @@ function Facilities () {
 }
 
 export default Facilities;
-

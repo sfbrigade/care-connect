@@ -5,9 +5,9 @@ import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
-import Api from '../../core/Api';
-import { useAuthContext } from '../../core/AuthContext';
-import PhotoInput from '../../core/components/PhotoInput';
+import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
+import PhotoInput from '@/components/PhotoInput';
 
 function UserForm () {
   const authContext = useAuthContext();
@@ -122,7 +122,7 @@ function UserForm () {
                 key={form.key('password')}
                 label='Password'
                 type='password'
-                autoComplete="new-password"
+                autoComplete='new-password'
               />
               {authContext.user?.isAdmin && (
                 <Checkbox
@@ -133,16 +133,16 @@ function UserForm () {
               )}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
-                <Button 
-                  variant="light" 
+                <Button
+                  variant='light'
                   onClick={handleCancel}
                   disabled={onSubmitMutation.isPending}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  variant="outline" 
-                  color="red" 
+                <Button
+                  variant='outline'
+                  color='red'
                   onClick={onLogout}
                 >
                   Log Out

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
 
-import { useAuthContext } from '../../../core/AuthContext';
+import { useAuthContext } from '@/AuthContext';
 
 function DIDOMobileNavbar ({ close }) {
   const { user } = useAuthContext();
@@ -9,7 +9,7 @@ function DIDOMobileNavbar ({ close }) {
   return (
     <Stack gap='md'>
       <MantineNavLink component={NavLink} to='/dido/' onClick={close} label='Home' />
-      
+
       {user && (
         <>
           {user.isAdmin && (
@@ -32,4 +32,3 @@ function DIDOMobileNavbar ({ close }) {
 }
 
 export default DIDOMobileNavbar;
-

@@ -19,7 +19,7 @@ export default function QRCode ({ value, size = 256, level = 'M', className = ''
         value={value}
         size={size}
         level={level}
-        includeMargin={true}
+        includeMargin
       />
     </div>
   );
@@ -31,4 +31,3 @@ QRCode.propTypes = {
   level: PropTypes.oneOf(['L', 'M', 'Q', 'H']),
   className: PropTypes.string,
 };
-

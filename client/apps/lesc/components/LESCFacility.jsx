@@ -1,6 +1,6 @@
 import { Box, Text, Group, Button, Stack } from '@mantine/core';
 import { IconBed } from '@tabler/icons-react';
-import { formatTime } from '../../../core/utils/dateTime';
+import { formatTime } from '@/utils/dateTime';
 
 /**
  * LESCFacility component for displaying LESC facility-level information
@@ -133,4 +133,3 @@ function LESCFacility ({
 }
 
 export default LESCFacility;
-

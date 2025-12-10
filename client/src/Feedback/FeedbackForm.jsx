@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Stack, Text, Textarea, TextInput, Alert } from '@mantine/core';
 
-import Api from '../../core/Api';
+import Api from '@/Api';
 
 function FeedbackForm ({ onSuccess }) {
   const [message, setMessage] = useState('');
