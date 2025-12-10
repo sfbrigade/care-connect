@@ -1,7 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import crypto from 'node:crypto';
-import { autoExpireHolds } from '../../lib/holds.js';
+
+import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:holdId',

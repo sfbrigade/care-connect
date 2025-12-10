@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
-import { autoExpireHolds } from '../../lib/holds.js';
+import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
   fastify.get('/:id/for-checkin',
