@@ -7,6 +7,9 @@ import { jsPDF } from 'jspdf';
 import { PDFDocument, PDFString, PDFName } from 'pdf-lib';
 import { formatDob, formatDateTime } from './dateTime.js';
 
+// Path to the SFSO Form P04 PDF template
+const SFSO_FORM_P04_PATH = '/static-data/forms/SFSO-FORM-P04-INVESTIGATIVE-DETENTION-REPORT.pdf';
+
 /**
  * Generate a 647(f) Transfer Form PDF document
  * @param {Object} hold - Hold object containing client and hold information
@@ -313,10 +316,8 @@ export async function analyzePDFFormMapping (pdfPath) {
  * Call this from browser console: await analyzeSFSOForm()
  */
 export async function analyzeSFSOForm () {
-  const formPath = '/forms/SFSO-FORM-P04-INVESTIGATIVE-DETENTION-REPORT.pdf';
-  
   try {
-    const result = await analyzePDFFormMapping(formPath);
+    const result = await analyzePDFFormMapping(SFSO_FORM_P04_PATH);
     
     console.log('=== PDF Form Analysis ===');
     console.log(`Total Fields: ${result.summary.totalFields}`);
@@ -357,8 +358,7 @@ export async function analyzeSFSOForm () {
  */
 export async function fillSFSOFormP04Debug () {
   // Load the PDF form
-  const formPath = '/forms/SFSO-FORM-P04-INVESTIGATIVE-DETENTION-REPORT.pdf';
-  const response = await fetch(formPath);
+  const response = await fetch(SFSO_FORM_P04_PATH);
   const pdfBytes = await response.arrayBuffer();
   
   // Load the PDF document
@@ -440,9 +440,35 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
   }
   
   // Load the PDF form
-  const formPath = '/forms/SFSO-FORM-P04-INVESTIGATIVE-DETENTION-REPORT.pdf';
-  const response = await fetch(formPath);
+  const response = await fetch(SFSO_FORM_P04_PATH);
+  
+  // Check if the response is OK
+  if (!response.ok) {
+    throw new Error(`Failed to fetch PDF form: ${response.status} ${response.statusText}. Path: ${SFSO_FORM_P04_PATH}`);
+  }
+  
+  // Check if the response is actually a PDF
+  const contentType = response.headers.get('content-type');
+  if (contentType && !contentType.includes('application/pdf') && !contentType.includes('application/octet-stream')) {
+    throw new Error(`Expected PDF but got ${contentType} from ${SFSO_FORM_P04_PATH}. The file may not be deployed correctly.`);
+  }
+  
   const pdfBytes = await response.arrayBuffer();
+  
+  // Verify it's actually a PDF by checking the header
+  const uint8Array = new Uint8Array(pdfBytes);
+  if (uint8Array.length < 4) {
+    throw new Error(`Invalid PDF file: file is too short. The file at ${SFSO_FORM_P04_PATH} may be corrupted.`);
+  }
+  const header = String.fromCharCode(...uint8Array.slice(0, 4));
+  if (header !== '%PDF') {
+    // Check if it's HTML (common 404 response)
+    const textStart = String.fromCharCode(...uint8Array.slice(0, Math.min(100, uint8Array.length)));
+    if (textStart.includes('<!DOCTYPE') || textStart.includes('<html')) {
+      throw new Error(`PDF form not found at ${SFSO_FORM_P04_PATH}. The file may not be deployed or the path is incorrect. Received HTML instead of PDF.`);
+    }
+    throw new Error(`Invalid PDF file: expected PDF header but got "${header}". The file at ${SFSO_FORM_P04_PATH} may be corrupted or not a valid PDF.`);
+  }
   
   // Load the PDF document
   const pdfDoc = await PDFDocument.load(pdfBytes);
