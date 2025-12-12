@@ -6,7 +6,7 @@ export default async function (fastify, opts) {
     {
       preHandler: fastify.requireUser,
       schema: {
-        description: 'Create a bed hold with 30 minute default expiration.',
+        description: 'Create a bed hold with 60 minute default expiration.',
         body: z.object({
           facilityId: z.string().uuid(),
           serviceTypeId: z.string().uuid(),
@@ -89,8 +89,8 @@ export default async function (fastify, opts) {
         });
       }
 
-      // Create multiple holds (one per bed) with 30 minute expiration
-      const expiresAt = new Date(now.getTime() + 30 * 60 * 1000);
+      // Create multiple holds (one per bed) with 60 minute expiration
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
 
       // Use a transaction to create all holds atomically
       const holds = await fastify.prisma.$transaction(
