@@ -44,12 +44,14 @@ function Chip ({
 
   // Merge styles: baseStyles, then props.style, then active/inactive/disabled, then ensure backgroundColor/color are last
   const { style: propsStyle, ...restProps } = props;
+  const customBackgroundColor = propsStyle?.backgroundColor;
+  const customColor = propsStyle?.color;
   const styles = {
     ...baseStyles,
     ...propsStyle,
     ...(disabled ? disabledStyles : (active ? activeStyles : inactiveStyles)),
-    backgroundColor: disabled ? '#e9ecef' : (active ? '#343a40' : '#f8f9fa'), // Set last to prevent overrides
-    color: disabled ? '#868e96' : (active ? '#ffffff' : '#212529'), // Set last to prevent overrides
+    backgroundColor: customBackgroundColor || (disabled ? '#e9ecef' : (active ? '#343a40' : '#f8f9fa')), // Use custom backgroundColor if provided
+    color: customColor || (disabled ? '#868e96' : (active ? '#ffffff' : '#212529')), // Use custom color if provided
   };
 
   if (onClick) {

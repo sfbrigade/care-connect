@@ -9,6 +9,7 @@
     "build:client": "vite build --outDir dist/client",
     "build:server": "vite build --ssr src/entry-server.jsx --outDir dist/server",
     "lint": "eslint --fix",
+    "lint:check": "eslint",
     "preview": "vite preview",
     "test": "",
     "storybook": "storybook dev -p 6006 --no-open",
