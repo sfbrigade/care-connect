@@ -176,7 +176,7 @@ export function generate647fTransferFormPDF (hold, facility = null) {
  * Analyze PDF form and create mapping from labels to field names
  * This function loads the PDF form, extracts all fields and text,
  * and attempts to match labels to form fields based on proximity
- * 
+ *
  * @param {string} pdfPath - Path to the PDF form file
  * @returns {Promise<Object>} Mapping object with label -> fieldName pairs
  */
@@ -185,17 +185,17 @@ export async function analyzePDFFormMapping (pdfPath) {
     // Fetch the PDF file
     const response = await fetch(pdfPath);
     const pdfBytes = await response.arrayBuffer();
-    
+
     // Load the PDF document
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
-    
+
     // Get all form fields
     const fields = form.getFields();
     const fieldInfo = fields.map((field, index) => {
       const fieldName = field.getName();
       const fieldType = field.constructor.name;
-      
+
       // Try to get field position (if available)
       let position = null;
       try {
@@ -212,7 +212,7 @@ export async function analyzePDFFormMapping (pdfPath) {
       } catch (e) {
         // Position not available
       }
-      
+
       return {
         index: index + 1,
         name: fieldName,
@@ -220,68 +220,68 @@ export async function analyzePDFFormMapping (pdfPath) {
         position
       };
     });
-    
+
     // Create a mapping based on field names and common patterns
     const mapping = {};
-    
+
     // Known field name patterns and their likely labels
     const fieldNamePatterns = {
       // Reporting/Deputy fields
-      'REPORTING': 'Reporting Deputy',
-      'REPORTING_UNIT': 'Reporting Unit',
-      'ASSIGNED_BY': 'Assigned By',
-      
+      REPORTING: 'Reporting Deputy',
+      REPORTING_UNIT: 'Reporting Unit',
+      ASSIGNED_BY: 'Assigned By',
+
       // Subject information
-      'NAME_LAST_FIRST_MIDDLE': 'Name (Last, First, Middle)',
-      'RACE': 'Race',
-      'SEX': 'Sex',
-      'DOBAGE': 'Date of Birth / Age',
-      'ALIAS': 'Alias',
-      'HEIGHT': 'Height',
-      'WEIGHT': 'Weight',
-      'HAIR': 'Hair',
-      'EYES': 'Eyes',
-      'RESIDENCE_ADDRESS': 'Residence Address',
-      'ZIP_CODE': 'Zip Code',
-      'CONTACT_PHONE': 'Contact Phone',
-      'ID_NO': 'ID Number',
-      'SF_NO': 'SF Number',
-      
+      NAME_LAST_FIRST_MIDDLE: 'Name (Last, First, Middle)',
+      RACE: 'Race',
+      SEX: 'Sex',
+      DOBAGE: 'Date of Birth / Age',
+      ALIAS: 'Alias',
+      HEIGHT: 'Height',
+      WEIGHT: 'Weight',
+      HAIR: 'Hair',
+      EYES: 'Eyes',
+      RESIDENCE_ADDRESS: 'Residence Address',
+      ZIP_CODE: 'Zip Code',
+      CONTACT_PHONE: 'Contact Phone',
+      ID_NO: 'ID Number',
+      SF_NO: 'SF Number',
+
       // Incident information
-      'DATETIME_OF_OCCURRENCE': 'Date/Time of Occurrence',
-      'LOCATION_OF_OCCURRENCE': 'Location of Occurrence',
-      'NARRATIVE': 'Narrative',
-      'OTHER_INFORMATION': 'Other Information',
-      
+      DATETIME_OF_OCCURRENCE: 'Date/Time of Occurrence',
+      LOCATION_OF_OCCURRENCE: 'Location of Occurrence',
+      NARRATIVE: 'Narrative',
+      OTHER_INFORMATION: 'Other Information',
+
       // Review/Approval
-      'REPORT_REVIEWED_BY': 'Report Reviewed By',
-      'WATCH_COMMANDER_APPROVAL': 'Watch Commander Approval',
-      
+      REPORT_REVIEWED_BY: 'Report Reviewed By',
+      WATCH_COMMANDER_APPROVAL: 'Watch Commander Approval',
+
       // Search information
-      'SUBJECT_HANDCUFFED': 'Subject Handcuffed',
-      'WEAPONS_SEARCH': 'Weapons Search',
-      'PROBATION_SEARCH': 'Probation Search',
-      'PAROLE_SEARCH': 'Parole Search',
-      'OTHER_SEARCH': 'Other Search',
-      'PROBATION': 'Probation',
-      'PAROLE': 'Parole',
-      'OTHER': 'Other',
-      'NONE': 'None',
-      
+      SUBJECT_HANDCUFFED: 'Subject Handcuffed',
+      WEAPONS_SEARCH: 'Weapons Search',
+      PROBATION_SEARCH: 'Probation Search',
+      PAROLE_SEARCH: 'Parole Search',
+      OTHER_SEARCH: 'Other Search',
+      PROBATION: 'Probation',
+      PAROLE: 'Parole',
+      OTHER: 'Other',
+      NONE: 'None',
+
       // Generic text fields (will need manual mapping)
-      'Textfield': 'Reporting Deputy', // Most likely candidate
-      'Textfield0': 'Reporting Deputy (alternate)', // Second candidate
-      'Text1': 'Text Field 1',
-      'Text2': 'Text Field 2',
-      'Text3': 'Text Field 3',
-      'Text4': 'Text Field 4',
-      'Text5': 'Text Field 5',
+      Textfield: 'Reporting Deputy', // Most likely candidate
+      Textfield0: 'Reporting Deputy (alternate)', // Second candidate
+      Text1: 'Text Field 1',
+      Text2: 'Text Field 2',
+      Text3: 'Text Field 3',
+      Text4: 'Text Field 4',
+      Text5: 'Text Field 5',
     };
-    
+
     // Build mapping from field names
     fieldInfo.forEach(field => {
       const fieldName = field.name;
-      
+
       // Check for exact matches in patterns
       for (const [pattern, label] of Object.entries(fieldNamePatterns)) {
         if (fieldName.includes(pattern) || fieldName === pattern) {
@@ -289,13 +289,13 @@ export async function analyzePDFFormMapping (pdfPath) {
           break;
         }
       }
-      
+
       // If no pattern match, add to unmapped fields
       if (!Object.values(mapping).includes(fieldName)) {
         mapping[`[UNMAPPED] ${fieldName}`] = fieldName;
       }
     });
-    
+
     return {
       fields: fieldInfo,
       mapping,
@@ -318,32 +318,32 @@ export async function analyzePDFFormMapping (pdfPath) {
 export async function analyzeSFSOForm () {
   try {
     const result = await analyzePDFFormMapping(SFSO_FORM_P04_PATH);
-    
+
     console.log('=== PDF Form Analysis ===');
     console.log(`Total Fields: ${result.summary.totalFields}`);
     console.log(`Mapped Fields: ${result.summary.mappedFields}`);
     console.log(`Unmapped Fields: ${result.summary.unmappedFields}`);
     console.log('\n=== All Fields ===');
-    
+
     result.fields.forEach(field => {
       console.log(`${field.index}. ${field.name} (${field.type})`);
       if (field.position) {
         console.log(`   Position: x=${field.position.x}, y=${field.position.y}`);
       }
     });
-    
+
     console.log('\n=== Field Mapping ===');
     Object.entries(result.mapping).forEach(([label, fieldName]) => {
       console.log(`${label} -> ${fieldName}`);
     });
-    
+
     console.log('\n=== Unmapped Fields (need manual mapping) ===');
     Object.entries(result.mapping)
       .filter(([label]) => label.startsWith('[UNMAPPED]'))
       .forEach(([label, fieldName]) => {
         console.log(`${fieldName} - needs label assignment`);
       });
-    
+
     return result;
   } catch (error) {
     console.error('Error analyzing form:', error);
@@ -360,33 +360,33 @@ export async function fillSFSOFormP04Debug () {
   // Load the PDF form
   const response = await fetch(SFSO_FORM_P04_PATH);
   const pdfBytes = await response.arrayBuffer();
-  
+
   // Load the PDF document
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const form = pdfDoc.getForm();
-  
+
   // Get all form fields
   const fields = form.getFields();
   let fieldCounter = 1;
-  
+
   console.log(`Found ${fields.length} total fields`);
-  
+
   // Fill each field with a unique ascending 4-digit integer and field name
   fields.forEach((field) => {
     try {
       const fieldName = field.getName();
       const fieldType = field.constructor.name;
-      
+
       // Check if field has setText method (text fields) or select method (dropdowns)
       const isTextField = typeof field.setText === 'function';
       const isDropdown = typeof field.select === 'function';
-      
+
       console.log(`${fieldCounter}. ${fieldName} (${fieldType}) - isTextField: ${isTextField}, isDropdown: ${isDropdown}`);
-      
+
       if (isTextField || isDropdown) {
         const number = String(fieldCounter).padStart(4, '0');
         const value = `${number}: ${fieldName}`;
-        
+
         if (isTextField) {
           field.setText(value);
           console.log(`  ✓ Set text field "${fieldName}" to "${value}"`);
@@ -409,19 +409,19 @@ export async function fillSFSOFormP04Debug () {
             }
           }
         }
-        
+
         fieldCounter++;
       } else {
         console.log(`  - Skipping field "${fieldName}" (not a text field or dropdown)`);
       }
     } catch (error) {
       // Field might not be accessible or wrong type
-      console.error(`Error processing field:`, error);
+      console.error('Error processing field:', error);
     }
   });
-  
+
   console.log(`\nProcessed ${fieldCounter - 1} fillable fields`);
-  
+
   // Save the PDF
   const pdfBytesOut = await pdfDoc.save();
   return pdfBytesOut;
@@ -438,23 +438,23 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
   if (!hold) {
     throw new Error('Hold information is required');
   }
-  
+
   // Load the PDF form
   const response = await fetch(SFSO_FORM_P04_PATH);
-  
+
   // Check if the response is OK
   if (!response.ok) {
     throw new Error(`Failed to fetch PDF form: ${response.status} ${response.statusText}. Path: ${SFSO_FORM_P04_PATH}`);
   }
-  
+
   // Check if the response is actually a PDF
   const contentType = response.headers.get('content-type');
   if (contentType && !contentType.includes('application/pdf') && !contentType.includes('application/octet-stream')) {
     throw new Error(`Expected PDF but got ${contentType} from ${SFSO_FORM_P04_PATH}. The file may not be deployed correctly.`);
   }
-  
+
   const pdfBytes = await response.arrayBuffer();
-  
+
   // Verify it's actually a PDF by checking the header
   const uint8Array = new Uint8Array(pdfBytes);
   if (uint8Array.length < 4) {
@@ -469,14 +469,14 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     }
     throw new Error(`Invalid PDF file: expected PDF header but got "${header}". The file at ${SFSO_FORM_P04_PATH} may be corrupted or not a valid PDF.`);
   }
-  
+
   // Load the PDF document
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const form = pdfDoc.getForm();
-  
+
   // Embed Courier font for typewriter appearance
   const courierFont = pdfDoc.embedStandardFont('Courier');
-  
+
   // Helper to safely set field value
   const setFieldValue = (fieldName, value) => {
     try {
@@ -500,51 +500,51 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     }
     return false;
   };
-  
+
   // Map hold data to form fields
   const fieldMappings = {
     // Reporting Deputy - map to hold creator
-    'Text3': hold.createdBy
+    Text3: hold.createdBy
       ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`
       : 'TBD',
-    
+
     // Subject Information
-    'NAME_LAST_FIRST_MIDDLE': hold.client
+    NAME_LAST_FIRST_MIDDLE: hold.client
       ? `${hold.client.lastName || ''}, ${hold.client.firstName || ''}`.trim() || 'TBD'
       : 'TBD',
-    'RACE': hold.client?.race || 'TBD',
-    'SEX': hold.client?.sex || 'TBD',
-    'DOBAGE': hold.client?.dateOfBirth ? formatDob(hold.client.dateOfBirth) : 'TBD',
-    'ALIAS': 'TBD', // Not available
-    'HEIGHT': 'TBD', // Not available
-    'WEIGHT': 'TBD', // Not available
-    'HAIR': 'TBD', // Not available
-    'EYES': 'TBD', // Not available
-    'RESIDENCE_ADDRESSCITY_IF_NOT_SAN_FRANCISCO': 'TBD', // Not available
-    'ZIP_CODE': 'TBD', // Not available
-    'CONTACT_PHONE': 'TBD', // Not available
-    'ID_NO_SOCSECOPLICFBICII': 'TBD', // Not available
-    'SF_NOXNO': hold.id.substring(0, 8).toUpperCase(),
-    
+    RACE: hold.client?.race || 'TBD',
+    SEX: hold.client?.sex || 'TBD',
+    DOBAGE: hold.client?.dateOfBirth ? formatDob(hold.client.dateOfBirth) : 'TBD',
+    ALIAS: 'TBD', // Not available
+    HEIGHT: 'TBD', // Not available
+    WEIGHT: 'TBD', // Not available
+    HAIR: 'TBD', // Not available
+    EYES: 'TBD', // Not available
+    RESIDENCE_ADDRESSCITY_IF_NOT_SAN_FRANCISCO: 'TBD', // Not available
+    ZIP_CODE: 'TBD', // Not available
+    CONTACT_PHONE: 'TBD', // Not available
+    ID_NO_SOCSECOPLICFBICII: 'TBD', // Not available
+    SF_NOXNO: hold.id.substring(0, 8).toUpperCase(),
+
     // Incident Information
-    'DATETIME_OF_OCCURRENCE': hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD',
-    'LOCATION_OF_OCCURRENCE': 'TBD', // Not available in current data model
-    'REPORTING_UNIT': 'TBD', // Not available in current data model
-    'NARRATIVE': hold.notes || 'TBD',
-    'OTHER_INFORMATION': 'TBD', // Not available
-    
+    DATETIME_OF_OCCURRENCE: hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD',
+    LOCATION_OF_OCCURRENCE: 'TBD', // Not available in current data model
+    REPORTING_UNIT: 'TBD', // Not available in current data model
+    NARRATIVE: hold.notes || 'TBD',
+    OTHER_INFORMATION: 'TBD', // Not available
+
     // Review/Approval (leave empty for now)
-    'REPORT_REVIEWED_BY_PRINTNAMESTAR': '',
-    'WATCH_COMMANDER_APPROVAL_PRINT_NAMESTAR': '',
-    'ASSIGNED_BY_PRINTNAME': '',
-    'COPIES_TO_OUTSIDE_AGENCIES_NAME_OF_UNITS': '',
+    REPORT_REVIEWED_BY_PRINTNAMESTAR: '',
+    WATCH_COMMANDER_APPROVAL_PRINT_NAMESTAR: '',
+    ASSIGNED_BY_PRINTNAME: '',
+    COPIES_TO_OUTSIDE_AGENCIES_NAME_OF_UNITS: '',
   };
-  
+
   // Fill all mapped fields
   Object.entries(fieldMappings).forEach(([fieldName, value]) => {
     setFieldValue(fieldName, value);
   });
-  
+
   // Update all form field appearances to use Courier font
   // This will make all filled values appear in typewriter font
   try {
@@ -552,7 +552,7 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
   } catch (fontError) {
     console.warn('Could not update field appearances with Courier font:', fontError.message);
   }
-  
+
   // Specifically set narrative field to 12pt font size
   // Set the default appearance (DA) string before updating appearances
   try {
@@ -560,7 +560,7 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     if (narrativeField && narrativeField.acroField && narrativeField.acroField.dict) {
       // Set DA (Default Appearance) string: "/Courier 12 Tf 0 0 0 rg"
       // This sets Courier font at 12pt with black color
-      const daString = `/Courier 12 Tf 0 0 0 rg`;
+      const daString = '/Courier 12 Tf 0 0 0 rg';
       // Create PDF string object
       const daValue = PDFString.of(daString);
       // Use PDFName for the dictionary key
@@ -573,9 +573,8 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     // If setting font size fails, continue without it - field will use form's default size
     console.warn('Could not set narrative field to 12pt:', narrativeError.message);
   }
-  
+
   // Save the PDF
   const pdfBytesOut = await pdfDoc.save();
   return pdfBytesOut;
 }
-

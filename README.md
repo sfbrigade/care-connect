@@ -228,7 +228,11 @@ npm run test:postgres
 2. To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the
 client through the server at: http://localhost:3000
 
-3. To lint and format your code, log in to a running container and run `npm run lint'.
+3. To lint and format your code:
+   - **From Docker container**: Log in to a running container and run `npm run lint`
+   - **Locally** (requires `npm install` first): 
+     - `npm run lint` - Auto-fixes issues and reports errors (matches CI behavior)
+     - `npm run lint:check` - Reports errors without auto-fixing (useful for pre-commit checks)
 
 ## Shell Command Quick Reference
 

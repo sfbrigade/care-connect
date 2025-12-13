@@ -363,15 +363,15 @@ function CheckIn () {
 
     try {
       const pdfBytes = await fillSFSOFormP04(hold, facility);
-      
+
       // Create a blob and open in new window
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
-      
+
       // Clean up the URL after a delay
       setTimeout(() => URL.revokeObjectURL(url), 100);
-      
+
       showToast('SFSO Form P04 opened in new window', 'success');
     } catch (error) {
       console.error('Error generating SFSO form PDF:', error);

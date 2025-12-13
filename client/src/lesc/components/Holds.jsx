@@ -11,6 +11,7 @@ import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
+import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
 import { formatTime, calculateAge } from '@/utils/dateTime';
 import { useAuthContext } from '@/AuthContext';
@@ -135,6 +136,28 @@ function Holds () {
     },
   });
 
+  const extendAllMutation = useMutation({
+    mutationFn: async (holdIds) => {
+      const results = await Promise.allSettled(
+        holdIds.map(id => Api.lesc.holds.extend(id))
+      );
+      const failures = results.filter(r => r.status === 'rejected');
+      if (failures.length > 0) {
+        throw new Error(`Failed to extend ${failures.length} hold(s)`);
+      }
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      showToast('All holds extended by 30 minutes', 'success');
+    },
+    onError: (error) => {
+      const errorMessage = error.message || 'Failed to extend all holds';
+      showToast(errorMessage, 'error');
+    },
+  });
+
   const cancelMutation = useMutation({
     mutationFn: (id) => Api.lesc.holds.cancel(id),
     onSuccess: () => {
@@ -198,6 +221,11 @@ function Holds () {
 
   const handleExtend = (id) => {
     extendMutation.mutate(id);
+  };
+
+  const handleExtendAll = () => {
+    if (userHolds.length === 0) return;
+    extendAllMutation.mutate(userHolds.map(h => h.id));
   };
 
   const handleCancel = (hold) => {
@@ -285,6 +313,24 @@ function Holds () {
               ))}
           </Stack>
         </Alert>
+      )}
+
+      {/* Extend All button */}
+      {userHolds && userHolds.length > 0 && (
+        <div style={{ width: '100%', marginBottom: '16px' }}>
+          <Chip
+            onClick={handleExtendAll}
+            disabled={extendAllMutation.isPending}
+            style={{
+              width: '100%',
+              display: 'block',
+              justifyContent: 'center',
+              backgroundColor: '#868E961A',
+            }}
+          >
+            Extend All Holds by 30 Minutes
+          </Chip>
+        </div>
       )}
 
       {/* Modal code kept for future use - currently disabled in favor of direct hold creation */}

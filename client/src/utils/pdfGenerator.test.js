@@ -27,10 +27,10 @@ vi.mock('jspdf', () => {
   function MockJsPDF () {
     return createMockDoc();
   }
-  
+
   // Wrap it in vi.fn to make it spyable
   const mockJsPDFConstructor = vi.fn(MockJsPDF);
-  
+
   return {
     jsPDF: mockJsPDFConstructor
   };
@@ -243,9 +243,9 @@ describe('PDF Generator', () => {
       // Facility address is formatted as: "123 Main St, Suite 100, San Francisco, CA 94102"
       // The addField function calls text() twice - once for label, once for value
       // Find the value call (not the label call)
-      const addressValueCall = textCalls.find(text => 
+      const addressValueCall = textCalls.find(text =>
         typeof text === 'string' &&
-        text.includes('123 Main St') && 
+        text.includes('123 Main St') &&
         !text.includes('Facility Address:') // Not the label
       );
       expect(addressValueCall).toBeDefined();
@@ -323,4 +323,3 @@ describe('PDF Generator', () => {
     });
   });
 });
-
