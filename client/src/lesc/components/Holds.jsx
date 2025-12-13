@@ -1,12 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
+import { /* useEffect, */ useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, Modal, Text } from '@mantine/core';
+import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useParams, /* useSearchParams */ } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
-import HoldForm from './HoldForm';
+// import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
@@ -19,8 +19,9 @@ function Holds () {
   const location = useLocation();
   const navigate = useNavigate();
   const { facilityId: facilityIdParam } = useParams();
-  const [searchParams] = useSearchParams();
-  const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
+  // const [searchParams] = useSearchParams();
+  // Modal hooks kept for future use - currently disabled in favor of direct hold creation
+  // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
   const [qrModalOpened, { open: openQRModal, close: closeQRModal }] = useDisclosure(false);
   const [selectedHold, setSelectedHold] = useState(null);
@@ -31,14 +32,14 @@ function Holds () {
   // Prioritize URL param over location.state for facilityId
   const facilityId = facilityIdParam || location.state?.facilityId;
   // Check both query param and location.state for create modal flag
-  const shouldOpenCreateModal = searchParams.get('create') === 'true' || location.state?.openCreateModal;
+  // const shouldOpenCreateModal = searchParams.get('create') === 'true' || location.state?.openCreateModal;
 
   // Auto-open modal only if explicitly requested (e.g., via "Hold a Bed" button)
-  useEffect(() => {
-    if (shouldOpenCreateModal) {
-      openCreateModal();
-    }
-  }, [shouldOpenCreateModal, openCreateModal]);
+  // useEffect(() => {
+  //   if (shouldOpenCreateModal) {
+  //     openCreateModal();
+  //   }
+  // }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
     queryKey: ['lesc-holds', facilityId],
@@ -146,6 +147,55 @@ function Holds () {
     },
   });
 
+  // Get the service type with most availability for a facility (same logic as HoldForm)
+  const getServiceTypeForFacility = (facId) => {
+    if (!availabilityData || !facId) return null;
+    const facilityServices = availabilityData.filter(item => item.facilityId === facId);
+    if (facilityServices.length === 0) return null;
+    // Return the service type with the most available beds
+    return facilityServices.reduce((best, current) =>
+      current.calculatedAvailable > best.calculatedAvailable ? current : best
+    );
+  };
+
+  // Create hold directly (1 bed, no notes) - replaces modal flow
+  const createHoldDirectlyMutation = useMutation({
+    mutationFn: async (targetFacilityId) => {
+      const serviceInfo = getServiceTypeForFacility(targetFacilityId);
+      if (!serviceInfo) {
+        throw new Error('No service type available for this facility');
+      }
+      return Api.lesc.holds.create({
+        facilityId: targetFacilityId,
+        serviceTypeId: serviceInfo.serviceTypeId,
+        bedsRequested: 1,
+        notes: undefined,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      showToast('Bed hold created successfully', 'success');
+    },
+    onError: (error) => {
+      const errorMessage = error.response?.data?.error || 'Failed to create hold';
+      showToast(errorMessage, 'error');
+    },
+  });
+
+  const handleCreateHoldDirectly = (targetFacilityId) => {
+    if (!targetFacilityId) {
+      // If no facility ID provided, use the LESC facility
+      if (lescFacilityInfo && facilitiesData?.[0]) {
+        createHoldDirectlyMutation.mutate(facilitiesData[0].id);
+      } else {
+        showToast('Facility information not available', 'error');
+      }
+    } else {
+      createHoldDirectlyMutation.mutate(targetFacilityId);
+    }
+  };
+
   const handleExtend = (id) => {
     extendMutation.mutate(id);
   };
@@ -237,7 +287,8 @@ function Holds () {
         </Alert>
       )}
 
-      <Modal
+      {/* Modal code kept for future use - currently disabled in favor of direct hold creation */}
+      {/* <Modal
         opened={createModalOpened}
         onClose={closeCreateModal}
         title='Create Bed Hold'
@@ -266,7 +317,7 @@ function Holds () {
           }}
           initialFacilityId={facilityId}
         />
-      </Modal>
+      </Modal> */}
 
       <CancelHoldModal
         opened={cancelModalOpened}
@@ -308,7 +359,7 @@ function Holds () {
                 bedCount={lescFacilityInfo.bedCount}
                 intakeHours='24/7'
                 lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                onHoldClick={() => openCreateModal()}
+                onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
               />
             )}
             <Alert>No active holds.</Alert>
@@ -329,7 +380,7 @@ function Holds () {
                     // TODO: Implement call functionality
                     console.log('Call facility:', facilityInfo.name);
                   }}
-                  onHoldClick={() => navigate(`/lesc/holds/${facilityInfo.id}?create=true`)}
+                  onHoldClick={() => handleCreateHoldDirectly(facilityInfo.id)}
                 />
               )}
               <Stack gap='md'>
@@ -369,7 +420,7 @@ function Holds () {
                   bedCount={lescFacilityInfo.bedCount}
                   intakeHours='24/7'
                   lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                  onHoldClick={() => openCreateModal()}
+                  onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
                 />
               )}
               <Stack gap='md'>

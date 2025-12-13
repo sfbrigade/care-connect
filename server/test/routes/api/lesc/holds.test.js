@@ -72,11 +72,11 @@ test('/api/lesc/holds', async (t) => {
         assert.ok(hold.expiresAt);
         assert.ok(hold.createdAt);
 
-        // Verify expiration is approximately 30 minutes from now
+        // Verify expiration is approximately 60 minutes from now
         const expiresAt = new Date(hold.expiresAt);
         const now = new Date();
         const diffMinutes = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
-        assert.ok(diffMinutes >= 29 && diffMinutes <= 31, `Expected ~30 minutes, got ${diffMinutes}`);
+        assert.ok(diffMinutes >= 59 && diffMinutes <= 61, `Expected ~60 minutes, got ${diffMinutes}`);
       }
 
       // Verify holds were created in database
