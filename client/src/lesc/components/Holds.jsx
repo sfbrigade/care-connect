@@ -1,12 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
+import { /* useEffect, */ useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, Modal, Text } from '@mantine/core';
+import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useParams, /* useSearchParams */ } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
-import HoldForm from './HoldForm';
+// import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
@@ -19,7 +19,7 @@ function Holds () {
   const location = useLocation();
   const navigate = useNavigate();
   const { facilityId: facilityIdParam } = useParams();
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   // Modal hooks kept for future use - currently disabled in favor of direct hold creation
   // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
