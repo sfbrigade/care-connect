@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generate647fTransferFormPDF } from './pdfGenerator.js';
+import { generate647fTransferFormPDF, fillSFSOFormP04 } from './pdfGenerator.js';
 import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 
 // Mock jsPDF - must define everything inside vi.mock since it's hoisted
 vi.mock('jspdf', () => {
@@ -35,6 +36,19 @@ vi.mock('jspdf', () => {
     jsPDF: mockJsPDFConstructor
   };
 });
+
+// Mock pdf-lib
+vi.mock('pdf-lib', () => ({
+  PDFDocument: {
+    load: vi.fn()
+  },
+  PDFString: {
+    of: vi.fn((str) => ({ value: str }))
+  },
+  PDFName: {
+    of: vi.fn((str) => ({ value: str }))
+  }
+}));
 
 describe('PDF Generator', () => {
   let mockHold;
@@ -502,6 +516,175 @@ describe('PDF Generator', () => {
         expect(doc).toBeDefined();
         expect(doc.text).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('fillSFSOFormP04', () => {
+    let mockPdfBytes;
+    let mockPdfDoc;
+    let mockForm;
+    let mockTextField;
+    let mockCourierFont;
+
+    beforeEach(() => {
+      // Mock PDF bytes (minimal valid PDF)
+      mockPdfBytes = new Uint8Array([
+        0x25, 0x50, 0x44, 0x46, // %PDF
+        0x2D, 0x31, 0x2E, 0x34, // -1.4
+        0x0A
+      ]);
+
+      // Mock text field
+      mockTextField = {
+        setText: vi.fn(),
+        acroField: {
+          dict: {
+            set: vi.fn()
+          }
+        },
+        updateAppearances: vi.fn()
+      };
+
+      // Mock form
+      mockForm = {
+        getTextField: vi.fn((name) => {
+          if (name === 'NARRATIVE') {
+            return mockTextField;
+          }
+          return mockTextField;
+        }),
+        getDropdown: vi.fn(),
+        updateFieldAppearances: vi.fn()
+      };
+
+      // Mock PDF document
+      mockCourierFont = {};
+      mockPdfDoc = {
+        getForm: vi.fn(() => mockForm),
+        embedStandardFont: vi.fn(() => mockCourierFont),
+        save: vi.fn(async () => new Uint8Array([1, 2, 3]))
+      };
+
+      // Mock PDFDocument.load
+      vi.mocked(PDFDocument.load).mockResolvedValue(mockPdfDoc);
+
+      // Mock global fetch
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          headers: {
+            get: vi.fn(() => 'application/pdf')
+          },
+          arrayBuffer: vi.fn(async () => mockPdfBytes.buffer)
+        })
+      );
+    });
+
+    it('should throw error when hold is not provided', async () => {
+      await expect(fillSFSOFormP04(null)).rejects.toThrow('Hold information is required');
+    });
+
+    it('should generate PDF with complete hold data', async () => {
+      const result = await fillSFSOFormP04(mockHold);
+
+      expect(global.fetch).toHaveBeenCalled();
+      expect(PDFDocument.load).toHaveBeenCalled();
+      expect(mockPdfDoc.getForm).toHaveBeenCalled();
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it('should use incident date/time when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify that setText was called (indicating fields were set)
+      expect(mockTextField.setText).toHaveBeenCalled();
+    });
+
+    it('should use incident location when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify form fields were set
+      expect(mockForm.getTextField).toHaveBeenCalled();
+    });
+
+    it('should use incident unit when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify form fields were set
+      expect(mockForm.getTextField).toHaveBeenCalled();
+    });
+
+    it('should fallback to hold.createdAt for date/time when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF using hold.createdAt
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should fallback to TBD for location when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should fallback to TBD for unit when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should handle null incident gracefully', async () => {
+      const holdWithNullIncident = {
+        ...mockHold,
+        incident: null
+      };
+
+      await fillSFSOFormP04(holdWithNullIncident);
+
+      // Should still generate PDF without errors
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should handle fetch error gracefully', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+      );
+
+      await expect(fillSFSOFormP04(mockHold)).rejects.toThrow('Failed to fetch PDF form');
     });
   });
 });

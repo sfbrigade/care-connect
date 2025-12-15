@@ -530,9 +530,12 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     SF_NOXNO: hold.id.substring(0, 8).toUpperCase(),
 
     // Incident Information
-    DATETIME_OF_OCCURRENCE: hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD',
-    LOCATION_OF_OCCURRENCE: 'TBD', // Not available in current data model
-    REPORTING_UNIT: 'TBD', // Not available in current data model
+    // Use incident data when available, fallback to hold.createdAt or 'TBD'
+    DATETIME_OF_OCCURRENCE: hold.incident?.dateTimeArrested
+      ? formatDateTime(hold.incident.dateTimeArrested)
+      : (hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD'),
+    LOCATION_OF_OCCURRENCE: hold.incident?.locationArrested || 'TBD',
+    REPORTING_UNIT: hold.incident?.unit || 'TBD',
     NARRATIVE: hold.notes || 'TBD',
     OTHER_INFORMATION: 'TBD', // Not available
 
