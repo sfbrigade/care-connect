@@ -46,13 +46,17 @@ export default function HoldQRCode ({ holdId, opened, onClose, onDone }) {
         setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
       } else {
         setTimeRemaining('Expired');
+        // Auto-close modal when expired
+        if (onClose) {
+          onClose();
+        }
       }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [expiresAt]);
+  }, [expiresAt, onClose]);
 
   const handleRefresh = async () => {
     try {
