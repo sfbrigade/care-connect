@@ -38,6 +38,16 @@ export default async function (fastify, opts) {
               firstName: z.string(),
               lastName: z.string(),
             }).nullable(),
+            incident: z.object({
+              id: z.string().uuid(),
+              cadNumber: z.string(),
+              locationArrested: z.string().nullable(),
+              dateTimeArrested: z.string(),
+              charge: z.string(),
+              unit: z.string().nullable(),
+              badgeNumber: z.string().nullable(),
+              agency: z.string().nullable(),
+            }).nullable(),
           })),
         },
       },
@@ -96,6 +106,18 @@ export default async function (fastify, opts) {
               lastName: true,
             },
           },
+          incident: {
+            select: {
+              id: true,
+              cadNumber: true,
+              locationArrested: true,
+              dateTimeArrested: true,
+              charge: true,
+              unit: true,
+              badgeNumber: true,
+              agency: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -130,6 +152,18 @@ export default async function (fastify, opts) {
               sex: hold.client.sex,
               race: hold.client.race,
               personallyIdentifiable: hold.client.personallyIdentifiable,
+            }
+          : null,
+        incident: hold.incident
+          ? {
+              id: hold.incident.id,
+              cadNumber: hold.incident.cadNumber,
+              locationArrested: hold.incident.locationArrested,
+              dateTimeArrested: hold.incident.dateTimeArrested.toISOString(),
+              charge: hold.incident.charge,
+              unit: hold.incident.unit,
+              badgeNumber: hold.incident.badgeNumber,
+              agency: hold.incident.agency,
             }
           : null,
       })));

@@ -12,6 +12,7 @@ export default async function (fastify, opts) {
           serviceTypeId: z.string().uuid(),
           bedsRequested: z.number().int().positive(),
           notes: z.string().optional(),
+          incidentId: z.string().uuid().optional(),
         }),
         response: {
           [StatusCodes.CREATED]: z.array(z.object({
@@ -27,8 +28,24 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const { facilityId, serviceTypeId, bedsRequested, notes } = request.body;
+      const { facilityId, serviceTypeId, bedsRequested, notes, incidentId } = request.body;
       const userId = request.user.id;
+
+      // Validate incident if incidentId is provided
+      if (incidentId) {
+        const incident = await fastify.prisma.incident.findUnique({
+          where: { id: incidentId },
+        });
+
+        if (!incident) {
+          return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Incident not found' });
+        }
+
+        // Verify incident belongs to current user
+        if (incident.createdById !== userId) {
+          return reply.code(StatusCodes.FORBIDDEN).send({ error: 'You can only create holds linked to your own incidents' });
+        }
+      }
 
       // Verify facility and service type exist and are LESC
       const facility = await fastify.prisma.facility.findUnique({
@@ -104,6 +121,7 @@ export default async function (fastify, opts) {
               status: 'ACTIVE',
               createdById: userId,
               notes: notes || null,
+              incidentId: incidentId || null,
             },
           })
         )

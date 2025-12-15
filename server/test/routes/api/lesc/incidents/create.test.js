@@ -231,4 +231,3 @@ test('/api/lesc/incidents', async (t) => {
     });
   });
 });
-
