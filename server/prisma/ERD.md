@@ -229,6 +229,7 @@ TRANSFERRED TRANSFERRED
     String facilityId 
     String serviceTypeId 
     String clientId "❓"
+    String incidentId "❓"
     Int bedsRequested 
     DateTime expiresAt 
     BedHoldStatus status 
@@ -241,6 +242,21 @@ TRANSFERRED TRANSFERRED
     String transferToken "❓"
     DateTime transferTokenExpiresAt "❓"
     String notes "❓"
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
+  "Incident" {
+    String id "🗝️"
+    String cadNumber 
+    String locationArrested "❓"
+    DateTime dateTimeArrested 
+    String charge 
+    String unit "❓"
+    String badgeNumber "❓"
+    String agency "❓"
+    String createdById 
     DateTime createdAt 
     DateTime updatedAt 
     }
@@ -264,6 +280,7 @@ TRANSFERRED TRANSFERRED
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
+    "User" o{--}o "Incident" : ""
     "Invite" o|--|| "User" : "createdBy"
     "Invite" o|--|o "User" : "acceptedBy"
     "Invite" o|--|o "User" : "revokedBy"
@@ -302,8 +319,10 @@ TRANSFERRED TRANSFERRED
     "BedHold" o|--|| "Facility" : "facility"
     "BedHold" o|--|| "ServiceType" : "serviceType"
     "BedHold" o|--|o "Client" : "client"
+    "BedHold" o|--|o "Incident" : "incident"
     "BedHold" o|--|| "BedHoldStatus" : "enum:status"
     "BedHold" o|--|o "User" : "createdBy"
     "BedHold" o|--|o "User" : "cancelledBy"
     "BedHold" o|--|o "User" : "transferredBy"
+    "Incident" o|--|| "User" : "createdBy"
 ```
