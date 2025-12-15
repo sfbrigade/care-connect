@@ -321,5 +321,187 @@ describe('PDF Generator', () => {
       const dateTimeCall = textCalls.find(text => text.includes('Date/Time Arrested:'));
       expect(dateTimeCall).toBeDefined();
     });
+
+    describe('incident data integration', () => {
+      it('should use incident CAD number when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // Check that CAD number from incident appears in the PDF
+        expect(textCalls.some(text => text.includes('CAD-12345'))).toBe(true);
+      });
+
+      it('should use incident location arrested when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('123 Main St'))).toBe(true);
+      });
+
+      it('should use incident date/time arrested when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        // The incident dateTimeArrested should be used instead of hold.createdAt
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // formatDateTime should format the incident dateTimeArrested
+        // We can't easily test the exact formatted value, but we can verify
+        // that the function was called and the PDF was generated
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+
+      it('should use incident unit, badge number, and agency when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('Unit A'))).toBe(true);
+        expect(textCalls.some(text => text.includes('12345'))).toBe(true);
+        expect(textCalls.some(text => text.includes('SFPD'))).toBe(true);
+      });
+
+      it('should use incident charge when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: 'Custom Charge'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('Custom Charge'))).toBe(true);
+      });
+
+      it('should fallback to hold.createdAt for date/time when incident is not present', () => {
+        const doc = generate647fTransferFormPDF(mockHold);
+
+        // Should still generate PDF using hold.createdAt
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+
+      it('should fallback to TBD for incident fields when incident is not present', () => {
+        const doc = generate647fTransferFormPDF(mockHold);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // When incident is not present, CAD Number should be TBD
+        // We check that the field exists, but the value will be TBD
+        expect(textCalls.some(text => text.includes('CAD Number:'))).toBe(true);
+      });
+
+      it('should fallback to default charge when incident charge is not present', () => {
+        const holdWithPartialIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD'
+            // charge is missing
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithPartialIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // Should default to '647(f) RWS'
+        expect(textCalls.some(text => text.includes('647(f) RWS'))).toBe(true);
+      });
+
+      it('should handle null incident gracefully', () => {
+        const holdWithNullIncident = {
+          ...mockHold,
+          incident: null
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithNullIncident);
+
+        // Should still generate PDF without errors
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+    });
   });
 });

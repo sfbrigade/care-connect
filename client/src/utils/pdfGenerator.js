@@ -105,16 +105,19 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   addSectionHeader('Arrest Information');
   doc.setFontSize(10);
 
-  const cadNumber = 'TBD'; // Not available in current data model
-  const dateTimeArrested = hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD';
+  // Use incident data when available, fallback to TBD or existing logic
+  const cadNumber = hold.incident?.cadNumber || 'TBD';
+  const dateTimeArrested = hold.incident?.dateTimeArrested
+    ? formatDateTime(hold.incident.dateTimeArrested)
+    : (hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD');
   const transportingOfficer = hold.createdBy
     ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`
     : 'TBD';
-  const locationArrested = 'TBD'; // Not available in current data model
-  const unit = 'TBD'; // Not available in current data model
-  const badgeNumber = 'TBD'; // Not available in current data model
-  const agency = 'TBD'; // Not available in current data model
-  const charge = '647(f) RWS'; // Required charge type
+  const locationArrested = hold.incident?.locationArrested || 'TBD';
+  const unit = hold.incident?.unit || 'TBD';
+  const badgeNumber = hold.incident?.badgeNumber || 'TBD';
+  const agency = hold.incident?.agency || 'TBD';
+  const charge = hold.incident?.charge || '647(f) RWS';
   const justification = hold.notes || 'TBD';
 
   addField('CAD Number:', cadNumber, true);
