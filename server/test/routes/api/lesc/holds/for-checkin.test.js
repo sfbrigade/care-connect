@@ -465,5 +465,115 @@ test('/api/lesc/holds/:id/for-checkin - Check-in Format and Authorization', asyn
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.client, null);
     });
+
+    await t.test('returns hold with new client fields populated', async () => {
+      const { facility, lescServiceType } = await createTestData();
+
+      // Set up: Create client with all new fields
+      const client = await prisma.client.create({
+        data: {
+          firstName: 'John',
+          lastName: 'Doe',
+          middleInitial: 'M',
+          address: '123 Main St, San Francisco, CA 94102',
+          driverLicense: 'DL123456',
+          localId: 'SF-789',
+        },
+      });
+
+      const hold = await prisma.bedHold.create({
+        data: {
+          facilityId: facility.id,
+          serviceTypeId: lescServiceType.id,
+          bedsRequested: 1,
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          status: 'ACTIVE',
+          createdById: user1Id,
+          clientId: client.id,
+        },
+      });
+
+      const shortCode = hold.id.substring(0, 3).toUpperCase();
+      const response = await app.inject().get(`/api/lesc/holds/${shortCode}/for-checkin`).headers(user1Headers);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.ok(data.client);
+      assert.deepStrictEqual(data.client.middleInitial, 'M');
+      assert.deepStrictEqual(data.client.address, '123 Main St, San Francisco, CA 94102');
+      assert.deepStrictEqual(data.client.driverLicense, 'DL123456');
+      assert.deepStrictEqual(data.client.localId, 'SF-789');
+    });
+
+    await t.test('returns hold with createdBy badgeNumber and rank', async () => {
+      // Set up: Set user badgeNumber and rank
+      await prisma.user.update({
+        where: { id: user1Id },
+        data: { badgeNumber: 'BADGE-999', rank: 'Deputy' },
+      });
+
+      const { facility, lescServiceType } = await createTestData();
+      const hold = await prisma.bedHold.create({
+        data: {
+          facilityId: facility.id,
+          serviceTypeId: lescServiceType.id,
+          bedsRequested: 1,
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          status: 'ACTIVE',
+          createdById: user1Id,
+        },
+      });
+
+      const shortCode = hold.id.substring(0, 3).toUpperCase();
+      const response = await app.inject().get(`/api/lesc/holds/${shortCode}/for-checkin`).headers(user1Headers);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.ok(data.createdBy);
+      assert.deepStrictEqual(data.createdBy.badgeNumber, 'BADGE-999');
+      assert.deepStrictEqual(data.createdBy.rank, 'Deputy');
+
+      // Clean up
+      await prisma.user.update({
+        where: { id: user1Id },
+        data: { badgeNumber: null, rank: null },
+      });
+    });
+
+    await t.test('returns null for client fields when not set', async () => {
+      const { facility, lescServiceType } = await createTestData();
+
+      // Set up: Create client without new fields
+      const client = await prisma.client.create({
+        data: {
+          firstName: 'Jane',
+          lastName: 'Smith',
+          // No middleInitial, address, driverLicense, localId
+        },
+      });
+
+      const hold = await prisma.bedHold.create({
+        data: {
+          facilityId: facility.id,
+          serviceTypeId: lescServiceType.id,
+          bedsRequested: 1,
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          status: 'ACTIVE',
+          createdById: user1Id,
+          clientId: client.id,
+        },
+      });
+
+      const shortCode = hold.id.substring(0, 3).toUpperCase();
+      const response = await app.inject().get(`/api/lesc/holds/${shortCode}/for-checkin`).headers(user1Headers);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.ok(data.client);
+      assert.deepStrictEqual(data.client.middleInitial, null);
+      assert.deepStrictEqual(data.client.address, null);
+      assert.deepStrictEqual(data.client.driverLicense, null);
+      assert.deepStrictEqual(data.client.localId, null);
+    });
   });
 });

@@ -43,6 +43,12 @@ test('/api/lesc/incidents', async (t) => {
     });
 
     await t.test('creates an incident with all fields (required + optional)', async () => {
+      // Set up: Set user badgeNumber
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: 'USER-BADGE-12345' },
+      });
+
       const dateTimeArrested = new Date('2024-01-15T10:30:00Z');
       const response = await app.inject().post('/api/lesc/incidents').payload({
         cadNumber: 'CAD-67890',
@@ -50,7 +56,7 @@ test('/api/lesc/incidents', async (t) => {
         dateTimeArrested: dateTimeArrested.toISOString(),
         charge: '647(f) RWS',
         unit: 'Unit 5',
-        badgeNumber: '12345',
+        badgeNumber: 'SHOULD-BE-IGNORED', // Request body badgeNumber is ignored
         agency: 'SFPD',
       }).headers(userHeaders);
 
@@ -61,7 +67,7 @@ test('/api/lesc/incidents', async (t) => {
       assert.deepStrictEqual(data.locationArrested, '123 Main St, San Francisco, CA');
       assert.deepStrictEqual(data.charge, '647(f) RWS');
       assert.deepStrictEqual(data.unit, 'Unit 5');
-      assert.deepStrictEqual(data.badgeNumber, '12345');
+      assert.deepStrictEqual(data.badgeNumber, 'USER-BADGE-12345'); // Uses user badgeNumber
       assert.deepStrictEqual(data.agency, 'SFPD');
 
       // Verify all fields in database
@@ -70,8 +76,14 @@ test('/api/lesc/incidents', async (t) => {
       });
       assert.deepStrictEqual(dbIncident.locationArrested, '123 Main St, San Francisco, CA');
       assert.deepStrictEqual(dbIncident.unit, 'Unit 5');
-      assert.deepStrictEqual(dbIncident.badgeNumber, '12345');
+      assert.deepStrictEqual(dbIncident.badgeNumber, 'USER-BADGE-12345'); // Uses user badgeNumber
       assert.deepStrictEqual(dbIncident.agency, 'SFPD');
+
+      // Clean up
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: null },
+      });
     });
 
     await t.test('requires authentication', async () => {
@@ -130,12 +142,18 @@ test('/api/lesc/incidents', async (t) => {
     });
 
     await t.test('returns correct response structure', async () => {
+      // Set up: Set user badgeNumber
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: 'RESPONSE-TEST-99999' },
+      });
+
       const response = await app.inject().post('/api/lesc/incidents').payload({
         cadNumber: 'CAD-RESPONSE-TEST',
         dateTimeArrested: new Date().toISOString(),
         locationArrested: 'Test Location',
         unit: 'Test Unit',
-        badgeNumber: '99999',
+        badgeNumber: 'REQUEST-BODY-IGNORED', // Request body badgeNumber is ignored
         agency: 'Test Agency',
       }).headers(userHeaders);
 
@@ -154,16 +172,28 @@ test('/api/lesc/incidents', async (t) => {
       assert.ok(typeof data.createdById === 'string');
       assert.ok(typeof data.createdAt === 'string');
       assert.ok(typeof data.updatedAt === 'string');
+
+      // Clean up
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: null },
+      });
     });
 
     await t.test('stores data correctly in database', async () => {
+      // Set up: Set user badgeNumber
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: 'DB-TEST-54321' },
+      });
+
       const testData = {
         cadNumber: 'CAD-DB-TEST',
         locationArrested: '456 Oak Ave',
         dateTimeArrested: new Date('2024-02-20T15:45:00Z'),
         charge: '647(f) RWS',
         unit: 'Patrol Unit 3',
-        badgeNumber: '54321',
+        badgeNumber: 'REQUEST-BODY-IGNORED', // Request body badgeNumber is ignored
         agency: 'SFPD',
       };
 
@@ -184,7 +214,7 @@ test('/api/lesc/incidents', async (t) => {
       assert.deepStrictEqual(dbIncident.locationArrested, testData.locationArrested);
       assert.deepStrictEqual(dbIncident.charge, testData.charge);
       assert.deepStrictEqual(dbIncident.unit, testData.unit);
-      assert.deepStrictEqual(dbIncident.badgeNumber, testData.badgeNumber);
+      assert.deepStrictEqual(dbIncident.badgeNumber, 'DB-TEST-54321'); // Uses user badgeNumber
       assert.deepStrictEqual(dbIncident.agency, testData.agency);
       assert.deepStrictEqual(dbIncident.createdById, userId);
 
@@ -193,6 +223,12 @@ test('/api/lesc/incidents', async (t) => {
       const expectedDateTime = testData.dateTimeArrested.getTime();
       const diff = Math.abs(dbDateTime - expectedDateTime);
       assert.ok(diff < 1000, `dateTimeArrested should match (diff: ${diff}ms)`);
+
+      // Clean up
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: null },
+      });
     });
 
     await t.test('links to current user (createdById)', async () => {
@@ -228,6 +264,63 @@ test('/api/lesc/incidents', async (t) => {
 
       assert.deepStrictEqual(dbIncident.createdBy.id, user2.id);
       assert.deepStrictEqual(dbIncident.createdBy.email, user2.email);
+    });
+
+    await t.test('always uses user.badgeNumber for incident.badgeNumber', async () => {
+      // Set up: Create user with badgeNumber
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: 'TEST-BADGE-123' },
+      });
+
+      // Test: Create incident with badgeNumber in request body (should be ignored)
+      const response = await app.inject().post('/api/lesc/incidents').payload({
+        cadNumber: 'CAD-TEST-BADGE',
+        badgeNumber: 'SHOULD-BE-IGNORED', // This should be ignored
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+
+      // Verify: incident uses user's badgeNumber, not request body
+      assert.deepStrictEqual(data.badgeNumber, 'TEST-BADGE-123');
+
+      // Verify in database
+      const dbIncident = await prisma.incident.findUnique({
+        where: { id: data.id },
+      });
+      assert.deepStrictEqual(dbIncident.badgeNumber, 'TEST-BADGE-123');
+
+      // Clean up
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: null },
+      });
+    });
+
+    await t.test('sets badgeNumber to null when user has no badgeNumber', async () => {
+      // Set up: Ensure user has no badgeNumber
+      await prisma.user.update({
+        where: { id: userId },
+        data: { badgeNumber: null },
+      });
+
+      // Test: Create incident
+      const response = await app.inject().post('/api/lesc/incidents').payload({
+        cadNumber: 'CAD-TEST-NULL',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+
+      // Verify: badgeNumber is null
+      assert.deepStrictEqual(data.badgeNumber, null);
+
+      // Verify in database
+      const dbIncident = await prisma.incident.findUnique({
+        where: { id: data.id },
+      });
+      assert.deepStrictEqual(dbIncident.badgeNumber, null);
     });
   });
 });

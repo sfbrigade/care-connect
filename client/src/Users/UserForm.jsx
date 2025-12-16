@@ -27,6 +27,8 @@ function UserForm () {
       picture: '',
       pictureUrl: '',
       isAdmin: false,
+      badgeNumber: '',
+      rank: '',
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
@@ -123,6 +125,18 @@ function UserForm () {
                 label='Password'
                 type='password'
                 autoComplete='new-password'
+              />
+              <TextInput
+                {...form.getInputProps('badgeNumber')}
+                key={form.key('badgeNumber')}
+                label='Badge Number / Star Number'
+                placeholder='Enter badge or star number'
+              />
+              <TextInput
+                {...form.getInputProps('rank')}
+                key={form.key('rank')}
+                label='Rank'
+                placeholder='Enter rank'
               />
               {authContext.user?.isAdmin && (
                 <Checkbox

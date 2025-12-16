@@ -215,4 +215,67 @@ test('/api/lesc/clients', async (t) => {
       assert.deepStrictEqual(data.dateOfBirth, null);
     });
   });
+
+  await t.test('PATCH /:id - New Fields', async (t) => {
+    await t.test('updates client middleInitial, address, driverLicense, localId', async () => {
+      const client = await prisma.client.create({
+        data: {
+          firstName: 'Original',
+          lastName: 'Name',
+        },
+      });
+
+      const response = await app.inject().patch(`/api/lesc/clients/${client.id}`).payload({
+        middleInitial: 'B',
+        address: '789 Update Ave',
+        driverLicense: 'DL777666',
+        localId: 'SF-456',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.deepStrictEqual(data.middleInitial, 'B');
+      assert.deepStrictEqual(data.address, '789 Update Ave');
+      assert.deepStrictEqual(data.driverLicense, 'DL777666');
+      assert.deepStrictEqual(data.localId, 'SF-456');
+
+      // Verify in database
+      const updatedClient = await prisma.client.findUnique({
+        where: { id: client.id },
+      });
+      assert.deepStrictEqual(updatedClient.middleInitial, 'B');
+      assert.deepStrictEqual(updatedClient.address, '789 Update Ave');
+      assert.deepStrictEqual(updatedClient.driverLicense, 'DL777666');
+      assert.deepStrictEqual(updatedClient.localId, 'SF-456');
+    });
+
+    await t.test('can set new client fields to null', async () => {
+      const client = await prisma.client.create({
+        data: {
+          firstName: 'Test',
+          lastName: 'User',
+          middleInitial: 'M',
+          address: '123 Main St',
+          driverLicense: 'DL123',
+          localId: 'SF-999',
+        },
+      });
+
+      const response = await app.inject().patch(`/api/lesc/clients/${client.id}`).payload({
+        middleInitial: null,
+        address: null,
+        driverLicense: null,
+        localId: null,
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.deepStrictEqual(data.middleInitial, null);
+      assert.deepStrictEqual(data.address, null);
+      assert.deepStrictEqual(data.driverLicense, null);
+      assert.deepStrictEqual(data.localId, null);
+    });
+  });
 });

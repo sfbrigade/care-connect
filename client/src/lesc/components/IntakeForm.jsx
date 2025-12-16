@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, NumberInput } from '@mantine/core';
+import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, NumberInput, Textarea } from '@mantine/core';
 import { useNavigate, useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -155,6 +155,17 @@ function IntakeForm () {
       dateOfBirth: '',
       sex: '',
       race: '',
+      middleInitial: '',
+      address: '',
+      driverLicense: '',
+      localId: '',
+      // Incident fields
+      cadNumber: '',
+      dateTimeArrested: '',
+      locationArrested: '',
+      agency: '',
+      charge: '',
+      justificationNarrative: '',
     };
   });
 
@@ -183,17 +194,40 @@ function IntakeForm () {
         dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
         sex: client.sex || '',
         race: client.race || '',
+        middleInitial: client.middleInitial || '',
+        address: client.address || '',
+        driverLicense: client.driverLicense || '',
+        localId: client.localId || '',
+        // Incident fields - not available in client edit mode
+        cadNumber: '',
+        dateTimeArrested: '',
+        locationArrested: '',
+        agency: '',
+        charge: '',
+        justificationNarrative: '',
       });
-    } else if (!isEditMode && holdResponse?.data?.client && !formData.fullName) {
+    } else if (!isEditMode && holdResponse?.data && !formData.fullName) {
       const client = holdResponse.data.client;
+      const incident = holdResponse.data.incident;
       setFormData({
-        fullName: `${client.firstName} ${client.lastName || ''}`.trim(),
-        dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
-        sex: client.sex || '',
-        race: client.race || '',
+        fullName: client ? `${client.firstName} ${client.lastName || ''}`.trim() : '',
+        dateOfBirth: client?.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
+        sex: client?.sex || '',
+        race: client?.race || '',
+        middleInitial: client?.middleInitial || '',
+        address: client?.address || '',
+        driverLicense: client?.driverLicense || '',
+        localId: client?.localId || '',
+        // Incident fields
+        cadNumber: incident?.cadNumber || '',
+        dateTimeArrested: incident?.dateTimeArrested ? new Date(incident.dateTimeArrested).toISOString().slice(0, 16) : '',
+        locationArrested: incident?.locationArrested || '',
+        agency: incident?.agency || '',
+        charge: incident?.charge || '',
+        justificationNarrative: holdResponse.data.notes || '',
       });
     }
-  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id]);
+  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id, holdResponse?.data?.incident?.id]);
 
   const updateClientMutation = useMutation({
     mutationFn: (data) => {
@@ -208,6 +242,10 @@ function IntakeForm () {
         dateOfBirth: data.dateOfBirth || null,
         sex: data.sex || null,
         race: data.race || null,
+        middleInitial: data.middleInitial || null,
+        address: data.address || null,
+        driverLicense: data.driverLicense || null,
+        localId: data.localId || null,
       });
     },
     onSuccess: () => {
@@ -227,6 +265,55 @@ function IntakeForm () {
       // Update existing client
       updateClientMutation.mutate(formData);
     } else {
+      // Handle incident creation/update
+      let incidentId = holdResponse?.data?.incident?.id || null;
+
+      if (formData.cadNumber || formData.dateTimeArrested || formData.locationArrested || formData.agency || formData.charge) {
+        // Create or update incident
+        try {
+          if (incidentId) {
+            // Update existing incident
+            await Api.lesc.incidents.update(incidentId, {
+              cadNumber: formData.cadNumber || undefined,
+              dateTimeArrested: formData.dateTimeArrested ? new Date(formData.dateTimeArrested).toISOString() : undefined,
+              locationArrested: formData.locationArrested || null,
+              agency: formData.agency || null,
+              charge: formData.charge || undefined,
+            });
+          } else {
+            // Create new incident
+            const incidentResponse = await Api.lesc.incidents.create({
+              cadNumber: formData.cadNumber || 'TBD',
+              dateTimeArrested: formData.dateTimeArrested ? new Date(formData.dateTimeArrested).toISOString() : new Date().toISOString(),
+              locationArrested: formData.locationArrested || null,
+              agency: formData.agency || null,
+              charge: formData.charge || '647(f) RWS',
+            });
+            incidentId = incidentResponse.data.id;
+          }
+        } catch (error) {
+          console.error('Failed to create/update incident', error);
+          // Continue with client update even if incident fails
+        }
+      }
+
+      // Update hold notes and link to incident
+      const currentNotes = holdResponse?.data?.notes || null;
+      const currentIncidentId = holdResponse?.data?.incident?.id || null;
+      const notesChanged = formData.justificationNarrative !== currentNotes;
+      const incidentChanged = incidentId !== currentIncidentId;
+
+      if (notesChanged || incidentChanged) {
+        try {
+          await Api.lesc.holds.update(holdId, {
+            notes: formData.justificationNarrative !== undefined ? (formData.justificationNarrative || null) : undefined,
+            incidentId: incidentChanged ? (incidentId || null) : undefined,
+          });
+        } catch (error) {
+          console.error('Failed to update hold', error);
+        }
+      }
+
       // Check if hold has existing client
       const existingClientId = holdResponse?.data?.client?.id;
 
@@ -244,6 +331,10 @@ function IntakeForm () {
             dateOfBirth: formData.dateOfBirth || null,
             sex: formData.sex || null,
             race: formData.race || null,
+            middleInitial: formData.middleInitial || null,
+            address: formData.address || null,
+            driverLicense: formData.driverLicense || null,
+            localId: formData.localId || null,
           });
 
           queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
@@ -346,7 +437,136 @@ function IntakeForm () {
                   },
                 }}
               />
+              <TextInput
+                label='Middle Initial'
+                placeholder='Enter middle initial'
+                value={formData.middleInitial}
+                onChange={(e) => setFormData(prev => ({ ...prev, middleInitial: e.target.value }))}
+                maxLength={1}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label='Address'
+                placeholder='Enter address'
+                value={formData.address}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label="Driver's License"
+                placeholder="Enter driver's license number"
+                value={formData.driverLicense}
+                onChange={(e) => setFormData(prev => ({ ...prev, driverLicense: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label='Local ID / SF #'
+                placeholder='Enter local ID or SF number'
+                value={formData.localId}
+                onChange={(e) => setFormData(prev => ({ ...prev, localId: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
             </Stack>
+
+            {/* Incident Information */}
+            {!isEditMode && (
+              <Stack gap='sm'>
+                <Text
+                  style={{
+                    fontSize: '24px',
+                    lineHeight: '32px',
+                    fontFamily: 'Roboto, sans-serif',
+                    fontWeight: 700,
+                    color: '#000000',
+                  }}
+                >
+                  Incident Information
+                </Text>
+                <TextInput
+                  label='CAD Number'
+                  placeholder='Enter CAD number'
+                  value={formData.cadNumber}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cadNumber: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Date/Time Arrested'
+                  type='datetime-local'
+                  value={formData.dateTimeArrested}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateTimeArrested: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Location Arrested'
+                  placeholder='Enter location arrested'
+                  value={formData.locationArrested}
+                  onChange={(e) => setFormData(prev => ({ ...prev, locationArrested: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Agency'
+                  placeholder='Enter agency'
+                  value={formData.agency}
+                  onChange={(e) => setFormData(prev => ({ ...prev, agency: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Charge'
+                  placeholder='Enter charge'
+                  value={formData.charge}
+                  onChange={(e) => setFormData(prev => ({ ...prev, charge: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <Textarea
+                  label='647(f) RWS Justification - Narrative'
+                  placeholder='Enter justification narrative'
+                  value={formData.justificationNarrative}
+                  onChange={(e) => setFormData(prev => ({ ...prev, justificationNarrative: e.target.value }))}
+                  rows={4}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+              </Stack>
+            )}
 
             <Group justify='space-between' mt='md'>
               <Button variant='light' onClick={() => navigate(-1)}>

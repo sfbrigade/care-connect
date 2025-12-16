@@ -60,6 +60,8 @@ TRANSFERRED TRANSFERRED
     DateTime deactivatedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
+    String badgeNumber "❓"
+    String rank "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }
@@ -181,9 +183,13 @@ TRANSFERRED TRANSFERRED
     String id "🗝️"
     String firstName 
     String lastName "❓"
+    String middleInitial "❓"
     DateTime dateOfBirth "❓"
     String sex "❓"
     String race "❓"
+    String address "❓"
+    String driverLicense "❓"
+    String localId "❓"
     String personallyIdentifiable "❓"
     String description "❓"
     String pets "❓"

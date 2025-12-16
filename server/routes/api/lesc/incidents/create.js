@@ -40,15 +40,20 @@ export default async function (fastify, opts) {
         dateTimeArrested,
         charge,
         unit,
-        badgeNumber,
         agency,
       } = request.body;
       const userId = request.user.id;
 
+      // Fetch user to get badgeNumber
+      const user = await fastify.prisma.user.findUnique({
+        where: { id: userId },
+        select: { badgeNumber: true },
+      });
+
       // Parse dateTimeArrested or default to now
       const arrestDateTime = dateTimeArrested ? new Date(dateTimeArrested) : new Date();
 
-      // Create incident
+      // Create incident - always use user.badgeNumber
       const incident = await fastify.prisma.incident.create({
         data: {
           cadNumber,
@@ -56,7 +61,7 @@ export default async function (fastify, opts) {
           dateTimeArrested: arrestDateTime,
           charge: charge || '647(f) RWS',
           unit: unit || null,
-          badgeNumber: badgeNumber || null,
+          badgeNumber: user.badgeNumber || null, // Always from user, ignore request body
           agency: agency || null,
           createdById: userId,
         },

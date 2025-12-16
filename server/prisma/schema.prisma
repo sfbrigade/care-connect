@@ -75,6 +75,8 @@ model User {
   deactivatedAt           DateTime?
   passwordResetToken      String?   @unique @db.Uuid
   passwordResetExpiresAt  DateTime?
+  badgeNumber             String?
+  rank                    String?
   createdInvites          Invite[]  @relation("CreatedByUser")
   acceptedInvites         Invite[]  @relation("AcceptedByUser")
   revokedInvites          Invite[]  @relation("RevokedByUser")
@@ -223,9 +225,13 @@ model Client {
   id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName           String
   lastName            String?
+  middleInitial       String?
   dateOfBirth         DateTime?
   sex                 String?
   race                String?
+  address             String?
+  driverLicense       String?
+  localId             String?
   personallyIdentifiable String?
   description         String?
   pets                String?
