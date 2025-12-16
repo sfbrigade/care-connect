@@ -606,8 +606,10 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
   const fieldMappings = {
     // Reporting Deputy - map to hold creator
     Text3: hold.createdBy
-      ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`
+      ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`.trim()
       : 'TBD',
+    // Badge Number/Star Number
+    Text4: hold.incident?.badgeNumber || hold.createdBy?.badgeNumber || 'TBD',
 
     // Subject Information
     NAME_LAST_FIRST_MIDDLE: hold.client
