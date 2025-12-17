@@ -52,6 +52,7 @@ test('/api/users', async (t) => {
         pictureUrl: null,
         badgeNumber: null,
         rank: null,
+        unit: null,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
         deactivatedAt: null
@@ -75,6 +76,7 @@ test('/api/users', async (t) => {
         pictureUrl: null,
         badgeNumber: null,
         rank: null,
+        unit: null,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
@@ -215,6 +217,57 @@ test('/api/users', async (t) => {
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.badgeNumber, null);
       assert.deepStrictEqual(data.rank, null);
+    });
+
+    await t.test('updates unit field', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        unit: 'Unit A'
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.unit, 'Unit A');
+
+      data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.deepStrictEqual(data.unit, 'Unit A');
+    });
+
+    await t.test('converts empty string to null for unit', async (t) => {
+      // First set value
+      await prisma.user.update({
+        where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
+        data: { unit: 'Unit B' },
+      });
+
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        unit: ''
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.unit, null);
+
+      data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.deepStrictEqual(data.unit, null);
+    });
+
+    await t.test('allows setting unit to null explicitly', async (t) => {
+      // First set value
+      await prisma.user.update({
+        where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
+        data: { unit: 'Unit C' },
+      });
+
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        unit: null
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.unit, null);
+
+      data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.deepStrictEqual(data.unit, null);
     });
   });
 });

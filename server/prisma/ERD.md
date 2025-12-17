@@ -62,6 +62,7 @@ TRANSFERRED TRANSFERRED
     DateTime passwordResetExpiresAt "❓"
     String badgeNumber "❓"
     String rank "❓"
+    String unit "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }

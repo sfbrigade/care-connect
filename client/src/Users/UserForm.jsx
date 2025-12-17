@@ -29,6 +29,7 @@ function UserForm () {
       isAdmin: false,
       badgeNumber: '',
       rank: '',
+      unit: '',
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
@@ -137,6 +138,12 @@ function UserForm () {
                 key={form.key('rank')}
                 label='Rank'
                 placeholder='Enter rank'
+              />
+              <TextInput
+                {...form.getInputProps('unit')}
+                key={form.key('unit')}
+                label='Unit'
+                placeholder='Enter unit'
               />
               {authContext.user?.isAdmin && (
                 <Checkbox

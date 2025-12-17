@@ -81,13 +81,13 @@ export function generate647fTransferFormPDF (hold, facility = null) {
 
   const firstName = hold.client?.firstName || 'TBD';
   const lastName = hold.client?.lastName || 'TBD';
-  const middleInitial = 'TBD'; // Not available in current data model
+  const middleInitial = hold.client?.middleInitial || 'TBD';
   const race = hold.client?.race || 'TBD';
   const sex = hold.client?.sex || 'TBD';
   const dob = hold.client?.dateOfBirth ? formatDob(hold.client.dateOfBirth) : 'TBD';
-  const address = 'TBD'; // Not available in current data model
-  const driverLicense = 'TBD'; // Not available in current data model
-  const localId = 'TBD'; // Not available in current data model
+  const address = hold.client?.address || 'TBD';
+  const driverLicense = hold.client?.driverLicense || 'TBD';
+  const localId = hold.client?.localId || 'TBD';
 
   addField('Subject Last Name:', lastName, true);
   addField('Subject First Name:', firstName, true);
@@ -114,7 +114,7 @@ export function generate647fTransferFormPDF (hold, facility = null) {
     ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`
     : 'TBD';
   const locationArrested = hold.incident?.locationArrested || 'TBD';
-  const unit = hold.incident?.unit || 'TBD';
+  const unit = hold.createdBy?.unit || 'TBD';
   const badgeNumber = hold.incident?.badgeNumber || 'TBD';
   const agency = hold.incident?.agency || 'TBD';
   const charge = hold.incident?.charge || '647(f) RWS';
@@ -235,9 +235,13 @@ export function generateCertificateOfReleasePDF (hold, facility = null) {
   yPos += 20;
 
   // Get subject name and dates
-  const subjectName = hold.client
-    ? `${hold.client.firstName || ''} ${hold.client.lastName || ''}`.trim() || 'TBD'
-    : 'TBD';
+  let subjectName = 'TBD';
+  if (hold.client) {
+    const firstName = hold.client.firstName || '';
+    const lastName = hold.client.lastName || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    subjectName = fullName || firstName || lastName || 'TBD';
+  }
   const custodyDateTime = hold.incident?.dateTimeArrested || hold.createdAt;
   const custodyDateStr = formatDateForCertificate(custodyDateTime);
   const releaseDateTime = hold.transferredAt || new Date();
@@ -258,9 +262,10 @@ export function generateCertificateOfReleasePDF (hold, facility = null) {
   const deputyName = hold.createdBy
     ? `${hold.createdBy.firstName || ''} ${hold.createdBy.lastName || ''}`.trim() || 'TBD'
     : 'TBD';
-  const badgeNumber = hold.incident?.badgeNumber || 'TBD';
-  const unit = hold.incident?.unit || 'TBD';
-  doc.text(`Deputy's Rank, Name & Star#: #Rank, ${deputyName} #${badgeNumber}, Unit Identifier: ${unit}`, leftMargin, yPos);
+  const rank = hold.createdBy?.rank || 'TBD';
+  const badgeNumber = hold.createdBy?.badgeNumber || 'TBD';
+  const unit = hold.createdBy?.unit || 'TBD';
+  doc.text(`Deputy's Rank, Name & Star#: ${rank}, ${deputyName} #${badgeNumber}, Unit Identifier: ${unit}`, leftMargin, yPos);
   yPos += 10;
 
   // Add blank lines before signature line
@@ -609,7 +614,7 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
       ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`.trim()
       : 'TBD',
     // Badge Number/Star Number
-    Text4: hold.incident?.badgeNumber || hold.createdBy?.badgeNumber || 'TBD',
+    Text4: hold.incident?.badgeNumber || 'TBD',
 
     // Subject Information
     NAME_LAST_FIRST_MIDDLE: hold.client

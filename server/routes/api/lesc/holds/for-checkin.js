@@ -43,6 +43,17 @@ export default async function (fastify, opts) {
               lastName: z.string(),
               badgeNumber: z.string().nullable(),
               rank: z.string().nullable(),
+              unit: z.string().nullable(),
+            }).nullable(),
+            incident: z.object({
+              id: z.string().uuid(),
+              cadNumber: z.string(),
+              locationArrested: z.string().nullable(),
+              dateTimeArrested: z.string(),
+              charge: z.string(),
+              unit: z.string().nullable(),
+              badgeNumber: z.string().nullable(),
+              agency: z.string().nullable(),
             }).nullable(),
           }),
           [StatusCodes.NOT_FOUND]: z.object({
@@ -117,6 +128,19 @@ export default async function (fastify, opts) {
                 lastName: true,
                 badgeNumber: true,
                 rank: true,
+                unit: true,
+              },
+            },
+            incident: {
+              select: {
+                id: true,
+                cadNumber: true,
+                locationArrested: true,
+                dateTimeArrested: true,
+                charge: true,
+                unit: true,
+                badgeNumber: true,
+                agency: true,
               },
             },
           },
@@ -248,6 +272,19 @@ export default async function (fastify, opts) {
                 lastName: true,
                 badgeNumber: true,
                 rank: true,
+                unit: true,
+              },
+            },
+            incident: {
+              select: {
+                id: true,
+                cadNumber: true,
+                locationArrested: true,
+                dateTimeArrested: true,
+                charge: true,
+                unit: true,
+                badgeNumber: true,
+                agency: true,
               },
             },
           },
@@ -383,6 +420,19 @@ export default async function (fastify, opts) {
               lastName: hold.createdBy.lastName,
               badgeNumber: hold.createdBy.badgeNumber,
               rank: hold.createdBy.rank,
+              unit: hold.createdBy.unit,
+            }
+          : null,
+        incident: hold.incident
+          ? {
+              id: hold.incident.id,
+              cadNumber: hold.incident.cadNumber,
+              locationArrested: hold.incident.locationArrested,
+              dateTimeArrested: hold.incident.dateTimeArrested.toISOString(),
+              charge: hold.incident.charge,
+              unit: hold.incident.unit,
+              badgeNumber: hold.incident.badgeNumber,
+              agency: hold.incident.agency,
             }
           : null,
       });

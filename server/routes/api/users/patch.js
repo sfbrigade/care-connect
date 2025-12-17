@@ -57,6 +57,7 @@ export default async function (fastify, opts) {
       const updateData = _.omit(request.body, ['password', 'picture']);
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.rank === '') updateData.rank = null;
+      if (updateData.unit === '') updateData.unit = null;
       user.update(updateData);
       // ensure only admins can change isAdmin and deactivatedAt params
       if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt'])).size && !request.user.isAdmin) {
