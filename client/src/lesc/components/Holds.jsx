@@ -106,8 +106,8 @@ function Holds () {
       enabled: shouldPoll,
     });
   }, [transferHoldIdToPoll, qrModalOpened, selectedHold?.id, isTransferTokenExpired, shouldPoll]);
-  
-  const { data: transferStatus, isLoading: isPolling } = useQuery({
+
+  const { data: transferStatus } = useQuery({
     queryKey: ['hold-transfer-status', transferHoldIdToPoll],
     queryFn: async () => {
       console.log('[Transfer Feedback] Polling transfer status for hold:', transferHoldIdToPoll);
@@ -121,7 +121,7 @@ function Holds () {
       if (!shouldPoll || !transferHoldIdToPoll || !qrModalOpened) {
         return false;
       }
-      
+
       // Stop polling if expired
       if (isTransferTokenExpired) {
         console.log('[Transfer Feedback] Token expired, stopping polling');
@@ -138,14 +138,14 @@ function Holds () {
 
   // Track previous transfer status to detect changes
   const prevTransferStatusRef = useRef(null);
-  
+
   // Show feedback when transfer completes
   useEffect(() => {
     // Handle initial case where prevTransferStatusRef is null (first poll)
     // Also handle case where status changes from false to true
     const wasNotTransferred = prevTransferStatusRef.current === null || prevTransferStatusRef.current?.isTransferred === false;
     const isNowTransferred = transferStatus?.isTransferred === true;
-    
+
     // Only show notification when status changes from not-transferred to transferred
     if (wasNotTransferred && isNowTransferred && transferHoldIdToPoll) {
       console.log('[Transfer Feedback] Transfer completed, showing notification');
@@ -155,7 +155,7 @@ function Holds () {
         ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
         : null;
       const displayName = clientName || holdId.substring(0, 8).toUpperCase();
-      
+
       showToast(`Client checked in: ${displayName}`, 'success');
       queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
@@ -166,7 +166,7 @@ function Holds () {
         setSelectedHold(null);
       }
     }
-    
+
     // Update ref
     prevTransferStatusRef.current = transferStatus;
   }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facilityId, qrModalOpened, closeQRModal]);
@@ -176,9 +176,9 @@ function Holds () {
   useEffect(() => {
     if (qrModalOpened && selectedHold) {
       // Check expiration specifically for the selected hold in the modal
-      const selectedHoldExpired = selectedHold.transferTokenExpiresAt && 
+      const selectedHoldExpired = selectedHold.transferTokenExpiresAt &&
         new Date(selectedHold.transferTokenExpiresAt) < new Date();
-      
+
       if (selectedHoldExpired) {
         console.log('[Transfer Feedback] Token expired for selected hold, closing modal');
         showToast('Transfer token expired. Please generate a new QR code.', 'warning');

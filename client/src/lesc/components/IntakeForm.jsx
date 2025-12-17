@@ -222,7 +222,7 @@ function IntakeForm () {
       const hours = String(pacificTime.getHours()).padStart(2, '0');
       const minutes = String(pacificTime.getMinutes()).padStart(2, '0');
       const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-      
+
       // Convert incident dateTimeArrested to Pacific timezone if it exists
       let incidentDateTime = currentDateTime;
       if (incident?.dateTimeArrested) {
@@ -235,7 +235,7 @@ function IntakeForm () {
         const iMinutes = String(incidentPacificTime.getMinutes()).padStart(2, '0');
         incidentDateTime = `${iYear}-${iMonth}-${iDay}T${iHours}:${iMinutes}`;
       }
-      
+
       setFormData({
         fullName: client ? `${client.firstName} ${client.lastName || ''}`.trim() : '',
         dateOfBirth: client?.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',

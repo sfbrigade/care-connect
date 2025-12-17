@@ -92,8 +92,8 @@ export default async function (fastify, opts) {
         }
 
         // Extract formatted address from properties.label or construct from properties
-        const address = feature.properties?.label
-          || (feature.properties
+        const address = feature.properties?.label ||
+          (feature.properties
             ? [
                 feature.properties.name,
                 feature.properties.street,

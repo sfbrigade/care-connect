@@ -401,10 +401,6 @@ describe('PDF Generator', () => {
         const doc = generate647fTransferFormPDF(holdWithIncident);
 
         // The incident dateTimeArrested should be used instead of hold.createdAt
-        const textCalls = doc.text.mock.calls.flatMap(call => {
-          const firstArg = call[0];
-          return Array.isArray(firstArg) ? firstArg : [firstArg];
-        });
         // formatDateTime should format the incident dateTimeArrested
         // We can't easily test the exact formatted value, but we can verify
         // that the function was called and the PDF was generated

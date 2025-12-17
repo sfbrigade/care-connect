@@ -220,10 +220,8 @@ export function generateCertificateOfReleasePDF (hold, facility = null) {
   // eslint-disable-next-line new-cap
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
   let yPos = 20;
   const leftMargin = 20;
-  const rightMargin = pageWidth - 20;
   const centerX = pageWidth / 2;
 
   // Header
@@ -251,7 +249,7 @@ export function generateCertificateOfReleasePDF (hold, facility = null) {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const certificateText = `As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975, ch.1117), I hereby certify that the taking into custody of ${subjectName} on ${custodyDateStr} hours by the San Francisco Sheriff's Department was a detention only, not an arrest. ${subjectName} was released on ${releaseDateStr} by the San Francisco Sheriff's Department pursuant to the provisions of: paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on the reverse of this certificate.`;
-  
+
   const certificateLines = doc.splitTextToSize(certificateText, pageWidth - 2 * leftMargin);
   doc.text(certificateLines, leftMargin, yPos);
   yPos += certificateLines.length * 5 + 4;
