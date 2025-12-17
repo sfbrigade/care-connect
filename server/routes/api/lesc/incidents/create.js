@@ -9,15 +9,28 @@ export default async function (fastify, opts) {
         description: 'Create an incident with shared fields for grouping holds.',
         body: z.object({
           cadNumber: z.string().min(1, 'CAD number is required'),
-          locationArrested: z.string().optional(),
+          locationArrested: z.string().nullable().optional(),
           dateTimeArrested: z.string().datetime().optional(),
           charge: z.string().optional().default('647(f) RWS'),
-          unit: z.string().optional(),
-          badgeNumber: z.string().optional(),
-          agency: z.string().optional(),
+          unit: z.string().nullable().optional(),
+          badgeNumber: z.string().nullable().optional(),
+          agency: z.string().nullable().optional(),
         }),
         response: {
           [StatusCodes.CREATED]: z.object({
+            id: z.string().uuid(),
+            cadNumber: z.string(),
+            locationArrested: z.string().nullable(),
+            dateTimeArrested: z.string(),
+            charge: z.string(),
+            unit: z.string().nullable(),
+            badgeNumber: z.string().nullable(),
+            agency: z.string().nullable(),
+            createdById: z.string().uuid(),
+            createdAt: z.string(),
+            updatedAt: z.string(),
+          }),
+          [StatusCodes.OK]: z.object({
             id: z.string().uuid(),
             cadNumber: z.string(),
             locationArrested: z.string().nullable(),
@@ -44,6 +57,34 @@ export default async function (fastify, opts) {
       } = request.body;
       const userId = request.user.id;
 
+      // Check if incident with this CAD number already exists for this user
+      const existingIncident = await fastify.prisma.incident.findFirst({
+        where: {
+          cadNumber: cadNumber.trim(),
+          createdById: userId,
+        },
+        orderBy: {
+          createdAt: 'desc', // Get most recent if multiple exist
+        },
+      });
+
+      // If incident exists, return it instead of creating a duplicate
+      if (existingIncident) {
+        return reply.code(StatusCodes.OK).send({
+          id: existingIncident.id,
+          cadNumber: existingIncident.cadNumber,
+          locationArrested: existingIncident.locationArrested,
+          dateTimeArrested: existingIncident.dateTimeArrested.toISOString(),
+          charge: existingIncident.charge,
+          unit: existingIncident.unit,
+          badgeNumber: existingIncident.badgeNumber,
+          agency: existingIncident.agency,
+          createdById: existingIncident.createdById,
+          createdAt: existingIncident.createdAt.toISOString(),
+          updatedAt: existingIncident.updatedAt.toISOString(),
+        });
+      }
+
       // Fetch user to get badgeNumber
       const user = await fastify.prisma.user.findUnique({
         where: { id: userId },
@@ -56,7 +97,7 @@ export default async function (fastify, opts) {
       // Create incident - always use user.badgeNumber
       const incident = await fastify.prisma.incident.create({
         data: {
-          cadNumber,
+          cadNumber: cadNumber.trim(),
           locationArrested: locationArrested || null,
           dateTimeArrested: arrestDateTime,
           charge: charge || '647(f) RWS',

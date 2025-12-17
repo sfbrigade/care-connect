@@ -11,6 +11,8 @@ function LESCMobileNavbar ({ close }) {
       <MantineNavLink component={NavLink} to='/lesc/holds' onClick={close} label='Holds' />
       <MantineNavLink component={NavLink} to='/admin/facilities' onClick={close} label='Facilities' />
       <MantineNavLink component={NavLink} to='/lesc/checkin' onClick={close} label='Check-in' />
+      <MantineNavLink component={NavLink} to='/lesc/client' onClick={close} label='Clients' />
+      <MantineNavLink component={NavLink} to='/lesc/incident' onClick={close} label='Incidents' />
       <Divider />
       {user && (
         <MantineNavLink
