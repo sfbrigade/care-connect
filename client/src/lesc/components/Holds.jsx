@@ -1,4 +1,4 @@
-import { /* useEffect, */ useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -66,6 +66,128 @@ function Holds () {
       return response.data;
     },
   });
+
+  // Update selectedHold with fresh data from holds list when it changes (to get transferToken after QR generation)
+  useEffect(() => {
+    if (selectedHold?.id && holds) {
+      const freshHold = holds.find(h => h.id === selectedHold.id);
+      if (freshHold) {
+        // Only update if transferToken changed (was added or updated)
+        const hadToken = !!selectedHold.transferToken;
+        const hasToken = !!freshHold.transferToken;
+        if (hasToken !== hadToken || (hasToken && freshHold.transferToken !== selectedHold.transferToken)) {
+          console.log('[Transfer Feedback] Updating selectedHold with fresh data, has transferToken:', hasToken);
+          setSelectedHold(freshHold);
+        }
+      }
+    }
+  }, [holds, selectedHold]);
+
+  // Only one transfer operation at a time - poll only for selectedHold when modal is open
+  const transferHoldIdToPoll = (qrModalOpened && selectedHold?.id) ? selectedHold.id : null;
+
+  // Check if transfer token has expired for the selected hold
+  const isTransferTokenExpired = useMemo(() => {
+    if (!selectedHold?.transferTokenExpiresAt) return false;
+    return new Date(selectedHold.transferTokenExpiresAt) < new Date();
+  }, [selectedHold]);
+
+  // Poll transfer status - only when modal is open with a selected hold
+  // Since there's only one transfer operation at a time, we only poll for selectedHold
+  const shouldPoll = !!transferHoldIdToPoll && !isTransferTokenExpired && qrModalOpened;
+
+  // Debug logging for polling setup
+  useEffect(() => {
+    console.log('[Transfer Feedback] Polling setup:', {
+      transferHoldIdToPoll,
+      qrModalOpened,
+      selectedHoldId: selectedHold?.id,
+      isTransferTokenExpired,
+      enabled: shouldPoll,
+    });
+  }, [transferHoldIdToPoll, qrModalOpened, selectedHold?.id, isTransferTokenExpired, shouldPoll]);
+
+  const { data: transferStatus } = useQuery({
+    queryKey: ['hold-transfer-status', transferHoldIdToPoll],
+    queryFn: async () => {
+      console.log('[Transfer Feedback] Polling transfer status for hold:', transferHoldIdToPoll);
+      const response = await Api.lesc.holds.transferStatus(transferHoldIdToPoll);
+      console.log('[Transfer Feedback] Transfer status response:', response.data);
+      return response.data;
+    },
+    enabled: shouldPoll,
+    refetchInterval: (query) => {
+      // Early return if polling shouldn't be happening (query is disabled)
+      if (!shouldPoll || !transferHoldIdToPoll || !qrModalOpened) {
+        return false;
+      }
+
+      // Stop polling if expired
+      if (isTransferTokenExpired) {
+        console.log('[Transfer Feedback] Token expired, stopping polling');
+        return false;
+      }
+      // Stop polling if transferred
+      if (query.state.data?.isTransferred) {
+        console.log('[Transfer Feedback] Hold transferred, stopping polling');
+        return false;
+      }
+      return 2000; // Poll every 2 seconds
+    },
+  });
+
+  // Track previous transfer status to detect changes
+  const prevTransferStatusRef = useRef(null);
+
+  // Show feedback when transfer completes
+  useEffect(() => {
+    // Handle initial case where prevTransferStatusRef is null (first poll)
+    // Also handle case where status changes from false to true
+    const wasNotTransferred = prevTransferStatusRef.current === null || prevTransferStatusRef.current?.isTransferred === false;
+    const isNowTransferred = transferStatus?.isTransferred === true;
+
+    // Only show notification when status changes from not-transferred to transferred
+    if (wasNotTransferred && isNowTransferred && transferHoldIdToPoll) {
+      console.log('[Transfer Feedback] Transfer completed, showing notification');
+      // Get client name from the hold if available, otherwise use hold ID
+      const holdId = transferHoldIdToPoll;
+      const clientName = selectedHold?.client
+        ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
+        : null;
+      const displayName = clientName || holdId.substring(0, 8).toUpperCase();
+
+      showToast(`Client checked in: ${displayName}`, 'success');
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      // Close QR modal (only one transfer at a time, so this must be the one)
+      if (qrModalOpened) {
+        console.log('[Transfer Feedback] Closing QR modal for transferred hold');
+        closeQRModal();
+        setSelectedHold(null);
+      }
+    }
+
+    // Update ref
+    prevTransferStatusRef.current = transferStatus;
+  }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facilityId, qrModalOpened, closeQRModal]);
+
+  // Handle token expiration - close modal and stop polling
+  // Only check expiration for the selected hold when modal is open
+  useEffect(() => {
+    if (qrModalOpened && selectedHold) {
+      // Check expiration specifically for the selected hold in the modal
+      const selectedHoldExpired = selectedHold.transferTokenExpiresAt &&
+        new Date(selectedHold.transferTokenExpiresAt) < new Date();
+
+      if (selectedHoldExpired) {
+        console.log('[Transfer Feedback] Token expired for selected hold, closing modal');
+        showToast('Transfer token expired. Please generate a new QR code.', 'warning');
+        closeQRModal();
+        setSelectedHold(null);
+        queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      }
+    }
+  }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facilityId]);
 
   // Get facility info for specific facility view
   const facilityInfo = useMemo(() => {
@@ -385,6 +507,12 @@ function Holds () {
         holdId={selectedHold?.id}
         opened={qrModalOpened}
         onClose={() => {
+          const holdIdToCancel = selectedHold?.id;
+          if (holdIdToCancel) {
+            console.log('[Transfer Feedback] QR modal closed, stopping polling for:', holdIdToCancel);
+            // Cancel any ongoing polling queries for this hold
+            queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+          }
           closeQRModal();
           setSelectedHold(null);
         }}

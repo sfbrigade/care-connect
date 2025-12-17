@@ -53,7 +53,12 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
       const user = new User(data);
-      user.update(_.omit(request.body, ['password', 'picture']));
+      // Convert empty strings to null for nullable fields
+      const updateData = _.omit(request.body, ['password', 'picture']);
+      if (updateData.badgeNumber === '') updateData.badgeNumber = null;
+      if (updateData.rank === '') updateData.rank = null;
+      if (updateData.unit === '') updateData.unit = null;
+      user.update(updateData);
       // ensure only admins can change isAdmin and deactivatedAt params
       if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt'])).size && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();

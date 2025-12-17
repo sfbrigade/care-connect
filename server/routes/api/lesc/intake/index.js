@@ -14,6 +14,10 @@ export default async function (fastify, opts) {
           sex: z.string().optional(),
           race: z.string().optional(),
           personallyIdentifiable: z.string().optional(),
+          middleInitial: z.string().optional(),
+          address: z.string().optional(),
+          driverLicense: z.string().optional(),
+          localId: z.string().optional(),
           observedBehavior: z.string().optional(),
           observationDetails: z.string().optional(),
           faceNormal: z.string().optional(),
@@ -43,6 +47,10 @@ export default async function (fastify, opts) {
         sex,
         race,
         personallyIdentifiable,
+        middleInitial,
+        address,
+        driverLicense,
+        localId,
       } = request.body;
 
       // Parse full name into first and last name
@@ -58,9 +66,13 @@ export default async function (fastify, opts) {
         data: {
           firstName,
           lastName,
+          middleInitial,
           dateOfBirth: dob,
           sex,
           race,
+          address,
+          driverLicense,
+          localId,
           personallyIdentifiable,
         },
       });

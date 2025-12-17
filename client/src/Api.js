@@ -195,6 +195,20 @@ const Api = {
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
       },
+      update (id, data) {
+        return instance.patch(`/api/lesc/holds/${id}`, data).catch(handleError);
+      },
+    },
+    incidents: {
+      create (data) {
+        return instance.post('/api/lesc/incidents', data).catch(handleError);
+      },
+      get (id) {
+        return instance.get(`/api/lesc/incidents/${id}`).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/lesc/incidents/${id}`, data).catch(handleError);
+      },
     },
     intake: {
       create (data) {
@@ -263,6 +277,13 @@ const Api = {
     },
     list (page = 1) {
       return instance.get('/api/feedback', { params: { page } });
+    },
+  },
+  geocode: {
+    reverse (latitude, longitude) {
+      return instance.get('/api/geocode/reverse', {
+        params: { latitude, longitude }
+      }).catch(handleError);
     },
   },
 };

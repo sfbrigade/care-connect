@@ -78,7 +78,7 @@ export default async function (fastify, opts) {
 
       // Generate new token and expiration
       const newToken = crypto.randomUUID();
-      const newExpiresAt = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+      const newExpiresAt = new Date(now.getTime() + 30 * 1000); // 30 seconds from now
 
       const updatedHold = await fastify.prisma.bedHold.update({
         where: { id },

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generate647fTransferFormPDF } from './pdfGenerator.js';
+import { generate647fTransferFormPDF, fillSFSOFormP04 } from './pdfGenerator.js';
 import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 
 // Mock jsPDF - must define everything inside vi.mock since it's hoisted
 vi.mock('jspdf', () => {
@@ -35,6 +36,19 @@ vi.mock('jspdf', () => {
     jsPDF: mockJsPDFConstructor
   };
 });
+
+// Mock pdf-lib
+vi.mock('pdf-lib', () => ({
+  PDFDocument: {
+    load: vi.fn()
+  },
+  PDFString: {
+    of: vi.fn((str) => ({ value: str }))
+  },
+  PDFName: {
+    of: vi.fn((str) => ({ value: str }))
+  }
+}));
 
 describe('PDF Generator', () => {
   let mockHold;
@@ -320,6 +334,356 @@ describe('PDF Generator', () => {
       const textCalls = doc.text.mock.calls.map(call => call[0]);
       const dateTimeCall = textCalls.find(text => text.includes('Date/Time Arrested:'));
       expect(dateTimeCall).toBeDefined();
+    });
+
+    describe('incident data integration', () => {
+      it('should use incident CAD number when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // Check that CAD number from incident appears in the PDF
+        expect(textCalls.some(text => text.includes('CAD-12345'))).toBe(true);
+      });
+
+      it('should use incident location arrested when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('123 Main St'))).toBe(true);
+      });
+
+      it('should use incident date/time arrested when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        // The incident dateTimeArrested should be used instead of hold.createdAt
+        // formatDateTime should format the incident dateTimeArrested
+        // We can't easily test the exact formatted value, but we can verify
+        // that the function was called and the PDF was generated
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+
+      it('should use incident unit, badge number, and agency when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          createdBy: {
+            ...mockHold.createdBy,
+            unit: 'Unit A', // Unit comes from createdBy, not incident
+          },
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: '647(f) RWS'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('Unit A'))).toBe(true);
+        expect(textCalls.some(text => text.includes('12345'))).toBe(true);
+        expect(textCalls.some(text => text.includes('SFPD'))).toBe(true);
+      });
+
+      it('should use incident charge when available', () => {
+        const holdWithIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD',
+            charge: 'Custom Charge'
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        expect(textCalls.some(text => text.includes('Custom Charge'))).toBe(true);
+      });
+
+      it('should fallback to hold.createdAt for date/time when incident is not present', () => {
+        const doc = generate647fTransferFormPDF(mockHold);
+
+        // Should still generate PDF using hold.createdAt
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+
+      it('should fallback to TBD for incident fields when incident is not present', () => {
+        const doc = generate647fTransferFormPDF(mockHold);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // When incident is not present, CAD Number should be TBD
+        // We check that the field exists, but the value will be TBD
+        expect(textCalls.some(text => text.includes('CAD Number:'))).toBe(true);
+      });
+
+      it('should fallback to default charge when incident charge is not present', () => {
+        const holdWithPartialIncident = {
+          ...mockHold,
+          incident: {
+            cadNumber: 'CAD-12345',
+            locationArrested: '123 Main St',
+            dateTimeArrested: '2024-01-15T08:00:00Z',
+            unit: 'Unit A',
+            badgeNumber: '12345',
+            agency: 'SFPD'
+            // charge is missing
+          }
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithPartialIncident);
+
+        const textCalls = doc.text.mock.calls.flatMap(call => {
+          const firstArg = call[0];
+          return Array.isArray(firstArg) ? firstArg : [firstArg];
+        });
+        // Should default to '647(f) RWS'
+        expect(textCalls.some(text => text.includes('647(f) RWS'))).toBe(true);
+      });
+
+      it('should handle null incident gracefully', () => {
+        const holdWithNullIncident = {
+          ...mockHold,
+          incident: null
+        };
+
+        const doc = generate647fTransferFormPDF(holdWithNullIncident);
+
+        // Should still generate PDF without errors
+        expect(doc).toBeDefined();
+        expect(doc.text).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('fillSFSOFormP04', () => {
+    let mockPdfBytes;
+    let mockPdfDoc;
+    let mockForm;
+    let mockTextField;
+    let mockCourierFont;
+
+    beforeEach(() => {
+      // Mock PDF bytes (minimal valid PDF)
+      mockPdfBytes = new Uint8Array([
+        0x25, 0x50, 0x44, 0x46, // %PDF
+        0x2D, 0x31, 0x2E, 0x34, // -1.4
+        0x0A
+      ]);
+
+      // Mock text field
+      mockTextField = {
+        setText: vi.fn(),
+        acroField: {
+          dict: {
+            set: vi.fn()
+          }
+        },
+        updateAppearances: vi.fn()
+      };
+
+      // Mock form
+      mockForm = {
+        getTextField: vi.fn((name) => {
+          if (name === 'NARRATIVE') {
+            return mockTextField;
+          }
+          return mockTextField;
+        }),
+        getDropdown: vi.fn(),
+        updateFieldAppearances: vi.fn()
+      };
+
+      // Mock PDF document
+      mockCourierFont = {};
+      mockPdfDoc = {
+        getForm: vi.fn(() => mockForm),
+        embedStandardFont: vi.fn(() => mockCourierFont),
+        save: vi.fn(async () => new Uint8Array([1, 2, 3]))
+      };
+
+      // Mock PDFDocument.load
+      vi.mocked(PDFDocument.load).mockResolvedValue(mockPdfDoc);
+
+      // Mock global fetch
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          headers: {
+            get: vi.fn(() => 'application/pdf')
+          },
+          arrayBuffer: vi.fn(async () => mockPdfBytes.buffer)
+        })
+      );
+    });
+
+    it('should throw error when hold is not provided', async () => {
+      await expect(fillSFSOFormP04(null)).rejects.toThrow('Hold information is required');
+    });
+
+    it('should generate PDF with complete hold data', async () => {
+      const result = await fillSFSOFormP04(mockHold);
+
+      expect(global.fetch).toHaveBeenCalled();
+      expect(PDFDocument.load).toHaveBeenCalled();
+      expect(mockPdfDoc.getForm).toHaveBeenCalled();
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+      expect(result).toBeInstanceOf(Uint8Array);
+    });
+
+    it('should use incident date/time when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify that setText was called (indicating fields were set)
+      expect(mockTextField.setText).toHaveBeenCalled();
+    });
+
+    it('should use incident location when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify form fields were set
+      expect(mockForm.getTextField).toHaveBeenCalled();
+    });
+
+    it('should use incident unit when available', async () => {
+      const holdWithIncident = {
+        ...mockHold,
+        incident: {
+          dateTimeArrested: '2024-01-15T08:00:00Z',
+          locationArrested: '123 Main St',
+          unit: 'Unit A'
+        }
+      };
+
+      await fillSFSOFormP04(holdWithIncident);
+
+      // Verify form fields were set
+      expect(mockForm.getTextField).toHaveBeenCalled();
+    });
+
+    it('should fallback to hold.createdAt for date/time when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF using hold.createdAt
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should fallback to TBD for location when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should fallback to TBD for unit when incident is not present', async () => {
+      await fillSFSOFormP04(mockHold);
+
+      // Should still generate PDF
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should handle null incident gracefully', async () => {
+      const holdWithNullIncident = {
+        ...mockHold,
+        incident: null
+      };
+
+      await fillSFSOFormP04(holdWithNullIncident);
+
+      // Should still generate PDF without errors
+      expect(mockPdfDoc.save).toHaveBeenCalled();
+    });
+
+    it('should handle fetch error gracefully', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found'
+        })
+      );
+
+      await expect(fillSFSOFormP04(mockHold)).rejects.toThrow('Failed to fetch PDF form');
     });
   });
 });

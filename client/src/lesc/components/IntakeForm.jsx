@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, NumberInput } from '@mantine/core';
+import { Container, Stack, Text, Button, Group, Select, TextInput, Loader, NumberInput, Textarea } from '@mantine/core';
 import { useNavigate, useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Api from '@/Api';
+import { getCurrentLocationAddress } from '@/utils/geocoding';
+import { useToast } from '@/components/ToastContext';
 
 /**
  * Date input component with spinners for month, day, and year
@@ -148,6 +150,8 @@ function IntakeForm () {
   const holdId = location.state?.holdId || holdIdParam;
   const queryClient = useQueryClient();
   const isEditMode = !!clientId;
+  const { showToast } = useToast();
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const [formData, setFormData] = useState(() => {
     return {
@@ -155,6 +159,17 @@ function IntakeForm () {
       dateOfBirth: '',
       sex: '',
       race: '',
+      middleInitial: '',
+      address: '',
+      driverLicense: '',
+      localId: '',
+      // Incident fields
+      cadNumber: '',
+      dateTimeArrested: '',
+      locationArrested: '',
+      agency: '',
+      charge: '',
+      justificationNarrative: '',
     };
   });
 
@@ -183,17 +198,110 @@ function IntakeForm () {
         dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
         sex: client.sex || '',
         race: client.race || '',
+        middleInitial: client.middleInitial || '',
+        address: client.address || '',
+        driverLicense: client.driverLicense || '',
+        localId: client.localId || '',
+        // Incident fields - not available in client edit mode
+        cadNumber: '',
+        dateTimeArrested: '',
+        locationArrested: '',
+        agency: '',
+        charge: '',
+        justificationNarrative: '',
       });
-    } else if (!isEditMode && holdResponse?.data?.client && !formData.fullName) {
+    } else if (!isEditMode && holdResponse?.data && !formData.fullName) {
       const client = holdResponse.data.client;
+      const incident = holdResponse.data.incident;
+      // Convert current time to Pacific timezone
+      const now = new Date();
+      const pacificTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      const year = pacificTime.getFullYear();
+      const month = String(pacificTime.getMonth() + 1).padStart(2, '0');
+      const day = String(pacificTime.getDate()).padStart(2, '0');
+      const hours = String(pacificTime.getHours()).padStart(2, '0');
+      const minutes = String(pacificTime.getMinutes()).padStart(2, '0');
+      const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+      // Convert incident dateTimeArrested to Pacific timezone if it exists
+      let incidentDateTime = currentDateTime;
+      if (incident?.dateTimeArrested) {
+        const incidentDate = new Date(incident.dateTimeArrested);
+        const incidentPacificTime = new Date(incidentDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+        const iYear = incidentPacificTime.getFullYear();
+        const iMonth = String(incidentPacificTime.getMonth() + 1).padStart(2, '0');
+        const iDay = String(incidentPacificTime.getDate()).padStart(2, '0');
+        const iHours = String(incidentPacificTime.getHours()).padStart(2, '0');
+        const iMinutes = String(incidentPacificTime.getMinutes()).padStart(2, '0');
+        incidentDateTime = `${iYear}-${iMonth}-${iDay}T${iHours}:${iMinutes}`;
+      }
+
       setFormData({
-        fullName: `${client.firstName} ${client.lastName || ''}`.trim(),
-        dateOfBirth: client.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
-        sex: client.sex || '',
-        race: client.race || '',
+        fullName: client ? `${client.firstName} ${client.lastName || ''}`.trim() : '',
+        dateOfBirth: client?.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
+        sex: client?.sex || '',
+        race: client?.race || '',
+        middleInitial: client?.middleInitial || '',
+        address: client?.address || '',
+        driverLicense: client?.driverLicense || '',
+        localId: client?.localId || '',
+        // Incident fields
+        cadNumber: incident?.cadNumber || '',
+        dateTimeArrested: incidentDateTime,
+        locationArrested: incident?.locationArrested || '',
+        agency: incident?.agency || '',
+        charge: incident?.charge || '',
+        justificationNarrative: holdResponse.data.notes || '',
       });
+    } else if (!isEditMode && !holdResponse?.data && !formData.fullName && holdId) {
+      // New intake mode - auto-fill date/time arrested with current time
+      const currentDateTime = new Date().toISOString().slice(0, 16);
+      setFormData(prev => ({
+        ...prev,
+        dateTimeArrested: prev.dateTimeArrested || currentDateTime,
+      }));
     }
-  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id]);
+  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id, holdResponse?.data?.incident?.id, holdId]);
+
+  // Auto-fill location arrested when form loads in new intake mode
+  useEffect(() => {
+    if (!isEditMode && holdId && !formData.locationArrested && !holdResponse?.data?.incident?.locationArrested) {
+      // Only auto-fill if we're in new intake mode and location is empty
+      getCurrentLocationAddress()
+        .then((address) => {
+          if (address) {
+            setFormData(prev => ({
+              ...prev,
+              locationArrested: address,
+            }));
+          }
+        })
+        .catch((error) => {
+          // Silently fail - user can manually enter location
+          console.warn('Failed to auto-fill location:', error);
+        });
+    }
+  }, [isEditMode, holdId, formData.locationArrested, holdResponse?.data?.incident?.locationArrested]);
+
+  const handleGetCurrentLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const address = await getCurrentLocationAddress();
+      if (address) {
+        setFormData(prev => ({
+          ...prev,
+          locationArrested: address,
+        }));
+        showToast('Location updated', 'success');
+      } else {
+        showToast('Could not determine location. Please enter manually.', 'warning');
+      }
+    } catch (error) {
+      showToast(error.message || 'Failed to get location. Please enter manually.', 'error');
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
 
   const updateClientMutation = useMutation({
     mutationFn: (data) => {
@@ -208,6 +316,10 @@ function IntakeForm () {
         dateOfBirth: data.dateOfBirth || null,
         sex: data.sex || null,
         race: data.race || null,
+        middleInitial: data.middleInitial || null,
+        address: data.address || null,
+        driverLicense: data.driverLicense || null,
+        localId: data.localId || null,
       });
     },
     onSuccess: () => {
@@ -227,6 +339,55 @@ function IntakeForm () {
       // Update existing client
       updateClientMutation.mutate(formData);
     } else {
+      // Handle incident creation/update
+      let incidentId = holdResponse?.data?.incident?.id || null;
+
+      if (formData.cadNumber || formData.dateTimeArrested || formData.locationArrested || formData.agency || formData.charge) {
+        // Create or update incident
+        try {
+          if (incidentId) {
+            // Update existing incident
+            await Api.lesc.incidents.update(incidentId, {
+              cadNumber: formData.cadNumber || undefined,
+              dateTimeArrested: formData.dateTimeArrested ? new Date(formData.dateTimeArrested).toISOString() : undefined,
+              locationArrested: formData.locationArrested || null,
+              agency: formData.agency || null,
+              charge: formData.charge || undefined,
+            });
+          } else {
+            // Create new incident
+            const incidentResponse = await Api.lesc.incidents.create({
+              cadNumber: formData.cadNumber || 'TBD',
+              dateTimeArrested: formData.dateTimeArrested ? new Date(formData.dateTimeArrested).toISOString() : new Date().toISOString(),
+              locationArrested: formData.locationArrested || null,
+              agency: formData.agency || null,
+              charge: formData.charge || '647(f) RWS',
+            });
+            incidentId = incidentResponse.data.id;
+          }
+        } catch (error) {
+          console.error('Failed to create/update incident', error);
+          // Continue with client update even if incident fails
+        }
+      }
+
+      // Update hold notes and link to incident
+      const currentNotes = holdResponse?.data?.notes || null;
+      const currentIncidentId = holdResponse?.data?.incident?.id || null;
+      const notesChanged = formData.justificationNarrative !== currentNotes;
+      const incidentChanged = incidentId !== currentIncidentId;
+
+      if (notesChanged || incidentChanged) {
+        try {
+          await Api.lesc.holds.update(holdId, {
+            notes: formData.justificationNarrative !== undefined ? (formData.justificationNarrative || null) : undefined,
+            incidentId: incidentChanged ? (incidentId || null) : undefined,
+          });
+        } catch (error) {
+          console.error('Failed to update hold', error);
+        }
+      }
+
       // Check if hold has existing client
       const existingClientId = holdResponse?.data?.client?.id;
 
@@ -244,6 +405,10 @@ function IntakeForm () {
             dateOfBirth: formData.dateOfBirth || null,
             sex: formData.sex || null,
             race: formData.race || null,
+            middleInitial: formData.middleInitial || null,
+            address: formData.address || null,
+            driverLicense: formData.driverLicense || null,
+            localId: formData.localId || null,
           });
 
           queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
@@ -346,7 +511,148 @@ function IntakeForm () {
                   },
                 }}
               />
+              <TextInput
+                label='Middle Initial'
+                placeholder='Enter middle initial'
+                value={formData.middleInitial}
+                onChange={(e) => setFormData(prev => ({ ...prev, middleInitial: e.target.value }))}
+                maxLength={1}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label='Address'
+                placeholder='Enter address'
+                value={formData.address}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label="Driver's License"
+                placeholder="Enter driver's license number"
+                value={formData.driverLicense}
+                onChange={(e) => setFormData(prev => ({ ...prev, driverLicense: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
+              <TextInput
+                label='Local ID / SF #'
+                placeholder='Enter local ID or SF number'
+                value={formData.localId}
+                onChange={(e) => setFormData(prev => ({ ...prev, localId: e.target.value }))}
+                styles={{
+                  input: {
+                    fontSize: '16px', // Prevent iOS zoom
+                  },
+                }}
+              />
             </Stack>
+
+            {/* Incident Information */}
+            {!isEditMode && (
+              <Stack gap='sm'>
+                <Text
+                  style={{
+                    fontSize: '24px',
+                    lineHeight: '32px',
+                    fontFamily: 'Roboto, sans-serif',
+                    fontWeight: 700,
+                    color: '#000000',
+                  }}
+                >
+                  Incident Information
+                </Text>
+                <TextInput
+                  label='CAD Number'
+                  placeholder='Enter CAD number'
+                  value={formData.cadNumber}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cadNumber: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Date/Time Arrested'
+                  type='datetime-local'
+                  value={formData.dateTimeArrested}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dateTimeArrested: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <Group align='flex-end' gap='xs'>
+                  <TextInput
+                    label='Location Arrested'
+                    placeholder='Enter location arrested'
+                    value={formData.locationArrested}
+                    onChange={(e) => setFormData(prev => ({ ...prev, locationArrested: e.target.value }))}
+                    styles={{
+                      input: {
+                        fontSize: '16px', // Prevent iOS zoom
+                      },
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    onClick={handleGetCurrentLocation}
+                    loading={isLoadingLocation}
+                    disabled={isLoadingLocation}
+                    size='sm'
+                    variant='outline'
+                  >
+                    Get Current Location
+                  </Button>
+                </Group>
+                <TextInput
+                  label='Agency'
+                  placeholder='Enter agency'
+                  value={formData.agency}
+                  onChange={(e) => setFormData(prev => ({ ...prev, agency: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <TextInput
+                  label='Charge'
+                  placeholder='Enter charge'
+                  value={formData.charge}
+                  onChange={(e) => setFormData(prev => ({ ...prev, charge: e.target.value }))}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+                <Textarea
+                  label='647(f) RWS Justification - Narrative'
+                  placeholder='Enter justification narrative'
+                  value={formData.justificationNarrative}
+                  onChange={(e) => setFormData(prev => ({ ...prev, justificationNarrative: e.target.value }))}
+                  rows={4}
+                  styles={{
+                    input: {
+                      fontSize: '16px', // Prevent iOS zoom
+                    },
+                  }}
+                />
+              </Stack>
+            )}
 
             <Group justify='space-between' mt='md'>
               <Button variant='light' onClick={() => navigate(-1)}>

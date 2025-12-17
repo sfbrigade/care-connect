@@ -7,7 +7,7 @@ import Api from '@/Api';
 import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
 import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
-import { generate647fTransferFormPDF, fillSFSOFormP04 } from '@/utils/pdfGenerator';
+import { generate647fTransferFormPDF, fillSFSOFormP04, generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
 /**
@@ -379,6 +379,24 @@ function CheckIn () {
     }
   };
 
+  // Generate Certificate of Release PDF
+  const generateCertificatePDF = () => {
+    if (!hold) {
+      showToast('No hold information available', 'error');
+      return;
+    }
+
+    try {
+      const doc = generateCertificateOfReleasePDF(hold, facility);
+      // Open PDF in browser
+      doc.output('dataurlnewwindow');
+      showToast('Certificate of Release opened in new window', 'success');
+    } catch (error) {
+      console.error('Error generating Certificate of Release PDF:', error);
+      showToast('Failed to generate Certificate of Release PDF', 'error');
+    }
+  };
+
   return (
     <Container>
       <Stack gap='md'>
@@ -461,6 +479,14 @@ function CheckIn () {
                 onClick={generateSFSOForm}
               >
                 849 PDF
+              </Button>
+              <Button
+                leftSection={<IconFileDownload size={16} />}
+                variant='outline'
+                size='sm'
+                onClick={generateCertificatePDF}
+              >
+                Release PDF
               </Button>
             </Group>
           </Stack>

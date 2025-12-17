@@ -75,6 +75,9 @@ model User {
   deactivatedAt           DateTime?
   passwordResetToken      String?   @unique @db.Uuid
   passwordResetExpiresAt  DateTime?
+  badgeNumber             String?
+  rank                    String?
+  unit                    String?
   createdInvites          Invite[]  @relation("CreatedByUser")
   acceptedInvites         Invite[]  @relation("AcceptedByUser")
   revokedInvites          Invite[]  @relation("RevokedByUser")
@@ -84,6 +87,7 @@ model User {
   bedHoldsCreated            BedHold[]            @relation("CreatedByUser")
   bedHoldsCancelled          BedHold[]           @relation("CancelledByUser")
   bedHoldsTransferred        BedHold[]           @relation("TransferredByUser")
+  createdIncidents            Incident[]          @relation("CreatedIncidents")
   updatedAt               DateTime  @updatedAt
   createdAt               DateTime  @default(now())
 }
@@ -222,9 +226,13 @@ model Client {
   id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName           String
   lastName            String?
+  middleInitial       String?
   dateOfBirth         DateTime?
   sex                 String?
   race                String?
+  address             String?
+  driverLicense       String?
+  localId             String?
   personallyIdentifiable String?
   description         String?
   pets                String?
@@ -282,6 +290,8 @@ model BedHold {
   serviceTypeId         String         @db.Uuid
   client                Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId              String?        @db.Uuid
+  incident              Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  incidentId            String?        @db.Uuid
   bedsRequested         Int
   expiresAt             DateTime
   status                BedHoldStatus  @default(ACTIVE)
@@ -303,6 +313,26 @@ model BedHold {
   @@index([facilityId])
   @@index([expiresAt])
   @@index([status])
+  @@index([incidentId])
+}
+
+model Incident {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cadNumber         String
+  locationArrested  String?
+  dateTimeArrested  DateTime
+  charge            String    @default("647(f) RWS")
+  unit              String?
+  badgeNumber       String?
+  agency            String?
+  createdBy         User      @relation("CreatedIncidents", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById       String    @db.Uuid
+  bedHolds          BedHold[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([cadNumber])
+  @@index([createdById])
 }
 
 model Feedback {

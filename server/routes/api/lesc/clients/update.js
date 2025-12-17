@@ -13,9 +13,13 @@ export default async function (fastify, opts) {
         body: z.object({
           firstName: z.string().nullable().optional(),
           lastName: z.string().nullable().optional(),
+          middleInitial: z.string().nullable().optional(),
           dateOfBirth: z.string().nullable().optional(),
           sex: z.string().nullable().optional(),
           race: z.string().nullable().optional(),
+          address: z.string().nullable().optional(),
+          driverLicense: z.string().nullable().optional(),
+          localId: z.string().nullable().optional(),
           personallyIdentifiable: z.string().nullable().optional(),
           description: z.string().nullable().optional(),
           pets: z.string().nullable().optional(),
@@ -29,9 +33,13 @@ export default async function (fastify, opts) {
       const {
         firstName,
         lastName,
+        middleInitial,
         dateOfBirth,
         sex,
         race,
+        address,
+        driverLicense,
+        localId,
         personallyIdentifiable,
         description,
         pets,
@@ -52,9 +60,13 @@ export default async function (fastify, opts) {
       const updateData = {};
       if (firstName !== undefined) updateData.firstName = firstName;
       if (lastName !== undefined) updateData.lastName = lastName;
+      if (middleInitial !== undefined) updateData.middleInitial = middleInitial;
       if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
       if (sex !== undefined) updateData.sex = sex;
       if (race !== undefined) updateData.race = race;
+      if (address !== undefined) updateData.address = address;
+      if (driverLicense !== undefined) updateData.driverLicense = driverLicense;
+      if (localId !== undefined) updateData.localId = localId;
       if (personallyIdentifiable !== undefined) updateData.personallyIdentifiable = personallyIdentifiable;
       if (description !== undefined) updateData.description = description;
       if (pets !== undefined) updateData.pets = pets;
@@ -70,9 +82,13 @@ export default async function (fastify, opts) {
         id: client.id,
         firstName: client.firstName,
         lastName: client.lastName,
+        middleInitial: client.middleInitial,
         dateOfBirth: client.dateOfBirth?.toISOString() || null,
         sex: client.sex,
         race: client.race,
+        address: client.address,
+        driverLicense: client.driverLicense,
+        localId: client.localId,
         personallyIdentifiable: client.personallyIdentifiable,
         description: client.description,
         pets: client.pets,
