@@ -227,7 +227,12 @@ function LESCHold ({
               {onTransfer && (
                 <Text
                   component='button'
-                  onClick={onTransfer}
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onTransfer(hold);
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '32px',
@@ -254,7 +259,12 @@ function LESCHold ({
               {onExtend && (
                 <Text
                   component='button'
-                  onClick={onExtend}
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onExtend(hold?.id);
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '32px',
@@ -313,7 +323,12 @@ function LESCHold ({
               {onCancel && (
                 <Text
                   component='button'
-                  onClick={onCancel}
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCancel(hold);
+                  }}
                   style={{
                     padding: '6px 16px',
                     borderRadius: '32px',

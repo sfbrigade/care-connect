@@ -359,8 +359,8 @@ function IntakeForm () {
             const incidentResponse = await Api.lesc.incidents.create({
               cadNumber: formData.cadNumber || 'TBD',
               dateTimeArrested: formData.dateTimeArrested ? new Date(formData.dateTimeArrested).toISOString() : new Date().toISOString(),
-              locationArrested: formData.locationArrested || null,
-              agency: formData.agency || null,
+              locationArrested: formData.locationArrested?.trim() || null,
+              agency: formData.agency?.trim() || null,
               charge: formData.charge || '647(f) RWS',
             });
             incidentId = incidentResponse.data.id;

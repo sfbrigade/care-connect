@@ -1,7 +1,6 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { useLocation, useNavigate, useParams, /* useSearchParams */ } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
@@ -15,6 +14,7 @@ import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
 import { formatTime, calculateAge } from '@/utils/dateTime';
 import { useAuthContext } from '@/AuthContext';
+import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 function Holds () {
   const location = useLocation();
@@ -23,15 +23,32 @@ function Holds () {
   // const [searchParams] = useSearchParams();
   // Modal hooks kept for future use - currently disabled in favor of direct hold creation
   // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
-  const [cancelModalOpened, { open: openCancelModal, close: closeCancelModal }] = useDisclosure(false);
-  const [qrModalOpened, { open: openQRModal, close: closeQRModal }] = useDisclosure(false);
-  const [selectedHold, setSelectedHold] = useState(null);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { user } = useAuthContext();
 
   // Prioritize URL param over location.state for facilityId
   const facilityId = facilityIdParam || location.state?.facilityId;
+
+  // Use shared hold actions hook
+  const {
+    cancelModalOpened,
+    qrModalOpened,
+    selectedHold,
+    setSelectedHold,
+    handleCancel,
+    handleConfirmCancel,
+    handleTransfer,
+    handleExtend,
+    handleCloseQRModal,
+    handleQRDone,
+    cancelMutation,
+    closeCancelModal,
+    closeQRModal,
+  } = useHoldActions({
+    invalidateQueries: ['lesc-holds', facilityId],
+  });
+
   // Check both query param and location.state for create modal flag
   // const shouldOpenCreateModal = searchParams.get('create') === 'true' || location.state?.openCreateModal;
 
@@ -245,19 +262,6 @@ function Holds () {
     };
   }, [facilitiesData, availabilityData]);
 
-  const extendMutation = useMutation({
-    mutationFn: (id) => Api.lesc.holds.extend(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
-      showToast('Hold extended by 30 minutes', 'success');
-    },
-    onError: (error) => {
-      const errorMessage = error.response?.data?.error || 'Failed to extend hold';
-      showToast(errorMessage, 'error');
-    },
-  });
-
   const extendAllMutation = useMutation({
     mutationFn: async (holdIds) => {
       const results = await Promise.allSettled(
@@ -276,18 +280,6 @@ function Holds () {
     },
     onError: (error) => {
       const errorMessage = error.message || 'Failed to extend all holds';
-      showToast(errorMessage, 'error');
-    },
-  });
-
-  const cancelMutation = useMutation({
-    mutationFn: (id) => Api.lesc.holds.cancel(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
-    },
-    onError: (error) => {
-      const errorMessage = error.response?.data?.error || 'Failed to cancel hold';
       showToast(errorMessage, 'error');
     },
   });
@@ -341,40 +333,9 @@ function Holds () {
     }
   };
 
-  const handleExtend = (id) => {
-    extendMutation.mutate(id);
-  };
-
   const handleExtendAll = () => {
     if (userHolds.length === 0) return;
     extendAllMutation.mutate(userHolds.map(h => h.id));
-  };
-
-  const handleCancel = (hold) => {
-    setSelectedHold(hold);
-    openCancelModal();
-  };
-
-  const handleShowQR = (hold) => {
-    setSelectedHold(hold);
-    openQRModal();
-  };
-
-  const handleConfirmCancel = () => {
-    if (selectedHold) {
-      const holdName = selectedHold.notes || selectedHold.facilityName || 'this hold';
-      cancelMutation.mutate(selectedHold.id, {
-        onSuccess: () => {
-          closeCancelModal();
-          setSelectedHold(null);
-          showToast(`Hold canceled for ${holdName}`, 'success');
-        },
-        onError: (error) => {
-          const errorMessage = error.response?.data?.error || 'Failed to cancel hold';
-          showToast(errorMessage, 'error');
-        },
-      });
-    }
   };
 
   // Filter holds to only show current user's holds
@@ -491,10 +452,9 @@ function Holds () {
         opened={cancelModalOpened}
         onClose={() => {
           closeCancelModal();
-          setSelectedHold(null);
         }}
         onConfirm={handleConfirmCancel}
-        holdIdentifier={selectedHold?.id?.slice(0, 8).toUpperCase() || '001'}
+        holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
         holdName={
           selectedHold?.client
             ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
@@ -513,14 +473,9 @@ function Holds () {
             // Cancel any ongoing polling queries for this hold
             queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
           }
-          closeQRModal();
-          setSelectedHold(null);
+          handleCloseQRModal();
         }}
-        onDone={() => {
-          // Reload the hold list
-          queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-          queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
-        }}
+        onDone={handleQRDone}
       />
 
       {userHolds && userHolds.length === 0
@@ -572,9 +527,9 @@ function Holds () {
                       patientAge={age}
                       patientSex={hold.client?.sex}
                       patientRace={hold.client?.race}
-                      onTransfer={() => handleShowQR(hold)}
-                      onExtend={() => handleExtend(hold.id)}
-                      onCancel={() => handleCancel(hold)}
+                      onTransfer={handleTransfer}
+                      onExtend={handleExtend}
+                      onCancel={handleCancel}
                       onViewDetails={() => {
                         navigate(`/lesc/intake/${hold.id}`);
                       }}
@@ -612,9 +567,9 @@ function Holds () {
                       patientAge={age}
                       patientSex={hold.client?.sex}
                       patientRace={hold.client?.race}
-                      onTransfer={() => handleShowQR(hold)}
-                      onExtend={() => handleExtend(hold.id)}
-                      onCancel={() => handleCancel(hold)}
+                      onTransfer={handleTransfer}
+                      onExtend={handleExtend}
+                      onCancel={handleCancel}
                       onViewDetails={() => {
                         navigate(`/lesc/intake/${hold.id}`);
                       }}

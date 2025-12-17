@@ -22,12 +22,34 @@ import {
 import { IconAlertCircle, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
+import LESCHold from '@/lesc/components/LESCHold';
+import CancelHoldModal from '@/lesc/components/CancelHoldModal';
+import HoldQRCode from '@/lesc/components/HoldQRCode';
+import { calculateAge } from '@/utils/dateTime';
+import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 function AdminFacilityDetail () {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isNew = id === 'new';
+
+  // Use shared hold actions hook
+  const {
+    cancelModalOpened,
+    qrModalOpened,
+    selectedHold,
+    handleCancel,
+    handleConfirmCancel,
+    handleTransfer,
+    handleExtend,
+    handleCloseQRModal,
+    handleQRDone,
+    handleCloseCancelModal,
+    cancelMutation,
+  } = useHoldActions({
+    invalidateQueries: ['admin-facility-holds', id],
+  });
 
   const [formData, setFormData] = useState({
     name: '',
@@ -53,6 +75,20 @@ function AdminFacilityDetail () {
       return response.data;
     },
     enabled: !isNew,
+  });
+
+  // Fetch holds for this facility (for Services & Beds tab)
+  // Using admin endpoint to get all holds regardless of creator
+  const { data: holdsData, isLoading: holdsLoading, error: holdsError } = useQuery({
+    queryKey: ['admin-facility-holds', id],
+    queryFn: async () => {
+      if (!id || id === 'new') {
+        return [];
+      }
+      const response = await Api.admin.facilities.holds(id);
+      return response.data;
+    },
+    enabled: !isNew && !!id && id !== 'new',
   });
 
   const { data: availableServiceTypes, isLoading: isLoadingServiceTypes, error: serviceTypesError } = useQuery({
@@ -454,109 +490,185 @@ function AdminFacilityDetail () {
               </Tabs.Panel>
 
               <Tabs.Panel value='services' pt='md'>
-                <Stack>
-                  {facility?.services?.map((service) => (
-                    <Card key={service.serviceTypeId} padding='md' withBorder>
-                      <Group justify='space-between' mb='md'>
-                        <div>
-                          <Title order={4}>{service.serviceTypeName}</Title>
-                          <Text size='sm' c='dimmed'>{service.serviceTypeCode}</Text>
-                        </div>
-                        <ActionIcon
-                          color='red'
-                          variant='light'
-                          onClick={() => handleRemoveService(service.serviceTypeId)}
-                          loading={removeServiceMutation.isPending}
-                        >
-                          <IconX size={18} />
-                        </ActionIcon>
-                      </Group>
-                      <Group>
-                        <NumberInput
-                          label='Available Beds'
-                          value={service.availableBeds ?? 0}
-                          onChange={(value) => {
-                            updateBedsMutation.mutate({
-                              serviceTypeId: service.serviceTypeId,
-                              availableBeds: value ?? 0,
-                              reservedBeds: service.reservedBeds ?? 0,
-                            });
-                          }}
-                          min={0}
-                        />
-                        <NumberInput
-                          label='Reserved Beds'
-                          value={service.reservedBeds ?? 0}
-                          onChange={(value) => {
-                            updateBedsMutation.mutate({
-                              serviceTypeId: service.serviceTypeId,
-                              availableBeds: service.availableBeds ?? 0,
-                              reservedBeds: value ?? 0,
-                            });
-                          }}
-                          min={0}
-                        />
-                      </Group>
-                    </Card>
-                  ))}
-                  {(!facility?.services || facility.services.length === 0) && (
-                    <Alert icon={<IconAlertCircle />}>
-                      No services configured for this facility. Add a service type below.
-                    </Alert>
-                  )}
+                <Stack gap='xl'>
+                  {/* Services Configuration */}
+                  <Stack>
+                    {facility?.services?.map((service) => (
+                      <Card key={service.serviceTypeId} padding='md' withBorder>
+                        <Group justify='space-between' mb='md'>
+                          <div>
+                            <Title order={4}>{service.serviceTypeName}</Title>
+                            <Text size='sm' c='dimmed'>{service.serviceTypeCode}</Text>
+                          </div>
+                          <ActionIcon
+                            color='red'
+                            variant='light'
+                            onClick={() => handleRemoveService(service.serviceTypeId)}
+                            loading={removeServiceMutation.isPending}
+                          >
+                            <IconX size={18} />
+                          </ActionIcon>
+                        </Group>
+                        <Group>
+                          <NumberInput
+                            label='Available Beds'
+                            value={service.availableBeds ?? 0}
+                            onChange={(value) => {
+                              updateBedsMutation.mutate({
+                                serviceTypeId: service.serviceTypeId,
+                                availableBeds: value ?? 0,
+                                reservedBeds: service.reservedBeds ?? 0,
+                              });
+                            }}
+                            min={0}
+                          />
+                          <NumberInput
+                            label='Reserved Beds'
+                            value={service.reservedBeds ?? 0}
+                            onChange={(value) => {
+                              updateBedsMutation.mutate({
+                                serviceTypeId: service.serviceTypeId,
+                                availableBeds: service.availableBeds ?? 0,
+                                reservedBeds: value ?? 0,
+                              });
+                            }}
+                            min={0}
+                          />
+                        </Group>
+                      </Card>
+                    ))}
+                    {(!facility?.services || facility.services.length === 0) && (
+                      <Alert icon={<IconAlertCircle />}>
+                        No services configured for this facility. Add a service type below.
+                      </Alert>
+                    )}
 
-                  {availableServiceTypesToAdd.length > 0 && (
-                    <Card padding='md' withBorder style={{ borderStyle: 'dashed' }}>
-                      <Title order={4} mb='md'>Add Service Type</Title>
-                      <Stack>
-                        <Select
-                          label='Service Type'
-                          placeholder='Select a service type'
-                          data={availableServiceTypesToAdd.map(st => ({
-                            value: st.id,
-                            label: `${st.name} (${st.code})`,
-                          }))}
-                          value={newServiceTypeId}
-                          onChange={setNewServiceTypeId}
-                          searchable
-                        />
-                        {newServiceTypeId && (
-                          <Group>
-                            <NumberInput
-                              label='Available Beds'
-                              value={newServiceAvailableBeds}
-                              onChange={(value) => setNewServiceAvailableBeds(value ?? 0)}
-                              min={0}
-                            />
-                            <NumberInput
-                              label='Reserved Beds'
-                              value={newServiceReservedBeds}
-                              onChange={(value) => setNewServiceReservedBeds(value ?? 0)}
-                              min={0}
-                            />
-                          </Group>
-                        )}
-                        <Button
-                          leftSection={<IconPlus size={18} />}
-                          onClick={handleAddService}
-                          disabled={!newServiceTypeId}
-                          loading={addServiceMutation.isPending}
-                        >
-                          Add Service Type
-                        </Button>
-                      </Stack>
-                    </Card>
-                  )}
-                  {availableServiceTypesToAdd.length === 0 && facility?.services && facility.services.length > 0 && (
-                    <Alert>
-                      All available service types have been added to this facility.
-                    </Alert>
-                  )}
+                    {availableServiceTypesToAdd.length > 0 && (
+                      <Card padding='md' withBorder style={{ borderStyle: 'dashed' }}>
+                        <Title order={4} mb='md'>Add Service Type</Title>
+                        <Stack>
+                          <Select
+                            label='Service Type'
+                            placeholder='Select a service type'
+                            data={availableServiceTypesToAdd.map(st => ({
+                              value: st.id,
+                              label: `${st.name} (${st.code})`,
+                            }))}
+                            value={newServiceTypeId}
+                            onChange={setNewServiceTypeId}
+                            searchable
+                          />
+                          {newServiceTypeId && (
+                            <Group>
+                              <NumberInput
+                                label='Available Beds'
+                                value={newServiceAvailableBeds}
+                                onChange={(value) => setNewServiceAvailableBeds(value ?? 0)}
+                                min={0}
+                              />
+                              <NumberInput
+                                label='Reserved Beds'
+                                value={newServiceReservedBeds}
+                                onChange={(value) => setNewServiceReservedBeds(value ?? 0)}
+                                min={0}
+                              />
+                            </Group>
+                          )}
+                          <Button
+                            leftSection={<IconPlus size={18} />}
+                            onClick={handleAddService}
+                            disabled={!newServiceTypeId}
+                            loading={addServiceMutation.isPending}
+                          >
+                            Add Service Type
+                          </Button>
+                        </Stack>
+                      </Card>
+                    )}
+                    {availableServiceTypesToAdd.length === 0 && facility?.services && facility.services.length > 0 && (
+                      <Alert>
+                        All available service types have been added to this facility.
+                      </Alert>
+                    )}
+                  </Stack>
+
+                  {/* Active Holds List */}
+                  <Stack>
+                    <Title order={4}>Active Holds</Title>
+                    {holdsLoading
+                      ? (
+                        <Loader size='sm' />
+                        )
+                      : holdsError
+                        ? (
+                          <Alert icon={<IconAlertCircle />} color='red' title='Error'>
+                            Failed to load holds: {holdsError.message || 'Unknown error'}
+                          </Alert>
+                          )
+                        : holdsData && holdsData.length > 0
+                          ? (
+                            <Stack gap='md'>
+                              {holdsData.map((hold) => {
+                                const age = calculateAge(hold.client?.dateOfBirth);
+                                return (
+                                  <LESCHold
+                                    key={hold.id}
+                                    hold={hold}
+                                    patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                                    patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                                    patientDob={hold.client?.dateOfBirth}
+                                    patientAge={age}
+                                    patientSex={hold.client?.sex}
+                                    patientRace={hold.client?.race}
+                                    onTransfer={handleTransfer}
+                                    onExtend={handleExtend}
+                                    onCancel={handleCancel}
+                                    onViewDetails={() => {
+                                      navigate(`/lesc/intake/${hold.id}`);
+                                    }}
+                                  />
+                                );
+                              })}
+                            </Stack>
+                            )
+                          : (
+                            <Text size='sm' c='dimmed'>
+                              No active holds for this facility
+                            </Text>
+                            )}
+                  </Stack>
                 </Stack>
               </Tabs.Panel>
             </Tabs>
             )}
       </form>
+
+      <CancelHoldModal
+        opened={cancelModalOpened}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+        holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
+        holdName={
+          selectedHold?.client
+            ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
+            : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
+        }
+        loading={cancelMutation.isPending}
+      />
+
+      <HoldQRCode
+        holdId={selectedHold?.id}
+        opened={qrModalOpened}
+        onClose={() => {
+          const holdIdToCancel = selectedHold?.id;
+          if (holdIdToCancel) {
+            // Cancel any ongoing polling queries for this hold
+            queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+          }
+          handleCloseQRModal();
+        }}
+        onDone={handleQRDone}
+      />
     </Container>
   );
 }

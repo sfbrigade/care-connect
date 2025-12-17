@@ -200,6 +200,9 @@ const Api = {
       },
     },
     incidents: {
+      list () {
+        return instance.get('/api/lesc/incidents').catch(handleError);
+      },
       create (data) {
         return instance.post('/api/lesc/incidents', data).catch(handleError);
       },
@@ -208,6 +211,9 @@ const Api = {
       },
       update (id, data) {
         return instance.patch(`/api/lesc/incidents/${id}`, data).catch(handleError);
+      },
+      findByCad (cadNumber) {
+        return instance.get(`/api/lesc/incidents/by-cad/${encodeURIComponent(cadNumber)}`).catch(handleError);
       },
     },
     intake: {
@@ -260,6 +266,9 @@ const Api = {
       },
       removeService (id, serviceTypeId) {
         return instance.delete(`/api/admin/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
+      },
+      holds (id) {
+        return instance.get(`/api/admin/facilities/${id}/holds`).catch(handleError);
       },
     },
   },

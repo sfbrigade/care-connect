@@ -82,4 +82,5 @@ export default async function (fastify, opts) {
   fastify.register(import('./update-beds.js'));
   fastify.register(import('./add-service.js'));
   fastify.register(import('./remove-service.js'));
+  fastify.register(import('./holds.js'));
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { Stack, Select, Textarea, Button, Alert, Text, Group } from '@mantine/core';
+import { Stack, Select, Textarea, Button, Alert, Text, Group, TextInput } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
@@ -12,6 +12,9 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
   const [facilityId, setFacilityId] = useState(initialFacilityId || '');
   const [notes, setNotes] = useState('');
   const [bedsRequested, setBedsRequested] = useState(1);
+  const [cadNumber, setCadNumber] = useState('');
+  const [foundIncident, setFoundIncident] = useState(null);
+  const [isLookingUpCad, setIsLookingUpCad] = useState(false);
 
   const { data: availability } = useQuery({
     queryKey: ['lesc-availability'],
@@ -94,7 +97,37 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
     }
   }, [availableBeds, bedsRequested]);
 
-  const handleSubmit = (e) => {
+  // Lookup incident by CAD number when CAD number changes
+  useEffect(() => {
+    const lookupCad = async () => {
+      if (!cadNumber || cadNumber.trim() === '') {
+        setFoundIncident(null);
+        return;
+      }
+
+      setIsLookingUpCad(true);
+      try {
+        const response = await Api.lesc.incidents.findByCad(cadNumber.trim());
+        setFoundIncident(response.data);
+      } catch (error) {
+        // 404 is expected if no incident found
+        if (error.response?.status === 404) {
+          setFoundIncident(null);
+        } else {
+          console.error('Failed to lookup CAD number', error);
+          setFoundIncident(null);
+        }
+      } finally {
+        setIsLookingUpCad(false);
+      }
+    };
+
+    // Debounce the lookup
+    const timeoutId = setTimeout(lookupCad, 500);
+    return () => clearTimeout(timeoutId);
+  }, [cadNumber]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Use initialServiceTypeId if provided, otherwise find the service type with most availability
@@ -107,11 +140,29 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
       serviceTypeId = serviceInfo.serviceTypeId;
     }
 
+    // If CAD number is provided but no incident found, create one (or get existing)
+    let incidentId = foundIncident?.id || null;
+    if (cadNumber && cadNumber.trim() && !incidentId) {
+      try {
+        // This will return existing incident if found, or create new one
+        const incidentResponse = await Api.lesc.incidents.create({
+          cadNumber: cadNumber.trim(),
+          dateTimeArrested: new Date().toISOString(),
+          charge: '647(f) RWS',
+        });
+        incidentId = incidentResponse.data.id;
+      } catch (error) {
+        console.error('Failed to create/find incident for CAD number', error);
+        // Continue without incident if creation fails
+      }
+    }
+
     createMutation.mutate({
       facilityId,
       serviceTypeId,
       bedsRequested,
       notes: notes || undefined,
+      incidentId: incidentId || undefined,
     });
   };
 
@@ -167,6 +218,46 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
             Facility: {availability.find(item => item.facilityId === facilityId)?.facilityName || facilityId}
           </Text>
         )}
+
+        <div>
+          <Text
+            style={{
+              fontSize: '18px',
+              lineHeight: '28px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#000000',
+              marginBottom: '8px',
+            }}
+          >
+            CAD Number (optional)
+          </Text>
+          <TextInput
+            placeholder='Enter CAD number to link to existing incident'
+            value={cadNumber}
+            onChange={(e) => setCadNumber(e.target.value)}
+            styles={{
+              input: {
+                fontSize: '16px', // Prevent iOS zoom
+              },
+            }}
+          />
+          {isLookingUpCad && (
+            <Text size='sm' c='dimmed' mt={4}>
+              Looking up incident...
+            </Text>
+          )}
+          {foundIncident && !isLookingUpCad && (
+            <Text size='sm' c='green' mt={4}>
+              Found incident: {foundIncident.cadNumber} ({foundIncident.charge || 'No charge'}) - Hold will be linked
+            </Text>
+          )}
+          {cadNumber && !foundIncident && !isLookingUpCad && (
+            <Text size='sm' c='dimmed' mt={4}>
+              No existing incident found - A new incident will be created for this CAD number
+            </Text>
+          )}
+        </div>
 
         <Stack gap='sm'>
           <Text
