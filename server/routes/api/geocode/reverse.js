@@ -51,12 +51,12 @@ export default async function (fastify, opts) {
 
       const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
       const REVERSE_URL = BASE_URL.replace('/geocode/search', '/geocode/reverse');
-      
+
       try {
         const url = new URL(REVERSE_URL);
         url.searchParams.set('point.lon', longitude.toString());
         url.searchParams.set('point.lat', latitude.toString());
-        
+
         if (BASE_URL.includes('openrouteservice.org')) {
           url.searchParams.set('api_key', API_KEY);
         }
@@ -83,7 +83,7 @@ export default async function (fastify, opts) {
 
         const data = await response.json();
         const feature = data?.features?.[0];
-        
+
         if (!feature) {
           return reply.send({
             address: null,
@@ -92,14 +92,16 @@ export default async function (fastify, opts) {
         }
 
         // Extract formatted address from properties.label or construct from properties
-        const address = feature.properties?.label || 
-          (feature.properties ? [
-            feature.properties.name,
-            feature.properties.street,
-            feature.properties.locality,
-            feature.properties.region,
-            feature.properties.postalcode,
-          ].filter(Boolean).join(', ') : null);
+        const address = feature.properties?.label
+          || (feature.properties
+            ? [
+                feature.properties.name,
+                feature.properties.street,
+                feature.properties.locality,
+                feature.properties.region,
+                feature.properties.postalcode,
+              ].filter(Boolean).join(', ')
+            : null);
 
         return reply.send({
           address: address || null,
