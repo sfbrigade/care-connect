@@ -411,11 +411,14 @@ describe('PDF Generator', () => {
       it('should use incident unit, badge number, and agency when available', () => {
         const holdWithIncident = {
           ...mockHold,
+          createdBy: {
+            ...mockHold.createdBy,
+            unit: 'Unit A', // Unit comes from createdBy, not incident
+          },
           incident: {
             cadNumber: 'CAD-12345',
             locationArrested: '123 Main St',
             dateTimeArrested: '2024-01-15T08:00:00Z',
-            unit: 'Unit A',
             badgeNumber: '12345',
             agency: 'SFPD',
             charge: '647(f) RWS'
