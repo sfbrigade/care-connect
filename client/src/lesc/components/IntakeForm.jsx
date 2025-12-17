@@ -4,6 +4,8 @@ import { useNavigate, useLocation, useParams } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IconArrowLeft } from '@tabler/icons-react';
 import Api from '@/Api';
+import { getCurrentLocationAddress } from '@/utils/geocoding';
+import { useToast } from '@/components/ToastContext';
 
 /**
  * Date input component with spinners for month, day, and year
@@ -148,6 +150,8 @@ function IntakeForm () {
   const holdId = location.state?.holdId || holdIdParam;
   const queryClient = useQueryClient();
   const isEditMode = !!clientId;
+  const { showToast } = useToast();
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const [formData, setFormData] = useState(() => {
     return {
@@ -209,6 +213,29 @@ function IntakeForm () {
     } else if (!isEditMode && holdResponse?.data && !formData.fullName) {
       const client = holdResponse.data.client;
       const incident = holdResponse.data.incident;
+      // Convert current time to Pacific timezone
+      const now = new Date();
+      const pacificTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      const year = pacificTime.getFullYear();
+      const month = String(pacificTime.getMonth() + 1).padStart(2, '0');
+      const day = String(pacificTime.getDate()).padStart(2, '0');
+      const hours = String(pacificTime.getHours()).padStart(2, '0');
+      const minutes = String(pacificTime.getMinutes()).padStart(2, '0');
+      const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      
+      // Convert incident dateTimeArrested to Pacific timezone if it exists
+      let incidentDateTime = currentDateTime;
+      if (incident?.dateTimeArrested) {
+        const incidentDate = new Date(incident.dateTimeArrested);
+        const incidentPacificTime = new Date(incidentDate.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+        const iYear = incidentPacificTime.getFullYear();
+        const iMonth = String(incidentPacificTime.getMonth() + 1).padStart(2, '0');
+        const iDay = String(incidentPacificTime.getDate()).padStart(2, '0');
+        const iHours = String(incidentPacificTime.getHours()).padStart(2, '0');
+        const iMinutes = String(incidentPacificTime.getMinutes()).padStart(2, '0');
+        incidentDateTime = `${iYear}-${iMonth}-${iDay}T${iHours}:${iMinutes}`;
+      }
+      
       setFormData({
         fullName: client ? `${client.firstName} ${client.lastName || ''}`.trim() : '',
         dateOfBirth: client?.dateOfBirth ? client.dateOfBirth.split('T')[0] : '',
@@ -220,14 +247,61 @@ function IntakeForm () {
         localId: client?.localId || '',
         // Incident fields
         cadNumber: incident?.cadNumber || '',
-        dateTimeArrested: incident?.dateTimeArrested ? new Date(incident.dateTimeArrested).toISOString().slice(0, 16) : '',
+        dateTimeArrested: incidentDateTime,
         locationArrested: incident?.locationArrested || '',
         agency: incident?.agency || '',
         charge: incident?.charge || '',
         justificationNarrative: holdResponse.data.notes || '',
       });
+    } else if (!isEditMode && !holdResponse?.data && !formData.fullName && holdId) {
+      // New intake mode - auto-fill date/time arrested with current time
+      const currentDateTime = new Date().toISOString().slice(0, 16);
+      setFormData(prev => ({
+        ...prev,
+        dateTimeArrested: prev.dateTimeArrested || currentDateTime,
+      }));
     }
-  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id, holdResponse?.data?.incident?.id]);
+  }, [isEditMode, clientResponse?.data?.id, holdResponse?.data?.client?.id, holdResponse?.data?.incident?.id, holdId]);
+
+  // Auto-fill location arrested when form loads in new intake mode
+  useEffect(() => {
+    if (!isEditMode && holdId && !formData.locationArrested && !holdResponse?.data?.incident?.locationArrested) {
+      // Only auto-fill if we're in new intake mode and location is empty
+      getCurrentLocationAddress()
+        .then((address) => {
+          if (address) {
+            setFormData(prev => ({
+              ...prev,
+              locationArrested: address,
+            }));
+          }
+        })
+        .catch((error) => {
+          // Silently fail - user can manually enter location
+          console.warn('Failed to auto-fill location:', error);
+        });
+    }
+  }, [isEditMode, holdId, formData.locationArrested, holdResponse?.data?.incident?.locationArrested]);
+
+  const handleGetCurrentLocation = async () => {
+    setIsLoadingLocation(true);
+    try {
+      const address = await getCurrentLocationAddress();
+      if (address) {
+        setFormData(prev => ({
+          ...prev,
+          locationArrested: address,
+        }));
+        showToast('Location updated', 'success');
+      } else {
+        showToast('Could not determine location. Please enter manually.', 'warning');
+      }
+    } catch (error) {
+      showToast(error.message || 'Failed to get location. Please enter manually.', 'error');
+    } finally {
+      setIsLoadingLocation(false);
+    }
+  };
 
   const updateClientMutation = useMutation({
     mutationFn: (data) => {
@@ -520,17 +594,29 @@ function IntakeForm () {
                     },
                   }}
                 />
-                <TextInput
-                  label='Location Arrested'
-                  placeholder='Enter location arrested'
-                  value={formData.locationArrested}
-                  onChange={(e) => setFormData(prev => ({ ...prev, locationArrested: e.target.value }))}
-                  styles={{
-                    input: {
-                      fontSize: '16px', // Prevent iOS zoom
-                    },
-                  }}
-                />
+                <Group align='flex-end' gap='xs'>
+                  <TextInput
+                    label='Location Arrested'
+                    placeholder='Enter location arrested'
+                    value={formData.locationArrested}
+                    onChange={(e) => setFormData(prev => ({ ...prev, locationArrested: e.target.value }))}
+                    styles={{
+                      input: {
+                        fontSize: '16px', // Prevent iOS zoom
+                      },
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    onClick={handleGetCurrentLocation}
+                    loading={isLoadingLocation}
+                    disabled={isLoadingLocation}
+                    size='sm'
+                    variant='outline'
+                  >
+                    Get Current Location
+                  </Button>
+                </Group>
                 <TextInput
                   label='Agency'
                   placeholder='Enter agency'

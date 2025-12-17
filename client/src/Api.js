@@ -279,6 +279,13 @@ const Api = {
       return instance.get('/api/feedback', { params: { page } });
     },
   },
+  geocode: {
+    reverse (latitude, longitude) {
+      return instance.get('/api/geocode/reverse', {
+        params: { latitude, longitude }
+      }).catch(handleError);
+    },
+  },
 };
 
 export default Api;
