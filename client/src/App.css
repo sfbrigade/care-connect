@@ -18,7 +18,6 @@ a {
 /* Ensure header appears above Leaflet map */
 .mantine-AppShell-header {
   z-index: 1500 !important;
-  position: relative;
 }
 
 /* Lower Leaflet map z-index to ensure it doesn't cover other content */
