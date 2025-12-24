@@ -51,7 +51,7 @@ export function detectLocationFromPath (pathname) {
 
   for (const [locationName, location] of Object.entries(LOCATIONS)) {
     for (const path of location.paths) {
-      if (pathname === path || pathname.startsWith(path + '/')) {
+      if (pathname === path || pathname.startsWith(path + '/') || pathname.startsWith(`/api${path}/`)) {
         return locationName;
       }
     }

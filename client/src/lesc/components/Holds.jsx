@@ -71,7 +71,7 @@ function Holds () {
   const { data: facilitiesData } = useQuery({
     queryKey: ['lesc-facilities'],
     queryFn: async () => {
-      const response = await Api.facilities.list();
+      const response = await Api.lesc.facilities.list();
       return response.data;
     },
   });
@@ -531,7 +531,7 @@ function Holds () {
                       onExtend={handleExtend}
                       onCancel={handleCancel}
                       onViewDetails={() => {
-                        navigate(`/lesc/intake/${hold.id}`);
+                        navigate(`/intake/${hold.id}`);
                       }}
                     />
                   );
@@ -571,7 +571,7 @@ function Holds () {
                       onExtend={handleExtend}
                       onCancel={handleCancel}
                       onViewDetails={() => {
-                        navigate(`/lesc/intake/${hold.id}`);
+                        navigate(`/intake/${hold.id}`);
                       }}
                     />
                   );

@@ -13,7 +13,7 @@ import { formatTime } from '@/utils/dateTime';
 
 /**
  * Transfer page component
- * Route: /lesc/transfer/:holdId?token=:token
+ * Route: /transfer/:holdId?token=:token
  * Can be accessed via:
  * - Direct URL (from scanned QR code)
  * - Manual entry (holdId + token)
@@ -73,7 +73,7 @@ export default function Transfer () {
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       // Redirect to holds list after a short delay
       setTimeout(() => {
-        navigate('/lesc/holds');
+        navigate('/holds');
       }, 2000);
     },
     onError: (error) => {
@@ -84,7 +84,7 @@ export default function Transfer () {
 
   const handleQRScan = (decodedText) => {
     try {
-      // Parse URL: /lesc/transfer/:holdId?token=:token
+      // Parse URL: /transfer/:holdId?token=:token
       const url = new URL(decodedText);
       const pathParts = url.pathname.split('/');
       const holdIdFromQR = pathParts[pathParts.length - 1];
@@ -133,7 +133,7 @@ export default function Transfer () {
               </Text>
             )}
           </Alert>
-          <Button onClick={() => navigate('/lesc/holds')}>
+          <Button onClick={() => navigate('/holds')}>
             Back to Holds
           </Button>
         </Stack>
@@ -256,7 +256,7 @@ export default function Transfer () {
                   >
                     Confirm Transfer
                   </Button>
-                  <Button variant='outline' onClick={() => navigate('/lesc/holds')}>
+                  <Button variant='outline' onClick={() => navigate('/holds')}>
                     Cancel
                   </Button>
                 </Group>

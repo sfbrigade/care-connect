@@ -325,7 +325,7 @@ function IntakeForm () {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients', clientId] });
       queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
-      navigate('/lesc/holds');
+      navigate('/holds');
     },
     onError: (error) => {
       console.error('Failed to update client', error);
@@ -414,7 +414,7 @@ function IntakeForm () {
           queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
           queryClient.invalidateQueries({ queryKey: ['lesc-hold', holdId] });
           queryClient.invalidateQueries({ queryKey: ['clients', existingClientId] });
-          navigate('/lesc/holds');
+          navigate('/holds');
         } catch (error) {
           console.error('Failed to update client', error);
         }
@@ -427,7 +427,7 @@ function IntakeForm () {
           });
           queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
           queryClient.invalidateQueries({ queryKey: ['lesc-hold', holdId] });
-          navigate('/lesc/holds');
+          navigate('/holds');
         } catch (error) {
           console.error('Failed to submit intake form', error);
           // Would show error message to user

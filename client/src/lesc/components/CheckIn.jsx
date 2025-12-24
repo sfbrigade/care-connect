@@ -66,7 +66,7 @@ function CheckIn () {
 
   const handleQRScan = (decodedText) => {
     try {
-      // Parse URL: /lesc/transfer/:holdId?token=:token
+      // Parse URL: /transfer/:holdId?token=:token
       // For checkin, we just need the holdId from the transfer QR code
       const url = new URL(decodedText);
       const pathParts = url.pathname.split('/');
@@ -76,7 +76,7 @@ function CheckIn () {
         setHoldId(holdIdFromQR);
         setShouldFetchHold(true); // Enable the query
         setShowScanner(false);
-        navigate(`/lesc/checkin/${holdIdFromQR}`, { replace: true });
+        navigate(`/checkin/${holdIdFromQR}`, { replace: true });
       } else {
         showToast('Invalid QR code format', 'error');
       }
@@ -92,7 +92,7 @@ function CheckIn () {
     }
     setHoldId(manualHoldId);
     setShouldFetchHold(true);
-    navigate(`/lesc/checkin/${manualHoldId}`, { replace: true });
+    navigate(`/checkin/${manualHoldId}`, { replace: true });
     setManualEntry(false);
   };
 
@@ -112,7 +112,7 @@ function CheckIn () {
       queryClient.invalidateQueries({ queryKey: ['lesc-holds'] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       // Navigate back to holds list
-      navigate('/lesc/holds');
+      navigate('/holds');
     },
     onError: (error) => {
       const errorMessage = error.response?.data?.error || 'Failed to check in. Please try again.';

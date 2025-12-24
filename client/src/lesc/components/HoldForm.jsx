@@ -32,7 +32,7 @@ function HoldForm ({ onSuccess, onCancel, initialFacilityId, initialServiceTypeI
       if (holds && holds.length > 0) {
         const firstHold = holds[0];
         // Navigate to success page with hold data
-        navigate('/lesc/success', {
+        navigate('/success', {
           state: {
             holdData: {
               id: firstHold.id,

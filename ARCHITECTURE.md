@@ -219,12 +219,6 @@ care-connect/
 
 ## Testing
 
-### Location Sync Test
-
-**File**: `server/test/structure/location-sync.test.js`
-
-Ensures client-side location detection (`client/src/utils/location.js`) stays in sync with server-side location registry (`server/plugins/locations/registry.js`).
-
 ### Facility Filtering Test
 
 **File**: `server/test/routes/api/facilities.test.js`

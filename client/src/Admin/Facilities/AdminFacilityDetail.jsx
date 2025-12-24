@@ -624,7 +624,7 @@ function AdminFacilityDetail () {
                                     onExtend={handleExtend}
                                     onCancel={handleCancel}
                                     onViewDetails={() => {
-                                      navigate(`/lesc/intake/${hold.id}`);
+                                      navigate(`/intake/${hold.id}`);
                                     }}
                                   />
                                 );
