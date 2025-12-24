@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router';
-import { Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { ActionIcon, Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { IconMessages } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
 import { useLocationContext } from '@/LocationContext';
@@ -56,8 +57,26 @@ function Header ({ opened, close, toggle, logout }) {
               </Anchor>
             </>
           )}
+          {!user && (
+            <Anchor component={NavLink} to='/login' onClick={close}>
+              Log in
+            </Anchor>
+          )}
         </Group>
-        <Burger opened={opened} onClick={toggle} hiddenFrom='sm' size='sm' />
+        {user && <Burger opened={opened} onClick={toggle} hiddenFrom='sm' size='sm' />}
+        {!user && (
+          <Group hiddenFrom='sm' gap='xs'>
+            <Link to='/feedback'>
+              <ActionIcon
+                variant='subtle'
+                size='lg'
+                aria-label='Feedback'
+              >
+                <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+              </ActionIcon>
+            </Link>
+          </Group>
+        )}
       </Group>
     </Container>
   );
