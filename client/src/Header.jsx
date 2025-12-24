@@ -62,21 +62,28 @@ function Header ({ opened, close, toggle, logout }) {
               Log in
             </Anchor>
           )}
+          <Link to='/feedback'>
+            <ActionIcon
+              variant='subtle'
+              size='lg'
+              aria-label='Feedback'
+            >
+              <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+            </ActionIcon>
+          </Link>
         </Group>
-        {user && <Burger opened={opened} onClick={toggle} hiddenFrom='sm' size='sm' />}
-        {!user && (
-          <Group hiddenFrom='sm' gap='xs'>
-            <Link to='/feedback'>
-              <ActionIcon
-                variant='subtle'
-                size='lg'
-                aria-label='Feedback'
-              >
-                <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
-              </ActionIcon>
-            </Link>
-          </Group>
-        )}
+        <Group hiddenFrom='sm' size='sm'>
+          <Link to='/feedback'>
+            <ActionIcon
+              variant='subtle'
+              size='lg'
+              aria-label='Feedback'
+            >
+              <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+            </ActionIcon>
+          </Link>
+          {user && <Burger opened={opened} onClick={toggle} />}
+        </Group>
       </Group>
     </Container>
   );

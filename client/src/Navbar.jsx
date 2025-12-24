@@ -28,6 +28,8 @@ function Navbar ({ close, logout }) {
           <Divider />
           <MantineNavLink component={NavLink} to='/account' onClick={close} label='Account' />
           <MantineNavLink component={NavLink} to='/logout' onClick={logout} label='Log out' />
+          <Divider />
+          <MantineNavLink component={NavLink} to='/feedback' onClick={close} label='Feedback' />
         </>
       )}
     </Stack>

@@ -2,7 +2,7 @@ import { matchPath } from 'react-router';
 
 export const ADMIN_AUTH_PROTECTED_PATHS = [];
 export const AUTH_PROTECTED_PATHS = [
-  '/lesc/*', // All LESC routes require authentication
+  '/holds/*', // All LESC routes require authentication
   '/admin/*', // All admin routes require authentication
 ];
 export const REDIRECTS = [
