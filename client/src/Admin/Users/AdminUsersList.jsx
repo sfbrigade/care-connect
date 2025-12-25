@@ -48,9 +48,11 @@ function AdminUsersList () {
             </Table.Thead>
             <Table.Tbody>
               {isLoading &&
-                <Table.Td colSpan={5}>
-                  <Group justify='center' py='lg'><Loader /></Group>
-                </Table.Td>}
+                <Table.Tr>
+                  <Table.Td colSpan={5}>
+                    <Group justify='center' py='lg'><Loader /></Group>
+                  </Table.Td>
+                </Table.Tr>}
               {!isLoading && users?.map((user) => (
                 <Table.Tr key={user.id}>
                   <Table.Td>{user.firstName}</Table.Td>

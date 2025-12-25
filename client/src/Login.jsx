@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Box, Button, Container, Fieldset, Stack, TextInput, Title, SegmentedControl, Text } from '@mantine/core';
 import { hasLength, isEmail, useForm } from '@mantine/form';
@@ -9,7 +9,6 @@ import { IconMail, IconLock, IconEye, IconEyeOff } from '@tabler/icons-react';
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import { useStaticContext } from '@/StaticContext';
-import { getLocation } from '@/utils/location';
 import { StatusCodes } from 'http-status-codes';
 
 function Login () {
@@ -23,35 +22,6 @@ function Login () {
   const [viewMode, setViewMode] = useState('signin');
 
   const from = location.state?.from || searchParams.get('from') || '/';
-  // Extract pathname from Location object or use string directly
-  const fromPath = useMemo(() => {
-    if (!from) return '/';
-    if (typeof from === 'string') return from;
-    if (typeof from === 'object' && from.pathname) return from.pathname;
-    return '/';
-  }, [from]);
-
-  // Determine which app we're logging into
-  // Check from parameter first, then current pathname, then static context
-  const appName = useMemo(() => {
-    // Check if 'from' parameter indicates an app
-    if (fromPath && fromPath.startsWith('/lesc')) {
-      return 'LESC';
-    }
-    if (fromPath && fromPath.startsWith('/dido')) {
-      return 'DIDO';
-    }
-    // Check current pathname
-    if (location.pathname.startsWith('/lesc')) {
-      return 'LESC';
-    }
-    if (location.pathname.startsWith('/dido')) {
-      return 'DIDO';
-    }
-    // Fallback to location detection
-    const appLocation = getLocation(staticContext);
-    return appLocation?.location || null;
-  }, [fromPath, location.pathname, staticContext]);
 
   useEffect(() => {
     if (authContext.user) {
@@ -96,7 +66,7 @@ function Login () {
   return (
     <>
       <Head>
-        <title>{appName ? `Log in - ${appName}` : 'Log in'}</title>
+        <title>Log in</title>
       </Head>
       <Container
         style={{

@@ -23,7 +23,7 @@ export const Default = {
       <MemoryRouter
         initialEntries={[
           {
-            pathname: '/lesc/success',
+            pathname: '/success',
             state: {
               holdData: {
                 id: '1',

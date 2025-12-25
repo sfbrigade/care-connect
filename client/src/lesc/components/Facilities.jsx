@@ -15,7 +15,7 @@ function Facilities () {
   const { data: facilitiesData, isLoading: facilitiesLoading, error: facilitiesError } = useQuery({
     queryKey: ['lesc-facilities'],
     queryFn: async () => {
-      const response = await Api.facilities.list();
+      const response = await Api.lesc.facilities.list();
       return response.data;
     },
   });
@@ -110,12 +110,12 @@ function Facilities () {
                     bedCount={availableBeds}
                     intakeHours='24/7'
                     lastUpdated={facility.updatedAt ? formatTime(new Date(facility.updatedAt)) : undefined}
-                    onCurrentHoldsClick={() => navigate(`/lesc/holds/${facility.id}`)}
+                    onCurrentHoldsClick={() => navigate(`/holds/${facility.id}`)}
                     onCallClick={() => {
                     // TODO: Implement call functionality
                       console.log('Call facility:', facility.name);
                     }}
-                    onHoldClick={() => navigate(`/lesc/holds/${facility.id}?create=true`)}
+                    onHoldClick={() => navigate(`/holds/${facility.id}?create=true`)}
                   />
                 );
               })

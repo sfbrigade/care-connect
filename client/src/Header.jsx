@@ -1,104 +1,23 @@
-import { useEffect, useMemo } from 'react';
-import { useNavigate, Link, NavLink, useLocation, useSearchParams } from 'react-router';
-import { StatusCodes } from 'http-status-codes';
-import { ActionIcon, Anchor, Avatar, Container, Group, Menu, Title } from '@mantine/core';
-import { IconMenu2, IconMessages } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, NavLink } from 'react-router';
+import { ActionIcon, Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { IconMessages } from '@tabler/icons-react';
 
-import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
-import { useStaticContext } from '@/StaticContext';
-import { getLocation } from '@/utils/location';
+import { useLocationContext } from '@/LocationContext';
 
-function Header ({ opened, close, toggle }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const staticContext = useStaticContext();
-  const { user, setUser } = useAuthContext();
-  const queryClient = useQueryClient();
-
-  // Determine which app we're in based on location or from parameter
-  const appInfo = useMemo(() => {
-    // Check if we're on a login page and have a 'from' parameter
-    if (location.pathname === '/login') {
-      const from = location.state?.from || searchParams.get('from') || '/';
-      const fromPath = typeof from === 'string' ? from : (typeof from === 'object' && from.pathname ? from.pathname : '/');
-      if (fromPath.startsWith('/lesc')) return { name: 'LESC', type: 'lesc' };
-      if (fromPath.startsWith('/dido')) return { name: 'DIDO', type: 'dido' };
-    }
-    // Check current pathname
-    if (location.pathname.startsWith('/lesc')) return { name: 'LESC', type: 'lesc' };
-    if (location.pathname.startsWith('/dido')) return { name: 'DIDO', type: 'dido' };
-    // Fallback to location detection
-    const appLocation = getLocation(staticContext);
-    if (appLocation) {
-      return { name: appLocation.location, type: appLocation.appType };
-    }
-    return null;
-  }, [location.pathname, location.state, searchParams, staticContext]);
-
-  const appName = appInfo?.name || null;
-  const appType = appInfo?.type || null;
-
-  // Determine home link based on active app
-  const homeLink = useMemo(() => {
-    if (appType === 'lesc') return '/lesc/';
-    if (appType === 'dido') return '/dido/';
-    return '/';
-  }, [appType]);
-
-  const { data, isSuccess } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: () => Api.users.me().then((response) => response.status === StatusCodes.OK ? response.data : null),
-  });
-
-  useEffect(
-    function () {
-      if (isSuccess) {
-        setUser(data);
-      }
-    },
-    [data, isSuccess, setUser]
-  );
-
-  async function onLogout (event) {
-    event.preventDefault();
-    await Api.auth.logout();
-    queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-    setUser(null);
-    close();
-    navigate('/');
-  }
-
-  const isFeedbackPage = location.pathname === '/feedback';
-  const isHomePage = location.pathname === '/';
-  const isLoginPage = location.pathname === '/login';
-
-  function handleFeedbackToggle () {
-    if (isFeedbackPage) {
-      navigate(-1); // Go back to the previous page
-    } else {
-      navigate('/feedback');
-    }
-    close(); // Close the mobile navbar if open
-  }
+function Header ({ opened, close, toggle, logout }) {
+  const { location } = useLocationContext();
+  const { user } = useAuthContext();
 
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between'>
-        <Link to={homeLink} onClick={close}>
-          <Title size='xl'>{appName || 'CareConnectSF'}</Title>
+        <Link to='/' onClick={close}>
+          <Title size='xl'>{location?.name || 'CareConnectSF'}</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
-          <Anchor component={NavLink} aria-current='page' to={homeLink} onClick={close}>
+          <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
             Home
-          </Anchor>
-          <Anchor component={NavLink} to='/lesc' onClick={close}>
-            LESC
-          </Anchor>
-          <Anchor component={NavLink} to='/admin/facilities' onClick={close}>
-            Facilities
           </Anchor>
           {user?.isAdmin && (
             <Menu trigger='hover' transitionProps={{ exitDuration: 0 }} withinPortal>
@@ -112,8 +31,18 @@ function Header ({ opened, close, toggle }) {
               </Menu.Dropdown>
             </Menu>
           )}
-          {user && appType === 'lesc' && (
+          {user && (
             <>
+              {location.appType === 'lesc' && (
+                <>
+                  <Anchor component={NavLink} to='/holds' onClick={close}>
+                    Holds
+                  </Anchor>
+                  <Anchor component={NavLink} to='/history' onClick={close}>
+                    History
+                  </Anchor>
+                </>
+              )}
               <Group gap='xs'>
                 <span>
                   Hello,{' '}
@@ -123,35 +52,38 @@ function Header ({ opened, close, toggle }) {
                 </span>
                 {user.pictureUrl && <Avatar src={user.pictureUrl} />}
               </Group>
-              <Anchor href='/logout' onClick={onLogout}>
+              <Anchor href='/logout' onClick={logout}>
                 Log out
               </Anchor>
             </>
           )}
-        </Group>
-        {!isHomePage && !isLoginPage && (
-          <Group hiddenFrom='sm' gap='xs'>
+          {!user && (
+            <Anchor component={NavLink} to='/login' onClick={close}>
+              Log in
+            </Anchor>
+          )}
+          <Link to='/feedback'>
             <ActionIcon
               variant='subtle'
-              onClick={handleFeedbackToggle}
               size='lg'
               aria-label='Feedback'
-              style={{
-                backgroundColor: isFeedbackPage ? 'var(--mantine-color-gray-2)' : 'transparent',
-              }}
             >
               <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
             </ActionIcon>
+          </Link>
+        </Group>
+        <Group hiddenFrom='sm' size='sm'>
+          <Link to='/feedback'>
             <ActionIcon
               variant='subtle'
-              onClick={toggle}
               size='lg'
-              aria-label='Menu'
+              aria-label='Feedback'
             >
-              <IconMenu2 size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
+              <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
             </ActionIcon>
-          </Group>
-        )}
+          </Link>
+          {user && <Burger opened={opened} onClick={toggle} />}
+        </Group>
       </Group>
     </Container>
   );

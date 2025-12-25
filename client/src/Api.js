@@ -167,6 +167,11 @@ const Api = {
     availability () {
       return instance.get('/api/lesc/availability');
     },
+    facilities: {
+      list () {
+        return instance.get('/api/lesc/facilities');
+      },
+    },
     holds: {
       list (facilityId) {
         return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });

@@ -84,7 +84,7 @@ function HoldSuccess () {
         {/* Buttons */}
         <Group gap='8px' justify='center' style={{ width: '100%' }}>
           <Button
-            onClick={() => navigate('/lesc/holds')}
+            onClick={() => navigate('/holds')}
             style={{
               backgroundColor: '#dee2e6',
               color: '#000000',
@@ -99,7 +99,7 @@ function HoldSuccess () {
             Later
           </Button>
           <Button
-            onClick={() => navigate('/lesc/intake', { state: { holdId: holdData.id } })}
+            onClick={() => navigate('/intake', { state: { holdId: holdData.id } })}
             style={{
               backgroundColor: '#000000',
               color: '#ffffff',

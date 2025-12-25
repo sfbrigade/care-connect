@@ -280,7 +280,7 @@ function ClientView () {
                       key={client.id}
                       variant='light'
                       fullWidth
-                      onClick={() => navigate(`/lesc/client/${client.id}`)}
+                      onClick={() => navigate(`/client/${client.id}`)}
                       style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px' }}
                     >
                       <Stack gap={4} style={{ width: '100%', textAlign: 'left' }}>
@@ -316,7 +316,7 @@ function ClientView () {
           <Button
             leftSection={<IconArrowLeft size={18} />}
             variant='light'
-            onClick={() => navigate('/lesc/client')}
+            onClick={() => navigate('/client')}
             style={{ alignSelf: 'flex-start' }}
           >
             Back

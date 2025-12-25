@@ -158,7 +158,7 @@ function IncidentView () {
                       key={incident.id}
                       variant='light'
                       fullWidth
-                      onClick={() => navigate(`/lesc/incident/${incident.id}`)}
+                      onClick={() => navigate(`/incident/${incident.id}`)}
                       styles={{
                         root: {
                           justifyContent: 'flex-start',
@@ -207,7 +207,7 @@ function IncidentView () {
           <Button
             leftSection={<IconArrowLeft size={18} />}
             variant='light'
-            onClick={() => navigate('/lesc/incident')}
+            onClick={() => navigate('/incident')}
             style={{ alignSelf: 'flex-start' }}
           >
             Back
