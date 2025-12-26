@@ -1,6 +1,7 @@
 import { useNavigate, Link } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
+import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Text, Title } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
@@ -30,25 +31,27 @@ function ForgotPassword () {
       <Head>
         <title>Forgot your password?</title>
       </Head>
-      <Container>
-        <Title mb='md'>Forgot your password?</Title>
+      <Container size='xs'>
+        <Box mb='xl'>
+          <Button color='gray.3' c='black' w={44} p={0} h={44} component={Link} to='/login'>
+            <IconArrowLeft size={20} />
+          </Button>
+        </Box>
+        <Title order={2} mb='md'>Forgot your password?</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-            <Stack w={{ base: '100%', xs: 320 }}>
+            <Stack>
               {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
-              <Box>Enter the email address you registered to receive a reset password link.</Box>
+              <Text c='dimmed'>Enter the email address you registered to receive a reset password link.</Text>
               <TextInput
                 {...form.getInputProps('email')}
                 key='email'
-                label='Email'
+                placeholder='youremail@example.com'
                 type='email'
               />
               <Group>
-                <Button type='submit'>Submit</Button>
+                <Button fullWidth type='submit'>Send reset link</Button>
               </Group>
-              <Box>
-                <Link to='/login'>Back to login...</Link>
-              </Box>
             </Stack>
           </Fieldset>
         </form>

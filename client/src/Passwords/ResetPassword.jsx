@@ -1,11 +1,12 @@
 import { useNavigate, useParams, Link } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Container, Fieldset, Group, Stack, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
+import PasswordInput from '@/components/PasswordInput';
 
 function ResetPassword () {
   const navigate = useNavigate();
@@ -39,11 +40,11 @@ function ResetPassword () {
       <Head>
         <title>Reset your password</title>
       </Head>
-      <Container>
-        <Title mb='md'>Reset your password</Title>
+      <Container size='xs'>
+        <Title order={2} mb='md'>Reset your password</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-            <Stack w={{ base: '100%', xs: 320 }}>
+            <Stack>
               {error?.response?.status === StatusCodes.NOT_FOUND && (
                 <Alert color='red'>
                   Sorry, this password reset link is invalid.<br />
@@ -58,15 +59,13 @@ function ResetPassword () {
               )}
               {!isLoading && !error && (
                 <>
-                  <Box>Enter a new password for your account.</Box>
-                  <TextInput
+                  <PasswordInput
                     {...form.getInputProps('password')}
                     key='password'
-                    label='New password'
-                    type='password'
+                    placeholder='Enter new password'
                   />
                   <Group>
-                    <Button type='submit'>
+                    <Button fullWidth type='submit'>
                       Submit
                     </Button>
                   </Group>

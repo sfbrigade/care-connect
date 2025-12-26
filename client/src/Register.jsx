@@ -28,8 +28,8 @@ function Register () {
         <title>Register</title>
       </Head>
       <Container size='xs'>
-        <Stack align='stretch' gap='xl'>
-          <Stack align='center' gap='xl'>
+        <Stack align='stretch'>
+          <Stack align='center'>
             {/* Logo placeholder */}
             <Box
               style={{

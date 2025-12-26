@@ -1,4 +1,4 @@
-import { createTheme, Chip, Container, Button, Card, Badge, SegmentedControl, TextInput } from '@mantine/core';
+import { createTheme, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -82,6 +82,11 @@ const AppTheme = createTheme({
       defaultProps: {
         size: 'lg',
         radius: 'xl'
+      }
+    }),
+    Stack: Stack.extend({
+      defaultProps: {
+        gap: 'xl'
       }
     }),
     TextInput: TextInput.extend({

@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { ActionIcon, Alert, Box, Button, Container, Fieldset, Stack, TextInput, Title, SegmentedControl } from '@mantine/core';
+import { Alert, Box, Button, Container, Fieldset, Stack, TextInput, Title, SegmentedControl } from '@mantine/core';
 import { hasLength, isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
-import { IconMail, IconLock, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconMail, IconLock } from '@tabler/icons-react';
 
 import Api from '@/Api';
+import PasswordInput from '@/components/PasswordInput';
 import { useAuthContext } from '@/AuthContext';
 import { useStaticContext } from '@/StaticContext';
 import { StatusCodes } from 'http-status-codes';
@@ -18,7 +19,6 @@ function Login () {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const from = location.state?.from || searchParams.get('from') || '/';
 
@@ -63,8 +63,8 @@ function Login () {
       <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
         <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
           <Container size='xs'>
-            <Stack align='stretch' gap='xl'>
-              <Stack align='center' gap='xl'>
+            <Stack align='stretch'>
+              <Stack align='center'>
                 {/* Logo placeholder */}
                 <Box
                   style={{
@@ -99,29 +99,14 @@ function Login () {
                 placeholder='email@example.com'
                 leftSection={<IconMail size={20} color='#868e96' />}
               />
-              <TextInput
+              <PasswordInput
                 key={form.key('password')}
                 {...form.getInputProps('password')}
                 label='Password'
                 placeholder='Password'
-                type={passwordVisible ? 'text' : 'password'}
                 leftSection={<IconLock size={20} color='#868e96' />}
-                rightSection={
-                  <ActionIcon
-                    variant='transparent'
-                    onClick={() => setPasswordVisible(!passwordVisible)}
-                  >
-                    {passwordVisible
-                      ? (
-                        <IconEyeOff size={20} color='#868e96' />
-                        )
-                      : (
-                        <IconEye size={20} color='#868e96' />
-                        )}
-                  </ActionIcon>
-                }
               />
-              <Stack align='center' gap='xl'>
+              <Stack align='center'>
                 {/* Submit Button */}
                 <Button
                   type='submit'

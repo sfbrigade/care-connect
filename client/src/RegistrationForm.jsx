@@ -28,7 +28,7 @@ function RegistrationForm ({ onSubmitMutation }) {
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
       <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-        <Stack gap='xl'>
+        <Stack>
           {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
           <TextInput
             {...form.getInputProps('firstName')}
