@@ -85,8 +85,8 @@ function Login () {
                   value='signin'
                   onChange={() => navigate('/register')}
                   data={[
-                    { label: 'Sign in', value: 'signin' },
-                    { label: 'Create account', value: 'create' },
+                    { label: 'Log in', value: 'signin' },
+                    { label: 'Register', value: 'create' },
                   ]}
                 />
               )}
@@ -113,7 +113,7 @@ function Login () {
                   loading={onSubmitMutation.isPending}
                   fullWidth
                 >
-                  Login
+                  Log in
                 </Button>
                 <Link
                   to='/passwords/forgot'

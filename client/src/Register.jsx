@@ -50,8 +50,8 @@ function Register () {
               value='create'
               onChange={() => navigate('/login')}
               data={[
-                { label: 'Sign in', value: 'signin' },
-                { label: 'Create account', value: 'create' },
+                { label: 'Log in', value: 'signin' },
+                { label: 'Register', value: 'create' },
               ]}
             />
           )}
