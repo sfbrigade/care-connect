@@ -80,8 +80,8 @@ const AppTheme = createTheme({
     }),
     SegmentedControl: SegmentedControl.extend({
       defaultProps: {
-        size: 'md',
-        radius: 'lg'
+        size: 'lg',
+        radius: 'xl'
       }
     }),
     TextInput: TextInput.extend({

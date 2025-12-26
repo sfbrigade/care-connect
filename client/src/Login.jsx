@@ -19,7 +19,6 @@ function Login () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [viewMode, setViewMode] = useState('signin');
 
   const from = location.state?.from || searchParams.get('from') || '/';
 
@@ -28,13 +27,6 @@ function Login () {
       navigate(from, { replace: true });
     }
   }, [authContext.user, from, navigate]);
-
-  // Navigate to register when switching to create account
-  useEffect(() => {
-    if (viewMode === 'create' && staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true') {
-      navigate('/register', { replace: false });
-    }
-  }, [viewMode, navigate, staticContext]);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -90,8 +82,8 @@ function Login () {
               {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
                 <SegmentedControl
                   fullWidth
-                  value={viewMode}
-                  onChange={setViewMode}
+                  value='signin'
+                  onChange={() => navigate('/register')}
                   data={[
                     { label: 'Sign in', value: 'signin' },
                     { label: 'Create account', value: 'create' },

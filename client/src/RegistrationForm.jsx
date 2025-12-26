@@ -28,7 +28,7 @@ function RegistrationForm ({ onSubmitMutation }) {
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
       <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-        <Stack w={{ base: '100%', xs: 320 }}>
+        <Stack gap='xl'>
           {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
           <TextInput
             {...form.getInputProps('firstName')}
@@ -73,7 +73,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             }}
           />
           <Group>
-            <Button type='submit'>Submit</Button>
+            <Button fullWidth type='submit'>Submit</Button>
           </Group>
         </Stack>
       </Fieldset>

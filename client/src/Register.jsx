@@ -1,14 +1,16 @@
-import { useNavigate, Link } from 'react-router';
-import { Box, Container, Stack, Title } from '@mantine/core';
+import { useNavigate } from 'react-router';
+import { Box, Container, SegmentedControl, Stack, Title } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
+import { useStaticContext } from '@/StaticContext';
 import RegistrationForm from './RegistrationForm';
 
 function Register () {
   const authContext = useAuthContext();
+  const staticContext = useStaticContext();
   const navigate = useNavigate();
 
   const onSubmitMutation = useMutation({
@@ -25,13 +27,35 @@ function Register () {
       <Head>
         <title>Register</title>
       </Head>
-      <Container>
-        <Title mb='md'>Register</Title>
-        <Stack>
+      <Container size='xs'>
+        <Stack align='stretch' gap='xl'>
+          <Stack align='center' gap='xl'>
+            {/* Logo placeholder */}
+            <Box
+              style={{
+                width: '134px',
+                height: '134px',
+                borderRadius: '50%',
+                backgroundColor: '#f1f3f5',
+              }}
+            />
+            {/* Title */}
+            <Title order={3}>
+              Register
+            </Title>
+          </Stack>
+          {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
+            <SegmentedControl
+              fullWidth
+              value='create'
+              onChange={() => navigate('/login')}
+              data={[
+                { label: 'Sign in', value: 'signin' },
+                { label: 'Create account', value: 'create' },
+              ]}
+            />
+          )}
           <RegistrationForm onSubmitMutation={onSubmitMutation} />
-          <Box>
-            <Link to='/login'>Already have an account?</Link>
-          </Box>
         </Stack>
       </Container>
     </>
