@@ -86,7 +86,7 @@ function Login () {
                   onChange={() => navigate('/register')}
                   data={[
                     { label: 'Log in', value: 'signin' },
-                    { label: 'Register', value: 'create' },
+                    { label: 'Create an account', value: 'create' },
                   ]}
                 />
               )}
@@ -96,14 +96,14 @@ function Login () {
                 key={form.key('email')}
                 {...form.getInputProps('email')}
                 label='Email'
-                placeholder='email@example.com'
+                placeholder='youremail@example.com'
                 leftSection={<IconMail size={20} color='#868e96' />}
               />
               <PasswordInput
                 key={form.key('password')}
                 {...form.getInputProps('password')}
                 label='Password'
-                placeholder='Password'
+                placeholder='Enter password'
                 leftSection={<IconLock size={20} color='#868e96' />}
               />
               <Stack align='center'>

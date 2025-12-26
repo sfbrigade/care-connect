@@ -41,7 +41,7 @@ function Register () {
             />
             {/* Title */}
             <Title order={3}>
-              Register
+              Create an account
             </Title>
           </Stack>
           {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
@@ -51,7 +51,7 @@ function Register () {
               onChange={() => navigate('/login')}
               data={[
                 { label: 'Log in', value: 'signin' },
-                { label: 'Register', value: 'create' },
+                { label: 'Create an account', value: 'create' },
               ]}
             />
           )}

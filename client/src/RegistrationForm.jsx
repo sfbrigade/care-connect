@@ -34,6 +34,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             {...form.getInputProps('firstName')}
             key={form.key('firstName')}
             label='First name'
+            placeholder='Enter first name'
             styles={{
               input: {
                 fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
@@ -44,6 +45,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             {...form.getInputProps('lastName')}
             key={form.key('lastName')}
             label='Last name'
+            placeholder='Enter last name'
             styles={{
               input: {
                 fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
@@ -55,6 +57,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             key={form.key('email')}
             type='email'
             label='Email'
+            placeholder='youremail@example.com'
             styles={{
               input: {
                 fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
@@ -66,6 +69,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             key={form.key('password')}
             type='password'
             label='Password'
+            placeholder='Enter password'
             styles={{
               input: {
                 fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
@@ -73,7 +77,7 @@ function RegistrationForm ({ onSubmitMutation }) {
             }}
           />
           <Group>
-            <Button fullWidth type='submit'>Submit</Button>
+            <Button fullWidth type='submit'>Create account</Button>
           </Group>
         </Stack>
       </Fieldset>
