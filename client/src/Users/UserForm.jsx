@@ -35,7 +35,7 @@ function UserForm () {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
-      password: (value) => value ? hasLength({ min: 8 }, 'Passwords must be at least 8 characters.') : null,
+      password: (value) => value ? hasLength({ min: 12 }, 'Passwords must be at least 12 characters.') : null,
     },
   });
 

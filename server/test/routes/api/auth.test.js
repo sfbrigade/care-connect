@@ -89,7 +89,7 @@ test('/api/auth', async (t) => {
       assert.ok(
         _.find(error.errors, {
           path: 'password',
-          message: 'Password must be at least 8 characters long',
+          message: 'Password must be at least 12 characters long',
         })
       );
     });

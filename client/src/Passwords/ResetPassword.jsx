@@ -9,6 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
 import PasswordInput from '@/components/PasswordInput';
+import PasswordStrength from '@/components/PasswordStrength';
 import { useAuthContext } from '@/AuthContext';
 
 function ResetPassword () {
@@ -25,7 +26,7 @@ function ResetPassword () {
       password: '',
     },
     validate: {
-      password: hasLength({ min: 8 }, 'Passwords must be at least 8 characters.'),
+      password: hasLength({ min: 12 }, 'Passwords must be at least 12 characters.'),
     },
   });
 
@@ -83,6 +84,7 @@ function ResetPassword () {
                         key='password'
                         placeholder='Enter new password'
                       />
+                      <PasswordStrength password={form.getValues().password} />
                       <Button fullWidth type='submit'>
                         Reset password
                       </Button>

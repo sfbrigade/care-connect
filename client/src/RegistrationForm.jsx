@@ -1,6 +1,8 @@
 import { Alert, Button, Fieldset, Group, Stack, TextInput } from '@mantine/core';
 import { isEmail, isNotEmpty, hasLength, useForm } from '@mantine/form';
 
+import PasswordStrength from '@/components/PasswordStrength';
+
 function RegistrationForm ({ onSubmitMutation }) {
   const form = useForm({
     mode: 'uncontrolled',
@@ -14,7 +16,7 @@ function RegistrationForm ({ onSubmitMutation }) {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
-      password: hasLength({ min: 8 }, 'Passwords must be at least 8 characters.'),
+      password: hasLength({ min: 12 }, 'Passwords must be at least 12 characters.'),
     },
   });
 
@@ -35,22 +37,12 @@ function RegistrationForm ({ onSubmitMutation }) {
             key={form.key('firstName')}
             label='First name'
             placeholder='Enter first name'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
           />
           <TextInput
             {...form.getInputProps('lastName')}
             key={form.key('lastName')}
             label='Last name'
             placeholder='Enter last name'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
           />
           <TextInput
             {...form.getInputProps('email')}
@@ -58,11 +50,6 @@ function RegistrationForm ({ onSubmitMutation }) {
             type='email'
             label='Email'
             placeholder='youremail@example.com'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
           />
           <TextInput
             {...form.getInputProps('password')}
@@ -70,12 +57,8 @@ function RegistrationForm ({ onSubmitMutation }) {
             type='password'
             label='Password'
             placeholder='Enter password'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
           />
+          <PasswordStrength password={form.getValues().password} />
           <Group>
             <Button fullWidth type='submit'>Create account</Button>
           </Group>
