@@ -5,12 +5,10 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
-import { useStaticContext } from '@/StaticContext';
 import RegistrationForm from './RegistrationForm';
 
 function Register () {
   const authContext = useAuthContext();
-  const staticContext = useStaticContext();
   const navigate = useNavigate();
 
   const onSubmitMutation = useMutation({
@@ -25,7 +23,7 @@ function Register () {
   return (
     <>
       <Head>
-        <title>Register</title>
+        <title>Create an account</title>
       </Head>
       <Container size='xs'>
         <Stack align='stretch'>
@@ -44,17 +42,15 @@ function Register () {
               Create an account
             </Title>
           </Stack>
-          {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
-            <SegmentedControl
-              fullWidth
-              value='create'
-              onChange={() => navigate('/login')}
-              data={[
-                { label: 'Log in', value: 'signin' },
-                { label: 'Create an account', value: 'create' },
-              ]}
-            />
-          )}
+          <SegmentedControl
+            fullWidth
+            value='create'
+            onChange={() => navigate('/login')}
+            data={[
+              { label: 'Log in', value: 'signin' },
+              { label: 'Create an account', value: 'create' },
+            ]}
+          />
           <RegistrationForm onSubmitMutation={onSubmitMutation} />
         </Stack>
       </Container>

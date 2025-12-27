@@ -1,5 +1,5 @@
 import { useNavigate, useParams, Link } from 'react-router';
-import { Alert, Button, Container, Fieldset, Group, Stack, Title } from '@mantine/core';
+import { Anchor, Alert, Button, Container, Fieldset, Stack, Text, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -38,10 +38,10 @@ function ResetPassword () {
   return (
     <>
       <Head>
-        <title>Reset your password</title>
+        <title>Reset password</title>
       </Head>
       <Container size='xs'>
-        <Title order={2} mb='md'>Reset your password</Title>
+        <Title order={2} mb='md'>Reset password</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
             <Stack>
@@ -64,11 +64,10 @@ function ResetPassword () {
                     key='password'
                     placeholder='Enter new password'
                   />
-                  <Group>
-                    <Button fullWidth type='submit'>
-                      Submit
-                    </Button>
-                  </Group>
+                  <Button fullWidth type='submit'>
+                    Reset password
+                  </Button>
+                  <Text align='center'>Or <Anchor component={Link} to='/login'>Log in</Anchor></Text>
                 </>
               )}
             </Stack>
