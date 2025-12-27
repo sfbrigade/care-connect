@@ -1,4 +1,4 @@
-import { createTheme, Chip, Container, Button, Card, Badge } from '@mantine/core';
+import { createTheme, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -46,25 +46,15 @@ const AppTheme = createTheme({
   },
 
   components: {
-    Chip: Chip.extend({
-      defaultProps: {
-        color: 'black',
-      }
-    }),
-    Container: Container.extend({
-      defaultProps: {
-        size: 'xl'
-      }
-    }),
-    Button: Button.extend({
+    Badge: Badge.extend({
       defaultProps: {
         radius: 'xl', // 24px border radius
       },
-      styles: {
-        root: {
-          fontWeight: 400,
-          padding: '8px 20px',
-        },
+    }),
+    Button: Button.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'xl', // 24px border radius
       },
     }),
     Card: Card.extend({
@@ -78,9 +68,31 @@ const AppTheme = createTheme({
         },
       },
     }),
-    Badge: Badge.extend({
+    Chip: Chip.extend({
       defaultProps: {
-        radius: 'xl', // 24px border radius
+        color: 'black',
+      }
+    }),
+    Container: Container.extend({
+      defaultProps: {
+        size: 'xl'
+      }
+    }),
+    SegmentedControl: SegmentedControl.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'xl'
+      }
+    }),
+    Stack: Stack.extend({
+      defaultProps: {
+        gap: 'xl'
+      }
+    }),
+    TextInput: TextInput.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md'
       },
     }),
   }

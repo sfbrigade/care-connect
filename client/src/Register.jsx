@@ -1,5 +1,5 @@
-import { useNavigate, Link } from 'react-router';
-import { Box, Container, Stack, Title } from '@mantine/core';
+import { useNavigate } from 'react-router';
+import { Box, Container, SegmentedControl, Stack, Title } from '@mantine/core';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
@@ -23,15 +23,35 @@ function Register () {
   return (
     <>
       <Head>
-        <title>Register</title>
+        <title>Create an account</title>
       </Head>
-      <Container>
-        <Title mb='md'>Register</Title>
-        <Stack>
+      <Container size='xs'>
+        <Stack align='stretch'>
+          <Stack align='center'>
+            {/* Logo placeholder */}
+            <Box
+              style={{
+                width: '134px',
+                height: '134px',
+                borderRadius: '50%',
+                backgroundColor: '#f1f3f5',
+              }}
+            />
+            {/* Title */}
+            <Title order={3}>
+              Create an account
+            </Title>
+          </Stack>
+          <SegmentedControl
+            fullWidth
+            value='create'
+            onChange={() => navigate('/login')}
+            data={[
+              { label: 'Log in', value: 'signin' },
+              { label: 'Create an account', value: 'create' },
+            ]}
+          />
           <RegistrationForm onSubmitMutation={onSubmitMutation} />
-          <Box>
-            <Link to='/login'>Already have an account?</Link>
-          </Box>
         </Stack>
       </Container>
     </>

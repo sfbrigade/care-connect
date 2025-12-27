@@ -1,28 +1,47 @@
+import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
+import { Anchor, Alert, Button, Container, Fieldset, Group, Stack, Text, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
+import { IconCheck } from '@tabler/icons-react';
 import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
+import PasswordInput from '@/components/PasswordInput';
+import PasswordStrength from '@/components/PasswordStrength';
+import { useAuthContext } from '@/AuthContext';
 
 function ResetPassword () {
+  const authContext = useAuthContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const { token } = useParams();
+
+  const [success, setSuccess] = useState(false);
 
   const form = useForm({
     initialValues: {
       password: '',
     },
     validate: {
-      password: hasLength({ min: 8 }, 'Passwords must be at least 8 characters.'),
+      password: hasLength({ min: 12 }, 'Passwords must be at least 12 characters.'),
     },
   });
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.passwords.update(token, values.password),
-    onSuccess: () => navigate('/login', { state: { flash: 'Your new password has been saved.' } }),
+    onSuccess: async (response) => {
+      // Update user state immediately from login response
+      if (response.status === StatusCodes.OK && response.data) {
+        authContext.setUser(response.data);
+      }
+      // Invalidate and refetch user query to ensure consistency
+      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      setSuccess(true);
+      setTimeout(() => navigate('/'), 3000);
+    },
     onError: (errors) => form.setErrors(errors),
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
@@ -37,13 +56,12 @@ function ResetPassword () {
   return (
     <>
       <Head>
-        <title>Reset your password</title>
+        <title>Reset password</title>
       </Head>
-      <Container>
-        <Title mb='md'>Reset your password</Title>
+      <Container size='xs'>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-            <Stack w={{ base: '100%', xs: 320 }}>
+            <Stack>
               {error?.response?.status === StatusCodes.NOT_FOUND && (
                 <Alert color='red'>
                   Sorry, this password reset link is invalid.<br />
@@ -58,18 +76,35 @@ function ResetPassword () {
               )}
               {!isLoading && !error && (
                 <>
-                  <Box>Enter a new password for your account.</Box>
-                  <TextInput
-                    {...form.getInputProps('password')}
-                    key='password'
-                    label='New password'
-                    type='password'
-                  />
-                  <Group>
-                    <Button type='submit'>
-                      Submit
-                    </Button>
-                  </Group>
+                  {!success && (
+                    <>
+                      <Title order={2}>Reset password</Title>
+                      <PasswordInput
+                        {...form.getInputProps('password')}
+                        key='password'
+                        placeholder='Enter new password'
+                      />
+                      <PasswordStrength password={form.getValues().password} />
+                      <Button fullWidth type='submit'>
+                        Reset password
+                      </Button>
+                      <Text align='center'>Or <Anchor component={Link} to='/login'>Log in</Anchor></Text>
+                    </>
+                  )}
+                  {success && (
+                    <Stack align='center' mt='xl'>
+                      <Group align='center' justify='center' w={56} h={56} bdrs='50%' bd='3px solid var(--mantine-color-teal-6)'>
+                        <IconCheck color='var(--mantine-color-teal-6)' size={32} />
+                      </Group>
+                      <Stack gap='xs'>
+                        <Title align='center' order={3}>Password updated</Title>
+                        <Text align='center' c='dimmed'>
+                          You will be automatically logged into your account in a few seconds. If not, press Done.
+                        </Text>
+                      </Stack>
+                      <Button fullWidth component={Link} to='/'>Done</Button>
+                    </Stack>
+                  )}
                 </>
               )}
             </Stack>

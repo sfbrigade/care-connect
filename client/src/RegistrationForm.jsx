@@ -1,6 +1,8 @@
 import { Alert, Button, Fieldset, Group, Stack, TextInput } from '@mantine/core';
 import { isEmail, isNotEmpty, hasLength, useForm } from '@mantine/form';
 
+import PasswordStrength from '@/components/PasswordStrength';
+
 function RegistrationForm ({ onSubmitMutation }) {
   const form = useForm({
     mode: 'uncontrolled',
@@ -14,7 +16,7 @@ function RegistrationForm ({ onSubmitMutation }) {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
-      password: hasLength({ min: 8 }, 'Passwords must be at least 8 characters.'),
+      password: hasLength({ min: 12 }, 'Passwords must be at least 12 characters.'),
     },
   });
 
@@ -28,52 +30,37 @@ function RegistrationForm ({ onSubmitMutation }) {
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
       <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-        <Stack w={{ base: '100%', xs: 320 }}>
+        <Stack>
           {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
           <TextInput
             {...form.getInputProps('firstName')}
             key={form.key('firstName')}
             label='First name'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
+            placeholder='Enter first name'
           />
           <TextInput
             {...form.getInputProps('lastName')}
             key={form.key('lastName')}
             label='Last name'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
+            placeholder='Enter last name'
           />
           <TextInput
             {...form.getInputProps('email')}
             key={form.key('email')}
             type='email'
             label='Email'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
+            placeholder='youremail@example.com'
           />
           <TextInput
             {...form.getInputProps('password')}
             key={form.key('password')}
             type='password'
             label='Password'
-            styles={{
-              input: {
-                fontSize: '16px', // Prevent iOS zoom (must be >= 16px)
-              },
-            }}
+            placeholder='Enter password'
           />
+          <PasswordStrength password={form.getValues().password} />
           <Group>
-            <Button type='submit'>Submit</Button>
+            <Button fullWidth type='submit'>Create account</Button>
           </Group>
         </Stack>
       </Fieldset>

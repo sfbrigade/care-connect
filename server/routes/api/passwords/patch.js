@@ -16,7 +16,17 @@ export default async function (fastify, opts) {
           password: User.PasswordSchema,
         }),
         response: {
-          [StatusCodes.OK]: z.null(),
+          [StatusCodes.OK]: User.ResponseSchema.meta({
+            description:
+                        'Successfully authenticated. The response sets a cookie named `session` that should be sent in subsequent requests for authentication. This cookie will NOT appear in the web-based API tester infterface because it is an HttpOnly cookie that cannot be accessed by JavaScript.',
+            headers: {
+              'Set-Cookie': {
+                schema: {
+                  type: 'string',
+                },
+              },
+            },
+          }),
           [StatusCodes.NOT_FOUND]: z.null(),
           [StatusCodes.GONE]: z.null(),
           [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
@@ -43,7 +53,8 @@ export default async function (fastify, opts) {
             hashedPassword: user.hashedPassword,
           },
         });
-        return reply.send();
+        request.session.set('userId', user.id);
+        return reply.send(user);
       } catch (error) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }

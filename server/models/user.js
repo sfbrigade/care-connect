@@ -23,7 +23,7 @@ const UserAttributesSchema = z.object({
 
 const UserPasswordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters long');
+  .min(12, 'Password must be at least 12 characters long');
 
 const UserRegisterSchema = UserAttributesSchema.extend({
   password: UserPasswordSchema,
