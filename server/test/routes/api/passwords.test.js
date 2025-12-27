@@ -91,7 +91,7 @@ test('/api/passwords', async (t) => {
       );
     });
 
-    await t.test('sets a new password', async (t) => {
+    await t.test('sets a new password and logs user in', async (t) => {
       let response = await app.inject().post('/api/passwords').payload({
         email: 'regular.user@test.com',
       });
@@ -101,6 +101,31 @@ test('/api/passwords', async (t) => {
         password: 'Abcd1234!',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const cookie = response.headers['set-cookie']
+        ?.split(';')
+        .map((t) => t.trim());
+      assert.ok(cookie[0].startsWith('session='));
+      assert.ok(cookie.includes('HttpOnly'));
+      // Will be Secure only in production
+      // assert.ok(cookie.includes('Secure'));
+      assert.ok(cookie.includes('SameSite=Strict'));
+
+      data = JSON.parse(response.body);
+      assert.deepStrictEqual(data, {
+        id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        firstName: 'Regular',
+        lastName: 'User',
+        email: 'regular.user@test.com',
+        isAdmin: false,
+        picture: null,
+        pictureUrl: null,
+        badgeNumber: null,
+        rank: null,
+        unit: null,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        deactivatedAt: null,
+      });
 
       data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
       const user = new User(data);
