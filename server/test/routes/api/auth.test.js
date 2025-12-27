@@ -15,7 +15,7 @@ test('/api/auth', async (t) => {
         firstName: 'Normal',
         lastName: 'Person',
         email: 'normal.person@test.com',
-        password: 'Abcd1234!',
+        password: 'Abcdef12345!',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
 
@@ -44,7 +44,7 @@ test('/api/auth', async (t) => {
         firstName: 'Invited',
         lastName: 'User',
         email: 'invited.user@test.com',
-        password: 'Abcd1234!',
+        password: 'Abcdef12345!',
         inviteId: '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
@@ -99,7 +99,7 @@ test('/api/auth', async (t) => {
         firstName: 'Normal',
         lastName: 'Person',
         email: 'regular.user@test.com',
-        password: 'Abcd1234!',
+        password: 'Abcdef12345!',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
 

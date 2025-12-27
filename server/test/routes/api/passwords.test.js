@@ -98,7 +98,7 @@ test('/api/passwords', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       let data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
       response = await app.inject().patch(`/api/passwords/${data.passwordResetToken}`).payload({
-        password: 'Abcd1234!',
+        password: 'Abcdef12345!',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const cookie = response.headers['set-cookie']
