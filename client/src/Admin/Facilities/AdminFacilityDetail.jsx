@@ -53,6 +53,8 @@ function AdminFacilityDetail () {
 
   const [formData, setFormData] = useState({
     name: '',
+    subdomain: '',
+    type: '',
     description: '',
     phone: '',
     email: '',
@@ -108,6 +110,8 @@ function AdminFacilityDetail () {
     if (facility && !isNew) {
       setFormData({
         name: facility.name || '',
+        subdomain: facility.subdomain || '',
+        type: facility.type || '',
         description: facility.description || '',
         phone: facility.phone || '',
         email: facility.email || '',
@@ -256,6 +260,22 @@ function AdminFacilityDetail () {
                 label='Name'
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <TextInput
+                label='Subdomain'
+                value={formData.subdomain}
+                onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+                required
+              />
+              <Select
+                label='Type'
+                data={[
+                  { value: 'DIDO', label: 'DIDO' },
+                  { value: 'LESC', label: 'LESC' },
+                ]}
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e })}
                 required
               />
               <Textarea

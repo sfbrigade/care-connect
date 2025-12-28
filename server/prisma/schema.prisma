@@ -30,6 +30,11 @@ enum PlacementRequestStatus {
   EXPIRED
 }
 
+enum FacilityType {
+  DIDO
+  LESC
+}
+
 enum FacilityUpdateMethod {
   INTEGRATION
   API
@@ -113,6 +118,8 @@ model Invite {
 model Facility {
   id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
+  type              FacilityType               @default(DIDO)
+  subdomain         String?                    @db.Citext @unique
   description       String?
   phone             String?
   email             String?

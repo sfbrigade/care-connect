@@ -11,6 +11,13 @@ EXPIRED EXPIRED
     
 
 
+        FacilityType {
+            DIDO DIDO
+LESC LESC
+        }
+    
+
+
         FacilityUpdateMethod {
             INTEGRATION INTEGRATION
 API API
@@ -87,6 +94,8 @@ TRANSFERRED TRANSFERRED
   "Facility" {
     String id "🗝️"
     String name 
+    FacilityType type 
+    String subdomain "❓"
     String description "❓"
     String phone "❓"
     String email "❓"
@@ -291,6 +300,7 @@ TRANSFERRED TRANSFERRED
     "Invite" o|--|| "User" : "createdBy"
     "Invite" o|--|o "User" : "acceptedBy"
     "Invite" o|--|o "User" : "revokedBy"
+    "Facility" o|--|| "FacilityType" : "enum:type"
     "Facility" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "Facility" o{--}o "FacilityCapacitySnapshot" : ""
     "Facility" o{--}o "FacilityAmenity" : ""
