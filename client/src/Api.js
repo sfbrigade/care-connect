@@ -91,9 +91,9 @@ const Api = {
           switch (error.response?.status) {
             case StatusCodes.NOT_FOUND:
             case StatusCodes.UNPROCESSABLE_ENTITY:
-              throw { _form: 'Invalid email and/or password' };
+              throw { password: 'Incorrect password. Try again or press Forgot password.' };
             case StatusCodes.FORBIDDEN:
-              throw { _form: 'Your account has been deactivated.' };
+              throw { email: 'Your account has been deactivated.' };
             default:
               throw { _form: error.message };
           }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Box, Button, Container, Fieldset, Stack, TextInput, Title, SegmentedControl } from '@mantine/core';
-import { hasLength, isEmail, useForm } from '@mantine/form';
+import { isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconMail, IconLock } from '@tabler/icons-react';
