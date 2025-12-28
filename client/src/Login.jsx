@@ -36,7 +36,6 @@ function Login () {
     },
     validate: {
       email: isEmail('Please enter a valid email address.'),
-      password: hasLength({ min: 12 }, 'Passwords must be at least 12 characters.'),
     },
   });
 
