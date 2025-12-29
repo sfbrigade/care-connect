@@ -14,13 +14,11 @@ export default async function (fastify, opts) {
             phone: z.string().nullable(),
             neighborhood: z.string().nullable(),
             nstDistrict: z.string().nullable(),
-            address: z.object({
-              line1: z.string().nullable(),
-              line2: z.string().nullable(),
-              city: z.string().nullable(),
-              state: z.string().nullable(),
-              postalCode: z.string().nullable(),
-            }),
+            addressLine1: z.string().nullable(),
+            addressLine2: z.string().nullable(),
+            city: z.string().nullable(),
+            state: z.string().nullable(),
+            postalCode: z.string().nullable(),
             latitude: z.number().nullable(),
             longitude: z.number().nullable(),
             services: z.array(z.object({
