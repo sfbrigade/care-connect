@@ -21,6 +21,7 @@ const FacilityAttributesSchema = z.object({
   state: z.string().nullable(),
   postalCode: z.string().nullable(),
   neighborhood: z.string().nullable(),
+  nstDistrict: z.string().nullable(),
   latitude: z.coerce.number().nullable(),
   longitude: z.coerce.number().nullable(),
   isActive: z.boolean(),
