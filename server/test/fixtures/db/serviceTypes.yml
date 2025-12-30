@@ -1,0 +1,9 @@
+entity: serviceType
+connectedFields: []
+items:
+  lesc:
+    code: 'LESC'
+    name: 'Law Enforcement Sobering Center'
+  general:
+    code: 'GENERAL'
+    name: 'General Service'

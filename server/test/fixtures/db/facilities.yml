@@ -1,0 +1,15 @@
+entity: facility
+connectedFields: [services]
+items:
+  lescFacility1:
+    name: 'LESC Facility 1'
+    isActive: true
+  lescFacility2:
+    name: 'LESC Facility 2'
+    isActive: true
+  generalFacility1:
+    name: 'General Facility 1'
+    isActive: true
+  generalFacility2:
+    name: 'General Facility 2'
+    isActive: true

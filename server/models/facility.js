@@ -1,11 +1,11 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, FacilityType, FacilityUpdateMethod } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 
 const FacilityAttributesSchema = z.object({
   name: z.string(),
-  type: z.enum(['DIDO', 'LESC']),
+  type: z.enum(Object.values(FacilityType)),
   subdomain: z.string().nullable(),
   description: z.string().nullable(),
   phone: z.string().nullable(),
@@ -20,15 +20,7 @@ const FacilityAttributesSchema = z.object({
   latitude: z.coerce.number().nullable(),
   longitude: z.coerce.number().nullable(),
   isActive: z.boolean(),
-  updateMethod: z.enum([
-    'INTEGRATION',
-    'API',
-    'MANUAL',
-    'AUTOMATED_CALL',
-    'AUTOMATED_TEXT',
-    'WHITEBOARD',
-    'OTHER',
-  ]),
+  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
   updateNotes: z.string().nullable(),
 });
 
@@ -45,7 +37,7 @@ export class Facility extends Base {
   static UpdateSchema = FacilityUpdateSchema;
 
   constructor (data) {
-    super(Prisma.UserScalarFieldEnum, data);
+    super(Prisma.FacilityScalarFieldEnum, data);
   }
 }
 

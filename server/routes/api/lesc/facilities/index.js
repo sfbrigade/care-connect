@@ -1,3 +1,3 @@
-import * as facilities from '../../facilities/index.js';
+import * as facilities from '../../facilities/list.js';
 
 export default facilities;

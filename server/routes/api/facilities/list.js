@@ -1,26 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { Facility } from '#models/facility.js';
+
 export default async function (fastify, opts) {
   fastify.get('/',
     {
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
         response: {
-          [StatusCodes.OK]: z.array(z.object({
-            id: z.string().uuid(),
-            name: z.string(),
-            description: z.string().nullable(),
-            phone: z.string().nullable(),
-            neighborhood: z.string().nullable(),
-            nstDistrict: z.string().nullable(),
-            addressLine1: z.string().nullable(),
-            addressLine2: z.string().nullable(),
-            city: z.string().nullable(),
-            state: z.string().nullable(),
-            postalCode: z.string().nullable(),
-            latitude: z.number().nullable(),
-            longitude: z.number().nullable(),
+          [StatusCodes.OK]: z.array(Facility.ResponseSchema.extend({
             services: z.array(z.object({
               id: z.string().uuid(),
               code: z.string(),
@@ -28,17 +17,17 @@ export default async function (fastify, opts) {
               description: z.string().nullable(),
               availableBeds: z.number().nullable(),
               reservedBeds: z.number().nullable(),
-            })),
+            })).optional(),
             amenities: z.array(z.object({
               id: z.string().uuid(),
               name: z.string(),
-            })),
+            })).optional(),
             eligibility: z.array(z.object({
               id: z.string().uuid(),
               type: z.string(),
               value: z.string().nullable(),
               notes: z.string().nullable(),
-            })),
+            })).optional(),
             contacts: z.array(z.object({
               id: z.string().uuid(),
               name: z.string(),
@@ -47,8 +36,7 @@ export default async function (fastify, opts) {
               email: z.string().nullable(),
               isPrimary: z.boolean(),
               notes: z.string().nullable(),
-            })),
-            updatedAt: z.string(),
+            })).optional(),
           })),
         },
       },
@@ -99,84 +87,24 @@ export default async function (fastify, opts) {
       const facilities = await fastify.prisma.facility.findMany({
         where: whereClause,
         orderBy: { name: 'asc' },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          phone: true,
-          neighborhood: true,
-          nstDistrict: true,
-          addressLine1: true,
-          addressLine2: true,
-          city: true,
-          state: true,
-          postalCode: true,
-          latitude: true,
-          longitude: true,
-          updatedAt: true,
+        include: {
           services: {
-            select: {
-              availableBeds: true,
-              reservedBeds: true,
-              description: true,
-              serviceType: {
-                select: {
-                  id: true,
-                  code: true,
-                  name: true,
-                  description: true,
-                },
-              },
+            include: {
+              serviceType: true,
             },
           },
           amenities: {
-            select: {
-              amenity: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+            include: {
+              amenity: true,
             },
           },
-          eligibility: {
-            select: {
-              id: true,
-              type: true,
-              value: true,
-              notes: true,
-            },
-          },
-          contacts: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-              phone: true,
-              email: true,
-              notes: true,
-              isPrimary: true,
-            },
-          },
+          eligibility: true,
+          contacts: true,
         },
       });
 
       const responsePayload = facilities.map((facility) => ({
-        id: facility.id,
-        name: facility.name,
-        description: facility.description ?? null,
-        phone: facility.phone ?? null,
-        neighborhood: facility.neighborhood ?? null,
-        nstDistrict: facility.nstDistrict ?? null,
-        address: {
-          line1: facility.addressLine1 ?? null,
-          line2: facility.addressLine2 ?? null,
-          city: facility.city ?? null,
-          state: facility.state ?? null,
-          postalCode: facility.postalCode ?? null,
-        },
-        latitude: facility.latitude != null ? Number(facility.latitude) : null,
-        longitude: facility.longitude != null ? Number(facility.longitude) : null,
+        ...facility,
         services: facility.services.map((service) => ({
           id: service.serviceType.id,
           code: service.serviceType.code,
@@ -195,16 +123,15 @@ export default async function (fastify, opts) {
           value: item.value ?? null,
           notes: item.notes ?? null,
         })),
-        contacts: facility.contacts.map((contact) => ({
-          id: contact.id,
-          name: contact.name,
-          role: contact.role ?? null,
-          phone: contact.phone ?? null,
-          email: contact.email ?? null,
-          isPrimary: contact.isPrimary,
-          notes: contact.notes ?? null,
+        contacts: facility.contacts.map((item) => ({
+          id: item.id,
+          name: item.name,
+          role: item.role ?? null,
+          phone: true,
+          email: true,
+          notes: true,
+          isPrimary: true,
         })),
-        updatedAt: facility.updatedAt.toISOString(),
       }));
 
       return reply.send(responsePayload);

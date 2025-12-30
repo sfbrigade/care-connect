@@ -1,0 +1,23 @@
+entity: facilityService
+connectedFields: [facility, serviceType]
+items:
+  lescFacility1Service:
+    facility: '@lescFacility1'
+    serviceType: '@lesc'
+    availableBeds: 10
+    reservedBeds: 2
+  lescFacility2Service:
+    facility: '@lescFacility2'
+    serviceType: '@lesc'
+    availableBeds: 5
+    reservedBeds: 1
+  generalFacility1Service:
+    facility: '@generalFacility1'
+    serviceType: '@general'
+    availableBeds: 20
+    reservedBeds: 5
+  generalFacility2Service:
+    facility: '@generalFacility2'
+    serviceType: '@general'
+    availableBeds: 15
+    reservedBeds: 3
