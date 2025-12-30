@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import ServiceType from './serviceType.js';
 
 const FacilityServiceAttributesSchema = z.object({
   availableBeds: z.number(),
@@ -12,6 +13,7 @@ const FacilityServiceAttributesSchema = z.object({
 const FacilityServiceResponseSchema = FacilityServiceAttributesSchema.extend({
   facilityId: z.string().uuid(),
   serviceTypeId: z.string().uuid(),
+  serviceType: ServiceType.ResponseSchema.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -22,7 +24,7 @@ export class FacilityService extends Base {
   static ResponseSchema = FacilityServiceResponseSchema;
   static UpdateSchema = FacilityServiceUpdateSchema;
 
-  constructor(data) {
+  constructor (data) {
     super(Prisma.FacilityServiceScalarFieldEnum, data);
   }
 }

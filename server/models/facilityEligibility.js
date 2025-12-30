@@ -22,7 +22,7 @@ export class FacilityEligibility extends Base {
   static ResponseSchema = FacilityEligibilityResponseSchema;
   static UpdateSchema = FacilityEligibilityUpdateSchema;
 
-  constructor(data) {
+  constructor (data) {
     super(Prisma.FacilityEligibilityScalarFieldEnum, data);
   }
 }

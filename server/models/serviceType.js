@@ -21,7 +21,7 @@ export class ServiceType extends Base {
   static ResponseSchema = ServiceTypeResponseSchema;
   static UpdateSchema = ServiceTypeUpdateSchema;
 
-  constructor(data) {
+  constructor (data) {
     super(Prisma.ServiceTypeScalarFieldEnum, data);
   }
 }

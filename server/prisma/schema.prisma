@@ -200,6 +200,8 @@ model FacilityService {
   availableBeds   Int         @default(0)
   reservedBeds    Int         @default(0)
   description     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@id([facilityId, serviceTypeId])
 }

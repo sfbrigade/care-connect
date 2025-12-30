@@ -29,7 +29,7 @@ test('/api/facilities', async (t) => {
 
       // Verify facilities have LESC service
       facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.code === 'LESC');
+        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
         assert.ok(hasLescService, `Facility ${facility.name} should have LESC service`);
       });
     });
@@ -54,7 +54,7 @@ test('/api/facilities', async (t) => {
 
       // Verify no facilities have LESC service
       facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.code === 'LESC');
+        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
         assert.ok(!hasLescService, `Facility ${facility.name} should not have LESC service`);
       });
     });
@@ -94,7 +94,7 @@ test('/api/facilities', async (t) => {
       assert.ok(Array.isArray(facilities));
       assert.ok(facilities.length >= 2);
       facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.code === 'LESC');
+        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
         assert.ok(hasLescService, `Facility ${facility.name} should have LESC service`);
       });
     });
@@ -114,7 +114,7 @@ test('/api/facilities', async (t) => {
       // Should exclude LESC facilities
       assert.ok(Array.isArray(facilities));
       facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.code === 'LESC');
+        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
         assert.ok(!hasLescService, `Facility ${facility.name} should not have LESC service`);
       });
     });

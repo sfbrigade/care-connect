@@ -20,7 +20,7 @@ export class Amenity extends Base {
   static ResponseSchema = AmenityResponseSchema;
   static UpdateSchema = AmenityUpdateSchema;
 
-  constructor(data) {
+  constructor (data) {
     super(Prisma.AmenityScalarFieldEnum, data);
   }
 }

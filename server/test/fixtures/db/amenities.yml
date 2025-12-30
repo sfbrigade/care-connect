@@ -1,0 +1,9 @@
+entity: amenity
+connectedFields: []
+items:
+  showers:
+    name: Showers
+    description: Showers are available for use.
+  outdoor:
+    name: Outdoor Space
+    description: Outdoor space is available for use.

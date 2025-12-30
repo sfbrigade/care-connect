@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { Facility } from '#models/facility.js';
+import Facility from '#models/facility.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -9,35 +9,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
         response: {
-          [StatusCodes.OK]: z.array(Facility.ResponseSchema.extend({
-            services: z.array(z.object({
-              id: z.string().uuid(),
-              code: z.string(),
-              name: z.string(),
-              description: z.string().nullable(),
-              availableBeds: z.number().nullable(),
-              reservedBeds: z.number().nullable(),
-            })).optional(),
-            amenities: z.array(z.object({
-              id: z.string().uuid(),
-              name: z.string(),
-            })).optional(),
-            eligibility: z.array(z.object({
-              id: z.string().uuid(),
-              type: z.string(),
-              value: z.string().nullable(),
-              notes: z.string().nullable(),
-            })).optional(),
-            contacts: z.array(z.object({
-              id: z.string().uuid(),
-              name: z.string(),
-              role: z.string().nullable(),
-              phone: z.string().nullable(),
-              email: z.string().nullable(),
-              isPrimary: z.boolean(),
-              notes: z.string().nullable(),
-            })).optional(),
-          })),
+          [StatusCodes.OK]: z.array(Facility.ResponseSchema),
         },
       },
     },
@@ -105,33 +77,7 @@ export default async function (fastify, opts) {
 
       const responsePayload = facilities.map((facility) => ({
         ...facility,
-        services: facility.services.map((service) => ({
-          id: service.serviceType.id,
-          code: service.serviceType.code,
-          name: service.serviceType.name,
-          description: service.description ?? service.serviceType.description ?? null,
-          availableBeds: service.availableBeds ?? null,
-          reservedBeds: service.reservedBeds ?? null,
-        })),
-        amenities: facility.amenities.map((item) => ({
-          id: item.amenity.id,
-          name: item.amenity.name,
-        })),
-        eligibility: facility.eligibility.map((item) => ({
-          id: item.id,
-          type: item.type,
-          value: item.value ?? null,
-          notes: item.notes ?? null,
-        })),
-        contacts: facility.contacts.map((item) => ({
-          id: item.id,
-          name: item.name,
-          role: item.role ?? null,
-          phone: true,
-          email: true,
-          notes: true,
-          isPrimary: true,
-        })),
+        amenities: facility.amenities.map((item) => item.amenity),
       }));
 
       return reply.send(responsePayload);

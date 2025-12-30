@@ -2,6 +2,10 @@ import { Prisma, FacilityType, FacilityUpdateMethod } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import Amenity from './amenity.js';
+import FacilityContact from './facilityContact.js';
+import FacilityEligibility from './facilityEligibility.js';
+import FacilityService from './facilityService.js';
 
 const FacilityAttributesSchema = z.object({
   name: z.string(),
@@ -26,6 +30,10 @@ const FacilityAttributesSchema = z.object({
 
 const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
+  services: z.array(FacilityService.ResponseSchema).optional(),
+  amenities: z.array(Amenity.ResponseSchema).optional(),
+  eligibility: z.array(FacilityEligibility.ResponseSchema).optional(),
+  contacts: z.array(FacilityContact.ResponseSchema).optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

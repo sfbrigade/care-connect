@@ -25,7 +25,7 @@ export class FacilityContact extends Base {
   static ResponseSchema = FacilityContactResponseSchema;
   static UpdateSchema = FacilityContactUpdateSchema;
 
-  constructor(data) {
+  constructor (data) {
     super(Prisma.FacilityContactScalarFieldEnum, data);
   }
 }

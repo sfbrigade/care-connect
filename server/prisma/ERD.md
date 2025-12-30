@@ -163,6 +163,8 @@ TRANSFERRED TRANSFERRED
     Int availableBeds 
     Int reservedBeds 
     String description "❓"
+    DateTime createdAt 
+    DateTime updatedAt 
     }
   
 
