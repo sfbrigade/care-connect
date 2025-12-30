@@ -141,12 +141,6 @@ TRANSFERRED TRANSFERRED
     }
   
 
-  "FacilityAmenity" {
-    String facilityId "🗝️"
-    String amenityId "🗝️"
-    }
-  
-
   "ServiceType" {
     String id "🗝️"
     String code 
@@ -305,16 +299,13 @@ TRANSFERRED TRANSFERRED
     "Facility" o|--|| "FacilityType" : "enum:type"
     "Facility" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "Facility" o{--}o "FacilityCapacitySnapshot" : ""
-    "Facility" o{--}o "FacilityAmenity" : ""
+    "Facility" o{--}o "Amenity" : ""
     "Facility" o{--}o "FacilityService" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "PlacementRequest" : ""
     "Facility" o{--}o "BedHold" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
-    "Amenity" o{--}o "FacilityAmenity" : ""
-    "FacilityAmenity" o|--|| "Facility" : "facility"
-    "FacilityAmenity" o|--|| "Amenity" : "amenity"
     "ServiceType" o{--}o "FacilityService" : ""
     "ServiceType" o{--}o "PlacementRequest" : ""
     "ServiceType" o{--}o "BedHold" : ""

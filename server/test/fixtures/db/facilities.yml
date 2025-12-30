@@ -1,5 +1,5 @@
 entity: facility
-connectedFields: [services]
+connectedFields: []
 items:
   lescFacility1:
     name: 'LESC Facility 1'

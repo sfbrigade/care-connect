@@ -1,9 +1,11 @@
 entity: amenity
-connectedFields: []
+connectedFields: [facilities]
 items:
   showers:
     name: Showers
     description: Showers are available for use.
+    facilities: ['@lescFacility1', '@lescFacility2', '@generalFacility2']
   outdoor:
     name: Outdoor Space
     description: Outdoor space is available for use.
+    facilities: ['@lescFacility1', '@generalFacility1']

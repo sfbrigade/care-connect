@@ -138,7 +138,7 @@ model Facility {
   updateMethod      FacilityUpdateMethod       @default(MANUAL)
   updateNotes       String?
   capacitySnapshots FacilityCapacitySnapshot[]
-  amenities         FacilityAmenity[]
+  amenities         Amenity[]
   services          FacilityService[]
   eligibility       FacilityEligibility[]
   contacts          FacilityContact[]
@@ -166,18 +166,9 @@ model Amenity {
   id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String            @unique
   description String?
-  facilities  FacilityAmenity[]
+  facilities  Facility[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-}
-
-model FacilityAmenity {
-  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId String   @db.Uuid
-  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  amenityId  String   @db.Uuid
-
-  @@id([facilityId, amenityId])
 }
 
 model ServiceType {

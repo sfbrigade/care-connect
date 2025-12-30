@@ -65,21 +65,11 @@ export default async function (fastify, opts) {
               serviceType: true,
             },
           },
-          amenities: {
-            include: {
-              amenity: true,
-            },
-          },
+          amenities: true,
           eligibility: true,
           contacts: true,
         },
       });
-
-      const responsePayload = facilities.map((facility) => ({
-        ...facility,
-        amenities: facility.amenities.map((item) => item.amenity),
-      }));
-
-      return reply.send(responsePayload);
+      return reply.send(facilities);
     });
 }
