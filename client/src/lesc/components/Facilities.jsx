@@ -66,9 +66,9 @@ function Facilities () {
 
   const formatAddress = (facility) => {
     const parts = [];
-    if (facility.address?.line1) parts.push(facility.address.line1);
-    if (facility.address?.city) parts.push(facility.address.city);
-    if (facility.address?.state) parts.push(facility.address.state);
+    if (facility.addressLine1) parts.push(facility.addressLine1);
+    if (facility.city) parts.push(facility.city);
+    if (facility.state) parts.push(facility.state);
     return parts.length > 0 ? parts.join(', ') : facility.neighborhood || 'Address not available';
   };
 

@@ -221,9 +221,9 @@ function Holds () {
 
     // Format address
     const addressParts = [];
-    if (facility.address?.line1) addressParts.push(facility.address.line1);
-    if (facility.address?.city) addressParts.push(facility.address.city);
-    if (facility.address?.state) addressParts.push(facility.address.state);
+    if (facility.addressLine1) addressParts.push(facility.addressLine1);
+    if (facility.city) addressParts.push(facility.city);
+    if (facility.state) addressParts.push(facility.state);
     const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
 
     return {
@@ -249,9 +249,9 @@ function Holds () {
 
     // Format address
     const addressParts = [];
-    if (facility.address?.line1) addressParts.push(facility.address.line1);
-    if (facility.address?.city) addressParts.push(facility.address.city);
-    if (facility.address?.state) addressParts.push(facility.address.state);
+    if (facility.addressLine1) addressParts.push(facility.addressLine1);
+    if (facility.city) addressParts.push(facility.city);
+    if (facility.state) addressParts.push(facility.state);
     const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
 
     return {
