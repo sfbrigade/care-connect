@@ -1,0 +1,10 @@
+entity: client
+connectedFields: []
+items:
+  client1:
+    firstName: 'Test'
+    lastName: 'Client'
+    middleInitial: 'T'
+    address: '123 Test St'
+    driverLicense: 'DL123'
+    localId: 'SF-123'

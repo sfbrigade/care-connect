@@ -1,0 +1,7 @@
+entity: incident
+connectedFields: [createdBy]
+items:
+  incident1:
+    cadNumber: 'CAD-123'
+    dateTimeArrested: <%= new Date().toISOString() %>
+    createdBy: '@user1'

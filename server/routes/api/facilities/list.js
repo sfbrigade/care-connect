@@ -8,6 +8,9 @@ export default async function (fastify, opts) {
     {
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
+        querystring: z.object({
+          include: z.string().optional(),
+        }),
         response: {
           [StatusCodes.OK]: z.array(Facility.ResponseSchema),
         },
@@ -56,18 +59,22 @@ export default async function (fastify, opts) {
       }
       // If appType is null (admin/shared routes), show all facilities (no filter)
 
+      const include = request.query.include?.split(',');
+
       const facilities = await fastify.prisma.facility.findMany({
         where: whereClause,
         orderBy: { name: 'asc' },
         include: {
-          services: {
-            include: {
-              serviceType: true,
-            },
-          },
-          amenities: true,
-          eligibility: true,
-          contacts: true,
+          services: include?.includes('services')
+            ? {
+                include: {
+                  serviceType: true,
+                },
+              }
+            : false,
+          amenities: !!include?.includes('amenities'),
+          eligibility: !!include?.includes('eligibility'),
+          contacts: !!include?.includes('contacts'),
         },
       });
       return reply.send(facilities);

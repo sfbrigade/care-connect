@@ -247,7 +247,7 @@ function Home () {
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['facilities'],
     queryFn: async () => {
-      const response = await Api.facilities.list();
+      const response = await Api.facilities.list('services');
       if (import.meta.env.DEV) {
         console.debug('[Home] Facilities response', response.data);
       }

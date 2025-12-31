@@ -73,7 +73,7 @@ function AdminFacilityDetail () {
   const { data: facility, isLoading } = useQuery({
     queryKey: ['admin-facility', id],
     queryFn: async () => {
-      const response = await Api.admin.facilities.get(id);
+      const response = await Api.facilities.get(id);
       return response.data;
     },
     enabled: !isNew,
@@ -87,7 +87,7 @@ function AdminFacilityDetail () {
       if (!id || id === 'new') {
         return [];
       }
-      const response = await Api.admin.facilities.holds(id);
+      const response = await Api.facilities.holds(id);
       return response.data;
     },
     enabled: !isNew && !!id && id !== 'new',
@@ -132,12 +132,12 @@ function AdminFacilityDetail () {
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       if (isNew) {
-        const response = await Api.admin.facilities.create(data);
+        const response = await Api.facilities.create(data);
         const facilityId = response.data.id;
 
         // Add service type if provided
         if (serviceTypeId) {
-          await Api.admin.facilities.addService(facilityId, {
+          await Api.facilities.addService(facilityId, {
             serviceTypeId,
             availableBeds,
             reservedBeds,
@@ -146,7 +146,7 @@ function AdminFacilityDetail () {
 
         return response;
       }
-      return Api.admin.facilities.update(id, data);
+      return Api.facilities.update(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-facilities'] });
@@ -160,7 +160,7 @@ function AdminFacilityDetail () {
 
   const updateBedsMutation = useMutation({
     mutationFn: ({ serviceTypeId, availableBeds, reservedBeds }) =>
-      Api.admin.facilities.updateBeds(id, { serviceTypeId, availableBeds, reservedBeds }),
+      Api.facilities.updateBeds(id, { serviceTypeId, availableBeds, reservedBeds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-facility', id] });
     },
@@ -168,7 +168,7 @@ function AdminFacilityDetail () {
 
   const addServiceMutation = useMutation({
     mutationFn: ({ serviceTypeId, availableBeds, reservedBeds }) =>
-      Api.admin.facilities.addService(id, { serviceTypeId, availableBeds, reservedBeds }),
+      Api.facilities.addService(id, { serviceTypeId, availableBeds, reservedBeds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-facility', id] });
     },
@@ -176,7 +176,7 @@ function AdminFacilityDetail () {
 
   const removeServiceMutation = useMutation({
     mutationFn: (serviceTypeId) =>
-      Api.admin.facilities.removeService(id, serviceTypeId),
+      Api.facilities.removeService(id, serviceTypeId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-facility', id] });
     },

@@ -159,8 +159,32 @@ const Api = {
     },
   },
   facilities: {
-    list () {
-      return instance.get('/api/facilities');
+    list (include = '') {
+      return instance.get('/api/facilities', { params: { include } });
+    },
+    get (id) {
+      return instance.get(`/api/facilities/${id}`);
+    },
+    create (data) {
+      return instance.post('/api/facilities', data).catch(handleError);
+    },
+    update (id, data) {
+      return instance.patch(`/api/facilities/${id}`, data).catch(handleError);
+    },
+    delete (id) {
+      return instance.delete(`/api/facilities/${id}`).catch(handleError);
+    },
+    updateBeds (id, data) {
+      return instance.patch(`/api/facilities/${id}/beds`, data).catch(handleError);
+    },
+    addService (id, data) {
+      return instance.post(`/api/facilities/${id}/services`, data).catch(handleError);
+    },
+    removeService (id, serviceTypeId) {
+      return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
+    },
+    holds (id) {
+      return instance.get(`/api/facilities/${id}/holds`).catch(handleError);
     },
   },
   lesc: {
@@ -243,37 +267,6 @@ const Api = {
       },
       update (id, data) {
         return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
-      },
-    },
-  },
-  admin: {
-    facilities: {
-      list () {
-        return instance.get('/api/admin/facilities');
-      },
-      get (id) {
-        return instance.get(`/api/admin/facilities/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/admin/facilities', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/admin/facilities/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/admin/facilities/${id}`).catch(handleError);
-      },
-      updateBeds (id, data) {
-        return instance.patch(`/api/admin/facilities/${id}/beds`, data).catch(handleError);
-      },
-      addService (id, data) {
-        return instance.post(`/api/admin/facilities/${id}/services`, data).catch(handleError);
-      },
-      removeService (id, serviceTypeId) {
-        return instance.delete(`/api/admin/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
-      },
-      holds (id) {
-        return instance.get(`/api/admin/facilities/${id}/holds`).catch(handleError);
       },
     },
   },

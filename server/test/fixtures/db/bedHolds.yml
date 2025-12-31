@@ -1,0 +1,20 @@
+entity: bedHold
+connectedFields: [facility, serviceType, client, incident, createdBy]
+items:
+  activeHold:
+    id: b65ae02b-9b35-43e2-897b-eee6eb5a82e2
+    facility: '@lescFacility1'
+    serviceType: '@lesc'
+    client: '@client1'
+    incident: '@incident1'
+    bedsRequested: 1
+    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user2'
+  expiredHold:
+    facility: '@lescFacility1'
+    serviceType: '@lesc'
+    bedsRequested: 1
+    expiresAt: '2024-12-27T09:53:41-07:00'
+    status: 'EXPIRED'
+    createdBy: '@user2'

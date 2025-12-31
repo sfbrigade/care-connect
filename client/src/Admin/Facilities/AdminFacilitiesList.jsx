@@ -13,13 +13,13 @@ function AdminFacilitiesList () {
   const { data: facilities, isLoading, error } = useQuery({
     queryKey: ['admin-facilities'],
     queryFn: async () => {
-      const response = await Api.admin.facilities.list();
+      const response = await Api.facilities.list();
       return response.data;
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => Api.admin.facilities.delete(id),
+    mutationFn: (id) => Api.facilities.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-facilities'] });
     },

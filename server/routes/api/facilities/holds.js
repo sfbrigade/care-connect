@@ -5,7 +5,7 @@ import { autoExpireHolds } from '#lib/lesc/holds.js';
 export default async function (fastify, opts) {
   fastify.get('/:id/holds',
     {
-      preHandler: fastify.requireUser,
+      onRequest: fastify.requireAdmin,
       schema: {
         description: 'List all active holds for a facility (admin only, shows all holds regardless of creator).',
         params: z.object({

@@ -2,7 +2,10 @@ entity: facility
 connectedFields: []
 items:
   lescFacility1:
+    id: 6d123d8f-edd5-4d14-9220-0508eb30b47b
     name: 'LESC Facility 1'
+    description: 'LESC Facility 1 Description'
+    phone: '555-0000'
     isActive: true
   lescFacility2:
     name: 'LESC Facility 2'
