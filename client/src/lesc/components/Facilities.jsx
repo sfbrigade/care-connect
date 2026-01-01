@@ -15,7 +15,7 @@ function Facilities () {
   const { data: facilitiesData, isLoading: facilitiesLoading, error: facilitiesError } = useQuery({
     queryKey: ['lesc-facilities'],
     queryFn: async () => {
-      const response = await Api.lesc.facilities.list();
+      const response = await Api.facilities.list({ type: 'LESC' });
       return response.data;
     },
   });

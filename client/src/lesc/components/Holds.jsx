@@ -71,7 +71,7 @@ function Holds () {
   const { data: facilitiesData } = useQuery({
     queryKey: ['lesc-facilities'],
     queryFn: async () => {
-      const response = await Api.lesc.facilities.list();
+      const response = await Api.facilities.list({ type: 'LESC' });
       return response.data;
     },
   });
