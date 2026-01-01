@@ -40,16 +40,18 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'Holds have already expired' });
       }
 
-      // Extend by 30 minutes from current expiration time
-      const newExpiresAt = new Date(holds[0].expiresAt.getTime() + 30 * 60 * 1000);
-
-      await fastify.prisma.bedHold.updateMany({
-        where: { id: { in: ids } },
-        data: {
-          expiresAt: newExpiresAt,
-          status: 'EXTENDED',
-          extendedAt: now,
-        },
+      await fastify.prisma.$transaction((tx) => {
+        // Extend by 30 minutes from current expiration time
+        return Promise.all(holds.map((hold) => {
+          return tx.bedHold.update({
+            where: { id: hold.id },
+            data: {
+              expiresAt: new Date(hold.expiresAt.getTime() + 30 * 60 * 1000),
+              status: 'EXTENDED',
+              extendedAt: now,
+            },
+          });
+        }));
       });
 
       return reply.code(StatusCodes.NO_CONTENT).send();
