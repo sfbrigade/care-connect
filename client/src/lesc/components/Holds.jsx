@@ -174,7 +174,7 @@ function Holds () {
         showToast('Transfer token expired. Please generate a new QR code.', 'warning');
         closeQRModal();
         setSelectedHold(null);
-        queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
+        queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
       }
     }
   }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facility.id]);
@@ -214,8 +214,8 @@ function Holds () {
       return results;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       showToast('All holds extended by 30 minutes', 'success');
     },
     onError: (error) => {
