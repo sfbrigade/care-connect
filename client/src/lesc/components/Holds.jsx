@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { Box, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
@@ -386,6 +386,12 @@ function Holds () {
           />
         )}
         <Stack gap='md'>
+          {(!holds || holds.length === 0) && (
+            <Box align='center'>
+              <Title order={4}>You don't have any active holds</Title>
+              <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
+            </Box>
+          )}
           {holds?.map((hold) => {
             // Calculate age from dateOfBirth if available
             const age = calculateAge(hold.client?.dateOfBirth);

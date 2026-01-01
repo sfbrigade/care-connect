@@ -94,48 +94,6 @@ test('/api/lesc/holds - Authorization: User Filtering', async (t) => {
     assert.strictEqual(user1FoundInUser2, undefined, 'User 2 should not see user 1\'s hold');
   });
 
-  await t.test('GET /api/lesc/holds/:id - users can only get their own holds', async () => {
-    const { facility, lescServiceType } = await createTestData();
-
-    const user1Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user1Id,
-      },
-    });
-
-    const user2Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user2Id,
-      },
-    });
-
-    // User 1 can get their own hold
-    const user1Response = await app.inject().get(`/api/lesc/holds/${user1Hold.id}`).headers(user1Headers);
-    assert.deepStrictEqual(user1Response.statusCode, StatusCodes.OK);
-
-    // User 1 cannot get user 2's hold
-    const user1ForbiddenResponse = await app.inject().get(`/api/lesc/holds/${user2Hold.id}`).headers(user1Headers);
-    assert.deepStrictEqual(user1ForbiddenResponse.statusCode, StatusCodes.FORBIDDEN);
-
-    // User 2 can get their own hold
-    const user2Response = await app.inject().get(`/api/lesc/holds/${user2Hold.id}`).headers(user2Headers);
-    assert.deepStrictEqual(user2Response.statusCode, StatusCodes.OK);
-
-    // User 2 cannot get user 1's hold
-    const user2ForbiddenResponse = await app.inject().get(`/api/lesc/holds/${user1Hold.id}`).headers(user2Headers);
-    assert.deepStrictEqual(user2ForbiddenResponse.statusCode, StatusCodes.FORBIDDEN);
-  });
-
   await t.test('GET /api/lesc/holds/:id/qr - users can only generate QR for their own holds', async () => {
     const { facility, lescServiceType } = await createTestData();
 

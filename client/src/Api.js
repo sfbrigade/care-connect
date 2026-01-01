@@ -200,8 +200,8 @@ const Api = {
     create (data) {
       return instance.post('/api/holds', data).catch(handleError);
     },
-    get (id) {
-      return instance.get(`/api/holds/${id}`);
+    get (id, { include = '' } = {}) {
+      return instance.get(`/api/holds/${id}`, { params: { include } });
     },
   },
   lesc: {
@@ -216,9 +216,6 @@ const Api = {
     holds: {
       list (facilityId) {
         return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
-      },
-      get (id) {
-        return instance.get(`/api/lesc/holds/${id}`).catch(handleError);
       },
       create (data) {
         return instance.post('/api/lesc/holds', data).catch(handleError);

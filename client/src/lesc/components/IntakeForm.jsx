@@ -183,7 +183,7 @@ function IntakeForm () {
   // Fetch hold data if accessed via holdId to check for existing client
   const { data: holdResponse, isLoading: isLoadingHold } = useQuery({
     queryKey: ['lesc-hold', holdId],
-    queryFn: () => Api.lesc.holds.get(holdId),
+    queryFn: () => Api.holds.get(holdId, { include: 'client,incident' }),
     enabled: !isEditMode && !!holdId,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
