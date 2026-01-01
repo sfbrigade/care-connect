@@ -136,6 +136,7 @@ export function useHoldActions ({ invalidateQueries = [], onCancelSuccess } = {}
     cancelModalOpened,
     qrModalOpened,
     selectedHold,
+    setSelectedHold,
 
     // Handlers
     handleCancel,
