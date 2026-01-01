@@ -4,7 +4,7 @@ import BedHold from '#models/bedHold.js';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
-      preHandler: fastify.requireUser,
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Create a bed hold with 60 minute default expiration.',
         body: BedHold.CreateSchema,

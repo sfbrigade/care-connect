@@ -295,8 +295,8 @@ model BedHold {
   bedsRequested         Int
   expiresAt             DateTime
   status                BedHoldStatus  @default(ACTIVE)
-  createdBy             User?          @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById           String?        @db.Uuid
+  createdBy             User           @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById           String         @db.Uuid
   cancelledAt           DateTime?
   cancelledBy           User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
   cancelledById         String?        @db.Uuid

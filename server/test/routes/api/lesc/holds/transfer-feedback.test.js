@@ -9,17 +9,12 @@ test('/api/lesc/holds - Transfer Feedback Flow', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const leoHeaders = await authenticate(app, 'regular.user@test.com', 'test');
-  const clinicHeaders = await authenticate(app, 'admin.user@test.com', 'test');
 
   // Get the authenticated user IDs
   const leo = await prisma.user.findUnique({
     where: { email: 'regular.user@test.com' },
   });
-  const clinicUser = await prisma.user.findUnique({
-    where: { email: 'admin.user@test.com' },
-  });
   const leoId = leo.id;
-  const clinicUserId = clinicUser.id;
 
   // Helper function to create test data
   async function createTestData () {
@@ -80,92 +75,6 @@ test('/api/lesc/holds - Transfer Feedback Flow', async (t) => {
     // Should be between 29-31 seconds (accounting for test execution time)
     assert.ok(timeDiff >= 29000 && timeDiff <= 31000, `Expected ~30 seconds, got ${timeDiff}ms`);
     assert.ok(timeDiffAfter >= 29000 && timeDiffAfter <= 31000, `Expected ~30 seconds, got ${timeDiffAfter}ms`);
-  });
-
-  await t.test('transfer status endpoint returns correct data', async () => {
-    const { facility, lescServiceType } = await createTestData();
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 30 * 1000); // 30 seconds
-
-    // Create hold with transfer token
-    const hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        transferToken: token,
-        transferTokenExpiresAt: expiresAt,
-        createdById: leoId,
-      },
-    });
-
-    // Check transfer status (not transferred yet)
-    const statusResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/transfer-status`).headers(leoHeaders);
-    assert.deepStrictEqual(statusResponse.statusCode, StatusCodes.OK);
-    const statusData = JSON.parse(statusResponse.body);
-
-    assert.deepStrictEqual(statusData.id, hold.id);
-    assert.deepStrictEqual(statusData.isTransferred, false);
-    assert.strictEqual(statusData.transferredAt, null);
-    assert.strictEqual(statusData.transferredBy, null);
-  });
-
-  await t.test('transfer status updates when hold is checked in', async () => {
-    const { facility, lescServiceType } = await createTestData();
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 30 * 1000); // 30 seconds
-
-    // Create hold with transfer token
-    const hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        transferToken: token,
-        transferTokenExpiresAt: expiresAt,
-        createdById: leoId,
-      },
-    });
-
-    // Clinic worker checks in the hold
-    const checkinResponse = await app.inject().post(`/api/lesc/checkin/${hold.id}`).payload({}).headers(clinicHeaders);
-    assert.deepStrictEqual(checkinResponse.statusCode, StatusCodes.CREATED);
-
-    // Verify hold is marked as TRANSFERRED
-    const updatedHold = await prisma.bedHold.findUnique({
-      where: { id: hold.id },
-      include: {
-        transferredBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
-
-    assert.deepStrictEqual(updatedHold.status, 'TRANSFERRED');
-    assert.ok(updatedHold.transferredAt);
-    assert.deepStrictEqual(updatedHold.transferredById, clinicUserId);
-    assert.strictEqual(updatedHold.transferToken, null);
-    assert.strictEqual(updatedHold.transferTokenExpiresAt, null);
-
-    // Check transfer status endpoint returns transferred status
-    const statusResponse = await app.inject().get(`/api/lesc/holds/${hold.id}/transfer-status`).headers(leoHeaders);
-    assert.deepStrictEqual(statusResponse.statusCode, StatusCodes.OK);
-    const statusData = JSON.parse(statusResponse.body);
-
-    assert.deepStrictEqual(statusData.id, hold.id);
-    assert.deepStrictEqual(statusData.isTransferred, true);
-    assert.ok(statusData.transferredAt);
-    assert.deepStrictEqual(statusData.transferredBy.id, clinicUserId);
-    assert.deepStrictEqual(statusData.transferredBy.firstName, clinicUser.firstName);
-    assert.deepStrictEqual(statusData.transferredBy.lastName, clinicUser.lastName);
   });
 
   await t.test('transfer token expiration is enforced', async () => {

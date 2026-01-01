@@ -200,6 +200,9 @@ const Api = {
     create (data) {
       return instance.post('/api/holds', data).catch(handleError);
     },
+    get (id) {
+      return instance.get(`/api/holds/${id}`);
+    },
   },
   lesc: {
     availability () {
@@ -225,9 +228,6 @@ const Api = {
       },
       transfer (id, token) {
         return instance.post(`/api/lesc/holds/${id}/transfer`, { token }).catch(handleError);
-      },
-      transferStatus (id) {
-        return instance.get(`/api/lesc/holds/${id}/transfer-status`);
       },
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);

@@ -309,48 +309,6 @@ test('/api/lesc/holds - Authorization: User Filtering', async (t) => {
     assert.deepStrictEqual(user1Response.statusCode, StatusCodes.OK);
   });
 
-  await t.test('GET /api/lesc/holds/:id/transfer-status - users can only check status of their own holds', async () => {
-    const { facility, lescServiceType } = await createTestData();
-
-    const user1Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user1Id,
-      },
-    });
-
-    const user2Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user2Id,
-      },
-    });
-
-    // User 1 can check status of their own hold
-    const user1Response = await app.inject().get(`/api/lesc/holds/${user1Hold.id}/transfer-status`).headers(user1Headers);
-    assert.deepStrictEqual(user1Response.statusCode, StatusCodes.OK);
-
-    // User 1 cannot check status of user 2's hold
-    const user1ForbiddenResponse = await app.inject().get(`/api/lesc/holds/${user2Hold.id}/transfer-status`).headers(user1Headers);
-    assert.deepStrictEqual(user1ForbiddenResponse.statusCode, StatusCodes.FORBIDDEN);
-
-    // User 2 can check status of their own hold
-    const user2Response = await app.inject().get(`/api/lesc/holds/${user2Hold.id}/transfer-status`).headers(user2Headers);
-    assert.deepStrictEqual(user2Response.statusCode, StatusCodes.OK);
-
-    // User 2 cannot check status of user 1's hold
-    const user2ForbiddenResponse = await app.inject().get(`/api/lesc/holds/${user1Hold.id}/transfer-status`).headers(user2Headers);
-    assert.deepStrictEqual(user2ForbiddenResponse.statusCode, StatusCodes.FORBIDDEN);
-  });
-
   await t.test('POST /api/lesc/checkin/:holdId - any authenticated user can check in a client', async () => {
     const { facility, lescServiceType } = await createTestData();
 

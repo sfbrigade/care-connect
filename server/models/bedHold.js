@@ -32,13 +32,13 @@ const BedHoldResponseSchema = BedHoldCreateSchema.extend({
   transferredById: z.string().uuid().nullable(),
   transferredAt: z.coerce.date().nullable(),
   updatedAt: z.coerce.date(),
-  client: Client.ResponseSchema.optional(),
+  client: Client.ResponseSchema.nullable().optional(),
   facility: Facility.ResponseSchema.optional(),
   serviceType: ServiceType.ResponseSchema.optional(),
   createdBy: User.ResponseSchema.optional(),
-  cancelledBy: User.ResponseSchema.optional(),
-  transferredBy: User.ResponseSchema.optional(),
-  incident: Incident.ResponseSchema.optional(),
+  cancelledBy: User.ResponseSchema.nullable().optional(),
+  transferredBy: User.ResponseSchema.nullable().optional(),
+  incident: Incident.ResponseSchema.nullable().optional(),
 });
 
 const BedHoldUpdateSchema = BedHoldAttributesSchema.partial();

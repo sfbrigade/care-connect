@@ -104,7 +104,7 @@ function Holds () {
     queryKey: ['hold-transfer-status', transferHoldIdToPoll],
     queryFn: async () => {
       console.log('[Transfer Feedback] Polling transfer status for hold:', transferHoldIdToPoll);
-      const response = await Api.lesc.holds.transferStatus(transferHoldIdToPoll);
+      const response = await Api.holds.get(transferHoldIdToPoll);
       console.log('[Transfer Feedback] Transfer status response:', response.data);
       return response.data;
     },
@@ -136,8 +136,8 @@ function Holds () {
   useEffect(() => {
     // Handle initial case where prevTransferStatusRef is null (first poll)
     // Also handle case where status changes from false to true
-    const wasNotTransferred = prevTransferStatusRef.current === null || prevTransferStatusRef.current?.isTransferred === false;
-    const isNowTransferred = transferStatus?.isTransferred === true;
+    const wasNotTransferred = prevTransferStatusRef.current === null || !prevTransferStatusRef.current?.transferredAt;
+    const isNowTransferred = !!transferStatus?.transferredAt;
 
     // Only show notification when status changes from not-transferred to transferred
     if (wasNotTransferred && isNowTransferred && transferHoldIdToPoll) {
@@ -162,7 +162,7 @@ function Holds () {
 
     // Update ref
     prevTransferStatusRef.current = transferStatus;
-  }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facility.id, qrModalOpened, closeQRModal]);
+  }, [transferStatus?.transferredAt, transferHoldIdToPoll, selectedHold, showToast, queryClient, facility.id, qrModalOpened, closeQRModal]);
 
   // Handle token expiration - close modal and stop polling
   // Only check expiration for the selected hold when modal is open

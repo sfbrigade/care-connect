@@ -2,6 +2,7 @@ entity: client
 connectedFields: []
 items:
   client1:
+    id: a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5
     firstName: 'Test'
     lastName: 'Client'
     middleInitial: 'T'

@@ -2,6 +2,7 @@ entity: incident
 connectedFields: [createdBy]
 items:
   incident1:
+    id: 2fa77128-586c-465a-9381-c441e633e3b2
     cadNumber: 'CAD-123'
     dateTimeArrested: <%= new Date().toISOString() %>
     createdBy: '@user1'

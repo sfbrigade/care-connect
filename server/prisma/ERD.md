@@ -245,7 +245,7 @@ TRANSFERRED TRANSFERRED
     Int bedsRequested 
     DateTime expiresAt 
     BedHoldStatus status 
-    String createdById "❓"
+    String createdById 
     DateTime cancelledAt "❓"
     String cancelledById "❓"
     DateTime extendedAt "❓"
@@ -331,7 +331,7 @@ TRANSFERRED TRANSFERRED
     "BedHold" o|--|o "Client" : "client"
     "BedHold" o|--|o "Incident" : "incident"
     "BedHold" o|--|| "BedHoldStatus" : "enum:status"
-    "BedHold" o|--|o "User" : "createdBy"
+    "BedHold" o|--|| "User" : "createdBy"
     "BedHold" o|--|o "User" : "cancelledBy"
     "BedHold" o|--|o "User" : "transferredBy"
     "Incident" o|--|| "User" : "createdBy"

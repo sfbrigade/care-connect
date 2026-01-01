@@ -65,6 +65,39 @@ test('/api/holds', async (t) => {
     });
   });
 
+  await t.test('GET /:id', async (t) => {
+    await t.test('returns hold by id', async () => {
+      const response = await app.inject().get('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const hold = JSON.parse(response.body);
+      assert.deepStrictEqual(hold.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
+      assert.deepStrictEqual(hold.serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(hold.status, 'ACTIVE');
+      assert.deepStrictEqual(hold.createdById, 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5');
+      assert.deepStrictEqual(hold.cancelledById, null);
+      assert.deepStrictEqual(hold.cancelledAt, null);
+      assert.deepStrictEqual(hold.transferToken, null);
+      assert.deepStrictEqual(hold.transferTokenExpiresAt, null);
+      assert.deepStrictEqual(hold.transferredById, null);
+      assert.deepStrictEqual(hold.transferredAt, null);
+      assert.deepStrictEqual(hold.incidentId, '2fa77128-586c-465a-9381-c441e633e3b2');
+      assert.deepStrictEqual(hold.notes, null);
+      assert.deepStrictEqual(hold.clientId, 'a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5');
+    });
+
+    await t.test('returns hold with specified included objects', async () => {
+      const response = await app.inject().get('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2?include=facility,serviceType,client,incident,createdBy,cancelledBy,transferredBy').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const hold = JSON.parse(response.body);
+
+      assert.ok(hold.client);
+      assert.ok(hold.facility);
+      assert.ok(hold.serviceType);
+      assert.ok(hold.incident);
+      assert.ok(hold.createdBy);
+    });
+  });
+
   await t.test('PATCH /:id/extend', async (t) => {
     await t.test('extends a hold successfully', async () => {
       // Create a hold

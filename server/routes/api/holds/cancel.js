@@ -4,7 +4,7 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.delete('/:id',
     {
-      preHandler: fastify.requireUser,
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Cancel a bed hold.',
         params: z.object({
