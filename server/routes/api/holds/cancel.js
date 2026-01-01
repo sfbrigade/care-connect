@@ -11,11 +11,7 @@ export default async function (fastify, opts) {
           id: z.string().uuid(),
         }),
         response: {
-          [StatusCodes.OK]: z.object({
-            id: z.string().uuid(),
-            status: z.string(),
-            cancelledAt: z.string(),
-          }),
+          [StatusCodes.NO_CONTENT]: z.null(),
         },
       },
     },
@@ -43,7 +39,7 @@ export default async function (fastify, opts) {
       const now = new Date();
 
       // Update hold status
-      const updated = await fastify.prisma.bedHold.update({
+      await fastify.prisma.bedHold.update({
         where: { id },
         data: {
           status: 'CANCELLED',
@@ -55,10 +51,6 @@ export default async function (fastify, opts) {
       // Note: Holds do NOT affect reservedBeds - they only reduce available beds
       // reservedBeds represents beds actually reserved for admissions, not temporary holds
 
-      return reply.send({
-        id: updated.id,
-        status: updated.status,
-        cancelledAt: updated.cancelledAt.toISOString(),
-      });
+      return reply.code(StatusCodes.NO_CONTENT).send();
     });
 }

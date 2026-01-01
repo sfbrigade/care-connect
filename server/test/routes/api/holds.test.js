@@ -89,4 +89,39 @@ test('/api/holds', async (t) => {
       assert.deepStrictEqual(error.error, 'Holds have already expired');
     });
   });
+
+  await t.test('DELETE /:id', async (t) => {
+    await t.test('cancels a hold successfully', async () => {
+      const response = await app.inject().delete('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NO_CONTENT);
+
+      // Verify in database
+      const cancelledHold = await prisma.bedHold.findUnique({
+        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+      });
+      assert.deepStrictEqual(cancelledHold.status, 'CANCELLED');
+      assert.ok(cancelledHold.cancelledAt);
+    });
+
+    await t.test('returns error when hold not found', async () => {
+      const fakeHoldId = '00000000-0000-0000-0000-000000000000';
+      const response = await app.inject().delete(`/api/holds/${fakeHoldId}`)
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.error, 'Hold not found');
+    });
+
+    await t.test('returns error when hold is already cancelled', async () => {
+      const response = await app.inject().delete('/api/holds/f2d6f235-5aeb-457e-8d42-b0cc096920c0')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.error, 'Hold is already cancelled');
+    });
+  });
 });
