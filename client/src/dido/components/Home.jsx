@@ -245,7 +245,7 @@ function Home () {
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
-    queryKey: ['facilities'],
+    queryKey: ['didoFacilitiesWithServices'],
     queryFn: async () => {
       const response = await Api.facilities.list({ include: 'services', type: 'DIDO' });
       if (import.meta.env.DEV) {

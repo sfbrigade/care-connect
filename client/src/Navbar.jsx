@@ -2,11 +2,11 @@ import { NavLink } from 'react-router';
 import { Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
 
 import { useAuthContext } from '@/AuthContext';
-import { useLocationContext } from '@/LocationContext';
+import { useFacilityContext } from '@/FacilityContext';
 
 function Navbar ({ close, logout }) {
   const { user } = useAuthContext();
-  const { location } = useLocationContext();
+  const { facility } = useFacilityContext();
 
   return (
     <Stack gap='md'>
@@ -16,7 +16,7 @@ function Navbar ({ close, logout }) {
       )}
       {user && (
         <>
-          {location.appType === 'lesc' && (
+          {facility?.type === 'LESC' && (
             <>
               <MantineNavLink component={NavLink} to='/holds' onClick={close} label='Holds' />
               <MantineNavLink component={NavLink} to='/checkin' onClick={close} label='Check-in' />
