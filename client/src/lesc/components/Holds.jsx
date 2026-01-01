@@ -56,17 +56,17 @@ function Holds () {
   // }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
-    queryKey: ['lesc-holds', facility.id],
+    queryKey: ['facilities', facility.id, 'holds'],
     queryFn: async () => {
       const response = await Api.facilities.holds(facility.id);
       return response.data;
     },
   });
 
-  const { data: availabilityData } = useQuery({
-    queryKey: ['lesc-availability'],
+  const { data: availability } = useQuery({
+    queryKey: ['facilities', facility.id, 'availability'],
     queryFn: async () => {
-      const response = await Api.lesc.availability();
+      const response = await Api.facilities.availability(facility.id);
       return response.data;
     },
   });
@@ -195,11 +195,10 @@ function Holds () {
 
   // Get facility info for specific facility view
   const facilityInfo = useMemo(() => {
-    if (!facility || !availabilityData) return null;
+    if (!facility || !availability) return null;
 
     // Calculate total available beds for this facility
-    const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
-    const totalAvailable = facilityAvailability.reduce((sum, item) => {
+    const totalAvailable = availability.reduce((sum, item) => {
       return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
     }, 0);
 
@@ -215,32 +214,7 @@ function Holds () {
       address,
       bedCount: totalAvailable,
     };
-  }, [facility, availabilityData]);
-
-  // Get the single LESC facility info for the LESCCard
-  const lescFacilityInfo = useMemo(() => {
-    if (!facility || !availabilityData) return null;
-
-    // Calculate total available beds
-    const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
-    const totalAvailable = facilityAvailability.reduce((sum, item) => {
-      return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
-    }, 0);
-
-    // Format address
-    const addressParts = [];
-    if (facility.addressLine1) addressParts.push(facility.addressLine1);
-    if (facility.city) addressParts.push(facility.city);
-    if (facility.state) addressParts.push(facility.state);
-    const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
-
-    return {
-      name: facility.name,
-      address,
-      bedCount: totalAvailable,
-      updatedAt: facility.updatedAt,
-    };
-  }, [facility, availabilityData]);
+  }, [facility, availability]);
 
   const extendAllMutation = useMutation({
     mutationFn: async (holdIds) => {
@@ -266,8 +240,8 @@ function Holds () {
 
   // Get the service type with most availability for a facility (same logic as HoldForm)
   const getServiceTypeForFacility = (facId) => {
-    if (!availabilityData || !facId) return null;
-    const facilityServices = availabilityData.filter(item => item.facilityId === facId);
+    if (!availability || !facId) return null;
+    const facilityServices = availability.filter(item => item.facilityId === facId);
     if (facilityServices.length === 0) return null;
     // Return the service type with the most available beds
     return facilityServices.reduce((best, current) =>
@@ -452,107 +426,47 @@ function Holds () {
         onDone={handleQRDone}
       />
 
-      {holds && holds.length === 0
-        ? (
-          <Stack gap='md'>
-            {lescFacilityInfo && (
-              <LESCFacility
-                facilityName={lescFacilityInfo.name}
-                address={lescFacilityInfo.address}
-                bedCount={lescFacilityInfo.bedCount}
-                intakeHours='24/7'
-                lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                onHoldClick={() => handleCreateHoldDirectly(facility?.id)}
+      <Stack gap='xl'>
+        {facilityInfo && (
+          <LESCFacility
+            facilityName={facilityInfo.name}
+            address={facilityInfo.address}
+            bedCount={facilityInfo.bedCount}
+            intakeHours='24/7'
+            lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
+            onCallClick={() => {
+              // TODO: Implement call functionality
+              console.log('Call facility:', facilityInfo.name);
+            }}
+            onHoldClick={() => handleCreateHoldDirectly(facilityInfo.id)}
+          />
+        )}
+        <Stack gap='md'>
+          {holds?.map((hold) => {
+            // Calculate age from dateOfBirth if available
+            const age = calculateAge(hold.client?.dateOfBirth);
+
+            return (
+              <LESCHold
+                key={hold.id}
+                hold={hold}
+                patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                patientDob={hold.client?.dateOfBirth}
+                patientAge={age}
+                patientSex={hold.client?.sex}
+                patientRace={hold.client?.race}
+                onTransfer={handleTransfer}
+                onExtend={handleExtend}
+                onCancel={handleCancel}
+                onViewDetails={() => {
+                  navigate(`/intake/${hold.id}`);
+                }}
               />
-            )}
-            <Alert>No active holds.</Alert>
-          </Stack>
-          )
-        : facility.id
-          ? (
-            // Single facility view - show facility card then holds
-            <Stack gap='xl'>
-              {facilityInfo && (
-                <LESCFacility
-                  facilityName={facilityInfo.name}
-                  address={facilityInfo.address}
-                  bedCount={facilityInfo.bedCount}
-                  intakeHours='24/7'
-                  lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
-                  onCallClick={() => {
-                    // TODO: Implement call functionality
-                    console.log('Call facility:', facilityInfo.name);
-                  }}
-                  onHoldClick={() => handleCreateHoldDirectly(facilityInfo.id)}
-                />
-              )}
-              <Stack gap='md'>
-                {holds?.map((hold) => {
-                  // Calculate age from dateOfBirth if available
-                  const age = calculateAge(hold.client?.dateOfBirth);
-
-                  return (
-                    <LESCHold
-                      key={hold.id}
-                      hold={hold}
-                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                      patientDob={hold.client?.dateOfBirth}
-                      patientAge={age}
-                      patientSex={hold.client?.sex}
-                      patientRace={hold.client?.race}
-                      onTransfer={handleTransfer}
-                      onExtend={handleExtend}
-                      onCancel={handleCancel}
-                      onViewDetails={() => {
-                        navigate(`/intake/${hold.id}`);
-                      }}
-                    />
-                  );
-                })}
-              </Stack>
-            </Stack>
-            )
-          : (
-            // All holds view - show LESCFacility then holds
-            <Stack gap='xl'>
-              {lescFacilityInfo && (
-                <LESCFacility
-                  facilityName={lescFacilityInfo.name}
-                  address={lescFacilityInfo.address}
-                  bedCount={lescFacilityInfo.bedCount}
-                  intakeHours='24/7'
-                  lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                  onHoldClick={() => handleCreateHoldDirectly(facility?.id)}
-                />
-              )}
-              <Stack gap='md'>
-                {holds?.map((hold) => {
-                  // Calculate age from dateOfBirth if available
-                  const age = calculateAge(hold.client?.dateOfBirth);
-
-                  return (
-                    <LESCHold
-                      key={hold.id}
-                      hold={hold}
-                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                      patientDob={hold.client?.dateOfBirth}
-                      patientAge={age}
-                      patientSex={hold.client?.sex}
-                      patientRace={hold.client?.race}
-                      onTransfer={handleTransfer}
-                      onExtend={handleExtend}
-                      onCancel={handleCancel}
-                      onViewDetails={() => {
-                        navigate(`/intake/${hold.id}`);
-                      }}
-                    />
-                  );
-                })}
-              </Stack>
-            </Stack>
-            )}
+            );
+          })}
+        </Stack>
+      </Stack>
     </Container>
   );
 }

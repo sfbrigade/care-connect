@@ -183,6 +183,9 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
+    availability (id) {
+      return instance.get(`/api/facilities/${id}/availability`);
+    },
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
