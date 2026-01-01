@@ -66,16 +66,7 @@ export default async function (fastify, opts) {
             }
           });
           // Add location info to static context (null if no location found)
-          if (request.facility) {
-            const { name, type, subdomain } = request.facility;
-            staticContext.context.facility = {
-              name,
-              type,
-              subdomain,
-            };
-          } else {
-            staticContext.context.facility = {};
-          }
+          staticContext.context.facility = request.facility?.toJSON() ?? {};
           const { head, html } = await render(request, reply, staticContext);
           if (head && html) {
             reply.header('Content-Type', 'text/html');
