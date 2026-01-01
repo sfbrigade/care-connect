@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
-import { useLocation, useNavigate, useParams, /* useSearchParams */ } from 'react-router';
+import { useNavigate, /* useSearchParams */ } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
@@ -16,19 +16,17 @@ import { formatTime, calculateAge } from '@/utils/dateTime';
 import { useAuthContext } from '@/AuthContext';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
+import { useFacilityContext } from '@/FacilityContext';
+
 function Holds () {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { facilityId: facilityIdParam } = useParams();
+  const { facility } = useFacilityContext();
   // const [searchParams] = useSearchParams();
   // Modal hooks kept for future use - currently disabled in favor of direct hold creation
   // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { user } = useAuthContext();
-
-  // Prioritize URL param over location.state for facilityId
-  const facilityId = facilityIdParam || location.state?.facilityId;
 
   // Use shared hold actions hook
   const {
@@ -46,7 +44,7 @@ function Holds () {
     closeCancelModal,
     closeQRModal,
   } = useHoldActions({
-    invalidateQueries: ['lesc-holds', facilityId],
+    invalidateQueries: ['lesc-holds', facility.id],
   });
 
   // Check both query param and location.state for create modal flag
@@ -60,18 +58,9 @@ function Holds () {
   // }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
-    queryKey: ['lesc-holds', facilityId],
+    queryKey: ['lesc-holds', facility.id],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list(facilityId);
-      return response.data;
-    },
-  });
-
-  // Fetch facilities and availability data
-  const { data: facilitiesData } = useQuery({
-    queryKey: ['lesc-facilities'],
-    queryFn: async () => {
-      const response = await Api.facilities.list({ type: 'LESC' });
+      const response = await Api.lesc.holds.list(facility.id);
       return response.data;
     },
   });
@@ -174,7 +163,7 @@ function Holds () {
       const displayName = clientName || holdId.substring(0, 8).toUpperCase();
 
       showToast(`Client checked in: ${displayName}`, 'success');
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       // Close QR modal (only one transfer at a time, so this must be the one)
       if (qrModalOpened) {
@@ -186,7 +175,7 @@ function Holds () {
 
     // Update ref
     prevTransferStatusRef.current = transferStatus;
-  }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facilityId, qrModalOpened, closeQRModal]);
+  }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facility.id, qrModalOpened, closeQRModal]);
 
   // Handle token expiration - close modal and stop polling
   // Only check expiration for the selected hold when modal is open
@@ -201,20 +190,17 @@ function Holds () {
         showToast('Transfer token expired. Please generate a new QR code.', 'warning');
         closeQRModal();
         setSelectedHold(null);
-        queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+        queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
       }
     }
-  }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facilityId]);
+  }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facility.id]);
 
   // Get facility info for specific facility view
   const facilityInfo = useMemo(() => {
-    if (!facilityId || !facilitiesData || !availabilityData) return null;
-
-    const facility = facilitiesData.find(f => f.id === facilityId);
-    if (!facility) return null;
+    if (!facility || !availabilityData) return null;
 
     // Calculate total available beds for this facility
-    const facilityAvailability = availabilityData.filter(item => item.facilityId === facilityId);
+    const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
     const totalAvailable = facilityAvailability.reduce((sum, item) => {
       return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
     }, 0);
@@ -231,15 +217,11 @@ function Holds () {
       address,
       bedCount: totalAvailable,
     };
-  }, [facilityId, facilitiesData, availabilityData]);
+  }, [facility, availabilityData]);
 
   // Get the single LESC facility info for the LESCCard
   const lescFacilityInfo = useMemo(() => {
-    if (!facilitiesData || !availabilityData) return null;
-
-    // Since there's only 1 LESC clinic, get the first facility
-    const facility = facilitiesData[0];
-    if (!facility) return null;
+    if (!facility || !availabilityData) return null;
 
     // Calculate total available beds
     const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
@@ -260,7 +242,7 @@ function Holds () {
       bedCount: totalAvailable,
       updatedAt: facility.updatedAt,
     };
-  }, [facilitiesData, availabilityData]);
+  }, [facility, availabilityData]);
 
   const extendAllMutation = useMutation({
     mutationFn: async (holdIds) => {
@@ -274,7 +256,7 @@ function Holds () {
       return results;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       showToast('All holds extended by 30 minutes', 'success');
     },
@@ -310,7 +292,7 @@ function Holds () {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
       showToast('Bed hold created successfully', 'success');
     },
@@ -323,8 +305,8 @@ function Holds () {
   const handleCreateHoldDirectly = (targetFacilityId) => {
     if (!targetFacilityId) {
       // If no facility ID provided, use the LESC facility
-      if (lescFacilityInfo && facilitiesData?.[0]) {
-        createHoldDirectlyMutation.mutate(facilitiesData[0].id);
+      if (facility) {
+        createHoldDirectlyMutation.mutate(facility.id);
       } else {
         showToast('Facility information not available', 'error');
       }
@@ -488,13 +470,13 @@ function Holds () {
                 bedCount={lescFacilityInfo.bedCount}
                 intakeHours='24/7'
                 lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
+                onHoldClick={() => handleCreateHoldDirectly(facility?.id)}
               />
             )}
             <Alert>No active holds.</Alert>
           </Stack>
           )
-        : facilityId
+        : facility.id
           ? (
             // Single facility view - show facility card then holds
             <Stack gap='xl'>
@@ -549,7 +531,7 @@ function Holds () {
                   bedCount={lescFacilityInfo.bedCount}
                   intakeHours='24/7'
                   lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                  onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
+                  onHoldClick={() => handleCreateHoldDirectly(facility?.id)}
                 />
               )}
               <Stack gap='md'>
