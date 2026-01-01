@@ -66,8 +66,8 @@ function CheckIn () {
 
   const handleQRScan = (decodedText) => {
     try {
-      // Parse URL: /transfer/:holdId?token=:token
-      // For checkin, we just need the holdId from the transfer QR code
+      // Parse URL: /checkin/:holdId?token=:token
+      // For checkin, we just need the holdId from the checkin QR code
       const url = new URL(decodedText);
       const pathParts = url.pathname.split('/');
       const holdIdFromQR = pathParts[pathParts.length - 1];
