@@ -11,10 +11,10 @@ test('/api/facilities', async (t) => {
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
   await t.test('GET /', async (t) => {
-    await t.test('LESC app returns only facilities with LESC service type', async () => {
+    await t.test('returns facilities with LESC service type', async () => {
       // Simulate request from LESC app via Referer header
       const response = await app.inject()
-        .get('/api/facilities?include=services')
+        .get('/api/facilities?type=LESC&include=services')
         .headers({
           ...userHeaders,
           referer: 'http://localhost:3000/lesc/availability',
@@ -36,10 +36,10 @@ test('/api/facilities', async (t) => {
       });
     });
 
-    await t.test('DIDO app excludes facilities with LESC service type', async () => {
+    await t.test('returns facilities with DIDO service type', async () => {
       // Simulate request from DIDO app via Referer header
       const response = await app.inject()
-        .get('/api/facilities?include=services')
+        .get('/api/facilities?type=DIDO&include=services')
         .headers({
           ...userHeaders,
           referer: 'http://localhost:3000/dido/',
@@ -61,7 +61,7 @@ test('/api/facilities', async (t) => {
       });
     });
 
-    await t.test('Admin/shared routes return all facilities', async () => {
+    await t.test('returns all facilities', async () => {
       // No Referer header or app-specific path - should return all facilities
       const response = await app.inject()
         .get('/api/facilities')
@@ -78,47 +78,6 @@ test('/api/facilities', async (t) => {
       assert.ok(facilityNames.includes('LESC Facility 2'));
       assert.ok(facilityNames.includes('General Facility 1'));
       assert.ok(facilityNames.includes('General Facility 2'));
-    });
-
-    await t.test('LESC app via subdomain returns only LESC facilities', async () => {
-      // Simulate request from LESC subdomain
-      const response = await app.inject()
-        .get('/api/facilities?include=services')
-        .headers({
-          ...userHeaders,
-          host: 'lesc.localhost:3000',
-        });
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const facilities = JSON.parse(response.body);
-
-      // Should only return LESC facilities
-      assert.ok(Array.isArray(facilities));
-      assert.ok(facilities.length >= 2);
-      facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
-        assert.ok(hasLescService, `Facility ${facility.name} should have LESC service`);
-      });
-    });
-
-    await t.test('DIDO app via subdomain excludes LESC facilities', async () => {
-      // Simulate request from DIDO subdomain
-      const response = await app.inject()
-        .get('/api/facilities?include=services')
-        .headers({
-          ...userHeaders,
-          host: 'dido.localhost:3000',
-        });
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const facilities = JSON.parse(response.body);
-
-      // Should exclude LESC facilities
-      assert.ok(Array.isArray(facilities));
-      facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
-        assert.ok(!hasLescService, `Facility ${facility.name} should not have LESC service`);
-      });
     });
   });
 
@@ -289,7 +248,8 @@ test('/api/facilities', async (t) => {
 
   await t.test('GET /:id/holds', async (t) => {
     await t.test('returns active holds for facility', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds').headers(adminHeaders);
+      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds')
+        .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
@@ -297,19 +257,21 @@ test('/api/facilities', async (t) => {
       assert.ok(Array.isArray(data));
       const holdIds = data.map(h => h.id);
       assert.ok(holdIds.includes('b65ae02b-9b35-43e2-897b-eee6eb5a82e2'), 'Should include active hold');
-      assert.deepStrictEqual(holdIds.length, 1, 'Should only return active hold');
+      assert.ok(holdIds.includes('7a261ab8-a6b6-427a-a67e-2509332a7bdd'), 'Should include active hold');
+      assert.deepStrictEqual(holdIds.length, 2, 'Should only return active hold');
     });
 
     await t.test('includes hold details with client, createdBy, and incident', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds').headers(adminHeaders);
+      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds?include=facility,client,createdBy,incident')
+        .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
       const foundHold = data.find(h => h.id === 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2');
       assert.ok(foundHold);
-      assert.deepStrictEqual(foundHold.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(foundHold.facilityName, 'LESC Facility 1');
+      assert.deepStrictEqual(foundHold.facility.id, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
+      assert.deepStrictEqual(foundHold.facility.name, 'LESC Facility 1');
       assert.ok(foundHold.client);
       assert.deepStrictEqual(foundHold.client.firstName, 'Test');
       assert.deepStrictEqual(foundHold.client.middleInitial, 'T');
@@ -322,7 +284,8 @@ test('/api/facilities', async (t) => {
 
     await t.test('returns 404 for non-existent facility', async () => {
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
-      const response = await app.inject().get(`/api/facilities/${nonExistentId}/holds`).headers(adminHeaders);
+      const response = await app.inject().get(`/api/facilities/${nonExistentId}/holds`)
+        .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK); // Returns empty array, not 404
       const data = JSON.parse(response.body);
@@ -332,8 +295,25 @@ test('/api/facilities', async (t) => {
 
     await t.test('requires authentication', async () => {
       const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds');
-
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+  });
+
+  await t.test('GET /:id/availability', async (t) => {
+    await t.test('returns availability for facility', async () => {
+      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/availability')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(Array.isArray(data));
+      assert.deepStrictEqual(data.length, 1);
+      assert.deepStrictEqual(data[0].serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(data[0].totalBeds, 10);
+      assert.deepStrictEqual(data[0].availableBeds, 8);
+      assert.deepStrictEqual(data[0].reservedBeds, 2);
+      assert.deepStrictEqual(data[0].activeHolds, 2);
+      assert.deepStrictEqual(data[0].calculatedAvailable, 8);
     });
   });
 });

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 import BedHold from '#models/bedHold.js';
+import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.get('/:id/holds',
@@ -57,7 +58,11 @@ export default async function (fastify, opts) {
           createdAt: 'desc',
         },
       });
-
+      holds.forEach(hold => {
+        if (hold.createdBy) {
+          hold.createdBy = new User(hold.createdBy);
+        }
+      });
       return reply.send(holds);
     });
 }

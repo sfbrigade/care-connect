@@ -10,6 +10,8 @@ import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
 import { generate647fTransferFormPDF, fillSFSOFormP04, generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
+import { useFacilityContext } from '@/FacilityContext';
+
 /**
  * Check-in screen - matches Figma "Check-in" design
  * Allows scanning QR code or entering hold ID manually
@@ -19,6 +21,7 @@ function CheckIn () {
   const { holdId: holdIdParam } = useParams();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { facility } = useFacilityContext();
 
   const [holdId, setHoldId] = useState(holdIdParam || '');
   const [manualHoldId, setManualHoldId] = useState(''); // Separate state for manual entry input
@@ -54,16 +57,6 @@ function CheckIn () {
 
   const hold = holdData;
 
-  // Fetch facility details if we have hold data
-  const { data: facilitiesData } = useQuery({
-    queryKey: ['lesc-facilities'],
-    queryFn: async () => {
-      const response = await Api.lesc.availability();
-      return response.data;
-    },
-    enabled: !!hold,
-  });
-
   const handleQRScan = (decodedText) => {
     try {
       // Parse URL: /checkin/:holdId?token=:token
@@ -95,8 +88,6 @@ function CheckIn () {
     navigate(`/checkin/${manualHoldId}`, { replace: true });
     setManualEntry(false);
   };
-
-  const facility = facilitiesData?.facilities?.find(f => f.id === hold?.facilityId);
 
   // Mutation to create check-in
   const checkInMutation = useMutation({
