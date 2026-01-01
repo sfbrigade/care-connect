@@ -427,6 +427,22 @@ function AdminFacilityDetail () {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
+                  <TextInput
+                    label='Subdomain'
+                    value={formData.subdomain}
+                    onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+                    required
+                  />
+                  <Select
+                    label='Type'
+                    data={[
+                      { value: 'DIDO', label: 'DIDO' },
+                      { value: 'LESC', label: 'LESC' },
+                    ]}
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e })}
+                    required
+                  />
                   <Textarea
                     label='Description'
                     value={formData.description}
