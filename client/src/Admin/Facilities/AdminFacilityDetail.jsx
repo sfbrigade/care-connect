@@ -87,7 +87,7 @@ function AdminFacilityDetail () {
       if (!id || id === 'new') {
         return [];
       }
-      const response = await Api.facilities.holds(id);
+      const response = await Api.facilities.holds(id, { all: true, include: 'client' });
       return response.data;
     },
     enabled: !isNew && !!id && id !== 'new',

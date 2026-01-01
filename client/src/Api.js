@@ -183,8 +183,8 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
-    holds (id) {
-      return instance.get(`/api/facilities/${id}/holds`).catch(handleError);
+    holds (id, { all = false, include = '' } = {}) {
+      return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
   },
   lesc: {

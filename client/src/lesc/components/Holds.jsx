@@ -13,7 +13,6 @@ import LESCHold from './LESCHold';
 import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
 import { formatTime, calculateAge } from '@/utils/dateTime';
-import { useAuthContext } from '@/AuthContext';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 import { useFacilityContext } from '@/FacilityContext';
@@ -26,7 +25,6 @@ function Holds () {
   // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const { user } = useAuthContext();
 
   // Use shared hold actions hook
   const {
@@ -60,7 +58,7 @@ function Holds () {
   const { data: holds, isLoading, error } = useQuery({
     queryKey: ['lesc-holds', facility.id],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list(facility.id);
+      const response = await Api.facilities.holds(facility.id);
       return response.data;
     },
   });
@@ -316,15 +314,9 @@ function Holds () {
   };
 
   const handleExtendAll = () => {
-    if (userHolds.length === 0) return;
-    extendAllMutation.mutate(userHolds.map(h => h.id));
+    if (holds.length === 0) return;
+    extendAllMutation.mutate(holds.map(h => h.id));
   };
-
-  // Filter holds to only show current user's holds
-  const userHolds = useMemo(() => {
-    if (!holds || !user) return [];
-    return holds.filter(hold => hold.createdBy?.id === user.id);
-  }, [holds, user]);
 
   // Group ALL holds by creator and count them (for banner display)
   const holdsByUser = useMemo(() => {
@@ -381,7 +373,7 @@ function Holds () {
       )}
 
       {/* Extend All button */}
-      {userHolds && userHolds.length > 0 && (
+      {holds && holds.length > 0 && (
         <div style={{ width: '100%', marginBottom: '16px' }}>
           <Chip
             onClick={handleExtendAll}
@@ -460,7 +452,7 @@ function Holds () {
         onDone={handleQRDone}
       />
 
-      {userHolds && userHolds.length === 0
+      {holds && holds.length === 0
         ? (
           <Stack gap='md'>
             {lescFacilityInfo && (
@@ -495,7 +487,7 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {userHolds?.map((hold) => {
+                {holds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
                   const age = calculateAge(hold.client?.dateOfBirth);
 
@@ -535,7 +527,7 @@ function Holds () {
                 />
               )}
               <Stack gap='md'>
-                {userHolds?.map((hold) => {
+                {holds?.map((hold) => {
                   // Calculate age from dateOfBirth if available
                   const age = calculateAge(hold.client?.dateOfBirth);
 
