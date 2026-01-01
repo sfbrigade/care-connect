@@ -190,6 +190,11 @@ const Api = {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
   },
+  holds: {
+    extend (ids) {
+      return instance.patch('/api/holds/extend', { ids }).catch(handleError);
+    },
+  },
   lesc: {
     availability () {
       return instance.get('/api/lesc/availability');
@@ -208,9 +213,6 @@ const Api = {
       },
       create (data) {
         return instance.post('/api/lesc/holds', data).catch(handleError);
-      },
-      extend (id) {
-        return instance.patch(`/api/lesc/holds/${id}/extend`).catch(handleError);
       },
       cancel (id) {
         return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);

@@ -8,3 +8,10 @@ items:
     address: '123 Test St'
     driverLicense: 'DL123'
     localId: 'SF-123'
+  client2:
+    firstName: 'Test'
+    lastName: 'Client2'
+    middleInitial: 'T'
+    address: '456 Test St'
+    driverLicense: 'DL456'
+    localId: 'SF-456'

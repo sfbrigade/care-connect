@@ -38,7 +38,10 @@ function Holds () {
     closeCancelModal,
     closeQRModal,
   } = useHoldActions({
-    invalidateQueries: ['facilities', facility.id, 'holds'],
+    invalidateQueries: [
+      ['facilities', facility.id, 'holds'],
+      ['facilities', facility.id, 'availability'],
+    ],
   });
 
   const { data: holds, isLoading, error } = useQuery({
@@ -203,16 +206,7 @@ function Holds () {
   }, [facility, availability]);
 
   const extendAllMutation = useMutation({
-    mutationFn: async (holdIds) => {
-      const results = await Promise.allSettled(
-        holdIds.map(id => Api.lesc.holds.extend(id))
-      );
-      const failures = results.filter(r => r.status === 'rejected');
-      if (failures.length > 0) {
-        throw new Error(`Failed to extend ${failures.length} hold(s)`);
-      }
-      return results;
-    },
+    mutationFn: (holdIds) => Api.holds.extend(holdIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });

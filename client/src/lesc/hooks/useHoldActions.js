@@ -59,7 +59,7 @@ export function useHoldActions ({ invalidateQueries = [], onCancelSuccess } = {}
   });
 
   const extendMutation = useMutation({
-    mutationFn: (holdId) => Api.lesc.holds.extend(holdId),
+    mutationFn: (holdId) => Api.holds.extend([holdId]),
     onSuccess: () => {
       queryKeysToInvalidate.forEach(key => {
         queryClient.invalidateQueries({ queryKey: key });
