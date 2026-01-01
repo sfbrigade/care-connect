@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
-import { useNavigate, /* useSearchParams */ } from 'react-router';
+import { Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { useNavigate } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
-// import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
@@ -20,9 +19,6 @@ import { useFacilityContext } from '@/FacilityContext';
 function Holds () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
-  // const [searchParams] = useSearchParams();
-  // Modal hooks kept for future use - currently disabled in favor of direct hold creation
-  // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -42,18 +38,8 @@ function Holds () {
     closeCancelModal,
     closeQRModal,
   } = useHoldActions({
-    invalidateQueries: ['lesc-holds', facility.id],
+    invalidateQueries: ['facilities', facility.id, 'holds'],
   });
-
-  // Check both query param and location.state for create modal flag
-  // const shouldOpenCreateModal = searchParams.get('create') === 'true' || location.state?.openCreateModal;
-
-  // Auto-open modal only if explicitly requested (e.g., via "Hold a Bed" button)
-  // useEffect(() => {
-  //   if (shouldOpenCreateModal) {
-  //     openCreateModal();
-  //   }
-  // }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
     queryKey: ['facilities', facility.id, 'holds'],
@@ -161,8 +147,8 @@ function Holds () {
       const displayName = clientName || holdId.substring(0, 8).toUpperCase();
 
       showToast(`Client checked in: ${displayName}`, 'success');
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       // Close QR modal (only one transfer at a time, so this must be the one)
       if (qrModalOpened) {
         console.log('[Transfer Feedback] Closing QR modal for transferred hold');
@@ -240,11 +226,8 @@ function Holds () {
 
   // Get the service type with most availability for a facility (same logic as HoldForm)
   const getServiceTypeForFacility = (facId) => {
-    if (!availability || !facId) return null;
-    const facilityServices = availability.filter(item => item.facilityId === facId);
-    if (facilityServices.length === 0) return null;
     // Return the service type with the most available beds
-    return facilityServices.reduce((best, current) =>
+    return availability.reduce((best, current) =>
       current.calculatedAvailable > best.calculatedAvailable ? current : best
     );
   };
@@ -264,8 +247,8 @@ function Holds () {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       showToast('Bed hold created successfully', 'success');
     },
     onError: (error) => {
@@ -364,38 +347,6 @@ function Holds () {
         </div>
       )}
 
-      {/* Modal code kept for future use - currently disabled in favor of direct hold creation */}
-      {/* <Modal
-        opened={createModalOpened}
-        onClose={closeCreateModal}
-        title='Create Bed Hold'
-        size='auto'
-        centered
-        lockScroll
-        styles={{
-          content: {
-            borderRadius: '16px',
-            maxHeight: '90vh',
-            maxWidth: '100vw',
-            marginTop: '80px',
-          },
-          body: {
-            maxHeight: 'calc(90vh - 120px)',
-            overflowY: 'auto',
-            padding: '20px',
-          },
-        }}
-      >
-        <HoldForm
-          onSuccess={() => {
-            closeCreateModal();
-            queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-            queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
-          }}
-          initialFacilityId={facilityId}
-        />
-      </Modal> */}
-
       <CancelHoldModal
         opened={cancelModalOpened}
         onClose={() => {
@@ -438,7 +389,7 @@ function Holds () {
               // TODO: Implement call functionality
               console.log('Call facility:', facilityInfo.name);
             }}
-            onHoldClick={() => handleCreateHoldDirectly(facilityInfo.id)}
+            onHoldClick={() => handleCreateHoldDirectly(facility.id)}
           />
         )}
         <Stack gap='md'>
