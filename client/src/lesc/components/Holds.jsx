@@ -233,10 +233,9 @@ function Holds () {
       if (!serviceInfo) {
         throw new Error('No service type available for this facility');
       }
-      return Api.lesc.holds.create({
+      return Api.holds.create({
         facilityId: targetFacilityId,
         serviceTypeId: serviceInfo.serviceTypeId,
-        bedsRequested: 1,
         notes: undefined,
       });
     },

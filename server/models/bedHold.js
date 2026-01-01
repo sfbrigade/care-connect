@@ -9,15 +9,17 @@ import User from './user.js';
 import Incident from './incident.js';
 
 const BedHoldAttributesSchema = z.object({
-  facilityId: z.string().uuid(),
-  serviceTypeId: z.string().uuid(),
-  clientId: z.string().uuid().nullable(),
-  incidentId: z.string().uuid().nullable(),
-  bedsRequested: z.number(),
-  notes: z.string().nullable(),
+  incidentId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
-const BedHoldResponseSchema = BedHoldAttributesSchema.extend({
+const BedHoldCreateSchema = BedHoldAttributesSchema.extend({
+  facilityId: z.string().uuid(),
+  serviceTypeId: z.string().uuid(),
+  clientId: z.string().uuid().nullable().optional(),
+});
+
+const BedHoldResponseSchema = BedHoldCreateSchema.extend({
   id: z.string().uuid(),
   expiresAt: z.coerce.date(),
   status: z.string(),
@@ -43,6 +45,7 @@ const BedHoldUpdateSchema = BedHoldAttributesSchema.partial();
 
 export class BedHold extends Base {
   static ResponseSchema = BedHoldResponseSchema;
+  static CreateSchema = BedHoldCreateSchema;
   static UpdateSchema = BedHoldUpdateSchema;
 
   constructor (data) {

@@ -9,6 +9,7 @@ items:
     phone: '555-0000'
     isActive: true
   lescFacility2:
+    id: fab67d53-a1c7-4eb5-b151-33727270ad20
     name: 'LESC Facility 2'
     type: 'LESC'
     isActive: true

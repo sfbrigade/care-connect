@@ -10,7 +10,7 @@ items:
     facility: '@lescFacility2'
     serviceType: '@lesc'
     availableBeds: 5
-    reservedBeds: 1
+    reservedBeds: 5
   generalFacility1Service:
     facility: '@generalFacility1'
     serviceType: '@general'

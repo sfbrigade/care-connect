@@ -197,6 +197,9 @@ const Api = {
     cancel (id) {
       return instance.delete(`/api/holds/${id}`).catch(handleError);
     },
+    create (data) {
+      return instance.post('/api/holds', data).catch(handleError);
+    },
   },
   lesc: {
     availability () {
