@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import 'leaflet/dist/leaflet.css';
-import '../../src/styles/FacilityMap.css';
+import './FacilityMap.css';
 
 import stethoscopeSvg from '../../src/assets/icons/stethoscope.svg?raw';
 import healthRecognitionSvg from '../../src/assets/icons/health-recognition.svg?raw';
