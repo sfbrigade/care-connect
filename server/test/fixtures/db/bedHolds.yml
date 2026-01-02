@@ -22,6 +22,14 @@ items:
     status: 'EXTENDED'
     extendedAt: <%= new Date(Date.now() - 30 * 60 * 1000).toISOString() %>
     createdBy: '@user2'
+  anotherActiveHold:
+    id: 7a2f42d0-adbe-49fe-a71f-7e62dff9a059
+    facility: '@lescFacility1'
+    serviceType: '@lesc'
+    bedsRequested: 1
+    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user4'
   expiredHold:
     id: 00d1daba-df84-4fda-86f3-eb5a2939528b
     facility: '@lescFacility1'

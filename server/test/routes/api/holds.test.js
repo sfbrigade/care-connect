@@ -8,6 +8,7 @@ test('/api/holds', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a hold successfully', async () => {
@@ -66,11 +67,16 @@ test('/api/holds', async (t) => {
   });
 
   await t.test('GET /', async (t) => {
-    await t.test('returns list of active/extended holds', async () => {
-      const response = await app.inject().get('/api/holds').headers(userHeaders);
+    await t.test('returns list of active/extended holds for the calling user', async () => {
+      let response = await app.inject().get('/api/holds').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const holds = JSON.parse(response.body);
+      let holds = JSON.parse(response.body);
       assert.deepStrictEqual(holds.length, 2);
+
+      response = await app.inject().get('/api/holds').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      holds = JSON.parse(response.body);
+      assert.deepStrictEqual(holds.length, 1);
     });
   });
 
@@ -105,6 +111,25 @@ test('/api/holds', async (t) => {
       assert.ok(hold.incident);
       assert.ok(hold.createdBy);
     });
+
+    await t.test('returns hold by prefix', async () => {
+      const response = await app.inject().get('/api/holds/B65?include=facility,serviceType,client,incident,createdBy,cancelledBy,transferredBy').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const hold = JSON.parse(response.body);
+
+      assert.ok(hold.client);
+      assert.ok(hold.facility);
+      assert.ok(hold.serviceType);
+      assert.ok(hold.incident);
+      assert.ok(hold.createdBy);
+    });
+
+    await t.test('returns bad request if multiple prefix matches found', async () => {
+      const response = await app.inject().get('/api/holds/7A2?include=facility,serviceType,client,incident,createdBy,cancelledBy,transferredBy').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.error, 'Multiple holds found with ID code "7A2". Please use the full hold ID instead.');
+    });
   });
 
   await t.test('GET /:id/qr', async (t) => {
@@ -138,6 +163,16 @@ test('/api/holds', async (t) => {
       });
       assert.deepStrictEqual(hold.incidentId, '921a02ad-af5f-404f-84f2-b8c987d436d8');
       assert.deepStrictEqual(hold.notes, 'Updated notes');
+    });
+
+    await t.test('returns forbidden for non creating user', async () => {
+      const response = await app.inject().patch('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')
+        .payload({
+          incidentId: '921a02ad-af5f-404f-84f2-b8c987d436d8',
+          notes: 'Updated notes',
+        })
+        .headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 
@@ -220,6 +255,16 @@ test('/api/holds', async (t) => {
       const error = JSON.parse(response.body);
       assert.deepStrictEqual(error.error, 'Holds have already expired');
     });
+
+    await t.test('returns an error when not the creating user', async () => {
+      const response = await app.inject().patch('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')
+        .payload({
+          incidentId: '921a02ad-af5f-404f-84f2-b8c987d436d8',
+          notes: 'Updated notes',
+        })
+        .headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
   });
 
   await t.test('DELETE /:id', async (t) => {
@@ -254,6 +299,12 @@ test('/api/holds', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
       const error = JSON.parse(response.body);
       assert.deepStrictEqual(error.error, 'Hold is already cancelled');
+    });
+
+    await t.test('returns an error when not the creating user', async () => {
+      const response = await app.inject().delete('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')
+        .headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 });

@@ -45,17 +45,15 @@ function CheckIn () {
   }, [holdIdParam]);
 
   // Fetch hold directly by ID for check-in (allows any authenticated user)
-  const { data: holdData, isLoading: isLoadingHold, error: holdError } = useQuery({
+  const { data: hold, isLoading: isLoadingHold, error: holdError } = useQuery({
     queryKey: ['lesc-hold-for-checkin', holdId],
     queryFn: async () => {
-      const response = await Api.lesc.holds.forCheckin(holdId);
+      const response = await Api.holds.get(holdId);
       return response.data;
     },
     enabled: !!holdId && shouldFetchHold,
     retry: false,
   });
-
-  const hold = holdData;
 
   const handleQRScan = (decodedText) => {
     try {

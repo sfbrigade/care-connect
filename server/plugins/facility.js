@@ -14,7 +14,7 @@ export default fp(async function (fastify) {
     request.facility = new Facility(data);
   });
   // onRequest handler to be used to ensure a user is logged in
-  fastify.decorate('requireFacility', (request, reply) => {
+  fastify.decorate('requireFacility', async (request, reply) => {
     if (!request.facility) {
       return reply.code(StatusCodes.BAD_REQUEST).send();
     }
