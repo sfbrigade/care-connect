@@ -16,7 +16,7 @@ function HoldsHistory () {
   const { data: holds, isLoading } = useQuery({
     queryKey: ['lesc-holds-history', filter],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list();
+      const response = await Api.holds.list();
       // Filter to historical holds (expired or cancelled)
       return response.data.filter(hold => {
         const expiresAt = new Date(hold.expiresAt);

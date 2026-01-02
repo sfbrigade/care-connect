@@ -203,6 +203,9 @@ const Api = {
     get (id, { include = '' } = {}) {
       return instance.get(`/api/holds/${id}`, { params: { include } });
     },
+    list () {
+      return instance.get('/api/holds');
+    },
   },
   lesc: {
     availability () {

@@ -65,6 +65,15 @@ test('/api/holds', async (t) => {
     });
   });
 
+  await t.test('GET /', async (t) => {
+    await t.test('returns list of active/extended holds', async () => {
+      const response = await app.inject().get('/api/holds').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const holds = JSON.parse(response.body);
+      assert.deepStrictEqual(holds.length, 2);
+    });
+  });
+
   await t.test('GET /:id', async (t) => {
     await t.test('returns hold by id', async () => {
       const response = await app.inject().get('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2').headers(userHeaders);

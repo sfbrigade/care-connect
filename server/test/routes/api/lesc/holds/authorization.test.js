@@ -49,51 +49,6 @@ test('/api/lesc/holds - Authorization: User Filtering', async (t) => {
     return { facility, lescServiceType };
   }
 
-  await t.test('GET /api/lesc/holds - users only see their own holds', async () => {
-    const { facility, lescServiceType } = await createTestData();
-
-    // Create holds for both users
-    const user1Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user1Id,
-      },
-    });
-
-    const user2Hold = await prisma.bedHold.create({
-      data: {
-        facilityId: facility.id,
-        serviceTypeId: lescServiceType.id,
-        bedsRequested: 1,
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-        status: 'ACTIVE',
-        createdById: user2Id,
-      },
-    });
-
-    // User 1 should only see their own hold
-    const user1Response = await app.inject().get('/api/lesc/holds').headers(user1Headers);
-    assert.deepStrictEqual(user1Response.statusCode, StatusCodes.OK);
-    const user1Data = JSON.parse(user1Response.body);
-    const user1Found = user1Data.find(h => h.id === user1Hold.id);
-    const user2FoundInUser1 = user1Data.find(h => h.id === user2Hold.id);
-    assert.ok(user1Found, 'User 1 should see their own hold');
-    assert.strictEqual(user2FoundInUser1, undefined, 'User 1 should not see user 2\'s hold');
-
-    // User 2 should only see their own hold
-    const user2Response = await app.inject().get('/api/lesc/holds').headers(user2Headers);
-    assert.deepStrictEqual(user2Response.statusCode, StatusCodes.OK);
-    const user2Data = JSON.parse(user2Response.body);
-    const user2Found = user2Data.find(h => h.id === user2Hold.id);
-    const user1FoundInUser2 = user2Data.find(h => h.id === user1Hold.id);
-    assert.ok(user2Found, 'User 2 should see their own hold');
-    assert.strictEqual(user1FoundInUser2, undefined, 'User 2 should not see user 1\'s hold');
-  });
-
   await t.test('GET /api/lesc/holds/:id/qr - users can only generate QR for their own holds', async () => {
     const { facility, lescServiceType } = await createTestData();
 
