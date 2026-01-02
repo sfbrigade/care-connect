@@ -220,17 +220,8 @@ const Api = {
       },
     },
     holds: {
-      list (facilityId) {
-        return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
-      },
-      create (data) {
-        return instance.post('/api/lesc/holds', data).catch(handleError);
-      },
       qr (id) {
         return instance.get(`/api/lesc/holds/${id}/qr`);
-      },
-      transfer (id, token) {
-        return instance.post(`/api/lesc/holds/${id}/transfer`, { token }).catch(handleError);
       },
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
