@@ -43,7 +43,7 @@ export default async function (fastify, opts) {
   fastify.get('/*',
     {
       schema: {
-        description: 'This catch-all route returns the html markup fo the client SPA after performing server-side rendering.',
+        description: 'This catch-all route returns the html markup for the client SPA after performing server-side rendering.',
       }
     },
     async function (request, reply) {
@@ -66,15 +66,7 @@ export default async function (fastify, opts) {
             }
           });
           // Add location info to static context (null if no location found)
-          if (request.location) {
-            staticContext.context.location = {
-              name: request.location,
-              appType: request.appType,
-              method: request.locationMethod,
-            };
-          } else {
-            staticContext.context.location = null;
-          }
+          staticContext.context.facility = request.facility?.toJSON() ?? {};
           const { head, html } = await render(request, reply, staticContext);
           if (head && html) {
             reply.header('Content-Type', 'text/html');

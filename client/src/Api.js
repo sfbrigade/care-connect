@@ -159,8 +159,58 @@ const Api = {
     },
   },
   facilities: {
+    list ({ include = '', type = '' } = {}) {
+      return instance.get('/api/facilities', { params: { include, type } });
+    },
+    get (id) {
+      return instance.get(`/api/facilities/${id}`);
+    },
+    create (data) {
+      return instance.post('/api/facilities', data).catch(handleError);
+    },
+    update (id, data) {
+      return instance.patch(`/api/facilities/${id}`, data).catch(handleError);
+    },
+    delete (id) {
+      return instance.delete(`/api/facilities/${id}`).catch(handleError);
+    },
+    updateBeds (id, data) {
+      return instance.patch(`/api/facilities/${id}/beds`, data).catch(handleError);
+    },
+    addService (id, data) {
+      return instance.post(`/api/facilities/${id}/services`, data).catch(handleError);
+    },
+    removeService (id, serviceTypeId) {
+      return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
+    },
+    availability (id) {
+      return instance.get(`/api/facilities/${id}/availability`);
+    },
+    holds (id, { all = false, include = '' } = {}) {
+      return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
+    },
+  },
+  holds: {
     list () {
-      return instance.get('/api/facilities');
+      return instance.get('/api/holds');
+    },
+    create (data) {
+      return instance.post('/api/holds', data).catch(handleError);
+    },
+    get (id, { include = '' } = {}) {
+      return instance.get(`/api/holds/${id}`, { params: { include } });
+    },
+    qr (id) {
+      return instance.get(`/api/holds/${id}/qr`);
+    },
+    update (id, data) {
+      return instance.patch(`/api/holds/${id}`, data).catch(handleError);
+    },
+    cancel (id) {
+      return instance.delete(`/api/holds/${id}`).catch(handleError);
+    },
+    extend (ids) {
+      return instance.patch('/api/holds/extend', { ids }).catch(handleError);
     },
   },
   lesc: {
@@ -173,35 +223,8 @@ const Api = {
       },
     },
     holds: {
-      list (facilityId) {
-        return instance.get('/api/lesc/holds', { params: facilityId ? { facilityId } : {} });
-      },
-      get (id) {
-        return instance.get(`/api/lesc/holds/${id}`).catch(handleError);
-      },
-      create (data) {
-        return instance.post('/api/lesc/holds', data).catch(handleError);
-      },
-      extend (id) {
-        return instance.patch(`/api/lesc/holds/${id}/extend`).catch(handleError);
-      },
-      cancel (id) {
-        return instance.delete(`/api/lesc/holds/${id}`).catch(handleError);
-      },
-      qr (id) {
-        return instance.get(`/api/lesc/holds/${id}/qr`);
-      },
-      transfer (id, token) {
-        return instance.post(`/api/lesc/holds/${id}/transfer`, { token }).catch(handleError);
-      },
-      transferStatus (id) {
-        return instance.get(`/api/lesc/holds/${id}/transfer-status`);
-      },
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/lesc/holds/${id}`, data).catch(handleError);
       },
     },
     incidents: {
@@ -243,37 +266,6 @@ const Api = {
       },
       update (id, data) {
         return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
-      },
-    },
-  },
-  admin: {
-    facilities: {
-      list () {
-        return instance.get('/api/admin/facilities');
-      },
-      get (id) {
-        return instance.get(`/api/admin/facilities/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/admin/facilities', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/admin/facilities/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/admin/facilities/${id}`).catch(handleError);
-      },
-      updateBeds (id, data) {
-        return instance.patch(`/api/admin/facilities/${id}/beds`, data).catch(handleError);
-      },
-      addService (id, data) {
-        return instance.post(`/api/admin/facilities/${id}/services`, data).catch(handleError);
-      },
-      removeService (id, serviceTypeId) {
-        return instance.delete(`/api/admin/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
-      },
-      holds (id) {
-        return instance.get(`/api/admin/facilities/${id}/holds`).catch(handleError);
       },
     },
   },

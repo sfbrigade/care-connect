@@ -10,6 +10,8 @@ import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
 import { generate647fTransferFormPDF, fillSFSOFormP04, generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 import LESCFacility from './LESCFacility';
 
+import { useFacilityContext } from '@/FacilityContext';
+
 /**
  * Check-in screen - matches Figma "Check-in" design
  * Allows scanning QR code or entering hold ID manually
@@ -19,6 +21,7 @@ function CheckIn () {
   const { holdId: holdIdParam } = useParams();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { facility } = useFacilityContext();
 
   const [holdId, setHoldId] = useState(holdIdParam || '');
   const [manualHoldId, setManualHoldId] = useState(''); // Separate state for manual entry input
@@ -42,32 +45,20 @@ function CheckIn () {
   }, [holdIdParam]);
 
   // Fetch hold directly by ID for check-in (allows any authenticated user)
-  const { data: holdData, isLoading: isLoadingHold, error: holdError } = useQuery({
+  const { data: hold, isLoading: isLoadingHold, error: holdError } = useQuery({
     queryKey: ['lesc-hold-for-checkin', holdId],
     queryFn: async () => {
-      const response = await Api.lesc.holds.forCheckin(holdId);
+      const response = await Api.holds.get(holdId);
       return response.data;
     },
     enabled: !!holdId && shouldFetchHold,
     retry: false,
   });
 
-  const hold = holdData;
-
-  // Fetch facility details if we have hold data
-  const { data: facilitiesData } = useQuery({
-    queryKey: ['lesc-facilities'],
-    queryFn: async () => {
-      const response = await Api.lesc.availability();
-      return response.data;
-    },
-    enabled: !!hold,
-  });
-
   const handleQRScan = (decodedText) => {
     try {
-      // Parse URL: /transfer/:holdId?token=:token
-      // For checkin, we just need the holdId from the transfer QR code
+      // Parse URL: /checkin/:holdId?token=:token
+      // For checkin, we just need the holdId from the checkin QR code
       const url = new URL(decodedText);
       const pathParts = url.pathname.split('/');
       const holdIdFromQR = pathParts[pathParts.length - 1];
@@ -95,8 +86,6 @@ function CheckIn () {
     navigate(`/checkin/${manualHoldId}`, { replace: true });
     setManualEntry(false);
   };
-
-  const facility = facilitiesData?.facilities?.find(f => f.id === hold?.facilityId);
 
   // Mutation to create check-in
   const checkInMutation = useMutation({

@@ -1,156 +1,66 @@
-# Multi-App Platform Architecture
+# Platform Architecture
 
 ## Overview
 
-Care Connect is a multi-app platform that serves multiple location-specific applications from a single codebase. Each application has its own routes, UI components, and data filtering logic, while sharing core functionality like authentication, user management, and database access.
+Care Connect is a platform that serves different facility-specific interfaces from a single codebase. Each facility type has its own routes, UI components, and data filtering logic, while sharing core functionality like authentication, user management, and database access.
 
-## Applications
+## Facility Types
 
 ### DIDO (Drop in, Drop off)
 - **Purpose**: Drop in centers
-- **Location Code**: `DIDO`
-- **App Type**: `dido`
+- **Type Code**: `DIDO`
 
 ### LESC (Law Enforcement Sobering Center)
 - **Purpose**: Sobering center bed availability and hold management
-- **Location Code**: `LESC`
-- **App Type**: `lesc`
+- **Type Code**: `LESC`
 
 ## Routing & Domain Configuration
-
-### Location Registry
-
-The location configuration is defined in `server/plugins/locations/registry.js`:
-
-```javascript
-export const LOCATIONS = {
-  DIDO: {
-    subdomains: ['dido'],
-    appType: 'dido',
-  },
-  LESC: {
-    subdomains: ['lesc'],
-    appType: 'lesc',
-  },
-};
-```
 
 ### Routing Methods
 
 #### Subdomain-Based Routing
-- **DIDO**: `dido.example.com`
-- **LESC**: `lesc.example.com`
+- **LESC**: `reset.example.com` for the RESET facility
 - **Detection**: Server extracts subdomain from `Host` header
 
 #### Important Notes
 
-- **Development**: When running on localhost, the client will present a selector to choose between the application types.
+- **Development**: When running on localhost, the client will present a selector to choose between the facilities or none- the root domain, which for now shows the DIDO list/map interface.
 
 ### Implementation
 
-Location detection happens in the `server/plugins/locations/index.js` plugin, which:
+Location detection happens in the `server/plugins/facility.js` plugin, which:
 - Runs on every request via Fastify `onRequest` hook
-- Sets `request.location`, `request.appType`, and `request.locationMethod`
-- Sets these to `null` if no location is detected (results in 404)
+- Sets `request.facility`
+- Sets these to an `null` if no facility subdomain is detected
 
 ## Client-Side Location Detection
 
 ### Detection Flow
 
-The client uses `client/src/LocationContext.js` to detect the current application.
+The client uses `client/src/FacilityContext.js` to manage the current facility if any.
 
 
 ### Usage in React Components
 
 ```javascript
-import { useLocationContext } from '@/LocationContext';
+import { useFacilityContext } from '@/FacilityContext';
 
 function MyComponent() {
-  const { location } = useLocationContext();
+  const { facility } = useFacilityContext();
   
-  if (!location) {
+  if (!facility) {
     return <NotFound />; // Root path or unknown location
   }
   
-  if (location.appType === 'dido') {
+  if (facility.type === 'DIDO') {
     return <DIDOComponent />;
   }
   
-  if (location.appType === 'lesc') {
+  if (facility.type === 'LESC') {
     return <LESCComponent />;
   }
 }
 ```
-
-## Application-Specific Features
-
-### DIDO App
-
-**Routes**: 
-- Home (`/`)
-- Admin routes (`/admin/*`)
-
-**Facility Filtering**:
-- Shows **all facilities EXCEPT** those with `LESC` service type
-- Admin routes show all facilities (no filtering)
-
-### LESC App
-
-**Routes**:
-- Holds (`/holds`)
-- History (`/history`)
-- Admin routes (`/admin/*`)
-
-**Facility Filtering**:
-- Shows **only** facilities with `LESC` service type
-- Admin routes show all facilities (no filtering)
-
-**API Endpoints**:
-- `GET /api/lesc/availability`: Bed availability for LESC facilities
-- `GET /api/lesc/holds`: Active bed holds
-- `POST /api/lesc/holds`: Create new bed hold
-- `POST /api/lesc/holds/:id/extend`: Extend hold expiration
-- `POST /api/lesc/holds/:id/cancel`: Cancel hold
-- `POST /api/lesc/checkin`: Create check-in record
-
-## Facility Filtering Logic
-
-### Backend Filtering
-
-Facility filtering happens in `server/routes/api/facilities/index.js`:
-
-```javascript
-// LESC app: Only facilities with LESC service type
-if (appType === 'lesc') {
-  whereClause = {
-    services: {
-      some: {
-        serviceTypeId: lescServiceType.id,
-      },
-    },
-  };
-}
-
-// DIDO app: Exclude facilities with LESC service type
-else if (appType === 'dido') {
-  whereClause = {
-    services: {
-      none: {
-        serviceTypeId: lescServiceType.id,
-      },
-    },
-  };
-}
-
-// Admin/shared routes: Show all facilities (no filter)
-// (appType === null)
-```
-
-### Service Type Codes
-
-- **`LESC`**: Law Enforcement Sobering Center service type
-- Used for filtering facilities per application
-- Only `LESC` code is used (not `SOBERING`)
 
 ## Shared Utilities
 
@@ -167,8 +77,8 @@ export async function autoExpireHolds(prisma, now = new Date()) {
 ```
 
 **Used by**:
-- `server/routes/api/lesc/availability/list.js`
-- `server/routes/api/lesc/holds/*.js`
+- `server/routes/api/facility/availability.js`
+- `server/routes/api/holds/*.js`
 
 ### Date/Time Utilities
 
@@ -203,30 +113,17 @@ care-connect/
     │   └── lesc/
     │           └── holds.js    # LESC hold utilities
     ├── plugins/
-    │   └── locations/
-    │       ├── registry.js     # Location configuration
-    │       └── index.js        # Location detection plugin
+    │   └── facility.js         # Facility detection plugin
+    │
     └── routes/
         └── api/
-        │   ├── lesc/           # LESC API routes
-        │   ├── locations/
-        │   │   ├── registry.js # Location configuration
-        │   │   └── index.js    # Location detection plugin
-        │   └── facilities/
-        │       └── index.js    # Facility API with filtering
+        │   ├── lesc/*          # LESC API routes
+        │   └── facilities/*    # Facilities API
+        │   └── holds/*         # Holds API
         └── root.js             # Root route handler (SSR)
 ```
 
 ## Testing
-
-### Facility Filtering Test
-
-**File**: `server/test/routes/api/facilities.test.js`
-
-Tests facility filtering logic for:
-- LESC app (subdomain and Referer detection)
-- DIDO app (subdomain and Referer detection)
-- Admin/shared routes (no filtering)
 
 ## Development
 
@@ -245,9 +142,6 @@ Tests facility filtering logic for:
 
 ## Deployment Considerations
 
-### Subdomain Configuration
+For production, point a wildcard subdomain to the server
 
-For production, configure DNS and reverse proxy:
-
-- `dido.example.com` → DIDO app
-- `lesc.example.com` → LESC app
+- `*.example.com` → Care Connect app

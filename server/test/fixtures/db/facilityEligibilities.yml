@@ -1,0 +1,18 @@
+entity: facilityEligibility
+connectedFields: [facility]
+items:
+  lescFacility1Age:
+    facility: '@lescFacility1'
+    type: AGE
+    value: '>=18'
+    notes: 'Age 18 and up are eligible.'
+  lescFacility1Gender:
+    facility: '@lescFacility1'
+    type: GENDER
+    value: MALE
+    notes: 'Male residents are eligible.'
+  lescFacility2Gender:
+    facility: '@lescFacility2'
+    type: GENDER
+    value: FEMALE
+    notes: 'Female residents are eligible.'

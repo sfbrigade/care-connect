@@ -11,6 +11,13 @@ EXPIRED EXPIRED
     
 
 
+        FacilityType {
+            DIDO DIDO
+LESC LESC
+        }
+    
+
+
         FacilityUpdateMethod {
             INTEGRATION INTEGRATION
 API API
@@ -87,6 +94,8 @@ TRANSFERRED TRANSFERRED
   "Facility" {
     String id "🗝️"
     String name 
+    FacilityType type 
+    String subdomain "❓"
     String description "❓"
     String phone "❓"
     String email "❓"
@@ -132,12 +141,6 @@ TRANSFERRED TRANSFERRED
     }
   
 
-  "FacilityAmenity" {
-    String facilityId "🗝️"
-    String amenityId "🗝️"
-    }
-  
-
   "ServiceType" {
     String id "🗝️"
     String code 
@@ -154,6 +157,8 @@ TRANSFERRED TRANSFERRED
     Int availableBeds 
     Int reservedBeds 
     String description "❓"
+    DateTime createdAt 
+    DateTime updatedAt 
     }
   
 
@@ -240,7 +245,7 @@ TRANSFERRED TRANSFERRED
     Int bedsRequested 
     DateTime expiresAt 
     BedHoldStatus status 
-    String createdById "❓"
+    String createdById 
     DateTime cancelledAt "❓"
     String cancelledById "❓"
     DateTime extendedAt "❓"
@@ -291,18 +296,16 @@ TRANSFERRED TRANSFERRED
     "Invite" o|--|| "User" : "createdBy"
     "Invite" o|--|o "User" : "acceptedBy"
     "Invite" o|--|o "User" : "revokedBy"
+    "Facility" o|--|| "FacilityType" : "enum:type"
     "Facility" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "Facility" o{--}o "FacilityCapacitySnapshot" : ""
-    "Facility" o{--}o "FacilityAmenity" : ""
+    "Facility" o{--}o "Amenity" : ""
     "Facility" o{--}o "FacilityService" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "PlacementRequest" : ""
     "Facility" o{--}o "BedHold" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
-    "Amenity" o{--}o "FacilityAmenity" : ""
-    "FacilityAmenity" o|--|| "Facility" : "facility"
-    "FacilityAmenity" o|--|| "Amenity" : "amenity"
     "ServiceType" o{--}o "FacilityService" : ""
     "ServiceType" o{--}o "PlacementRequest" : ""
     "ServiceType" o{--}o "BedHold" : ""
@@ -328,7 +331,7 @@ TRANSFERRED TRANSFERRED
     "BedHold" o|--|o "Client" : "client"
     "BedHold" o|--|o "Incident" : "incident"
     "BedHold" o|--|| "BedHoldStatus" : "enum:status"
-    "BedHold" o|--|o "User" : "createdBy"
+    "BedHold" o|--|| "User" : "createdBy"
     "BedHold" o|--|o "User" : "cancelledBy"
     "BedHold" o|--|o "User" : "transferredBy"
     "Incident" o|--|| "User" : "createdBy"

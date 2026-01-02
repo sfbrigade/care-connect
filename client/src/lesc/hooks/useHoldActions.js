@@ -41,7 +41,7 @@ export function useHoldActions ({ invalidateQueries = [], onCancelSuccess } = {}
   })();
 
   const cancelMutation = useMutation({
-    mutationFn: (holdId) => Api.lesc.holds.cancel(holdId),
+    mutationFn: (holdId) => Api.holds.cancel(holdId),
     onSuccess: () => {
       queryKeysToInvalidate.forEach(key => {
         queryClient.invalidateQueries({ queryKey: key });
@@ -59,7 +59,7 @@ export function useHoldActions ({ invalidateQueries = [], onCancelSuccess } = {}
   });
 
   const extendMutation = useMutation({
-    mutationFn: (holdId) => Api.lesc.holds.extend(holdId),
+    mutationFn: (holdId) => Api.holds.extend([holdId]),
     onSuccess: () => {
       queryKeysToInvalidate.forEach(key => {
         queryClient.invalidateQueries({ queryKey: key });
@@ -136,6 +136,7 @@ export function useHoldActions ({ invalidateQueries = [], onCancelSuccess } = {}
     cancelModalOpened,
     qrModalOpened,
     selectedHold,
+    setSelectedHold,
 
     // Handlers
     handleCancel,

@@ -169,7 +169,7 @@ function ClientView () {
   const { data: holdsResponse, isLoading: isLoadingHolds } = useQuery({
     queryKey: ['lesc-holds'],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list();
+      const response = await Api.holds.list();
       return response.data;
     },
     enabled: !clientId,

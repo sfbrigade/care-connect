@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, Title, Stack, Loader, Alert, /* Modal, */ Text } from '@mantine/core';
-import { useLocation, useNavigate, useParams, /* useSearchParams */ } from 'react-router';
+import { Box, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { useNavigate } from 'react-router';
 import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
 
 import Api from '@/Api';
-// import HoldForm from './HoldForm';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
@@ -13,22 +12,15 @@ import LESCHold from './LESCHold';
 import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
 import { formatTime, calculateAge } from '@/utils/dateTime';
-import { useAuthContext } from '@/AuthContext';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
+import { useFacilityContext } from '@/FacilityContext';
+
 function Holds () {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { facilityId: facilityIdParam } = useParams();
-  // const [searchParams] = useSearchParams();
-  // Modal hooks kept for future use - currently disabled in favor of direct hold creation
-  // const [createModalOpened, { open: openCreateModal, close: closeCreateModal }] = useDisclosure(false);
+  const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const { user } = useAuthContext();
-
-  // Prioritize URL param over location.state for facilityId
-  const facilityId = facilityIdParam || location.state?.facilityId;
 
   // Use shared hold actions hook
   const {
@@ -46,40 +38,24 @@ function Holds () {
     closeCancelModal,
     closeQRModal,
   } = useHoldActions({
-    invalidateQueries: ['lesc-holds', facilityId],
+    invalidateQueries: [
+      ['facilities', facility.id, 'holds'],
+      ['facilities', facility.id, 'availability'],
+    ],
   });
-
-  // Check both query param and location.state for create modal flag
-  // const shouldOpenCreateModal = searchParams.get('create') === 'true' || location.state?.openCreateModal;
-
-  // Auto-open modal only if explicitly requested (e.g., via "Hold a Bed" button)
-  // useEffect(() => {
-  //   if (shouldOpenCreateModal) {
-  //     openCreateModal();
-  //   }
-  // }, [shouldOpenCreateModal, openCreateModal]);
 
   const { data: holds, isLoading, error } = useQuery({
-    queryKey: ['lesc-holds', facilityId],
+    queryKey: ['facilities', facility.id, 'holds'],
     queryFn: async () => {
-      const response = await Api.lesc.holds.list(facilityId);
+      const response = await Api.facilities.holds(facility.id);
       return response.data;
     },
   });
 
-  // Fetch facilities and availability data
-  const { data: facilitiesData } = useQuery({
-    queryKey: ['lesc-facilities'],
+  const { data: availability } = useQuery({
+    queryKey: ['facilities', facility.id, 'availability'],
     queryFn: async () => {
-      const response = await Api.lesc.facilities.list();
-      return response.data;
-    },
-  });
-
-  const { data: availabilityData } = useQuery({
-    queryKey: ['lesc-availability'],
-    queryFn: async () => {
-      const response = await Api.lesc.availability();
+      const response = await Api.facilities.availability(facility.id);
       return response.data;
     },
   });
@@ -128,7 +104,7 @@ function Holds () {
     queryKey: ['hold-transfer-status', transferHoldIdToPoll],
     queryFn: async () => {
       console.log('[Transfer Feedback] Polling transfer status for hold:', transferHoldIdToPoll);
-      const response = await Api.lesc.holds.transferStatus(transferHoldIdToPoll);
+      const response = await Api.holds.get(transferHoldIdToPoll);
       console.log('[Transfer Feedback] Transfer status response:', response.data);
       return response.data;
     },
@@ -160,8 +136,8 @@ function Holds () {
   useEffect(() => {
     // Handle initial case where prevTransferStatusRef is null (first poll)
     // Also handle case where status changes from false to true
-    const wasNotTransferred = prevTransferStatusRef.current === null || prevTransferStatusRef.current?.isTransferred === false;
-    const isNowTransferred = transferStatus?.isTransferred === true;
+    const wasNotTransferred = prevTransferStatusRef.current === null || !prevTransferStatusRef.current?.transferredAt;
+    const isNowTransferred = !!transferStatus?.transferredAt;
 
     // Only show notification when status changes from not-transferred to transferred
     if (wasNotTransferred && isNowTransferred && transferHoldIdToPoll) {
@@ -174,8 +150,8 @@ function Holds () {
       const displayName = clientName || holdId.substring(0, 8).toUpperCase();
 
       showToast(`Client checked in: ${displayName}`, 'success');
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       // Close QR modal (only one transfer at a time, so this must be the one)
       if (qrModalOpened) {
         console.log('[Transfer Feedback] Closing QR modal for transferred hold');
@@ -186,7 +162,7 @@ function Holds () {
 
     // Update ref
     prevTransferStatusRef.current = transferStatus;
-  }, [transferStatus?.isTransferred, transferHoldIdToPoll, selectedHold, showToast, queryClient, facilityId, qrModalOpened, closeQRModal]);
+  }, [transferStatus?.transferredAt, transferHoldIdToPoll, selectedHold, showToast, queryClient, facility.id, qrModalOpened, closeQRModal]);
 
   // Handle token expiration - close modal and stop polling
   // Only check expiration for the selected hold when modal is open
@@ -201,29 +177,25 @@ function Holds () {
         showToast('Transfer token expired. Please generate a new QR code.', 'warning');
         closeQRModal();
         setSelectedHold(null);
-        queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
+        queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
       }
     }
-  }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facilityId]);
+  }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facility.id]);
 
   // Get facility info for specific facility view
   const facilityInfo = useMemo(() => {
-    if (!facilityId || !facilitiesData || !availabilityData) return null;
-
-    const facility = facilitiesData.find(f => f.id === facilityId);
-    if (!facility) return null;
+    if (!facility || !availability) return null;
 
     // Calculate total available beds for this facility
-    const facilityAvailability = availabilityData.filter(item => item.facilityId === facilityId);
-    const totalAvailable = facilityAvailability.reduce((sum, item) => {
+    const totalAvailable = availability.reduce((sum, item) => {
       return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
     }, 0);
 
     // Format address
     const addressParts = [];
-    if (facility.address?.line1) addressParts.push(facility.address.line1);
-    if (facility.address?.city) addressParts.push(facility.address.city);
-    if (facility.address?.state) addressParts.push(facility.address.state);
+    if (facility.addressLine1) addressParts.push(facility.addressLine1);
+    if (facility.city) addressParts.push(facility.city);
+    if (facility.state) addressParts.push(facility.state);
     const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
 
     return {
@@ -231,51 +203,13 @@ function Holds () {
       address,
       bedCount: totalAvailable,
     };
-  }, [facilityId, facilitiesData, availabilityData]);
-
-  // Get the single LESC facility info for the LESCCard
-  const lescFacilityInfo = useMemo(() => {
-    if (!facilitiesData || !availabilityData) return null;
-
-    // Since there's only 1 LESC clinic, get the first facility
-    const facility = facilitiesData[0];
-    if (!facility) return null;
-
-    // Calculate total available beds
-    const facilityAvailability = availabilityData.filter(item => item.facilityId === facility.id);
-    const totalAvailable = facilityAvailability.reduce((sum, item) => {
-      return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
-    }, 0);
-
-    // Format address
-    const addressParts = [];
-    if (facility.address?.line1) addressParts.push(facility.address.line1);
-    if (facility.address?.city) addressParts.push(facility.address.city);
-    if (facility.address?.state) addressParts.push(facility.address.state);
-    const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
-
-    return {
-      name: facility.name,
-      address,
-      bedCount: totalAvailable,
-      updatedAt: facility.updatedAt,
-    };
-  }, [facilitiesData, availabilityData]);
+  }, [facility, availability]);
 
   const extendAllMutation = useMutation({
-    mutationFn: async (holdIds) => {
-      const results = await Promise.allSettled(
-        holdIds.map(id => Api.lesc.holds.extend(id))
-      );
-      const failures = results.filter(r => r.status === 'rejected');
-      if (failures.length > 0) {
-        throw new Error(`Failed to extend ${failures.length} hold(s)`);
-      }
-      return results;
-    },
+    mutationFn: (holdIds) => Api.holds.extend(holdIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       showToast('All holds extended by 30 minutes', 'success');
     },
     onError: (error) => {
@@ -286,11 +220,8 @@ function Holds () {
 
   // Get the service type with most availability for a facility (same logic as HoldForm)
   const getServiceTypeForFacility = (facId) => {
-    if (!availabilityData || !facId) return null;
-    const facilityServices = availabilityData.filter(item => item.facilityId === facId);
-    if (facilityServices.length === 0) return null;
     // Return the service type with the most available beds
-    return facilityServices.reduce((best, current) =>
+    return availability.reduce((best, current) =>
       current.calculatedAvailable > best.calculatedAvailable ? current : best
     );
   };
@@ -302,16 +233,15 @@ function Holds () {
       if (!serviceInfo) {
         throw new Error('No service type available for this facility');
       }
-      return Api.lesc.holds.create({
+      return Api.holds.create({
         facilityId: targetFacilityId,
         serviceTypeId: serviceInfo.serviceTypeId,
-        bedsRequested: 1,
         notes: undefined,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-      queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
       showToast('Bed hold created successfully', 'success');
     },
     onError: (error) => {
@@ -323,8 +253,8 @@ function Holds () {
   const handleCreateHoldDirectly = (targetFacilityId) => {
     if (!targetFacilityId) {
       // If no facility ID provided, use the LESC facility
-      if (lescFacilityInfo && facilitiesData?.[0]) {
-        createHoldDirectlyMutation.mutate(facilitiesData[0].id);
+      if (facility) {
+        createHoldDirectlyMutation.mutate(facility.id);
       } else {
         showToast('Facility information not available', 'error');
       }
@@ -334,15 +264,9 @@ function Holds () {
   };
 
   const handleExtendAll = () => {
-    if (userHolds.length === 0) return;
-    extendAllMutation.mutate(userHolds.map(h => h.id));
+    if (holds.length === 0) return;
+    extendAllMutation.mutate(holds.map(h => h.id));
   };
-
-  // Filter holds to only show current user's holds
-  const userHolds = useMemo(() => {
-    if (!holds || !user) return [];
-    return holds.filter(hold => hold.createdBy?.id === user.id);
-  }, [holds, user]);
 
   // Group ALL holds by creator and count them (for banner display)
   const holdsByUser = useMemo(() => {
@@ -399,7 +323,7 @@ function Holds () {
       )}
 
       {/* Extend All button */}
-      {userHolds && userHolds.length > 0 && (
+      {holds && holds.length > 0 && (
         <div style={{ width: '100%', marginBottom: '16px' }}>
           <Chip
             onClick={handleExtendAll}
@@ -415,38 +339,6 @@ function Holds () {
           </Chip>
         </div>
       )}
-
-      {/* Modal code kept for future use - currently disabled in favor of direct hold creation */}
-      {/* <Modal
-        opened={createModalOpened}
-        onClose={closeCreateModal}
-        title='Create Bed Hold'
-        size='auto'
-        centered
-        lockScroll
-        styles={{
-          content: {
-            borderRadius: '16px',
-            maxHeight: '90vh',
-            maxWidth: '100vw',
-            marginTop: '80px',
-          },
-          body: {
-            maxHeight: 'calc(90vh - 120px)',
-            overflowY: 'auto',
-            padding: '20px',
-          },
-        }}
-      >
-        <HoldForm
-          onSuccess={() => {
-            closeCreateModal();
-            queryClient.invalidateQueries({ queryKey: ['lesc-holds', facilityId] });
-            queryClient.invalidateQueries({ queryKey: ['lesc-availability'] });
-          }}
-          initialFacilityId={facilityId}
-        />
-      </Modal> */}
 
       <CancelHoldModal
         opened={cancelModalOpened}
@@ -478,107 +370,53 @@ function Holds () {
         onDone={handleQRDone}
       />
 
-      {userHolds && userHolds.length === 0
-        ? (
-          <Stack gap='md'>
-            {lescFacilityInfo && (
-              <LESCFacility
-                facilityName={lescFacilityInfo.name}
-                address={lescFacilityInfo.address}
-                bedCount={lescFacilityInfo.bedCount}
-                intakeHours='24/7'
-                lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
+      <Stack gap='xl'>
+        {facilityInfo && (
+          <LESCFacility
+            facilityName={facilityInfo.name}
+            address={facilityInfo.address}
+            bedCount={facilityInfo.bedCount}
+            intakeHours='24/7'
+            lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
+            onCallClick={() => {
+              // TODO: Implement call functionality
+              console.log('Call facility:', facilityInfo.name);
+            }}
+            onHoldClick={() => handleCreateHoldDirectly(facility.id)}
+          />
+        )}
+        <Stack gap='md'>
+          {(!holds || holds.length === 0) && (
+            <Box align='center'>
+              <Title order={4}>You don't have any active holds</Title>
+              <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
+            </Box>
+          )}
+          {holds?.map((hold) => {
+            // Calculate age from dateOfBirth if available
+            const age = calculateAge(hold.client?.dateOfBirth);
+
+            return (
+              <LESCHold
+                key={hold.id}
+                hold={hold}
+                patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                patientDob={hold.client?.dateOfBirth}
+                patientAge={age}
+                patientSex={hold.client?.sex}
+                patientRace={hold.client?.race}
+                onTransfer={handleTransfer}
+                onExtend={handleExtend}
+                onCancel={handleCancel}
+                onViewDetails={() => {
+                  navigate(`/intake/${hold.id}`);
+                }}
               />
-            )}
-            <Alert>No active holds.</Alert>
-          </Stack>
-          )
-        : facilityId
-          ? (
-            // Single facility view - show facility card then holds
-            <Stack gap='xl'>
-              {facilityInfo && (
-                <LESCFacility
-                  facilityName={facilityInfo.name}
-                  address={facilityInfo.address}
-                  bedCount={facilityInfo.bedCount}
-                  intakeHours='24/7'
-                  lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
-                  onCallClick={() => {
-                    // TODO: Implement call functionality
-                    console.log('Call facility:', facilityInfo.name);
-                  }}
-                  onHoldClick={() => handleCreateHoldDirectly(facilityInfo.id)}
-                />
-              )}
-              <Stack gap='md'>
-                {userHolds?.map((hold) => {
-                  // Calculate age from dateOfBirth if available
-                  const age = calculateAge(hold.client?.dateOfBirth);
-
-                  return (
-                    <LESCHold
-                      key={hold.id}
-                      hold={hold}
-                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                      patientDob={hold.client?.dateOfBirth}
-                      patientAge={age}
-                      patientSex={hold.client?.sex}
-                      patientRace={hold.client?.race}
-                      onTransfer={handleTransfer}
-                      onExtend={handleExtend}
-                      onCancel={handleCancel}
-                      onViewDetails={() => {
-                        navigate(`/intake/${hold.id}`);
-                      }}
-                    />
-                  );
-                })}
-              </Stack>
-            </Stack>
-            )
-          : (
-            // All holds view - show LESCFacility then holds
-            <Stack gap='xl'>
-              {lescFacilityInfo && (
-                <LESCFacility
-                  facilityName={lescFacilityInfo.name}
-                  address={lescFacilityInfo.address}
-                  bedCount={lescFacilityInfo.bedCount}
-                  intakeHours='24/7'
-                  lastUpdated={lescFacilityInfo.updatedAt ? formatTime(new Date(lescFacilityInfo.updatedAt)) : undefined}
-                  onHoldClick={() => handleCreateHoldDirectly(facilitiesData?.[0]?.id)}
-                />
-              )}
-              <Stack gap='md'>
-                {userHolds?.map((hold) => {
-                  // Calculate age from dateOfBirth if available
-                  const age = calculateAge(hold.client?.dateOfBirth);
-
-                  return (
-                    <LESCHold
-                      key={hold.id}
-                      hold={hold}
-                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                      patientDob={hold.client?.dateOfBirth}
-                      patientAge={age}
-                      patientSex={hold.client?.sex}
-                      patientRace={hold.client?.race}
-                      onTransfer={handleTransfer}
-                      onExtend={handleExtend}
-                      onCancel={handleCancel}
-                      onViewDetails={() => {
-                        navigate(`/intake/${hold.id}`);
-                      }}
-                    />
-                  );
-                })}
-              </Stack>
-            </Stack>
-            )}
+            );
+          })}
+        </Stack>
+      </Stack>
     </Container>
   );
 }

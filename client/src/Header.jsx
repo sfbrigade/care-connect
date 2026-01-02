@@ -3,17 +3,17 @@ import { ActionIcon, Anchor, Avatar, Burger, Container, Group, Menu, Title } fro
 import { IconMessages } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
-import { useLocationContext } from '@/LocationContext';
+import { useFacilityContext } from '@/FacilityContext';
 
 function Header ({ opened, close, toggle, logout }) {
-  const { location } = useLocationContext();
+  const { facility } = useFacilityContext();
   const { user } = useAuthContext();
 
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
-          <Title size='xl'>{location?.name || 'CareConnectSF'}</Title>
+          <Title size='xl'>{facility?.name || 'CareConnectSF'}</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
@@ -33,7 +33,7 @@ function Header ({ opened, close, toggle, logout }) {
           )}
           {user && (
             <>
-              {location.appType === 'lesc' && (
+              {facility?.type === 'LESC' && (
                 <>
                   <Anchor component={NavLink} to='/holds' onClick={close}>
                     Holds

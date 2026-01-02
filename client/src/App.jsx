@@ -11,8 +11,8 @@ import PosthogProvider from './analytics/PosthogProvider';
 import { useStaticContext } from './StaticContext';
 import { ToastProvider } from './components/ToastContext';
 import ToastContainer from './components/ToastContainer';
-import LocationContextProvider from './LocationContextProvider';
-import LocationSelector from './LocationSelector';
+import FacilityContextProvider from './FacilityContextProvider';
+import FacilitySelector from './FacilitySelector';
 
 import AppTheme from './AppTheme';
 import AppLayout from './AppLayout';
@@ -32,13 +32,13 @@ function App () {
         <ModalsProvider>
           <ToastProvider>
             <AuthContextProvider>
-              <LocationContextProvider>
-                <LocationSelector>
+              <FacilityContextProvider>
+                <FacilitySelector>
                   <PosthogProvider />
                   <ToastContainer />
                   <AppLayout />
-                </LocationSelector>
-              </LocationContextProvider>
+                </FacilitySelector>
+              </FacilityContextProvider>
             </AuthContextProvider>
           </ToastProvider>
         </ModalsProvider>

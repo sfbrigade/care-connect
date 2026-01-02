@@ -30,6 +30,11 @@ enum PlacementRequestStatus {
   EXPIRED
 }
 
+enum FacilityType {
+  DIDO
+  LESC
+}
+
 enum FacilityUpdateMethod {
   INTEGRATION
   API
@@ -113,6 +118,8 @@ model Invite {
 model Facility {
   id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
+  type              FacilityType               @default(DIDO)
+  subdomain         String?                    @db.Citext @unique
   description       String?
   phone             String?
   email             String?
@@ -131,7 +138,7 @@ model Facility {
   updateMethod      FacilityUpdateMethod       @default(MANUAL)
   updateNotes       String?
   capacitySnapshots FacilityCapacitySnapshot[]
-  amenities         FacilityAmenity[]
+  amenities         Amenity[]
   services          FacilityService[]
   eligibility       FacilityEligibility[]
   contacts          FacilityContact[]
@@ -159,18 +166,9 @@ model Amenity {
   id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String            @unique
   description String?
-  facilities  FacilityAmenity[]
+  facilities  Facility[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-}
-
-model FacilityAmenity {
-  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId String   @db.Uuid
-  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  amenityId  String   @db.Uuid
-
-  @@id([facilityId, amenityId])
 }
 
 model ServiceType {
@@ -193,6 +191,8 @@ model FacilityService {
   availableBeds   Int         @default(0)
   reservedBeds    Int         @default(0)
   description     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@id([facilityId, serviceTypeId])
 }
@@ -295,8 +295,8 @@ model BedHold {
   bedsRequested         Int
   expiresAt             DateTime
   status                BedHoldStatus  @default(ACTIVE)
-  createdBy             User?          @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById           String?        @db.Uuid
+  createdBy             User           @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById           String         @db.Uuid
   cancelledAt           DateTime?
   cancelledBy           User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
   cancelledById         String?        @db.Uuid

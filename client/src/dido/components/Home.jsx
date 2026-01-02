@@ -124,16 +124,16 @@ function formatRelativeTime (isoString) {
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 }
 
-function formatAddress (address) {
-  if (!address) {
+function formatAddress (facility) {
+  if (!facility) {
     return '';
   }
 
   const segments = [
-    address.line1,
-    address.line2,
-    [address.city, address.state].filter(Boolean).join(', '),
-    address.postalCode,
+    facility.addressLine1,
+    facility.addressLine2,
+    [facility.city, facility.state].filter(Boolean).join(', '),
+    facility.postalCode,
   ].filter(Boolean);
 
   return segments.join(', ');
@@ -142,22 +142,22 @@ function formatAddress (address) {
 function getFacilityCategories (facility) {
   const searchableText = [
     facility.description ?? '',
-    ...facility.services.map((service) => service.name ?? ''),
-    ...facility.services.map((service) => service.description ?? ''),
+    ...facility.services.map((service) => service.serviceType.name ?? ''),
+    ...facility.services.map((service) => service.description ?? service.serviceType.description ?? ''),
   ].join(' ').toLowerCase();
 
   const matches = [];
 
   // Check service type names and abbreviations
   for (const service of facility.services) {
-    const serviceName = (service.name ?? '').toLowerCase();
+    const serviceName = (service.serviceType.name ?? '').toLowerCase();
 
     // Medical/Health services
     if (serviceName.includes('mh') || serviceName.includes('acute') ||
-        serviceName.includes('sud') || serviceName.includes('subacute') ||
-        serviceName.includes('detox') || serviceName.includes('crisis') ||
-        serviceName.includes('sobering') || serviceName.includes('lesc') ||
-        serviceName.includes('medical') || serviceName.includes('mental health')) {
+      serviceName.includes('sud') || serviceName.includes('subacute') ||
+      serviceName.includes('detox') || serviceName.includes('crisis') ||
+      serviceName.includes('sobering') || serviceName.includes('lesc') ||
+      serviceName.includes('medical') || serviceName.includes('mental health')) {
       if (!matches.includes('medical')) {
         matches.push('medical');
       }
@@ -245,9 +245,9 @@ function Home () {
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
-    queryKey: ['facilities'],
+    queryKey: ['didoFacilitiesWithServices'],
     queryFn: async () => {
-      const response = await Api.facilities.list();
+      const response = await Api.facilities.list({ include: 'services', type: 'DIDO' });
       if (import.meta.env.DEV) {
         console.debug('[Home] Facilities response', response.data);
       }
@@ -353,11 +353,11 @@ function Home () {
     const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
     const primaryCategory = categories[0] ?? 'other';
-    const primaryService = facility.services[0]?.name ?? null;
+    const primaryService = facility.services[0]?.serviceType?.name ?? null;
     const primaryBadge = facility.services[0]?.availableBeds != null
       ? `${facility.services[0].availableBeds} beds`
       : null;
-    const displayAddress = formatAddress(facility.address);
+    const displayAddress = formatAddress(facility);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
 
     const districtLabel = (facility.nstDistrict ?? '').trim() || 'Unknown';
@@ -373,7 +373,7 @@ function Home () {
       displayAddress,
       primaryContact,
       slug,
-      serviceNames: facility.services.map((service) => service.name).filter(Boolean),
+      serviceNames: facility.services.map((service) => service.serviceType.name).filter(Boolean),
       districtLabel,
     };
   }), [facilities, referenceCoordinate]);

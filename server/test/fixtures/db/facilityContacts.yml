@@ -1,0 +1,27 @@
+entity: FacilityContact
+connectedFields: [facility]
+items:
+  lescFacility1ContactPrimary:
+    facility: '@lescFacility1'
+    name: 'Jane Doe'
+    role: 'Facility Contact'
+    email: 'jane.doe@lesc1.org'
+    phone: '415-555-1234'
+    notes: 'Facility Contact for LESC Facility 1'
+    isPrimary: true
+  lescFacility1ContactSecondary:
+    facility: '@lescFacility1'
+    name: 'John Doe'
+    role: 'Facility Contact'
+    email: 'john.doe@lesc1.org'
+    phone: '415-555-1235'
+    notes: 'Facility Contact for LESC Facility 1'
+    isPrimary: false
+  lescFacility2ContactPrimary:
+    facility: '@lescFacility2'
+    name: 'Jane Smith'
+    role: 'Facility Contact'
+    email: 'jane.smith@lesc2.org'
+    phone: '415-555-1236'
+    notes: 'Facility Contact for LESC Facility 2'
+    isPrimary: true

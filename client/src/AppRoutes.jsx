@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router';
 import { Container, Loader } from '@mantine/core';
 
 import AppRedirects from './AppRedirects';
-import { useLocationContext } from './LocationContext';
+import { useFacilityContext } from './FacilityContext';
 import { useStaticContext } from './StaticContext';
 
 import Login from './Login';
@@ -20,7 +20,7 @@ import LESCRoutes from './lesc/routes/LESCRoutes';
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 
 function AppRoutes () {
-  const { location } = useLocationContext();
+  const { facility } = useFacilityContext();
   const staticContext = useStaticContext();
 
   return (
@@ -44,8 +44,8 @@ function AppRoutes () {
                   </Suspense>
                 }
               />
-              {location.appType === 'dido' && <Route path='/*' element={<DIDORoutes />} />}
-              {location.appType === 'lesc' && <Route path='/*' element={<LESCRoutes />} />}
+              {!facility?.subdomain && <Route path='/*' element={<DIDORoutes />} />}
+              {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
               <Route path='/*' element={<NotFound />} />
             </Routes>
           </AppRedirects>
