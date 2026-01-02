@@ -107,6 +107,18 @@ test('/api/holds', async (t) => {
     });
   });
 
+  await t.test('GET /:id/qr', async (t) => {
+    await t.test('returns QR code for hold', async () => {
+      const response = await app.inject().get('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2/qr').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(data);
+      assert.ok(data.qrUrl);
+      assert.ok(data.token);
+      assert.ok(data.expiresAt);
+    });
+  });
+
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates a hold successfully', async () => {
       const response = await app.inject().patch('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')

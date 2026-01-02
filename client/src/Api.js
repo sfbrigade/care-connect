@@ -200,6 +200,9 @@ const Api = {
     get (id, { include = '' } = {}) {
       return instance.get(`/api/holds/${id}`, { params: { include } });
     },
+    qr (id) {
+      return instance.get(`/api/holds/${id}/qr`);
+    },
     update (id, data) {
       return instance.patch(`/api/holds/${id}`, data).catch(handleError);
     },
@@ -220,9 +223,6 @@ const Api = {
       },
     },
     holds: {
-      qr (id) {
-        return instance.get(`/api/lesc/holds/${id}/qr`);
-      },
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
       },

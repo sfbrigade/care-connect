@@ -90,7 +90,7 @@ export default async function (fastify, opts) {
 
       const protocol = request.headers['x-forwarded-proto'] || request.protocol;
       const host = request.headers.host || 'localhost:3000';
-      const qrUrl = `${protocol}://${host}/lesc/checkin/${updatedHold.id}?token=${newToken}`;
+      const qrUrl = `${protocol}://${host}/checkin/${updatedHold.id}?token=${newToken}`;
 
       return reply.send({
         token: updatedHold.transferToken,

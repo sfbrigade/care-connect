@@ -19,7 +19,7 @@ export default function HoldQRCode ({ holdId, opened, onClose, onDone }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['hold-qr', holdId],
     queryFn: async () => {
-      const response = await Api.lesc.holds.qr(holdId);
+      const response = await Api.holds.qr(holdId);
       return response.data;
     },
     enabled: opened && !!holdId,
