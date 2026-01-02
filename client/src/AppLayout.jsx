@@ -1,5 +1,6 @@
 import { AppShell } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { matchPath, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import Header from './Header';
@@ -8,14 +9,11 @@ import Navbar from './Navbar';
 import Api from './Api';
 import AppRoutes from './AppRoutes';
 import { useAuthContext } from './AuthContext';
-import { useFacilityContext } from './FacilityContext';
-import { useNavigate } from 'react-router';
 
 function AppLayout () {
   const [opened, { close, toggle }] = useDisclosure();
   const navigate = useNavigate();
-  const { user, setUser } = useAuthContext();
-  const { facility } = useFacilityContext();
+  const { setUser } = useAuthContext();
   const queryClient = useQueryClient();
 
   async function logout (event) {
@@ -27,13 +25,21 @@ function AppLayout () {
     navigate('/');
   }
 
+  const location = useLocation();
+  const isHeaderHidden = [
+    '/login',
+    '/passwords/*',
+    '/invites/*',
+    '/register',
+  ].some(path => matchPath(path, location.pathname));
+
   return (
     <AppShell
       header={{ height: 60 }}
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
       padding='md'
     >
-      {(!facility || !!user) && (
+      {!isHeaderHidden && (
         <AppShell.Header>
           <Header opened={opened} close={close} toggle={toggle} logout={logout} />
         </AppShell.Header>
