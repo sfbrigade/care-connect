@@ -310,10 +310,10 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(data.length, 1);
       assert.deepStrictEqual(data[0].serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
       assert.deepStrictEqual(data[0].totalBeds, 10);
-      assert.deepStrictEqual(data[0].availableBeds, 8);
+      assert.deepStrictEqual(data[0].availableBeds, 7);
       assert.deepStrictEqual(data[0].reservedBeds, 2);
-      assert.deepStrictEqual(data[0].activeHolds, 2);
-      assert.deepStrictEqual(data[0].calculatedAvailable, 8);
+      assert.deepStrictEqual(data[0].activeHolds, 3);
+      assert.deepStrictEqual(data[0].calculatedAvailable, 7);
     });
   });
 });

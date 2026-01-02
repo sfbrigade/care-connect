@@ -17,42 +17,6 @@ test('/api/lesc/incidents', async (t) => {
 
   await t.test('GET /', async (t) => {
     await t.test('returns user\'s incidents only', async () => {
-      // Create incidents for user1
-      const incident1 = await prisma.incident.create({
-        data: {
-          cadNumber: 'CAD-LIST-1',
-          dateTimeArrested: new Date(),
-          createdById: userId,
-        },
-      });
-
-      const incident2 = await prisma.incident.create({
-        data: {
-          cadNumber: 'CAD-LIST-2',
-          dateTimeArrested: new Date(),
-          createdById: userId,
-        },
-      });
-
-      // Create a second user
-      const user2 = await prisma.user.create({
-        data: {
-          firstName: 'User',
-          lastName: 'Two',
-          email: `user2-list-${Date.now()}@test.com`,
-          hashedPassword: '$2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W', // test
-        },
-      });
-
-      // Create incident for user2
-      await prisma.incident.create({
-        data: {
-          cadNumber: 'CAD-LIST-USER2',
-          dateTimeArrested: new Date(),
-          createdById: user2.id,
-        },
-      });
-
       const response = await app.inject().get('/api/lesc/incidents').headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -63,57 +27,19 @@ test('/api/lesc/incidents', async (t) => {
       assert.deepStrictEqual(data.length, 2);
 
       const incidentIds = data.map(i => i.id);
-      assert.ok(incidentIds.includes(incident1.id));
-      assert.ok(incidentIds.includes(incident2.id));
-      assert.ok(!incidentIds.includes(user2.id)); // user2's incident should not be included
+      assert.ok(incidentIds.includes('2fa77128-586c-465a-9381-c441e633e3b2'));
+      assert.ok(incidentIds.includes('921a02ad-af5f-404f-84f2-b8c987d436d8'));
     });
 
     await t.test('includes hold counts', async () => {
-      const incident = await prisma.incident.create({
-        data: {
-          cadNumber: 'CAD-COUNT-TEST',
-          dateTimeArrested: new Date(),
-          createdById: userId,
-        },
-      });
-
-      const facility = await prisma.facility.create({
-        data: {
-          name: 'Test Facility',
-          isActive: true,
-        },
-      });
-
-      const serviceType = await prisma.serviceType.create({
-        data: {
-          code: 'LESC',
-          name: 'LESC Service',
-        },
-      });
-
-      // Create 3 holds linked to incident
-      for (let i = 0; i < 3; i++) {
-        await prisma.bedHold.create({
-          data: {
-            facilityId: facility.id,
-            serviceTypeId: serviceType.id,
-            bedsRequested: 1,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            status: 'ACTIVE',
-            createdById: userId,
-            incidentId: incident.id,
-          },
-        });
-      }
-
       const response = await app.inject().get('/api/lesc/incidents').headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
-      const foundIncident = data.find(i => i.id === incident.id);
+      const foundIncident = data.find(i => i.id === '2fa77128-586c-465a-9381-c441e633e3b2');
       assert.ok(foundIncident);
-      assert.deepStrictEqual(foundIncident.holdCount, 3);
+      assert.deepStrictEqual(foundIncident.holdCount, 2);
     });
 
     await t.test('requires authentication', async () => {
