@@ -191,11 +191,8 @@ const Api = {
     },
   },
   holds: {
-    extend (ids) {
-      return instance.patch('/api/holds/extend', { ids }).catch(handleError);
-    },
-    cancel (id) {
-      return instance.delete(`/api/holds/${id}`).catch(handleError);
+    list () {
+      return instance.get('/api/holds');
     },
     create (data) {
       return instance.post('/api/holds', data).catch(handleError);
@@ -203,8 +200,14 @@ const Api = {
     get (id, { include = '' } = {}) {
       return instance.get(`/api/holds/${id}`, { params: { include } });
     },
-    list () {
-      return instance.get('/api/holds');
+    update (id, data) {
+      return instance.patch(`/api/holds/${id}`, data).catch(handleError);
+    },
+    cancel (id) {
+      return instance.delete(`/api/holds/${id}`).catch(handleError);
+    },
+    extend (ids) {
+      return instance.patch('/api/holds/extend', { ids }).catch(handleError);
     },
   },
   lesc: {
@@ -231,9 +234,6 @@ const Api = {
       },
       forCheckin (id) {
         return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/lesc/holds/${id}`, data).catch(handleError);
       },
     },
     incidents: {

@@ -5,4 +5,9 @@ items:
     id: 2fa77128-586c-465a-9381-c441e633e3b2
     cadNumber: 'CAD-123'
     dateTimeArrested: <%= new Date().toISOString() %>
-    createdBy: '@user1'
+    createdBy: '@user2'
+  incident2:
+    id: 921a02ad-af5f-404f-84f2-b8c987d436d8
+    cadNumber: 'CAD-456'
+    dateTimeArrested: <%= new Date().toISOString() %>
+    createdBy: '@user2'

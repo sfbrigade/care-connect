@@ -9,11 +9,11 @@ import User from './user.js';
 import Incident from './incident.js';
 
 const BedHoldAttributesSchema = z.object({
-  incidentId: z.string().uuid().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  incidentId: z.string().uuid().nullable(),
+  notes: z.string().nullable(),
 });
 
-const BedHoldCreateSchema = BedHoldAttributesSchema.extend({
+const BedHoldCreateSchema = BedHoldAttributesSchema.partial().extend({
   facilityId: z.string().uuid(),
   serviceTypeId: z.string().uuid(),
   clientId: z.string().uuid().nullable().optional(),
