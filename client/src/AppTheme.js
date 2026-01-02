@@ -45,6 +45,24 @@ const AppTheme = createTheme({
     xl: '32px',
   },
 
+  headings: {
+    fontWeight: 'regular',
+    sizes: {
+      h2: {
+        fontSize: '32px',
+        lineHeight: '40px',
+      },
+      h3: {
+        fontSize: '24px',
+        lineHeight: '32px',
+      },
+      h4: {
+        fontSize: '20px',
+        lineHeight: '24px',
+      },
+    }
+  },
+
   components: {
     Badge: Badge.extend({
       defaultProps: {
@@ -56,6 +74,11 @@ const AppTheme = createTheme({
         size: 'lg',
         radius: 'xl', // 24px border radius
       },
+      styles: {
+        label: {
+          fontWeight: 'normal',
+        }
+      }
     }),
     Card: Card.extend({
       defaultProps: {
@@ -94,6 +117,12 @@ const AppTheme = createTheme({
         size: 'lg',
         radius: 'md'
       },
+      styles: {
+        label: {
+          fontWeight: '600',
+          lineHeight: '1.5555em',
+        }
+      }
     }),
   }
 });
