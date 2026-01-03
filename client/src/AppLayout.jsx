@@ -9,11 +9,13 @@ import Navbar from './Navbar';
 import Api from './Api';
 import AppRoutes from './AppRoutes';
 import { useAuthContext } from './AuthContext';
+import { useFacilityContext } from './FacilityContext';
 
 function AppLayout () {
   const [opened, { close, toggle }] = useDisclosure();
   const navigate = useNavigate();
   const { setUser } = useAuthContext();
+  const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
   async function logout (event) {
@@ -38,9 +40,10 @@ function AppLayout () {
       header={{ height: 60 }}
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
       padding='md'
+      bg={facility ? 'gray.0' : 'white'}
     >
       {!isHeaderHidden && (
-        <AppShell.Header>
+        <AppShell.Header bg={facility ? 'gray.0' : 'white'} withBorder={!facility}>
           <Header opened={opened} close={close} toggle={toggle} logout={logout} />
         </AppShell.Header>
       )}

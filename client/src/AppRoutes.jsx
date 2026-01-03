@@ -44,7 +44,7 @@ function AppRoutes () {
                   </Suspense>
                 }
               />
-              {!facility?.subdomain && <Route path='/*' element={<DIDORoutes />} />}
+              {!facility && <Route path='/*' element={<DIDORoutes />} />}
               {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
               <Route path='/*' element={<NotFound />} />
             </Routes>

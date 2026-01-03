@@ -1,4 +1,4 @@
-import { createTheme, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+import { createTheme, Burger, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -67,6 +67,17 @@ const AppTheme = createTheme({
     Badge: Badge.extend({
       defaultProps: {
         radius: 'xl', // 24px border radius
+      },
+    }),
+    Burger: Burger.extend({
+      defaultProps: {
+        size: 'sm',
+        lineSize: 2,
+        bg: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)',
+        bdrs: '50%',
+        px: '12px',
+        w: '44px',
+        h: '44px',
       },
     }),
     Button: Button.extend({

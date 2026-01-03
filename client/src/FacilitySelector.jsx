@@ -13,10 +13,10 @@ function FacilitySelector ({ children }) {
   });
 
   function onNoneClick () {
-    setFacility({});
+    setFacility(null);
   }
 
-  if (!facility) {
+  if (!!facility && !facility.subdomain) {
     return (
       <Container size='sm' py='xl'>
         <Stack align='center' gap='xl'>

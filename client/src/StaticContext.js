@@ -10,7 +10,7 @@ export const defaultValue = {
     VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
     VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
   },
-  facility: null,
+  facility: {},
 };
 
 export const staticContext = createContext(defaultValue);

@@ -301,9 +301,7 @@ function Holds () {
   }
 
   return (
-    <Container size='sm' py='md' px='md' style={{ backgroundColor: '#F8F9FA', minHeight: '100vh' }}>
-      <Title order={2} mb='md'>Active Bed Holds</Title>
-
+    <Container size='xs'>
       {/* Active holds breakdown by user */}
       {Object.keys(holdsByUser).length > 0 && (
         <Alert icon={<IconInfoCircle size={16} />} color='blue' mb='md'>
