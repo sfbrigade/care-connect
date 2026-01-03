@@ -63,7 +63,7 @@ function Login () {
       </Head>
       <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
         <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-          <Container size='xs'>
+          <Container>
             <Stack align='stretch'>
               <Stack align='center'>
                 {/* Logo placeholder */}

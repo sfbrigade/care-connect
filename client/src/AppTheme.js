@@ -109,7 +109,8 @@ const AppTheme = createTheme({
     }),
     Container: Container.extend({
       defaultProps: {
-        size: 'xl'
+        size: 'xs',
+        px: 'xl'
       }
     }),
     SegmentedControl: SegmentedControl.extend({

@@ -11,7 +11,7 @@ function Header ({ opened, close, toggle, logout }) {
   const { user } = useAuthContext();
 
   return (
-    <Container h='100%'>
+    <Container h='100%' size='xl'>
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
           <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName} ${user?.lastName}`.trim() : 'CareConnectSF'}</Title>

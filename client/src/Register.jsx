@@ -25,7 +25,7 @@ function Register () {
       <Head>
         <title>Create an account</title>
       </Head>
-      <Container size='xs'>
+      <Container>
         <Stack align='stretch'>
           <Stack align='center'>
             {/* Logo placeholder */}

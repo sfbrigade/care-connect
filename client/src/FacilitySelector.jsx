@@ -18,7 +18,7 @@ function FacilitySelector ({ children }) {
 
   if (!!facility && !facility.subdomain) {
     return (
-      <Container size='sm' py='xl'>
+      <Container py='xl'>
         <Stack align='center' gap='xl'>
           <Stack align='center' gap='md'>
             <Title order={1} size='2.5rem' ta='center'>CareConnectSF</Title>

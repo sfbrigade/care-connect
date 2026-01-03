@@ -301,7 +301,7 @@ function Holds () {
   }
 
   return (
-    <Container size='xs'>
+    <Container>
       {/* Active holds breakdown by user */}
       {Object.keys(holdsByUser).length > 0 && (
         <Alert icon={<IconInfoCircle size={16} />} color='blue' mb='md'>

@@ -470,7 +470,7 @@ function Home () {
       <Head>
         <title>Home</title>
       </Head>
-      <Container>
+      <Container size='xl'>
 
         {isLoading && (
           <Text>Loading facility data…</Text>

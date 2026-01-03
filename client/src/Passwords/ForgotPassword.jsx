@@ -33,7 +33,7 @@ function ForgotPassword () {
       <Head>
         <title>Forgot your password?</title>
       </Head>
-      <Container size='xs'>
+      <Container>
         {!success && (
           <>
             <Box mb='xl'>
