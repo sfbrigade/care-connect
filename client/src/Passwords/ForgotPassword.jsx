@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import IconButtonLink from '@/components/IconButtonLink';
 
 function ForgotPassword () {
   const [success, setSuccess] = useState(false);
@@ -36,9 +37,7 @@ function ForgotPassword () {
         {!success && (
           <>
             <Box mb='xl'>
-              <Button color='gray.3' c='black' w={44} p={0} h={44} component={Link} to='/login'>
-                <IconArrowLeft size={20} />
-              </Button>
+              <IconButtonLink icon={IconArrowLeft} to='/login' />
             </Box>
             <Title order={2} mb='md'>Forgot your password?</Title>
             <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
