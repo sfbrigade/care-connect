@@ -1,6 +1,7 @@
 import { Alert, Card, Text, Title, Group, Button, Stack } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { pluralize, singularize } from 'inflection';
+import { DateTime } from 'luxon';
 
 /**
  * LESCFacility component for displaying LESC facility-level information
@@ -33,10 +34,12 @@ function LESCFacility ({
           <Text size='sm'>{facilityName} <Text span c='gray.5'>•</Text> {address}</Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
-          {!hasArrived && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
+          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
           {hasArrived && !hasLeft && <Button px='sm' color='indigo.0' c='black' onClick={onLeftClick}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {singularize(bedType)}</Button>
         </Group>
+        {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromJSDate(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
+        {hasLeft && <Text align='center' size='md' c='gray.5'>Left at {DateTime.fromJSDate(leftAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
       </Stack>
     </Card>
   );

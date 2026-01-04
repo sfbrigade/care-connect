@@ -66,3 +66,18 @@ export const Closed = {
     isClosed: true,
   },
 };
+
+export const Arrived = {
+  args: {
+    ...Default.args,
+    arrivedAt: new Date(),
+  }
+};
+
+export const Left = {
+  args: {
+    ...Default.args,
+    arrivedAt: new Date(),
+    leftAt: new Date(),
+  }
+};
