@@ -25,7 +25,8 @@ ADD COLUMN     "type" "public"."FacilityType" NOT NULL DEFAULT 'DIDO';
 
 -- AlterTable
 ALTER TABLE "public"."FacilityService" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE "public"."FacilityService" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- DropTable
 DROP TABLE "public"."FacilityAmenity";
