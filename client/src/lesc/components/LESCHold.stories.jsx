@@ -2,7 +2,7 @@ import { fn } from 'storybook/test';
 import LESCHold from './LESCHold';
 
 export default {
-  title: 'LESC/Hold',
+  title: 'LESC/LESCHold',
   parameters: {
     layout: 'fullscreen',
   },
