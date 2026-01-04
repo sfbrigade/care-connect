@@ -1,4 +1,6 @@
-import { createTheme, Burger, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+import { createTheme, Alert, Burger, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+
+import buttonClasses from './components/Button.module.css';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -64,6 +66,18 @@ const AppTheme = createTheme({
   },
 
   components: {
+    Alert: Alert.extend({
+      styles: {
+        icon: {
+          position: 'relative',
+          top: '2px',
+        },
+        title: {
+          fontSize: '16px',
+          fontWeight: 'normal',
+        },
+      },
+    }),
     Badge: Badge.extend({
       defaultProps: {
         radius: 'xl', // 24px border radius
@@ -85,11 +99,7 @@ const AppTheme = createTheme({
         size: 'lg',
         radius: 'xl', // 24px border radius
       },
-      styles: {
-        label: {
-          fontWeight: 'normal',
-        }
-      }
+      classNames: buttonClasses
     }),
     Card: Card.extend({
       defaultProps: {

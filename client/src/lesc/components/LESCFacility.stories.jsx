@@ -3,6 +3,13 @@ import LESCFacility from './LESCFacility';
 export default {
   title: 'LESC/LESCFacility',
   component: LESCFacility,
+  decorators: [
+    (Story) => (
+      <div style={{ width: '320px' }}>
+        <Story />
+      </div>
+    ),
+  ],
   parameters: {
     layout: 'centered',
   },
@@ -20,21 +27,13 @@ export default {
       control: 'number',
       description: 'Number of available beds',
     },
-    intakeHours: {
+    bedType: {
       control: 'text',
-      description: 'Intake hours of the facility',
+      description: 'Type of bed',
     },
-    lastUpdated: {
-      control: 'text',
-      description: 'Timestamp of last update (set to false to hide)',
-    },
-    onCurrentHoldsClick: {
-      action: 'onCurrentHoldsClick',
-      description: 'Callback for when the "Current holds" chip is clicked',
-    },
-    onCallClick: {
-      action: 'onCallClick',
-      description: 'Callback for when the "Call" button is clicked',
+    onArrivedClick: {
+      action: 'onArrivedClick',
+      description: 'Callback for when the "I\'ve arrived" button is clicked',
     },
     onHoldClick: {
       action: 'onHoldClick',
@@ -45,20 +44,25 @@ export default {
 
 export const Default = {
   args: {
-    facilityName: 'Law Enforcement Sobering Center',
-    address: '123 Main St, San Francisco',
+    facilityName: 'RESET',
+    address: '444 6th St',
     bedCount: 12,
-    intakeHours: '24/7',
-    lastUpdated: '10:42 AM',
-    onCurrentHoldsClick: () => console.log('Current holds clicked'),
-    onCallClick: () => console.log('Call clicked'),
+    bedType: 'chair',
+    onArrivedClick: () => console.log('I\'ve arrived clicked'),
     onHoldClick: () => console.log('Hold a Bed clicked'),
   },
 };
 
-export const NoLastUpdated = {
+export const NoHoldsAvailable = {
   args: {
     ...Default.args,
-    lastUpdated: false,
+    bedCount: 0,
+  },
+};
+
+export const Closed = {
+  args: {
+    ...Default.args,
+    isClosed: true,
   },
 };
