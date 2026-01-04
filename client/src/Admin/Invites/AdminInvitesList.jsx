@@ -80,7 +80,7 @@ function AdminInvitesList () {
       <Head>
         <title>Manage Invites</title>
       </Head>
-      <Container>
+      <Container size='xl'>
         <Title mb='md'>Manage Invites</Title>
         <Group mb='lg'>
           <Button component={Link} to='new'>

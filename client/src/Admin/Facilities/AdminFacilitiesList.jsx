@@ -67,7 +67,7 @@ function AdminFacilitiesList () {
   }
 
   return (
-    <Container>
+    <Container size='xl'>
       <Group justify='space-between' mb='md'>
         <Title order={2}>Facilities</Title>
         <Button leftSection={<IconPlus />} onClick={() => navigate('/admin/facilities/new')}>
