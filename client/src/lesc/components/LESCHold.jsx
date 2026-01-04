@@ -1,5 +1,6 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
-import { DateTime } from 'luxon';
+
+import { calculateAge, formatTimeRemaining } from '@/utils/dateTime';
 
 /**
  * LESCHold component for displaying individual bed hold cards
@@ -23,7 +24,7 @@ function LESCHold ({
 
   let patientAge;
   if (patientDob) {
-    patientAge = Math.floor(DateTime.now().diff(DateTime.fromISO(patientDob), 'years').years);
+    patientAge = calculateAge(patientDob);
   }
   const patientDetails = [];
   if (patientAge) {
@@ -48,7 +49,7 @@ function LESCHold ({
           </Box>
         </Stack>
         <Group justify='space-between'>
-          <Title order={3}>{DateTime.fromISO(hold?.expiresAt).diff(DateTime.now(), ['hours', 'minutes']).toFormat('h:mm')}</Title>
+          <Title order={3}>{formatTimeRemaining(hold?.expiresAt) ?? ''}</Title>
           <Button variant='secondary' onClick={onViewDetails}>View Details</Button>
         </Group>
       </Stack>
