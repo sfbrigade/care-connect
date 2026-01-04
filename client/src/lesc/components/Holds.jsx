@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Box, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { Box, Button, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { IconAlertCircle } from '@tabler/icons-react';
+import { DateTime } from 'luxon';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
-import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
-import { formatTime, calculateAge } from '@/utils/dateTime';
+import { calculateAge } from '@/utils/dateTime';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 import { useFacilityContext } from '@/FacilityContext';
@@ -325,12 +325,6 @@ function Holds () {
             facilityName={facilityInfo.name}
             address={facilityInfo.address}
             bedCount={facilityInfo.bedCount}
-            intakeHours='24/7'
-            lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
-            onCallClick={() => {
-              // TODO: Implement call functionality
-              console.log('Call facility:', facilityInfo.name);
-            }}
             onHoldClick={() => handleCreateHoldDirectly(facility.id)}
           />
         )}
@@ -340,23 +334,6 @@ function Holds () {
               <Title order={4}>You don't have any active holds</Title>
               <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
             </Box>
-          )}
-          {/* Extend All button */}
-          {holds && holds.length > 0 && (
-            <div style={{ width: '100%', marginBottom: '16px' }}>
-              <Chip
-                onClick={handleExtendAll}
-                disabled={extendAllMutation.isPending}
-                style={{
-                  width: '100%',
-                  display: 'block',
-                  justifyContent: 'center',
-                  backgroundColor: '#868E961A',
-                }}
-              >
-                Extend All Holds by 30 Minutes
-              </Chip>
-            </div>
           )}
           {holds?.map((hold) => {
             // Calculate age from dateOfBirth if available
@@ -382,6 +359,19 @@ function Holds () {
             );
           })}
         </Stack>
+        {holds && holds.length > 0 && (
+          <Button
+            variant='secondary'
+            onClick={handleExtendAll}
+            disabled={extendAllMutation.isPending}
+            fullWidth
+          >
+            Extend all holds
+          </Button>
+        )}
+        <Text size='xs' c='gray.5' align='center'>
+          Last updated: {facilityInfo?.updatedAt ? DateTime.fromISO(facilityInfo.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+        </Text>
       </Stack>
     </Container>
   );
