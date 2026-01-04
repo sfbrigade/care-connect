@@ -4,6 +4,7 @@ import { Alert, Box, Button, Container, Loader, SegmentedControl, Stack, Text, T
 import { useNavigate } from 'react-router';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
+import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
@@ -288,101 +289,111 @@ function Holds () {
   }
 
   return (
-    <Container>
-      <CancelHoldModal
-        opened={cancelModalOpened}
-        onClose={() => {
-          closeCancelModal();
-        }}
-        onConfirm={handleConfirmCancel}
-        holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
-        holdName={
-          selectedHold?.client
-            ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
-            : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
-        }
-        loading={cancelMutation.isPending}
-      />
-
-      <HoldQRCode
-        holdId={selectedHold?.id}
-        opened={qrModalOpened}
-        onClose={() => {
-          const holdIdToCancel = selectedHold?.id;
-          if (holdIdToCancel) {
-            console.log('[Transfer Feedback] QR modal closed, stopping polling for:', holdIdToCancel);
-            // Cancel any ongoing polling queries for this hold
-            queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+    <>
+      <Head>
+        <title>Holds</title>
+      </Head>
+      <Container>
+        <CancelHoldModal
+          opened={cancelModalOpened}
+          onClose={() => {
+            closeCancelModal();
+          }}
+          onConfirm={handleConfirmCancel}
+          holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
+          holdName={
+            selectedHold?.client
+              ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
+              : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
           }
-          handleCloseQRModal();
-        }}
-        onDone={handleQRDone}
-      />
-
-      <Stack gap='xl'>
-        {facilityInfo && (
-          <LESCFacility
-            facilityName={facilityInfo.name}
-            address={facilityInfo.address}
-            bedCount={facilityInfo.bedCount}
-            onHoldClick={() => handleCreateHoldDirectly(facility.id)}
-          />
-        )}
-        <SegmentedControl
-          fullWidth
-          value='holds'
-          onChange={(value) => navigate('/history')}
-          data={[
-            { label: 'My holds', value: 'holds' },
-            { label: 'History', value: 'history' },
-          ]}
+          loading={cancelMutation.isPending}
         />
-        <Stack gap='md'>
-          {(!holds || holds.length === 0) && (
-            <Box align='center'>
-              <Title order={4}>You don't have any active holds</Title>
-              <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
-            </Box>
-          )}
-          {holds?.map((hold) => {
-            // Calculate age from dateOfBirth if available
-            const age = calculateAge(hold.client?.dateOfBirth);
 
-            return (
-              <LESCHold
-                key={hold.id}
-                hold={hold}
-                patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                patientDob={hold.client?.dateOfBirth}
-                patientAge={age}
-                patientSex={hold.client?.sex}
-                patientRace={hold.client?.race}
-                onTransfer={handleTransfer}
-                onExtend={handleExtend}
-                onCancel={handleCancel}
-                onViewDetails={() => {
-                  navigate(`/intake/${hold.id}`);
-                }}
-              />
-            );
-          })}
-        </Stack>
-        {holds && holds.length > 0 && (
-          <Button
-            variant='secondary'
-            onClick={handleExtendAll}
-            disabled={extendAllMutation.isPending}
+        <HoldQRCode
+          holdId={selectedHold?.id}
+          opened={qrModalOpened}
+          onClose={() => {
+            const holdIdToCancel = selectedHold?.id;
+            if (holdIdToCancel) {
+              console.log('[Transfer Feedback] QR modal closed, stopping polling for:', holdIdToCancel);
+              // Cancel any ongoing polling queries for this hold
+              queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+            }
+            handleCloseQRModal();
+          }}
+          onDone={handleQRDone}
+        />
+
+        <Stack gap='xl'>
+          {facilityInfo && (
+            <LESCFacility
+              facilityName={facilityInfo.name}
+              address={facilityInfo.address}
+              bedCount={facilityInfo.bedCount}
+              onHoldClick={() => handleCreateHoldDirectly(facility.id)}
+            />
+          )}
+          <SegmentedControl
             fullWidth
-          >
-            Extend all holds
-          </Button>
-        )}
-        <Text size='xs' c='gray.5' align='center'>
-          Last updated: {facilityInfo?.updatedAt ? DateTime.fromISO(facilityInfo.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
-        </Text>
-      </Stack>
-    </Container>
+            value='holds'
+            onChange={(value) => navigate('/history')}
+            data={[
+              { label: 'My holds', value: 'holds' },
+              { label: 'History', value: 'history' },
+            ]}
+          />
+          {(!holds || holds.length === 0) && (
+            <>
+              <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
+              <Box align='center'>
+                <Title order={4}>You don't have any active holds</Title>
+                <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
+              </Box>
+            </>
+          )}
+          {holds && holds.length > 0 && (
+            <>
+              <Stack gap='md'>
+                {holds?.map((hold) => {
+                  // Calculate age from dateOfBirth if available
+                  const age = calculateAge(hold.client?.dateOfBirth);
+
+                  return (
+                    <LESCHold
+                      key={hold.id}
+                      hold={hold}
+                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                      patientDob={hold.client?.dateOfBirth}
+                      patientAge={age}
+                      patientSex={hold.client?.sex}
+                      patientRace={hold.client?.race}
+                      onTransfer={handleTransfer}
+                      onExtend={handleExtend}
+                      onCancel={handleCancel}
+                      onViewDetails={() => {
+                        navigate(`/intake/${hold.id}`);
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+              <Button
+                variant='secondary'
+                onClick={handleExtendAll}
+                disabled={extendAllMutation.isPending}
+                fullWidth
+              >
+                Extend all holds
+              </Button>
+            </>
+          )}
+          <Text size='xs' c='gray.5' align='center'>
+            Last updated: {facilityInfo?.updatedAt ? DateTime.fromISO(facilityInfo.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+          </Text>
+        </Stack>
+      </Container>
+    </>
   );
 }
 
