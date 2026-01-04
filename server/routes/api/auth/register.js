@@ -58,7 +58,13 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.GONE).send(null);
         }
       }
-      let data = { firstName, lastName, email };
+      let data = invite
+        ? {
+            firstName: invite.firstName,
+            lastName: invite.lastName,
+            email: invite.email,
+          }
+        : { firstName, lastName, email };
       const user = new User(data);
       // Hash the password
       await user.setPassword(password);
@@ -75,6 +81,7 @@ export default async function (fastify, opts) {
           });
         }
       });
+      request.session.set('userId', data.id);
       return reply.code(StatusCodes.CREATED).send(new User(data));
     });
 }

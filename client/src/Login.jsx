@@ -99,14 +99,14 @@ function Login () {
                 {...form.getInputProps('email')}
                 label='Email'
                 placeholder='youremail@example.com'
-                leftSection={<IconMail size={20} color='#868e96' />}
+                leftSection={<IconMail size={20} color='var(--mantine-color-dark-1)' />}
               />
               <PasswordInput
                 key={form.key('password')}
                 {...form.getInputProps('password')}
                 label='Password'
                 placeholder='Enter password'
-                leftSection={<IconLock size={20} color='#868e96' />}
+                leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
               />
               <Stack align='center'>
                 {/* Submit Button */}
