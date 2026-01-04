@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { Alert, Box, Button, Container, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { DateTime } from 'luxon';
@@ -328,6 +328,15 @@ function Holds () {
             onHoldClick={() => handleCreateHoldDirectly(facility.id)}
           />
         )}
+        <SegmentedControl
+          fullWidth
+          value='holds'
+          onChange={(value) => navigate('/history')}
+          data={[
+            { label: 'My holds', value: 'holds' },
+            { label: 'History', value: 'history' },
+          ]}
+        />
         <Stack gap='md'>
           {(!holds || holds.length === 0) && (
             <Box align='center'>
