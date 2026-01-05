@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import prisma from '#prisma/client.js';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
@@ -25,7 +25,6 @@ const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openroute
 const RATE_LIMIT_DELAY_MS = Number.parseInt(process.env.GEOCODE_RATE_LIMIT_MS ?? '1100', 10);
 const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '..', 'static-data', 'street_team_coverage.geojson');
 
-const prisma = new PrismaClient();
 const nstDistrictFeatures = loadNSTDistrictFeatures();
 
 async function main () {

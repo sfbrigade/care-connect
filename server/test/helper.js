@@ -20,7 +20,8 @@ import {
   Parser,
   Resolver,
 } from '@getbigger-io/prisma-fixtures-cli';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma/generated/prisma/client.js';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 import s3 from '#lib/s3.js';
 import { configureMailer } from '#lib/mailer.js';
@@ -64,7 +65,9 @@ async function buildPostgres (t) {
     cwd: path.join(__dirname, '..'),
   });
   const prisma = new PrismaClient({
-    datasourceUrl: TEMPLATE_DATABASE_URL,
+    adapter: new PrismaPg({ 
+      connectionString: TEMPLATE_DATABASE_URL
+    })
   });
   // load fixtures
   const loader = new Loader();
@@ -77,7 +80,11 @@ async function buildPostgres (t) {
   }
   // configure test database url
   process.env.DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/${startedDbContainer.getDatabase()}`;
-  t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
+  t.prisma = new PrismaClient({ 
+    adapter: new PrismaPg({ 
+      connectionString: process.env.DATABASE_URL 
+    }) 
+  });
 
   // set up a new storage container
   let storageContainer = new GenericContainer(compose.services.storage.image)

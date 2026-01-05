@@ -5,7 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output = "./generated/prisma-ts"
+  importFileExtension = "js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
@@ -18,7 +20,6 @@ generator erd {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
   extensions = [citext]
 }
 
