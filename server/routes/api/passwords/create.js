@@ -35,7 +35,7 @@ export default async function (fastify, opts) {
           ).toISOString(),
         },
       });
-      await user.sendPasswordResetEmail();
+      await user.sendPasswordResetEmail(request.facility);
       return reply.send();
     });
 }

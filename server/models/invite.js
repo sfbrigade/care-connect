@@ -54,9 +54,10 @@ class Invite extends Base {
       .replace(/ {2,}/g, ' ');
   }
 
-  async sendInviteEmail () {
+  async sendInviteEmail (facility) {
     const { firstName, message } = this;
-    const url = `${process.env.BASE_URL}/invites/${this.id}`;
+    const url = facility?.baseURL ?? new URL(process.env.BASE_URL);
+    url.pathname = `/invites/${this.id}`;
     return mailer.send({
       message: {
         to: this.fullNameAndEmail,
@@ -65,7 +66,7 @@ class Invite extends Base {
       locals: {
         firstName,
         message,
-        url,
+        url: url.toString(),
       },
     });
   }

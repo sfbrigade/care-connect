@@ -85,9 +85,10 @@ export class User extends Base {
     this.passwordResetToken = crypto.randomUUID();
   }
 
-  async sendPasswordResetEmail () {
+  async sendPasswordResetEmail (facility) {
     const { firstName } = this;
-    const url = `${process.env.BASE_URL}/passwords/reset/${this.passwordResetToken}`;
+    const url = facility?.baseURL ?? new URL(process.env.BASE_URL);
+    url.pathname = `/passwords/reset/${this.passwordResetToken}`;
     return mailer.send({
       message: {
         to: this.fullNameAndEmail,
@@ -95,7 +96,7 @@ export class User extends Base {
       template: 'password-reset',
       locals: {
         firstName,
-        url,
+        url: url.toString(),
       },
     });
   }
