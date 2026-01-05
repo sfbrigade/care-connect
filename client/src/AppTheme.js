@@ -1,4 +1,6 @@
-import { createTheme, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+import { createTheme, Alert, Burger, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+
+import buttonClasses from './components/Button.module.css';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -45,10 +47,51 @@ const AppTheme = createTheme({
     xl: '32px',
   },
 
+  headings: {
+    fontWeight: 'regular',
+    sizes: {
+      h2: {
+        fontSize: '32px',
+        lineHeight: '40px',
+      },
+      h3: {
+        fontSize: '24px',
+        lineHeight: '32px',
+      },
+      h4: {
+        fontSize: '20px',
+        lineHeight: '24px',
+      },
+    }
+  },
+
   components: {
+    Alert: Alert.extend({
+      styles: {
+        icon: {
+          position: 'relative',
+          top: '2px',
+        },
+        title: {
+          fontSize: '16px',
+          fontWeight: 'normal',
+        },
+      },
+    }),
     Badge: Badge.extend({
       defaultProps: {
         radius: 'xl', // 24px border radius
+      },
+    }),
+    Burger: Burger.extend({
+      defaultProps: {
+        size: 'sm',
+        lineSize: 2,
+        bg: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)',
+        bdrs: '50%',
+        px: '12px',
+        w: '44px',
+        h: '44px',
       },
     }),
     Button: Button.extend({
@@ -56,6 +99,7 @@ const AppTheme = createTheme({
         size: 'lg',
         radius: 'xl', // 24px border radius
       },
+      classNames: buttonClasses
     }),
     Card: Card.extend({
       defaultProps: {
@@ -75,7 +119,8 @@ const AppTheme = createTheme({
     }),
     Container: Container.extend({
       defaultProps: {
-        size: 'xl'
+        size: 'xs',
+        px: 'xl'
       }
     }),
     SegmentedControl: SegmentedControl.extend({
@@ -94,6 +139,12 @@ const AppTheme = createTheme({
         size: 'lg',
         radius: 'md'
       },
+      styles: {
+        label: {
+          fontWeight: '600',
+          lineHeight: '1.5555em',
+        }
+      }
     }),
   }
 });

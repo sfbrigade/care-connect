@@ -48,6 +48,12 @@ export class Facility extends Base {
   constructor (data) {
     super(Prisma.FacilityScalarFieldEnum, data);
   }
+
+  get baseURL () {
+    const url = new URL(process.env.BASE_URL);
+    url.hostname = `${this.subdomain}.${url.hostname}`;
+    return url;
+  }
 }
 
 export default Facility;

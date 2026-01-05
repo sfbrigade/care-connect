@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Box, Button, Container, Fieldset, Stack, TextInput, Title, SegmentedControl } from '@mantine/core';
+import { Alert, Button, Container, Fieldset, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -9,12 +9,14 @@ import { IconMail, IconLock } from '@tabler/icons-react';
 import Api from '@/Api';
 import PasswordInput from '@/components/PasswordInput';
 import { useAuthContext } from '@/AuthContext';
+import { useFacilityContext } from '@/FacilityContext';
 import { useStaticContext } from '@/StaticContext';
 import { StatusCodes } from 'http-status-codes';
 
 function Login () {
   const staticContext = useStaticContext();
   const authContext = useAuthContext();
+  const { facility } = useFacilityContext();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -57,25 +59,26 @@ function Login () {
   return (
     <>
       <Head>
-        <title>Log in</title>
+        <title>Login</title>
       </Head>
       <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
         <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
-          <Container size='xs'>
+          <Container>
             <Stack align='stretch'>
               <Stack align='center'>
                 {/* Logo placeholder */}
-                <Box
-                  style={{
-                    width: '134px',
-                    height: '134px',
-                    borderRadius: '50%',
-                    backgroundColor: '#f1f3f5',
-                  }}
-                />
+                <Stack
+                  justify='center'
+                  w='134px'
+                  h='134px'
+                  bdrs='50%'
+                  bg='gray.3'
+                >
+                  <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+                </Stack>
                 {/* Title */}
                 <Title order={3}>
-                  Log in
+                  Login
                 </Title>
               </Stack>
               {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
@@ -84,7 +87,7 @@ function Login () {
                   value='signin'
                   onChange={() => navigate('/register')}
                   data={[
-                    { label: 'Log in', value: 'signin' },
+                    { label: 'Login', value: 'signin' },
                     { label: 'Create an account', value: 'create' },
                   ]}
                 />
@@ -96,14 +99,14 @@ function Login () {
                 {...form.getInputProps('email')}
                 label='Email'
                 placeholder='youremail@example.com'
-                leftSection={<IconMail size={20} color='#868e96' />}
+                leftSection={<IconMail size={20} color='var(--mantine-color-dark-1)' />}
               />
               <PasswordInput
                 key={form.key('password')}
                 {...form.getInputProps('password')}
                 label='Password'
                 placeholder='Enter password'
-                leftSection={<IconLock size={20} color='#868e96' />}
+                leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
               />
               <Stack align='center'>
                 {/* Submit Button */}
@@ -112,12 +115,12 @@ function Login () {
                   loading={onSubmitMutation.isPending}
                   fullWidth
                 >
-                  Log in
+                  Login
                 </Button>
                 <Link
                   to='/passwords/forgot'
                 >
-                  Forgot password
+                  <Text size='lg'>Forgot password</Text>
                 </Link>
               </Stack>
             </Stack>

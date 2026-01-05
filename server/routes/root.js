@@ -66,7 +66,7 @@ export default async function (fastify, opts) {
             }
           });
           // Add location info to static context (null if no location found)
-          staticContext.context.facility = request.facility?.toJSON() ?? {};
+          staticContext.context.facility = request.facility?.toJSON() ?? null;
           const { head, html } = await render(request, reply, staticContext);
           if (head && html) {
             reply.header('Content-Type', 'text/html');

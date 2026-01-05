@@ -1,19 +1,20 @@
 import { Link, NavLink } from 'react-router';
-import { ActionIcon, Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
 import { IconMessages } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
+import IconButtonLink from '@/components/IconButtonLink';
 
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
   const { user } = useAuthContext();
 
   return (
-    <Container h='100%'>
+    <Container h='100%' size='xl'>
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
-          <Title size='xl'>{facility?.name || 'CareConnectSF'}</Title>
+          <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName} ${user?.lastName}`.trim() : 'CareConnectSF'}</Title>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
@@ -25,24 +26,14 @@ function Header ({ opened, close, toggle, logout }) {
                 <Anchor component={NavLink} to='/admin'>Admin</Anchor>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
               </Menu.Dropdown>
             </Menu>
           )}
           {user && (
             <>
-              {facility?.type === 'LESC' && (
-                <>
-                  <Anchor component={NavLink} to='/holds' onClick={close}>
-                    Holds
-                  </Anchor>
-                  <Anchor component={NavLink} to='/history' onClick={close}>
-                    History
-                  </Anchor>
-                </>
-              )}
               <Group gap='xs'>
                 <span>
                   Hello,{' '}
@@ -62,26 +53,10 @@ function Header ({ opened, close, toggle, logout }) {
               Log in
             </Anchor>
           )}
-          <Link to='/feedback'>
-            <ActionIcon
-              variant='subtle'
-              size='lg'
-              aria-label='Feedback'
-            >
-              <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
-            </ActionIcon>
-          </Link>
+          <IconButtonLink icon={IconMessages} to='/feedback' />
         </Group>
         <Group hiddenFrom='sm' size='sm'>
-          <Link to='/feedback'>
-            <ActionIcon
-              variant='subtle'
-              size='lg'
-              aria-label='Feedback'
-            >
-              <IconMessages size={22} stroke={1.5} color='var(--mantine-color-gray-7)' />
-            </ActionIcon>
-          </Link>
+          <IconButtonLink icon={IconMessages} to='/feedback' />
           {user && <Burger opened={opened} onClick={toggle} />}
         </Group>
       </Group>

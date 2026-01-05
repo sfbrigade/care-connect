@@ -78,7 +78,7 @@ TRANSFERRED TRANSFERRED
   "Invite" {
     String id "🗝️"
     String firstName 
-    String lastName "❓"
+    String lastName 
     String email 
     String message "❓"
     DateTime updatedAt 

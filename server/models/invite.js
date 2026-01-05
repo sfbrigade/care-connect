@@ -12,8 +12,7 @@ const InviteAttributesSchema = z.object({
   lastName: z
     .string()
     .min(2, 'Last name must be between 2 and 30 characters long')
-    .max(30, 'Last name must be between 2 and 30 characters long')
-    .optional(),
+    .max(30, 'Last name must be between 2 and 30 characters long'),
   email: z.string().email('Please enter a valid email address.'),
   message: z.string().optional(),
 });
@@ -55,9 +54,10 @@ class Invite extends Base {
       .replace(/ {2,}/g, ' ');
   }
 
-  async sendInviteEmail () {
+  async sendInviteEmail (facility) {
     const { firstName, message } = this;
-    const url = `${process.env.BASE_URL}/invites/${this.id}`;
+    const url = facility?.baseURL ?? new URL(process.env.BASE_URL);
+    url.pathname = `/invites/${this.id}`;
     return mailer.send({
       message: {
         to: this.fullNameAndEmail,
@@ -66,7 +66,7 @@ class Invite extends Base {
       locals: {
         firstName,
         message,
-        url,
+        url: url.toString(),
       },
     });
   }

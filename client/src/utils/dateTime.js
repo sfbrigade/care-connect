@@ -1,24 +1,31 @@
+import { DateTime } from 'luxon';
+
 /**
  * Date and time formatting utilities
  * Shared across LESC components for consistent time display
  */
 
 /**
+ * Convert date to DateTime object
+ * @param {string|Date} date - Date to convert
+ * @returns {DateTime} - DateTime object
+ */
+function dateTime (date) {
+  return typeof date === 'string' ? DateTime.fromISO(date) : DateTime.fromJSDate(date);
+}
+
+/**
  * Format time remaining until expiration
  * @param {string|Date} expiresAt - Expiration date/time
- * @returns {string} - Formatted string like "45 mins", "2h 30m", or "Expired"
+ * @returns {string} - Formatted string like "0:45", "2:30", or "Expired"
  */
 export function formatTimeRemaining (expiresAt) {
-  const expires = new Date(expiresAt);
-  const diffMs = expires.getTime() - Date.now();
-  const diffMins = Math.floor(diffMs / 60000);
+  const expires = dateTime(expiresAt);
+  const now = DateTime.now();
 
-  if (diffMins < 0) return 'Expired';
-  if (diffMins < 60) return `${diffMins} mins`;
+  if (expires < now) return 'Expired';
 
-  const hours = Math.floor(diffMins / 60);
-  const mins = diffMins % 60;
-  return `${hours}h ${mins}m`;
+  return expires.diff(now, ['hours', 'minutes']).toFormat('h:mm');
 }
 
 /**
@@ -27,13 +34,7 @@ export function formatTimeRemaining (expiresAt) {
  * @returns {string} - Formatted string like "Until 3:45 PM"
  */
 export function formatTimeUntil (expiresAt) {
-  const expires = new Date(expiresAt);
-  const displayHours = expires.getHours();
-  const displayMinutes = expires.getMinutes();
-  const ampm = displayHours >= 12 ? 'PM' : 'AM';
-  const displayH = displayHours % 12 || 12;
-  const displayM = displayMinutes.toString().padStart(2, '0');
-  return `Until ${displayH}:${displayM} ${ampm}`;
+  return `Until ${formatTime(expiresAt)}`;
 }
 
 /**
@@ -42,13 +43,7 @@ export function formatTimeUntil (expiresAt) {
  * @returns {string} - Formatted string like "3:45 PM"
  */
 export function formatTime (date) {
-  const d = new Date(date);
-  const hours = d.getHours();
-  const minutes = d.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayH = hours % 12 || 12;
-  const displayM = minutes.toString().padStart(2, '0');
-  return `${displayH}:${displayM} ${ampm}`;
+  return dateTime(date).toLocaleString(DateTime.TIME_SIMPLE);
 }
 
 /**
@@ -57,31 +52,7 @@ export function formatTime (date) {
  * @returns {string} - Formatted string like "2 hours ago", "Yesterday", or "Jan 15"
  */
 export function formatCreatedAt (createdAt) {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffMs = now.getTime() - created.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) {
-    return 'Just now';
-  } else if (diffMins < 60) {
-    return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  } else if (diffDays === 1) {
-    return 'Yesterday';
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
-  } else {
-    // Format as date
-    const month = created.toLocaleString('default', { month: 'short' });
-    const day = created.getDate();
-    const year = created.getFullYear();
-    const isCurrentYear = year === now.getFullYear();
-    return isCurrentYear ? `${month} ${day}` : `${month} ${day}, ${year}`;
-  }
+  return dateTime(createdAt).toRelative();
 }
 
 /**
@@ -91,13 +62,7 @@ export function formatCreatedAt (createdAt) {
  */
 export function calculateAge (dateOfBirth) {
   if (!dateOfBirth) return null;
-  try {
-    const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) return null;
-    return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-  } catch {
-    return null;
-  }
+  return -Math.floor(dateTime(dateOfBirth).diffNow('years').years);
 }
 
 /**
@@ -107,16 +72,7 @@ export function calculateAge (dateOfBirth) {
  */
 export function formatDob (dateOfBirth) {
   if (!dateOfBirth) return null;
-  try {
-    const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) return null;
-    const month = String(dob.getMonth() + 1).padStart(2, '0');
-    const day = String(dob.getDate()).padStart(2, '0');
-    const year = dob.getFullYear();
-    return `${month}/${day}/${year}`;
-  } catch {
-    return null;
-  }
+  return dateTime(dateOfBirth).toLocaleString(DateTime.DATE_SHORT);
 }
 
 /**
@@ -126,19 +82,5 @@ export function formatDob (dateOfBirth) {
  */
 export function formatDateTime (date) {
   if (!date) return 'TBD';
-  try {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return 'TBD';
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    const hours = d.getHours();
-    const minutes = d.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayH = hours % 12 || 12;
-    const displayM = minutes.toString().padStart(2, '0');
-    return `${month}/${day}/${year} ${displayH}:${displayM} ${ampm}`;
-  } catch {
-    return 'TBD';
-  }
+  return dateTime(date).toLocaleString(DateTime.DATETIME_SHORT);
 }

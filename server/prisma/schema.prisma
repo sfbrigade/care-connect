@@ -100,7 +100,7 @@ model User {
 model Invite {
   id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName               String
-  lastName                String?
+  lastName                String
   email                   String    @db.Citext
   message                 String?
   updatedAt               DateTime  @updatedAt

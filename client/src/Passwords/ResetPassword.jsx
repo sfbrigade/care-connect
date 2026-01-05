@@ -58,7 +58,7 @@ function ResetPassword () {
       <Head>
         <title>Reset password</title>
       </Head>
-      <Container size='xs'>
+      <Container>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
             <Stack>

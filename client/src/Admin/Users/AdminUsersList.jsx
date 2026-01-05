@@ -27,7 +27,7 @@ function AdminUsersList () {
       <Head>
         <title>Manage Users</title>
       </Head>
-      <Container>
+      <Container size='xl'>
         <Title mb='md'>Manage Users</Title>
         <Group mb='lg'>
           <Button component={Link} to='/admin/invites/new'>

@@ -1,49 +1,102 @@
-import { useNavigate, useParams } from 'react-router';
-import { Box, Container, Stack, Title } from '@mantine/core';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useNavigate, useParams, Link } from 'react-router';
+import { Button, Container, Loader, Stack, Text, Title } from '@mantine/core';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
+import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
+import { useFacilityContext } from '@/FacilityContext';
 import RegistrationForm from '../RegistrationForm';
 
 function Invite () {
-  const { setUser: setAuthUser } = useAuthContext();
-  const navigate = useNavigate();
+  const { user, setUser } = useAuthContext();
+  const { facility } = useFacilityContext();
   const { inviteId } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isSuccess, setSuccess] = useState(false);
 
-  const { data: invite } = useQuery({
+  const { data: invite, isLoading, error } = useQuery({
     queryKey: ['invite', inviteId],
     queryFn: async () => {
       const response = await Api.invites.get(inviteId);
-      setAuthUser(null);
+      setUser(null);
       return response.data;
     },
+    retry: false,
   });
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.auth.register({ ...values, inviteId }),
-    onSuccess: (response) => {
-      setAuthUser(response.data);
-      navigate('/account', { state: { flash: 'Your account has been created!' } });
+    onSuccess: async (response) => {
+      setUser(response.data);
+      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      setSuccess(true);
+      setTimeout(() => navigate('/'), 3000);
     },
     onError: () => window.scrollTo(0, 0),
   });
 
+  console.log(error);
+
   return (
     <>
       <Head>
-        <title>You&apos;re Invited</title>
+        <title>Create an account</title>
       </Head>
       <Container>
-        <Title mb='md'>You&apos;re Invited</Title>
-        <Stack>
-          {invite?.acceptedAt && <Box>This invite has already been accepted.</Box>}
-          {invite?.revokedAt && <Box>This invite is no longer available.</Box>}
-          {invite && invite.acceptedAt === null && invite.revokedAt === null && (
-            <RegistrationForm onSubmitMutation={onSubmitMutation} />
-          )}
-        </Stack>
+        {!isSuccess && (
+          <Stack>
+            <Stack align='center'>
+              {/* Logo placeholder */}
+              <Stack
+                justify='center'
+                w='134px'
+                h='134px'
+                bdrs='50%'
+                bg='gray.3'
+              >
+                <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+              </Stack>
+              {/* Title */}
+              <Title order={3}>
+                Create an account
+              </Title>
+              {isLoading && <Loader />}
+            </Stack>
+            {error?.status === StatusCodes.GONE && <Text align='center'>This invite is no longer available.</Text>}
+            {!!error && error?.status !== StatusCodes.GONE && <Text align='center'>An error occurred while loading this invite.</Text>}
+            {invite && invite.acceptedAt === null && invite.revokedAt === null && (
+              <RegistrationForm invite={invite} onSubmitMutation={onSubmitMutation} />
+            )}
+          </Stack>
+        )}
+        {isSuccess && (
+          <Stack justify='center' h='100vh'>
+            <Stack align='center'>
+              {/* Logo placeholder */}
+              <Stack
+                justify='center'
+                w='134px'
+                h='134px'
+                bdrs='50%'
+                bg='gray.3'
+              >
+                <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+              </Stack>
+              {/* Title */}
+              <Title order={3}>
+                Welcome to {facility?.name}, {user?.firstName}.
+              </Title>
+              <Text align='center' c='dimmed'>
+                You will be automatically logged into your account in a few seconds. If not, press Continue.
+              </Text>
+              <Button fullWidth component={Link} to='/'>Continue</Button>
+            </Stack>
+          </Stack>
+        )}
       </Container>
     </>
   );

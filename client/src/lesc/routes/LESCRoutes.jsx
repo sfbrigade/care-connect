@@ -4,7 +4,6 @@ import Holds from '../components/Holds';
 import IntakeForm from '../components/IntakeForm';
 import CheckIn from '../components/CheckIn';
 import HoldsHistory from '../components/HoldsHistory';
-import Unavailable from '../components/Unavailable';
 import ClientView from '../components/ClientView';
 import IncidentView from '../components/IncidentView';
 
@@ -17,7 +16,6 @@ function LESCRoutes () {
       <Route path='checkin/:holdId' element={<CheckIn />} />
       <Route path='checkin' element={<CheckIn />} />
       <Route path='history' element={<HoldsHistory />} />
-      <Route path='unavailable' element={<Unavailable />} />
       <Route path='client/:clientId' element={<ClientView />} />
       <Route path='client' element={<ClientView />} />
       <Route path='incident/:incidentId' element={<IncidentView />} />

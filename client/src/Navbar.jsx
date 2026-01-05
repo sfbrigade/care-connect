@@ -18,11 +18,17 @@ function Navbar ({ close, logout }) {
         <>
           {facility?.type === 'LESC' && (
             <>
-              <MantineNavLink component={NavLink} to='/holds' onClick={close} label='Holds' />
               <MantineNavLink component={NavLink} to='/checkin' onClick={close} label='Check-in' />
               <MantineNavLink component={NavLink} to='/client' onClick={close} label='Clients' />
               <MantineNavLink component={NavLink} to='/incident' onClick={close} label='Incidents' />
+            </>
+          )}
+          {user?.isAdmin && (
+            <>
+              <Divider />
               <MantineNavLink component={NavLink} to='/admin/facilities' onClick={close} label='Facilities' />
+              <MantineNavLink component={NavLink} to='/admin/invites' onClick={close} label='Invites' />
+              <MantineNavLink component={NavLink} to='/admin/users' onClick={close} label='Users' />
             </>
           )}
           <Divider />

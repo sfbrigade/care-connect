@@ -22,7 +22,7 @@ export default async function (fastify, opts) {
         data: { firstName, lastName, email, message, createdById: request.user.id },
       });
       const invite = new Invite(data);
-      await invite.sendInviteEmail();
+      await invite.sendInviteEmail(request.facility);
       return reply.code(StatusCodes.CREATED).send(data);
     });
 }

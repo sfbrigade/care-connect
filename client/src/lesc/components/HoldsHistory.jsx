@@ -1,7 +1,6 @@
-import { Container, Stack, Text, Group } from '@mantine/core';
+import { Chip, Container, Stack, Text, Group } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import Api from '@/Api';
-import Chip from '@/components/Chip';
 import Card from '@/components/Card';
 import { useState } from 'react';
 import { formatTimeRemaining, formatTimeUntil } from '@/utils/dateTime';
@@ -37,10 +36,10 @@ function HoldsHistory () {
     <Container>
       <Stack gap='md'>
         <Group gap='sm'>
-          <Chip active={filter === 'current'} onClick={() => setFilter('current')}>
+          <Chip checked={filter === 'current'} onClick={() => setFilter('current')}>
             Current holds
           </Chip>
-          <Chip active={filter === 'thisWeek'} onClick={() => setFilter('thisWeek')}>
+          <Chip checked={filter === 'thisWeek'} onClick={() => setFilter('thisWeek')}>
             This week
           </Chip>
         </Group>

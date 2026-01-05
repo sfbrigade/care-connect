@@ -18,6 +18,7 @@ function AdminInviteForm () {
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
+      lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
     },
   });

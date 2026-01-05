@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Box, Container, Title, Stack, Loader, Alert, Text } from '@mantine/core';
+import { Alert, Box, Button, Container, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { useNavigate } from 'react-router';
-import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react';
+import { IconAlertCircle } from '@tabler/icons-react';
+import { DateTime } from 'luxon';
+import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import LESCFacility from './LESCFacility';
 import LESCHold from './LESCHold';
-import Chip from '@/components/Chip';
 import { useToast } from '@/components/ToastContext';
-import { formatTime, calculateAge } from '@/utils/dateTime';
+import { calculateAge } from '@/utils/dateTime';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 import { useFacilityContext } from '@/FacilityContext';
@@ -268,19 +269,6 @@ function Holds () {
     extendAllMutation.mutate(holds.map(h => h.id));
   };
 
-  // Group ALL holds by creator and count them (for banner display)
-  const holdsByUser = useMemo(() => {
-    if (!holds) return {};
-    const grouped = {};
-    holds.forEach(hold => {
-      if (hold.createdBy) {
-        const userName = `${hold.createdBy.firstName} ${hold.createdBy.lastName}`.trim();
-        grouped[userName] = (grouped[userName] || 0) + 1;
-      }
-    });
-    return grouped;
-  }, [holds]);
-
   // Early returns MUST come after all hooks
   if (isLoading) {
     return (
@@ -301,123 +289,111 @@ function Holds () {
   }
 
   return (
-    <Container size='sm' py='md' px='md' style={{ backgroundColor: '#F8F9FA', minHeight: '100vh' }}>
-      <Title order={2} mb='md'>Active Bed Holds</Title>
-
-      {/* Active holds breakdown by user */}
-      {Object.keys(holdsByUser).length > 0 && (
-        <Alert icon={<IconInfoCircle size={16} />} color='blue' mb='md'>
-          <Text size='sm' fw={500} mb={4}>
-            Active holds
-          </Text>
-          <Stack gap={2}>
-            {Object.entries(holdsByUser)
-              .sort(([, a], [, b]) => b - a) // Sort by count descending
-              .map(([userName, count]) => (
-                <Text key={userName} size='sm'>
-                  {userName}: <strong>{count}</strong>
-                </Text>
-              ))}
-          </Stack>
-        </Alert>
-      )}
-
-      {/* Extend All button */}
-      {holds && holds.length > 0 && (
-        <div style={{ width: '100%', marginBottom: '16px' }}>
-          <Chip
-            onClick={handleExtendAll}
-            disabled={extendAllMutation.isPending}
-            style={{
-              width: '100%',
-              display: 'block',
-              justifyContent: 'center',
-              backgroundColor: '#868E961A',
-            }}
-          >
-            Extend All Holds by 30 Minutes
-          </Chip>
-        </div>
-      )}
-
-      <CancelHoldModal
-        opened={cancelModalOpened}
-        onClose={() => {
-          closeCancelModal();
-        }}
-        onConfirm={handleConfirmCancel}
-        holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
-        holdName={
-          selectedHold?.client
-            ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
-            : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
-        }
-        loading={cancelMutation.isPending}
-      />
-
-      <HoldQRCode
-        holdId={selectedHold?.id}
-        opened={qrModalOpened}
-        onClose={() => {
-          const holdIdToCancel = selectedHold?.id;
-          if (holdIdToCancel) {
-            console.log('[Transfer Feedback] QR modal closed, stopping polling for:', holdIdToCancel);
-            // Cancel any ongoing polling queries for this hold
-            queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+    <>
+      <Head>
+        <title>Holds</title>
+      </Head>
+      <Container>
+        <CancelHoldModal
+          opened={cancelModalOpened}
+          onClose={() => {
+            closeCancelModal();
+          }}
+          onConfirm={handleConfirmCancel}
+          holdIdentifier={selectedHold?.id ? selectedHold.id.slice(0, 8).toUpperCase() : '001'}
+          holdName={
+            selectedHold?.client
+              ? `${selectedHold.client.firstName} ${selectedHold.client.lastName || ''}`.trim()
+              : selectedHold?.notes || selectedHold?.facilityName || 'this hold'
           }
-          handleCloseQRModal();
-        }}
-        onDone={handleQRDone}
-      />
+          loading={cancelMutation.isPending}
+        />
 
-      <Stack gap='xl'>
-        {facilityInfo && (
-          <LESCFacility
-            facilityName={facilityInfo.name}
-            address={facilityInfo.address}
-            bedCount={facilityInfo.bedCount}
-            intakeHours='24/7'
-            lastUpdated={facilityInfo.updatedAt ? formatTime(new Date(facilityInfo.updatedAt)) : undefined}
-            onCallClick={() => {
-              // TODO: Implement call functionality
-              console.log('Call facility:', facilityInfo.name);
-            }}
-            onHoldClick={() => handleCreateHoldDirectly(facility.id)}
-          />
-        )}
-        <Stack gap='md'>
-          {(!holds || holds.length === 0) && (
-            <Box align='center'>
-              <Title order={4}>You don't have any active holds</Title>
-              <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
-            </Box>
+        <HoldQRCode
+          holdId={selectedHold?.id}
+          opened={qrModalOpened}
+          onClose={() => {
+            const holdIdToCancel = selectedHold?.id;
+            if (holdIdToCancel) {
+              console.log('[Transfer Feedback] QR modal closed, stopping polling for:', holdIdToCancel);
+              // Cancel any ongoing polling queries for this hold
+              queryClient.cancelQueries({ queryKey: ['hold-transfer-status', holdIdToCancel] });
+            }
+            handleCloseQRModal();
+          }}
+          onDone={handleQRDone}
+        />
+
+        <Stack gap='xl'>
+          {facilityInfo && (
+            <LESCFacility
+              facilityName={facilityInfo.name}
+              address={facilityInfo.address}
+              bedCount={facilityInfo.bedCount}
+              onHoldClick={() => handleCreateHoldDirectly(facility.id)}
+            />
           )}
-          {holds?.map((hold) => {
-            // Calculate age from dateOfBirth if available
-            const age = calculateAge(hold.client?.dateOfBirth);
+          <SegmentedControl
+            fullWidth
+            value='holds'
+            onChange={(value) => navigate('/history')}
+            data={[
+              { label: 'My holds', value: 'holds' },
+              { label: 'History', value: 'history' },
+            ]}
+          />
+          {(!holds || holds.length === 0) && (
+            <>
+              <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
+              <Box align='center'>
+                <Title order={4}>You don't have any active holds</Title>
+                <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
+              </Box>
+            </>
+          )}
+          {holds && holds.length > 0 && (
+            <>
+              <Stack gap='md'>
+                {holds?.map((hold) => {
+                  // Calculate age from dateOfBirth if available
+                  const age = calculateAge(hold.client?.dateOfBirth);
 
-            return (
-              <LESCHold
-                key={hold.id}
-                hold={hold}
-                patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                patientDob={hold.client?.dateOfBirth}
-                patientAge={age}
-                patientSex={hold.client?.sex}
-                patientRace={hold.client?.race}
-                onTransfer={handleTransfer}
-                onExtend={handleExtend}
-                onCancel={handleCancel}
-                onViewDetails={() => {
-                  navigate(`/intake/${hold.id}`);
-                }}
-              />
-            );
-          })}
+                  return (
+                    <LESCHold
+                      key={hold.id}
+                      hold={hold}
+                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
+                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
+                      patientDob={hold.client?.dateOfBirth}
+                      patientAge={age}
+                      patientSex={hold.client?.sex}
+                      patientRace={hold.client?.race}
+                      onTransfer={handleTransfer}
+                      onExtend={handleExtend}
+                      onCancel={handleCancel}
+                      onViewDetails={() => {
+                        navigate(`/intake/${hold.id}`);
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+              <Button
+                variant='secondary'
+                onClick={handleExtendAll}
+                disabled={extendAllMutation.isPending}
+                fullWidth
+              >
+                Extend all holds
+              </Button>
+            </>
+          )}
+          <Text size='xs' c='gray.5' align='center'>
+            Last updated: {facilityInfo?.updatedAt ? DateTime.fromISO(facilityInfo.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+          </Text>
         </Stack>
-      </Stack>
-    </Container>
+      </Container>
+    </>
   );
 }
 

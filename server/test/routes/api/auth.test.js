@@ -11,6 +11,7 @@ test('/api/auth', async (t) => {
 
   await t.test('POST /register', async (t) => {
     await t.test('registers a new User', async () => {
+      process.env.VITE_FEATURE_REGISTRATION = 'true';
       const response = await app.inject().post('/api/auth/register').payload({
         firstName: 'Normal',
         lastName: 'Person',
@@ -37,6 +38,17 @@ test('/api/auth', async (t) => {
         updatedAt,
         deactivatedAt: null,
       });
+    });
+
+    await t.test('returns forbidden when registration disabled and no invite', async () => {
+      process.env.VITE_FEATURE_REGISTRATION = 'false';
+      const response = await app.inject().post('/api/auth/register').payload({
+        firstName: 'Normal',
+        lastName: 'Person',
+        email: 'normal.person@test.com',
+        password: 'Abcdef12345!',
+      });
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
 
     await t.test('registers a new user from an invite', async () => {
