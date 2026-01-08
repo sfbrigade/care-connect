@@ -4,12 +4,18 @@ import seedFacilities from './seeds/facilities.js';
 import seedServiceTypes from './seeds/serviceTypes.js';
 import seedUsers from './seeds/users.js';
 import seedResetCenter from './seeds/resetCenter.js';
+import seedOrganizations from './seeds/organizations.js';
+import seedTitles from './seeds/titles.js';
+import seedUnits from './seeds/units.js';
 
 try {
   await seedFacilities(prisma);
   await seedServiceTypes(prisma);
   await seedUsers(prisma);
   await seedResetCenter(prisma);
+  await seedOrganizations(prisma);
+  await seedTitles(prisma);
+  await seedUnits(prisma);
 } catch (error) {
   console.error('Error seeding:', error);
   process.exit(1);
