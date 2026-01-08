@@ -1,11 +1,4 @@
-#!/usr/bin/env node
-
-import '../config.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-async function main () {
+export default async function main (prisma) {
   console.log('Seeding service types...');
 
   const serviceTypes = [
@@ -33,12 +26,3 @@ async function main () {
 
   console.log('Done seeding service types!');
 }
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

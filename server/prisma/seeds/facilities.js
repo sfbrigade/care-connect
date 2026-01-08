@@ -1,27 +1,21 @@
-#!/usr/bin/env node
-
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import dotenv from 'dotenv';
 import { parse } from 'csv-parse/sync';
-import { PrismaClient, FacilityUpdateMethod, FacilityEligibilityType } from '@prisma/client';
+import { FacilityUpdateMethod, FacilityEligibilityType } from '@prisma/client';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '../..', 'static-data', 'street_team_coverage.geojson');
 
-const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '..', 'static-data', 'street_team_coverage.geojson');
-
-const prisma = new PrismaClient();
 const nstDistrictFeatures = loadNSTDistrictFeatures();
 
-async function main () {
+export default async function main (prisma) {
   const { filePath, dryRun, truncateSnapshots } = parseArgs(process.argv.slice(2));
   const absolutePath = resolveFilePath(filePath);
   const fileContents = fs.readFileSync(absolutePath, 'utf8');
@@ -91,7 +85,7 @@ async function main () {
     }
 
     const serviceTypeName = record['Service Category'] || 'General';
-    const serviceType = await getOrCreateServiceType(serviceTypeName, serviceTypesCache, dryRun);
+    const serviceType = await getOrCreateServiceType(prisma, serviceTypeName, serviceTypesCache, dryRun);
 
     const { availableBeds, totalBeds, reservedBeds, description } = buildCapacityData(record);
     if (!dryRun) {
@@ -189,7 +183,7 @@ function parseArgs (args) {
   }
 
   return {
-    filePath: filePath ?? path.resolve(__dirname, '..', 'static-data', 'treatment_centers.csv'),
+    filePath: filePath ?? path.resolve(__dirname, '../..', 'static-data', 'treatment_centers.csv'),
     dryRun,
     truncateSnapshots,
   };
@@ -206,6 +200,7 @@ function buildFacilityData (record) {
   const address = record['DPH Address'] || record['DRAFT Site address'];
   const { city, state, postalCode } = parseAddress(address);
   const neighborhood = (record.Neighborhood || '').trim() || null;
+  const { nstDistrict, latitude, longitude } = record;
 
   return {
     description: record['CareConnect MVP'] || record['Capacity Constraints'] || null,
@@ -216,6 +211,9 @@ function buildFacilityData (record) {
     state,
     postalCode,
     neighborhood,
+    nstDistrict,
+    latitude,
+    longitude,
     isActive: (record['CareConnect MVP'] || '').toUpperCase().includes('X'),
     updateMethod: mapUpdateMethod(record['Avail management']),
     updateNotes: buildUpdateNotes(record),
@@ -291,7 +289,7 @@ function inferEligibilityType (value) {
   return FacilityEligibilityType.OTHER;
 }
 
-async function getOrCreateServiceType (name, cache, dryRun) {
+async function getOrCreateServiceType (prisma, name, cache, dryRun) {
   const code = slugify(name || 'General');
   if (cache.has(code)) {
     return cache.get(code);
@@ -450,21 +448,3 @@ function loadNSTDistrictFeatures () {
     return [];
   }
 }
-
-process.on('unhandledRejection', (error) => {
-  console.error(error);
-  prisma.$disconnect().finally(() => process.exit(1));
-});
-
-process.on('SIGINT', () => {
-  prisma.$disconnect().finally(() => process.exit());
-});
-
-main()
-  .catch((error) => {
-    console.error('Import failed:', error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });

@@ -72,5 +72,8 @@
     "#models/*.js": "./models/*.js",
     "#prisma/*.js": "./prisma/*.js",
     "#test/*.js": "./test/*.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
