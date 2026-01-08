@@ -15,6 +15,10 @@ const InviteAttributesSchema = z.object({
     .max(30, 'Last name must be between 2 and 30 characters long'),
   email: z.string().email('Please enter a valid email address.'),
   message: z.string().optional(),
+  organizationId: z.string().nullable().optional(),
+  titleId: z.string().nullable().optional(),
+  badgeNumber: z.string().nullable().optional(),
+  prop115Certified: z.boolean(),
 });
 
 const InviteResponseSchema = InviteAttributesSchema.extend({

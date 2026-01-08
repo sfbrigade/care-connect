@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useParams, useNavigate } from 'react-router';
-import { Alert, Button, Checkbox, Container, Fieldset, Group, Stack, TextInput, Title } from '@mantine/core';
+import { useLocation, useParams } from 'react-router';
+import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
-import PhotoInput from '@/components/PhotoInput';
+// import PhotoInput from '@/components/PhotoInput';
 
 function UserForm () {
   const authContext = useAuthContext();
   const location = useLocation();
   const params = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const userId = params.userId ?? authContext.user?.id;
 
   const form = useForm({
@@ -27,9 +25,11 @@ function UserForm () {
       picture: '',
       pictureUrl: '',
       isAdmin: false,
+      organizationId: '',
       badgeNumber: '',
-      rank: '',
-      unit: '',
+      titleId: '',
+      unitId: '',
+      prop115Certified: false,
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
@@ -42,7 +42,24 @@ function UserForm () {
   const { data: response, isLoading } = useQuery({
     queryKey: ['users', userId],
     queryFn: () => Api.users.get(userId),
-    enabled: !!userId,
+  });
+
+  const { data: organization } = useQuery({
+    queryKey: ['organization', form.getValues().organizationId],
+    queryFn: () => Api.organizations.get(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
+  });
+
+  const { data: titles } = useQuery({
+    queryKey: ['organizations', form.getValues().organizationId, 'titles'],
+    queryFn: () => Api.organizations.titles.index(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
+  });
+
+  const { data: units } = useQuery({
+    queryKey: ['organizations', form.getValues().organizationId, 'units'],
+    queryFn: () => Api.organizations.units.index(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
   });
 
   useEffect(() => {
@@ -68,82 +85,89 @@ function UserForm () {
   });
   const [success, setSuccess] = useState(false);
 
-  function handleCancel () {
-    // Navigate back to previous page
-    navigate(-1);
-  }
-
-  async function onLogout (event) {
-    event.preventDefault();
-    await Api.auth.logout();
-    queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-    authContext.setUser(null);
-    navigate('/');
-  }
-
-  // Don't render if user is not loaded yet or userId is missing
-  if (!authContext.user || !userId) {
-    return null;
-  }
-
   return (
     <>
       <Head>
-        <title>My Account</title>
+        <title>Edit Profile</title>
       </Head>
       <Container>
-        <Title mb='md'>My Account</Title>
+        <Title mb='md'>Edit Profile</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading} variant='unstyled'>
-            <Stack w={{ base: '100%', xs: 320 }}>
+            <Stack>
               {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
               {form.errors?._form && <Alert color='red'>{form.errors._form}</Alert>}
               {success && <Alert>Your account has been updated!</Alert>}
-              <PhotoInput
+              {/* <PhotoInput
                 {...form.getInputProps('picture')}
                 label='Picture'
                 valueUrl={form.getValues().pictureUrl}
-              />
+              /> */}
               <TextInput
                 {...form.getInputProps('firstName')}
                 key={form.key('firstName')}
                 label='First name'
+                disabled
               />
               <TextInput
                 {...form.getInputProps('lastName')}
                 key={form.key('lastName')}
                 label='Last name'
+                disabled
               />
               <TextInput
                 {...form.getInputProps('email')}
                 key={form.key('email')}
                 label='Email'
                 type='email'
+                disabled
               />
+              {!!organization && (
+                <Select
+                  {...form.getInputProps('organizationId')}
+                  key='organizationId'
+                  label='Organization'
+                  data={[{ value: organization.id, label: organization.name }]}
+                  disabled
+                />
+              )}
+              {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+                <TextInput
+                  {...form.getInputProps('badgeNumber')}
+                  key={form.key('badgeNumber')}
+                  label='Star Number'
+                  placeholder='Enter badge or star number'
+                />
+              )}
+              {form.getValues().organizationId === 'sfso' && (
+                <Select
+                  {...form.getInputProps('titleId')}
+                  key='titleId'
+                  label='Rank'
+                  data={titles?.map((title) => ({ value: title.id, label: title.name })) || []}
+                />
+              )}
+              {form.getValues().organizationId === 'sfso' && (
+                <Checkbox
+                  {...form.getInputProps('prop115Certified', { type: 'checkbox' })}
+                  key={form.key('prop115Certified')}
+                  label='Prop 115 certified'
+                />
+              )}
+              {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+                <Select
+                  {...form.getInputProps('unitId')}
+                  key='unitId'
+                  label='Unit'
+                  data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
+                />
+              )}
               <TextInput
                 {...form.getInputProps('password')}
                 key={form.key('password')}
                 label='Password'
                 type='password'
                 autoComplete='new-password'
-              />
-              <TextInput
-                {...form.getInputProps('badgeNumber')}
-                key={form.key('badgeNumber')}
-                label='Badge Number / Star Number'
-                placeholder='Enter badge or star number'
-              />
-              <TextInput
-                {...form.getInputProps('rank')}
-                key={form.key('rank')}
-                label='Rank'
-                placeholder='Enter rank'
-              />
-              <TextInput
-                {...form.getInputProps('unit')}
-                key={form.key('unit')}
-                label='Unit'
-                placeholder='Enter unit'
               />
               {authContext.user?.isAdmin && (
                 <Checkbox
@@ -154,20 +178,6 @@ function UserForm () {
               )}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
-                <Button
-                  variant='light'
-                  onClick={handleCancel}
-                  disabled={onSubmitMutation.isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant='outline'
-                  color='red'
-                  onClick={onLogout}
-                >
-                  Log Out
-                </Button>
               </Group>
             </Stack>
           </Fieldset>

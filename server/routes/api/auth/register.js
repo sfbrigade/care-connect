@@ -63,6 +63,10 @@ export default async function (fastify, opts) {
             firstName: invite.firstName,
             lastName: invite.lastName,
             email: invite.email,
+            organizationId: invite.organizationId,
+            titleId: invite.titleId,
+            badgeNumber: invite.badgeNumber,
+            prop115Certified: invite.prop115Certified,
           }
         : { firstName, lastName, email };
       const user = new User(data);

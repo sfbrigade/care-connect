@@ -17,9 +17,8 @@ export default async function (fastify, opts) {
       onRequest: fastify.requireAdmin
     },
     async function (request, reply) {
-      const { firstName, lastName, email, message } = request.body;
       const data = await fastify.prisma.invite.create({
-        data: { firstName, lastName, email, message, createdById: request.user.id },
+        data: { ...request.body, createdById: request.user.id },
       });
       const invite = new Invite(data);
       await invite.sendInviteEmail(request.facility);

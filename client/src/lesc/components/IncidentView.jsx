@@ -302,7 +302,7 @@ function IncidentView () {
                 }}
               />
               <TextInput
-                label='Badge Number/Star Number'
+                label='Star Number'
                 placeholder='Enter badge number'
                 value={formData.badgeNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, badgeNumber: e.target.value }))}
