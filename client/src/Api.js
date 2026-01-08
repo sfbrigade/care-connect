@@ -292,6 +292,57 @@ const Api = {
       }).catch(handleError);
     },
   },
+  organizations: {
+    index (page = 1) {
+      return instance.get('/api/organizations', { params: { page } });
+    },
+    get (id) {
+      return instance.get(`/api/organizations/${id}`);
+    },
+    create (data) {
+      return instance.post('/api/organizations', data).catch(handleError);
+    },
+    update (id, data) {
+      return instance.patch(`/api/organizations/${id}`, data).catch(handleError);
+    },
+    delete (id) {
+      return instance.delete(`/api/organizations/${id}`).catch(handleError);
+    },
+    titles: {
+      index (organizationId, page = 1) {
+        return instance.get(`/api/organizations/${organizationId}/titles`, { params: { page } });
+      },
+      get (organizationId, id) {
+        return instance.get(`/api/organizations/${organizationId}/titles/${id}`);
+      },
+      create (organizationId, data) {
+        return instance.post(`/api/organizations/${organizationId}/titles`, data).catch(handleError);
+      },
+      update (organizationId, id, data) {
+        return instance.patch(`/api/organizations/${organizationId}/titles/${id}`, data).catch(handleError);
+      },
+      delete (organizationId, id) {
+        return instance.delete(`/api/organizations/${organizationId}/titles/${id}`).catch(handleError);
+      },
+    },
+    units: {
+      index (organizationId, page = 1) {
+        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page } });
+      },
+      get (organizationId, id) {
+        return instance.get(`/api/organizations/${organizationId}/units/${id}`);
+      },
+      create (organizationId, data) {
+        return instance.post(`/api/organizations/${organizationId}/units`, data).catch(handleError);
+      },
+      update (organizationId, id, data) {
+        return instance.patch(`/api/organizations/${organizationId}/units/${id}`, data).catch(handleError);
+      },
+      delete (organizationId, id) {
+        return instance.delete(`/api/organizations/${organizationId}/units/${id}`).catch(handleError);
+      },
+    },
+  },
 };
 
 export default Api;

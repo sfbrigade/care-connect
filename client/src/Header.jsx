@@ -28,6 +28,7 @@ function Header ({ opened, close, toggle, logout }) {
               <Menu.Dropdown>
                 <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
+                <Menu.Item><Anchor component={NavLink} to='/admin/organizations'>Organizations</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
               </Menu.Dropdown>
             </Menu>
