@@ -30,8 +30,7 @@ Care Connect is a platform that serves different facility-specific interfaces fr
 
 Location detection happens in the `server/plugins/facility.js` plugin, which:
 - Runs on every request via Fastify `onRequest` hook
-- Sets `request.facility`
-- Sets these to an `null` if no facility subdomain is detected
+- Sets `request.facility` to the facility with a matching subdomain, or `null` if no facility with a matching subdomain is detected
 
 ## Client-Side Location Detection
 
