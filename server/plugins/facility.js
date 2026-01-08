@@ -11,7 +11,9 @@ export default fp(async function (fastify) {
     const { host = '' } = request.headers;
     const subdomain = host.split('.')[0];
     const data = await fastify.prisma.facility.findUnique({ where: { subdomain } });
-    request.facility = new Facility(data);
+    if (data) {
+      request.facility = new Facility(data);
+    }
   });
   // onRequest handler to be used to ensure a user is logged in
   fastify.decorate('requireFacility', async (request, reply) => {

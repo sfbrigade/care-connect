@@ -6,7 +6,7 @@
    into the directory.
 
    ```
-   git clone https://github.com/YOUR_ACCOUNT_ID/care-connect.git
+   git clone https://github.com/sfbrigade/care-connect.git
    cd care-connect
    ```
 
@@ -26,8 +26,8 @@
    like this, the server is running:
 
    ```
-   full-stack-starter-server-1       | 5:31:23 PM client.1 |    VITE v4.3.9  ready in 327 ms
-   full-stack-starter-server-1       | 5:31:23 PM client.1 |    ➜  Local:   http://localhost:3333/
+   server-1       | 5:31:23 PM client.1 |    VITE v4.3.9  ready in 327 ms
+   server-1       | 5:31:23 PM client.1 |    ➜  Local:   http://localhost:3333/
    ```
 
 5. Now you should be able to open the web app in your browser at: http://localhost:3333/
@@ -39,13 +39,19 @@
    ```
 
    This will log you in to the running server container, as if you were connecting to a different machine over the Internet.
-   Once you're logged in, you will be in a new shell for the container where you can run the following command:
+   Once you're logged in, you will be in a new shell for the container where you can run the following command.
+   You'll want to execute this command to "log in" to the running container before running any
+   command line tools or scripts that operate on the server. Run the following the first time you log in:
 
    ```
-   bin/create-admin.js Firstname Lastname email password
+   cd server
+   npx prisma db seed
    ```
 
-   Put in your name and email address and a password. This will create a first admin user in the database.
+   This will populate the database with a complete setup for development, including an admin user that you can use to log in to the web app.
+   The development admin user credentials are:
+   - Email: admin@careconnectsf.org
+   - Password: abcd1234
 
 7. To stop the server, press CONTROL-C in the window with the running server.
    If it is successful, you will see something like this:
@@ -119,63 +125,17 @@ This starter includes optional PostHog product analytics instrumentation on the 
 - When the env variables are present, the SPA automatically initializes PostHog on the client, identifying signed-in users by their user ID (and falling back to email) and tracking page views.
 - Leave `VITE_POSTHOG_KEY` blank to disable analytics entirely.
 
-## Data Imports
-
-The repository includes a CSV (`clinics.csv`) with draft facility metadata. To load it into the new Prisma models:
-
-```
-cd server
-npm install
-npx prisma migrate dev
-npm run import:clinics -- ../clinics.csv
-```
-
-Flags:
-
-- `--dry-run` — parse the file without writing to the database.
-- `--truncate-snapshots` — clear existing `FacilityCapacitySnapshot` rows before import.
-
-Update the CSV path if you relocate the file.
-
-## Geocoding Facilities
-
-Use the OpenRouteService geocoder (or another provider by overriding the base URL) to backfill latitude/longitude:
-
-```
-cd server
-OPENROUTESERVICE_API_KEY=your_key_here npm run geocode:facilities
-```
-
-Additional flags:
-
-- `--dry-run` — show proposed coordinates without saving.
-- `--force` — re-geocode facilities that already have coordinates.
-- `--limit=10` — only process the first N facilities (useful for testing).
-
-Respect the provider’s rate limits; adjust `GEOCODE_RATE_LIMIT_MS` in `.env` as needed.
-
 ## CareConnect
 
-The CareConnect tooling lives inside this repository. After bringing up the Docker stack (`docker compose up`), use the following commands from the repo root to seed local data:
+CareConnect tooling lives inside this repository. After bringing up the Docker stack (`docker compose up`), use the following commands from the repo root to seed local data:
 
-1. **Import clinics**
-   Ask a team member for a copy of the sample data CSV.
+1. **Geocode clinics**
 
-   ```
-   docker compose exec server bash -l -c 'npm run import:clinics -- ../clinics.csv'
-   ```
-
-   Optional flags (append within the quoted command):
-
-   - `--dry-run` to preview changes
-   - `--truncate-snapshots` to clear historical capacity snapshots
-
-2. **Geocode clinics**
-
-   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`, then run:
+   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`. Enter the server container and run the geocode command:
 
    ```
-   docker compose exec server bash -l -c 'npm run geocode:facilities'
+   cd server
+   npm run geocode:facilities
    ```
 
    Common options:
@@ -184,55 +144,27 @@ The CareConnect tooling lives inside this repository. After bringing up the Dock
    - `--force` — overwrite existing latitude/longitude values
    - `--limit=10` — geocode only the first N facilities (useful for testing)
 
-3. **Restart the server container**
-
-   ```
-   docker compose restart server
-   ```
-
-   Restarting ensures Fastify picks up any schema or dependency changes before you refresh the UI.
-
-Once complete, open http://localhost:3333/ to see the map and facility list sourced from the newly imported data.
-
-> **Quick demo:** If the database is empty, the API automatically falls back to bundled sample facilities (see `server/data/sample-facilities.json`) so the map renders without running the import scripts.
-
 ## Testing
 
-### Fast Local Testing (SQLite - Recommended)
+### Full Integration Testing (PostgreSQL + Docker)
 
-For faster local development, tests use SQLite instead of Docker containers:
+For complete integration tests with PostgreSQL and MinIO, enter the server container and run the test command:
 
 ```bash
 cd server
 npm test
 ```
 
-This runs tests much faster without requiring Docker. Tests that need S3/MinIO storage are skipped unless you run `npm run test:minio`.
-
-### Full Integration Testing (PostgreSQL + Docker)
-
-For complete integration tests with PostgreSQL and MinIO:
-
-```bash
-# From host machine
-cd server
-npm run test:postgres
-
-# Or from Docker container
-docker compose exec server bash -l
-npm run test:postgres
-```
-
 **Note:** If tests terminate unexpectedly, you may have dangling/orphan containers running. Use `docker ps` to list and check running containers.
 
-2. To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the
-client through the server at: http://localhost:3000
+### Testing the Client
 
-3. To lint and format your code:
+To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the client through the server at: http://localhost:3000
+
+### Linting and Formatting
+
+To lint and format your code:
    - **From Docker container**: Log in to a running container and run `npm run lint`
-   - **Locally** (requires `npm install` first): 
-     - `npm run lint` - Auto-fixes issues and reports errors (matches CI behavior)
-     - `npm run lint:check` - Reports errors without auto-fixing (useful for pre-commit checks)
 
 ## Shell Command Quick Reference
 
