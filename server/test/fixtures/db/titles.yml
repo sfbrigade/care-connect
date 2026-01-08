@@ -1,0 +1,43 @@
+entity: title
+connectedFields: [organization, createdBy]
+items:
+  deputy:
+    id: deputy
+    name: Deputy
+    organization: '@sfso'
+    createdBy: '@user1'
+  sergeant:
+    id: sergeant
+    name: Sergeant
+    organization: '@sfso'
+    createdBy: '@user1'
+  lieutenant:
+    id: lieutenant
+    name: Lieutenant
+    organization: '@sfso'
+    createdBy: '@user1'
+  captain:
+    id: captain
+    name: Captain
+    organization: '@sfso'
+    createdBy: '@user1'
+  chief:
+    id: chief
+    name: Chief
+    organization: '@sfso'
+    createdBy: '@user1'
+  assistant-sheriff:
+    id: assistant-sheriff
+    name: Assistant Sheriff
+    organization: '@sfso'
+    createdBy: '@user1'
+  under-sheriff:
+    id: under-sheriff
+    name: Under Sheriff
+    organization: '@sfso'
+    createdBy: '@user1'
+  sheriff:
+    id: sheriff
+    name: Sheriff
+    organization: '@sfso'
+    createdBy: '@user1'
