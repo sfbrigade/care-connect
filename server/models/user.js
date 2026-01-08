@@ -17,8 +17,9 @@ const UserAttributesSchema = z.object({
     .max(30, 'Last name must be between 2 and 30 characters long'),
   email: z.string().email('Please enter a valid email address.'),
   badgeNumber: z.string().nullable().optional(),
-  rank: z.string().nullable().optional(),
-  unit: z.string().nullable().optional(),
+  organizationId: z.string().nullable().optional(),
+  titleId: z.string().nullable().optional(),
+  unitId: z.string().nullable().optional(),
 });
 
 const UserPasswordSchema = z
@@ -35,9 +36,6 @@ const UserResponseSchema = UserAttributesSchema.extend({
   picture: z.string().nullable(),
   pictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
-  badgeNumber: z.string().nullable(),
-  rank: z.string().nullable(),
-  unit: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deactivatedAt: z.coerce.date().nullable(),
@@ -47,9 +45,6 @@ const UserUpdateSchema = UserAttributesSchema.extend({
   password: UserPasswordSchema.or(z.literal('')),
   picture: z.string().nullable(),
   isAdmin: z.boolean(),
-  badgeNumber: z.string().nullable(),
-  rank: z.string().nullable(),
-  unit: z.string().nullable(),
   deactivatedAt: z.coerce.date().nullable(),
 }).partial();
 
