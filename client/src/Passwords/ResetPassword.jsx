@@ -8,10 +8,12 @@ import { IconCheck } from '@tabler/icons-react';
 import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import PasswordInput from '@/components/PasswordInput';
 import PasswordStrength from '@/components/PasswordStrength';
 
 function ResetPassword () {
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -33,11 +35,25 @@ function ResetPassword () {
     onSuccess: async (response) => {
       queryClient.setQueryData(['users', 'me'], response.data);
       setSuccess(true);
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => {
+        if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {
+          navigate('/units', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }, 3000);
     },
     onError: (errors) => form.setErrors(errors),
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
+
+  function onContinue () {
+    if (user?.organizationId === 'sfpd' || user?.organizationId === 'sfso') {
+      navigate('/units', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }
 
   const { error, isLoading } = useQuery({
     queryKey: ['passwords', token],
@@ -92,10 +108,10 @@ function ResetPassword () {
                       <Stack gap='xs'>
                         <Title align='center' order={3}>Password updated</Title>
                         <Text align='center' c='dimmed'>
-                          You will be automatically logged into your account in a few seconds. If not, press Done.
+                          You will be automatically logged into your account in a few seconds. If not, press Continue.
                         </Text>
                       </Stack>
-                      <Button fullWidth component={Link} to='/'>Done</Button>
+                      <Button fullWidth onClick={onContinue}>Continue</Button>
                     </Stack>
                   )}
                 </>
