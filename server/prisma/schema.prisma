@@ -178,6 +178,8 @@ model Facility {
   id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
   type              FacilityType               @default(DIDO)
+  serviceType       ServiceType                @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId     String
   subdomain         String?                    @db.Citext @unique
   description       String?
   phone             String?
@@ -234,7 +236,8 @@ model ServiceType {
   id          String           @id
   name        String
   description String?
-  facilities  FacilityService[]
+  facilities  Facility[]
+  facilityServices  FacilityService[]
   placementRequests PlacementRequest[]
   bedHolds    BedHold[]
   createdAt   DateTime         @default(now())

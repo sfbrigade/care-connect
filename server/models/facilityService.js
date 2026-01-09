@@ -12,7 +12,7 @@ const FacilityServiceAttributesSchema = z.object({
 
 const FacilityServiceResponseSchema = FacilityServiceAttributesSchema.extend({
   facilityId: z.string().uuid(),
-  serviceTypeId: z.string().uuid(),
+  serviceTypeId: z.string(),
   serviceType: ServiceType.ResponseSchema.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),

@@ -1,10 +1,11 @@
 entity: facility
-connectedFields: []
+connectedFields: ['serviceType']
 items:
   lescFacility1:
     id: 6d123d8f-edd5-4d14-9220-0508eb30b47b
     name: 'LESC Facility 1'
     type: 'LESC'
+    serviceType: '@lesc'
     description: 'LESC Facility 1 Description'
     phone: '555-0000'
     isActive: true
@@ -12,12 +13,15 @@ items:
     id: fab67d53-a1c7-4eb5-b151-33727270ad20
     name: 'LESC Facility 2'
     type: 'LESC'
+    serviceType: '@lesc'
     isActive: true
   generalFacility1:
     name: 'General Facility 1'
     type: 'DIDO'
+    serviceType: '@general'
     isActive: true
   generalFacility2:
     name: 'General Facility 2'
     type: 'DIDO'
+    serviceType: '@general'
     isActive: true

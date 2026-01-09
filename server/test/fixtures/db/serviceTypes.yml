@@ -2,9 +2,8 @@ entity: serviceType
 connectedFields: []
 items:
   lesc:
-    id: 0c752837-76b8-437f-b279-512e1c848634
-    code: 'LESC'
+    id: 'lesc'
     name: 'Law Enforcement Sobering Center'
   general:
-    code: 'GENERAL'
-    name: 'General Service'
+    id: 'general'
+    name: 'General'

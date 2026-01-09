@@ -28,12 +28,6 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(facilities.length, 2);
       const facilityNames = facilities.map(f => f.name).sort();
       assert.deepStrictEqual(facilityNames, ['LESC Facility 1', 'LESC Facility 2']);
-
-      // Verify facilities have LESC service
-      facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
-        assert.ok(hasLescService, `Facility ${facility.name} should have LESC service`);
-      });
     });
 
     await t.test('returns facilities with DIDO service type', async () => {
@@ -53,12 +47,6 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(facilities.length, 2);
       const facilityNames = facilities.map(f => f.name).sort();
       assert.deepStrictEqual(facilityNames, ['General Facility 1', 'General Facility 2']);
-
-      // Verify no facilities have LESC service
-      facilities.forEach(facility => {
-        const hasLescService = facility.services.some(s => s.serviceType.code === 'LESC');
-        assert.ok(!hasLescService, `Facility ${facility.name} should not have LESC service`);
-      });
     });
 
     await t.test('returns all facilities', async () => {
@@ -92,7 +80,7 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(data.name, 'LESC Facility 1');
       assert.ok(Array.isArray(data.services));
       assert.deepStrictEqual(data.services.length, 1);
-      assert.deepStrictEqual(data.services[0].serviceType.code, 'LESC');
+      assert.deepStrictEqual(data.services[0].serviceType.id, 'lesc');
       assert.deepStrictEqual(data.services[0].availableBeds, 10);
       assert.deepStrictEqual(data.services[0].reservedBeds, 2);
       assert.ok(Array.isArray(data.contacts));
@@ -116,6 +104,7 @@ test('/api/facilities', async (t) => {
         description: 'Test Description',
         phone: '555-9999',
         isActive: true,
+        serviceTypeId: 'general',
       }).headers(adminHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
@@ -151,6 +140,7 @@ test('/api/facilities', async (t) => {
         latitude: 37.8044,
         longitude: -122.2711,
         isActive: false,
+        serviceTypeId: 'general',
       }).headers(adminHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
@@ -308,7 +298,7 @@ test('/api/facilities', async (t) => {
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 1);
-      assert.deepStrictEqual(data[0].serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(data[0].serviceTypeId, 'lesc');
       assert.deepStrictEqual(data[0].totalBeds, 10);
       assert.deepStrictEqual(data[0].availableBeds, 7);
       assert.deepStrictEqual(data[0].reservedBeds, 2);

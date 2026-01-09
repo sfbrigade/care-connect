@@ -15,7 +15,7 @@ export default async function (fastify, opts) {
         }),
         response: {
           [StatusCodes.OK]: z.array(z.object({
-            serviceTypeId: z.string().uuid(),
+            serviceTypeId: z.string(),
             serviceType: ServiceType.ResponseSchema,
             totalBeds: z.number().nullable(),
             availableBeds: z.number().nullable(),

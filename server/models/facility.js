@@ -6,10 +6,12 @@ import Amenity from './amenity.js';
 import FacilityContact from './facilityContact.js';
 import FacilityEligibility from './facilityEligibility.js';
 import FacilityService from './facilityService.js';
+import ServiceType from './serviceType.js';
 
 const FacilityAttributesSchema = z.object({
   name: z.string(),
   type: z.enum(Object.values(FacilityType)),
+  serviceTypeId: z.string(),
   subdomain: z.string().nullable(),
   description: z.string().nullable(),
   phone: z.string().nullable(),
@@ -31,6 +33,7 @@ const FacilityAttributesSchema = z.object({
 
 const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
+  serviceType: ServiceType.ResponseSchema.optional(),
   services: z.array(FacilityService.ResponseSchema).optional(),
   amenities: z.array(Amenity.ResponseSchema).optional(),
   eligibility: z.array(FacilityEligibility.ResponseSchema).optional(),
