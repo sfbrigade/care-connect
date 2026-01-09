@@ -9,13 +9,10 @@ export default async function main (prisma) {
       addressLine1: '444 6th St',
     },
   });
-  const serviceType = await prisma.serviceType.findUnique({
-    where: { code: 'LESC' },
-  });
   await prisma.facilityService.create({
     data: {
       facilityId: facility.id,
-      serviceTypeId: serviceType.id,
+      serviceTypeId: 'lesc',
       availableBeds: 16,
       reservedBeds: 0,
     },

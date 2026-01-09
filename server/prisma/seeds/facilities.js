@@ -290,24 +290,24 @@ function inferEligibilityType (value) {
 }
 
 async function getOrCreateServiceType (prisma, name, cache, dryRun) {
-  const code = slugify(name || 'General');
-  if (cache.has(code)) {
-    return cache.get(code);
+  const id = slugify(name || 'General');
+  if (cache.has(id)) {
+    return cache.get(id);
   }
 
   if (dryRun) {
-    const placeholder = { id: `<dry-run-service-${code}>`, code, name };
-    cache.set(code, placeholder);
+    const placeholder = { id, name };
+    cache.set(id, placeholder);
     return placeholder;
   }
 
   const serviceType = await prisma.serviceType.upsert({
-    where: { code },
+    where: { id },
     update: { name },
-    create: { code, name },
+    create: { id, name },
   });
 
-  cache.set(code, serviceType);
+  cache.set(id, serviceType);
   return serviceType;
 }
 
@@ -387,12 +387,12 @@ function parseAddress (raw) {
 }
 
 function slugify (value) {
-  return (value || 'GENERAL')
+  return (value || 'general')
     .toString()
     .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '') || 'GENERAL';
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'general';
 }
 
 function isOutOfCounty (record) {
