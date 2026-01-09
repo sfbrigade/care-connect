@@ -7,6 +7,7 @@ import { useFacilityContext } from './FacilityContext';
 import { useStaticContext } from './StaticContext';
 
 import Login from './Login';
+import UnitSelector from './UnitSelector';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
 import InvitesRoutes from './Invites/InvitesRoutes';
 import Register from './Register';
@@ -31,6 +32,7 @@ function AppRoutes () {
           <AppRedirects>
             <Routes>
               <Route path='/login' element={<Login />} />
+              <Route path='/units' element={<UnitSelector />} />
               <Route path='/passwords/*' element={<PasswordsRoutes />} />
               <Route path='/invites/*' element={<InvitesRoutes />} />
               {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}

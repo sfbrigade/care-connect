@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -10,10 +10,11 @@ import { useAuthContext } from '@/AuthContext';
 // import PhotoInput from '@/components/PhotoInput';
 
 function UserForm () {
-  const authContext = useAuthContext();
+  const { user } = useAuthContext();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const params = useParams();
-  const userId = params.userId ?? authContext.user?.id;
+  const userId = params.userId ?? user?.id;
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -75,8 +76,8 @@ function UserForm () {
     mutationFn: (values) => Api.users.update(userId, values),
     onMutate: () => setSuccess(false),
     onSuccess: (response) => {
-      if (userId === authContext.user?.id) {
-        authContext.setUser(response.data);
+      if (userId === user?.id) {
+        queryClient.setQueryData(['users', 'me'], response.data);
       }
       setSuccess(true);
     },
@@ -169,7 +170,7 @@ function UserForm () {
                 type='password'
                 autoComplete='new-password'
               />
-              {authContext.user?.isAdmin && (
+              {user?.isAdmin && (
                 <Checkbox
                   {...form.getInputProps('isAdmin', { type: 'checkbox' })}
                   key={form.key('isAdmin')}

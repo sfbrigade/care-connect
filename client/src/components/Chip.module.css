@@ -1,0 +1,14 @@
+.iconWrapper {
+  display: none;
+}
+
+.label[data-checked] {
+  padding-inline: var(--chip-padding);
+}
+
+.root[data-size='xl'] {
+  label {
+    height: 3rem;
+    width: 100%;
+  }
+}

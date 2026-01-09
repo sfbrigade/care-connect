@@ -4,6 +4,7 @@ export const ADMIN_AUTH_PROTECTED_PATHS = [];
 export const AUTH_PROTECTED_PATHS = [
   '/holds/*', // All LESC routes require authentication
   '/admin/*', // All admin routes require authentication
+  '/units',
 ];
 export const REDIRECTS = [
   ['/admin', '/admin/users'],

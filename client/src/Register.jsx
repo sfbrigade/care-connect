@@ -1,21 +1,27 @@
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Box, Container, SegmentedControl, Stack, Title } from '@mantine/core';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
-import { useAuthContext } from '@/AuthContext';
 import RegistrationForm from './RegistrationForm';
 
 function Register () {
-  const authContext = useAuthContext();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from || '/';
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.auth.register(values),
     onSuccess: (response) => {
-      authContext.setUser(response.data);
-      navigate('/');
+      queryClient.setQueryData(['users', 'me'], response.data);
+      if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {
+        navigate('/units', { replace: true, state: { from } });
+      } else {
+        navigate(from);
+      }
     },
     onError: () => window.scrollTo(0, 0),
   });

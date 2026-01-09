@@ -8,21 +8,18 @@ import Navbar from './Navbar';
 
 import Api from './Api';
 import AppRoutes from './AppRoutes';
-import { useAuthContext } from './AuthContext';
 import { useFacilityContext } from './FacilityContext';
 
 function AppLayout () {
   const [opened, { close, toggle }] = useDisclosure();
   const navigate = useNavigate();
-  const { setUser } = useAuthContext();
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
   async function logout (event) {
     event.preventDefault();
     await Api.auth.logout();
-    queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-    setUser(null);
+    queryClient.setQueryData(['users', 'me'], null);
     close();
     navigate('/');
   }
@@ -30,6 +27,7 @@ function AppLayout () {
   const location = useLocation();
   const isHeaderHidden = [
     '/login',
+    '/units',
     '/passwords/*',
     '/invites/*',
     '/register',

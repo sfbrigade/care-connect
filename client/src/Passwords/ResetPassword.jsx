@@ -10,10 +10,8 @@ import { StatusCodes } from 'http-status-codes';
 import Api from '@/Api';
 import PasswordInput from '@/components/PasswordInput';
 import PasswordStrength from '@/components/PasswordStrength';
-import { useAuthContext } from '@/AuthContext';
 
 function ResetPassword () {
-  const authContext = useAuthContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -33,12 +31,7 @@ function ResetPassword () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.passwords.update(token, values.password),
     onSuccess: async (response) => {
-      // Update user state immediately from login response
-      if (response.status === StatusCodes.OK && response.data) {
-        authContext.setUser(response.data);
-      }
-      // Invalidate and refetch user query to ensure consistency
-      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      queryClient.setQueryData(['users', 'me'], response.data);
       setSuccess(true);
       setTimeout(() => navigate('/'), 3000);
     },

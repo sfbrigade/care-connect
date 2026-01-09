@@ -1,6 +1,7 @@
 import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import buttonClasses from './components/Button.module.css';
+import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
 
 const AppTheme = createTheme({
@@ -123,7 +124,8 @@ const AppTheme = createTheme({
     Chip: Chip.extend({
       defaultProps: {
         color: 'black',
-      }
+      },
+      classNames: chipClasses
     }),
     Container: Container.extend({
       defaultProps: {

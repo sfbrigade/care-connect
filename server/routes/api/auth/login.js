@@ -31,7 +31,14 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { email, password } = request.body;
-      const data = await fastify.prisma.user.findUnique({ where: { email } });
+      const data = await fastify.prisma.user.findUnique({
+        where: { email },
+        include: {
+          organization: true,
+          title: true,
+          unit: true,
+        },
+      });
       if (!data) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }

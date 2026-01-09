@@ -1,26 +1,19 @@
 import { Navigate, useLocation } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
-import { StatusCodes } from 'http-status-codes';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader, Container } from '@mantine/core';
 
 import { useAuthContext } from '@/AuthContext';
 import { handleRedirects } from './AppRedirectsConfig';
-import Api from '@/Api';
 
 function AppRedirects ({ children }) {
   const location = useLocation();
   const authContext = useAuthContext();
+  const queryClient = useQueryClient();
 
   // Ensure user state is loaded before checking auth
-  const { isLoading } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: () => Api.users.me().then((response) => response.status === StatusCodes.OK ? response.data : null),
-    retry: false,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-  });
-
+  const data = queryClient.getQueryData(['users', 'me']);
   // Show loading while checking auth state
-  if (isLoading && !authContext.user) {
+  if (data === undefined) {
     return (
       <Container ta='center' py='xl'>
         <Loader />
@@ -36,4 +29,5 @@ function AppRedirects ({ children }) {
   });
   return result || children;
 }
+
 export default AppRedirects;
