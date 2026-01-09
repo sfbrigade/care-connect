@@ -5,6 +5,9 @@ import { z } from 'zod';
 
 import Base from './base.js';
 import mailer from '#lib/mailer.js';
+import Organization from '#models/organization.js';
+import Title from '#models/title.js';
+import Unit from '#models/unit.js';
 
 const UserAttributesSchema = z.object({
   firstName: z
@@ -37,6 +40,9 @@ const UserResponseSchema = UserAttributesSchema.extend({
   picture: z.string().nullable(),
   pictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
+  organization: Organization.ResponseSchema.nullable().optional(),
+  title: Title.ResponseSchema.nullable().optional(),
+  unit: Unit.ResponseSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deactivatedAt: z.coerce.date().nullable(),

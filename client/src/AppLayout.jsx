@@ -37,7 +37,7 @@ function AppLayout () {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 80 }}
       navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }}
       padding='md'
       bg={!isHeaderHidden && facility ? 'gray.0' : 'white'}
