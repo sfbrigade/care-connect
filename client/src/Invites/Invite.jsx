@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { Button, Container, Loader, Stack, Text, Title } from '@mantine/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -11,7 +11,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import RegistrationForm from '../RegistrationForm';
 
 function Invite () {
-  const { user, setUser } = useAuthContext();
+  const { user } = useAuthContext();
   const { facility } = useFacilityContext();
   const { inviteId } = useParams();
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ function Invite () {
     queryKey: ['invite', inviteId],
     queryFn: async () => {
       const response = await Api.invites.get(inviteId);
-      setUser(null);
+      queryClient.setQueryData(['users', 'me'], null);
       return response.data;
     },
     retry: false,
@@ -31,15 +31,26 @@ function Invite () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.auth.register({ ...values, inviteId }),
     onSuccess: async (response) => {
-      setUser(response.data);
-      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+      queryClient.setQueryData(['users', 'me'], response.data);
       setSuccess(true);
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => {
+        if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {
+          navigate('/units', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }, 3000);
     },
     onError: () => window.scrollTo(0, 0),
   });
 
-  console.log(error);
+  function onContinue () {
+    if (user?.organizationId === 'sfpd' || user?.organizationId === 'sfso') {
+      navigate('/units', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }
 
   return (
     <>
@@ -93,7 +104,7 @@ function Invite () {
               <Text align='center' c='dimmed'>
                 You will be automatically logged into your account in a few seconds. If not, press Continue.
               </Text>
-              <Button fullWidth component={Link} to='/'>Continue</Button>
+              <Button fullWidth onClick={onContinue}>Continue</Button>
             </Stack>
           </Stack>
         )}

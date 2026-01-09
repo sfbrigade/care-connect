@@ -22,7 +22,14 @@ export default fp(async function (fastify) {
     const id = request.session.get('userId');
     if (id) {
       try {
-        const data = await fastify.prisma.user.findUnique({ where: { id } });
+        const data = await fastify.prisma.user.findUnique({
+          where: { id },
+          include: {
+            organization: true,
+            title: true,
+            unit: true,
+          },
+        });
         if (data) {
           request.user = new User(data);
         } else {

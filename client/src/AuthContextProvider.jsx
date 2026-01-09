@@ -23,7 +23,7 @@ function AuthContextProvider ({ children }) {
       // Explicitly set to null if API returns null (not logged in)
       value.setUser(null);
     }
-  }, [data, isSuccess, value]);
+  }, [data, isSuccess, value.setUser]);
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
 }

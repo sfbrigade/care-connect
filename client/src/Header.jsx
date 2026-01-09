@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router';
-import { Anchor, Avatar, Burger, Container, Group, Menu, Title } from '@mantine/core';
+import { Anchor, Avatar, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import { IconMessages } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
@@ -14,7 +14,10 @@ function Header ({ opened, close, toggle, logout }) {
     <Container h='100%' size='xl'>
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
-          <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName} ${user?.lastName}`.trim() : 'CareConnectSF'}</Title>
+          <Box>
+            <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName} ${user?.lastName}`.trim() : 'CareConnectSF'}</Title>
+            {user?.unit && <Text size='sm' color='dimmed'>{user.unit.name}</Text>}
+          </Box>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
           <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
@@ -28,6 +31,7 @@ function Header ({ opened, close, toggle, logout }) {
               <Menu.Dropdown>
                 <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
+                <Menu.Item><Anchor component={NavLink} to='/admin/organizations'>Organizations</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
               </Menu.Dropdown>
             </Menu>

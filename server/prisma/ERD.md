@@ -56,6 +56,35 @@ EXPIRED EXPIRED
 TRANSFERRED TRANSFERRED
         }
     
+  "Organization" {
+    String id "🗝️"
+    String name 
+    String createdById 
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
+  "Unit" {
+    String id "🗝️"
+    String organizationId "🗝️"
+    String name 
+    String createdById 
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
+  "Title" {
+    String id "🗝️"
+    String organizationId "🗝️"
+    String name 
+    String createdById 
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
   "User" {
     String id "🗝️"
     String firstName 
@@ -63,13 +92,15 @@ TRANSFERRED TRANSFERRED
     String email 
     String picture "❓"
     Boolean isAdmin 
+    String organizationId "❓"
+    String titleId "❓"
+    String unitId "❓"
     String hashedPassword 
     DateTime deactivatedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
     String badgeNumber "❓"
-    String rank "❓"
-    String unit "❓"
+    Boolean prop115Certified 
     DateTime updatedAt 
     DateTime createdAt 
     }
@@ -81,6 +112,10 @@ TRANSFERRED TRANSFERRED
     String lastName 
     String email 
     String message "❓"
+    String organizationId "❓"
+    String titleId "❓"
+    String badgeNumber "❓"
+    Boolean prop115Certified 
     DateTime updatedAt 
     DateTime createdAt 
     String createdById 
@@ -283,6 +318,21 @@ TRANSFERRED TRANSFERRED
     DateTime updatedAt 
     }
   
+    "Organization" o|--|| "User" : "createdBy"
+    "Organization" o{--}o "Unit" : ""
+    "Organization" o{--}o "Title" : ""
+    "Organization" o{--}o "Invite" : ""
+    "Organization" o{--}o "User" : ""
+    "Unit" o|--|| "Organization" : "organization"
+    "Unit" o|--|| "User" : "createdBy"
+    "Unit" o{--}o "User" : ""
+    "Title" o|--|| "Organization" : "organization"
+    "Title" o|--|| "User" : "createdBy"
+    "Title" o{--}o "Invite" : ""
+    "Title" o{--}o "User" : ""
+    "User" o|--|o "Organization" : "organization"
+    "User" o|--|o "Title" : "title"
+    "User" o|--|o "Unit" : "unit"
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
@@ -293,6 +343,8 @@ TRANSFERRED TRANSFERRED
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "Incident" : ""
+    "Invite" o|--|o "Organization" : "organization"
+    "Invite" o|--|o "Title" : "title"
     "Invite" o|--|| "User" : "createdBy"
     "Invite" o|--|o "User" : "acceptedBy"
     "Invite" o|--|o "User" : "revokedBy"

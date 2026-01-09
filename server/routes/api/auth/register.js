@@ -63,6 +63,10 @@ export default async function (fastify, opts) {
             firstName: invite.firstName,
             lastName: invite.lastName,
             email: invite.email,
+            organizationId: invite.organizationId,
+            titleId: invite.titleId,
+            badgeNumber: invite.badgeNumber,
+            prop115Certified: invite.prop115Certified,
           }
         : { firstName, lastName, email };
       const user = new User(data);
@@ -70,7 +74,14 @@ export default async function (fastify, opts) {
       await user.setPassword(password);
       // Create user in db
       await fastify.prisma.$transaction(async (tx) => {
-        data = await tx.user.create({ data });
+        data = await tx.user.create({
+          data,
+          include: {
+            organization: true,
+            title: true,
+            unit: true,
+          },
+        });
         if (invite) {
           await tx.invite.update({
             where: { id: invite.id },

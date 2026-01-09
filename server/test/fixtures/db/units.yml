@@ -1,0 +1,53 @@
+entity: unit
+connectedFields: [organization, createdBy]
+items:
+  sfpd-option-1:
+    id: option-1
+    name: 'Option 1'
+    organization: '@sfpd'
+    createdBy: '@user1'
+  sfpd-option-2:
+    id: option-2
+    name: 'Option 2'
+    organization: '@sfpd'
+    createdBy: '@user1'
+  sfpd-option-3:
+    id: option-3
+    name: 'Option 3'
+    organization: '@sfpd'
+    createdBy: '@user1'
+  sfpd-option-4:
+    id: option-4
+    name: 'Option 4'
+    organization: '@sfpd'
+    createdBy: '@user1'
+  sfpd-option-5:
+    id: option-5
+    name: 'Option 5'
+    organization: '@sfpd'
+    createdBy: '@user1'
+  sfso-option-1:
+    id: option-1
+    name: 'Option 1'
+    organization: '@sfso'
+    createdBy: '@user1'
+  sfso-option-2:
+    id: option-2
+    name: 'Option 2'
+    organization: '@sfso'
+    createdBy: '@user1'
+  sfso-option-3:
+    id: option-3
+    name: 'Option 3'
+    organization: '@sfso'
+    createdBy: '@user1'
+  sfso-option-4:
+    id: option-4
+    name: 'Option 4'
+    organization: '@sfso'
+    createdBy: '@user1'
+  sfso-option-5:
+    id: option-5
+    name: 'Option 5'
+    organization: '@sfso'
+    createdBy: '@user1'

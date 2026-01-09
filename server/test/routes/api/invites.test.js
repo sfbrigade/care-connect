@@ -21,7 +21,7 @@ test('/api/invites', async (t) => {
   });
 
   await t.test('POST /', async (t) => {
-    await t.test('creates a new Invite', async (t) => {
+    await t.test('creates a new Invite with minimum fields', async (t) => {
       const response = await app.inject().post('/api/invites').payload({
         firstName: 'John',
         lastName: 'Doe',
@@ -35,12 +35,96 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.lastName, 'Doe');
       assert.deepStrictEqual(data.email, 'john.doe@test.com');
       assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, null);
+      assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.prop115Certified, false);
 
       data = await prisma.invite.findUnique({ where: { id: data.id } });
       assert.deepStrictEqual(data.firstName, 'John');
       assert.deepStrictEqual(data.lastName, 'Doe');
       assert.deepStrictEqual(data.email, 'john.doe@test.com');
       assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, null);
+      assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.prop115Certified, false);
+
+      const sentMail = nodemailerMock.mock.getSentMail();
+      assert.deepStrictEqual(sentMail.length, 1);
+      const [mail] = sentMail;
+      assert.deepStrictEqual(mail.to, 'John Doe <john.doe@test.com>');
+      assert.ok(mail.html.includes('Welcome!'));
+      assert.ok(mail.html.includes(data.id));
+      assert.ok(mail.text.includes('Welcome!'));
+      assert.ok(mail.text.includes(data.id));
+    });
+
+    await t.test('creates a new Invite with some fields', async (t) => {
+      const response = await app.inject().post('/api/invites').payload({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@test.com',
+        message: 'Welcome!',
+        organizationId: 'sfpd',
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.firstName, 'John');
+      assert.deepStrictEqual(data.lastName, 'Doe');
+      assert.deepStrictEqual(data.email, 'john.doe@test.com');
+      assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, 'sfpd');
+      assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.prop115Certified, false);
+
+      data = await prisma.invite.findUnique({ where: { id: data.id } });
+      assert.deepStrictEqual(data.firstName, 'John');
+      assert.deepStrictEqual(data.lastName, 'Doe');
+      assert.deepStrictEqual(data.email, 'john.doe@test.com');
+      assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, 'sfpd');
+      assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.prop115Certified, false);
+
+      const sentMail = nodemailerMock.mock.getSentMail();
+      assert.deepStrictEqual(sentMail.length, 1);
+      const [mail] = sentMail;
+      assert.deepStrictEqual(mail.to, 'John Doe <john.doe@test.com>');
+      assert.ok(mail.html.includes('Welcome!'));
+      assert.ok(mail.html.includes(data.id));
+      assert.ok(mail.text.includes('Welcome!'));
+      assert.ok(mail.text.includes(data.id));
+    });
+
+    await t.test('creates a new Invite with all fields', async (t) => {
+      const response = await app.inject().post('/api/invites').payload({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@test.com',
+        message: 'Welcome!',
+        organizationId: 'sfso',
+        titleId: 'sheriff',
+        prop115Certified: true,
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.firstName, 'John');
+      assert.deepStrictEqual(data.lastName, 'Doe');
+      assert.deepStrictEqual(data.email, 'john.doe@test.com');
+      assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, 'sfso');
+      assert.deepStrictEqual(data.titleId, 'sheriff');
+      assert.deepStrictEqual(data.prop115Certified, true);
+
+      data = await prisma.invite.findUnique({ where: { id: data.id } });
+      assert.deepStrictEqual(data.firstName, 'John');
+      assert.deepStrictEqual(data.lastName, 'Doe');
+      assert.deepStrictEqual(data.email, 'john.doe@test.com');
+      assert.deepStrictEqual(data.message, 'Welcome!');
+      assert.deepStrictEqual(data.organizationId, 'sfso');
+      assert.deepStrictEqual(data.titleId, 'sheriff');
+      assert.deepStrictEqual(data.prop115Certified, true);
 
       const sentMail = nodemailerMock.mock.getSentMail();
       assert.deepStrictEqual(sentMail.length, 1);

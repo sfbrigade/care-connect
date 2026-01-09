@@ -56,8 +56,8 @@ export default async function (fastify, opts) {
       // Convert empty strings to null for nullable fields
       const updateData = _.omit(request.body, ['password', 'picture']);
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
-      if (updateData.rank === '') updateData.rank = null;
-      if (updateData.unit === '') updateData.unit = null;
+      if (updateData.titleId === '') updateData.titleId = null;
+      if (updateData.unitId === '') updateData.unitId = null;
       user.update(updateData);
       // ensure only admins can change isAdmin and deactivatedAt params
       if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt'])).size && !request.user.isAdmin) {
@@ -72,6 +72,11 @@ export default async function (fastify, opts) {
       await fastify.prisma.$transaction(async (tx) => {
         data = await tx.user.update({
           where: { id },
+          include: {
+            organization: true,
+            title: true,
+            unit: true,
+          },
           data: _.pick(data, [...user.changes])
         });
         await pictureHandler?.();

@@ -39,6 +39,11 @@ export default async function (fastify, opts) {
       try {
         const data = await fastify.prisma.user.findUniqueOrThrow({
           where: { passwordResetToken },
+          include: {
+            organization: true,
+            title: true,
+            unit: true,
+          },
         });
         const user = new User(data);
         if (!user.isPasswordResetTokenValid) {

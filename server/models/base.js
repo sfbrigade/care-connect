@@ -26,7 +26,7 @@ class Base {
     return new Proxy(this, {
       get (target, property, receiver) {
         // if the property is in the schema, return it from the data object
-        if (Object.hasOwn(fields, property)) {
+        if (Object.hasOwn(fields, property) || Object.hasOwn(data, `${property.toString()}Id`)) {
           return data[property];
         }
         // otherwise, dispatch it to the target with the proxy as this

@@ -24,6 +24,11 @@ export default async function (fastify, opts) {
       const { id } = request.params;
       const data = await fastify.prisma.user.findUnique({
         where: { id },
+        include: {
+          organization: true,
+          unit: true,
+          title: true,
+        },
       });
       if (!data) {
         return reply.code(StatusCodes.NOT_FOUND).send();

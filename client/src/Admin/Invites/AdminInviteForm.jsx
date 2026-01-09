@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
-import { Alert, Button, Container, Fieldset, Group, Stack, Textarea, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Checkbox, Container, Fieldset, Group, Stack, Select, Textarea, TextInput, Title } from '@mantine/core';
 import { isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -15,12 +15,27 @@ function AdminInviteForm () {
       lastName: '',
       email: '',
       message: '',
+      organizationId: '',
+      titleId: '',
+      badgeNumber: '',
+      prop115Certified: false
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
     },
+  });
+
+  const { data: organizations } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => Api.organizations.index().then(response => response.data),
+  });
+
+  const { data: titles } = useQuery({
+    queryKey: ['organizations', form.getValues().organizationId, 'titles'],
+    queryFn: () => Api.organizations.titles.index(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
   });
 
   const onSubmitMutation = useMutation({
@@ -39,7 +54,7 @@ function AdminInviteForm () {
         <Title mb='md'>Invite a new User</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset variant='unstyled' disabled={onSubmitMutation.isPending}>
-            <Stack w={{ base: '100%', xs: 320 }}>
+            <Stack>
               {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
               <TextInput
                 {...form.getInputProps('firstName')}
@@ -57,6 +72,34 @@ function AdminInviteForm () {
                 label='Email'
                 type='email'
               />
+              <Select
+                {...form.getInputProps('organizationId')}
+                key='organizationId'
+                label='Organization'
+                data={[{ value: '', label: 'None' }, ...(organizations?.map((o) => ({ value: o.id, label: o.name })) || [])]}
+              />
+              {!!titles?.length && (
+                <Select
+                  {...form.getInputProps('titleId')}
+                  key='titleId'
+                  label='Rank'
+                  data={titles?.map((title) => ({ value: title.id, label: title.name })) || []}
+                />
+              )}
+              {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+                <TextInput
+                  {...form.getInputProps('badgeNumber')}
+                  key='badgeNumber'
+                  label='Star number'
+                />
+              )}
+              {form.getValues().organizationId === 'sfso' && (
+                <Checkbox
+                  {...form.getInputProps('prop115Certified')}
+                  key='prop115Certified'
+                  label='Prop 115 certified'
+                />
+              )}
               <Textarea
                 {...form.getInputProps('message')}
                 key='message'

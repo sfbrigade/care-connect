@@ -5,6 +5,9 @@ import { z } from 'zod';
 
 import Base from './base.js';
 import mailer from '#lib/mailer.js';
+import Organization from '#models/organization.js';
+import Title from '#models/title.js';
+import Unit from '#models/unit.js';
 
 const UserAttributesSchema = z.object({
   firstName: z
@@ -17,8 +20,10 @@ const UserAttributesSchema = z.object({
     .max(30, 'Last name must be between 2 and 30 characters long'),
   email: z.string().email('Please enter a valid email address.'),
   badgeNumber: z.string().nullable().optional(),
-  rank: z.string().nullable().optional(),
-  unit: z.string().nullable().optional(),
+  prop115Certified: z.boolean().optional(),
+  organizationId: z.string().nullable().optional(),
+  titleId: z.string().nullable().optional(),
+  unitId: z.string().nullable().optional(),
 });
 
 const UserPasswordSchema = z
@@ -35,9 +40,9 @@ const UserResponseSchema = UserAttributesSchema.extend({
   picture: z.string().nullable(),
   pictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
-  badgeNumber: z.string().nullable(),
-  rank: z.string().nullable(),
-  unit: z.string().nullable(),
+  organization: Organization.ResponseSchema.nullable().optional(),
+  title: Title.ResponseSchema.nullable().optional(),
+  unit: Unit.ResponseSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deactivatedAt: z.coerce.date().nullable(),
@@ -47,9 +52,6 @@ const UserUpdateSchema = UserAttributesSchema.extend({
   password: UserPasswordSchema.or(z.literal('')),
   picture: z.string().nullable(),
   isAdmin: z.boolean(),
-  badgeNumber: z.string().nullable(),
-  rank: z.string().nullable(),
-  unit: z.string().nullable(),
   deactivatedAt: z.coerce.date().nullable(),
 }).partial();
 

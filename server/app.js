@@ -26,6 +26,7 @@ export default async function (fastify, opts) {
   // define your routes in one of these
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'routes'),
+    routeParams: true,
     options: Object.assign({}, opts)
   });
 }

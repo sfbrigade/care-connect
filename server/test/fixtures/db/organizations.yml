@@ -1,0 +1,15 @@
+entity: organization
+connectedFields: [createdBy]
+items:
+  sfpd:
+    id: sfpd
+    name: 'SFPD'
+    createdBy: '@user1'
+  sfso:
+    id: sfso
+    name: 'SFSO'
+    createdBy: '@user1'
+  connections:
+    id: connections
+    name: 'Connections'
+    createdBy: '@user1'

@@ -11,7 +11,6 @@ import PasswordInput from '@/components/PasswordInput';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useStaticContext } from '@/StaticContext';
-import { StatusCodes } from 'http-status-codes';
 
 function Login () {
   const staticContext = useStaticContext();
@@ -23,12 +22,6 @@ function Login () {
   const queryClient = useQueryClient();
 
   const from = location.state?.from || searchParams.get('from') || '/';
-
-  useEffect(() => {
-    if (authContext.user) {
-      navigate(from, { replace: true });
-    }
-  }, [authContext.user, from, navigate]);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -44,17 +37,22 @@ function Login () {
   const onSubmitMutation = useMutation({
     mutationFn: ({ email, password }) => Api.auth.login(email, password),
     onSuccess: async (response) => {
-      // Update user state immediately from login response
-      if (response.status === StatusCodes.OK && response.data) {
-        authContext.setUser(response.data);
+      queryClient.setQueryData(['users', 'me'], response.data);
+      if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {
+        navigate('/units', { replace: true, state: { from } });
+      } else {
+        navigate(from, { replace: true });
       }
-      // Invalidate and refetch user query to ensure consistency
-      await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-      navigate(from, { replace: true });
     },
     onError: (errors) => form.setErrors(errors),
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
+
+  useEffect(() => {
+    if (authContext.user && onSubmitMutation.isIdle) {
+      navigate(from, { replace: true });
+    }
+  }, [authContext.user, onSubmitMutation.isIdle, from, navigate]);
 
   return (
     <>

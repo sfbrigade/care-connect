@@ -50,9 +50,14 @@ test('/api/users', async (t) => {
         isAdmin: true,
         picture: null,
         pictureUrl: null,
+        organization: null,
+        organizationId: null,
         badgeNumber: null,
-        rank: null,
+        title: null,
+        titleId: null,
+        prop115Certified: false,
         unit: null,
+        unitId: null,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
         deactivatedAt: null
@@ -74,9 +79,14 @@ test('/api/users', async (t) => {
         isAdmin: false,
         picture: null,
         pictureUrl: null,
+        organization: null,
+        organizationId: null,
         badgeNumber: null,
-        rank: null,
+        title: null,
+        titleId: null,
+        prop115Certified: false,
         unit: null,
+        unitId: null,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
@@ -159,115 +169,115 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data.deactivatedAt, new Date('2025-01-01T16:53:41.000Z'));
     });
 
-    await t.test('updates badgeNumber and rank', async (t) => {
+    await t.test('updates badgeNumber and title', async (t) => {
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
         badgeNumber: 'BADGE-12345',
-        rank: 'Deputy'
+        titleId: 'sheriff'
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
       assert.deepStrictEqual(data.badgeNumber, 'BADGE-12345');
-      assert.deepStrictEqual(data.rank, 'Deputy');
+      assert.deepStrictEqual(data.titleId, 'sheriff');
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.badgeNumber, 'BADGE-12345');
-      assert.deepStrictEqual(data.rank, 'Deputy');
+      assert.deepStrictEqual(data.titleId, 'sheriff');
     });
 
-    await t.test('converts empty strings to null for badgeNumber and rank', async (t) => {
+    await t.test('converts empty strings to null for badgeNumber and title', async (t) => {
       // First set values
       await prisma.user.update({
         where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
-        data: { badgeNumber: 'BADGE-999', rank: 'Sergeant' },
+        data: { badgeNumber: 'BADGE-999', titleId: 'sheriff' },
       });
 
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
         badgeNumber: '',
-        rank: ''
+        titleId: ''
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
       assert.deepStrictEqual(data.badgeNumber, null);
-      assert.deepStrictEqual(data.rank, null);
+      assert.deepStrictEqual(data.titleId, null);
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.badgeNumber, null);
-      assert.deepStrictEqual(data.rank, null);
+      assert.deepStrictEqual(data.titleId, null);
     });
 
-    await t.test('allows setting badgeNumber and rank to null explicitly', async (t) => {
+    await t.test('allows setting badgeNumber and title to null explicitly', async (t) => {
       // First set values
       await prisma.user.update({
         where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
-        data: { badgeNumber: 'BADGE-888', rank: 'Lieutenant' },
+        data: { badgeNumber: 'BADGE-888', titleId: 'sheriff' },
       });
 
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
         badgeNumber: null,
-        rank: null
+        titleId: null
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
       assert.deepStrictEqual(data.badgeNumber, null);
-      assert.deepStrictEqual(data.rank, null);
+      assert.deepStrictEqual(data.titleId, null);
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.badgeNumber, null);
-      assert.deepStrictEqual(data.rank, null);
+      assert.deepStrictEqual(data.titleId, null);
     });
 
     await t.test('updates unit field', async (t) => {
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
-        unit: 'Unit A'
+        unitId: 'option-1'
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.unit, 'Unit A');
+      assert.deepStrictEqual(data.unitId, 'option-1');
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
-      assert.deepStrictEqual(data.unit, 'Unit A');
+      assert.deepStrictEqual(data.unitId, 'option-1');
     });
 
     await t.test('converts empty string to null for unit', async (t) => {
       // First set value
       await prisma.user.update({
         where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
-        data: { unit: 'Unit B' },
+        data: { unitId: 'option-1' },
       });
 
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
-        unit: ''
+        unitId: ''
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.unit, null);
+      assert.deepStrictEqual(data.unitId, null);
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
-      assert.deepStrictEqual(data.unit, null);
+      assert.deepStrictEqual(data.unitId, null);
     });
 
     await t.test('allows setting unit to null explicitly', async (t) => {
       // First set value
       await prisma.user.update({
         where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
-        data: { unit: 'Unit C' },
+        data: { unitId: 'option-1' },
       });
 
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
-        unit: null
+        unitId: null
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       let data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.unit, null);
+      assert.deepStrictEqual(data.unitId, null);
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
-      assert.deepStrictEqual(data.unit, null);
+      assert.deepStrictEqual(data.unitId, null);
     });
   });
 });

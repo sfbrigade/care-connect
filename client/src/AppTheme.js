@@ -1,6 +1,8 @@
-import { createTheme, Alert, Burger, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, TextInput } from '@mantine/core';
+import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import buttonClasses from './components/Button.module.css';
+import chipClasses from './components/Chip.module.css';
+import inputClasses from './components/Input.module.css';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -112,10 +114,18 @@ const AppTheme = createTheme({
         },
       },
     }),
+    Checkbox: Checkbox.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md',
+      },
+      classNames: inputClasses
+    }),
     Chip: Chip.extend({
       defaultProps: {
         color: 'black',
-      }
+      },
+      classNames: chipClasses
     }),
     Container: Container.extend({
       defaultProps: {
@@ -129,22 +139,31 @@ const AppTheme = createTheme({
         radius: 'xl'
       }
     }),
+    Select: Select.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md'
+      },
+      classNames: inputClasses
+    }),
     Stack: Stack.extend({
       defaultProps: {
         gap: 'xl'
       }
+    }),
+    Textarea: Textarea.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md'
+      },
+      classNames: inputClasses
     }),
     TextInput: TextInput.extend({
       defaultProps: {
         size: 'lg',
         radius: 'md'
       },
-      styles: {
-        label: {
-          fontWeight: '600',
-          lineHeight: '1.5555em',
-        }
-      }
+      classNames: inputClasses
     }),
   }
 });
