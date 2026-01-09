@@ -18,7 +18,7 @@ const InviteAttributesSchema = z.object({
   organizationId: z.string().nullable().optional(),
   titleId: z.string().nullable().optional(),
   badgeNumber: z.string().nullable().optional(),
-  prop115Certified: z.boolean(),
+  prop115Certified: z.boolean().default(false),
 });
 
 const InviteResponseSchema = InviteAttributesSchema.extend({

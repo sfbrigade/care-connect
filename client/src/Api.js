@@ -305,9 +305,6 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/organizations/${id}`, data).catch(handleError);
     },
-    delete (id) {
-      return instance.delete(`/api/organizations/${id}`).catch(handleError);
-    },
     titles: {
       index (organizationId, page = 1) {
         return instance.get(`/api/organizations/${organizationId}/titles`, { params: { page } });

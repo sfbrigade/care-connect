@@ -117,28 +117,4 @@ test('/api/organizations', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
     });
   });
-
-  await t.test('DELETE /:id', async (t) => {
-    await t.test('deletes an organization (admin only)', async () => {
-      const response = await app.inject().delete('/api/organizations/sfso').headers(adminHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.NO_CONTENT);
-
-      // Verify in database
-      const org = await prisma.organization.findUnique({ where: { id: 'sfso' } });
-      assert.ok(!org);
-    });
-
-    await t.test('returns 403 for non-admin user', async () => {
-      const response = await app.inject().delete('/api/organizations/connections').headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
-    });
-
-    await t.test('returns 404 for non-existent organization', async () => {
-      const response = await app.inject().delete('/api/organizations/NON-EXISTENT').headers(adminHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
-    });
-  });
 });
