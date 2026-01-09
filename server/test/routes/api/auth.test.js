@@ -57,20 +57,40 @@ test('/api/auth', async (t) => {
     });
 
     await t.test('registers a new user from an invite', async () => {
+      // set a title on the invite (until fixture loader fixed to support compound foreign keys)
+      await prisma.invite.update({
+        where: { id: '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de' },
+        data: { titleId: 'sheriff' },
+      });
+
       const response = await app.inject().post('/api/auth/register').payload({
-        firstName: 'Invited',
-        lastName: 'User',
-        email: 'invited.user@test.com',
+        firstName: 'Ignored',
+        lastName: 'Changes',
+        email: 'changed.email@test.com',
         password: 'Abcdef12345!',
         inviteId: '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
 
       const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.firstName, 'Invited');
+      assert.deepStrictEqual(data.lastName, 'User 2');
+      assert.deepStrictEqual(data.email, 'invited.user.2@test.com');
+      assert.deepStrictEqual(data.organizationId, 'sfso');
+      assert.deepStrictEqual(data.titleId, 'sheriff');
+      assert.deepStrictEqual(data.prop115Certified, true);
 
       const inviteData = await prisma.invite.findUnique({ where: { id: '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de' } });
       assert.ok(inviteData.acceptedAt);
       assert.deepStrictEqual(inviteData.acceptedById, data.id);
+
+      const userData = await prisma.user.findUnique({ where: { id: data.id } });
+      assert.deepStrictEqual(userData.firstName, 'Invited');
+      assert.deepStrictEqual(userData.lastName, 'User 2');
+      assert.deepStrictEqual(userData.email, 'invited.user.2@test.com');
+      assert.deepStrictEqual(userData.organizationId, 'sfso');
+      assert.deepStrictEqual(userData.titleId, 'sheriff');
+      assert.deepStrictEqual(userData.prop115Certified, true);
     });
 
     await t.test('validates required fields', async () => {
