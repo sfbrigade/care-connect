@@ -231,8 +231,7 @@ model Amenity {
 }
 
 model ServiceType {
-  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code        String           @unique
+  id          String           @id
   name        String
   description String?
   facilities  FacilityService[]
@@ -246,7 +245,7 @@ model FacilityService {
   facility        Facility    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   facilityId      String      @db.Uuid
   serviceType     ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId   String      @db.Uuid
+  serviceTypeId   String
   availableBeds   Int         @default(0)
   reservedBeds    Int         @default(0)
   description     String?
@@ -315,7 +314,7 @@ model PlacementRequest {
   reviewedBy         User?                  @relation("ReviewedByUser", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedById       String?                @db.Uuid
   serviceType        ServiceType?           @relation(fields: [serviceTypeId], references: [id], onDelete: SetNull)
-  serviceTypeId      String?                @db.Uuid
+  serviceTypeId      String?
   status             PlacementRequestStatus @default(PENDING)
   requestedAt        DateTime               @default(now())
   respondedAt        DateTime?
@@ -346,7 +345,7 @@ model BedHold {
   facility              Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   facilityId            String         @db.Uuid
   serviceType           ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId         String         @db.Uuid
+  serviceTypeId         String
   client                Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId              String?        @db.Uuid
   incident              Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
