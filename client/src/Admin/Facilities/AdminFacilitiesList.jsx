@@ -1,130 +1,71 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { Container, Title, Button, Table, Group, Badge, Loader, Alert, Text } from '@mantine/core';
-import { modals } from '@mantine/modals';
-import { IconPlus, IconAlertCircle, IconTrash } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router';
+import { Button, Container, Group, Loader, Table, Title, Anchor } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
+import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import Pagination from '@/components/Pagination';
 
 function AdminFacilitiesList () {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const page = parseInt(params.get('page') ?? '1', 10);
+  const [lastPage, setLastPage] = useState(1);
 
-  const { data: facilities, isLoading, error } = useQuery({
-    queryKey: ['admin-facilities'],
+  const { data: facilities, isLoading } = useQuery({
+    queryKey: ['facilities', page],
     queryFn: async () => {
-      const response = await Api.facilities.list();
+      const response = await Api.facilities.index(page);
+      setLastPage(Api.calculateLastPage(response, page));
       return response.data;
-    },
+    }
   });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => Api.facilities.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-facilities'] });
-    },
-  });
-
-  function handleDelete (facility) {
-    modals.openConfirmModal({
-      title: 'Delete Facility',
-      centered: true,
-      children: (
-        <Text>
-          Are you sure you want to delete <b>{facility.name}</b>?
-          <br />
-          <br />
-          This action cannot be undone.
-        </Text>
-      ),
-      labels: {
-        confirm: 'Delete',
-        cancel: 'Cancel',
-      },
-      confirmProps: { color: 'red' },
-      onConfirm: () => {
-        deleteMutation.mutate(facility.id);
-      },
-    });
-  }
-
-  if (isLoading) {
-    return (
-      <Container>
-        <Loader />
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container>
-        <Alert icon={<IconAlertCircle />} title='Error' color='red'>
-          Failed to load facilities.
-        </Alert>
-      </Container>
-    );
-  }
 
   return (
-    <Container size='xl'>
-      <Group justify='space-between' mb='md'>
+    <>
+      <Head>
+        <title>Manage Facilities</title>
+      </Head>
+      <Container size='xl'>
+        <Title mb='md'>Manage Facilities</Title>
+        <Group mb='lg'>
+          <Button component={Link} to='new'>
+            Create a new Facility
+          </Button>
+        </Group>
         <Title order={2}>Facilities</Title>
-        <Button leftSection={<IconPlus />} onClick={() => navigate('/admin/facilities/new')}>
-          New Facility
-        </Button>
-      </Group>
-
-      {facilities && facilities.length === 0
-        ? (
-          <Alert>No facilities found.</Alert>
-          )
-        : (
-          <Table>
+        <Table.ScrollContainer>
+          <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Neighborhood</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Actions</Table.Th>
+                <Table.Th w='30%'>ID</Table.Th>
+                <Table.Th w='40%'>Name</Table.Th>
+                <Table.Th w='30%'>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {facilities?.map((facility) => (
-                <Table.Tr key={facility.id}>
-                  <Table.Td>{facility.name}</Table.Td>
-                  <Table.Td>{facility.neighborhood || '-'}</Table.Td>
-                  <Table.Td>
-                    <Badge color={facility.isActive ? 'green' : 'gray'}>
-                      {facility.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+              {isLoading &&
+                <Table.Tr>
+                  <Table.Td colSpan={3}>
+                    <Group justify='center' py='lg'><Loader /></Group>
                   </Table.Td>
+                </Table.Tr>}
+              {!isLoading && facilities?.map((facility) => (
+                <Table.Tr key={facility.id}>
+                  <Table.Td>{facility.id}</Table.Td>
+                  <Table.Td>{facility.name}</Table.Td>
                   <Table.Td>
-                    <Group gap='xs'>
-                      <Button variant='light' size='xs' onClick={() => navigate(`/admin/facilities/${facility.id}`)}>
-                        Edit
-                      </Button>
-                      <Button variant='light' size='xs' onClick={() => navigate('/lesc/holds', { state: { facilityId: facility.id } })}>
-                        Hold
-                      </Button>
-                      <Button
-                        variant='light'
-                        color='red'
-                        size='xs'
-                        leftSection={<IconTrash size={14} />}
-                        onClick={() => handleDelete(facility)}
-                        loading={deleteMutation.isPending}
-                      >
-                        Delete
-                      </Button>
-                    </Group>
+                    <Anchor component={Link} to={`${facility.id}`}>Edit</Anchor>
                   </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
-          )}
-    </Container>
+          <Pagination page={page} lastPage={lastPage} />
+        </Table.ScrollContainer>
+      </Container>
+    </>
   );
 }
 

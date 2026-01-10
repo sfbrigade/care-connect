@@ -159,6 +159,9 @@ const Api = {
     },
   },
   facilities: {
+    index (page = 1) {
+      return instance.get('/api/facilities', { params: { page } });
+    },
     list ({ include = '', type = '' } = {}) {
       return instance.get('/api/facilities', { params: { include, type } });
     },
