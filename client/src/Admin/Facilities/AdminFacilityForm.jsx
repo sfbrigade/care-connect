@@ -97,7 +97,7 @@ function AdminFacilityForm () {
               {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
               {form.errors?._form && <Alert color='red'>{form.errors._form}</Alert>}
               {success && <Alert>Facility has been {isNew ? 'created' : 'updated'}!</Alert>}
-              
+
               <TextInput
                 {...form.getInputProps('name')}
                 key={form.key('name')}
