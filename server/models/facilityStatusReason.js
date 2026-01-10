@@ -1,9 +1,10 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, FacilityType } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 
 const FacilityStatusReasonAttributesSchema = z.object({
+  type: z.enum(Object.values(FacilityType)).nullable(),
   description: z.string().nullable(),
 });
 

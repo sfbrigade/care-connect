@@ -33,19 +33,17 @@ function AdminFacilityStatusForm () {
     },
   });
 
-  const { data: facilityResponse, isLoading: facilityLoading } = useQuery({
+  const { data: facility, isLoading: facilityLoading } = useQuery({
     queryKey: ['facilities', facilityId],
-    queryFn: () => Api.facilities.get(facilityId),
+    queryFn: () => Api.facilities.get(facilityId).then(res => res.data),
     enabled: !!facilityId,
   });
 
-  const { data: reasonsResponse, isLoading: reasonsLoading } = useQuery({
-    queryKey: ['facilityStatusReasons'],
-    queryFn: () => Api.facilityStatusReasons.list(),
+  const { data: reasons, isLoading: reasonsLoading } = useQuery({
+    queryKey: ['facilityStatusReasons', facility?.type],
+    queryFn: () => Api.facilities.statusReasons.list(facility?.type).then(res => res.data),
+    enabled: !!facility,
   });
-
-  const facility = facilityResponse?.data;
-  const reasons = reasonsResponse?.data || [];
 
   useEffect(() => {
     if (facility) {
@@ -107,7 +105,7 @@ function AdminFacilityStatusForm () {
                     key={form.key('statusReasonId')}
                     label='Reason'
                     placeholder='Select reason'
-                    data={reasons.map(r => ({ value: r.id, label: r.description }))}
+                    data={reasons?.map(r => ({ value: r.id, label: r.description })) || []}
                     required
                   />
 

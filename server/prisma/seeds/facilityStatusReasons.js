@@ -30,12 +30,14 @@ export default async function main (prisma) {
     },
     {
       id: 'sfso_staffing',
+      type: 'LESC',
       description: 'Lack of SFSO Staffing',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
     {
       id: 'connections_staffing',
+      type: 'LESC',
       description: 'Lack of Connections Staffing',
       createdById: adminUser.id,
       updatedById: adminUser.id,

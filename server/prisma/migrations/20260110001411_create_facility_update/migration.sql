@@ -73,7 +73,7 @@ CREATE TABLE "public"."FacilityUpdate" (
 -- CreateTable
 CREATE TABLE "public"."FacilityStatusReason" (
     "id" TEXT NOT NULL,
-    "facilityId" UUID,
+    "type" "public"."FacilityType",
     "description" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdById" UUID NOT NULL,
@@ -100,9 +100,6 @@ ALTER TABLE "public"."FacilityUpdate" ADD CONSTRAINT "FacilityUpdate_statusReaso
 
 -- AddForeignKey
 ALTER TABLE "public"."FacilityUpdate" ADD CONSTRAINT "FacilityUpdate_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."FacilityStatusReason" ADD CONSTRAINT "FacilityStatusReason_facilityId_fkey" FOREIGN KEY ("facilityId") REFERENCES "public"."Facility"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."FacilityStatusReason" ADD CONSTRAINT "FacilityStatusReason_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

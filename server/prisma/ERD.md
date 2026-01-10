@@ -172,7 +172,7 @@ TRANSFERRED TRANSFERRED
 
   "FacilityStatusReason" {
     String id "🗝️"
-    String facilityId "❓"
+    FacilityType type "❓"
     String description 
     DateTime createdAt 
     String createdById 
@@ -360,14 +360,13 @@ TRANSFERRED TRANSFERRED
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "FacilityService" : ""
-    "Facility" o{--}o "FacilityStatusReason" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
     "FacilityUpdate" o|--|| "FacilityStatus" : "enum:status"
     "FacilityUpdate" o|--|o "FacilityStatusReason" : "statusReason"
     "FacilityUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "FacilityUpdate" o|--|| "User" : "updatedBy"
-    "FacilityStatusReason" o|--|o "Facility" : "facility"
+    "FacilityStatusReason" o|--|o "FacilityType" : "enum:type"
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
     "FacilityContact" o|--|| "Facility" : "facility"

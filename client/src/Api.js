@@ -195,6 +195,15 @@ const Api = {
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
+    statusReasons: {
+      list (type = '') {
+        const params = {};
+        if (type) {
+          params.type = type;
+        }
+        return instance.get('/api/facilities/status-reasons', { params });
+      },
+    },
   },
   holds: {
     list () {
@@ -344,11 +353,6 @@ const Api = {
       delete (organizationId, id) {
         return instance.delete(`/api/organizations/${organizationId}/units/${id}`).catch(handleError);
       },
-    },
-  },
-  facilityStatusReasons: {
-    list () {
-      return instance.get('/api/facility-status-reasons');
     },
   },
 };

@@ -217,7 +217,6 @@ model Facility {
   contacts                     FacilityContact[]
   eligibility                  FacilityEligibility[]
   services                     FacilityService[]
-  statusReasons                FacilityStatusReason[]  @relation("Facility")
   updates                      FacilityUpdate[]
 }
 
@@ -238,8 +237,7 @@ model FacilityUpdate {
 
 model FacilityStatusReason {
   id                           String                  @id
-  facility                     Facility?               @relation("Facility", fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String?                 @db.Uuid
+  type                         FacilityType?
   description                  String
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)

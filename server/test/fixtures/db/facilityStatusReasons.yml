@@ -18,11 +18,13 @@ items:
     updatedBy: '@user1'
   sfso_staffing:
     id: sfso_staffing
+    type: 'LESC'
     description: Lack of SFSO Staffing
     createdBy: '@user1'
     updatedBy: '@user1'
   connections_staffing:
     id: connections_staffing
+    type: 'LESC'
     description: Lack of Connections Staffing
     createdBy: '@user1'
     updatedBy: '@user1'

@@ -9,15 +9,28 @@ export default async function (fastify, opts) {
       preHandler: fastify.requireUser,
       schema: {
         description: 'List all facility status reasons.',
+        querystring: z.object({
+          type: z.string().optional(),
+        }),
         response: {
           [StatusCodes.OK]: z.array(FacilityStatusReason.ResponseSchema),
         },
       },
     },
     async function (request, reply) {
-      const reasons = await fastify.prisma.facilityStatusReason.findMany({
+      const { type } = request.query;
+      const options = {
         orderBy: { description: 'asc' },
-      });
+      };
+      if (type) {
+        options.where = {
+          OR: [
+            { type },
+            { type: null },
+          ],
+        };
+      }
+      const reasons = await fastify.prisma.facilityStatusReason.findMany(options);
 
       return reply.send(reasons);
     });
