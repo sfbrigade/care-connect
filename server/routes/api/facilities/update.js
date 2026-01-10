@@ -32,7 +32,10 @@ export default async function (fastify, opts) {
 
       const updated = await fastify.prisma.facility.update({
         where: { id },
-        data,
+        data: {
+          ...data,
+          updatedById: request.user.id,
+        },
       });
 
       return reply.send(updated);

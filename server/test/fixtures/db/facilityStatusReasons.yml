@@ -1,0 +1,28 @@
+entity: facilityStatusReason
+connectedFields: [facility, createdBy, updatedBy]
+items:
+  building_issue:
+    id: building_issue
+    description: Building Issue
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  safety_lockdown:
+    id: safety_lockdown
+    description: Safety Lock-down
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  other:
+    id: other
+    description: Other
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  sfso_staffing:
+    id: sfso_staffing
+    description: Lack of SFSO Staffing
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  connections_staffing:
+    id: connections_staffing
+    description: Lack of Connections Staffing
+    createdBy: '@user1'
+    updatedBy: '@user1'

@@ -14,11 +14,6 @@ const FacilityAttributesSchema = z.object({
   name: z.string(),
   type: z.enum(Object.values(FacilityType)),
   serviceTypeId: z.string(),
-  status: z.enum(Object.values(FacilityStatus)),
-  statusReasonId: z.string().nullable(),
-  statusOther: z.string().nullable(),
-  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
-  updateNotes: z.string().nullable(),
   subdomain: z.string().nullable(),
   description: z.string().nullable(),
   phone: z.string().nullable(),
@@ -39,7 +34,12 @@ const FacilityAttributesSchema = z.object({
 const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
   serviceType: ServiceType.ResponseSchema.optional(),
+  status: z.enum(Object.values(FacilityStatus)),
   statusReason: FacilityStatusReason.ResponseSchema.optional(),
+  statusReasonId: z.string().nullable(),
+  statusOther: z.string().nullable(),
+  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
+  updateNotes: z.string().nullable(),
   services: z.array(FacilityService.ResponseSchema).optional(),
   amenities: z.array(Amenity.ResponseSchema).optional(),
   eligibility: z.array(FacilityEligibility.ResponseSchema).optional(),
@@ -55,6 +55,9 @@ const FacilityResponseSchema = FacilityAttributesSchema.extend({
 const FacilityUpdateSchema = FacilityAttributesSchema.partial();
 
 export class Facility extends Base {
+  static Status = FacilityStatus;
+  static Type = FacilityType;
+  static UpdateMethod = FacilityUpdateMethod;
   static ResponseSchema = FacilityResponseSchema;
   static UpdateSchema = FacilityUpdateSchema;
 

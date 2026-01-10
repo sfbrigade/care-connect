@@ -3,6 +3,7 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
+import Facility from '#models/facility.js';
 
 test('/api/facilities', async (t) => {
   const app = await build(t);
@@ -233,6 +234,56 @@ test('/api/facilities', async (t) => {
       });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+  });
+
+  await t.test('POST /:id/status', async (t) => {
+    await t.test('updates facility status', async () => {
+      const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
+        status: Facility.Status.CLOSED,
+        statusReasonId: 'other',
+        statusOther: 'Other reasons',
+        updateNotes: 'Testing',
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, Facility.Status.CLOSED);
+      assert.deepStrictEqual(data.statusReasonId, 'other');
+      assert.deepStrictEqual(data.statusOther, 'Other reasons');
+      assert.deepStrictEqual(data.updateNotes, 'Testing');
+
+      const facility = await prisma.facility.findUnique({
+        where: { id: '6d123d8f-edd5-4d14-9220-0508eb30b47b' },
+      });
+      assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
+      assert.deepStrictEqual(facility.statusReasonId, 'other');
+      assert.deepStrictEqual(facility.statusOther, 'Other reasons');
+      assert.deepStrictEqual(facility.updateNotes, 'Testing');
+    });
+
+    await t.test('ignores other fields if status is OPEN_ACCEPTING', async () => {
+      const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
+        status: Facility.Status.OPEN_ACCEPTING,
+        statusReasonId: 'other',
+        statusOther: 'Other reasons',
+        updateNotes: 'Testing',
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, Facility.Status.OPEN_ACCEPTING);
+      assert.deepStrictEqual(data.statusReasonId, null);
+      assert.deepStrictEqual(data.statusOther, null);
+      assert.deepStrictEqual(data.updateNotes, 'Testing');
+
+      const facility = await prisma.facility.findUnique({
+        where: { id: '6d123d8f-edd5-4d14-9220-0508eb30b47b' },
+      });
+      assert.deepStrictEqual(facility.status, Facility.Status.OPEN_ACCEPTING);
+      assert.deepStrictEqual(facility.statusReasonId, null);
+      assert.deepStrictEqual(facility.statusOther, null);
+      assert.deepStrictEqual(facility.updateNotes, 'Testing');
     });
   });
 
