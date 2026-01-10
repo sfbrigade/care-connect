@@ -159,8 +159,8 @@ const Api = {
     },
   },
   facilities: {
-    index (page = 1) {
-      return instance.get('/api/facilities', { params: { page } });
+    index (page = 1, include = '') {
+      return instance.get('/api/facilities', { params: { page, include } });
     },
     list ({ include = '', type = '' } = {}) {
       return instance.get('/api/facilities', { params: { include, type } });

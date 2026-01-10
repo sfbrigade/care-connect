@@ -16,11 +16,28 @@ function AdminFacilitiesList () {
   const { data: facilities, isLoading } = useQuery({
     queryKey: ['facilities', page],
     queryFn: async () => {
-      const response = await Api.facilities.index(page);
+      const response = await Api.facilities.index(page, 'statusReason');
       setLastPage(Api.calculateLastPage(response, page));
       return response.data;
     }
   });
+
+  const STATUS_LABELS = {
+    OPEN_ACCEPTING: 'Open & Accepting',
+    OPEN_NOT_ACCEPTING: 'Open & Not Accepting',
+    CLOSED: 'Closed',
+  };
+
+  const formatStatus = (facility) => {
+    const statusLabel = STATUS_LABELS[facility.status] || facility.status;
+    const reason = facility.statusReason?.description || facility.statusOther;
+
+    if (reason) {
+      return `${statusLabel} (${reason})`;
+    }
+
+    return statusLabel;
+  };
 
   return (
     <>
@@ -39,8 +56,8 @@ function AdminFacilitiesList () {
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th w='30%'>ID</Table.Th>
-                <Table.Th w='40%'>Name</Table.Th>
+                <Table.Th w='35%'>Name</Table.Th>
+                <Table.Th w='35%'>Status</Table.Th>
                 <Table.Th w='30%'>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -53,8 +70,8 @@ function AdminFacilitiesList () {
                 </Table.Tr>}
               {!isLoading && facilities?.map((facility) => (
                 <Table.Tr key={facility.id}>
-                  <Table.Td>{facility.id}</Table.Td>
                   <Table.Td>{facility.name}</Table.Td>
+                  <Table.Td>{formatStatus(facility)}</Table.Td>
                   <Table.Td>
                     <Anchor component={Link} to={`${facility.id}`}>Edit</Anchor>
                     &nbsp;|&nbsp;

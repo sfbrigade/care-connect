@@ -35,7 +35,7 @@ const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
   serviceType: ServiceType.ResponseSchema.optional(),
   status: z.enum(Object.values(FacilityStatus)),
-  statusReason: FacilityStatusReason.ResponseSchema.optional(),
+  statusReason: FacilityStatusReason.ResponseSchema.nullable().optional(),
   statusReasonId: z.string().nullable(),
   statusOther: z.string().nullable(),
   updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
