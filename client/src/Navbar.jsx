@@ -27,6 +27,7 @@ function Navbar ({ close, logout }) {
             <>
               <Divider />
               <MantineNavLink component={NavLink} to='/admin/facilities' onClick={close} label='Facilities' />
+              <MantineNavLink component={NavLink} to='/admin/facility-status-reasons' onClick={close} label='Facility Status Reasons' />
               <MantineNavLink component={NavLink} to='/admin/organizations' onClick={close} label='Organizations' />
               <MantineNavLink component={NavLink} to='/admin/invites' onClick={close} label='Invites' />
               <MantineNavLink component={NavLink} to='/admin/users' onClick={close} label='Users' />

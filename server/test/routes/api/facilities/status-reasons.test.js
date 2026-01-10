@@ -70,4 +70,112 @@ test('/api/facilities/status-reasons', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
     });
   });
+
+  await t.test('POST /', async (t) => {
+    const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+    const newReason = {
+      id: 'test_reason',
+      type: 'LESC',
+      description: 'Test Reason Description',
+    };
+
+    await t.test('creates a new status reason (admin only)', async () => {
+      const response = await app.inject()
+        .post('/api/facilities/status-reasons')
+        .headers(adminHeaders)
+        .payload(newReason);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const reason = JSON.parse(response.body);
+      assert.strictEqual(reason.id, newReason.id);
+      assert.strictEqual(reason.type, newReason.type);
+      assert.strictEqual(reason.description, newReason.description);
+      assert.ok(reason.createdAt);
+      assert.ok(reason.updatedAt);
+
+      // Verify in DB
+      const dbReason = await app.prisma.facilityStatusReason.findUnique({ where: { id: newReason.id } });
+      assert.ok(dbReason);
+    });
+
+    await t.test('requires admin role', async () => {
+      const response = await app.inject()
+        .post('/api/facilities/status-reasons')
+        .headers(userHeaders)
+        .payload(newReason);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
+  await t.test('GET /:id', async (t) => {
+    await t.test('returns a status reason by ID', async () => {
+      const response = await app.inject()
+        .get('/api/facilities/status-reasons/building_issue')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const reason = JSON.parse(response.body);
+      assert.strictEqual(reason.id, 'building_issue');
+    });
+
+    await t.test('returns 404 if not found', async () => {
+      const response = await app.inject()
+        .get('/api/facilities/status-reasons/non_existent')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('PATCH /:id', async (t) => {
+    const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+    const updateData = {
+      description: 'Updated Description',
+    };
+
+    await t.test('updates a status reason (admin only)', async () => {
+      const response = await app.inject()
+        .patch('/api/facilities/status-reasons/safety_lockdown')
+        .headers(adminHeaders)
+        .payload(updateData);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const reason = JSON.parse(response.body);
+      assert.strictEqual(reason.description, updateData.description);
+    });
+
+    await t.test('requires admin role', async () => {
+      const response = await app.inject()
+        .patch('/api/facilities/status-reasons/safety_lockdown')
+        .headers(userHeaders)
+        .payload(updateData);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
+  await t.test('DELETE /:id', async (t) => {
+    const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+
+    await t.test('deletes a status reason (admin only)', async () => {
+      const response = await app.inject()
+        .delete('/api/facilities/status-reasons/other')
+        .headers(adminHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NO_CONTENT);
+
+      // Verify deletion
+      const dbReason = await app.prisma.facilityStatusReason.findUnique({ where: { id: 'other' } });
+      assert.ok(!dbReason);
+    });
+
+    await t.test('requires admin role', async () => {
+      const response = await app.inject()
+        .delete('/api/facilities/status-reasons/building_issue')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
 });

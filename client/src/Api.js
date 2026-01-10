@@ -196,12 +196,24 @@ const Api = {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
     statusReasons: {
-      list (type = '') {
+      index (type = '') {
         const params = {};
         if (type) {
           params.type = type;
         }
         return instance.get('/api/facilities/status-reasons', { params });
+      },
+      get (id) {
+        return instance.get(`/api/facilities/status-reasons/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/facilities/status-reasons', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/facilities/status-reasons/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/facilities/status-reasons/${id}`).catch(handleError);
       },
     },
   },
