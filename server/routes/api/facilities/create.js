@@ -17,7 +17,13 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const data = request.body;
 
-      const facility = await fastify.prisma.facility.create({ data });
+      const facility = await fastify.prisma.facility.create({
+        data: {
+          ...data,
+          createdById: request.user.id,
+          updatedById: request.user.id,
+        },
+      });
 
       return reply.code(StatusCodes.CREATED).send(facility);
     });

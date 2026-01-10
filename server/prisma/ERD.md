@@ -1,19 +1,17 @@
 ```mermaid
 erDiagram
 
-        PlacementRequestStatus {
-            PENDING PENDING
-APPROVED APPROVED
-DENIED DENIED
-CANCELLED CANCELLED
-EXPIRED EXPIRED
+        FacilityType {
+            DIDO DIDO
+LESC LESC
         }
     
 
 
-        FacilityType {
-            DIDO DIDO
-LESC LESC
+        FacilityStatus {
+            CLOSED CLOSED
+OPEN_NOT_ACCEPTING OPEN_NOT_ACCEPTING
+OPEN_ACCEPTING OPEN_ACCEPTING
         }
     
 
@@ -131,6 +129,11 @@ TRANSFERRED TRANSFERRED
     String name 
     FacilityType type 
     String serviceTypeId 
+    FacilityStatus status 
+    String statusReasonId "❓"
+    String statusOther "❓"
+    FacilityUpdateMethod updateMethod 
+    String updateNotes "❓"
     String subdomain "❓"
     String description "❓"
     String phone "❓"
@@ -147,10 +150,34 @@ TRANSFERRED TRANSFERRED
     Decimal longitude "❓"
     String timezone "❓"
     Boolean isActive 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
+  "FacilityUpdate" {
+    String id "🗝️"
+    String facilityId 
+    FacilityStatus status 
+    String statusReasonId "❓"
+    String statusOther "❓"
     FacilityUpdateMethod updateMethod 
     String updateNotes "❓"
-    DateTime createdAt 
     DateTime updatedAt 
+    String updatedById 
+    }
+  
+
+  "FacilityStatusReason" {
+    String id "🗝️"
+    String facilityId "❓"
+    String description 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
@@ -241,36 +268,6 @@ TRANSFERRED TRANSFERRED
     }
   
 
-  "PlacementRequest" {
-    String id "🗝️"
-    String referenceCode "❓"
-    String facilityId 
-    String clientId 
-    String requestedById 
-    String reviewedById "❓"
-    String serviceTypeId "❓"
-    PlacementRequestStatus status 
-    DateTime requestedAt 
-    DateTime respondedAt "❓"
-    DateTime expiresAt "❓"
-    String outreachNotes "❓"
-    String providerNotes "❓"
-    Json metadata "❓"
-    DateTime createdAt 
-    DateTime updatedAt 
-    }
-  
-
-  "PlacementRequestEvent" {
-    String id "🗝️"
-    String placementRequestId 
-    PlacementRequestStatus status 
-    String notes "❓"
-    String actorId "❓"
-    DateTime createdAt 
-    }
-  
-
   "BedHold" {
     String id "🗝️"
     String facilityId 
@@ -333,16 +330,18 @@ TRANSFERRED TRANSFERRED
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
-    "User" o{--}o "Invite" : ""
-    "User" o{--}o "Invite" : ""
-    "User" o{--}o "Invite" : ""
-    "User" o{--}o "PlacementRequest" : ""
-    "User" o{--}o "PlacementRequest" : ""
-    "User" o{--}o "PlacementRequestEvent" : ""
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
+    "User" o{--}o "Facility" : ""
+    "User" o{--}o "Facility" : ""
+    "User" o{--}o "FacilityStatusReason" : ""
+    "User" o{--}o "FacilityStatusReason" : ""
+    "User" o{--}o "FacilityUpdate" : ""
     "User" o{--}o "Incident" : ""
+    "User" o{--}o "Invite" : ""
+    "User" o{--}o "Invite" : ""
+    "User" o{--}o "Invite" : ""
     "Invite" o|--|o "Organization" : "organization"
     "Invite" o|--|o "Title" : "title"
     "Invite" o|--|| "User" : "createdBy"
@@ -350,35 +349,36 @@ TRANSFERRED TRANSFERRED
     "Invite" o|--|o "User" : "revokedBy"
     "Facility" o|--|| "FacilityType" : "enum:type"
     "Facility" o|--|| "ServiceType" : "serviceType"
+    "Facility" o|--|| "FacilityStatus" : "enum:status"
+    "Facility" o|--|o "FacilityStatusReason" : "statusReason"
     "Facility" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
-    "Facility" o{--}o "FacilityCapacitySnapshot" : ""
+    "Facility" o|--|| "User" : "createdBy"
+    "Facility" o|--|| "User" : "updatedBy"
     "Facility" o{--}o "Amenity" : ""
-    "Facility" o{--}o "FacilityService" : ""
-    "Facility" o{--}o "FacilityEligibility" : ""
-    "Facility" o{--}o "FacilityContact" : ""
-    "Facility" o{--}o "PlacementRequest" : ""
     "Facility" o{--}o "BedHold" : ""
+    "Facility" o{--}o "FacilityCapacitySnapshot" : ""
+    "Facility" o{--}o "FacilityContact" : ""
+    "Facility" o{--}o "FacilityEligibility" : ""
+    "Facility" o{--}o "FacilityService" : ""
+    "Facility" o{--}o "FacilityStatusReason" : ""
+    "Facility" o{--}o "FacilityUpdate" : ""
+    "FacilityUpdate" o|--|| "Facility" : "facility"
+    "FacilityUpdate" o|--|| "FacilityStatus" : "enum:status"
+    "FacilityUpdate" o|--|o "FacilityStatusReason" : "statusReason"
+    "FacilityUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
+    "FacilityUpdate" o|--|| "User" : "updatedBy"
+    "FacilityStatusReason" o|--|o "Facility" : "facility"
+    "FacilityStatusReason" o|--|| "User" : "createdBy"
+    "FacilityStatusReason" o|--|| "User" : "updatedBy"
     "FacilityContact" o|--|| "Facility" : "facility"
     "ServiceType" o{--}o "FacilityService" : ""
-    "ServiceType" o{--}o "PlacementRequest" : ""
     "ServiceType" o{--}o "BedHold" : ""
     "FacilityService" o|--|| "Facility" : "facility"
     "FacilityService" o|--|| "ServiceType" : "serviceType"
     "FacilityEligibility" o|--|| "Facility" : "facility"
     "FacilityEligibility" o|--|| "FacilityEligibilityType" : "enum:type"
     "FacilityCapacitySnapshot" o|--|| "Facility" : "facility"
-    "Client" o{--}o "PlacementRequest" : ""
     "Client" o{--}o "BedHold" : ""
-    "PlacementRequest" o|--|| "Facility" : "facility"
-    "PlacementRequest" o|--|| "Client" : "client"
-    "PlacementRequest" o|--|| "User" : "requestedBy"
-    "PlacementRequest" o|--|o "User" : "reviewedBy"
-    "PlacementRequest" o|--|o "ServiceType" : "serviceType"
-    "PlacementRequest" o|--|| "PlacementRequestStatus" : "enum:status"
-    "PlacementRequest" o{--}o "PlacementRequestEvent" : ""
-    "PlacementRequestEvent" o|--|| "PlacementRequest" : "placementRequest"
-    "PlacementRequestEvent" o|--|| "PlacementRequestStatus" : "enum:status"
-    "PlacementRequestEvent" o|--|o "User" : "actor"
     "BedHold" o|--|| "Facility" : "facility"
     "BedHold" o|--|| "ServiceType" : "serviceType"
     "BedHold" o|--|o "Client" : "client"

@@ -36,6 +36,12 @@ export default async function main (prisma) {
     await prisma.facilityCapacitySnapshot.deleteMany({});
   }
 
+  const admin = await prisma.user.findUnique({
+    where: {
+      email: 'admin@careconnectsf.org',
+    },
+  });
+
   let createdFacilities = 0;
   let updatedFacilities = 0;
   const serviceTypesCache = new Map();
@@ -66,26 +72,32 @@ export default async function main (prisma) {
       }
     }
 
+    const serviceTypeName = record['Service Category'] || 'General';
+    const serviceType = await getOrCreateServiceType(prisma, serviceTypeName, serviceTypesCache, dryRun);
+
     if (dryRun) {
       facility = facility ?? { id: '<dry-run-id>' };
     } else if (facility) {
       facility = await prisma.facility.update({
         where: { id: facility.id },
-        data: facilityData,
+        data: {
+          ...facilityData,
+          updatedById: admin.id,
+        },
       });
       updatedFacilities += 1;
     } else {
       facility = await prisma.facility.create({
         data: {
-          name: facilityName,
           ...facilityData,
+          name: facilityName,
+          serviceTypeId: serviceType.id,
+          createdById: admin.id,
+          updatedById: admin.id,
         },
       });
       createdFacilities += 1;
     }
-
-    const serviceTypeName = record['Service Category'] || 'General';
-    const serviceType = await getOrCreateServiceType(prisma, serviceTypeName, serviceTypesCache, dryRun);
 
     const { availableBeds, totalBeds, reservedBeds, description } = buildCapacityData(record);
     if (!dryRun) {

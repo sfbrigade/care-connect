@@ -128,6 +128,7 @@ test('/api/facilities', async (t) => {
       const response = await app.inject().post('/api/facilities').payload({
         name: 'Complete New Facility',
         description: 'Full Description',
+        serviceTypeId: 'general',
         phone: '555-1111',
         email: 'new@example.com',
         website: 'https://new.example.com',
@@ -140,7 +141,6 @@ test('/api/facilities', async (t) => {
         latitude: 37.8044,
         longitude: -122.2711,
         isActive: false,
-        serviceTypeId: 'general',
       }).headers(adminHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
