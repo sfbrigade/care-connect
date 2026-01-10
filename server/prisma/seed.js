@@ -7,6 +7,7 @@ import seedResetCenter from './seeds/resetCenter.js';
 import seedOrganizations from './seeds/organizations.js';
 import seedTitles from './seeds/titles.js';
 import seedUnits from './seeds/units.js';
+import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 
 try {
   await seedUsers(prisma);
@@ -16,6 +17,7 @@ try {
   await seedOrganizations(prisma);
   await seedTitles(prisma);
   await seedUnits(prisma);
+  await seedFacilityStatusReasons(prisma);
 } catch (error) {
   console.error('Error seeding:', error);
   process.exit(1);
