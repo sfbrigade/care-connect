@@ -15,7 +15,7 @@ const BedHoldAttributesSchema = z.object({
 
 const BedHoldCreateSchema = BedHoldAttributesSchema.partial().extend({
   facilityId: z.string().uuid(),
-  serviceTypeId: z.string(),
+  serviceTypeId: z.string().optional(),
   clientId: z.string().uuid().nullable().optional(),
 });
 
