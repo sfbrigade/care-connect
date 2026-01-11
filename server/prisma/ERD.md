@@ -54,6 +54,13 @@ EXPIRED EXPIRED
 TRANSFERRED TRANSFERRED
         }
     
+
+
+        BedType {
+            BED BED
+CHAIR CHAIR
+        }
+    
   "Organization" {
     String id "🗝️"
     String name 
@@ -213,14 +220,38 @@ TRANSFERRED TRANSFERRED
     }
   
 
-  "FacilityService" {
-    String facilityId "🗝️"
-    String serviceTypeId "🗝️"
-    Int availableBeds 
-    Int reservedBeds 
-    String description "❓"
+  "BedStatus" {
+    String id "🗝️"
+    String facilityId 
+    BedType type 
+    Int capacity 
+    Int unavailableUnoccupied 
+    Int unavailableOccupied 
+    Int occupied 
+    Int holds 
+    Int available 
     DateTime createdAt 
+    String createdById 
+    FacilityUpdateMethod updateMethod 
+    String updateNotes "❓"
     DateTime updatedAt 
+    String updatedById 
+    }
+  
+
+  "BedStatusUpdate" {
+    String id "🗝️"
+    String bedStatusId 
+    Int capacity 
+    Int unavailableUnoccupied 
+    Int unavailableOccupied 
+    Int occupied 
+    Int holds 
+    Int available 
+    FacilityUpdateMethod updateMethod 
+    String updateNotes "❓"
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
@@ -232,18 +263,6 @@ TRANSFERRED TRANSFERRED
     String notes "❓"
     DateTime createdAt 
     DateTime updatedAt 
-    }
-  
-
-  "FacilityCapacitySnapshot" {
-    String id "🗝️"
-    String facilityId 
-    Int totalBeds "❓"
-    Int availableBeds "❓"
-    Int reservedBeds "❓"
-    String lastSyncSource "❓"
-    DateTime observedAt 
-    DateTime createdAt 
     }
   
 
@@ -333,6 +352,9 @@ TRANSFERRED TRANSFERRED
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedHold" : ""
+    "User" o{--}o "BedStatus" : ""
+    "User" o{--}o "BedStatus" : ""
+    "User" o{--}o "BedStatusUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "FacilityStatusReason" : ""
@@ -356,10 +378,9 @@ TRANSFERRED TRANSFERRED
     "Facility" o|--|| "User" : "updatedBy"
     "Facility" o{--}o "Amenity" : ""
     "Facility" o{--}o "BedHold" : ""
-    "Facility" o{--}o "FacilityCapacitySnapshot" : ""
+    "Facility" o{--}o "BedStatus" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
-    "Facility" o{--}o "FacilityService" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
     "FacilityUpdate" o|--|| "FacilityStatus" : "enum:status"
@@ -370,13 +391,18 @@ TRANSFERRED TRANSFERRED
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
     "FacilityContact" o|--|| "Facility" : "facility"
-    "ServiceType" o{--}o "FacilityService" : ""
     "ServiceType" o{--}o "BedHold" : ""
-    "FacilityService" o|--|| "Facility" : "facility"
-    "FacilityService" o|--|| "ServiceType" : "serviceType"
+    "BedStatus" o|--|| "Facility" : "facility"
+    "BedStatus" o|--|| "BedType" : "enum:type"
+    "BedStatus" o|--|| "User" : "createdBy"
+    "BedStatus" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
+    "BedStatus" o|--|| "User" : "updatedBy"
+    "BedStatus" o{--}o "BedStatusUpdate" : ""
+    "BedStatusUpdate" o|--|| "BedStatus" : "bedStatus"
+    "BedStatusUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
+    "BedStatusUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
     "FacilityEligibility" o|--|| "FacilityEligibilityType" : "enum:type"
-    "FacilityCapacitySnapshot" o|--|| "Facility" : "facility"
     "Client" o{--}o "BedHold" : ""
     "BedHold" o|--|| "Facility" : "facility"
     "BedHold" o|--|| "ServiceType" : "serviceType"

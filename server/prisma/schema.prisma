@@ -67,6 +67,11 @@ enum BedHoldStatus {
   TRANSFERRED
 }
 
+enum BedType {
+  BED
+  CHAIR
+}
+
 model Organization {
   id                           String                  @id
   name                         String
@@ -137,6 +142,9 @@ model User {
   bedHoldsCreated              BedHold[]               @relation("CreatedBy")
   bedHoldsCancelled            BedHold[]               @relation("CancelledBy")
   bedHoldsTransferred          BedHold[]               @relation("TransferredBy")
+  bedStatusesCreated           BedStatus[]             @relation("CreatedBy")
+  bedStatusesUpdated           BedStatus[]             @relation("UpdatedBy")
+  bedStatusUpdatesCreated      BedStatusUpdate[]
   facilitiesCreated            Facility[]              @relation("CreatedBy")
   facilitiesUpdated            Facility[]              @relation("UpdatedBy")
   facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
@@ -213,10 +221,9 @@ model Facility {
 
   amenities                    Amenity[]
   bedHolds                     BedHold[]
-  capacitySnapshots            FacilityCapacitySnapshot[]
+  bedStatuses                  BedStatus[]
   contacts                     FacilityContact[]
   eligibility                  FacilityEligibility[]
-  services                     FacilityService[]
   updates                      FacilityUpdate[]
 }
 
@@ -228,7 +235,7 @@ model FacilityUpdate {
   statusReasonId               String?
   statusReason                 FacilityStatusReason?   @relation(fields: [statusReasonId], references: [id])
   statusOther                  String?
-  updateMethod                 FacilityUpdateMethod
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
   updateNotes                  String?
   updatedAt                    DateTime                @default(now())
   updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
@@ -281,22 +288,47 @@ model ServiceType {
   updatedAt                    DateTime                @updatedAt
 
   facilities                   Facility[]
-  facilityServices             FacilityService[]
   bedHolds                     BedHold[]
 }
 
-model FacilityService {
+model BedStatus {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   facilityId                   String                  @db.Uuid
-  serviceType                  ServiceType             @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId                String
-  availableBeds                Int                     @default(0)
-  reservedBeds                 Int                     @default(0)
-  description                  String?
+  type                         BedType                 @default(BED)
+  capacity                     Int                     @default(0)
+  unavailableUnoccupied        Int                     @default(0)
+  unavailableOccupied          Int                     @default(0)
+  occupied                     Int                     @default(0)
+  holds                        Int                     @default(0)
+  available                    Int                     @default(0)
   createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
   updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
-  @@id([facilityId, serviceTypeId])
+  updates                      BedStatusUpdate[]
+}
+
+model BedStatusUpdate {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bedStatus                    BedStatus               @relation(fields: [bedStatusId], references: [id], onDelete: Cascade)
+  bedStatusId                  String                  @db.Uuid
+  capacity                     Int                     @default(0)
+  unavailableUnoccupied        Int                     @default(0)
+  unavailableOccupied          Int                     @default(0)
+  occupied                     Int                     @default(0)
+  holds                        Int                     @default(0)
+  available                    Int                     @default(0)
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid  
 }
 
 model FacilityEligibility {
@@ -310,18 +342,6 @@ model FacilityEligibility {
   updatedAt                    DateTime                @updatedAt
 
   @@index([facilityId, type])
-}
-
-model FacilityCapacitySnapshot {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String                  @db.Uuid
-  totalBeds                    Int?
-  availableBeds                Int?
-  reservedBeds                 Int?
-  lastSyncSource               String?
-  observedAt                   DateTime                @default(now())
-  createdAt                    DateTime                @default(now())
 }
 
 model Client {
