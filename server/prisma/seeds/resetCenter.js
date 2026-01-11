@@ -21,22 +21,31 @@ export default async function main (prisma) {
     create: data,
     update: data,
   });
-  const facilityServiceData = {
+  const bedStatusData = {
     facilityId: facility.id,
-    serviceTypeId: 'lesc',
-    availableBeds: 16,
-    reservedBeds: 0,
+    type: 'CHAIR',
+    capacity: 16,
+    available: 16,
+    createdById: admin.id,
+    updatedById: admin.id,
   };
-  await prisma.facilityService.upsert({
+  let bedStatus = await prisma.bedStatus.findFirst({
     where: {
-      facilityId_serviceTypeId: {
-        facilityId: facility.id,
-        serviceTypeId: 'lesc',
-      },
+      facilityId: facility.id,
     },
-    create: facilityServiceData,
-    update: facilityServiceData,
   });
+  if (bedStatus) {
+    await prisma.bedStatus.update({
+      where: {
+        id: bedStatus.id,
+      },
+      data: bedStatusData,
+    });
+  } else {
+    bedStatus = await prisma.bedStatus.create({
+      data: bedStatusData,
+    });
+  }
 
   console.log('Done seeding RESET');
 }

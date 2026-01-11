@@ -33,7 +33,7 @@ export default async function main (prisma) {
   console.info(`Importing ${records.length} clinic records from ${absolutePath}${dryRun ? ' (dry run)' : ''}`);
 
   if (truncateSnapshots && !dryRun) {
-    await prisma.facilityCapacitySnapshot.deleteMany({});
+    await prisma.bedStatusUpdate.deleteMany({});
   }
 
   const admin = await prisma.user.findUnique({
@@ -99,37 +99,34 @@ export default async function main (prisma) {
       createdFacilities += 1;
     }
 
-    const { availableBeds, totalBeds, reservedBeds, description } = buildCapacityData(record);
+    const { availableBeds, totalBeds, reservedBeds } = buildCapacityData(record);
     if (!dryRun) {
-      await prisma.facilityService.upsert({
+      let bedStatus = await prisma.bedStatus.findFirst({
         where: {
-          facilityId_serviceTypeId: {
-            facilityId: facility.id,
-            serviceTypeId: serviceType.id,
-          },
-        },
-        update: {
-          availableBeds,
-          reservedBeds,
-          description,
-        },
-        create: {
           facilityId: facility.id,
-          serviceTypeId: serviceType.id,
-          availableBeds,
-          reservedBeds,
-          description,
         },
       });
-
-      if (totalBeds !== null || availableBeds !== null || reservedBeds !== null) {
-        await prisma.facilityCapacitySnapshot.create({
+      if (bedStatus) {
+        await prisma.bedStatus.update({
+          where: {
+            id: bedStatus.id,
+          },
+          data: {
+            capacity: totalBeds,
+            available: availableBeds,
+            unavailableUnoccupied: reservedBeds,
+            updatedById: admin.id,
+          },
+        });
+      } else {
+        bedStatus = await prisma.bedStatus.create({
           data: {
             facilityId: facility.id,
-            totalBeds,
-            availableBeds,
-            reservedBeds,
-            lastSyncSource: record['Avail management'] || 'clinics.csv',
+            capacity: totalBeds ?? 0,
+            available: availableBeds ?? 0,
+            unavailableUnoccupied: reservedBeds ?? 0,
+            createdById: admin.id,
+            updatedById: admin.id,
           },
         });
       }
