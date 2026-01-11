@@ -4,13 +4,13 @@ import { Alert, Button, Container, Fieldset, Select, Stack, TextInput, Textarea,
 import { isNotEmpty, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
+import i18n from 'i18next';
 
 import Api from '@/Api';
 
 function AdminFacilityStatusForm () {
-  const params = useParams();
+  const { facilityId } = useParams();
   const navigate = useNavigate();
-  const facilityId = params.facilityId;
 
   const [success, setSuccess] = useState(false);
 
@@ -41,7 +41,7 @@ function AdminFacilityStatusForm () {
 
   const { data: reasons, isLoading: reasonsLoading } = useQuery({
     queryKey: ['facilityStatusReasons', facility?.type],
-    queryFn: () => Api.facilities.statusReasons.list(facility?.type).then(res => res.data),
+    queryFn: () => Api.facilities.statusReasons.index(facility?.type).then(res => res.data),
     enabled: !!facility,
   });
 
@@ -70,6 +70,8 @@ function AdminFacilityStatusForm () {
     navigate(-1);
   }
 
+  console.log('???', facility, facilityLoading, reasons, reasonsLoading, updateStatusMutation.isPending);
+
   return (
     <>
       <Head>
@@ -90,11 +92,10 @@ function AdminFacilityStatusForm () {
                 key={form.key('status')}
                 label='Status'
                 placeholder='Select status'
-                data={[
-                  { value: 'OPEN_ACCEPTING', label: 'Open & Accepting' },
-                  { value: 'OPEN_NOT_ACCEPTING', label: 'Open & Not Accepting' },
-                  { value: 'CLOSED', label: 'Closed' },
-                ]}
+                data={['OPEN_ACCEPTING', 'OPEN_NOT_ACCEPTING', 'CLOSED'].map(status => ({
+                  value: status,
+                  label: i18n.t(`facility.status.${status}`)
+                }))}
                 required
               />
 

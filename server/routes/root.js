@@ -1,5 +1,4 @@
 import accepts from 'accepts';
-import fastifyStatic from '@fastify/static';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import path from 'path';
@@ -16,30 +15,6 @@ function readIndexFile () {
 }
 
 export default async function (fastify, opts) {
-  // Only register static assets if the directory exists (client has been built)
-  const assetsPath = path.resolve(__dirname, '../../client/dist/client/assets');
-  if (fs.existsSync(assetsPath)) {
-    fastify.register(fastifyStatic, {
-      root: assetsPath,
-      prefix: '/assets/',
-      index: false,
-      // Add cache headers for hashed assets (long cache since filenames are hashed)
-      setHeaders: (res, path) => {
-        // Vite creates hashed filenames (e.g., index-abc123.js), so these can be cached long-term
-        if (path.match(/\.(js|css|woff2?|png|jpg|jpeg|svg|ico|webp)$/)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        }
-      },
-    });
-  }
-
-  fastify.register(fastifyStatic, {
-    root: path.resolve(__dirname, '../static-data'),
-    prefix: '/static-data/',
-    decorateReply: false,
-    schemaHide: true,
-  });
-
   fastify.get('/*',
     {
       schema: {

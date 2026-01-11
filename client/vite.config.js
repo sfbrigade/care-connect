@@ -49,11 +49,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
         'unlustrous-christiane-didactic.ngrok-free.dev'
       ],
       proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
-        },
-        '/static-data': {
+        '^/api|/static-data|/locales': {
           target: 'http://localhost:3000',
           changeOrigin: true,
         }

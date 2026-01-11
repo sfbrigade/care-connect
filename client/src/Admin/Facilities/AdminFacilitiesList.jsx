@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { Button, Container, Group, Loader, Table, Title, Anchor } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
+import i18n from 'i18next';
 
 import Api from '@/Api';
 import Pagination from '@/components/Pagination';
@@ -22,14 +23,8 @@ function AdminFacilitiesList () {
     }
   });
 
-  const STATUS_LABELS = {
-    OPEN_ACCEPTING: 'Open & Accepting',
-    OPEN_NOT_ACCEPTING: 'Open & Not Accepting',
-    CLOSED: 'Closed',
-  };
-
   const formatStatus = (facility) => {
-    const statusLabel = STATUS_LABELS[facility.status] || facility.status;
+    const statusLabel = i18n.t(`facility.status.${facility.status}`);
     const reason = facility.statusReason?.description || facility.statusOther;
 
     if (reason) {

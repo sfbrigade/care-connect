@@ -91,7 +91,7 @@ function AdminFacilityStatusReasonForm () {
               {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
               {form.errors?._form && <Alert color='red'>{form.errors._form}</Alert>}
               {success && <Alert>Status reason has been {isNew ? 'created' : 'updated'}!</Alert>}
-              
+
               <TextInput
                 {...form.getInputProps('id')}
                 key={form.key('id')}
