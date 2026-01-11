@@ -62,7 +62,7 @@ CREATE TABLE "public"."FacilityUpdate" (
     "status" "public"."FacilityStatus" NOT NULL,
     "statusReasonId" TEXT,
     "statusOther" TEXT,
-    "updateMethod" "public"."FacilityUpdateMethod" NOT NULL,
+    "updateMethod" "public"."FacilityUpdateMethod" NOT NULL DEFAULT 'MANUAL',
     "updateNotes" TEXT,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedById" UUID NOT NULL,
