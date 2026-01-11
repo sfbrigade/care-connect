@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import { autoExpireHolds } from '#lib/lesc/holds.js';
 
-import ServiceType from '#models/serviceType.js';
+// TODO: this endpoint going away once status is always updated/cached in BedStatus
 
 export default async function (fastify, opts) {
   fastify.get('/:id/availability',
@@ -15,13 +15,12 @@ export default async function (fastify, opts) {
         }),
         response: {
           [StatusCodes.OK]: z.array(z.object({
-            serviceTypeId: z.string(),
-            serviceType: ServiceType.ResponseSchema,
-            totalBeds: z.number().nullable(),
-            availableBeds: z.number().nullable(),
-            reservedBeds: z.number().nullable(),
-            activeHolds: z.number(),
-            calculatedAvailable: z.number(),
+            capacity: z.number(),
+            unavailableOccupied: z.number(),
+            unavailableUnoccupied: z.number(),
+            occupied: z.number(),
+            holds: z.number(),
+            available: z.number(),
           })),
         },
       },
@@ -50,26 +49,23 @@ export default async function (fastify, opts) {
         },
       });
 
-      const facilityServices = await fastify.prisma.facilityService.findMany({
+      const bedStatuses = await fastify.prisma.bedStatus.findMany({
         where: {
           facilityId,
         },
-        include: {
-          serviceType: true,
-        },
       });
 
-      const results = facilityServices.map((facilityService) => {
-        const hold = holds.find((hold) => hold.serviceTypeId === facilityService.serviceTypeId);
-        const calculatedAvailable = facilityService.availableBeds - (hold ? hold._sum.bedsRequested : 0);
+      const results = bedStatuses.map((bedStatus) => {
+        // TODO: change to check on bedStatus.id once hold model migrated
+        const hold = holds.find((hold) => hold.facilityId === bedStatus.facilityId);
+        const calculatedAvailable = bedStatus.capacity - bedStatus.unavailableOccupied - bedStatus.unavailableUnoccupied - bedStatus.occupied - (hold ? hold._sum.bedsRequested : 0);
         return {
-          serviceTypeId: facilityService.serviceTypeId,
-          serviceType: facilityService.serviceType,
-          totalBeds: facilityService.availableBeds ?? 0,
-          availableBeds: calculatedAvailable,
-          reservedBeds: facilityService.reservedBeds ?? 0,
-          activeHolds: hold ? hold._sum.bedsRequested : 0,
-          calculatedAvailable,
+          capacity: bedStatus.capacity,
+          unavailableOccupied: bedStatus.unavailableOccupied,
+          unavailableUnoccupied: bedStatus.unavailableUnoccupied,
+          occupied: bedStatus.occupied,
+          holds: hold ? hold._sum.bedsRequested : 0,
+          available: calculatedAvailable,
         };
       });
 

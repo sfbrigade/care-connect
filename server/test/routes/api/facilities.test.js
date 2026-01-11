@@ -79,11 +79,11 @@ test('/api/facilities', async (t) => {
 
       assert.deepStrictEqual(data.id, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
       assert.deepStrictEqual(data.name, 'LESC Facility 1');
-      assert.ok(Array.isArray(data.services));
-      assert.deepStrictEqual(data.services.length, 1);
-      assert.deepStrictEqual(data.services[0].serviceType.id, 'lesc');
-      assert.deepStrictEqual(data.services[0].availableBeds, 10);
-      assert.deepStrictEqual(data.services[0].reservedBeds, 2);
+      assert.ok(Array.isArray(data.bedStatuses));
+      assert.deepStrictEqual(data.bedStatuses.length, 1);
+      assert.deepStrictEqual(data.bedStatuses[0].type, 'CHAIR');
+      assert.deepStrictEqual(data.bedStatuses[0].capacity, 10);
+      assert.deepStrictEqual(data.bedStatuses[0].unavailableUnoccupied, 2);
       assert.ok(Array.isArray(data.contacts));
       assert.deepStrictEqual(data.contacts.length, 2);
       assert.deepStrictEqual(data.contacts[0].name, 'Jane Doe');
@@ -349,12 +349,12 @@ test('/api/facilities', async (t) => {
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 1);
-      assert.deepStrictEqual(data[0].serviceTypeId, 'lesc');
-      assert.deepStrictEqual(data[0].totalBeds, 10);
-      assert.deepStrictEqual(data[0].availableBeds, 7);
-      assert.deepStrictEqual(data[0].reservedBeds, 2);
-      assert.deepStrictEqual(data[0].activeHolds, 3);
-      assert.deepStrictEqual(data[0].calculatedAvailable, 7);
+      assert.deepStrictEqual(data[0].capacity, 10);
+      assert.deepStrictEqual(data[0].unavailableUnoccupied, 2);
+      assert.deepStrictEqual(data[0].unavailableOccupied, 0);
+      assert.deepStrictEqual(data[0].occupied, 0);
+      assert.deepStrictEqual(data[0].holds, 3);
+      assert.deepStrictEqual(data[0].available, 5);
     });
   });
 });

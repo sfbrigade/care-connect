@@ -25,11 +25,7 @@ export default async function (fastify, opts) {
       const facility = await fastify.prisma.facility.findUnique({
         where: { id },
         include: {
-          services: {
-            include: {
-              serviceType: true,
-            },
-          },
+          bedStatuses: true,
           contacts: true,
         },
       });
