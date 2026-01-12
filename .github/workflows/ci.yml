@@ -8,36 +8,8 @@ on:
     types: [opened, reopened, synchronize]
   
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    container: node:22.19.0-bookworm
-    services:
-      db:
-        image: postgres:17.6
-      minio:
-        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-      - name: Set up npm cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - name: Install Dependencies
-        run: npm ci
-      - name: Generate Prisma client
-        run: cd server && npx prisma generate
-      - name: Run ESLint
-        run: npm run lint
-      - name: Run Tests
-        run: cp server/example.env server/.env && npm test
-
   meta:
     name: Generate and check metadata
-    needs: test
-    if: ${{ github.ref_name == 'dev' || github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.environment.outputs.environment }}
@@ -77,9 +49,37 @@ jobs:
             echo "tag_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+  test:
+    name: Test
+    needs: meta
+    runs-on: ubuntu-latest
+    if: ${{ needs.meta.outputs.tag_exists == 'false' }}
+    container: node:22.19.0-bookworm
+    services:
+      db:
+        image: postgres:17.6
+      minio:
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Set up npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: cd server && npx prisma generate
+      - name: Run ESLint
+        run: npm run lint
+      - name: Run Tests
+        run: cp server/example.env server/.env && npm test
+
   build:
     name: Build Image
-    needs: meta
+    needs: [ meta, test ]
     strategy:
       fail-fast: false
       matrix:
@@ -87,7 +87,7 @@ jobs:
           - ubuntu-24.04
           - ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
-    if: ${{ needs.meta.outputs.tag_exists == 'false' }}
+    if: ${{ github.ref_name == 'dev' || github.ref_name == 'main' }}
     steps:
       - name: Prepare
         run: |
