@@ -112,9 +112,9 @@ export default async function main (prisma) {
             id: bedStatus.id,
           },
           data: {
-            capacity: totalBeds,
-            available: availableBeds,
-            unavailableUnoccupied: reservedBeds,
+            capacity: totalBeds ?? availableBeds ?? 0,
+            available: availableBeds ?? 0,
+            unavailableUnoccupied: reservedBeds ?? 0,
             updatedById: admin.id,
           },
         });
@@ -122,7 +122,7 @@ export default async function main (prisma) {
         bedStatus = await prisma.bedStatus.create({
           data: {
             facilityId: facility.id,
-            capacity: totalBeds ?? 0,
+            capacity: totalBeds ?? availableBeds ?? 0,
             available: availableBeds ?? 0,
             unavailableUnoccupied: reservedBeds ?? 0,
             createdById: admin.id,
