@@ -1,25 +1,51 @@
 export default async function main (prisma) {
   console.log('Seeding RESET center...');
-
-  const facility = await prisma.facility.create({
-    data: {
-      name: 'RESET',
-      type: 'LESC',
+  const admin = await prisma.user.findUnique({
+    where: {
+      email: 'admin@careconnectsf.org',
+    },
+  });
+  const data = {
+    name: 'RESET',
+    type: 'LESC',
+    serviceTypeId: 'lesc',
+    subdomain: 'reset',
+    addressLine1: '444 6th St',
+    createdById: admin.id,
+    updatedById: admin.id,
+  };
+  const facility = await prisma.facility.upsert({
+    where: {
       subdomain: 'reset',
-      addressLine1: '444 6th St',
     },
+    create: data,
+    update: data,
   });
-  const serviceType = await prisma.serviceType.findUnique({
-    where: { code: 'LESC' },
-  });
-  await prisma.facilityService.create({
-    data: {
+  const bedStatusData = {
+    facilityId: facility.id,
+    type: 'CHAIR',
+    capacity: 16,
+    available: 16,
+    createdById: admin.id,
+    updatedById: admin.id,
+  };
+  let bedStatus = await prisma.bedStatus.findFirst({
+    where: {
       facilityId: facility.id,
-      serviceTypeId: serviceType.id,
-      availableBeds: 16,
-      reservedBeds: 0,
     },
   });
+  if (bedStatus) {
+    await prisma.bedStatus.update({
+      where: {
+        id: bedStatus.id,
+      },
+      data: bedStatusData,
+    });
+  } else {
+    bedStatus = await prisma.bedStatus.create({
+      data: bedStatusData,
+    });
+  }
 
   console.log('Done seeding RESET');
 }

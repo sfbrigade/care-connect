@@ -11,6 +11,8 @@ export default async function (fastify, opts) {
         querystring: z.object({
           type: z.string().optional(),
           include: z.string().optional(),
+          page: z.coerce.number().optional(),
+          perPage: z.coerce.number().optional(),
         }),
         response: {
           [StatusCodes.OK]: z.array(Facility.ResponseSchema),
@@ -18,6 +20,7 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
+      const { page = '1', perPage = '25' } = request.query;
       // Filter facilities based on type
       const where = {};
       if (request.query.type) {
@@ -25,22 +28,21 @@ export default async function (fastify, opts) {
       }
       const include = request.query.include?.split(',');
 
-      const facilities = await fastify.prisma.facility.findMany({
+      const options = {
+        page,
+        perPage,
         where,
         orderBy: { name: 'asc' },
         include: {
-          services: include?.includes('services')
-            ? {
-                include: {
-                  serviceType: true,
-                },
-              }
-            : false,
+          bedStatuses: !!include?.includes('bedStatuses'),
           amenities: !!include?.includes('amenities'),
           eligibility: !!include?.includes('eligibility'),
           contacts: !!include?.includes('contacts'),
+          statusReason: !!include?.includes('statusReason'),
         },
-      });
-      return reply.send(facilities);
+      };
+
+      const { records, total } = await fastify.prisma.facility.paginate(options);
+      return reply.setPaginationHeaders(page, perPage, total).send(records);
     });
 }

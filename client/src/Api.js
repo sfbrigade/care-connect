@@ -159,6 +159,9 @@ const Api = {
     },
   },
   facilities: {
+    index (page = 1, include = '') {
+      return instance.get('/api/facilities', { params: { page, include } });
+    },
     list ({ include = '', type = '' } = {}) {
       return instance.get('/api/facilities', { params: { include, type } });
     },
@@ -186,8 +189,46 @@ const Api = {
     availability (id) {
       return instance.get(`/api/facilities/${id}/availability`);
     },
+    updateStatus (id, data) {
+      return instance.post(`/api/facilities/${id}/status`, data).catch(handleError);
+    },
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
+    },
+    bedStatuses: {
+      index (facilityId, page = 1) {
+        return instance.get(`/api/facilities/${facilityId}/bed-statuses`, { params: { page } });
+      },
+      create (facilityId, data) {
+        return instance.post(`/api/facilities/${facilityId}/bed-statuses`, data).catch(handleError);
+      },
+      update (facilityId, bedStatusId, data) {
+        return instance.patch(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`, data).catch(handleError);
+      },
+      get (facilityId, bedStatusId) {
+        return instance.get(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`);
+      },
+    },
+    statusReasons: {
+      index (type = '') {
+        const params = {};
+        if (type) {
+          params.type = type;
+        }
+        return instance.get('/api/facilities/status-reasons', { params });
+      },
+      get (id) {
+        return instance.get(`/api/facilities/status-reasons/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/facilities/status-reasons', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/facilities/status-reasons/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/facilities/status-reasons/${id}`).catch(handleError);
+      },
     },
   },
   holds: {

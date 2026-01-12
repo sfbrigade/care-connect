@@ -14,7 +14,7 @@ test('/api/holds', async (t) => {
     await t.test('creates a hold successfully', async () => {
       const response = await app.inject().post('/api/holds').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
-        serviceTypeId: '0c752837-76b8-437f-b279-512e1c848634',
+        serviceTypeId: 'lesc',
         notes: 'Test hold notes',
       }).headers(userHeaders);
 
@@ -23,7 +23,7 @@ test('/api/holds', async (t) => {
       let hold = JSON.parse(response.body);
       assert.ok(hold.id);
       assert.deepStrictEqual(hold.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(hold.serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(hold.serviceTypeId, 'lesc');
       assert.deepStrictEqual(hold.status, 'ACTIVE');
       assert.ok(hold.expiresAt);
       assert.ok(hold.createdAt);
@@ -46,7 +46,7 @@ test('/api/holds', async (t) => {
     await t.test('returns error when facility not found', async () => {
       const response = await app.inject().post('/api/holds').payload({
         facilityId: '00000000-0000-0000-0000-000000000000',
-        serviceTypeId: '0c752837-76b8-437f-b279-512e1c848634',
+        serviceTypeId: 'lesc',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
@@ -57,7 +57,7 @@ test('/api/holds', async (t) => {
     await t.test('returns error when insufficient beds available', async () => {
       const response = await app.inject().post('/api/holds').payload({
         facilityId: 'fab67d53-a1c7-4eb5-b151-33727270ad20',
-        serviceTypeId: '0c752837-76b8-437f-b279-512e1c848634',
+        serviceTypeId: 'lesc',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
@@ -86,7 +86,7 @@ test('/api/holds', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const hold = JSON.parse(response.body);
       assert.deepStrictEqual(hold.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(hold.serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(hold.serviceTypeId, 'lesc');
       assert.deepStrictEqual(hold.status, 'ACTIVE');
       assert.deepStrictEqual(hold.createdById, 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5');
       assert.deepStrictEqual(hold.cancelledById, null);

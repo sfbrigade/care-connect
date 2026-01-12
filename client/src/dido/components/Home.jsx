@@ -247,7 +247,7 @@ function Home () {
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['didoFacilitiesWithServices'],
     queryFn: async () => {
-      const response = await Api.facilities.list({ include: 'services', type: 'DIDO' });
+      const response = await Api.facilities.list({ include: 'bedStatuses', type: 'DIDO' });
       if (import.meta.env.DEV) {
         console.debug('[Home] Facilities response', response.data);
       }

@@ -37,11 +37,8 @@ export default async function (fastify, opts) {
       const facility = await fastify.prisma.facility.findUnique({
         where: { id: facilityId },
         include: {
-          services: {
-            include: {
-              serviceType: true,
-            },
-          },
+          bedStatuses: true,
+          serviceType: true,
         },
       });
 
@@ -50,11 +47,11 @@ export default async function (fastify, opts) {
       }
 
       // TODO: make service type selection explicit
-      const service = facility.services[0];
+      const service = facility.serviceType;
       if (!service) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Service type not found for this facility' });
       }
-      const serviceTypeId = service.serviceTypeId;
+      const serviceTypeId = service.id;
 
       // TODO: needs optimistic locking to avoid race conditions
 
@@ -78,8 +75,9 @@ export default async function (fastify, opts) {
 
       const currentHolds = activeHolds._sum.bedsRequested || 0;
       // availableBeds represents total capacity, so available = total - reserved - holds
-      const totalBeds = service.availableBeds || 0;
-      const reservedBeds = service.reservedBeds || 0;
+      const bedStatus = facility.bedStatuses[0];
+      const totalBeds = bedStatus.capacity || 0;
+      const reservedBeds = bedStatus.unavailableUnoccupied + bedStatus.unavailableOccupied;
       const availableBeds = Math.max(0, totalBeds - reservedBeds - currentHolds);
 
       if (availableBeds <= 0) {

@@ -189,7 +189,7 @@ function Holds () {
 
     // Calculate total available beds for this facility
     const totalAvailable = availability.reduce((sum, item) => {
-      return sum + (item.calculatedAvailable ?? item.availableBeds ?? 0);
+      return sum + (item.available ?? 0);
     }, 0);
 
     // Format address
@@ -223,7 +223,7 @@ function Holds () {
   const getServiceTypeForFacility = (facId) => {
     // Return the service type with the most available beds
     return availability.reduce((best, current) =>
-      current.calculatedAvailable > best.calculatedAvailable ? current : best
+      current.available > best.available ? current : best
     );
   };
 

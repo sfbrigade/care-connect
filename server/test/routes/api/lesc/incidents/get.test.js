@@ -64,7 +64,7 @@ test('/api/lesc/incidents/:id', async (t) => {
       const returnedHold1 = data.bedHolds.find(h => h.id === 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2');
       assert.ok(returnedHold1);
       assert.deepStrictEqual(returnedHold1.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(returnedHold1.serviceTypeId, '0c752837-76b8-437f-b279-512e1c848634');
+      assert.deepStrictEqual(returnedHold1.serviceTypeId, 'lesc');
       assert.deepStrictEqual(returnedHold1.bedsRequested, 1);
       assert.deepStrictEqual(returnedHold1.status, 'ACTIVE');
       assert.ok(returnedHold1.expiresAt);

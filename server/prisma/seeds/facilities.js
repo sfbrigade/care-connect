@@ -33,8 +33,14 @@ export default async function main (prisma) {
   console.info(`Importing ${records.length} clinic records from ${absolutePath}${dryRun ? ' (dry run)' : ''}`);
 
   if (truncateSnapshots && !dryRun) {
-    await prisma.facilityCapacitySnapshot.deleteMany({});
+    await prisma.bedStatusUpdate.deleteMany({});
   }
+
+  const admin = await prisma.user.findUnique({
+    where: {
+      email: 'admin@careconnectsf.org',
+    },
+  });
 
   let createdFacilities = 0;
   let updatedFacilities = 0;
@@ -66,58 +72,61 @@ export default async function main (prisma) {
       }
     }
 
+    const serviceTypeName = record['Service Category'] || 'General';
+    const serviceType = await getOrCreateServiceType(prisma, serviceTypeName, serviceTypesCache, dryRun);
+
     if (dryRun) {
       facility = facility ?? { id: '<dry-run-id>' };
     } else if (facility) {
       facility = await prisma.facility.update({
         where: { id: facility.id },
-        data: facilityData,
+        data: {
+          ...facilityData,
+          updatedById: admin.id,
+        },
       });
       updatedFacilities += 1;
     } else {
       facility = await prisma.facility.create({
         data: {
-          name: facilityName,
           ...facilityData,
+          name: facilityName,
+          serviceTypeId: serviceType.id,
+          createdById: admin.id,
+          updatedById: admin.id,
         },
       });
       createdFacilities += 1;
     }
 
-    const serviceTypeName = record['Service Category'] || 'General';
-    const serviceType = await getOrCreateServiceType(prisma, serviceTypeName, serviceTypesCache, dryRun);
-
-    const { availableBeds, totalBeds, reservedBeds, description } = buildCapacityData(record);
+    const { availableBeds, totalBeds, reservedBeds } = buildCapacityData(record);
     if (!dryRun) {
-      await prisma.facilityService.upsert({
+      let bedStatus = await prisma.bedStatus.findFirst({
         where: {
-          facilityId_serviceTypeId: {
-            facilityId: facility.id,
-            serviceTypeId: serviceType.id,
-          },
-        },
-        update: {
-          availableBeds,
-          reservedBeds,
-          description,
-        },
-        create: {
           facilityId: facility.id,
-          serviceTypeId: serviceType.id,
-          availableBeds,
-          reservedBeds,
-          description,
         },
       });
-
-      if (totalBeds !== null || availableBeds !== null || reservedBeds !== null) {
-        await prisma.facilityCapacitySnapshot.create({
+      if (bedStatus) {
+        await prisma.bedStatus.update({
+          where: {
+            id: bedStatus.id,
+          },
+          data: {
+            capacity: totalBeds,
+            available: availableBeds,
+            unavailableUnoccupied: reservedBeds,
+            updatedById: admin.id,
+          },
+        });
+      } else {
+        bedStatus = await prisma.bedStatus.create({
           data: {
             facilityId: facility.id,
-            totalBeds,
-            availableBeds,
-            reservedBeds,
-            lastSyncSource: record['Avail management'] || 'clinics.csv',
+            capacity: totalBeds ?? 0,
+            available: availableBeds ?? 0,
+            unavailableUnoccupied: reservedBeds ?? 0,
+            createdById: admin.id,
+            updatedById: admin.id,
           },
         });
       }
@@ -290,24 +299,24 @@ function inferEligibilityType (value) {
 }
 
 async function getOrCreateServiceType (prisma, name, cache, dryRun) {
-  const code = slugify(name || 'General');
-  if (cache.has(code)) {
-    return cache.get(code);
+  const id = slugify(name || 'General');
+  if (cache.has(id)) {
+    return cache.get(id);
   }
 
   if (dryRun) {
-    const placeholder = { id: `<dry-run-service-${code}>`, code, name };
-    cache.set(code, placeholder);
+    const placeholder = { id, name };
+    cache.set(id, placeholder);
     return placeholder;
   }
 
   const serviceType = await prisma.serviceType.upsert({
-    where: { code },
+    where: { id },
     update: { name },
-    create: { code, name },
+    create: { id, name },
   });
 
-  cache.set(code, serviceType);
+  cache.set(id, serviceType);
   return serviceType;
 }
 
@@ -387,12 +396,12 @@ function parseAddress (raw) {
 }
 
 function slugify (value) {
-  return (value || 'GENERAL')
+  return (value || 'general')
     .toString()
     .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '') || 'GENERAL';
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'general';
 }
 
 function isOutOfCounty (record) {

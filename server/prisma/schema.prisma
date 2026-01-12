@@ -22,17 +22,15 @@ datasource db {
   extensions = [citext]
 }
 
-enum PlacementRequestStatus {
-  PENDING
-  APPROVED
-  DENIED
-  CANCELLED
-  EXPIRED
-}
-
 enum FacilityType {
   DIDO
   LESC
+}
+
+enum FacilityStatus {
+  CLOSED
+  OPEN_NOT_ACCEPTING
+  OPEN_ACCEPTING
 }
 
 enum FacilityUpdateMethod {
@@ -69,305 +67,331 @@ enum BedHoldStatus {
   TRANSFERRED
 }
 
-model Organization {
-  id          String   @id
-  name        String
-  createdBy   User     @relation("CreatedByUser", fields: [createdById], references: [id])
-  createdById String   @db.Uuid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum BedType {
+  BED
+  CHAIR
+}
 
-  units       Unit[]   @relation("Organization")
-  titles      Title[]  @relation("Organization")
-  invites     Invite[] @relation("Organization")
-  users       User[]   @relation("Organization")
+model Organization {
+  id                           String                  @id
+  name                         String
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  units                        Unit[]
+  titles                       Title[]
+  invites                      Invite[]
+  users                        User[]
 }
 
 model Unit {
-  id             String
-  organization   Organization  @relation("Organization", fields: [organizationId], references: [id])
-  organizationId String
-  name           String
-  createdBy      User          @relation("CreatedByUser", fields: [createdById], references: [id])
-  createdById    String        @db.Uuid
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                           String
+  organization                 Organization            @relation(fields: [organizationId], references: [id])
+  organizationId               String
+  name                         String
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
-  users          User[]        @relation("Unit")
+  users                        User[]
 
   @@id(name: "unitId", [id, organizationId])
 }
 
 model Title {
-  id             String
-  organization   Organization  @relation("Organization", fields: [organizationId], references: [id])
-  organizationId String
-  name           String
-  createdBy      User          @relation("CreatedByUser", fields: [createdById], references: [id])
-  createdById    String        @db.Uuid
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                           String
+  organization                 Organization            @relation(fields: [organizationId], references: [id])
+  organizationId               String
+  name                         String
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
-  invites        Invite[]      @relation("Title")
-  users          User[]        @relation("Title")
+  invites                      Invite[]
+  users                        User[]
 
   @@id(name: "titleId", [id, organizationId])
 }
 
 model User {
-  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName               String
-  lastName                String
-  email                   String    @unique @db.Citext
-  picture                 String?
-  isAdmin                 Boolean   @default(false)
-  organization            Organization? @relation("Organization", fields: [organizationId], references: [id])
-  organizationId          String?
-  title                   Title?    @relation("Title", fields: [organizationId, titleId], references: [organizationId, id])
-  titleId                 String?
-  unit                    Unit?     @relation("Unit", fields: [organizationId, unitId], references: [organizationId, id])
-  unitId                  String?
-  hashedPassword          String
-  deactivatedAt           DateTime?
-  passwordResetToken      String?   @unique @db.Uuid
-  passwordResetExpiresAt  DateTime?
-  badgeNumber             String?
-  prop115Certified        Boolean   @default(false)
-  createdInvites          Invite[]  @relation("CreatedByUser")
-  acceptedInvites         Invite[]  @relation("AcceptedByUser")
-  revokedInvites          Invite[]  @relation("RevokedByUser")
-  placementRequestsRequested PlacementRequest[] @relation("RequestedByUser")
-  placementRequestsReviewed  PlacementRequest[] @relation("ReviewedByUser")
-  placementRequestEvents     PlacementRequestEvent[]
-  bedHoldsCreated            BedHold[]            @relation("CreatedByUser")
-  bedHoldsCancelled          BedHold[]           @relation("CancelledByUser")
-  bedHoldsTransferred        BedHold[]           @relation("TransferredByUser")
-  createdIncidents            Incident[]          @relation("CreatedIncidents")
-  organizationsCreated       Organization[]      @relation("CreatedByUser")
-  titlesCreated              Title[]             @relation("CreatedByUser")
-  unitsCreated               Unit[]              @relation("CreatedByUser") 
-  updatedAt               DateTime  @updatedAt
-  createdAt               DateTime  @default(now())
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName                    String
+  lastName                     String
+  email                        String                  @unique @db.Citext
+  picture                      String?
+  isAdmin                      Boolean                 @default(false)
+  organization                 Organization?           @relation(fields: [organizationId], references: [id])
+  organizationId               String?
+  title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
+  titleId                      String?
+  unit                         Unit?                   @relation(fields: [organizationId, unitId], references: [organizationId, id])
+  unitId                       String?
+  hashedPassword               String
+  deactivatedAt                DateTime?
+  passwordResetToken           String?                 @unique @db.Uuid
+  passwordResetExpiresAt       DateTime?
+  badgeNumber                  String?
+  prop115Certified             Boolean                 @default(false)
+  updatedAt                    DateTime                @updatedAt
+  createdAt                    DateTime                @default(now())
+
+  bedHoldsCreated              BedHold[]               @relation("CreatedBy")
+  bedHoldsCancelled            BedHold[]               @relation("CancelledBy")
+  bedHoldsTransferred          BedHold[]               @relation("TransferredBy")
+  bedStatusesCreated           BedStatus[]             @relation("CreatedBy")
+  bedStatusesUpdated           BedStatus[]             @relation("UpdatedBy")
+  bedStatusUpdatesCreated      BedStatusUpdate[]
+  facilitiesCreated            Facility[]              @relation("CreatedBy")
+  facilitiesUpdated            Facility[]              @relation("UpdatedBy")
+  facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
+  facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
+  facilityUpdatesCreated       FacilityUpdate[]
+  incidentsCreated             Incident[]              @relation("CreatedBy")
+  invitesCreated               Invite[]                @relation("CreatedBy")
+  invitesAccepted              Invite[]                @relation("AcceptedBy")
+  invitesRevoked               Invite[]                @relation("RevokedBy")
+  organizationsCreated         Organization[]          @relation("CreatedBy")
+  titlesCreated                Title[]                 @relation("CreatedBy")
+  unitsCreated                 Unit[]                  @relation("CreatedBy") 
 }
 
 model Invite {
-  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName               String
-  lastName                String
-  email                   String    @db.Citext
-  message                 String?
-  organization            Organization? @relation("Organization", fields: [organizationId], references: [id])
-  organizationId          String?
-  title                   Title?    @relation("Title", fields: [organizationId, titleId], references: [organizationId, id])
-  titleId                 String?
-  badgeNumber             String?
-  prop115Certified        Boolean   @default(false)
-  updatedAt               DateTime  @updatedAt
-  createdAt               DateTime  @default(now())
-  createdBy               User      @relation("CreatedByUser", fields: [createdById], references: [id])
-  createdById             String    @db.Uuid
-  acceptedAt              DateTime?
-  acceptedBy              User?     @relation("AcceptedByUser", fields: [acceptedById], references: [id])
-  acceptedById            String?   @db.Uuid
-  revokedAt               DateTime?
-  revokedBy               User?     @relation("RevokedByUser", fields: [revokedById], references: [id])
-  revokedById             String?   @db.Uuid
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName                    String
+  lastName                     String
+  email                        String                  @db.Citext
+  message                      String?
+  organization                 Organization?           @relation(fields: [organizationId], references: [id])
+  organizationId               String?
+  title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
+  titleId                      String?
+  badgeNumber                  String?
+  prop115Certified             Boolean                 @default(false)
+  updatedAt                    DateTime                @updatedAt
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  acceptedAt                   DateTime?
+  acceptedBy                   User?                   @relation("AcceptedBy", fields: [acceptedById], references: [id])
+  acceptedById                 String?                 @db.Uuid
+  revokedAt                    DateTime?
+  revokedBy                    User?                   @relation("RevokedBy", fields: [revokedById], references: [id])
+  revokedById                  String?                 @db.Uuid
 }
 
 model Facility {
-  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name              String
-  type              FacilityType               @default(DIDO)
-  subdomain         String?                    @db.Citext @unique
-  description       String?
-  phone             String?
-  email             String?
-  website           String?
-  addressLine1      String?
-  addressLine2      String?
-  city              String?
-  state             String?
-  postalCode        String?
-  neighborhood      String?
-  nstDistrict       String?
-  latitude          Decimal?                   @db.Decimal(9, 6)
-  longitude         Decimal?                   @db.Decimal(9, 6)
-  timezone          String?
-  isActive          Boolean                    @default(true)
-  updateMethod      FacilityUpdateMethod       @default(MANUAL)
-  updateNotes       String?
-  capacitySnapshots FacilityCapacitySnapshot[]
-  amenities         Amenity[]
-  services          FacilityService[]
-  eligibility       FacilityEligibility[]
-  contacts          FacilityContact[]
-  placementRequests PlacementRequest[]
-  bedHolds          BedHold[]
-  createdAt         DateTime                   @default(now())
-  updatedAt         DateTime                   @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                         String
+  type                         FacilityType            @default(DIDO)
+  serviceType                  ServiceType             @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId                String
+  status                       FacilityStatus          @default(OPEN_ACCEPTING)
+  statusReason                 FacilityStatusReason?   @relation(fields: [statusReasonId], references: [id])
+  statusReasonId               String?
+  statusOther                  String?
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
+
+  subdomain                    String?                 @db.Citext @unique
+  description                  String?
+  phone                        String?
+  email                        String?
+  website                      String?
+  addressLine1                 String?
+  addressLine2                 String?
+  city                         String?
+  state                        String?
+  postalCode                   String?
+  neighborhood                 String?
+  nstDistrict                  String?
+  latitude                     Decimal?                @db.Decimal(9, 6)
+  longitude                    Decimal?                @db.Decimal(9, 6)
+  timezone                     String?
+  isActive                     Boolean                 @default(true)
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+
+  amenities                    Amenity[]
+  bedHolds                     BedHold[]
+  bedStatuses                  BedStatus[]
+  contacts                     FacilityContact[]
+  eligibility                  FacilityEligibility[]
+  updates                      FacilityUpdate[]
+}
+
+model FacilityUpdate {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId                   String                  @db.Uuid
+  status                       FacilityStatus
+  statusReasonId               String?
+  statusReason                 FacilityStatusReason?   @relation(fields: [statusReasonId], references: [id])
+  statusOther                  String?
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+}
+
+model FacilityStatusReason {
+  id                           String                  @id
+  type                         FacilityType?
+  description                  String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+
+  facilities                   Facility[]
+  facilityUpdates              FacilityUpdate[]
 }
 
 model FacilityContact {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility    Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId  String   @db.Uuid
-  name        String
-  role        String?
-  email       String?
-  phone       String?
-  notes       String?
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId                   String                  @db.Uuid
+  name                         String
+  role                         String?
+  email                        String?
+  phone                        String?
+  notes                        String?
+  isPrimary                    Boolean                 @default(false)
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 }
 
 model Amenity {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String            @unique
-  description String?
-  facilities  Facility[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                         String                  @unique
+  description                  String?
+  facilities                   Facility[]
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 }
 
 model ServiceType {
-  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code        String           @unique
-  name        String
-  description String?
-  facilities  FacilityService[]
-  placementRequests PlacementRequest[]
-  bedHolds    BedHold[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id                           String                  @id
+  name                         String
+  description                  String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  facilities                   Facility[]
+  bedHolds                     BedHold[]
 }
 
-model FacilityService {
-  facility        Facility    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId      String      @db.Uuid
-  serviceType     ServiceType @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId   String      @db.Uuid
-  availableBeds   Int         @default(0)
-  reservedBeds    Int         @default(0)
-  description     String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+model BedStatus {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId                   String                  @db.Uuid
+  type                         BedType                 @default(BED)
+  capacity                     Int                     @default(0)
+  unavailableUnoccupied        Int                     @default(0)
+  unavailableOccupied          Int                     @default(0)
+  occupied                     Int                     @default(0)
+  holds                        Int                     @default(0)
+  available                    Int                     @default(0)
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
-  @@id([facilityId, serviceTypeId])
+  updates                      BedStatusUpdate[]
+}
+
+model BedStatusUpdate {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bedStatus                    BedStatus               @relation(fields: [bedStatusId], references: [id], onDelete: Cascade)
+  bedStatusId                  String                  @db.Uuid
+  capacity                     Int                     @default(0)
+  unavailableUnoccupied        Int                     @default(0)
+  unavailableOccupied          Int                     @default(0)
+  occupied                     Int                     @default(0)
+  holds                        Int                     @default(0)
+  available                    Int                     @default(0)
+  updateMethod                 FacilityUpdateMethod    @default(MANUAL)
+  updateNotes                  String?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid  
 }
 
 model FacilityEligibility {
-  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility    Facility               @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId  String                 @db.Uuid
-  type        FacilityEligibilityType
-  value       String?
-  notes       String?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId                   String                  @db.Uuid
+  type                         FacilityEligibilityType
+  value                        String?
+  notes                        String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
   @@index([facilityId, type])
 }
 
-model FacilityCapacitySnapshot {
-  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility         Facility   @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId       String     @db.Uuid
-  totalBeds        Int?
-  availableBeds    Int?
-  reservedBeds     Int?
-  lastSyncSource   String?
-  observedAt       DateTime   @default(now())
-  createdAt        DateTime   @default(now())
-}
-
 model Client {
-  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName           String
-  lastName            String?
-  middleInitial       String?
-  dateOfBirth         DateTime?
-  sex                 String?
-  race                String?
-  address             String?
-  driverLicense       String?
-  localId             String?
-  personallyIdentifiable String?
-  description         String?
-  pets                String?
-  qualifications      Json?
-  notes               String?
-  placementRequests   PlacementRequest[]
-  bedHolds            BedHold[]
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-}
-
-model PlacementRequest {
-  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  referenceCode      String?                @unique
-  facility           Facility               @relation(fields: [facilityId], references: [id], onDelete: Restrict)
-  facilityId         String                 @db.Uuid
-  client             Client                 @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  clientId           String                 @db.Uuid
-  requestedBy        User                   @relation("RequestedByUser", fields: [requestedById], references: [id], onDelete: Restrict)
-  requestedById      String                 @db.Uuid
-  reviewedBy         User?                  @relation("ReviewedByUser", fields: [reviewedById], references: [id], onDelete: SetNull)
-  reviewedById       String?                @db.Uuid
-  serviceType        ServiceType?           @relation(fields: [serviceTypeId], references: [id], onDelete: SetNull)
-  serviceTypeId      String?                @db.Uuid
-  status             PlacementRequestStatus @default(PENDING)
-  requestedAt        DateTime               @default(now())
-  respondedAt        DateTime?
-  expiresAt          DateTime?
-  outreachNotes      String?
-  providerNotes      String?
-  metadata           Json?
-  events             PlacementRequestEvent[]
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-}
-
-model PlacementRequestEvent {
-  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  placementRequest   PlacementRequest       @relation(fields: [placementRequestId], references: [id], onDelete: Cascade)
-  placementRequestId String                 @db.Uuid
-  status             PlacementRequestStatus
-  notes              String?
-  actor              User?                  @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  actorId            String?                @db.Uuid
-  createdAt          DateTime               @default(now())
-
-  @@index([placementRequestId, createdAt])
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName                    String
+  lastName                     String?
+  middleInitial                String?
+  dateOfBirth                  DateTime?
+  sex                          String?
+  race                         String?
+  address                      String?
+  driverLicense                String?
+  localId                      String?
+  personallyIdentifiable       String?
+  description                  String?
+  pets                         String?
+  qualifications               Json?
+  notes                        String?
+  bedHolds                     BedHold[]
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 }
 
 model BedHold {
-  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility              Facility       @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId            String         @db.Uuid
-  serviceType           ServiceType    @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId         String         @db.Uuid
-  client                Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  clientId              String?        @db.Uuid
-  incident              Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
-  incidentId            String?        @db.Uuid
-  bedsRequested         Int
-  expiresAt             DateTime
-  status                BedHoldStatus  @default(ACTIVE)
-  createdBy             User           @relation("CreatedByUser", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById           String         @db.Uuid
-  cancelledAt           DateTime?
-  cancelledBy           User?          @relation("CancelledByUser", fields: [cancelledById], references: [id], onDelete: SetNull)
-  cancelledById         String?        @db.Uuid
-  extendedAt            DateTime?
-  transferredAt         DateTime?
-  transferredBy         User?          @relation("TransferredByUser", fields: [transferredById], references: [id], onDelete: SetNull)
-  transferredById       String?        @db.Uuid
-  transferToken         String?        @unique
-  transferTokenExpiresAt DateTime?
-  notes                 String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId                   String                  @db.Uuid
+  serviceType                  ServiceType             @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
+  serviceTypeId                String
+  client                       Client?                 @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId                     String?                 @db.Uuid
+  incident                     Incident?               @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  incidentId                   String?                 @db.Uuid
+  bedsRequested                Int
+  expiresAt                    DateTime
+  status                       BedHoldStatus           @default(ACTIVE)
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById                  String                  @db.Uuid
+  cancelledAt                  DateTime?
+  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancelledById                String?                 @db.Uuid
+  extendedAt                   DateTime?
+  transferredAt                DateTime?
+  transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id], onDelete: SetNull)
+  transferredById              String?                 @db.Uuid
+  transferToken                String?                 @unique
+  transferTokenExpiresAt       DateTime?
+  notes                        String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
   @@index([facilityId])
   @@index([expiresAt])
@@ -376,31 +400,31 @@ model BedHold {
 }
 
 model Incident {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cadNumber         String
-  locationArrested  String?
-  dateTimeArrested  DateTime
-  charge            String    @default("647(f) RWS")
-  unit              String?
-  badgeNumber       String?
-  agency            String?
-  createdBy         User      @relation("CreatedIncidents", fields: [createdById], references: [id], onDelete: Restrict)
-  createdById       String    @db.Uuid
-  bedHolds          BedHold[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cadNumber                    String
+  locationArrested             String?
+  dateTimeArrested             DateTime
+  charge                       String                  @default("647(f) RWS")
+  unit                         String?
+  badgeNumber                  String?
+  agency                       String?
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById                  String                  @db.Uuid
+  bedHolds                     BedHold[]
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
   @@index([cadNumber])
   @@index([createdById])
 }
 
 model Feedback {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  message   String
-  userEmail String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message                      String
+  userEmail                    String?
+  userAgent                    String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
   @@index([createdAt])
 }

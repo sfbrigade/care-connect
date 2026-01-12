@@ -15,7 +15,7 @@ function Header ({ opened, close, toggle, logout }) {
       <Group h='100%' align='center' justify='space-between'>
         <Link to='/' onClick={close}>
           <Box>
-            <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName} ${user?.lastName}`.trim() : 'CareConnectSF'}</Title>
+            <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
             {user?.unit && <Text size='sm' color='dimmed'>{user.unit.name}</Text>}
           </Box>
         </Link>
@@ -30,6 +30,7 @@ function Header ({ opened, close, toggle, logout }) {
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
+                <Menu.Item><Anchor component={NavLink} to='/admin/facility-status-reasons'>Facility Status Reasons</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/organizations'>Organizations</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>

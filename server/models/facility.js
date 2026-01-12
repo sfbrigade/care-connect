@@ -1,15 +1,19 @@
-import { Prisma, FacilityType, FacilityUpdateMethod } from '@prisma/client';
+import { Prisma, FacilityStatus, FacilityType, FacilityUpdateMethod } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import Amenity from './amenity.js';
+import BedStatus from './bedStatus.js';
 import FacilityContact from './facilityContact.js';
 import FacilityEligibility from './facilityEligibility.js';
-import FacilityService from './facilityService.js';
+import FacilityStatusReason from './facilityStatusReason.js';
+import ServiceType from './serviceType.js';
+import User from './user.js';
 
 const FacilityAttributesSchema = z.object({
   name: z.string(),
   type: z.enum(Object.values(FacilityType)),
+  serviceTypeId: z.string(),
   subdomain: z.string().nullable(),
   description: z.string().nullable(),
   phone: z.string().nullable(),
@@ -25,23 +29,35 @@ const FacilityAttributesSchema = z.object({
   latitude: z.coerce.number().nullable(),
   longitude: z.coerce.number().nullable(),
   isActive: z.boolean(),
-  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
-  updateNotes: z.string().nullable(),
 });
 
 const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
-  services: z.array(FacilityService.ResponseSchema).optional(),
+  serviceType: ServiceType.ResponseSchema.optional(),
+  status: z.enum(Object.values(FacilityStatus)),
+  statusReason: FacilityStatusReason.ResponseSchema.nullable().optional(),
+  statusReasonId: z.string().nullable(),
+  statusOther: z.string().nullable(),
+  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
+  updateNotes: z.string().nullable(),
+  bedStatuses: z.array(BedStatus.ResponseSchema).optional(),
   amenities: z.array(Amenity.ResponseSchema).optional(),
   eligibility: z.array(FacilityEligibility.ResponseSchema).optional(),
   contacts: z.array(FacilityContact.ResponseSchema).optional(),
   createdAt: z.coerce.date(),
+  createdBy: User.ResponseSchema.optional(),
+  createdById: z.string().uuid(),
   updatedAt: z.coerce.date(),
+  updatedBy: User.ResponseSchema.optional(),
+  updatedById: z.string().uuid(),
 });
 
 const FacilityUpdateSchema = FacilityAttributesSchema.partial();
 
 export class Facility extends Base {
+  static Status = FacilityStatus;
+  static Type = FacilityType;
+  static UpdateMethod = FacilityUpdateMethod;
   static ResponseSchema = FacilityResponseSchema;
   static UpdateSchema = FacilityUpdateSchema;
 

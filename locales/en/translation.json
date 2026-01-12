@@ -1,0 +1,9 @@
+{
+  "facility": {
+    "status": {
+      "OPEN_ACCEPTING": "Open - accepting",
+      "OPEN_NOT_ACCEPTING": "Open - not accepting",
+      "CLOSED": "Closed - not accepting"
+    }
+  }
+}

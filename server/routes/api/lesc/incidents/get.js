@@ -26,7 +26,7 @@ export default async function (fastify, opts) {
             bedHolds: z.array(z.object({
               id: z.string().uuid(),
               facilityId: z.string().uuid(),
-              serviceTypeId: z.string().uuid(),
+              serviceTypeId: z.string(),
               bedsRequested: z.number(),
               expiresAt: z.string(),
               status: z.string(),
