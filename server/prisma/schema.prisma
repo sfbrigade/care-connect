@@ -401,21 +401,36 @@ model BedHold {
 
 model Incident {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cadNumber                    String
-  locationArrested             String?
-  dateTimeArrested             DateTime
-  charge                       String                  @default("647(f) RWS")
-  unit                         String?
-  badgeNumber                  String?
-  agency                       String?
+  facilityId                   String                  @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  arrivedAt                    DateTime?
+  leftAt                       DateTime?
+  completedAt                  DateTime?
+  addressLine1                 String?
+  addressLine2                 String?
+  city                         String?
+  state                        String?
+  postalCode                   String?
+  latitude                     Decimal?                @db.Decimal(9, 6)
+  longitude                    Decimal?                @db.Decimal(9, 6)
+  arrestedAt                   DateTime?
+  cadNumber                    String?
+  supervisorBadgeNumber        String?
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdById                  String                  @db.Uuid
-  bedHolds                     BedHold[]
+  createdByOrganization        Organization?           @relation("CreatedByOrganization", fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
+  createdByOrganizationId      String?
+  createdByTitle               Title?                  @relation("CreatedByTitle", fields: [createdByTitleId], references: [id], onDelete: Restrict)
+  createdByTitleId             String?
+  createdByUnit                Unit?                   @relation("CreatedByUnit", fields: [createdByUnitId], references: [id], onDelete: Restrict)
+  createdByUnitId              String?
+  createdByBadgeNumber         String?
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
   @@index([cadNumber])
-  @@index([createdById])
+
+  bedHolds                     BedHold[]
 }
 
 model Feedback {
