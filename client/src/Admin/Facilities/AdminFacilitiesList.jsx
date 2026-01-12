@@ -71,6 +71,8 @@ function AdminFacilitiesList () {
                     <Anchor component={Link} to={`${facility.id}`}>Edit</Anchor>
                     &nbsp;|&nbsp;
                     <Anchor component={Link} to={`${facility.id}/status`}>Update Status</Anchor>
+                    &nbsp;|&nbsp;
+                    <Anchor component={Link} to={`${facility.id}/bed-statuses`}>Update Beds</Anchor>
                   </Table.Td>
                 </Table.Tr>
               ))}

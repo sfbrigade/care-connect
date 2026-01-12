@@ -2,6 +2,7 @@ entity: bedStatus
 connectedFields: [facility, createdBy, updatedBy]
 items:
   lescFacility1Service:
+    id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76'
     facility: '@lescFacility1'
     type: 'CHAIR'
     capacity: 10

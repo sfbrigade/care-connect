@@ -195,6 +195,20 @@ const Api = {
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
+    bedStatuses: {
+      index (facilityId, page = 1) {
+        return instance.get(`/api/facilities/${facilityId}/bed-statuses`, { params: { page } });
+      },
+      create (facilityId, data) {
+        return instance.post(`/api/facilities/${facilityId}/bed-statuses`, data).catch(handleError);
+      },
+      update (facilityId, bedStatusId, data) {
+        return instance.patch(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`, data).catch(handleError);
+      },
+      get (facilityId, bedStatusId) {
+        return instance.get(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`);
+      },
+    },
     statusReasons: {
       index (type = '') {
         const params = {};

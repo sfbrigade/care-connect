@@ -6,10 +6,18 @@ import User from './user.js';
 
 const BedStatusCreateSchema = z.object({
   facilityId: z.string().uuid(),
-  capacity: z.number(),
-  unavailableUnoccupied: z.number(),
-  unavailableOccupied: z.number(),
   type: z.enum(Object.values(BedType)),
+  capacity: z.number().int().min(0),
+  unavailableUnoccupied: z.number().int().min(0),
+  unavailableOccupied: z.number().int().min(0),
+});
+
+const BedStatusUpdateSchema = z.object({
+  type: z.enum(Object.values(BedType)).optional(),
+  capacity: z.number().int().min(0).optional(),
+  unavailableUnoccupied: z.number().int().min(0).optional(),
+  unavailableOccupied: z.number().int().min(0).optional(),
+  updateNotes: z.string().nullable().optional(),
 });
 
 const BedStatusResponseSchema = BedStatusCreateSchema.extend({
@@ -29,7 +37,10 @@ const BedStatusResponseSchema = BedStatusCreateSchema.extend({
 
 export class BedStatus extends Base {
   static CreateSchema = BedStatusCreateSchema;
+  static UpdateSchema = BedStatusUpdateSchema;
   static ResponseSchema = BedStatusResponseSchema;
+
+  static UpdateMethod = FacilityUpdateMethod;
 
   constructor (data) {
     super(Prisma.BedStatusScalarFieldEnum, data);
