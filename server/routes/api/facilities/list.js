@@ -34,6 +34,7 @@ export default async function (fastify, opts) {
         where,
         orderBy: { name: 'asc' },
         include: {
+          serviceType: !!include?.includes('serviceType'),
           bedStatuses: !!include?.includes('bedStatuses'),
           amenities: !!include?.includes('amenities'),
           eligibility: !!include?.includes('eligibility'),

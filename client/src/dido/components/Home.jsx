@@ -142,57 +142,54 @@ function formatAddress (facility) {
 function getFacilityCategories (facility) {
   const searchableText = [
     facility.description ?? '',
-    ...facility.services.map((service) => service.serviceType.name ?? ''),
-    ...facility.services.map((service) => service.description ?? service.serviceType.description ?? ''),
+    facility.serviceType?.name ?? '',
+    facility.serviceType?.description ?? '',
   ].join(' ').toLowerCase();
 
   const matches = [];
 
-  // Check service type names and abbreviations
-  for (const service of facility.services) {
-    const serviceName = (service.serviceType.name ?? '').toLowerCase();
+  const serviceName = (facility.serviceType?.name ?? '').toLowerCase();
 
-    // Medical/Health services
-    if (serviceName.includes('mh') || serviceName.includes('acute') ||
-      serviceName.includes('sud') || serviceName.includes('subacute') ||
-      serviceName.includes('detox') || serviceName.includes('crisis') ||
-      serviceName.includes('sobering') || serviceName.includes('lesc') ||
-      serviceName.includes('medical') || serviceName.includes('mental health')) {
-      if (!matches.includes('medical')) {
-        matches.push('medical');
-      }
+  // Medical/Health services
+  if (serviceName.includes('mh') || serviceName.includes('acute') ||
+    serviceName.includes('sud') || serviceName.includes('subacute') ||
+    serviceName.includes('detox') || serviceName.includes('crisis') ||
+    serviceName.includes('sobering') || serviceName.includes('lesc') ||
+    serviceName.includes('medical') || serviceName.includes('mental health')) {
+    if (!matches.includes('medical')) {
+      matches.push('medical');
     }
+  }
 
-    // Shelter/Respite services
-    if (serviceName.includes('respite') || serviceName.includes('shelter') ||
-      serviceName.includes('housing') || serviceName.includes('stabilization')) {
-      if (!matches.includes('shelter')) {
-        matches.push('shelter');
-      }
+  // Shelter/Respite services
+  if (serviceName.includes('respite') || serviceName.includes('shelter') ||
+    serviceName.includes('housing') || serviceName.includes('stabilization')) {
+    if (!matches.includes('shelter')) {
+      matches.push('shelter');
     }
+  }
 
-    // Basic services
-    if (serviceName.includes('shower') || serviceName.includes('food') ||
-      serviceName.includes('hygiene') || serviceName.includes('laundry')) {
-      if (!matches.includes('basic')) {
-        matches.push('basic');
-      }
+  // Basic services
+  if (serviceName.includes('shower') || serviceName.includes('food') ||
+    serviceName.includes('hygiene') || serviceName.includes('laundry')) {
+    if (!matches.includes('basic')) {
+      matches.push('basic');
     }
+  }
 
-    // Mobile services
-    if (serviceName.includes('mobile') || serviceName.includes('van') ||
-      serviceName.includes('outreach')) {
-      if (!matches.includes('mobile')) {
-        matches.push('mobile');
-      }
+  // Mobile services
+  if (serviceName.includes('mobile') || serviceName.includes('van') ||
+    serviceName.includes('outreach')) {
+    if (!matches.includes('mobile')) {
+      matches.push('mobile');
     }
+  }
 
-    // Ongoing support
-    if (serviceName.includes('case') || serviceName.includes('navigation') ||
-      serviceName.includes('support') || serviceName.includes('coordination')) {
-      if (!matches.includes('ongoing')) {
-        matches.push('ongoing');
-      }
+  // Ongoing support
+  if (serviceName.includes('case') || serviceName.includes('navigation') ||
+    serviceName.includes('support') || serviceName.includes('coordination')) {
+    if (!matches.includes('ongoing')) {
+      matches.push('ongoing');
     }
   }
 
@@ -247,7 +244,7 @@ function Home () {
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['didoFacilitiesWithServices'],
     queryFn: async () => {
-      const response = await Api.facilities.list({ include: 'bedStatuses', type: 'DIDO' });
+      const response = await Api.facilities.list({ include: 'serviceType,bedStatuses', type: 'DIDO' });
       if (import.meta.env.DEV) {
         console.debug('[Home] Facilities response', response.data);
       }
@@ -353,9 +350,9 @@ function Home () {
     const distanceMiles = computeDistanceMiles(facility.latitude, facility.longitude, referenceCoordinate);
     const categories = getFacilityCategories(facility);
     const primaryCategory = categories[0] ?? 'other';
-    const primaryService = facility.services[0]?.serviceType?.name ?? null;
-    const primaryBadge = facility.services[0]?.availableBeds != null
-      ? `${facility.services[0].availableBeds} beds`
+    const primaryService = facility.serviceType?.name ?? null;
+    const primaryBadge = facility.bedStatuses?.[0]?.available
+      ? `${facility.bedStatuses[0].available} beds`
       : null;
     const displayAddress = formatAddress(facility);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;
@@ -373,7 +370,7 @@ function Home () {
       displayAddress,
       primaryContact,
       slug,
-      serviceNames: facility.services.map((service) => service.serviceType.name).filter(Boolean),
+      serviceNames: [facility.serviceType?.name ?? ''].filter(Boolean),
       districtLabel,
     };
   }), [facilities, referenceCoordinate]);
