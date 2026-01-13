@@ -82,6 +82,7 @@ model Organization {
 
   units                        Unit[]
   titles                       Title[]
+  incidents                    Incident[]
   invites                      Invite[]
   users                        User[]
 }
@@ -96,6 +97,7 @@ model Unit {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
+  incidents                    Incident[]
   users                        User[]
 
   @@id(name: "unitId", [id, organizationId])
@@ -111,6 +113,7 @@ model Title {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
+  incidents                    Incident[]
   invites                      Invite[]
   users                        User[]
 
@@ -151,6 +154,7 @@ model User {
   facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
   facilityUpdatesCreated       FacilityUpdate[]
   incidentsCreated             Incident[]              @relation("CreatedBy")
+  incidentsUpdated             Incident[]              @relation("UpdatedBy")
   invitesCreated               Invite[]                @relation("CreatedBy")
   invitesAccepted              Invite[]                @relation("AcceptedBy")
   invitesRevoked               Invite[]                @relation("RevokedBy")
@@ -224,6 +228,7 @@ model Facility {
   bedStatuses                  BedStatus[]
   contacts                     FacilityContact[]
   eligibility                  FacilityEligibility[]
+  incidents                    Incident[]
   updates                      FacilityUpdate[]
 }
 
@@ -373,7 +378,7 @@ model BedHold {
   serviceTypeId                String
   client                       Client?                 @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId                     String?                 @db.Uuid
-  incident                     Incident?               @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  incident                     Incident?               @relation(fields: [facilityId, incidentId], references: [facilityId, id], onDelete: SetNull)
   incidentId                   String?                 @db.Uuid
   bedsRequested                Int
   expiresAt                    DateTime
@@ -400,7 +405,7 @@ model BedHold {
 }
 
 model Incident {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                           String                  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facilityId                   String                  @db.Uuid
   facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   arrivedAt                    DateTime?
@@ -418,16 +423,19 @@ model Incident {
   supervisorBadgeNumber        String?
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdById                  String                  @db.Uuid
-  createdByOrganization        Organization?           @relation("CreatedByOrganization", fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
+  createdByOrganization        Organization?           @relation(fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
   createdByOrganizationId      String?
-  createdByTitle               Title?                  @relation("CreatedByTitle", fields: [createdByTitleId], references: [id], onDelete: Restrict)
+  createdByTitle               Title?                  @relation(fields: [createdByOrganizationId, createdByTitleId], references: [organizationId, id], onDelete: Restrict)
   createdByTitleId             String?
-  createdByUnit                Unit?                   @relation("CreatedByUnit", fields: [createdByUnitId], references: [id], onDelete: Restrict)
+  createdByUnit                Unit?                   @relation(fields: [createdByOrganizationId, createdByUnitId], references: [organizationId, id], onDelete: Restrict)
   createdByUnitId              String?
   createdByBadgeNumber         String?
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id])
+  updatedById                  String                  @db.Uuid
 
+  @@id([id, facilityId])
   @@index([cadNumber])
 
   bedHolds                     BedHold[]

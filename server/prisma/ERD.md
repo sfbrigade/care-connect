@@ -312,16 +312,28 @@ CHAIR CHAIR
 
   "Incident" {
     String id "🗝️"
-    String cadNumber 
-    String locationArrested "❓"
-    DateTime dateTimeArrested 
-    String charge 
-    String unit "❓"
-    String badgeNumber "❓"
-    String agency "❓"
+    String facilityId "🗝️"
+    DateTime arrivedAt "❓"
+    DateTime leftAt "❓"
+    DateTime completedAt "❓"
+    String addressLine1 "❓"
+    String addressLine2 "❓"
+    String city "❓"
+    String state "❓"
+    String postalCode "❓"
+    Decimal latitude "❓"
+    Decimal longitude "❓"
+    DateTime arrestedAt "❓"
+    String cadNumber "❓"
+    String supervisorBadgeNumber "❓"
     String createdById 
+    String createdByOrganizationId "❓"
+    String createdByTitleId "❓"
+    String createdByUnitId "❓"
+    String createdByBadgeNumber "❓"
     DateTime createdAt 
     DateTime updatedAt 
+    String updatedById 
     }
   
 
@@ -337,13 +349,16 @@ CHAIR CHAIR
     "Organization" o|--|| "User" : "createdBy"
     "Organization" o{--}o "Unit" : ""
     "Organization" o{--}o "Title" : ""
+    "Organization" o{--}o "Incident" : ""
     "Organization" o{--}o "Invite" : ""
     "Organization" o{--}o "User" : ""
     "Unit" o|--|| "Organization" : "organization"
     "Unit" o|--|| "User" : "createdBy"
+    "Unit" o{--}o "Incident" : ""
     "Unit" o{--}o "User" : ""
     "Title" o|--|| "Organization" : "organization"
     "Title" o|--|| "User" : "createdBy"
+    "Title" o{--}o "Incident" : ""
     "Title" o{--}o "Invite" : ""
     "Title" o{--}o "User" : ""
     "User" o|--|o "Organization" : "organization"
@@ -360,6 +375,7 @@ CHAIR CHAIR
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityUpdate" : ""
+    "User" o{--}o "Incident" : ""
     "User" o{--}o "Incident" : ""
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
@@ -381,6 +397,7 @@ CHAIR CHAIR
     "Facility" o{--}o "BedStatus" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
+    "Facility" o{--}o "Incident" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
     "FacilityUpdate" o|--|| "FacilityStatus" : "enum:status"
@@ -412,5 +429,10 @@ CHAIR CHAIR
     "BedHold" o|--|| "User" : "createdBy"
     "BedHold" o|--|o "User" : "cancelledBy"
     "BedHold" o|--|o "User" : "transferredBy"
+    "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"
+    "Incident" o|--|o "Organization" : "createdByOrganization"
+    "Incident" o|--|o "Title" : "createdByTitle"
+    "Incident" o|--|o "Unit" : "createdByUnit"
+    "Incident" o|--|| "User" : "updatedBy"
 ```
