@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
+import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -27,7 +28,11 @@ export default async function (fastify, opts) {
       });
 
       if (!incident) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Incident not found' });
+        return reply.code(StatusCodes.NOT_FOUND).send();
+      }
+
+      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
       const updated = await fastify.prisma.incident.update({
@@ -45,6 +50,9 @@ export default async function (fastify, opts) {
           updatedBy: true,
         },
       });
+
+      updated.createdBy = new User(updated.createdBy);
+      updated.updatedBy = new User(updated.updatedBy);
 
       return reply.send(updated);
     });

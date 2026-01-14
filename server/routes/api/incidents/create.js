@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 
 import Incident from '#models/incident.js';
+import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',
@@ -38,6 +39,9 @@ export default async function (fastify, opts) {
           updatedBy: true,
         },
       });
+
+      incident.createdBy = new User(incident.createdBy);
+      incident.updatedBy = new User(incident.updatedBy);
 
       return reply.code(StatusCodes.CREATED).send(incident);
     });

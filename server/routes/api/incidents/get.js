@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
+import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.get('/:id',
@@ -36,6 +37,9 @@ export default async function (fastify, opts) {
       if (!incident) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Incident not found' });
       }
+
+      incident.createdBy = new User(incident.createdBy);
+      incident.updatedBy = new User(incident.updatedBy);
 
       return reply.send(incident);
     });

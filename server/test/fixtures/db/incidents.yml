@@ -10,7 +10,7 @@ items:
     updatedBy: '@user2'
   incident2:
     id: 921a02ad-af5f-404f-84f2-b8c987d436d8
-    facility: '@lescFacility1'
+    facility: '@lescFacility2'
     cadNumber: 'CAD-456'
     arrestedAt: <%= new Date().toISOString() %>
     createdBy: '@user2'

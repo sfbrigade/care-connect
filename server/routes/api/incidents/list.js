@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
+import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -42,6 +43,10 @@ export default async function (fastify, opts) {
       };
 
       const { records, total } = await fastify.prisma.incident.paginate(options);
+      records.forEach(record => {
+        record.createdBy = new User(record.createdBy);
+        record.updatedBy = new User(record.updatedBy);
+      });
       return reply.setPaginationHeaders(page, perPage, total).send(records);
     });
 }
