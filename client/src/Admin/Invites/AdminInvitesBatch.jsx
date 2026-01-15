@@ -200,7 +200,7 @@ function AdminInvitesBatch () {
           )}
           <FileInput
             label='Upload CSV'
-            description='File should have a header row with the following columns: first_name, last_name, email'
+            description='File must have the following columns: first_name, last_name, email'
             placeholder='Select a CSV file'
             accept='.csv,text/csv'
             maw={420}
