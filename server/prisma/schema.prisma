@@ -226,6 +226,7 @@ model Facility {
   amenities                    Amenity[]
   bedHolds                     BedHold[]
   bedStatuses                  BedStatus[]
+  bedStatusUpdates             BedStatusUpdate[]
   contacts                     FacilityContact[]
   eligibility                  FacilityEligibility[]
   incidents                    Incident[]
@@ -297,7 +298,7 @@ model ServiceType {
 }
 
 model BedStatus {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                           String                  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   facilityId                   String                  @db.Uuid
   type                         BedType                 @default(BED)
@@ -316,13 +317,17 @@ model BedStatus {
   updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
   updatedById                  String                  @db.Uuid
 
+  @@id(name: "bedStatusId", [id, facilityId])
+
   updates                      BedStatusUpdate[]
 }
 
 model BedStatusUpdate {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bedStatus                    BedStatus               @relation(fields: [bedStatusId], references: [id], onDelete: Cascade)
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid  
+  bedStatus                    BedStatus               @relation(fields: [bedStatusId, facilityId], references: [id, facilityId])
   bedStatusId                  String                  @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id])
+  facilityId                   String                  @db.Uuid
   capacity                     Int                     @default(0)
   unavailableUnoccupied        Int                     @default(0)
   unavailableOccupied          Int                     @default(0)

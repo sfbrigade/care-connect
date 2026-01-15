@@ -222,7 +222,7 @@ CHAIR CHAIR
 
   "BedStatus" {
     String id "🗝️"
-    String facilityId 
+    String facilityId "🗝️"
     BedType type 
     Int capacity 
     Int unavailableUnoccupied 
@@ -242,6 +242,7 @@ CHAIR CHAIR
   "BedStatusUpdate" {
     String id "🗝️"
     String bedStatusId 
+    String facilityId 
     Int capacity 
     Int unavailableUnoccupied 
     Int unavailableOccupied 
@@ -395,6 +396,7 @@ CHAIR CHAIR
     "Facility" o{--}o "Amenity" : ""
     "Facility" o{--}o "BedHold" : ""
     "Facility" o{--}o "BedStatus" : ""
+    "Facility" o{--}o "BedStatusUpdate" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "Incident" : ""
@@ -416,6 +418,7 @@ CHAIR CHAIR
     "BedStatus" o|--|| "User" : "updatedBy"
     "BedStatus" o{--}o "BedStatusUpdate" : ""
     "BedStatusUpdate" o|--|| "BedStatus" : "bedStatus"
+    "BedStatusUpdate" o|--|| "Facility" : "facility"
     "BedStatusUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "BedStatusUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"

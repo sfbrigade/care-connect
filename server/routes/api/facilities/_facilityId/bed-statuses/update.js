@@ -24,10 +24,12 @@ export default async function (fastify, opts) {
       const data = request.body;
       const { id: userId } = request.user;
 
-      const existingBedStatus = await fastify.prisma.bedStatus.findFirst({
+      const existingBedStatus = await fastify.prisma.bedStatus.findUnique({
         where: {
-          id: bedStatusId,
-          facilityId,
+          bedStatusId: {
+            id: bedStatusId,
+            facilityId,
+          }
         },
       });
 
@@ -47,6 +49,7 @@ export default async function (fastify, opts) {
         // Create the update history record
         await tx.bedStatusUpdate.create({
           data: {
+            facilityId,
             bedStatusId,
             capacity: nextData.capacity,
             unavailableUnoccupied: nextData.unavailableUnoccupied,
@@ -60,7 +63,7 @@ export default async function (fastify, opts) {
 
         // Update the actual bed status record
         bedStatus = await tx.bedStatus.update({
-          where: { id: bedStatusId },
+          where: { bedStatusId: { id: bedStatusId, facilityId } },
           data: {
             type: nextData.type,
             capacity: nextData.capacity,
