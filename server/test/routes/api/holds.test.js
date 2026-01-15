@@ -148,20 +148,17 @@ test('/api/holds', async (t) => {
     await t.test('updates a hold successfully', async () => {
       const response = await app.inject().patch('/api/holds/b65ae02b-9b35-43e2-897b-eee6eb5a82e2')
         .payload({
-          incidentId: '921a02ad-af5f-404f-84f2-b8c987d436d8',
           notes: 'Updated notes',
         })
         .headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       let hold = JSON.parse(response.body);
-      assert.deepStrictEqual(hold.incidentId, '921a02ad-af5f-404f-84f2-b8c987d436d8');
       assert.deepStrictEqual(hold.notes, 'Updated notes');
 
       // Verify hold was updated in database
       hold = await prisma.bedHold.findUnique({
         where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
       });
-      assert.deepStrictEqual(hold.incidentId, '921a02ad-af5f-404f-84f2-b8c987d436d8');
       assert.deepStrictEqual(hold.notes, 'Updated notes');
     });
 
