@@ -340,6 +340,18 @@ test('/api/facilities', async (t) => {
     });
   });
 
+  await t.test('GET /:id/active-incident', async (t) => {
+    await t.test('returns active incident for facility', async () => {
+      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/active-incident')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(data);
+      assert.deepStrictEqual(data.id, '2fa77128-586c-465a-9381-c441e633e3b2');
+    });
+  });
+
   await t.test('GET /:id/availability', async (t) => {
     await t.test('returns availability for facility', async () => {
       const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/availability')
