@@ -72,11 +72,11 @@ function parseCsv (text) {
     const lastName = values[1].trim();
     const email = values[2].trim();
     if (!firstName) {
-      errors.push(`Row ${lineNumber}: First name is required.`);
+      errors.push(`Row ${lineNumber}: First name is required. (email: ${email})`);
       continue;
     }
     if (!lastName) {
-      errors.push(`Row ${lineNumber}: Last name is required.`);
+      errors.push(`Row ${lineNumber}: Last name is required. (email: ${email})`);
       continue;
     }
     if (!email) {
@@ -85,7 +85,7 @@ function parseCsv (text) {
     }
     const emailError = emailValidator(email);
     if (emailError) {
-      errors.push(`Row ${lineNumber}: ${emailError}`);
+      errors.push(`Row ${lineNumber}: ${emailError} (email: ${email})`);
       continue;
     }
     rows.push({ firstName, lastName, email });
