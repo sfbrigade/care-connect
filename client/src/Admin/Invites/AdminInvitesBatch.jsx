@@ -149,7 +149,7 @@ function AdminInvitesBatch () {
       setParseErrors([]);
       return;
     }
-    const reader = new FileReader();
+    const reader = new window.FileReader();
     reader.onload = (event) => {
       const text = event.target?.result ?? '';
       const { rows: parsedRows, errors } = parseCsv(String(text));
