@@ -28,10 +28,6 @@ export default async function (fastify, opts) {
         },
       });
 
-      if (!incident) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-
       return reply.send(incident);
     });
 }

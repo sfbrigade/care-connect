@@ -13,5 +13,5 @@ items:
     facility: '@lescFacility2'
     cadNumber: 'CAD-456'
     arrestedAt: <%= new Date().toISOString() %>
-    createdBy: '@user2'
-    updatedBy: '@user2'
+    createdBy: '@user4'
+    updatedBy: '@user4'

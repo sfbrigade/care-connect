@@ -5,7 +5,7 @@ import IntakeForm from '../components/IntakeForm';
 import CheckIn from '../components/CheckIn';
 import HoldsHistory from '../components/HoldsHistory';
 import ClientView from '../components/ClientView';
-import IncidentView from '../components/IncidentView';
+import IncidentForm from '../components/IncidentForm';
 
 function LESCRoutes () {
   return (
@@ -18,8 +18,7 @@ function LESCRoutes () {
       <Route path='history' element={<HoldsHistory />} />
       <Route path='client/:clientId' element={<ClientView />} />
       <Route path='client' element={<ClientView />} />
-      <Route path='incident/:incidentId' element={<IncidentView />} />
-      <Route path='incident' element={<IncidentView />} />
+      <Route path='incident' element={<IncidentForm />} />
       <Route path='clients/:clientId' element={<IntakeForm />} />
       <Route path='' element={<Navigate to='holds' />} />
     </Routes>

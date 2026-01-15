@@ -40,9 +40,18 @@ function Holds () {
     closeQRModal,
   } = useHoldActions({
     invalidateQueries: [
+      ['facilities', facility.id, 'active-incident'],
       ['facilities', facility.id, 'holds'],
       ['facilities', facility.id, 'availability'],
     ],
+  });
+
+  const { data: incident } = useQuery({
+    queryKey: ['facilities', facility.id, 'active-incident'],
+    queryFn: async () => {
+      const response = await Api.facilities.activeIncident(facility.id);
+      return response.data;
+    },
   });
 
   const { data: holds, isLoading, error } = useQuery({
@@ -220,49 +229,55 @@ function Holds () {
   });
 
   // Get the service type with most availability for a facility (same logic as HoldForm)
-  const getServiceTypeForFacility = (facId) => {
-    // Return the service type with the most available beds
-    return availability.reduce((best, current) =>
-      current.available > best.available ? current : best
-    );
-  };
+  // const getServiceTypeForFacility = (facId) => {
+  //   // Return the service type with the most available beds
+  //   return availability.reduce((best, current) =>
+  //     current.available > best.available ? current : best
+  //   );
+  // };
 
   // Create hold directly (1 bed, no notes) - replaces modal flow
-  const createHoldDirectlyMutation = useMutation({
-    mutationFn: async (targetFacilityId) => {
-      const serviceInfo = getServiceTypeForFacility(targetFacilityId);
-      if (!serviceInfo) {
-        throw new Error('No service type available for this facility');
-      }
-      return Api.holds.create({
-        facilityId: targetFacilityId,
-        serviceTypeId: serviceInfo.serviceTypeId,
-        notes: undefined,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
-      showToast('Bed hold created successfully', 'success');
-    },
-    onError: (error) => {
-      const errorMessage = error.response?.data?.error || 'Failed to create hold';
-      showToast(errorMessage, 'error');
-    },
-  });
+  // const createHoldDirectlyMutation = useMutation({
+  //   mutationFn: async (targetFacilityId) => {
+  //     const serviceInfo = getServiceTypeForFacility(targetFacilityId);
+  //     if (!serviceInfo) {
+  //       throw new Error('No service type available for this facility');
+  //     }
+  //     return Api.holds.create({
+  //       facilityId: targetFacilityId,
+  //       serviceTypeId: serviceInfo.serviceTypeId,
+  //       notes: undefined,
+  //     });
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
+  //     queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
+  //     showToast('Bed hold created successfully', 'success');
+  //   },
+  //   onError: (error) => {
+  //     const errorMessage = error.response?.data?.error || 'Failed to create hold';
+  //     showToast(errorMessage, 'error');
+  //   },
+  // });
 
-  const handleCreateHoldDirectly = (targetFacilityId) => {
-    if (!targetFacilityId) {
-      // If no facility ID provided, use the LESC facility
-      if (facility) {
-        createHoldDirectlyMutation.mutate(facility.id);
-      } else {
-        showToast('Facility information not available', 'error');
-      }
-    } else {
-      createHoldDirectlyMutation.mutate(targetFacilityId);
+  function onHoldClick () {
+    if (!incident) {
+      navigate('/incident');
     }
-  };
+  }
+
+  // const handleCreateHoldDirectly = (targetFacilityId) => {
+  //   if (!targetFacilityId) {
+  //     // If no facility ID provided, use the LESC facility
+  //     if (facility) {
+  //       createHoldDirectlyMutation.mutate(facility.id);
+  //     } else {
+  //       showToast('Facility information not available', 'error');
+  //     }
+  //   } else {
+  //     createHoldDirectlyMutation.mutate(targetFacilityId);
+  //   }
+  // };
 
   const handleExtendAll = () => {
     if (holds.length === 0) return;
@@ -330,7 +345,7 @@ function Holds () {
               facilityName={facilityInfo.name}
               address={facilityInfo.address}
               bedCount={facilityInfo.bedCount}
-              onHoldClick={() => handleCreateHoldDirectly(facility.id)}
+              onHoldClick={() => onHoldClick()}
             />
           )}
           <SegmentedControl

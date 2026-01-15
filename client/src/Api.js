@@ -186,6 +186,9 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
+    activeIncident (id) {
+      return instance.get(`/api/facilities/${id}/active-incident`);
+    },
     availability (id) {
       return instance.get(`/api/facilities/${id}/availability`);
     },

@@ -350,6 +350,15 @@ test('/api/facilities', async (t) => {
       assert.ok(data);
       assert.deepStrictEqual(data.id, '2fa77128-586c-465a-9381-c441e633e3b2');
     });
+
+    await t.test('returns null if no active incident for user and facility', async () => {
+      const response = await app.inject().get('/api/facilities/fab67d53-a1c7-4eb5-b151-33727270ad20/active-incident')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data, null);
+    });
   });
 
   await t.test('GET /:id/availability', async (t) => {
