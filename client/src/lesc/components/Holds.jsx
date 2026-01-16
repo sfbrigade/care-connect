@@ -35,7 +35,7 @@ function Holds () {
 
   const { data: deflections, isLoading, error } = useQuery({
     queryKey: ['incidents', incident?.id, 'deflections'],
-    queryFn: () => Api.incidents.deflections.index(incident.id).then(response => response.data),
+    queryFn: () => Api.incidents.deflections(incident.id).then(response => response.data),
     enabled: !!incident,
   });
 
@@ -197,56 +197,15 @@ function Holds () {
     },
   });
 
-  // Get the service type with most availability for a facility (same logic as HoldForm)
-  // const getServiceTypeForFacility = (facId) => {
-  //   // Return the service type with the most available beds
-  //   return availability.reduce((best, current) =>
-  //     current.available > best.available ? current : best
-  //   );
-  // };
-
-  // Create hold directly (1 bed, no notes) - replaces modal flow
-  // const createHoldDirectlyMutation = useMutation({
-  //   mutationFn: async (targetFacilityId) => {
-  //     const serviceInfo = getServiceTypeForFacility(targetFacilityId);
-  //     if (!serviceInfo) {
-  //       throw new Error('No service type available for this facility');
-  //     }
-  //     return Api.holds.create({
-  //       facilityId: targetFacilityId,
-  //       serviceTypeId: serviceInfo.serviceTypeId,
-  //       notes: undefined,
-  //     });
-  //   },
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'holds'] });
-  //     queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'availability'] });
-  //     showToast('Bed hold created successfully', 'success');
-  //   },
-  //   onError: (error) => {
-  //     const errorMessage = error.response?.data?.error || 'Failed to create hold';
-  //     showToast(errorMessage, 'error');
-  //   },
-  // });
-
   function onHoldClick () {
     if (!incident) {
-      navigate('/incident');
+      let bedTypeId;
+      if (bedTypes?.length === 1) {
+        bedTypeId = bedTypes[0].id;
+      }
+      navigate(`/incident${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`);
     }
   }
-
-  // const handleCreateHoldDirectly = (targetFacilityId) => {
-  //   if (!targetFacilityId) {
-  //     // If no facility ID provided, use the LESC facility
-  //     if (facility) {
-  //       createHoldDirectlyMutation.mutate(facility.id);
-  //     } else {
-  //       showToast('Facility information not available', 'error');
-  //     }
-  //   } else {
-  //     createHoldDirectlyMutation.mutate(targetFacilityId);
-  //   }
-  // };
 
   const handleExtendAll = () => {
     if (deflections.length === 0) return;

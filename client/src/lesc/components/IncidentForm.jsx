@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Box, Button, Container, Fieldset, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Box, Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
@@ -25,18 +26,24 @@ const initialValues = {
 };
 
 function IncidentForm () {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const addressRef = useRef();
+
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
   });
+
   const { data, isLoading } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
   });
+
   useEffect(() => {
     if (!isLoading) {
       if (data) {
@@ -44,22 +51,43 @@ function IncidentForm () {
         form.reset();
         setInitialized(true);
       } else {
+        const now = DateTime.now().toISO({ includeOffset: false, precision: 'seconds' });
         getCurrentLocationAddress().then(address => {
           form.setInitialValues({
             ...initialValues,
             ...address,
-            arrestedAt: DateTime.now().toISO({ includeOffset: false, precision: 'seconds' }),
+            facilityId: facility.id,
+            arrestedAt: now,
           });
-          form.reset();
+        }).catch(() => {
+          form.setInitialValues({
+            ...initialValues,
+            facilityId: facility.id,
+            arrestedAt: now,
+          });
         }).finally(() => {
+          form.reset();
           setInitialized(true);
         });
       }
     }
   }, [isLoading, data]);
+
   function formatAddress () {
     return `${form.values.addressLine1}${form.values.addressLine2 ? `, ${form.values.addressLine2}` : ''}${form.values.city ? `, ${form.values.city}` : ''}${form.values.state ? `, ${form.values.state}` : ''}${form.values.postalCode ? ` ${form.values.postalCode}` : ''}`;
   }
+
+  const onSubmitMutation = useMutation({
+    mutationFn: (data) => data.id ? Api.incidents.update(data.id, data) : Api.incidents.create(data, { bedTypeId: searchParams.get('bedTypeId') }),
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['facilities', facility.id, 'bed-types'],
+      });
+      await queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
+      navigate('/holds');
+    },
+  });
+
   return (
     <>
       <Head>
@@ -71,13 +99,13 @@ function IncidentForm () {
         </Box>
         <Text c='dimmed' size='xl'>Start an incident</Text>
         <Title order={3} mb='xl'>Enter these details once. We’ll reuse them for all holds in this incident.</Title>
-        <form>
+        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized} variant='unstyled'>
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
                   label='Arrest location'
-                  rightSection={<IconCurrentLocationFilled size={24} />}
+                  rightSection={!isInitialized ? <Loader size={24} /> : <IconCurrentLocationFilled size={24} />}
                   value={formatAddress()}
                   readOnly
                   onFocus={() => { setShowAddressForm(true); setTimeout(() => addressRef.current?.focus(), 100); }}

@@ -261,8 +261,8 @@ const Api = {
     list () {
       return instance.get('/api/incidents').catch(handleError);
     },
-    create (data) {
-      return instance.post('/api/incidents', data).catch(handleError);
+    create (data, { bedTypeId } = {}) {
+      return instance.post(`/api/incidents${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`, data).catch(handleError);
     },
     get (id) {
       return instance.get(`/api/incidents/${id}`).catch(handleError);
