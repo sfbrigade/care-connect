@@ -1,6 +1,21 @@
 ```mermaid
 erDiagram
 
+        BedType {
+            BED BED
+CHAIR CHAIR
+        }
+    
+
+
+        TernaryEnum {
+            YES YES
+NO NO
+UNKNOWN UNKNOWN
+        }
+    
+
+
         FacilityType {
             DIDO DIDO
 LESC LESC
@@ -46,19 +61,44 @@ OTHER OTHER
     
 
 
-        BedHoldStatus {
+        HoldStatus {
             ACTIVE ACTIVE
 EXTENDED EXTENDED
 CANCELLED CANCELLED
 EXPIRED EXPIRED
-TRANSFERRED TRANSFERRED
         }
     
 
 
-        BedType {
-            BED BED
-CHAIR CHAIR
+        Sex {
+            MALE MALE
+FEMALE FEMALE
+OTHER OTHER
+UNKNOWN UNKNOWN
+        }
+    
+
+
+        Race {
+            WHITE WHITE
+BLACK BLACK
+HISPANIC HISPANIC
+ASIAN ASIAN
+OTHER OTHER
+UNKNOWN UNKNOWN
+        }
+    
+
+
+        SubjectStatus {
+            DETAINED DETAINED
+ONSITE ONSITE
+AWAITING_TRANSFER AWAITING_TRANSFER
+AWAITING_INTAKE AWAITING_INTAKE
+FAILED_INTAKE FAILED_INTAKE
+ADMITTED ADMITTED
+RELEASED RELEASED
+EXITED EXITED
         }
     
   "Organization" {
@@ -267,47 +307,103 @@ CHAIR CHAIR
     }
   
 
-  "Client" {
+  "Subject" {
     String id "🗝️"
     String firstName 
-    String lastName "❓"
+    String lastName 
     String middleInitial "❓"
-    DateTime dateOfBirth "❓"
-    String sex "❓"
-    String race "❓"
-    String address "❓"
+    DateTime dateOfBirth 
+    Sex sex 
+    Race race 
     String driverLicense "❓"
+    String addressLine1 "❓"
+    String addressLine2 "❓"
+    String city "❓"
+    String state "❓"
+    String postalCode "❓"
     String localId "❓"
-    String personallyIdentifiable "❓"
-    String description "❓"
-    String pets "❓"
-    Json qualifications "❓"
-    String notes "❓"
     DateTime createdAt 
     DateTime updatedAt 
     }
   
 
-  "BedHold" {
+  "Deflection" {
     String id "🗝️"
     String facilityId 
-    String serviceTypeId 
-    String clientId "❓"
-    String incidentId "❓"
-    Int bedsRequested 
-    DateTime expiresAt 
-    BedHoldStatus status 
+    String incidentId 
+    String bedStatusId 
+    String subjectId "❓"
+    SubjectStatus subjectStatus 
+    String behavior "❓"
+    DateTime createdAt 
     String createdById 
+    DateTime expiresAt 
+    DateTime completedAt "❓"
+    HoldStatus status 
+    Int extensionCount 
+    String cancelReasonId "❓"
     DateTime cancelledAt "❓"
     String cancelledById "❓"
-    DateTime extendedAt "❓"
     DateTime transferredAt "❓"
     String transferredById "❓"
-    String transferToken "❓"
-    DateTime transferTokenExpiresAt "❓"
-    String notes "❓"
-    DateTime createdAt 
+    String transferredByBadgeNumber "❓"
+    Boolean transferredByProp115Certified "❓"
+    String transferredByOrganizationId "❓"
+    String transferredByUnitId "❓"
+    String transferredByTitleId "❓"
+    DateTime admittedAt "❓"
+    String admittedById "❓"
+    DateTime rejectedAt "❓"
+    String rejectedById "❓"
+    DateTime releasedAt "❓"
+    String releasedById "❓"
+    String releaseReasonId "❓"
+    String refusalReasonId "❓"
+    String exitDestinationId "❓"
+    String exitHousingStatusId "❓"
+    TernaryEnum exitConnectedToCare "❓"
+    TernaryEnum exitSFResident "❓"
     DateTime updatedAt 
+    }
+  
+
+  "DeflectionUpdate" {
+    String id "🗝️"
+    String deflectionId 
+    HoldStatus status "❓"
+    SubjectStatus subjectStatus "❓"
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
+  "DeflectionCancelReason" {
+    String id "🗝️"
+    String name 
+    }
+  
+
+  "DeflectionReleaseReason" {
+    String id "🗝️"
+    String name 
+    }
+  
+
+  "DeflectionRefusalReason" {
+    String id "🗝️"
+    String name 
+    }
+  
+
+  "DeflectionExitDestination" {
+    String id "🗝️"
+    String name 
+    }
+  
+
+  "DeflectionExitHousingStatus" {
+    String id "🗝️"
+    String name 
     }
   
 
@@ -348,29 +444,36 @@ CHAIR CHAIR
     }
   
     "Organization" o|--|| "User" : "createdBy"
-    "Organization" o{--}o "Unit" : ""
-    "Organization" o{--}o "Title" : ""
+    "Organization" o{--}o "Deflection" : ""
     "Organization" o{--}o "Incident" : ""
     "Organization" o{--}o "Invite" : ""
+    "Organization" o{--}o "Title" : ""
+    "Organization" o{--}o "Unit" : ""
     "Organization" o{--}o "User" : ""
     "Unit" o|--|| "Organization" : "organization"
     "Unit" o|--|| "User" : "createdBy"
+    "Unit" o{--}o "Deflection" : ""
     "Unit" o{--}o "Incident" : ""
     "Unit" o{--}o "User" : ""
     "Title" o|--|| "Organization" : "organization"
     "Title" o|--|| "User" : "createdBy"
+    "Title" o{--}o "Deflection" : ""
     "Title" o{--}o "Incident" : ""
     "Title" o{--}o "Invite" : ""
     "Title" o{--}o "User" : ""
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
-    "User" o{--}o "BedHold" : ""
-    "User" o{--}o "BedHold" : ""
-    "User" o{--}o "BedHold" : ""
     "User" o{--}o "BedStatus" : ""
     "User" o{--}o "BedStatus" : ""
     "User" o{--}o "BedStatusUpdate" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
+    "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "FacilityStatusReason" : ""
@@ -394,10 +497,10 @@ CHAIR CHAIR
     "Facility" o|--|| "User" : "createdBy"
     "Facility" o|--|| "User" : "updatedBy"
     "Facility" o{--}o "Amenity" : ""
-    "Facility" o{--}o "BedHold" : ""
     "Facility" o{--}o "BedStatus" : ""
     "Facility" o{--}o "BedStatusUpdate" : ""
     "Facility" o{--}o "FacilityContact" : ""
+    "Facility" o{--}o "Deflection" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "Incident" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
@@ -410,12 +513,12 @@ CHAIR CHAIR
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
     "FacilityContact" o|--|| "Facility" : "facility"
-    "ServiceType" o{--}o "BedHold" : ""
     "BedStatus" o|--|| "Facility" : "facility"
     "BedStatus" o|--|| "BedType" : "enum:type"
     "BedStatus" o|--|| "User" : "createdBy"
     "BedStatus" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
     "BedStatus" o|--|| "User" : "updatedBy"
+    "BedStatus" o{--}o "Deflection" : ""
     "BedStatus" o{--}o "BedStatusUpdate" : ""
     "BedStatusUpdate" o|--|| "BedStatus" : "bedStatus"
     "BedStatusUpdate" o|--|| "Facility" : "facility"
@@ -423,15 +526,36 @@ CHAIR CHAIR
     "BedStatusUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
     "FacilityEligibility" o|--|| "FacilityEligibilityType" : "enum:type"
-    "Client" o{--}o "BedHold" : ""
-    "BedHold" o|--|| "Facility" : "facility"
-    "BedHold" o|--|| "ServiceType" : "serviceType"
-    "BedHold" o|--|o "Client" : "client"
-    "BedHold" o|--|o "Incident" : "incident"
-    "BedHold" o|--|| "BedHoldStatus" : "enum:status"
-    "BedHold" o|--|| "User" : "createdBy"
-    "BedHold" o|--|o "User" : "cancelledBy"
-    "BedHold" o|--|o "User" : "transferredBy"
+    "Subject" o|--|| "Sex" : "enum:sex"
+    "Subject" o|--|| "Race" : "enum:race"
+    "Subject" o{--}o "Deflection" : ""
+    "Deflection" o|--|| "Facility" : "facility"
+    "Deflection" o|--|| "Incident" : "incident"
+    "Deflection" o|--|| "BedStatus" : "bedStatus"
+    "Deflection" o|--|o "Subject" : "subject"
+    "Deflection" o|--|| "SubjectStatus" : "enum:subjectStatus"
+    "Deflection" o|--|| "User" : "createdBy"
+    "Deflection" o|--|| "HoldStatus" : "enum:status"
+    "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
+    "Deflection" o|--|o "User" : "cancelledBy"
+    "Deflection" o|--|o "User" : "transferredBy"
+    "Deflection" o|--|o "Organization" : "transferredByOrganization"
+    "Deflection" o|--|o "Unit" : "transferredByUnit"
+    "Deflection" o|--|o "Title" : "transferredByTitle"
+    "Deflection" o|--|o "User" : "admittedBy"
+    "Deflection" o|--|o "User" : "rejectedBy"
+    "Deflection" o|--|o "User" : "releasedBy"
+    "Deflection" o|--|o "DeflectionReleaseReason" : "releaseReason"
+    "Deflection" o|--|o "DeflectionRefusalReason" : "refusalReason"
+    "Deflection" o|--|o "DeflectionExitDestination" : "exitDestination"
+    "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
+    "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
+    "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "Deflection" o{--}o "DeflectionUpdate" : ""
+    "DeflectionUpdate" o|--|| "Deflection" : "deflection"
+    "DeflectionUpdate" o|--|o "HoldStatus" : "enum:status"
+    "DeflectionUpdate" o|--|o "SubjectStatus" : "enum:subjectStatus"
+    "DeflectionUpdate" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"

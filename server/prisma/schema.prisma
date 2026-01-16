@@ -22,6 +22,17 @@ datasource db {
   extensions = [citext]
 }
 
+enum BedType {
+  BED
+  CHAIR
+}
+
+enum TernaryEnum {
+  YES
+  NO
+  UNKNOWN
+}
+
 enum FacilityType {
   DIDO
   LESC
@@ -59,17 +70,38 @@ enum FacilityEligibilityType {
   OTHER
 }
 
-enum BedHoldStatus {
+enum HoldStatusEnum {
   ACTIVE
   EXTENDED
   CANCELLED
   EXPIRED
-  TRANSFERRED
 }
 
-enum BedType {
-  BED
-  CHAIR
+enum SexEnum {
+  MALE
+  FEMALE
+  OTHER
+  UNKNOWN  
+}
+
+enum RaceEnum {
+  WHITE
+  BLACK
+  HISPANIC
+  ASIAN
+  OTHER
+  UNKNOWN
+}
+
+enum SubjectStatusEnum {
+  DETAINED
+  ONSITE
+  AWAITING_TRANSFER
+  AWAITING_INTAKE
+  FAILED_INTAKE
+  ADMITTED
+  RELEASED
+  EXITED
 }
 
 model Organization {
@@ -80,10 +112,11 @@ model Organization {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
-  units                        Unit[]
-  titles                       Title[]
+  deflections                  Deflection[]
   incidents                    Incident[]
   invites                      Invite[]
+  titles                       Title[]
+  units                        Unit[]
   users                        User[]
 }
 
@@ -97,6 +130,7 @@ model Unit {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
+  deflections                  Deflection[]
   incidents                    Incident[]
   users                        User[]
 
@@ -113,6 +147,7 @@ model Title {
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
+  deflections                  Deflection[]
   incidents                    Incident[]
   invites                      Invite[]
   users                        User[]
@@ -142,12 +177,16 @@ model User {
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
 
-  bedHoldsCreated              BedHold[]               @relation("CreatedBy")
-  bedHoldsCancelled            BedHold[]               @relation("CancelledBy")
-  bedHoldsTransferred          BedHold[]               @relation("TransferredBy")
   bedStatusesCreated           BedStatus[]             @relation("CreatedBy")
   bedStatusesUpdated           BedStatus[]             @relation("UpdatedBy")
   bedStatusUpdatesCreated      BedStatusUpdate[]
+  deflectionsCancelled         Deflection[]            @relation("CancelledBy")
+  deflectionsCreated           Deflection[]            @relation("CreatedBy")
+  deflectionsTransferred       Deflection[]            @relation("TransferredBy")
+  deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
+  deflectionsRejected          Deflection[]            @relation("RejectedBy")
+  deflectionsReleased          Deflection[]            @relation("ReleasedBy")  
+  deflectionUpdatesCreated     DeflectionUpdate[]
   facilitiesCreated            Facility[]              @relation("CreatedBy")
   facilitiesUpdated            Facility[]              @relation("UpdatedBy")
   facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
@@ -224,10 +263,10 @@ model Facility {
   updatedById                  String                  @db.Uuid
 
   amenities                    Amenity[]
-  bedHolds                     BedHold[]
   bedStatuses                  BedStatus[]
   bedStatusUpdates             BedStatusUpdate[]
   contacts                     FacilityContact[]
+  deflections                  Deflection[]
   eligibility                  FacilityEligibility[]
   incidents                    Incident[]
   updates                      FacilityUpdate[]
@@ -294,7 +333,6 @@ model ServiceType {
   updatedAt                    DateTime                @updatedAt
 
   facilities                   Facility[]
-  bedHolds                     BedHold[]
 }
 
 model BedStatus {
@@ -319,6 +357,7 @@ model BedStatus {
 
   @@id(name: "bedStatusId", [id, facilityId])
 
+  deflections                  Deflection[]
   updates                      BedStatusUpdate[]
 }
 
@@ -354,59 +393,130 @@ model FacilityEligibility {
   @@index([facilityId, type])
 }
 
-model Client {
+model Subject {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   firstName                    String
-  lastName                     String?
+  lastName                     String
   middleInitial                String?
-  dateOfBirth                  DateTime?
-  sex                          String?
-  race                         String?
-  address                      String?
+  dateOfBirth                  DateTime                @db.Date
+  sex                          SexEnum
+  race                         RaceEnum
   driverLicense                String?
+  addressLine1                 String?
+  addressLine2                 String?
+  city                         String?
+  state                        String?
+  postalCode                   String?
   localId                      String?
-  personallyIdentifiable       String?
-  description                  String?
-  pets                         String?
-  qualifications               Json?
-  notes                        String?
-  bedHolds                     BedHold[]
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
+
+  deflections                  Deflection[]
 }
 
-model BedHold {
+model Deflection {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facility                     Facility                @relation(fields: [facilityId], references: [id])
   facilityId                   String                  @db.Uuid
-  serviceType                  ServiceType             @relation(fields: [serviceTypeId], references: [id], onDelete: Cascade)
-  serviceTypeId                String
-  client                       Client?                 @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  clientId                     String?                 @db.Uuid
-  incident                     Incident?               @relation(fields: [facilityId, incidentId], references: [facilityId, id], onDelete: SetNull)
-  incidentId                   String?                 @db.Uuid
-  bedsRequested                Int
-  expiresAt                    DateTime
-  status                       BedHoldStatus           @default(ACTIVE)
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdById                  String                  @db.Uuid
-  cancelledAt                  DateTime?
-  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
-  cancelledById                String?                 @db.Uuid
-  extendedAt                   DateTime?
-  transferredAt                DateTime?
-  transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id], onDelete: SetNull)
-  transferredById              String?                 @db.Uuid
-  transferToken                String?                 @unique
-  transferTokenExpiresAt       DateTime?
-  notes                        String?
+  incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
+  incidentId                   String                  @db.Uuid
+  bedStatus                    BedStatus               @relation(fields: [facilityId, bedStatusId], references: [facilityId, id])
+  bedStatusId                  String                  @db.Uuid 
+  subject                      Subject?                @relation(fields: [subjectId], references: [id])
+  subjectId                    String?                 @db.Uuid
+  subjectStatus                SubjectStatusEnum       @default(DETAINED)
+  behavior                     String?
   createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  expiresAt                    DateTime
+  completedAt                  DateTime?
+  status                       HoldStatusEnum          @default(ACTIVE)
+  extensionCount               Int                     @default(0)
+  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId               String?
+  cancelledAt                  DateTime?
+  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id])
+  cancelledById                String?                 @db.Uuid
+  transferredAt                DateTime?
+  transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id])
+  transferredById              String?                 @db.Uuid
+  transferredByBadgeNumber     String?
+  transferredByProp115Certified Boolean?
+  transferredByOrganizationId  String?
+  transferredByOrganization    Organization?           @relation(fields: [transferredByOrganizationId], references: [id])
+  transferredByUnitId          String?
+  transferredByUnit            Unit?                   @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
+  transferredByTitleId         String?
+  transferredByTitle           Title?                  @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
+  admittedAt                   DateTime?
+  admittedBy                   User?                   @relation("AdmittedBy", fields: [admittedById], references: [id])
+  admittedById                 String?                 @db.Uuid
+  rejectedAt                   DateTime?
+  rejectedBy                   User?                   @relation("RejectedBy", fields: [rejectedById], references: [id])
+  rejectedById                 String?                 @db.Uuid
+  releasedAt                   DateTime?
+  releasedBy                   User?                   @relation("ReleasedBy", fields: [releasedById], references: [id])
+  releasedById                 String?                 @db.Uuid
+  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId              String?
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               TernaryEnum?
   updatedAt                    DateTime                @updatedAt
 
-  @@index([facilityId])
-  @@index([expiresAt])
-  @@index([status])
-  @@index([incidentId])
+  deflectionUpdates            DeflectionUpdate[]
+}
+
+model DeflectionUpdate {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id])
+  deflectionId                 String                  @db.Uuid
+  status                       HoldStatusEnum?
+  subjectStatus                SubjectStatusEnum?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+}
+
+model DeflectionCancelReason {
+  id                           String                  @id
+  name                         String
+
+  deflections                  Deflection[]
+}
+
+model DeflectionReleaseReason {
+  id                           String                  @id
+  name                         String
+
+  deflections                  Deflection[]
+}
+
+model DeflectionRefusalReason {
+  id                           String                  @id
+  name                         String
+
+  deflections                  Deflection[]
+}
+
+model DeflectionExitDestination {
+  id                           String                  @id
+  name                         String
+
+  deflections                  Deflection[]
+}
+
+model DeflectionExitHousingStatus {
+  id                           String                  @id
+  name                         String
+
+  deflections                  Deflection[]
 }
 
 model Incident {
@@ -443,7 +553,7 @@ model Incident {
   @@id([id, facilityId])
   @@index([cadNumber])
 
-  bedHolds                     BedHold[]
+  deflections                  Deflection[]
 }
 
 model Feedback {
