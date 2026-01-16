@@ -1,8 +1,8 @@
-import LESCFacility from './LESCFacility';
+import Facility from './Facility';
 
 export default {
-  title: 'LESC/LESCFacility',
-  component: LESCFacility,
+  title: 'LESC/Facility',
+  component: Facility,
   decorators: [
     (Story) => (
       <div style={{ width: '320px' }}>
@@ -15,21 +15,17 @@ export default {
   },
   tags: ['autodocs'],
   argTypes: {
-    facilityName: {
-      control: 'text',
-      description: 'Name of the LESC facility',
+    facility: {
+      description: 'Facility object',
     },
-    address: {
-      control: 'text',
-      description: 'Address of the facility',
+    bedTypes: {
+      description: 'Bed types array',
     },
-    bedCount: {
-      control: 'number',
-      description: 'Number of available beds',
+    arrivedAt: {
+      description: 'Arrived at date',
     },
-    bedType: {
-      control: 'text',
-      description: 'Type of bed',
+    leftAt: {
+      description: 'Left at date',
     },
     onArrivedClick: {
       action: 'onArrivedClick',
@@ -44,10 +40,17 @@ export default {
 
 export const Default = {
   args: {
-    facilityName: 'RESET',
-    address: '444 6th St',
-    bedCount: 12,
-    bedType: 'chair',
+    facility: {
+      name: 'RESET',
+      addressLine1: '444 6th St',
+      status: 'OPEN_ACCEPTING',
+    },
+    bedTypes: [
+      {
+        type: 'CHAIR',
+        available: 16,
+      },
+    ],
     onArrivedClick: () => console.log('I\'ve arrived clicked'),
     onHoldClick: () => console.log('Hold a Bed clicked'),
   },
@@ -56,14 +59,22 @@ export const Default = {
 export const NoHoldsAvailable = {
   args: {
     ...Default.args,
-    bedCount: 0,
+    bedTypes: [
+      {
+        type: 'CHAIR',
+        available: 0,
+      },
+    ],
   },
 };
 
 export const Closed = {
   args: {
     ...Default.args,
-    isClosed: true,
+    facility: {
+      ...Default.args.facility,
+      status: 'CLOSED',
+    },
   },
 };
 

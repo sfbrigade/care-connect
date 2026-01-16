@@ -1,4 +1,8 @@
 {
+  "bedType": {
+    "CHAIR": "Chair",
+    "BED": "Bed"
+  },
   "facility": {
     "status": {
       "OPEN_ACCEPTING": "Open - accepting",

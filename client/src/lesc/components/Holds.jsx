@@ -9,7 +9,7 @@ import { Head } from '@unhead/react';
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
-import LESCFacility from './LESCFacility';
+import Facility from './Facility';
 import LESCHold from './LESCHold';
 import { useToast } from '@/components/ToastContext';
 import { calculateAge } from '@/utils/dateTime';
@@ -22,6 +22,22 @@ function Holds () {
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
+  });
+
+  const { data: incident } = useQuery({
+    queryKey: ['facilities', facility.id, 'active-incident'],
+    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+  });
+
+  const { data: deflections, isLoading, error } = useQuery({
+    queryKey: ['incidents', incident?.id, 'deflections'],
+    queryFn: () => Api.incidents.deflections.index(incident.id).then(response => response.data),
+    enabled: !!incident,
+  });
 
   // Use shared hold actions hook
   const {
@@ -40,40 +56,16 @@ function Holds () {
     closeQRModal,
   } = useHoldActions({
     invalidateQueries: [
+      ['facilities', facility.id, 'bed-types'],
       ['facilities', facility.id, 'active-incident'],
-      ['facilities', facility.id, 'holds'],
-      ['facilities', facility.id, 'availability'],
+      ['incidents', incident?.id, 'deflections'],
     ],
-  });
-
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: async () => {
-      const response = await Api.facilities.activeIncident(facility.id);
-      return response.data;
-    },
-  });
-
-  const { data: holds, isLoading, error } = useQuery({
-    queryKey: ['facilities', facility.id, 'holds'],
-    queryFn: async () => {
-      const response = await Api.facilities.holds(facility.id);
-      return response.data;
-    },
-  });
-
-  const { data: availability } = useQuery({
-    queryKey: ['facilities', facility.id, 'availability'],
-    queryFn: async () => {
-      const response = await Api.facilities.availability(facility.id);
-      return response.data;
-    },
   });
 
   // Update selectedHold with fresh data from holds list when it changes (to get transferToken after QR generation)
   useEffect(() => {
-    if (selectedHold?.id && holds) {
-      const freshHold = holds.find(h => h.id === selectedHold.id);
+    if (selectedHold?.id && deflections) {
+      const freshHold = deflections.find(h => h.id === selectedHold.id);
       if (freshHold) {
         // Only update if transferToken changed (was added or updated)
         const hadToken = !!selectedHold.transferToken;
@@ -84,7 +76,7 @@ function Holds () {
         }
       }
     }
-  }, [holds, selectedHold]);
+  }, [deflections, selectedHold]);
 
   // Only one transfer operation at a time - poll only for selectedHold when modal is open
   const transferHoldIdToPoll = (qrModalOpened && selectedHold?.id) ? selectedHold.id : null;
@@ -192,29 +184,6 @@ function Holds () {
     }
   }, [qrModalOpened, selectedHold, closeQRModal, showToast, queryClient, facility.id]);
 
-  // Get facility info for specific facility view
-  const facilityInfo = useMemo(() => {
-    if (!facility || !availability) return null;
-
-    // Calculate total available beds for this facility
-    const totalAvailable = availability.reduce((sum, item) => {
-      return sum + (item.available ?? 0);
-    }, 0);
-
-    // Format address
-    const addressParts = [];
-    if (facility.addressLine1) addressParts.push(facility.addressLine1);
-    if (facility.city) addressParts.push(facility.city);
-    if (facility.state) addressParts.push(facility.state);
-    const address = addressParts.length > 0 ? addressParts.join(', ') : facility.neighborhood || 'Address not available';
-
-    return {
-      ...facility,
-      address,
-      bedCount: totalAvailable,
-    };
-  }, [facility, availability]);
-
   const extendAllMutation = useMutation({
     mutationFn: (holdIds) => Api.holds.extend(holdIds),
     onSuccess: () => {
@@ -280,8 +249,8 @@ function Holds () {
   // };
 
   const handleExtendAll = () => {
-    if (holds.length === 0) return;
-    extendAllMutation.mutate(holds.map(h => h.id));
+    if (deflections.length === 0) return;
+    extendAllMutation.mutate(deflections.map(h => h.id));
   };
 
   // Early returns MUST come after all hooks
@@ -340,14 +309,11 @@ function Holds () {
         />
 
         <Stack gap='xl'>
-          {facilityInfo && (
-            <LESCFacility
-              facilityName={facilityInfo.name}
-              address={facilityInfo.address}
-              bedCount={facilityInfo.bedCount}
-              onHoldClick={() => onHoldClick()}
-            />
-          )}
+          <Facility
+            facility={facility}
+            bedTypes={bedTypes}
+            onHoldClick={() => onHoldClick()}
+          />
           <SegmentedControl
             fullWidth
             value='holds'
@@ -357,7 +323,7 @@ function Holds () {
               { label: 'History', value: 'history' },
             ]}
           />
-          {(!holds || holds.length === 0) && (
+          {(!deflections || deflections.length === 0) && (
             <>
               <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
               <Box align='center'>
@@ -366,10 +332,10 @@ function Holds () {
               </Box>
             </>
           )}
-          {holds && holds.length > 0 && (
+          {deflections && deflections.length > 0 && (
             <>
               <Stack gap='md'>
-                {holds?.map((hold) => {
+                {deflections?.map((hold) => {
                   // Calculate age from dateOfBirth if available
                   const age = calculateAge(hold.client?.dateOfBirth);
 
@@ -404,7 +370,7 @@ function Holds () {
             </>
           )}
           <Text size='xs' c='gray.5' align='center'>
-            Last updated: {facilityInfo?.updatedAt ? DateTime.fromISO(facilityInfo.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+            Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
           </Text>
         </Stack>
       </Container>

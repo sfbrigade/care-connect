@@ -8,7 +8,7 @@ import { DateTime } from 'luxon';
 import Api from '@/Api';
 import Pagination from '@/components/Pagination';
 
-function AdminBedStatusesList () {
+function AdminBedTypesList () {
   const { facilityId } = useParams();
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -21,22 +21,22 @@ function AdminBedStatusesList () {
     }
   });
 
-  const { data: bedStatuses, isLoading: isLoadingBedStatuses } = useQuery({
-    queryKey: ['bedStatuses', facilityId, page],
+  const { data: bedTypes, isLoading: isLoadingBedTypes } = useQuery({
+    queryKey: ['bedTypes', facilityId, page],
     queryFn: async () => {
-      const response = await Api.facilities.bedStatuses.index(facilityId, page);
+      const response = await Api.facilities.bedTypes.index(facilityId, page);
       setLastPage(Api.calculateLastPage(response, page));
       return response.data;
     }
   });
 
-  const isLoading = isLoadingFacility || isLoadingBedStatuses;
+  const isLoading = isLoadingFacility || isLoadingBedTypes;
 
   const breadcrumbs = [
     { title: 'Home', href: '/' },
     { title: 'Manage Facilities', href: '/admin/facilities' },
     { title: facility?.name || 'Facility', href: `/admin/facilities/${facilityId}` },
-    { title: 'Bed Statuses', href: '#' },
+    { title: 'Bed Types', href: '#' },
   ].map((item, index) => (
     <Anchor component={Link} to={item.href} key={index}>
       {item.title}
@@ -46,7 +46,7 @@ function AdminBedStatusesList () {
   return (
     <>
       <Head>
-        <title>Manage Bed Statuses - {facility?.name}</title>
+        <title>Manage Bed Types - {facility?.name}</title>
       </Head>
       <Container size='xl'>
         <Breadcrumbs mb='md' separator='→'>
@@ -54,9 +54,9 @@ function AdminBedStatusesList () {
         </Breadcrumbs>
 
         <Group justify='space-between' mb='lg'>
-          <Title order={2}>Bed Statuses for {facility?.name}</Title>
+          <Title order={2}>Bed Types for {facility?.name}</Title>
           <Button component={Link} to='new'>
-            Create New Bed Status
+            Create New Bed Type
           </Button>
         </Group>
 
@@ -83,28 +83,28 @@ function AdminBedStatusesList () {
                   </Table.Td>
                 </Table.Tr>
               )}
-              {!isLoading && bedStatuses?.length === 0 && (
+              {!isLoading && bedTypes?.length === 0 && (
                 <Table.Tr>
                   <Table.Td colSpan={9}>
-                    <Text ta='center' py='sm'>No bed statuses found.</Text>
+                    <Text ta='center' py='sm'>No bed types found.</Text>
                   </Table.Td>
                 </Table.Tr>
               )}
-              {!isLoading && bedStatuses?.map((status) => (
-                <Table.Tr key={status.id}>
-                  <Table.Td>{DateTime.fromISO(status.createdAt).toFormat('yyyy-MM-dd HH:mm')}</Table.Td>
+              {!isLoading && bedTypes?.map((type) => (
+                <Table.Tr key={type.id}>
+                  <Table.Td>{DateTime.fromISO(type.createdAt).toFormat('yyyy-MM-dd HH:mm')}</Table.Td>
                   <Table.Td>
-                    <Anchor component={Link} to={status.id}>
-                      {status.type}
+                    <Anchor component={Link} to={type.id}>
+                      {type.type}
                     </Anchor>
                   </Table.Td>
-                  <Table.Td>{status.capacity}</Table.Td>
-                  <Table.Td>{status.occupied}</Table.Td>
-                  <Table.Td>{status.holds}</Table.Td>
-                  <Table.Td>{status.unavailableUnoccupied}</Table.Td>
-                  <Table.Td>{status.unavailableOccupied}</Table.Td>
-                  <Table.Td>{status.available}</Table.Td>
-                  <Table.Td>{status.createdBy?.firstName} {status.createdBy?.lastName}</Table.Td>
+                  <Table.Td>{type.capacity}</Table.Td>
+                  <Table.Td>{type.occupied}</Table.Td>
+                  <Table.Td>{type.holds}</Table.Td>
+                  <Table.Td>{type.unavailableUnoccupied}</Table.Td>
+                  <Table.Td>{type.unavailableOccupied}</Table.Td>
+                  <Table.Td>{type.available}</Table.Td>
+                  <Table.Td>{type.createdBy?.firstName} {type.createdBy?.lastName}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
@@ -116,4 +116,4 @@ function AdminBedStatusesList () {
   );
 }
 
-export default AdminBedStatusesList;
+export default AdminBedTypesList;

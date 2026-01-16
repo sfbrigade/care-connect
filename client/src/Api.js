@@ -198,18 +198,18 @@ const Api = {
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
-    bedStatuses: {
+    bedTypes: {
       index (facilityId, page = 1) {
-        return instance.get(`/api/facilities/${facilityId}/bed-statuses`, { params: { page } });
+        return instance.get(`/api/facilities/${facilityId}/bed-types`, { params: { page } });
       },
       create (facilityId, data) {
-        return instance.post(`/api/facilities/${facilityId}/bed-statuses`, data).catch(handleError);
+        return instance.post(`/api/facilities/${facilityId}/bed-types`, data).catch(handleError);
       },
-      update (facilityId, bedStatusId, data) {
-        return instance.patch(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`, data).catch(handleError);
+      update (facilityId, bedTypeId, data) {
+        return instance.patch(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`, data).catch(handleError);
       },
-      get (facilityId, bedStatusId) {
-        return instance.get(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`);
+      get (facilityId, bedTypeId) {
+        return instance.get(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`);
       },
     },
     statusReasons: {
@@ -255,6 +255,23 @@ const Api = {
     },
     extend (ids) {
       return instance.patch('/api/holds/extend', { ids }).catch(handleError);
+    },
+  },
+  incidents: {
+    list () {
+      return instance.get('/api/incidents').catch(handleError);
+    },
+    create (data) {
+      return instance.post('/api/incidents', data).catch(handleError);
+    },
+    get (id) {
+      return instance.get(`/api/incidents/${id}`).catch(handleError);
+    },
+    update (id, data) {
+      return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
+    },
+    deflections (id) {
+      return instance.get(`/api/incidents/${id}/deflections`).catch(handleError);
     },
   },
   lesc: {

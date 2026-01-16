@@ -7,8 +7,8 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 
-function AdminBedStatusForm () {
-  const { facilityId, bedStatusId } = useParams();
+function AdminBedTypeForm () {
+  const { facilityId, bedTypeId } = useParams();
   const navigate = useNavigate();
 
   const { data: facility } = useQuery({
@@ -19,13 +19,13 @@ function AdminBedStatusForm () {
     }
   });
 
-  const { data: bedStatus, isLoading: isLoadingBedStatus } = useQuery({
-    queryKey: ['bed-status', bedStatusId],
+  const { data: bedType, isLoading: isLoadingBedType } = useQuery({
+    queryKey: ['bed-type', bedTypeId],
     queryFn: async () => {
-      const response = await Api.facilities.bedStatuses.get(facilityId, bedStatusId);
+      const response = await Api.facilities.bedTypes.get(facilityId, bedTypeId);
       return response.data;
     },
-    enabled: !!bedStatusId,
+    enabled: !!bedTypeId,
   });
 
   const form = useForm({
@@ -46,16 +46,16 @@ function AdminBedStatusForm () {
   });
 
   useEffect(() => {
-    if (bedStatus) {
+    if (bedType) {
       form.setValues({
-        type: bedStatus.type,
-        capacity: bedStatus.capacity,
-        unavailableUnoccupied: bedStatus.unavailableUnoccupied,
-        unavailableOccupied: bedStatus.unavailableOccupied,
+        type: bedType.type,
+        capacity: bedType.capacity,
+        unavailableUnoccupied: bedType.unavailableUnoccupied,
+        unavailableOccupied: bedType.unavailableOccupied,
         updateNotes: '',
       });
     }
-  }, [bedStatus]);
+  }, [bedType]);
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => {
@@ -66,14 +66,14 @@ function AdminBedStatusForm () {
         unavailableOccupied: Number(values.unavailableOccupied),
       };
 
-      if (bedStatusId) {
-        return Api.facilities.bedStatuses.update(facilityId, bedStatusId, payload);
+      if (bedTypeId) {
+        return Api.facilities.bedTypes.update(facilityId, bedTypeId, payload);
       }
 
       delete payload.updateNotes;
-      return Api.facilities.bedStatuses.create(facilityId, payload);
+      return Api.facilities.bedTypes.create(facilityId, payload);
     },
-    onSuccess: () => navigate(`/admin/facilities/${facilityId}/bed-statuses`),
+    onSuccess: () => navigate(`/admin/facilities/${facilityId}/bed-types`),
     onError: (errors) => {
       form.setErrors(errors);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -87,11 +87,11 @@ function AdminBedStatusForm () {
   return (
     <>
       <Head>
-        <title>{bedStatusId ? 'Edit' : 'New'} Bed Status - {facility?.name}</title>
+        <title>{bedTypeId ? 'Edit' : 'New'} Bed Type - {facility?.name}</title>
       </Head>
       <Container pos='relative'>
-        <LoadingOverlay visible={isLoadingBedStatus} />
-        <Title mb='md'>{bedStatusId ? 'Edit' : 'New'} Bed Status for {facility?.name}</Title>
+        <LoadingOverlay visible={isLoadingBedType} />
+        <Title mb='md'>{bedTypeId ? 'Edit' : 'New'} Bed Type for {facility?.name}</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
             <Stack>
@@ -133,7 +133,7 @@ function AdminBedStatusForm () {
                 min={0}
               />
 
-              {bedStatusId && (
+              {bedTypeId && (
                 <Textarea
                   {...form.getInputProps('updateNotes')}
                   key={form.key('updateNotes')}
@@ -144,7 +144,7 @@ function AdminBedStatusForm () {
               )}
 
               <Group>
-                <Button disabled={onSubmitMutation.isPending} type='submit'>{bedStatusId ? 'Update' : 'Create'} Bed Status</Button>
+                <Button disabled={onSubmitMutation.isPending} type='submit'>{bedTypeId ? 'Update' : 'Create'} Bed Type</Button>
                 <Button variant='light' onClick={handleCancel} disabled={onSubmitMutation.isPending}>Cancel</Button>
               </Group>
             </Stack>
@@ -155,4 +155,4 @@ function AdminBedStatusForm () {
   );
 }
 
-export default AdminBedStatusForm;
+export default AdminBedTypeForm;

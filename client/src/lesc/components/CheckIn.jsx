@@ -8,7 +8,7 @@ import QRScanner from '@/components/QRScanner';
 import { useToast } from '@/components/ToastContext';
 import { calculateAge, formatTime, formatDob } from '@/utils/dateTime';
 import { generate647fTransferFormPDF, fillSFSOFormP04, generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
-import LESCFacility from './LESCFacility';
+import Facility from './Facility';
 
 import { useFacilityContext } from '@/FacilityContext';
 
@@ -485,7 +485,7 @@ function CheckIn () {
           <MantineCard p='md'>
             <Stack gap='sm'>
               <Text fw={500} size='lg'>Facility</Text>
-              <LESCFacility facility={facility} />
+              <Facility facility={facility} />
             </Stack>
           </MantineCard>
         )}
