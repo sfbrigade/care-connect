@@ -1,13 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import BedStatus from '#models/bedStatus.js';
+import BedType from '#models/bedType.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
     {
       schema: {
-        description: 'Returns a list of bed statuses for a specific facility.',
+        description: 'Returns a list of bed types for a specific facility.',
         params: z.object({
           facilityId: z.string().uuid(),
         }),
@@ -16,7 +16,7 @@ export default async function (fastify, opts) {
           perPage: z.coerce.number().optional(),
         }),
         response: {
-          [StatusCodes.OK]: z.array(BedStatus.ResponseSchema),
+          [StatusCodes.OK]: z.array(BedType.ResponseSchema),
         },
       },
     },
@@ -33,7 +33,7 @@ export default async function (fastify, opts) {
         orderBy: { createdAt: 'desc' },
       };
 
-      const { records, total } = await fastify.prisma.bedStatus.paginate(options);
+      const { records, total } = await fastify.prisma.bedType.paginate(options);
       return reply.setPaginationHeaders(page, perPage, total).send(records);
     });
 }

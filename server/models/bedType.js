@@ -1,26 +1,26 @@
-import { Prisma, BedType, FacilityUpdateMethod } from '@prisma/client';
+import { Prisma, BedTypeEnum, FacilityUpdateMethodEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import User from './user.js';
 
-const BedStatusCreateSchema = z.object({
+const BedTypeCreateSchema = z.object({
   facilityId: z.string().uuid(),
-  type: z.enum(Object.values(BedType)),
+  type: z.enum(Object.values(BedTypeEnum)),
   capacity: z.number().int().min(0),
   unavailableUnoccupied: z.number().int().min(0),
   unavailableOccupied: z.number().int().min(0),
 });
 
-const BedStatusUpdateSchema = z.object({
-  type: z.enum(Object.values(BedType)).optional(),
+const BedTypeUpdateSchema = z.object({
+  type: z.enum(Object.values(BedTypeEnum)).optional(),
   capacity: z.number().int().min(0).optional(),
   unavailableUnoccupied: z.number().int().min(0).optional(),
   unavailableOccupied: z.number().int().min(0).optional(),
   updateNotes: z.string().nullable().optional(),
 });
 
-const BedStatusResponseSchema = BedStatusCreateSchema.extend({
+const BedTypeResponseSchema = BedTypeCreateSchema.extend({
   id: z.string().uuid(),
   occupied: z.number(),
   holds: z.number(),
@@ -31,20 +31,20 @@ const BedStatusResponseSchema = BedStatusCreateSchema.extend({
   updatedAt: z.coerce.date(),
   updatedBy: User.ResponseSchema.optional(),
   updatedById: z.string().uuid(),
-  updateMethod: z.enum(Object.values(FacilityUpdateMethod)),
+  updateMethod: z.enum(Object.values(FacilityUpdateMethodEnum)),
   updateNotes: z.string().nullable().optional(),
 });
 
-export class BedStatus extends Base {
-  static CreateSchema = BedStatusCreateSchema;
-  static UpdateSchema = BedStatusUpdateSchema;
-  static ResponseSchema = BedStatusResponseSchema;
+export class BedType extends Base {
+  static CreateSchema = BedTypeCreateSchema;
+  static UpdateSchema = BedTypeUpdateSchema;
+  static ResponseSchema = BedTypeResponseSchema;
 
-  static UpdateMethod = FacilityUpdateMethod;
+  static UpdateMethod = FacilityUpdateMethodEnum;
 
   constructor (data) {
-    super(Prisma.BedStatusScalarFieldEnum, data);
+    super(Prisma.BedTypeScalarFieldEnum, data);
   }
 }
 
-export default BedStatus;
+export default BedType;

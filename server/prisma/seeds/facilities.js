@@ -33,7 +33,7 @@ export default async function main (prisma) {
   console.info(`Importing ${records.length} clinic records from ${absolutePath}${dryRun ? ' (dry run)' : ''}`);
 
   if (truncateSnapshots && !dryRun) {
-    await prisma.bedStatusUpdate.deleteMany({});
+    await prisma.bedTypeUpdate.deleteMany({});
   }
 
   const admin = await prisma.user.findUnique({
@@ -101,15 +101,15 @@ export default async function main (prisma) {
 
     const { availableBeds, totalBeds, reservedBeds } = buildCapacityData(record);
     if (!dryRun) {
-      let bedStatus = await prisma.bedStatus.findFirst({
+      let bedType = await prisma.bedType.findFirst({
         where: {
           facilityId: facility.id,
         },
       });
-      if (bedStatus) {
-        await prisma.bedStatus.update({
+      if (bedType) {
+        await prisma.bedType.update({
           where: {
-            id: bedStatus.id,
+            id: bedType.id,
           },
           data: {
             capacity: totalBeds ?? availableBeds ?? 0,
@@ -119,7 +119,7 @@ export default async function main (prisma) {
           },
         });
       } else {
-        bedStatus = await prisma.bedStatus.create({
+        bedType = await prisma.bedType.create({
           data: {
             facilityId: facility.id,
             capacity: totalBeds ?? availableBeds ?? 0,

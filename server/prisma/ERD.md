@@ -1,7 +1,7 @@
 ```mermaid
 erDiagram
 
-        BedType {
+        BedTypeEnum {
             BED BED
 CHAIR CHAIR
         }
@@ -16,14 +16,14 @@ UNKNOWN UNKNOWN
     
 
 
-        FacilityType {
+        FacilityTypeEnum {
             DIDO DIDO
 LESC LESC
         }
     
 
 
-        FacilityStatus {
+        FacilityStatusEnum {
             CLOSED CLOSED
 OPEN_NOT_ACCEPTING OPEN_NOT_ACCEPTING
 OPEN_ACCEPTING OPEN_ACCEPTING
@@ -31,7 +31,7 @@ OPEN_ACCEPTING OPEN_ACCEPTING
     
 
 
-        FacilityUpdateMethod {
+        FacilityUpdateMethodEnum {
             INTEGRATION INTEGRATION
 API API
 MANUAL MANUAL
@@ -43,7 +43,7 @@ OTHER OTHER
     
 
 
-        FacilityEligibilityType {
+        FacilityEligibilityTypeEnum {
             AGE AGE
 GENDER GENDER
 AMBULATORY AMBULATORY
@@ -61,7 +61,7 @@ OTHER OTHER
     
 
 
-        HoldStatus {
+        HoldStatusEnum {
             ACTIVE ACTIVE
 EXTENDED EXTENDED
 CANCELLED CANCELLED
@@ -70,7 +70,7 @@ EXPIRED EXPIRED
     
 
 
-        Sex {
+        SexEnum {
             MALE MALE
 FEMALE FEMALE
 OTHER OTHER
@@ -79,7 +79,7 @@ UNKNOWN UNKNOWN
     
 
 
-        Race {
+        RaceEnum {
             WHITE WHITE
 BLACK BLACK
 HISPANIC HISPANIC
@@ -90,7 +90,7 @@ UNKNOWN UNKNOWN
     
 
 
-        SubjectStatus {
+        SubjectStatusEnum {
             DETAINED DETAINED
 ONSITE ONSITE
 AWAITING_TRANSFER AWAITING_TRANSFER
@@ -174,12 +174,12 @@ EXITED EXITED
   "Facility" {
     String id "🗝️"
     String name 
-    FacilityType type 
+    FacilityTypeEnum type 
     String serviceTypeId 
-    FacilityStatus status 
+    FacilityStatusEnum status 
     String statusReasonId "❓"
     String statusOther "❓"
-    FacilityUpdateMethod updateMethod 
+    FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     String subdomain "❓"
     String description "❓"
@@ -207,10 +207,10 @@ EXITED EXITED
   "FacilityUpdate" {
     String id "🗝️"
     String facilityId 
-    FacilityStatus status 
+    FacilityStatusEnum status 
     String statusReasonId "❓"
     String statusOther "❓"
-    FacilityUpdateMethod updateMethod 
+    FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
     String updatedById 
@@ -219,7 +219,7 @@ EXITED EXITED
 
   "FacilityStatusReason" {
     String id "🗝️"
-    FacilityType type "❓"
+    FacilityTypeEnum type "❓"
     String description 
     DateTime createdAt 
     String createdById 
@@ -260,10 +260,10 @@ EXITED EXITED
     }
   
 
-  "BedStatus" {
+  "BedType" {
     String id "🗝️"
     String facilityId "🗝️"
-    BedType type 
+    BedTypeEnum type 
     Int capacity 
     Int unavailableUnoccupied 
     Int unavailableOccupied 
@@ -272,16 +272,16 @@ EXITED EXITED
     Int available 
     DateTime createdAt 
     String createdById 
-    FacilityUpdateMethod updateMethod 
+    FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
     String updatedById 
     }
   
 
-  "BedStatusUpdate" {
+  "BedTypeUpdate" {
     String id "🗝️"
-    String bedStatusId 
+    String bedTypeId 
     String facilityId 
     Int capacity 
     Int unavailableUnoccupied 
@@ -289,7 +289,7 @@ EXITED EXITED
     Int occupied 
     Int holds 
     Int available 
-    FacilityUpdateMethod updateMethod 
+    FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
     String updatedById 
@@ -299,7 +299,7 @@ EXITED EXITED
   "FacilityEligibility" {
     String id "🗝️"
     String facilityId 
-    FacilityEligibilityType type 
+    FacilityEligibilityTypeEnum type 
     String value "❓"
     String notes "❓"
     DateTime createdAt 
@@ -313,8 +313,8 @@ EXITED EXITED
     String lastName 
     String middleInitial "❓"
     DateTime dateOfBirth 
-    Sex sex 
-    Race race 
+    SexEnum sex 
+    RaceEnum race 
     String driverLicense "❓"
     String addressLine1 "❓"
     String addressLine2 "❓"
@@ -331,15 +331,15 @@ EXITED EXITED
     String id "🗝️"
     String facilityId 
     String incidentId 
-    String bedStatusId 
+    String bedTypeId 
     String subjectId "❓"
-    SubjectStatus subjectStatus 
+    SubjectStatusEnum subjectStatus 
     String behavior "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
     DateTime completedAt "❓"
-    HoldStatus status 
+    HoldStatusEnum status 
     Int extensionCount 
     String cancelReasonId "❓"
     DateTime cancelledAt "❓"
@@ -370,8 +370,8 @@ EXITED EXITED
   "DeflectionUpdate" {
     String id "🗝️"
     String deflectionId 
-    HoldStatus status "❓"
-    SubjectStatus subjectStatus "❓"
+    HoldStatusEnum status "❓"
+    SubjectStatusEnum subjectStatus "❓"
     DateTime updatedAt 
     String updatedById 
     }
@@ -464,9 +464,9 @@ EXITED EXITED
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
-    "User" o{--}o "BedStatus" : ""
-    "User" o{--}o "BedStatus" : ""
-    "User" o{--}o "BedStatusUpdate" : ""
+    "User" o{--}o "BedType" : ""
+    "User" o{--}o "BedType" : ""
+    "User" o{--}o "BedTypeUpdate" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
@@ -489,53 +489,53 @@ EXITED EXITED
     "Invite" o|--|| "User" : "createdBy"
     "Invite" o|--|o "User" : "acceptedBy"
     "Invite" o|--|o "User" : "revokedBy"
-    "Facility" o|--|| "FacilityType" : "enum:type"
+    "Facility" o|--|| "FacilityTypeEnum" : "enum:type"
     "Facility" o|--|| "ServiceType" : "serviceType"
-    "Facility" o|--|| "FacilityStatus" : "enum:status"
+    "Facility" o|--|| "FacilityStatusEnum" : "enum:status"
     "Facility" o|--|o "FacilityStatusReason" : "statusReason"
-    "Facility" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
+    "Facility" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "Facility" o|--|| "User" : "createdBy"
     "Facility" o|--|| "User" : "updatedBy"
     "Facility" o{--}o "Amenity" : ""
-    "Facility" o{--}o "BedStatus" : ""
-    "Facility" o{--}o "BedStatusUpdate" : ""
+    "Facility" o{--}o "BedType" : ""
+    "Facility" o{--}o "BedTypeUpdate" : ""
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "Deflection" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
     "Facility" o{--}o "Incident" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
-    "FacilityUpdate" o|--|| "FacilityStatus" : "enum:status"
+    "FacilityUpdate" o|--|| "FacilityStatusEnum" : "enum:status"
     "FacilityUpdate" o|--|o "FacilityStatusReason" : "statusReason"
-    "FacilityUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
+    "FacilityUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "FacilityUpdate" o|--|| "User" : "updatedBy"
-    "FacilityStatusReason" o|--|o "FacilityType" : "enum:type"
+    "FacilityStatusReason" o|--|o "FacilityTypeEnum" : "enum:type"
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
     "FacilityContact" o|--|| "Facility" : "facility"
-    "BedStatus" o|--|| "Facility" : "facility"
-    "BedStatus" o|--|| "BedType" : "enum:type"
-    "BedStatus" o|--|| "User" : "createdBy"
-    "BedStatus" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
-    "BedStatus" o|--|| "User" : "updatedBy"
-    "BedStatus" o{--}o "Deflection" : ""
-    "BedStatus" o{--}o "BedStatusUpdate" : ""
-    "BedStatusUpdate" o|--|| "BedStatus" : "bedStatus"
-    "BedStatusUpdate" o|--|| "Facility" : "facility"
-    "BedStatusUpdate" o|--|| "FacilityUpdateMethod" : "enum:updateMethod"
-    "BedStatusUpdate" o|--|| "User" : "updatedBy"
+    "BedType" o|--|| "Facility" : "facility"
+    "BedType" o|--|| "BedTypeEnum" : "enum:type"
+    "BedType" o|--|| "User" : "createdBy"
+    "BedType" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
+    "BedType" o|--|| "User" : "updatedBy"
+    "BedType" o{--}o "Deflection" : ""
+    "BedType" o{--}o "BedTypeUpdate" : ""
+    "BedTypeUpdate" o|--|| "BedType" : "bedType"
+    "BedTypeUpdate" o|--|| "Facility" : "facility"
+    "BedTypeUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
+    "BedTypeUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
-    "FacilityEligibility" o|--|| "FacilityEligibilityType" : "enum:type"
-    "Subject" o|--|| "Sex" : "enum:sex"
-    "Subject" o|--|| "Race" : "enum:race"
+    "FacilityEligibility" o|--|| "FacilityEligibilityTypeEnum" : "enum:type"
+    "Subject" o|--|| "SexEnum" : "enum:sex"
+    "Subject" o|--|| "RaceEnum" : "enum:race"
     "Subject" o{--}o "Deflection" : ""
     "Deflection" o|--|| "Facility" : "facility"
     "Deflection" o|--|| "Incident" : "incident"
-    "Deflection" o|--|| "BedStatus" : "bedStatus"
+    "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
-    "Deflection" o|--|| "SubjectStatus" : "enum:subjectStatus"
+    "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
     "Deflection" o|--|| "User" : "createdBy"
-    "Deflection" o|--|| "HoldStatus" : "enum:status"
+    "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
     "Deflection" o|--|o "User" : "cancelledBy"
     "Deflection" o|--|o "User" : "transferredBy"
@@ -553,8 +553,8 @@ EXITED EXITED
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionUpdate" : ""
     "DeflectionUpdate" o|--|| "Deflection" : "deflection"
-    "DeflectionUpdate" o|--|o "HoldStatus" : "enum:status"
-    "DeflectionUpdate" o|--|o "SubjectStatus" : "enum:subjectStatus"
+    "DeflectionUpdate" o|--|o "HoldStatusEnum" : "enum:status"
+    "DeflectionUpdate" o|--|o "SubjectStatusEnum" : "enum:subjectStatus"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"

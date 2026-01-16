@@ -79,11 +79,11 @@ test('/api/facilities', async (t) => {
 
       assert.deepStrictEqual(data.id, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
       assert.deepStrictEqual(data.name, 'LESC Facility 1');
-      assert.ok(Array.isArray(data.bedStatuses));
-      assert.deepStrictEqual(data.bedStatuses.length, 1);
-      assert.deepStrictEqual(data.bedStatuses[0].type, 'CHAIR');
-      assert.deepStrictEqual(data.bedStatuses[0].capacity, 10);
-      assert.deepStrictEqual(data.bedStatuses[0].unavailableUnoccupied, 2);
+      assert.ok(Array.isArray(data.bedTypes));
+      assert.deepStrictEqual(data.bedTypes.length, 1);
+      assert.deepStrictEqual(data.bedTypes[0].type, 'CHAIR');
+      assert.deepStrictEqual(data.bedTypes[0].capacity, 10);
+      assert.deepStrictEqual(data.bedTypes[0].unavailableUnoccupied, 2);
       assert.ok(Array.isArray(data.contacts));
       assert.deepStrictEqual(data.contacts.length, 2);
       assert.deepStrictEqual(data.contacts[0].name, 'Jane Doe');
@@ -284,59 +284,6 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(facility.statusReasonId, null);
       assert.deepStrictEqual(facility.statusOther, null);
       assert.deepStrictEqual(facility.updateNotes, 'Testing');
-    });
-  });
-
-  await t.test('GET /:id/holds', async (t) => {
-    await t.test('returns active holds for facility', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds')
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-
-      assert.ok(Array.isArray(data));
-      const holdIds = data.map(h => h.id);
-      assert.ok(holdIds.includes('b65ae02b-9b35-43e2-897b-eee6eb5a82e2'), 'Should include active hold');
-      assert.ok(holdIds.includes('7a261ab8-a6b6-427a-a67e-2509332a7bdd'), 'Should include active hold');
-      assert.deepStrictEqual(holdIds.length, 2, 'Should only return active hold');
-    });
-
-    await t.test('includes hold details with client, createdBy, and incident', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds?include=facility,client,createdBy,incident')
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-
-      const foundHold = data.find(h => h.id === 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2');
-      assert.ok(foundHold);
-      assert.deepStrictEqual(foundHold.facility.id, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(foundHold.facility.name, 'LESC Facility 1');
-      assert.ok(foundHold.client);
-      assert.deepStrictEqual(foundHold.client.firstName, 'Test');
-      assert.deepStrictEqual(foundHold.client.middleInitial, 'T');
-      assert.deepStrictEqual(foundHold.client.address, '123 Test St');
-      assert.ok(foundHold.createdBy);
-      assert.deepStrictEqual(foundHold.createdBy.id, 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5');
-      assert.ok(foundHold.incident);
-      assert.deepStrictEqual(foundHold.incident.cadNumber, 'CAD-123');
-    });
-
-    await t.test('returns 404 for non-existent facility', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
-      const response = await app.inject().get(`/api/facilities/${nonExistentId}/holds`)
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK); // Returns empty array, not 404
-      const data = JSON.parse(response.body);
-      assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 0);
-    });
-
-    await t.test('requires authentication', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/holds');
-      assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
     });
   });
 

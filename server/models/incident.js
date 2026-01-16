@@ -17,7 +17,7 @@ const IncidentAttributesSchema = z.object({
   postalCode: z.string().nullable(),
   latitude: z.coerce.number().nullable(),
   longitude: z.coerce.number().nullable(),
-  arrestedAt: z.coerce.date().nullable(),
+  arrestedAt: z.coerce.date().catch(null).nullable(),
   supervisorBadgeNumber: z.string().nullable(),
 });
 

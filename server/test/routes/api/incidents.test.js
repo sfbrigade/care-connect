@@ -59,6 +59,34 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(incident.supervisorBadgeNumber, '1234');
     });
 
+    await t.test('creates an incident with a deflection/bed hold', async () => {
+      const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      assert.ok(data.id);
+      const incident = await prisma.incident.findUnique({
+        where: { id: data.id },
+      });
+      assert.ok(incident);
+      const deflections = await prisma.deflection.findMany({
+        where: { incidentId: incident.id },
+      });
+      assert.ok(deflections.length === 1);
+    });
+
     await t.test('requires authentication', async () => {
       const response = await app.inject().post('/api/incidents').payload({});
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
@@ -73,7 +101,7 @@ test('/api/incidents', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 3);
     });
 
     await t.test('filters by facilityId', async () => {

@@ -10,7 +10,7 @@
  * @returns {Promise<number>} - Number of holds expired
  */
 export async function autoExpireHolds (prisma, now = new Date()) {
-  const result = await prisma.bedHold.updateMany({
+  const result = await prisma.deflection.updateMany({
     where: {
       status: {
         in: ['ACTIVE', 'EXTENDED'],

@@ -1,20 +1,20 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import BedStatus from '#models/bedStatus.js';
+import BedType from '#models/bedType.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',
     {
       onRequest: fastify.requireAuth,
       schema: {
-        description: 'Create a new bed status for a facility.',
+        description: 'Create a new bed type for a facility.',
         params: z.object({
           facilityId: z.string().uuid(),
         }),
-        body: BedStatus.CreateSchema.omit({ facilityId: true }),
+        body: BedType.CreateSchema.omit({ facilityId: true }),
         response: {
-          [StatusCodes.CREATED]: BedStatus.ResponseSchema,
+          [StatusCodes.CREATED]: BedType.ResponseSchema,
         },
       },
     },
@@ -27,7 +27,7 @@ export default async function (fastify, opts) {
       const holds = 0;
       const available = data.capacity - data.unavailableUnoccupied - data.unavailableOccupied - occupied - holds;
 
-      const bedStatus = await fastify.prisma.bedStatus.create({
+      const bedType = await fastify.prisma.bedType.create({
         data: {
           ...data,
           facilityId,
@@ -39,6 +39,6 @@ export default async function (fastify, opts) {
         },
       });
 
-      return reply.code(StatusCodes.CREATED).send(bedStatus);
+      return reply.code(StatusCodes.CREATED).send(bedType);
     });
 }

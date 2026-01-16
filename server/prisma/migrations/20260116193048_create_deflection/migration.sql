@@ -1,24 +1,19 @@
 /*
   Warnings:
 
+  - The `updateMethod` column on the `Facility` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The `type` column on the `Facility` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The `status` column on the `Facility` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The `type` column on the `FacilityStatusReason` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The `updateMethod` column on the `FacilityUpdate` table would be dropped and recreated. This will lead to data loss if there is data in the column.
   - You are about to drop the `BedHold` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `BedStatus` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `BedStatusUpdate` table. If the table is not empty, all the data it contains will be lost.
   - You are about to drop the `Client` table. If the table is not empty, all the data it contains will be lost.
+  - Changed the type of `type` on the `FacilityEligibility` table. No cast exists, the column would be dropped and recreated, which cannot be done if there is data, since the column is required.
+  - Changed the type of `status` on the `FacilityUpdate` table. No cast exists, the column would be dropped and recreated, which cannot be done if there is data, since the column is required.
 
 */
--- CreateEnum
-CREATE TYPE "public"."TernaryEnum" AS ENUM ('YES', 'NO', 'UNKNOWN');
-
--- CreateEnum
-CREATE TYPE "public"."HoldStatusEnum" AS ENUM ('ACTIVE', 'EXTENDED', 'CANCELLED', 'EXPIRED');
-
--- CreateEnum
-CREATE TYPE "public"."SexEnum" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN');
-
--- CreateEnum
-CREATE TYPE "public"."RaceEnum" AS ENUM ('WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN');
-
--- CreateEnum
-CREATE TYPE "public"."SubjectStatusEnum" AS ENUM ('DETAINED', 'ONSITE', 'AWAITING_TRANSFER', 'AWAITING_INTAKE', 'FAILED_INTAKE', 'ADMITTED', 'RELEASED', 'EXITED');
 
 -- DropForeignKey
 ALTER TABLE "public"."BedHold" DROP CONSTRAINT "BedHold_cancelledById_fkey";
@@ -41,14 +36,70 @@ ALTER TABLE "public"."BedHold" DROP CONSTRAINT "BedHold_serviceTypeId_fkey";
 -- DropForeignKey
 ALTER TABLE "public"."BedHold" DROP CONSTRAINT "BedHold_transferredById_fkey";
 
+-- DropForeignKey
+ALTER TABLE "public"."BedStatus" DROP CONSTRAINT "BedStatus_createdById_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."BedStatus" DROP CONSTRAINT "BedStatus_facilityId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."BedStatus" DROP CONSTRAINT "BedStatus_updatedById_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."BedStatusUpdate" DROP CONSTRAINT "BedStatusUpdate_bedStatusId_facilityId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."BedStatusUpdate" DROP CONSTRAINT "BedStatusUpdate_facilityId_fkey";
+
+-- DropForeignKey
+ALTER TABLE "public"."BedStatusUpdate" DROP CONSTRAINT "BedStatusUpdate_updatedById_fkey";
+
 -- DropTable
 DROP TABLE "public"."BedHold";
 
 -- DropTable
 DROP TABLE "public"."Client";
 
--- DropEnum
+-- CreateEnum
+ALTER TYPE "public"."BedType" RENAME TO "BedTypeEnum";
+
+-- CreateEnum
+CREATE TYPE "public"."TernaryEnum" AS ENUM ('YES', 'NO', 'UNKNOWN');
+
+-- CreateEnum
+ALTER TYPE "public"."FacilityType" RENAME TO "FacilityTypeEnum";
+
+-- CreateEnum
+ALTER TYPE "public"."FacilityStatus" RENAME TO "FacilityStatusEnum";
+
+-- CreateEnum
+ALTER TYPE "public"."FacilityUpdateMethod" RENAME TO "FacilityUpdateMethodEnum";
+
+-- CreateEnum
+ALTER TYPE "public"."FacilityEligibilityType" RENAME TO "FacilityEligibilityTypeEnum";
+
+-- CreateEnum
 DROP TYPE "public"."BedHoldStatus";
+CREATE TYPE "public"."HoldStatusEnum" AS ENUM ('ACTIVE', 'EXTENDED', 'CANCELLED', 'EXPIRED');
+
+-- CreateEnum
+CREATE TYPE "public"."SexEnum" AS ENUM ('MALE', 'FEMALE', 'OTHER', 'UNKNOWN');
+
+-- CreateEnum
+CREATE TYPE "public"."RaceEnum" AS ENUM ('WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN');
+
+-- CreateEnum
+CREATE TYPE "public"."SubjectStatusEnum" AS ENUM ('DETAINED', 'ONSITE', 'AWAITING_TRANSFER', 'AWAITING_INTAKE', 'FAILED_INTAKE', 'ADMITTED', 'RELEASED', 'EXITED');
+
+-- CreateTable
+ALTER TABLE "public"."BedStatus" RENAME TO "BedType"; 
+ALTER INDEX "public"."BedStatus_pkey" RENAME TO "BedType_pkey";
+ALTER INDEX "public"."BedStatus_id_key" RENAME TO "BedType_id_key";
+
+-- CreateTable
+ALTER TABLE "public"."BedStatusUpdate" RENAME TO "BedTypeUpdate"; 
+ALTER INDEX "public"."BedStatusUpdate_pkey" RENAME TO "BedTypeUpdate_pkey";
+ALTER TABLE "public"."BedTypeUpdate" RENAME "bedStatusId" TO "bedTypeId";
 
 -- CreateTable
 CREATE TABLE "public"."Subject" (
@@ -77,13 +128,13 @@ CREATE TABLE "public"."Deflection" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "facilityId" UUID NOT NULL,
     "incidentId" UUID NOT NULL,
-    "bedStatusId" UUID NOT NULL,
+    "bedTypeId" UUID NOT NULL,
     "subjectId" UUID,
     "subjectStatus" "public"."SubjectStatusEnum" NOT NULL DEFAULT 'DETAINED',
     "behavior" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdById" UUID NOT NULL,
-    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL DEFAULT (now() + '01:00:00'::interval),
     "completedAt" TIMESTAMP(3),
     "status" "public"."HoldStatusEnum" NOT NULL DEFAULT 'ACTIVE',
     "extensionCount" INTEGER NOT NULL DEFAULT 0,
@@ -167,13 +218,31 @@ CREATE TABLE "public"."DeflectionExitHousingStatus" (
 );
 
 -- AddForeignKey
+ALTER TABLE "public"."BedType" ADD CONSTRAINT "BedType_facilityId_fkey" FOREIGN KEY ("facilityId") REFERENCES "public"."Facility"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BedType" ADD CONSTRAINT "BedType_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BedType" ADD CONSTRAINT "BedType_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BedTypeUpdate" ADD CONSTRAINT "BedTypeUpdate_bedTypeId_facilityId_fkey" FOREIGN KEY ("bedTypeId", "facilityId") REFERENCES "public"."BedType"("id", "facilityId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BedTypeUpdate" ADD CONSTRAINT "BedTypeUpdate_facilityId_fkey" FOREIGN KEY ("facilityId") REFERENCES "public"."Facility"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."BedTypeUpdate" ADD CONSTRAINT "BedTypeUpdate_updatedById_fkey" FOREIGN KEY ("updatedById") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Deflection" ADD CONSTRAINT "Deflection_facilityId_fkey" FOREIGN KEY ("facilityId") REFERENCES "public"."Facility"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Deflection" ADD CONSTRAINT "Deflection_facilityId_incidentId_fkey" FOREIGN KEY ("facilityId", "incidentId") REFERENCES "public"."Incident"("facilityId", "id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Deflection" ADD CONSTRAINT "Deflection_facilityId_bedStatusId_fkey" FOREIGN KEY ("facilityId", "bedStatusId") REFERENCES "public"."BedStatus"("facilityId", "id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."Deflection" ADD CONSTRAINT "Deflection_facilityId_bedTypeId_fkey" FOREIGN KEY ("facilityId", "bedTypeId") REFERENCES "public"."BedType"("facilityId", "id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Deflection" ADD CONSTRAINT "Deflection_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "public"."Subject"("id") ON DELETE SET NULL ON UPDATE CASCADE;

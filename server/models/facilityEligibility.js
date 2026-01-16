@@ -1,11 +1,11 @@
-import { Prisma, FacilityEligibilityType } from '@prisma/client';
+import { Prisma, FacilityEligibilityTypeEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 
 const FacilityEligibilityAttributesSchema = z.object({
   facilityId: z.string().uuid(),
-  type: z.enum(Object.values(FacilityEligibilityType)),
+  type: z.enum(Object.values(FacilityEligibilityTypeEnum)),
   value: z.string().nullable(),
   notes: z.string().nullable(),
 });

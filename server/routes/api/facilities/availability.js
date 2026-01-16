@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import { autoExpireHolds } from '#lib/lesc/holds.js';
 
-// TODO: this endpoint going away once status is always updated/cached in BedStatus
+// TODO: this endpoint going away once status is always updated/cached in BedType
 
 export default async function (fastify, opts) {
   fastify.get('/:id/availability',
@@ -41,30 +41,30 @@ export default async function (fastify, opts) {
           gt: now,
         },
       };
-      const holds = await fastify.prisma.bedHold.groupBy({
-        by: ['facilityId', 'serviceTypeId'],
+      const deflections = await fastify.prisma.deflection.groupBy({
+        by: ['facilityId', 'bedTypeId'],
         where,
-        _sum: {
-          bedsRequested: true,
+        _count: {
+          _all: true,
         },
       });
 
-      const bedStatuses = await fastify.prisma.bedStatus.findMany({
+      const bedTypes = await fastify.prisma.bedType.findMany({
         where: {
           facilityId,
         },
       });
 
-      const results = bedStatuses.map((bedStatus) => {
-        // TODO: change to check on bedStatus.id once hold model migrated
-        const hold = holds.find((hold) => hold.facilityId === bedStatus.facilityId);
-        const calculatedAvailable = bedStatus.capacity - bedStatus.unavailableOccupied - bedStatus.unavailableUnoccupied - bedStatus.occupied - (hold ? hold._sum.bedsRequested : 0);
+      const results = bedTypes.map((bedType) => {
+        // TODO: change to check on bedType.id once hold model migrated
+        const holds = deflections.find((deflection) => deflection.bedTypeId === bedType.id);
+        const calculatedAvailable = bedType.capacity - bedType.unavailableOccupied - bedType.unavailableUnoccupied - bedType.occupied - (holds ? holds._count._all : 0);
         return {
-          capacity: bedStatus.capacity,
-          unavailableOccupied: bedStatus.unavailableOccupied,
-          unavailableUnoccupied: bedStatus.unavailableUnoccupied,
-          occupied: bedStatus.occupied,
-          holds: hold ? hold._sum.bedsRequested : 0,
+          capacity: bedType.capacity,
+          unavailableOccupied: bedType.unavailableOccupied,
+          unavailableUnoccupied: bedType.unavailableUnoccupied,
+          occupied: bedType.occupied,
+          holds: holds ? holds._count._all : 0,
           available: calculatedAvailable,
         };
       });

@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
 
-test('/api/facilities/:facilityId/bed-statuses', async (t) => {
+test('/api/facilities/:facilityId/bed-types', async (t) => {
   const app = await build(t);
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
@@ -13,29 +13,29 @@ test('/api/facilities/:facilityId/bed-statuses', async (t) => {
   assert.ok(facility, 'No facility found in database');
   const facilityId = facility.id;
 
-  await t.test('GET /:bedStatusId', async (t) => {
-    await t.test('returns bed status details', async () => {
-      const bedStatusId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+  await t.test('GET /:id', async (t) => {
+    await t.test('returns bed type details', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
       const response = await app.inject()
-        .get(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`)
+        .get(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`)
         .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.id, bedStatusId);
+      assert.deepStrictEqual(data.id, bedTypeId);
     });
 
-    await t.test('returns 404 for non-existent bed status', async () => {
+    await t.test('returns 404 for non-existent bed type', async () => {
       const response = await app.inject()
-        .get(`/api/facilities/${facilityId}/bed-statuses/00000000-0000-0000-0000-000000000000`)
+        .get(`/api/facilities/${facilityId}/bed-types/00000000-0000-0000-0000-000000000000`)
         .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
     });
   });
 
-  await t.test('PATCH /:bedStatusId', async (t) => {
-    await t.test('updates bed status and creates bed status update', async () => {
+  await t.test('PATCH /:id', async (t) => {
+    await t.test('updates bed type and creates bed type update', async () => {
       const updateData = {
         capacity: 25,
         unavailableUnoccupied: 0,
@@ -44,22 +44,22 @@ test('/api/facilities/:facilityId/bed-statuses', async (t) => {
       };
 
       const response = await app.inject()
-        .patch(`/api/facilities/${facilityId}/bed-statuses/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
         .headers(userHeaders)
         .payload(updateData);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const updatedBedStatus = JSON.parse(response.body);
+      const updatedBedType = JSON.parse(response.body);
 
-      assert.deepStrictEqual(updatedBedStatus.capacity, 25);
-      assert.deepStrictEqual(updatedBedStatus.unavailableUnoccupied, 0);
-      assert.deepStrictEqual(updatedBedStatus.unavailableOccupied, 0);
+      assert.deepStrictEqual(updatedBedType.capacity, 25);
+      assert.deepStrictEqual(updatedBedType.unavailableUnoccupied, 0);
+      assert.deepStrictEqual(updatedBedType.unavailableOccupied, 0);
       // Check calculated available: 25 - 0 - 0 - 0 (occupied default) - 0 (holds default) = 25
-      assert.deepStrictEqual(updatedBedStatus.available, 21);
+      assert.deepStrictEqual(updatedBedType.available, 21);
 
-      // Check if BedStatusUpdate record was created
-      const updates = await app.prisma.bedStatusUpdate.findMany({
-        where: { bedStatusId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      // Check if BedTypeUpdate record was created
+      const updates = await app.prisma.bedTypeUpdate.findMany({
+        where: { bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
       assert.deepStrictEqual(updates.length, 1);
       assert.deepStrictEqual(updates[0].capacity, 25);
@@ -74,7 +74,7 @@ test('/api/facilities/:facilityId/bed-statuses', async (t) => {
       };
 
       const response = await app.inject()
-        .patch(`/api/facilities/${facilityId}/bed-statuses/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
         .headers(userHeaders)
         .payload(updateData);
 
@@ -89,13 +89,13 @@ test('/api/facilities/:facilityId/bed-statuses', async (t) => {
       assert.deepStrictEqual(updated.available, 4);
 
       // Check history count
-      const count = await app.prisma.bedStatusUpdate.count({ where: { bedStatusId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' } });
+      const count = await app.prisma.bedTypeUpdate.count({ where: { bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' } });
       assert.deepStrictEqual(count, 1);
     });
 
-    await t.test('returns 404 if bed status not found', async () => {
+    await t.test('returns 404 if bed type not found', async () => {
       const response = await app.inject()
-        .patch(`/api/facilities/${facilityId}/bed-statuses/00000000-0000-0000-0000-000000000000`)
+        .patch(`/api/facilities/${facilityId}/bed-types/00000000-0000-0000-0000-000000000000`)
         .headers(userHeaders)
         .payload({ capacity: 10 });
 
