@@ -4,7 +4,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { parse } from 'csv-parse/sync';
-import { FacilityUpdateMethod, FacilityEligibilityType } from '@prisma/client';
+import { FacilityUpdateMethodEnum, FacilityEligibilityTypeEnum } from '@prisma/client';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
@@ -282,20 +282,20 @@ function buildEligibilityData (record) {
 
 function inferEligibilityType (value) {
   const normalized = value.toLowerCase();
-  if (normalized.includes('age')) return FacilityEligibilityType.AGE;
+  if (normalized.includes('age')) return FacilityEligibilityTypeEnum.AGE;
   if (normalized.includes('gender') || normalized.includes('women') || normalized.includes('men')) {
-    return FacilityEligibilityType.GENDER;
+    return FacilityEligibilityTypeEnum.GENDER;
   }
-  if (normalized.includes('ambulatory')) return FacilityEligibilityType.AMBULATORY;
-  if (normalized.includes('adl')) return FacilityEligibilityType.ADL_INDEPENDENT;
-  if (normalized.includes('device')) return FacilityEligibilityType.MOBILITY_DEVICES;
-  if (normalized.includes('neighborhood') || normalized.includes('district')) return FacilityEligibilityType.NEIGHBORHOOD;
-  if (normalized.includes('language')) return FacilityEligibilityType.LANGUAGE;
-  if (normalized.includes('pet')) return FacilityEligibilityType.PETS;
-  if (normalized.includes('housing')) return FacilityEligibilityType.HOUSING_STATUS;
-  if (normalized.includes('sexual')) return FacilityEligibilityType.SEXUAL_ORIENTATION;
-  if (normalized.includes('race')) return FacilityEligibilityType.RACE;
-  return FacilityEligibilityType.OTHER;
+  if (normalized.includes('ambulatory')) return FacilityEligibilityTypeEnum.AMBULATORY;
+  if (normalized.includes('adl')) return FacilityEligibilityTypeEnum.ADL_INDEPENDENT;
+  if (normalized.includes('device')) return FacilityEligibilityTypeEnum.MOBILITY_DEVICES;
+  if (normalized.includes('neighborhood') || normalized.includes('district')) return FacilityEligibilityTypeEnum.NEIGHBORHOOD;
+  if (normalized.includes('language')) return FacilityEligibilityTypeEnum.LANGUAGE;
+  if (normalized.includes('pet')) return FacilityEligibilityTypeEnum.PETS;
+  if (normalized.includes('housing')) return FacilityEligibilityTypeEnum.HOUSING_STATUS;
+  if (normalized.includes('sexual')) return FacilityEligibilityTypeEnum.SEXUAL_ORIENTATION;
+  if (normalized.includes('race')) return FacilityEligibilityTypeEnum.RACE;
+  return FacilityEligibilityTypeEnum.OTHER;
 }
 
 async function getOrCreateServiceType (prisma, name, cache, dryRun) {
@@ -322,15 +322,15 @@ async function getOrCreateServiceType (prisma, name, cache, dryRun) {
 
 function mapUpdateMethod (value) {
   if (!value) {
-    return FacilityUpdateMethod.MANUAL;
+    return FacilityUpdateMethodEnum.MANUAL;
   }
   const normalized = value.toLowerCase();
-  if (normalized.includes('api')) return FacilityUpdateMethod.API;
-  if (normalized.includes('text')) return FacilityUpdateMethod.AUTOMATED_TEXT;
-  if (normalized.includes('call')) return FacilityUpdateMethod.AUTOMATED_CALL;
-  if (normalized.includes('integration')) return FacilityUpdateMethod.INTEGRATION;
-  if (normalized.includes('whiteboard')) return FacilityUpdateMethod.WHITEBOARD;
-  return FacilityUpdateMethod.MANUAL;
+  if (normalized.includes('api')) return FacilityUpdateMethodEnum.API;
+  if (normalized.includes('text')) return FacilityUpdateMethodEnum.AUTOMATED_TEXT;
+  if (normalized.includes('call')) return FacilityUpdateMethodEnum.AUTOMATED_CALL;
+  if (normalized.includes('integration')) return FacilityUpdateMethodEnum.INTEGRATION;
+  if (normalized.includes('whiteboard')) return FacilityUpdateMethodEnum.WHITEBOARD;
+  return FacilityUpdateMethodEnum.MANUAL;
 }
 
 function buildUpdateNotes (record) {
