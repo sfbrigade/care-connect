@@ -9,5 +9,11 @@
       "OPEN_NOT_ACCEPTING": "Open - not accepting",
       "CLOSED": "Closed - not accepting"
     }
+  },
+  "sex": {
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "OTHER": "Other",
+    "UNKNOWN": "Unknown"
   }
 }

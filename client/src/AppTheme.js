@@ -98,6 +98,7 @@ const AppTheme = createTheme({
     }),
     Button: Button.extend({
       defaultProps: {
+        color: 'indigo.6',
         size: 'lg',
         radius: 'xl', // 24px border radius
       },

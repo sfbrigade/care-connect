@@ -11,9 +11,8 @@ import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import Facility from './Facility';
 import Incident from './Incident';
-import LESCHold from './LESCHold';
+import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
-import { calculateAge } from '@/utils/dateTime';
 import { useHoldActions } from '@/lesc/hooks/useHoldActions';
 
 import { useFacilityContext } from '@/FacilityContext';
@@ -46,10 +45,10 @@ function Holds () {
     qrModalOpened,
     selectedHold,
     setSelectedHold,
-    handleCancel,
+    // handleCancel,
     handleConfirmCancel,
-    handleTransfer,
-    handleExtend,
+    // handleTransfer,
+    // handleExtend,
     handleCloseQRModal,
     handleQRDone,
     cancelMutation,
@@ -279,7 +278,7 @@ function Holds () {
             value='holds'
             onChange={(value) => navigate('/history')}
             data={[
-              { label: 'My holds', value: 'holds' },
+              { label: 'Active holds', value: 'holds' },
               { label: 'History', value: 'history' },
             ]}
           />
@@ -298,29 +297,15 @@ function Holds () {
           {deflections && deflections.length > 0 && (
             <>
               <Stack gap='md'>
-                {deflections?.map((hold) => {
-                  // Calculate age from dateOfBirth if available
-                  const age = calculateAge(hold.client?.dateOfBirth);
-
-                  return (
-                    <LESCHold
-                      key={hold.id}
-                      hold={hold}
-                      patientId={hold.client?.id ? hold.client.id.slice(0, 3).toUpperCase() : undefined}
-                      patientName={hold.client ? `${hold.client.firstName} ${hold.client.lastName || ''}`.trim() : undefined}
-                      patientDob={hold.client?.dateOfBirth}
-                      patientAge={age}
-                      patientSex={hold.client?.sex}
-                      patientRace={hold.client?.race}
-                      onTransfer={handleTransfer}
-                      onExtend={handleExtend}
-                      onCancel={handleCancel}
-                      onViewDetails={() => {
-                        navigate(`/intake/${hold.id}`);
-                      }}
-                    />
-                  );
-                })}
+                {deflections?.map((deflection) => (
+                  <Hold
+                    key={deflection.id}
+                    deflection={deflection}
+                    onDetailsClick={() => {
+                      navigate(`/intake/${deflection.id}`);
+                    }}
+                  />
+                ))}
               </Stack>
               <Button
                 variant='secondary'
