@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
+import { DateTime } from 'luxon';
 
 import { authenticate, build } from '#test/helper.js';
 
@@ -179,6 +180,18 @@ test('/api/incidents', async (t) => {
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('PATCH /:id/extend', async (t) => {
+    await t.test('extends incident', async () => {
+      const response = await app.inject().patch('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2/extend').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.length, 2);
+      const oneHourLater = DateTime.now().plus({ hours: 1 });
+      assert.ok(data[0].expiresAt.startsWith(oneHourLater.toISO({ includeOffset: false, precision: 'minute' })));
+      assert.ok(data[1].expiresAt.startsWith(oneHourLater.toISO({ includeOffset: false, precision: 'minute' })));
     });
   });
 });
