@@ -1,27 +1,31 @@
 import { useNavigate } from 'react-router';
-import { Box, Stack, Title, Text } from '@mantine/core';
+import { Box, Button, Stack, Title, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
+import Incident from './Incident';
 import Hold from './Hold';
 
-function HoldsHistory ({ facility }) {
+function HoldsActive ({ incident }) {
   const navigate = useNavigate();
 
   const { data: deflections } = useQuery({
-    queryKey: ['deflections', facility?.id, 'inactive'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: false }).then(response => response.data),
-    enabled: !!facility,
+    queryKey: ['deflections', incident?.id, 'active'],
+    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    enabled: !!incident,
   });
 
   return (
     <>
+      {incident && (
+        <Incident incident={incident} editLink='/incident' />
+      )}
       {(!deflections || deflections.length === 0) && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
-            <Title order={4}>You don't have any past holds</Title>
-            <Text size='md' c='dimmed'>Completed, cancelled, and expired holds will show up here.</Text>
+            <Title order={4}>You don't have any active holds</Title>
+            <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
           </Box>
         </>
       )}
@@ -38,10 +42,15 @@ function HoldsHistory ({ facility }) {
               />
             ))}
           </Stack>
+          <Button
+            variant='secondary'
+            fullWidth
+          >
+            Extend all holds
+          </Button>
         </>
       )}
     </>
   );
 }
-
-export default HoldsHistory;
+export default HoldsActive;

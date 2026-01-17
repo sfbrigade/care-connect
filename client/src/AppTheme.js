@@ -1,4 +1,4 @@
-import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
@@ -132,6 +132,12 @@ const AppTheme = createTheme({
       defaultProps: {
         size: 'xs',
         px: 'xl'
+      }
+    }),
+    Modal: Modal.extend({
+      defaultProps: {
+        padding: 'xl',
+        radius: 'lg'
       }
     }),
     SegmentedControl: SegmentedControl.extend({

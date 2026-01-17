@@ -274,6 +274,24 @@ const Api = {
       return instance.get(`/api/incidents/${id}/deflections`).catch(handleError);
     },
   },
+  deflections: {
+    list ({ incidentId, facilityId, active } = {}) {
+      const params = {};
+      if (incidentId) {
+        params.incidentId = incidentId;
+      }
+      if (facilityId) {
+        params.facilityId = facilityId;
+      }
+      if (active !== undefined) {
+        params.active = active;
+      }
+      return instance.get('/api/deflections', { params }).catch(handleError);
+    },
+    create (data) {
+      return instance.post('/api/deflections', data).catch(handleError);
+    },
+  },
   lesc: {
     availability () {
       return instance.get('/api/lesc/availability');

@@ -6,6 +6,7 @@ import { calculateAge, formatTimeRemaining } from '@/utils/dateTime';
 
 function Hold ({
   deflection,
+  onCancelClick,
   onDetailsClick,
 }) {
   const { t } = useTranslation();
@@ -55,10 +56,13 @@ function Hold ({
             )}
           </Box>
         </Stack>
-        <Group justify='space-between'>
+        <Group justify='space-between' wrap='nowrap'>
           <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
           {isNew && (
-            <Button size='md' onClick={onDetailsClick}>Add Details</Button>
+            <Group gap='sm' wrap='nowrap'>
+              <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
+              <Button size='md' onClick={onDetailsClick}>Add Details</Button>
+            </Group>
           )}
           {!isNew && !isValid && (
             <Button size='md' onClick={onDetailsClick}>Finish Details</Button>

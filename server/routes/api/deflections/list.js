@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
-import User from '#models/user.js';
 import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
@@ -70,14 +69,6 @@ export default async function (fastify, opts) {
       };
 
       const { records, total } = await fastify.prisma.deflection.paginate(options);
-      records.forEach(record => {
-        if (record.cancelledBy) record.cancelledBy = new User(record.cancelledBy);
-        if (record.createdBy) record.createdBy = new User(record.createdBy);
-        if (record.transferredBy) record.transferredBy = new User(record.transferredBy);
-        if (record.admittedBy) record.admittedBy = new User(record.admittedBy);
-        if (record.rejectedBy) record.rejectedBy = new User(record.rejectedBy);
-        if (record.releasedBy) record.releasedBy = new User(record.releasedBy);
-      });
       return reply.setPaginationHeaders(page, perPage, total).send(records);
     });
 }
