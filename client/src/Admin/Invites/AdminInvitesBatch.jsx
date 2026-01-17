@@ -1,97 +1,32 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Button, Container, FileInput, Group, Stack, Table, Text, Title } from '@mantine/core';
-import { isEmail } from '@mantine/form';
 import { useMutation } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 
+import { parseCsv } from './util';
+
 const EXPECTED_HEADERS = ['first_name', 'last_name', 'email'];
-const emailValidator = isEmail('Please enter a valid email address.');
 
-function parseCsvLine (line) {
-  const values = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      values.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  values.push(current);
-  return values;
-}
-
-function parseCsv (text) {
-  const allLines = text.split(/\r?\n/);
-  const errors = [];
-  const rows = [];
-
-  const headerLine = allLines.find((line) => line.trim() !== '');
-  if (!headerLine) {
-    errors.push('CSV file is empty.');
-    return { rows, errors };
-  }
-
-  const headerValues = parseCsvLine(headerLine).map((value) => value.trim().toLowerCase());
-  if (headerValues.length !== EXPECTED_HEADERS.length ||
-    headerValues.some((value, index) => value !== EXPECTED_HEADERS[index])) {
-    errors.push(`Invalid header row. Expected: ${EXPECTED_HEADERS.join(', ')}.`);
-    return { rows, errors };
-  }
-
-  let headerSeen = false;
-  for (let lineIndex = 0; lineIndex < allLines.length; lineIndex += 1) {
-    const rawLine = allLines[lineIndex];
-    if (rawLine.trim() === '') {
-      continue;
-    }
-    if (!headerSeen) {
-      headerSeen = true;
-      continue;
-    }
-    const lineNumber = lineIndex + 1;
-    const values = parseCsvLine(rawLine);
-    if (values.length !== EXPECTED_HEADERS.length) {
-      errors.push(`Row ${lineNumber}: Expected ${EXPECTED_HEADERS.length} columns.`);
-      continue;
-    }
-    const firstName = values[0].trim();
-    const lastName = values[1].trim();
-    const email = values[2].trim();
-    if (!firstName) {
-      errors.push(`Row ${lineNumber}: First name is required. (email: ${email})`);
-      continue;
-    }
-    if (!lastName) {
-      errors.push(`Row ${lineNumber}: Last name is required. (email: ${email})`);
-      continue;
-    }
-    if (!email) {
-      errors.push(`Row ${lineNumber}: Email is required.`);
-      continue;
-    }
-    const emailError = emailValidator(email);
-    if (emailError) {
-      errors.push(`Row ${lineNumber}: ${emailError} (email: ${email})`);
-      continue;
-    }
-    rows.push({ firstName, lastName, email });
-  }
-
-  return { rows, errors };
+function InviteRow ({ row, index, onRemove }) {
+  return (
+    <Table.Tr>
+      <Table.Td>{row.firstName}</Table.Td>
+      <Table.Td>{row.lastName}</Table.Td>
+      <Table.Td>{row.email}</Table.Td>
+      <Table.Td>
+        <Button
+          variant='subtle'
+          color='red'
+          size='xs'
+          onClick={() => onRemove(index)}
+        >
+          Remove
+        </Button>
+      </Table.Td>
+    </Table.Tr>
+  );
 }
 
 function AdminInvitesBatch () {
@@ -101,14 +36,18 @@ function AdminInvitesBatch () {
   const [submitError, setSubmitError] = useState(null);
   const [summary, setSummary] = useState(null);
 
+  function resetForm () {
+    setRows([]);
+    setParseErrors([]);
+    setFile(null);
+  }
+
   const onSubmitMutation = useMutation({
     mutationFn: (payload) => Api.invites.bulk(payload),
     onSuccess: (response) => {
       const result = response.data;
       setSummary(result);
-      setRows([]);
-      setParseErrors([]);
-      setFile(null);
+      resetForm();
       if (result.errorCount > 0) {
         setSubmitError('Some invites could not be processed. See details below.');
       } else {
@@ -122,24 +61,6 @@ function AdminInvitesBatch () {
 
   const canSubmit = rows.length > 0 && !onSubmitMutation.isPending;
 
-  const tableRows = useMemo(() => rows.map((row, index) => (
-    <Table.Tr key={`${row.email}-${index}`}>
-      <Table.Td>{row.firstName}</Table.Td>
-      <Table.Td>{row.lastName}</Table.Td>
-      <Table.Td>{row.email}</Table.Td>
-      <Table.Td>
-        <Button
-          variant='subtle'
-          color='red'
-          size='xs'
-          onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-        >
-          Remove
-        </Button>
-      </Table.Td>
-    </Table.Tr>
-  )), [rows]);
-
   function handleFile (file) {
     setSummary(null);
     setSubmitError(null);
@@ -152,7 +73,7 @@ function AdminInvitesBatch () {
     const reader = new window.FileReader();
     reader.onload = (event) => {
       const text = event.target?.result ?? '';
-      const { rows: parsedRows, errors } = parseCsv(String(text));
+      const { rows: parsedRows, errors } = parseCsv(String(text), EXPECTED_HEADERS);
       setRows(parsedRows);
       setParseErrors(errors);
     };
@@ -166,11 +87,9 @@ function AdminInvitesBatch () {
   }
 
   function handleReset () {
-    setRows([]);
-    setParseErrors([]);
     setSubmitError(null);
     setSummary(null);
-    setFile(null);
+    resetForm();
   }
 
   return (
@@ -246,7 +165,16 @@ function AdminInvitesBatch () {
                     </Table.Td>
                   </Table.Tr>
                 )}
-                {tableRows}
+                {rows.map((row, index) => (
+                  <InviteRow
+                    key={`${row.email}-${index}`}
+                    row={row}
+                    index={index}
+                    onRemove={(targetIndex) => {
+                      setRows((current) => current.filter((_, i) => i !== targetIndex));
+                    }}
+                  />
+                ))}
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
