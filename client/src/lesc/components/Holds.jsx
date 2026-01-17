@@ -10,6 +10,7 @@ import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import HoldQRCode from './HoldQRCode';
 import Facility from './Facility';
+import Incident from './Incident';
 import LESCHold from './LESCHold';
 import { useToast } from '@/components/ToastContext';
 import { calculateAge } from '@/utils/dateTime';
@@ -282,6 +283,9 @@ function Holds () {
               { label: 'History', value: 'history' },
             ]}
           />
+          {incident && (
+            <Incident incident={incident} editLink='/incident' />
+          )}
           {(!deflections || deflections.length === 0) && (
             <>
               <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />

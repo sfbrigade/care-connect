@@ -37,6 +37,10 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    transformValues: values => ({
+      ...values,
+      arrestedAt: DateTime.fromISO(values.arrestedAt, { zone: 'local' }).toISO(),
+    }),
   });
 
   const { data, isLoading } = useQuery({
@@ -47,7 +51,12 @@ function IncidentForm () {
   useEffect(() => {
     if (!isLoading) {
       if (data) {
-        form.setInitialValues(data);
+        let { arrestedAt } = data;
+        arrestedAt = DateTime.fromISO(arrestedAt).toISO({ includeOffset: false, precision: 'seconds' });
+        form.setInitialValues({
+          ...data,
+          arrestedAt,
+        });
         form.reset();
         setInitialized(true);
       } else {
@@ -163,7 +172,9 @@ function IncidentForm () {
                 label='Supervising Sergeant’s Star Number'
                 onFocus={() => setShowAddressForm(false)}
               />
-              <Button type='submit'>Create incident & hold</Button>
+              <Button type='submit'>
+                {data?.id ? 'Save incident details' : 'Create incident & hold'}
+              </Button>
             </Stack>
           </Fieldset>
         </form>

@@ -8,6 +8,7 @@ import {
 } from '@mantine/core';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { BrowserRouter } from 'react-router';
 
 // theme.ts file from previous step
 import AppTheme from '../src/AppTheme';
@@ -52,6 +53,9 @@ const preview = {
     ),
     (renderStory) => (
       <MantineProvider theme={AppTheme}>{renderStory()}</MantineProvider>
+    ),
+    (renderStory) => (
+      <BrowserRouter>{renderStory()}</BrowserRouter>
     ),
   ],
   parameters: {
