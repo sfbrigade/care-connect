@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Stack, Text, Title, Group, Button } from '@mantine/core';
+import { Button, Chip, Group, Modal, Stack, Text, Title } from '@mantine/core';
 
 function CancelHoldModal ({
   deflection,
@@ -34,6 +34,9 @@ function CancelHoldModal ({
           {!deflection.subjectId && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
           {!!deflection.subjectId && <Text size='sm' c='dimmed'>Canceling a hold means a chair will no longer be reserved. This person's identifying information will also be removed.</Text>}
         </Stack>
+        {!!deflection.subjectId && (
+          <Chip.Group value={cancelReasonId} onChange={setCancelReasonId} />
+        )}
         <Group grow>
           <Button
             variant='light'
