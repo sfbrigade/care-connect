@@ -44,34 +44,49 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      const updated = await fastify.prisma.deflection.update({
-        where: { id },
-        data: {
-          status: Deflection.HoldStatus.CANCELLED,
-          cancelledAt: new Date(),
-          cancelledById: request.user.id,
-          ...(cancelReasonId && { cancelReasonId }),
-        },
-        include: {
-          facility: true,
-          incident: true,
-          bedType: true,
-          subject: true,
-          cancelReason: true,
-          cancelledBy: true,
-          createdBy: true,
-          transferredBy: true,
-          transferredByOrganization: true,
-          transferredByUnit: true,
-          transferredByTitle: true,
-          admittedBy: true,
-          rejectedBy: true,
-          releasedBy: true,
-          releaseReason: true,
-          refusalReason: true,
-          exitDestination: true,
-          exitHousingStatus: true,
-        },
+      // create the update record for the cancellation
+      let updated;
+      await fastify.prisma.$transaction(async (tx) => {
+        const update = await tx.deflectionUpdate.create({
+          data: {
+            deflectionId: id,
+            status: Deflection.HoldStatus.CANCELLED,
+            cancelReasonId,
+            updatedById: request.user.id,
+            updatedAt: new Date(),
+          },
+        });
+
+        updated = await tx.deflection.update({
+          where: { id },
+          data: {
+            status: Deflection.HoldStatus.CANCELLED,
+            cancelReasonId: update.cancelReasonId,
+            cancelledAt: update.updatedAt,
+            cancelledById: update.updatedById,
+            updatedAt: update.updatedAt,
+          },
+          include: {
+            facility: true,
+            incident: true,
+            bedType: true,
+            subject: true,
+            cancelReason: true,
+            cancelledBy: true,
+            createdBy: true,
+            transferredBy: true,
+            transferredByOrganization: true,
+            transferredByUnit: true,
+            transferredByTitle: true,
+            admittedBy: true,
+            rejectedBy: true,
+            releasedBy: true,
+            releaseReason: true,
+            refusalReason: true,
+            exitDestination: true,
+            exitHousingStatus: true,
+          },
+        });
       });
 
       if (updated.cancelledBy) updated.cancelledBy = new User(updated.cancelledBy);

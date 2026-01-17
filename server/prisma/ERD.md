@@ -92,8 +92,7 @@ UNKNOWN UNKNOWN
 
         SubjectStatusEnum {
             DETAINED DETAINED
-ONSITE ONSITE
-AWAITING_TRANSFER AWAITING_TRANSFER
+ONSITE_AWAITING_TRANSFER ONSITE_AWAITING_TRANSFER
 AWAITING_INTAKE AWAITING_INTAKE
 FAILED_INTAKE FAILED_INTAKE
 ADMITTED ADMITTED
@@ -359,6 +358,8 @@ EXITED EXITED
     String releasedById "❓"
     String releaseReasonId "❓"
     String refusalReasonId "❓"
+    DateTime exitedAt "❓"
+    String exitedById "❓"
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
@@ -371,7 +372,15 @@ EXITED EXITED
     String id "🗝️"
     String deflectionId 
     HoldStatusEnum status "❓"
+    DateTime expiresAt "❓"
+    String cancelReasonId "❓"
     SubjectStatusEnum subjectStatus "❓"
+    String releaseReasonId "❓"
+    String refusalReasonId "❓"
+    String exitDestinationId "❓"
+    String exitHousingStatusId "❓"
+    TernaryEnum exitConnectedToCare "❓"
+    TernaryEnum exitSFResident "❓"
     DateTime updatedAt 
     String updatedById 
     }
@@ -473,6 +482,7 @@ EXITED EXITED
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
@@ -547,6 +557,7 @@ EXITED EXITED
     "Deflection" o|--|o "User" : "releasedBy"
     "Deflection" o|--|o "DeflectionReleaseReason" : "releaseReason"
     "Deflection" o|--|o "DeflectionRefusalReason" : "refusalReason"
+    "Deflection" o|--|o "User" : "exitedBy"
     "Deflection" o|--|o "DeflectionExitDestination" : "exitDestination"
     "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
@@ -554,7 +565,14 @@ EXITED EXITED
     "Deflection" o{--}o "DeflectionUpdate" : ""
     "DeflectionUpdate" o|--|| "Deflection" : "deflection"
     "DeflectionUpdate" o|--|o "HoldStatusEnum" : "enum:status"
+    "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"
     "DeflectionUpdate" o|--|o "SubjectStatusEnum" : "enum:subjectStatus"
+    "DeflectionUpdate" o|--|o "DeflectionReleaseReason" : "releaseReason"
+    "DeflectionUpdate" o|--|o "DeflectionRefusalReason" : "refusalReason"
+    "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
+    "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
+    "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
+    "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"

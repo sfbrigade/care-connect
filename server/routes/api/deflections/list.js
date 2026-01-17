@@ -7,6 +7,7 @@ import User from '#models/user.js';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Returns a list of deflections.',
         querystring: z.object({

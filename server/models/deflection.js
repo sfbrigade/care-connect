@@ -26,11 +26,11 @@ const DeflectionAttributesSchema = z.object({
   exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
 });
 
-const DeflectionCreateSchema = DeflectionAttributesSchema.extend({
+const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
   facilityId: z.string().uuid(),
   incidentId: z.string().uuid(),
   bedTypeId: z.string().uuid(),
-  subjectId: z.string().uuid().nullable(),
+  subjectId: z.string().uuid().nullable().optional(),
 });
 
 const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
@@ -57,6 +57,9 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   admittedAt: z.coerce.date().nullable(),
   rejectedAt: z.coerce.date().nullable(),
   releasedAt: z.coerce.date().nullable(),
+  exitedAt: z.coerce.date().nullable(),
+  exitedBy: User.ResponseSchema.nullable().optional(),
+  exitedById: z.string().uuid().nullable(),
   completedAt: z.coerce.date().nullable(),
   cancelReason: DeflectionCancelReason.ResponseSchema.nullable().optional(),
   cancelledById: z.string().uuid().nullable(),

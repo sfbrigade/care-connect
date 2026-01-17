@@ -1,0 +1,17 @@
+entity: deflectionCancelReason
+items:
+  '5150':
+    id: '5150'
+    name: '5150'
+  jail:
+    id: 'jail'
+    name: 'Jail'
+  hospital:
+    id: 'hospital'
+    name: 'Hospital'
+  release_on_scene:
+    id: 'release_on_scene'
+    name: 'Release on Scene'
+  facility_emergency:
+    id: 'facility_emergency'
+    name: 'Facility Emergency'

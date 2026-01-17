@@ -95,8 +95,7 @@ enum RaceEnum {
 
 enum SubjectStatusEnum {
   DETAINED
-  ONSITE
-  AWAITING_TRANSFER
+  ONSITE_AWAITING_TRANSFER
   AWAITING_INTAKE
   FAILED_INTAKE
   ADMITTED
@@ -185,7 +184,8 @@ model User {
   deflectionsTransferred       Deflection[]            @relation("TransferredBy")
   deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
   deflectionsRejected          Deflection[]            @relation("RejectedBy")
-  deflectionsReleased          Deflection[]            @relation("ReleasedBy")  
+  deflectionsReleased          Deflection[]            @relation("ReleasedBy")
+  deflectionsExited            Deflection[]            @relation("ExitedBy")
   deflectionUpdatesCreated     DeflectionUpdate[]
   facilitiesCreated            Facility[]              @relation("CreatedBy")
   facilitiesUpdated            Facility[]              @relation("UpdatedBy")
@@ -462,6 +462,9 @@ model Deflection {
   releaseReasonId              String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
+  exitedAt                     DateTime?
+  exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
+  exitedById                   String?                 @db.Uuid
   exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
   exitDestinationId            String?
   exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
@@ -478,7 +481,20 @@ model DeflectionUpdate {
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id])
   deflectionId                 String                  @db.Uuid
   status                       HoldStatusEnum?
+  expiresAt                    DateTime?
+  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId               String?
   subjectStatus                SubjectStatusEnum?
+  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId              String?
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               TernaryEnum?
   updatedAt                    DateTime                @default(now())
   updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
   updatedById                  String                  @db.Uuid
@@ -489,6 +505,7 @@ model DeflectionCancelReason {
   name                         String
 
   deflections                  Deflection[]
+  deflectionUpdates            DeflectionUpdate[]
 }
 
 model DeflectionReleaseReason {
@@ -496,6 +513,7 @@ model DeflectionReleaseReason {
   name                         String
 
   deflections                  Deflection[]
+  deflectionUpdates            DeflectionUpdate[]
 }
 
 model DeflectionRefusalReason {
@@ -503,6 +521,7 @@ model DeflectionRefusalReason {
   name                         String
 
   deflections                  Deflection[]
+  deflectionUpdates            DeflectionUpdate[]
 }
 
 model DeflectionExitDestination {
@@ -510,6 +529,7 @@ model DeflectionExitDestination {
   name                         String
 
   deflections                  Deflection[]
+  deflectionUpdates            DeflectionUpdate[]
 }
 
 model DeflectionExitHousingStatus {
@@ -517,6 +537,7 @@ model DeflectionExitHousingStatus {
   name                         String
 
   deflections                  Deflection[]
+  deflectionUpdates            DeflectionUpdate[]
 }
 
 model Incident {
