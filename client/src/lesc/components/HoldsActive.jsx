@@ -1,19 +1,37 @@
 import { useNavigate } from 'react-router';
 import { Box, Button, Stack, Title, Text } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
+import { useToast } from '@/components/ToastContext';
 
 function HoldsActive ({ incident, onCancelHoldClick }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: deflections } = useQuery({
     queryKey: ['deflections', incident?.id, 'active'],
     queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
     enabled: !!incident,
   });
+
+  const extendAllHoldsMutation = useMutation({
+    mutationFn: () => Api.incidents.extend(incident.id),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
+      showToast('All active holds have been reset to 60 minutes.', 'success');
+    },
+    onError: () => {
+      showToast('Couldn’t extend holds. Please try again.', 'error');
+    },
+  });
+
+  function onExtendAllClick () {
+    extendAllHoldsMutation.mutate();
+  }
 
   return (
     <>
@@ -46,6 +64,7 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
           <Button
             variant='secondary'
             fullWidth
+            onClick={onExtendAllClick}
           >
             Extend all holds
           </Button>

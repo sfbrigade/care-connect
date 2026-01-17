@@ -270,8 +270,8 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
     },
-    deflections (id) {
-      return instance.get(`/api/incidents/${id}/deflections`).catch(handleError);
+    extend (id) {
+      return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
     },
   },
   deflections: {
