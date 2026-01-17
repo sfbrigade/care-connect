@@ -291,6 +291,9 @@ const Api = {
     create (data) {
       return instance.post('/api/deflections', data).catch(handleError);
     },
+    cancel (id, data) {
+      return instance.delete(`/api/deflections/${id}`, data).catch(handleError);
+    },
   },
   lesc: {
     availability () {

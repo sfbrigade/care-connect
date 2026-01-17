@@ -390,30 +390,50 @@ EXITED EXITED
   "DeflectionCancelReason" {
     String id "🗝️"
     String name 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
   "DeflectionReleaseReason" {
     String id "🗝️"
     String name 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
   "DeflectionRefusalReason" {
     String id "🗝️"
     String name 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
   "DeflectionExitDestination" {
     String id "🗝️"
     String name 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
   "DeflectionExitHousingStatus" {
     String id "🗝️"
     String name 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
     }
   
 
@@ -477,6 +497,16 @@ EXITED EXITED
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedTypeUpdate" : ""
+    "User" o{--}o "DeflectionCancelReason" : ""
+    "User" o{--}o "DeflectionCancelReason" : ""
+    "User" o{--}o "DeflectionReleaseReason" : ""
+    "User" o{--}o "DeflectionReleaseReason" : ""
+    "User" o{--}o "DeflectionRefusalReason" : ""
+    "User" o{--}o "DeflectionRefusalReason" : ""
+    "User" o{--}o "DeflectionExitDestination" : ""
+    "User" o{--}o "DeflectionExitDestination" : ""
+    "User" o{--}o "DeflectionExitHousingStatus" : ""
+    "User" o{--}o "DeflectionExitHousingStatus" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
@@ -575,6 +605,16 @@ EXITED EXITED
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
+    "DeflectionCancelReason" o|--|| "User" : "createdBy"
+    "DeflectionCancelReason" o|--|| "User" : "updatedBy"
+    "DeflectionReleaseReason" o|--|| "User" : "createdBy"
+    "DeflectionReleaseReason" o|--|| "User" : "updatedBy"
+    "DeflectionRefusalReason" o|--|| "User" : "createdBy"
+    "DeflectionRefusalReason" o|--|| "User" : "updatedBy"
+    "DeflectionExitDestination" o|--|| "User" : "createdBy"
+    "DeflectionExitDestination" o|--|| "User" : "updatedBy"
+    "DeflectionExitHousingStatus" o|--|| "User" : "createdBy"
+    "DeflectionExitHousingStatus" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"

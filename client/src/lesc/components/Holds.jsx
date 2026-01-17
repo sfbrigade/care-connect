@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
@@ -57,6 +58,36 @@ function Holds () {
     }
   }
 
+  const [selectedDeflection, setSelectedDeflection] = useState();
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const cancelDeflectionMutation = useMutation({
+    mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
+    onSuccess: (response) => {
+      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      if (cachedDeflections) {
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id));
+      }
+      onCloseCancelModal();
+    },
+  });
+
+  function onCancelHoldClick (deflection) {
+    setSelectedDeflection(deflection);
+    setShowCancelModal(true);
+  }
+
+  async function onCancelHoldConfirmed (cancelReasonId) {
+    await cancelDeflectionMutation.mutateAsync({
+      cancelReasonId,
+    });
+  }
+
+  function onCloseCancelModal () {
+    setSelectedDeflection();
+    setShowCancelModal(false);
+  }
+
   return (
     <>
       <Head>
@@ -79,7 +110,7 @@ function Holds () {
             ]}
           />
           {tab === 'active' && (
-            <HoldsActive incident={incident} />
+            <HoldsActive incident={incident} onCancelHoldClick={onCancelHoldClick} />
           )}
           {tab === 'history' && (
             <HoldsHistory facility={facility} />
@@ -89,6 +120,14 @@ function Holds () {
           </Text>
         </Stack>
       </Container>
+      {selectedDeflection && (
+        <CancelHoldModal
+          deflection={selectedDeflection}
+          opened={showCancelModal}
+          onClose={onCloseCancelModal}
+          onConfirm={onCancelHoldConfirmed}
+        />
+      )}
     </>
   );
 }

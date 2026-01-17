@@ -15,7 +15,7 @@ export default async function (fastify, opts) {
         }),
         body: z.object({
           cancelReasonId: z.string().optional(),
-        }).optional(),
+        }).nullable().optional(),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),

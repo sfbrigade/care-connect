@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal, Stack, Text, Title, Group, Button } from '@mantine/core';
 
 function CancelHoldModal ({
@@ -7,6 +8,15 @@ function CancelHoldModal ({
   onConfirm,
   loading = false,
 }) {
+  const [cancelReasonId, setCancelReasonId] = useState();
+
+  // const { data: cancelReasons } = useQuery({
+  //   queryKey: ['deflectionCancelReasons'],
+  //   queryFn: () => Api.deflectionCancelReasons.index().then(response => response.data),
+  // });
+
+  const name = [deflection.subject?.firstName, deflection.subject?.middleInitial, deflection.subject?.lastName].filter(Boolean).join(' ');
+
   return (
     <Modal
       opened={opened}
@@ -19,14 +29,16 @@ function CancelHoldModal ({
     >
       <Stack gap='xl'>
         <Stack gap='sm'>
-          <Title order={4}>Cancel this hold?</Title>
-          <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>
+          {!name && <Title order={4}>Cancel this hold?</Title>}
+          {!!name && <Title order={4}>Cancel hold for {name}?</Title>}
+          {!deflection.subjectId && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
+          {!!deflection.subjectId && <Text size='sm' c='dimmed'>Canceling a hold means a chair will no longer be reserved. This person's identifying information will also be removed.</Text>}
         </Stack>
         <Group grow>
           <Button
             variant='light'
             color='red.6'
-            onClick={onConfirm}
+            onClick={() => onConfirm(cancelReasonId)}
             disabled={loading}
           >
             Yes, cancel

@@ -6,7 +6,7 @@ import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
 
-function HoldsActive ({ incident }) {
+function HoldsActive ({ incident, onCancelHoldClick }) {
   const navigate = useNavigate();
 
   const { data: deflections } = useQuery({
@@ -36,6 +36,7 @@ function HoldsActive ({ incident }) {
               <Hold
                 key={deflection.id}
                 deflection={deflection}
+                onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
                   navigate(`/intake/${deflection.id}`);
                 }}

@@ -179,6 +179,16 @@ model User {
   bedTypesCreated              BedType[]               @relation("CreatedBy")
   bedTypesUpdated              BedType[]               @relation("UpdatedBy")
   bedTypeUpdatesCreated        BedTypeUpdate[]
+  deflectionCancelReasonsCreated DeflectionCancelReason[] @relation("CreatedBy")
+  deflectionCancelReasonsUpdated DeflectionCancelReason[] @relation("UpdatedBy")
+  deflectionReleaseReasonsCreated DeflectionReleaseReason[] @relation("CreatedBy")
+  deflectionReleaseReasonsUpdated DeflectionReleaseReason[] @relation("UpdatedBy")
+  deflectionRefusalReasonsCreated DeflectionRefusalReason[] @relation("CreatedBy")
+  deflectionRefusalReasonsUpdated DeflectionRefusalReason[] @relation("UpdatedBy")
+  deflectionExitDestinationsCreated DeflectionExitDestination[] @relation("CreatedBy")
+  deflectionExitDestinationsUpdated DeflectionExitDestination[] @relation("UpdatedBy")
+  deflectionExitHousingStatusesCreated DeflectionExitHousingStatus[] @relation("CreatedBy")
+  deflectionExitHousingStatusesUpdated DeflectionExitHousingStatus[] @relation("UpdatedBy")
   deflectionsCancelled         Deflection[]            @relation("CancelledBy")
   deflectionsCreated           Deflection[]            @relation("CreatedBy")
   deflectionsTransferred       Deflection[]            @relation("TransferredBy")
@@ -504,6 +514,12 @@ model DeflectionUpdate {
 model DeflectionCancelReason {
   id                           String                  @id
   name                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
@@ -512,6 +528,12 @@ model DeflectionCancelReason {
 model DeflectionReleaseReason {
   id                           String                  @id
   name                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
@@ -520,6 +542,12 @@ model DeflectionReleaseReason {
 model DeflectionRefusalReason {
   id                           String                  @id
   name                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
@@ -528,6 +556,12 @@ model DeflectionRefusalReason {
 model DeflectionExitDestination {
   id                           String                  @id
   name                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
@@ -536,6 +570,12 @@ model DeflectionExitDestination {
 model DeflectionExitHousingStatus {
   id                           String                  @id
   name                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
