@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import User from '#models/user.js';
+import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -14,6 +15,7 @@ export default async function (fastify, opts) {
           facilityId: z.string().uuid().optional(),
           incidentId: z.string().uuid().optional(),
           subjectId: z.string().uuid().optional(),
+          active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),
@@ -24,23 +26,37 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const { page = '1', perPage = '25' } = request.query;
+      const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status } = request.query;
       const where = {};
 
-      if (request.query.facilityId) {
-        where.facilityId = request.query.facilityId;
+      await autoExpireHolds(fastify.prisma);
+
+      if (active !== undefined) {
+        if (active === 'true') {
+          where.status = Deflection.HoldStatus.ACTIVE;
+        } else {
+          where.status = { not: Deflection.HoldStatus.ACTIVE };
+        }
       }
 
-      if (request.query.incidentId) {
-        where.incidentId = request.query.incidentId;
+      if (facilityId) {
+        where.facilityId = facilityId;
       }
 
-      if (request.query.subjectId) {
-        where.subjectId = request.query.subjectId;
+      if (incidentId) {
+        where.incidentId = incidentId;
       }
 
-      if (request.query.status) {
-        where.status = request.query.status;
+      if (subjectId) {
+        where.subjectId = subjectId;
+      }
+
+      if (status) {
+        where.status = status;
+      }
+
+      if (!request.user.isAdmin) {
+        where.createdById = request.user.id;
       }
 
       const options = {
@@ -49,24 +65,7 @@ export default async function (fastify, opts) {
         where,
         orderBy: { createdAt: 'desc' },
         include: {
-          facility: true,
-          incident: true,
-          bedType: true,
           subject: true,
-          cancelReason: true,
-          cancelledBy: true,
-          createdBy: true,
-          transferredBy: true,
-          transferredByOrganization: true,
-          transferredByUnit: true,
-          transferredByTitle: true,
-          admittedBy: true,
-          rejectedBy: true,
-          releasedBy: true,
-          releaseReason: true,
-          refusalReason: true,
-          exitDestination: true,
-          exitHousingStatus: true,
         },
       };
 

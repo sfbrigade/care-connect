@@ -12,9 +12,7 @@
 export async function autoExpireHolds (prisma, now = new Date()) {
   const result = await prisma.deflection.updateMany({
     where: {
-      status: {
-        in: ['ACTIVE', 'EXTENDED'],
-      },
+      status: 'ACTIVE',
       expiresAt: {
         lte: now,
       },

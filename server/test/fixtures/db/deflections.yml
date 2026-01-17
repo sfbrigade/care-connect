@@ -17,7 +17,7 @@ items:
     subject: '@subject2'
     incident: '@incident1'
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
-    status: 'EXTENDED'
+    status: 'ACTIVE'
     createdBy: '@user2'
   anotherActiveHold:
     id: 7a2f42d0-adbe-49fe-a71f-7e62dff9a059

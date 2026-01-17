@@ -8,6 +8,7 @@ test('/api/deflections', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new deflection', async () => {
@@ -50,14 +51,28 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('GET /', async (t) => {
-    await t.test('returns a list of deflections', async () => {
-      const response = await app.inject().get('/api/deflections').headers(userHeaders);
-
+    await t.test('returns a list of deflections for the user', async () => {
+      const response = await app.inject().get('/api/deflections').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 5);
+      assert.deepStrictEqual(data.length, 3);
+    });
+
+    await t.test('returns a list of active deflections for the user', async () => {
+      const response = await app.inject().get('/api/deflections?active=true').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(Array.isArray(data));
+      assert.deepStrictEqual(data.length, 1);
+    });
+
+    await t.test('returns a list of inactive deflections for the user', async () => {
+      const response = await app.inject().get('/api/deflections?active=false').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(Array.isArray(data));
+      assert.deepStrictEqual(data.length, 2);
     });
   });
 

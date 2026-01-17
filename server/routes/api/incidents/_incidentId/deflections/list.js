@@ -1,12 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { autoExpireHolds } from '#lib/lesc/holds.js';
 import Deflection from '#models/deflection.js';
 import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Returns a list of deflections for an incident.',
         params: z.object({
@@ -43,6 +45,8 @@ export default async function (fastify, opts) {
           exitHousingStatus: true,
         },
       };
+
+      await autoExpireHolds(fastify.prisma);
 
       const records = await fastify.prisma.deflection.findMany(options);
       records.forEach(record => {

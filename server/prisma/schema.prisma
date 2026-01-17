@@ -72,9 +72,9 @@ enum FacilityEligibilityTypeEnum {
 
 enum HoldStatusEnum {
   ACTIVE
-  EXTENDED
   CANCELLED
   EXPIRED
+  COMPLETED
 }
 
 enum SexEnum {
@@ -482,6 +482,7 @@ model DeflectionUpdate {
   deflectionId                 String                  @db.Uuid
   status                       HoldStatusEnum?
   expiresAt                    DateTime?
+  extensionCount               Int?
   cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
   cancelReasonId               String?
   subjectStatus                SubjectStatusEnum?

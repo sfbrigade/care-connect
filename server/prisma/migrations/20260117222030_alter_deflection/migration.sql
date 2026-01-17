@@ -1,9 +1,22 @@
 /*
   Warnings:
 
+  - The values [EXTENDED] on the enum `HoldStatusEnum` will be removed. If these variants are still used in the database, this will fail.
   - The values [ONSITE,AWAITING_TRANSFER] on the enum `SubjectStatusEnum` will be removed. If these variants are still used in the database, this will fail.
 
 */
+-- AlterEnum
+BEGIN;
+CREATE TYPE "public"."HoldStatusEnum_new" AS ENUM ('ACTIVE', 'CANCELLED', 'EXPIRED', 'COMPLETED');
+ALTER TABLE "public"."Deflection" ALTER COLUMN "status" DROP DEFAULT;
+ALTER TABLE "public"."Deflection" ALTER COLUMN "status" TYPE "public"."HoldStatusEnum_new" USING ("status"::text::"public"."HoldStatusEnum_new");
+ALTER TABLE "public"."DeflectionUpdate" ALTER COLUMN "status" TYPE "public"."HoldStatusEnum_new" USING ("status"::text::"public"."HoldStatusEnum_new");
+ALTER TYPE "public"."HoldStatusEnum" RENAME TO "HoldStatusEnum_old";
+ALTER TYPE "public"."HoldStatusEnum_new" RENAME TO "HoldStatusEnum";
+DROP TYPE "public"."HoldStatusEnum_old";
+ALTER TABLE "public"."Deflection" ALTER COLUMN "status" SET DEFAULT 'ACTIVE';
+COMMIT;
+
 -- AlterEnum
 BEGIN;
 CREATE TYPE "public"."SubjectStatusEnum_new" AS ENUM ('DETAINED', 'ONSITE_AWAITING_TRANSFER', 'AWAITING_INTAKE', 'FAILED_INTAKE', 'ADMITTED', 'RELEASED', 'EXITED');
@@ -27,6 +40,7 @@ ADD COLUMN     "exitDestinationId" TEXT,
 ADD COLUMN     "exitHousingStatusId" TEXT,
 ADD COLUMN     "exitSFResident" "public"."TernaryEnum",
 ADD COLUMN     "expiresAt" TIMESTAMP(3),
+ADD COLUMN     "extensionCount" INTEGER,
 ADD COLUMN     "refusalReasonId" TEXT,
 ADD COLUMN     "releaseReasonId" TEXT;
 

@@ -63,9 +63,9 @@ OTHER OTHER
 
         HoldStatusEnum {
             ACTIVE ACTIVE
-EXTENDED EXTENDED
 CANCELLED CANCELLED
 EXPIRED EXPIRED
+COMPLETED COMPLETED
         }
     
 
@@ -373,6 +373,7 @@ EXITED EXITED
     String deflectionId 
     HoldStatusEnum status "❓"
     DateTime expiresAt "❓"
+    Int extensionCount "❓"
     String cancelReasonId "❓"
     SubjectStatusEnum subjectStatus "❓"
     String releaseReasonId "❓"
