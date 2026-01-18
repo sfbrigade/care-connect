@@ -69,17 +69,20 @@ function Hold ({
           {isCancelled && (
             <Title order={3} c='red.6'>Cancelled</Title>
           )}
-          {isNew && !isExpired && (
+          {isNew && !isExpired && !isCancelled && (
             <Group gap='sm' wrap='nowrap'>
               <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
               <Button size='md' onClick={onDetailsClick}>Add Details</Button>
             </Group>
           )}
-          {!isNew && !isValid && !isExpired && (
+          {!isNew && !isValid && !isExpired && !isCancelled && (
             <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
           )}
-          {!isNew && isValid && (
+          {!isNew && (isValid || isCancelled || isExpired) && (
             <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+          )}
+          {!isNew && !isValid && !isExpired && !isCancelled && (
+            <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
           )}
         </Group>
       </Stack>

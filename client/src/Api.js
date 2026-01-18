@@ -294,6 +294,9 @@ const Api = {
     get (id) {
       return instance.get(`/api/deflections/${id}`);
     },
+    update (id, data) {
+      return instance.patch(`/api/deflections/${id}`, data).catch(handleError);
+    },
     subject (id, data) {
       return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
     },

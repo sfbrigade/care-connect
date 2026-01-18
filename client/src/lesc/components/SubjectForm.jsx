@@ -76,7 +76,7 @@ function SubjectForm () {
         updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
       }
-      navigate(isNew ? `/holds/${id}/deflection` : `/holds/${id}`);
+      navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
     },
   });
 
@@ -167,8 +167,8 @@ function SubjectForm () {
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
-              <Divider />
               <Accordion defaultValue='address'>
+                <Divider />
                 <Accordion.Item value='address'>
                   <Accordion.Control>
                     <Title order={3}>Home address</Title>
