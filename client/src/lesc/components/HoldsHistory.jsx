@@ -33,7 +33,7 @@ function HoldsHistory ({ facility }) {
                 key={deflection.id}
                 deflection={deflection}
                 onDetailsClick={() => {
-                  navigate(`/intake/${deflection.id}`);
+                  navigate(`/holds/${deflection.id}`);
                 }}
               />
             ))}

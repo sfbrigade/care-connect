@@ -4,12 +4,12 @@ import { z } from 'zod';
 import Base from './base.js';
 
 const SubjectAttributesSchema = z.object({
-  firstName: z.string(),
-  lastName: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
   middleInitial: z.string().nullable(),
-  dateOfBirth: z.coerce.date(),
-  sex: z.enum(Object.values(SexEnum)),
-  race: z.enum(Object.values(RaceEnum)),
+  dateOfBirth: z.coerce.date().nullable(),
+  sex: z.enum(Object.values(SexEnum)).nullable(),
+  race: z.enum(Object.values(RaceEnum)).nullable(),
   driverLicense: z.string().nullable(),
   addressLine1: z.string().nullable(),
   addressLine2: z.string().nullable(),

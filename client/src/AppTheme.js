@@ -1,5 +1,6 @@
-import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Accordion, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
+import accordionClasses from './components/Accordian.module.css';
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
@@ -68,6 +69,12 @@ const AppTheme = createTheme({
   },
 
   components: {
+    Accordion: Accordion.extend({
+      defaultProps: {
+        chevronIconSize: 20,
+      },
+      classNames: accordionClasses,
+    }),
     Alert: Alert.extend({
       styles: {
         icon: {
@@ -125,6 +132,7 @@ const AppTheme = createTheme({
     Chip: Chip.extend({
       defaultProps: {
         color: 'black',
+        size: 'xl',
       },
       classNames: chipClasses
     }),
@@ -133,6 +141,12 @@ const AppTheme = createTheme({
         size: 'xs',
         px: 'xl'
       }
+    }),
+    InputWrapper: Input.Wrapper.extend({
+      defaultProps: {
+        size: 'lg',
+      },
+      classNames: inputClasses
     }),
     Modal: Modal.extend({
       defaultProps: {

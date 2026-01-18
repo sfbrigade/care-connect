@@ -286,10 +286,16 @@ const Api = {
       if (active !== undefined) {
         params.active = active;
       }
-      return instance.get('/api/deflections', { params }).catch(handleError);
+      return instance.get('/api/deflections', { params });
     },
     create (data) {
       return instance.post('/api/deflections', data).catch(handleError);
+    },
+    get (id) {
+      return instance.get(`/api/deflections/${id}`);
+    },
+    subject (id, data) {
+      return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
     },
     cancel (id, data) {
       return instance.delete(`/api/deflections/${id}`, data).catch(handleError);

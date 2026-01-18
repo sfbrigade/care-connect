@@ -1,0 +1,17 @@
+.control {
+  padding: 0 0 1rem 0;
+}
+
+.content {
+  padding: 0 0 1.5rem 0;
+}
+
+.chevron {
+  background-color: rgb(from var(--mantine-color-gray-6) R G B / 0.1);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -56,7 +56,7 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
-                  navigate(`/intake/${deflection.id}`);
+                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject`);
                 }}
               />
             ))}

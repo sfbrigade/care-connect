@@ -26,6 +26,7 @@ function Hold ({
   }
 
   const isNew = !deflection?.subjectId;
+  const isExpired = deflection.status === 'EXPIRED' || DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 0;
   const isExpiringSoon = DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 10;
   const isValid = !!deflection?.subject?.firstName &&
     !!deflection?.subject?.lastName &&
@@ -57,14 +58,19 @@ function Hold ({
           </Box>
         </Stack>
         <Group justify='space-between' wrap='nowrap'>
-          <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-          {isNew && (
+          {isExpired && (
+            <Title order={3} c='red.6'>Expired</Title>
+          )}
+          {!isExpired && (
+            <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
+          )}
+          {isNew && !isExpired && (
             <Group gap='sm' wrap='nowrap'>
               <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
               <Button size='md' onClick={onDetailsClick}>Add Details</Button>
             </Group>
           )}
-          {!isNew && !isValid && (
+          {!isNew && !isValid && !isExpired && (
             <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
           )}
           {!isNew && isValid && (

@@ -148,7 +148,7 @@ function IncidentForm () {
                     <TextInput
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
-                      label='Arrest postal code'
+                      label='Arrest ZIP code'
                     />
                   </Group>
                 </>
