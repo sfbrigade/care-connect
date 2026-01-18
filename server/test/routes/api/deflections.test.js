@@ -76,33 +76,39 @@ test('/api/deflections', async (t) => {
     });
   });
 
-  // await t.test('PATCH /:id', async (t) => {
-  //   await t.test('updates deflection details', async () => {
-  //     const response = await app.inject().patch(`/api/deflections/${deflectionId}`).payload({
-  //       behavior: 'Combative',
-  //     }).headers(userHeaders);
+  await t.test('PATCH /:id', async (t) => {
+    await t.test('updates deflection details', async () => {
+      const response = await app.inject().patch('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2').payload({
+        behavior: 'This is the narrative text.',
+        deflectionDetails: ['unable_to_stand', 'confused'],
+      }).headers(userHeaders);
 
-  //     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-  //     const data = JSON.parse(response.body);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
 
-  //     assert.deepStrictEqual(data.behavior, 'Combative');
+      assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(data.deflectionDetails.length, 2);
 
-  //     // Verify in database
-  //     const deflection = await prisma.deflection.findUnique({
-  //       where: { id: deflectionId },
-  //     });
-  //     assert.deepStrictEqual(deflection.behavior, 'Combative');
-  //   });
+      // Verify in database
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+        include: {
+          deflectionDetails: true,
+        },
+      });
+      assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
+    });
 
-  //   await t.test('returns 404 for non-existent deflection', async () => {
-  //     const nonExistentId = '00000000-0000-0000-0000-000000000000';
-  //     const response = await app.inject().patch(`/api/deflections/${nonExistentId}`).payload({
-  //       behavior: 'Cooperative',
-  //     }).headers(userHeaders);
+    await t.test('returns 404 for non-existent deflection', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const response = await app.inject().patch(`/api/deflections/${nonExistentId}`).payload({
+        behavior: 'Cooperative',
+      }).headers(userHeaders);
 
-  //     assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
-  //   });
-  // });
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
 
   await t.test('PUT /:id/subject', async (t) => {
     await t.test('creates a new subject for a deflection', async () => {

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Base from './base.js';
 import BedType from './bedType.js';
 import DeflectionCancelReason from './deflectionCancelReason.js';
+import DeflectionDetail from './deflectionDetail.js';
 import DeflectionExitDestination from './deflectionExitDestination.js';
 import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
 import DeflectionRefusalReason from './deflectionRefusalReason.js';
@@ -18,12 +19,6 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  releaseReasonId: z.string().nullable(),
-  refusalReasonId: z.string().nullable(),
-  exitDestinationId: z.string().nullable(),
-  exitHousingStatusId: z.string().nullable(),
-  exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
-  exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
 });
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
@@ -33,16 +28,19 @@ const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
   subjectId: z.string().uuid().nullable().optional(),
 });
 
-const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
+const DeflectionUpdateSchema = DeflectionAttributesSchema.extend({
+  deflectionDetails: z.array(z.string()).optional(),
+}).partial();
 
 const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.string().uuid(),
   facility: Facility.ResponseSchema.optional(),
   incident: Incident.ResponseSchema.optional(),
   bedType: BedType.ResponseSchema.optional(),
+  status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
-  status: z.enum(Object.values(HoldStatusEnum)),
+  deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
   extensionCount: z.number().int().min(0),
@@ -75,10 +73,16 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   rejectedBy: User.ResponseSchema.nullable().optional(),
   releasedById: z.string().uuid().nullable(),
   releasedBy: User.ResponseSchema.nullable().optional(),
+  releaseReasonId: z.string().nullable(),
   releaseReason: DeflectionReleaseReason.ResponseSchema.nullable().optional(),
+  refusalReasonId: z.string().nullable(),
   refusalReason: DeflectionRefusalReason.ResponseSchema.nullable().optional(),
+  exitDestinationId: z.string().nullable(),
   exitDestination: DeflectionExitDestination.ResponseSchema.nullable().optional(),
+  exitHousingStatusId: z.string().nullable(),
   exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
+  exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
+  exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),

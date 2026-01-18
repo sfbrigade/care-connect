@@ -65,6 +65,7 @@ export default async function (fastify, opts) {
         orderBy: { createdAt: 'desc' },
         include: {
           subject: true,
+          deflectionDetails: true,
         },
       };
 

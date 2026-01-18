@@ -37,9 +37,6 @@ function SubjectForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: values => ({
-      ...values,
-    }),
   });
 
   const { data: incident } = useQuery({
@@ -167,7 +164,7 @@ function SubjectForm () {
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
-              <Accordion defaultValue='address'>
+              <Accordion variant='section' defaultValue='address'>
                 <Divider />
                 <Accordion.Item value='address'>
                   <Accordion.Control>

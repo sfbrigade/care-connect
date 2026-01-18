@@ -308,6 +308,15 @@ const Api = {
         return instance.get('/api/deflections/cancel-reasons');
       },
     },
+    detailCategories: {
+      index ({ include } = {}) {
+        const params = {};
+        if (include) {
+          params.include = include;
+        }
+        return instance.get('/api/deflections/detail-categories', { params });
+      },
+    },
   },
   lesc: {
     availability () {

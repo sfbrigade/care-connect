@@ -25,6 +25,10 @@ export default async function (fastify, opts) {
 
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
+        include: {
+          subject: true,
+          deflectionDetails: true,
+        },
       });
 
       if (!deflection) {
@@ -48,6 +52,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
+              deflectionDetails: true,
             },
           });
         });

@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
-import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -35,37 +34,20 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
+      if (data.deflectionDetails) {
+        data.deflectionDetails = {
+          set: data.deflectionDetails.map((detailId) => ({ id: detailId })),
+        };
+      }
+
       const updated = await fastify.prisma.deflection.update({
         where: { id },
         data,
         include: {
-          facility: true,
-          incident: true,
-          bedType: true,
           subject: true,
-          cancelReason: true,
-          cancelledBy: true,
-          createdBy: true,
-          transferredBy: true,
-          transferredByOrganization: true,
-          transferredByUnit: true,
-          transferredByTitle: true,
-          admittedBy: true,
-          rejectedBy: true,
-          releasedBy: true,
-          releaseReason: true,
-          refusalReason: true,
-          exitDestination: true,
-          exitHousingStatus: true,
+          deflectionDetails: true,
         },
       });
-
-      if (updated.cancelledBy) updated.cancelledBy = new User(updated.cancelledBy);
-      if (updated.createdBy) updated.createdBy = new User(updated.createdBy);
-      if (updated.transferredBy) updated.transferredBy = new User(updated.transferredBy);
-      if (updated.admittedBy) updated.admittedBy = new User(updated.admittedBy);
-      if (updated.rejectedBy) updated.rejectedBy = new User(updated.rejectedBy);
-      if (updated.releasedBy) updated.releasedBy = new User(updated.releasedBy);
 
       return reply.send(updated);
     });

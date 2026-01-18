@@ -105,13 +105,27 @@ function Deflection () {
               <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject details</Button>
             </Group>
           </Stack>
-          <Accordion defaultValue={['deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='deflection'>
               <Accordion.Control>
                 <Title order={3}>Deflection details</Title>
               </Accordion.Control>
-              <Accordion.Panel />
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  <Box>
+                    <Text c='dimmed'>Selected observations</Text>
+                    <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                  </Box>
+                  <Box>
+                    <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                    <Text>{deflection?.behavior}</Text>
+                  </Box>
+                </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection details</Button>
+                </Group>
+              </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='property'>
               <Accordion.Control>

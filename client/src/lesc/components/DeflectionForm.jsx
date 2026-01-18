@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Box, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, Textarea, TextInput, Title } from '@mantine/core';
+import { Accordion, Anchor, Box, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/api';
@@ -13,6 +12,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 
 const initialValues = {
   behavior: '',
+  deflectionDetails: [],
 };
 
 function DeflectionForm () {
@@ -24,14 +24,6 @@ function DeflectionForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
 
-  const form = useForm({
-    mode: 'uncontrolled',
-    initialValues,
-    transformValues: values => ({
-      ...values,
-    }),
-  });
-
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
@@ -42,11 +34,38 @@ function DeflectionForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
+  const { data: deflectionDetailCategories } = useQuery({
+    queryKey: ['deflections', 'detail-categories'],
+    queryFn: () => Api.deflections.detailCategories.index({ include: 'deflectionDetails' }).then(response => response.data),
+  });
+
+  const [selectedDetails, setSelectedDetails] = useState([]);
+  const [detailCategoryCounts, setDetailCategoryCounts] = useState({});
+
+  const form = useForm({
+    mode: 'uncontrolled',
+    initialValues,
+    onValuesChange: (values) => {
+      const newSelectedDetails = [];
+      const newDetailCategoryCounts = {};
+      for (const detailId of values.deflectionDetails) {
+        const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
+        if (category) {
+          newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
+          newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
+        }
+      }
+      setSelectedDetails(newSelectedDetails);
+      setDetailCategoryCounts(newDetailCategoryCounts);
+    }
+  });
+
   useEffect(() => {
     if (!isLoading) {
       if (deflection) {
         form.setInitialValues({
           behavior: deflection.behavior,
+          deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
         });
         form.reset();
       }
@@ -83,10 +102,44 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection?.id?.substring(0, 3) ?? ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Deflection details</Title>
-        <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will beincluded in the legal forms.</Text>
+        <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will be included in the legal forms.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized} variant='unstyled'>
             <Stack gap='xl'>
+              <Chip.Group
+                key={form.key('deflectionDetails')}
+                {...form.getInputProps('deflectionDetails')}
+                multiple
+              >
+                <Accordion defaultValue=''>
+                  {deflectionDetailCategories?.map(category => (
+                    <Accordion.Item key={category.id} value={category.id}>
+                      <Accordion.Control><Text size='lg' fw={detailCategoryCounts[category.id] > 0 ? '600' : 'normal'}>{category.name}{detailCategoryCounts[category.id] > 0 && ` (${detailCategoryCounts[category.id]})`}</Text></Accordion.Control>
+                      <Accordion.Panel>
+                        <Group gap='xs'>
+                          {category.deflectionDetails?.map(detail => (
+                            <Chip
+                              key={detail.id}
+                              value={detail.id}
+                              size='lg'
+                            >
+                              {detail.name}
+                            </Chip>
+                          ))}
+                        </Group>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              </Chip.Group>
+              {selectedDetails.length > 0 && (
+                <Input.Wrapper label='Selected observations'>
+                  <Text>
+                    {selectedDetails.map(detail => detail.name).join('; ')}
+                  </Text>
+                  <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
+                </Input.Wrapper>
+              )}
               <Textarea
                 label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
