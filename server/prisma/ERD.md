@@ -368,6 +368,27 @@ EXITED EXITED
     }
   
 
+  "DeflectionDetailCategory" {
+    String id "🗝️"
+    String name 
+    String createdById 
+    DateTime createdAt 
+    String updatedById "❓"
+    DateTime updatedAt 
+    }
+  
+
+  "DeflectionDetail" {
+    String id "🗝️"
+    String deflectionDetailCategoryId 
+    String name 
+    String createdById 
+    DateTime createdAt 
+    String updatedById "❓"
+    DateTime updatedAt 
+    }
+  
+
   "DeflectionUpdate" {
     String id "🗝️"
     String deflectionId 
@@ -499,6 +520,10 @@ EXITED EXITED
     "User" o{--}o "BedTypeUpdate" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
+    "User" o{--}o "DeflectionDetailCategory" : ""
+    "User" o{--}o "DeflectionDetailCategory" : ""
+    "User" o{--}o "DeflectionDetail" : ""
+    "User" o{--}o "DeflectionDetail" : ""
     "User" o{--}o "DeflectionReleaseReason" : ""
     "User" o{--}o "DeflectionReleaseReason" : ""
     "User" o{--}o "DeflectionRefusalReason" : ""
@@ -593,7 +618,14 @@ EXITED EXITED
     "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "Deflection" o{--}o "DeflectionDetail" : ""
     "Deflection" o{--}o "DeflectionUpdate" : ""
+    "DeflectionDetailCategory" o|--|| "User" : "createdBy"
+    "DeflectionDetailCategory" o|--|o "User" : "updatedBy"
+    "DeflectionDetailCategory" o{--}o "DeflectionDetail" : ""
+    "DeflectionDetail" o|--|| "DeflectionDetailCategory" : "deflectionDetailCategory"
+    "DeflectionDetail" o|--|| "User" : "createdBy"
+    "DeflectionDetail" o|--|o "User" : "updatedBy"
     "DeflectionUpdate" o|--|| "Deflection" : "deflection"
     "DeflectionUpdate" o|--|o "HoldStatusEnum" : "enum:status"
     "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"

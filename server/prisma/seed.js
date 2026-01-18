@@ -9,6 +9,7 @@ import seedTitles from './seeds/titles.js';
 import seedUnits from './seeds/units.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
+import seedDeflectionDetails from './seeds/deflectionDetails.js';
 
 try {
   await seedUsers(prisma);
@@ -20,6 +21,7 @@ try {
   await seedUnits(prisma);
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
+  await seedDeflectionDetails(prisma);
 } catch (error) {
   console.error('Error seeding:', error);
   process.exit(1);
