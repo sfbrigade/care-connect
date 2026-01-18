@@ -195,9 +195,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('cancels the deflection', async () => {
-      const response = await app.inject().delete('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2').payload({
-        cancelReasonId: '5150'
-      }).headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2?cancelReasonId=5150').headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 

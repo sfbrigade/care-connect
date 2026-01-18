@@ -26,8 +26,10 @@ function Hold ({
   }
 
   const isNew = !deflection?.subjectId;
-  const isExpired = deflection.status === 'EXPIRED' || DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 0;
-  const isExpiringSoon = DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 10;
+  const isActive = deflection.status === 'ACTIVE';
+  const isCancelled = deflection.status === 'CANCELLED';
+  const isExpired = deflection.status === 'EXPIRED' || (isActive && DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 0);
+  const isExpiringSoon = isActive && DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 10;
   const isValid = !!deflection?.subject?.firstName &&
     !!deflection?.subject?.lastName &&
     !!deflection?.subject?.dateOfBirth &&
@@ -61,8 +63,11 @@ function Hold ({
           {isExpired && (
             <Title order={3} c='red.6'>Expired</Title>
           )}
-          {!isExpired && (
+          {isActive && !isExpired && (
             <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
+          )}
+          {isCancelled && (
+            <Title order={3} c='red.6'>Cancelled</Title>
           )}
           {isNew && !isExpired && (
             <Group gap='sm' wrap='nowrap'>

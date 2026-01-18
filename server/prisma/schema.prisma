@@ -409,12 +409,12 @@ model FacilityEligibility {
 
 model Subject {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName                    String
-  lastName                     String
+  firstName                    String?
+  lastName                     String?
   middleInitial                String?
-  dateOfBirth                  DateTime                @db.Date
-  sex                          SexEnum
-  race                         RaceEnum
+  dateOfBirth                  DateTime?               @db.Date
+  sex                          SexEnum?
+  race                         RaceEnum?
   driverLicense                String?
   addressLine1                 String?
   addressLine2                 String?

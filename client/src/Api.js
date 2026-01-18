@@ -297,8 +297,13 @@ const Api = {
     subject (id, data) {
       return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
     },
-    cancel (id, data) {
-      return instance.delete(`/api/deflections/${id}`, data).catch(handleError);
+    cancel (id, { cancelReasonId } = {}) {
+      return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
+    },
+    cancelReasons: {
+      index () {
+        return instance.get('/api/deflections/cancel-reasons');
+      },
     },
   },
   lesc: {

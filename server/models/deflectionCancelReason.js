@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import User from './user.js';
 
 const DeflectionCancelReasonAttributesSchema = z.object({
   name: z.string(),
@@ -13,7 +14,14 @@ const DeflectionCancelReasonCreateSchema = DeflectionCancelReasonAttributesSchem
 
 const DeflectionCancelReasonUpdateSchema = DeflectionCancelReasonAttributesSchema.partial();
 
-const DeflectionCancelReasonResponseSchema = DeflectionCancelReasonCreateSchema;
+const DeflectionCancelReasonResponseSchema = DeflectionCancelReasonCreateSchema.extend({
+  createdAt: z.coerce.date(),
+  createdById: z.string().uuid(),
+  createdBy: User.ResponseSchema.optional(),
+  updatedAt: z.coerce.date(),
+  updatedById: z.string().uuid(),
+  updatedBy: User.ResponseSchema.optional(),
+});
 
 export class DeflectionCancelReason extends Base {
   static CreateSchema = DeflectionCancelReasonCreateSchema;

@@ -308,12 +308,12 @@ EXITED EXITED
 
   "Subject" {
     String id "🗝️"
-    String firstName 
-    String lastName 
+    String firstName "❓"
+    String lastName "❓"
     String middleInitial "❓"
-    DateTime dateOfBirth 
-    SexEnum sex 
-    RaceEnum race 
+    DateTime dateOfBirth "❓"
+    SexEnum sex "❓"
+    RaceEnum race "❓"
     String driverLicense "❓"
     String addressLine1 "❓"
     String addressLine2 "❓"
@@ -592,8 +592,8 @@ EXITED EXITED
     "BedTypeUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
     "FacilityEligibility" o|--|| "FacilityEligibilityTypeEnum" : "enum:type"
-    "Subject" o|--|| "SexEnum" : "enum:sex"
-    "Subject" o|--|| "RaceEnum" : "enum:race"
+    "Subject" o|--|o "SexEnum" : "enum:sex"
+    "Subject" o|--|o "RaceEnum" : "enum:race"
     "Subject" o{--}o "Deflection" : ""
     "Deflection" o|--|| "Facility" : "facility"
     "Deflection" o|--|| "Incident" : "incident"

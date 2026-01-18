@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import CancelHoldModal from './CancelHoldModal';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { formatAddress, formatDateTime } from '@/utils/format';
@@ -16,6 +18,7 @@ function Deflection () {
   const { facility } = useFacilityContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -30,6 +33,26 @@ function Deflection () {
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const cancelDeflectionMutation = useMutation({
+    mutationFn: (data) => Api.deflections.cancel(id, data),
+    onSuccess: () => {
+      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      if (cachedDeflections) {
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], cachedDeflections.filter(deflection => deflection.id !== id));
+      }
+      setShowCancelModal(false);
+      navigate('/holds');
+    },
+  });
+
+  async function onCancelHoldConfirmed (cancelReasonId) {
+    await cancelDeflectionMutation.mutateAsync({
+      cancelReasonId,
+    });
+  }
 
   return (
     <>
@@ -132,10 +155,19 @@ function Deflection () {
             </Accordion.Item>
           </Accordion>
           <Group mb='xl'>
-            <Button variant='light' color='red.6'>Cancel hold</Button>
+            <Button onClick={() => setShowCancelModal(true)} variant='light' color='red.6'>Cancel hold</Button>
           </Group>
         </Stack>
       </Container>
+      {!!deflection && showCancelModal && (
+        <CancelHoldModal
+          deflection={deflection}
+          opened={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={onCancelHoldConfirmed}
+          loading={cancelDeflectionMutation.isPending}
+        />
+      )}
     </>
   );
 }

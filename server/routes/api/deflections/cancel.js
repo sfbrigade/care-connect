@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
-import User from '#models/user.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -13,7 +12,7 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.string().uuid(),
         }),
-        body: z.object({
+        querystring: z.object({
           cancelReasonId: z.string().optional(),
         }).nullable().optional(),
         response: {
@@ -25,7 +24,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const { cancelReasonId } = request.body || {};
+      const { cancelReasonId } = request.query || {};
 
       const deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -67,34 +66,10 @@ export default async function (fastify, opts) {
             updatedAt: update.updatedAt,
           },
           include: {
-            facility: true,
-            incident: true,
-            bedType: true,
             subject: true,
-            cancelReason: true,
-            cancelledBy: true,
-            createdBy: true,
-            transferredBy: true,
-            transferredByOrganization: true,
-            transferredByUnit: true,
-            transferredByTitle: true,
-            admittedBy: true,
-            rejectedBy: true,
-            releasedBy: true,
-            releaseReason: true,
-            refusalReason: true,
-            exitDestination: true,
-            exitHousingStatus: true,
           },
         });
       });
-
-      if (updated.cancelledBy) updated.cancelledBy = new User(updated.cancelledBy);
-      if (updated.createdBy) updated.createdBy = new User(updated.createdBy);
-      if (updated.transferredBy) updated.transferredBy = new User(updated.transferredBy);
-      if (updated.admittedBy) updated.admittedBy = new User(updated.admittedBy);
-      if (updated.rejectedBy) updated.rejectedBy = new User(updated.rejectedBy);
-      if (updated.releasedBy) updated.releasedBy = new User(updated.releasedBy);
 
       return reply.send(updated);
     });
