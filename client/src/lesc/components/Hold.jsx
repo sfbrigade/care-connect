@@ -2,7 +2,7 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 
-import { calculateAge, formatTimeRemaining } from '@/utils/dateTime';
+import { calculateAge, formatTimeRemaining } from '@/utils/format';
 
 function Hold ({
   deflection,

@@ -1,9 +1,12 @@
 import { DateTime } from 'luxon';
 
 /**
- * Date and time formatting utilities
- * Shared across LESC components for consistent time display
+ * Formatting utilities
  */
+
+export function formatAddress ({ addressLine1, addressLine2, city, state, postalCode }) {
+  return `${addressLine1}${addressLine2 ? `, ${addressLine2}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${postalCode ? ` ${postalCode}` : ''}`;
+}
 
 /**
  * Convert date to DateTime object

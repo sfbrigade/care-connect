@@ -1,6 +1,6 @@
 import { Box, Group, Text } from '@mantine/core';
 import { IconPencilMinus } from '@tabler/icons-react';
-import { formatTime } from '@/utils/dateTime';
+import { formatTime } from '@/utils/format';
 
 import IconButtonLink from '@/components/IconButtonLink';
 

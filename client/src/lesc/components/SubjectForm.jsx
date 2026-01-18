@@ -57,7 +57,7 @@ function SubjectForm () {
       if (deflection.subject) {
         form.setInitialValues({
           ...deflection.subject,
-          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth).toISODate() : '',
+          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toISODate() : '',
         });
         form.reset();
       }
@@ -100,21 +100,25 @@ function SubjectForm () {
           <Fieldset disabled={!isInitialized} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
+                key={form.key('firstName')}
                 label={<>First name<span>*</span></>}
                 placeholder='Enter first name'
                 {...form.getInputProps('firstName')}
               />
               <TextInput
+                key={form.key('lastName')}
                 label={<>Last name<span>*</span></>}
                 placeholder='Enter last name'
                 {...form.getInputProps('lastName')}
               />
               <TextInput
+                key={form.key('middleInitial')}
                 label='Middle initial'
                 placeholder='Optional'
                 {...form.getInputProps('middleInitial')}
               />
               <TextInput
+                key={form.key('dateOfBirth')}
                 label={<>Date of birth<span>*</span></>}
                 type='date'
                 {...form.getInputProps('dateOfBirth')}
@@ -123,6 +127,7 @@ function SubjectForm () {
                 label={<>Sex<span>*</span></>}
               >
                 <Chip.Group
+                  key={form.key('sex')}
                   {...form.getInputProps('sex')}
                 >
                   <Group gap='sm' mt='md'>
@@ -137,6 +142,7 @@ function SubjectForm () {
                 label={<>Race<span>*</span></>}
               >
                 <Chip.Group
+                  key={form.key('race')}
                   {...form.getInputProps('race')}
                 >
                   <Group gap='sm' mt='md'>
@@ -150,11 +156,13 @@ function SubjectForm () {
                 </Chip.Group>
               </Input.Wrapper>
               <TextInput
+                key={form.key('driverLicense')}
                 label="Driver's license number"
                 placeholder='Optional'
                 {...form.getInputProps('driverLicense')}
               />
               <TextInput
+                key={form.key('localId')}
                 label='SF ID (if available)'
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
@@ -169,26 +177,31 @@ function SubjectForm () {
                   <Accordion.Panel>
                     <Stack gap='xl'>
                       <TextInput
+                        key={form.key('addressLine1')}
                         label='Street address'
                         placeholder='Enter street address'
                         {...form.getInputProps('addressLine1')}
                       />
                       <TextInput
+                        key={form.key('addressLine2')}
                         label='Street address (line 2)'
                         placeholder='Optional'
                         {...form.getInputProps('addressLine2')}
                       />
                       <TextInput
+                        key={form.key('city')}
                         label='City'
                         placeholder='Enter city'
                         {...form.getInputProps('city')}
                       />
                       <TextInput
+                        key={form.key('state')}
                         label='State'
                         placeholder='Optional'
                         {...form.getInputProps('state')}
                       />
                       <TextInput
+                        key={form.key('postalCode')}
                         label='ZIP code'
                         placeholder='Enter ZIP code'
                         {...form.getInputProps('postalCode')}

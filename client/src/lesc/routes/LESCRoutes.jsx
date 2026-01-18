@@ -5,11 +5,13 @@ import CheckIn from '../components/CheckIn';
 import ClientView from '../components/ClientView';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
+import Deflection from '../components/Deflection';
 
 function LESCRoutes () {
   return (
     <Routes>
       <Route path='holds/:id/subject' element={<SubjectForm />} />
+      <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
       <Route path='checkin/:holdId' element={<CheckIn />} />
       <Route path='checkin' element={<CheckIn />} />

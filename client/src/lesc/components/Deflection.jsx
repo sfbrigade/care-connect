@@ -1,0 +1,143 @@
+import { useParams, useNavigate } from 'react-router';
+import { Head } from '@unhead/react';
+import { Accordion, Box, Button, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { DateTime } from 'luxon';
+import { useTranslation } from 'react-i18next';
+
+import Api from '@/Api';
+import { useFacilityContext } from '@/FacilityContext';
+import IconButtonLink from '@/components/IconButtonLink';
+import { formatAddress, formatDateTime } from '@/utils/format';
+
+function Deflection () {
+  const { id } = useParams();
+  const { facility } = useFacilityContext();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const { data: incident } = useQuery({
+    queryKey: ['facilities', facility.id, 'active-incident'],
+    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+  });
+
+  const { data: deflection } = useQuery({
+    queryKey: ['deflections', id],
+    queryFn: () => Api.deflections.get(id).then(response => response.data),
+  });
+
+  const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
+  const address = formatAddress(deflection?.subject ?? {});
+  const incidentAddress = formatAddress(incident ?? {});
+
+  return (
+    <>
+      <Head>
+        <title>Details</title>
+      </Head>
+      <Container>
+        <Stack gap='xl'>
+          <Box>
+            <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          </Box>
+          <Group gap='xs'>
+            <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
+            <Text c='gray.5' size='md'>•</Text>
+            <Text size='md' c='dimmed'>Hold {deflection?.id?.substring(0, 3) ?? ''}</Text>
+          </Group>
+          <Stack gap='sm'>
+            <Title order={2}>{name}</Title>
+            {deflection?.subject?.dateOfBirth && (
+              <Box>
+                <Text c='dimmed'>Date of birth</Text>
+                <Text>{DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toLocaleString(DateTime.DATE_SHORT)}</Text>
+              </Box>
+            )}
+            {deflection?.subject?.sex && (
+              <Box>
+                <Text c='dimmed'>Sex</Text>
+                <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
+              </Box>
+            )}
+            {deflection?.subject?.race && (
+              <Box>
+                <Text c='dimmed'>Race</Text>
+                <Text>{t(`race.${deflection.subject.race}`)}</Text>
+              </Box>
+            )}
+            {deflection?.subject?.driverLicense && (
+              <Box>
+                <Text c='dimmed'>Driver's license number</Text>
+                <Text>{deflection.subject.driverLicense}</Text>
+              </Box>
+            )}
+            {address && (
+              <Box>
+                <Text c='dimmed'>Address</Text>
+                <Text>{address}</Text>
+              </Box>
+            )}
+            <Group mt='md'>
+              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject details</Button>
+            </Group>
+          </Stack>
+          <Accordion defaultValue={['deflection', 'property', 'incident']}>
+            <Divider />
+            <Accordion.Item value='deflection'>
+              <Accordion.Control>
+                <Title order={3}>Deflection details</Title>
+              </Accordion.Control>
+              <Accordion.Panel />
+            </Accordion.Item>
+            <Accordion.Item value='property'>
+              <Accordion.Control>
+                <Title order={3}>Property details</Title>
+              </Accordion.Control>
+              <Accordion.Panel />
+            </Accordion.Item>
+            <Accordion.Item value='incident'>
+              <Accordion.Control>
+                <Title order={3}>Incident details</Title>
+                <Text c='gray.5' size='sm'>These details apply to all holds in this incident.</Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {incidentAddress && (
+                    <Box>
+                      <Text c='dimmed'>Arrest location</Text>
+                      <Text>{incidentAddress}</Text>
+                    </Box>
+                  )}
+                  {incident?.arrestedAt && (
+                    <Box>
+                      <Text c='dimmed'>Arrest date & time</Text>
+                      <Text>{formatDateTime(incident.arrestedAt)}</Text>
+                    </Box>
+                  )}
+                  {incident?.cadNumber && (
+                    <Box>
+                      <Text c='dimmed'>CAD number</Text>
+                      <Text>{incident?.cadNumber}</Text>
+                    </Box>
+                  )}
+                  {incident?.supervisorBadgeNumber && (
+                    <Box>
+                      <Text c='dimmed'>Supervising Sergeant's Star Number</Text>
+                      <Text>{incident?.supervisorBadgeNumber}</Text>
+                    </Box>
+                  )}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+          <Group mb='xl'>
+            <Button variant='light' color='red.6'>Cancel hold</Button>
+          </Group>
+        </Stack>
+      </Container>
+    </>
+  );
+}
+
+export default Deflection;

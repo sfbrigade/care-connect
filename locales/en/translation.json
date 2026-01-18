@@ -10,6 +10,14 @@
       "CLOSED": "Closed - not accepting"
     }
   },
+  "race": {
+    "WHITE": "White",
+    "BLACK": "Black",
+    "ASIAN": "Asian",
+    "HISPANIC": "Hispanic or Latin",
+    "OTHER": "Other",
+    "UNKNOWN": "Unknown"
+  },
   "sex": {
     "MALE": "Male",
     "FEMALE": "Female",

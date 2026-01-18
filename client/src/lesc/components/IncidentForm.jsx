@@ -10,6 +10,7 @@ import { DateTime } from 'luxon';
 import Api from '@/Api';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
+import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
 
 const initialValues = {
@@ -82,10 +83,6 @@ function IncidentForm () {
     }
   }, [isLoading, data]);
 
-  function formatAddress () {
-    return `${form.values.addressLine1}${form.values.addressLine2 ? `, ${form.values.addressLine2}` : ''}${form.values.city ? `, ${form.values.city}` : ''}${form.values.state ? `, ${form.values.state}` : ''}${form.values.postalCode ? ` ${form.values.postalCode}` : ''}`;
-  }
-
   const onSubmitMutation = useMutation({
     mutationFn: (data) => data.id ? Api.incidents.update(data.id, data) : Api.incidents.create(data, { bedTypeId: searchParams.get('bedTypeId') }),
     onSuccess: async (response) => {
@@ -115,7 +112,7 @@ function IncidentForm () {
                 <TextInput
                   label='Arrest location'
                   rightSection={!isInitialized ? <Loader size={24} /> : <IconCurrentLocationFilled size={24} />}
-                  value={formatAddress()}
+                  value={formatAddress(form.getValues())}
                   readOnly
                   onFocus={() => { setShowAddressForm(true); setTimeout(() => addressRef.current?.focus(), 100); }}
                 />
