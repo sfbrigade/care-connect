@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 
 const initialValues = {
@@ -92,11 +93,13 @@ function DeflectionForm () {
       <Head>
         <title>Deflection details</title>
       </Head>
-      <Container>
-        <Group mb='xl' justify='space-between'>
+      <Header>
+        <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
           {isNew && <Text c='dimmed' size='lg'>Step 2 of 3</Text>}
         </Group>
+      </Header>
+      <Container>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
@@ -117,7 +120,7 @@ function DeflectionForm () {
                     <Accordion.Item key={category.id} value={category.id}>
                       <Accordion.Control><Text size='lg' fw={detailCategoryCounts[category.id] > 0 ? '600' : 'normal'}>{category.name}{detailCategoryCounts[category.id] > 0 && ` (${detailCategoryCounts[category.id]})`}</Text></Accordion.Control>
                       <Accordion.Panel>
-                        <Group gap='xs'>
+                        <Group gap='sm'>
                           {category.deflectionDetails?.map(detail => (
                             <Chip
                               key={detail.id}

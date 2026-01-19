@@ -40,9 +40,9 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
               onRemoved={onRemoved}
               onUploaded={onUploaded}
             >
-              {({ statuses, onRemove }) => {
-                if (statuses.length > 0) {
-                  return statuses.map((s) => (
+              {({ statuses, onRemove }) => (
+                <Box>
+                  {statuses.length > 0 && statuses.map((s) => (
                     <Box
                       key={s.id}
                       className={classNames(classes.preview, {
@@ -53,18 +53,18 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
                       <CloseButton onClick={() => onRemove(s)} className={classes.remove} />
                       <Loader className={classes.spinner} />
                     </Box>
-                  ));
-                } else if (statuses.length === 0 && _value) {
-                  return (
+                  ))}
+                  {statuses.length === 0 && !!_value && (
                     <Box className={classes.preview}>
                       <Image src={valueUrl} alt='' />
                       <CloseButton className={classes.remove} onClick={onRemoved} />
                     </Box>
-                  );
-                } else if (statuses.length === 0 && !_value) {
-                  return children || <Text className='clickable' inherit={false} fz='sm' my='sm'>Drag-and-drop a photo file here, or click here to browse and select a file.</Text>;
-                }
-              }}
+                  )}
+                  {statuses.length === 0 && !_value && (
+                    children || <Text className='clickable' inherit={false} fz='sm' my='sm'>Drag-and-drop a photo file here, or click here to browse and select a file.</Text>
+                  )}
+                </Box>
+              )}
             </DropzoneUploader>
           </Box>
         )}

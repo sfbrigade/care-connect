@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
+import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
 
@@ -84,11 +85,13 @@ function SubjectForm () {
       <Head>
         <title>Subject details</title>
       </Head>
-      <Container>
-        <Group mb='xl' justify='space-between'>
+      <Header>
+        <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
           {isNew && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
         </Group>
+      </Header>
+      <Container>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>

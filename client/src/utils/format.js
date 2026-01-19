@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
  */
 
 export function formatAddress ({ addressLine1, addressLine2, city, state, postalCode }) {
-  return `${addressLine1}${addressLine2 ? `, ${addressLine2}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${postalCode ? ` ${postalCode}` : ''}`;
+  return `${addressLine1 ?? ''}${addressLine2 ? `, ${addressLine2}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${postalCode ? ` ${postalCode}` : ''}`;
 }
 
 /**

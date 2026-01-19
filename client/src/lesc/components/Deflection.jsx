@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
+import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { formatAddress, formatDateTime } from '@/utils/format';
@@ -59,11 +60,11 @@ function Deflection () {
       <Head>
         <title>Details</title>
       </Head>
+      <Header>
+        <IconButtonLink icon={IconArrowLeft} to='/holds' />
+      </Header>
       <Container>
         <Stack gap='xl'>
-          <Box>
-            <IconButtonLink icon={IconArrowLeft} to='/holds' />
-          </Box>
           <Group gap='xs'>
             <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
             <Text c='gray.5' size='md'>•</Text>
@@ -113,14 +114,18 @@ function Deflection () {
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  <Box>
-                    <Text c='dimmed'>Selected observations</Text>
-                    <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                  </Box>
-                  <Box>
-                    <Text c='dimmed'>Narrative (arrestable behavior)</Text>
-                    <Text>{deflection?.behavior}</Text>
-                  </Box>
+                  {!!deflection?.deflectionDetails?.length && (
+                    <Box>
+                      <Text c='dimmed'>Selected observations</Text>
+                      <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                    </Box>
+                  )}
+                  {!!deflection?.behavior && (
+                    <Box>
+                      <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                      <Text>{deflection?.behavior}</Text>
+                    </Box>
+                  )}
                 </Stack>
                 <Group mt='md'>
                   <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection</Button>
@@ -146,14 +151,18 @@ function Deflection () {
                       ))}
                     </Group>
                   )}
-                  <Box>
-                    <Text c='dimmed'>Volume of property</Text>
-                    <Text>{t(`property.${deflection?.property}`)}</Text>
-                  </Box>
-                  <Box>
-                    <Text c='dimmed'>Description</Text>
-                    <Text>{deflection?.propertyDetails}</Text>
-                  </Box>
+                  {!!deflection?.property && (
+                    <Box>
+                      <Text c='dimmed'>Volume of property</Text>
+                      <Text>{t(`property.${deflection?.property}`)}</Text>
+                    </Box>
+                  )}
+                  {!!deflection?.propertyDetails && (
+                    <Box>
+                      <Text c='dimmed'>Description</Text>
+                      <Text>{deflection?.propertyDetails}</Text>
+                    </Box>
+                  )}
                 </Stack>
                 <Group mt='md'>
                   <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>Edit property</Button>

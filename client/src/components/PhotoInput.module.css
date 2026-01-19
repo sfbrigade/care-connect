@@ -2,6 +2,10 @@
   margin: 1rem;
   max-width: 160px;
   position: relative;
+
+  &:first-child {
+    margin-left: 0;
+  }
 }
 
 .remove {

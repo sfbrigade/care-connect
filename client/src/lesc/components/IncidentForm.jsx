@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
+import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
@@ -99,10 +100,12 @@ function IncidentForm () {
       <Head>
         <title>Incident Details</title>
       </Head>
-      <Container>
-        <Box mb='xl'>
+      <Header>
+        <Group>
           <IconButtonLink icon={IconArrowLeft} to='/holds' />
-        </Box>
+        </Group>
+      </Header>
+      <Container>
         <Text c='dimmed' size='xl'>Start an incident</Text>
         <Title order={3} mb='xl'>Enter these details once. We’ll reuse them for all holds in this incident.</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>

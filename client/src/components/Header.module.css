@@ -1,0 +1,15 @@
+.header {
+  position: fixed;
+  background-color: var(--mantine-color-gray-0);
+  top: 0;
+  height: 80px;
+  width: 100%;
+  z-index: 100;
+}
+
+.headerContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 80px;
+}

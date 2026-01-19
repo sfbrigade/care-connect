@@ -2,6 +2,10 @@
   .control {
     padding: 0.1875rem var(--mantine-spacing-md) 0.1875rem 0;
   }
+
+  .content {
+    padding-inline: 0;
+  }
 }
 
 [data-variant=section] {

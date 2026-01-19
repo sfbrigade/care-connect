@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
 
@@ -93,11 +94,13 @@ function PropertyForm () {
       <Head>
         <title>Personal property</title>
       </Head>
-      <Container>
-        <Group mb='xl' justify='space-between'>
+      <Header>
+        <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
           {isNew && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
         </Group>
+      </Header>
+      <Container>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>

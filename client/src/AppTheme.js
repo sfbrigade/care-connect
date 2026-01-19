@@ -1,6 +1,6 @@
 import { createTheme, Accordion, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
-import accordionClasses from './components/Accordian.module.css';
+import accordionClasses from './components/Accordion.module.css';
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
