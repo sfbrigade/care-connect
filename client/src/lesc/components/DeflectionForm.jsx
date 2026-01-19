@@ -7,7 +7,7 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useFacilityContext } from '@/FacilityContext';
-import Api from '@/api';
+import Api from '@/Api';
 import IconButtonLink from '@/components/IconButtonLink';
 
 const initialValues = {
@@ -15,7 +15,7 @@ const initialValues = {
   deflectionDetails: [],
 };
 
-function DeflectionForm () {
+function DeflectionForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
