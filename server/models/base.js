@@ -106,7 +106,10 @@ class Base {
       return;
     }
     this[attribute] = newValue;
-    return async (callback) => {
+    return async ({ id, callback }) => {
+      if (id) {
+        this.id = id;
+      }
       const assetDirPath = this.getAssetDirPath(attribute);
       let prevPath;
       let newPath;

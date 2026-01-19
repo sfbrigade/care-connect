@@ -317,6 +317,11 @@ const Api = {
         return instance.get('/api/deflections/detail-categories', { params });
       },
     },
+    propertyPhotos: {
+      create (deflectionId, data) {
+        return instance.post(`/api/deflections/${deflectionId}/property-photos`, data).catch(handleError);
+      },
+    },
   },
   lesc: {
     availability () {

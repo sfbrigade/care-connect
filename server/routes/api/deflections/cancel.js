@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import PropertyPhoto from '#models/propertyPhoto.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -72,6 +73,8 @@ export default async function (fastify, opts) {
           },
         });
       });
+
+      deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
       return reply.send(updated);
     });

@@ -1,10 +1,11 @@
 .preview {
   margin: 1rem;
-  max-width: 300px;
+  max-width: 160px;
   position: relative;
 }
 
 .remove {
+  display: none;
   background-color: var(--mantine-color-gray-2);
   border-radius: 50%;
   position: absolute;

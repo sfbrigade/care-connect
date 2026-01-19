@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
-import { Accordion, Box, Button, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -133,6 +133,19 @@ function Deflection () {
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
+                  {!!deflection?.propertyPhotos?.length && (
+                    <Group gap='sm'>
+                      {deflection?.propertyPhotos?.map(photo => (
+                        <Image
+                          key={photo.id}
+                          src={photo.fileUrl}
+                          w={160}
+                          h='auto'
+                          fit='contain'
+                        />
+                      ))}
+                    </Group>
+                  )}
                   <Box>
                     <Text c='dimmed'>Volume of property</Text>
                     <Text>{t(`property.${deflection?.property}`)}</Text>

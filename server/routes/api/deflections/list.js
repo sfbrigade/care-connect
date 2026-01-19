@@ -2,6 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import PropertyPhoto from '#models/propertyPhoto.js';
+
 import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
@@ -71,6 +73,9 @@ export default async function (fastify, opts) {
       };
 
       const { records, total } = await fastify.prisma.deflection.paginate(options);
+      records.forEach(record => {
+        record.propertyPhotos = record.propertyPhotos.map(photo => new PropertyPhoto(photo));
+      });
       return reply.setPaginationHeaders(page, perPage, total).send(records);
     });
 }

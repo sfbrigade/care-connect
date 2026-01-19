@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/api';
 import IconButtonLink from '@/components/IconButtonLink';
+import PhotoInput from '@/components/PhotoInput';
 
 const initialValues = {
   property: '',
@@ -68,6 +69,25 @@ function PropertyForm () {
     },
   });
 
+  const uploadPhotoMutation = useMutation({
+    mutationFn: (data) => Api.deflections.propertyPhotos.create(id, data),
+    onSuccess: async (response) => {
+      await queryClient.setQueryData(['deflections', id], response.data);
+      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      if (cachedDeflections) {
+        const updatedDeflections = [...cachedDeflections];
+        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+      }
+    },
+  });
+
+  function onUploadPhoto (file) {
+    if (file) {
+      uploadPhotoMutation.mutate({ file });
+    }
+  }
+
   return (
     <>
       <Head>
@@ -104,6 +124,14 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
+              <PhotoInput
+                label='Photo'
+                id='file'
+                name='file'
+                onChange={onUploadPhoto}
+              >
+                <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
+              </PhotoInput>
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}
