@@ -17,7 +17,7 @@ const initialValues = {
   propertyDetails: '',
 };
 
-function PropertyForm() {
+function PropertyForm () {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -82,7 +82,7 @@ function PropertyForm() {
     },
   });
 
-  function onUploadPhoto(file) {
+  function onUploadPhoto (file) {
     if (file) {
       uploadPhotoMutation.mutate({ file });
     }

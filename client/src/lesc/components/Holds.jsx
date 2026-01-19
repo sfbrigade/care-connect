@@ -97,7 +97,7 @@ function Holds () {
         <Stack gap='xl'>
           <Facility
             facility={facility}
-            bedTypes={bedTypes}
+            bedTypes={bedTypes ?? facility.bedTypes}
             onHoldClick={() => onHoldClick()}
           />
           <SegmentedControl
