@@ -8,7 +8,11 @@ const PropertyPhotoAttributesSchema = z.object({
   file: z.string().nullable()
 });
 
-const PropertyPhotoResponseSchema = PropertyPhotoAttributesSchema.extend({
+const PropertyPhotoCreateSchema = PropertyPhotoAttributesSchema.extend({
+  deflectionId: z.string().uuid(),
+});
+
+const PropertyPhotoResponseSchema = PropertyPhotoCreateSchema.extend({
   id: z.string().uuid(),
   fileUrl: z.string().nullable(),
   createdAt: z.coerce.date(),
@@ -20,8 +24,7 @@ const PropertyPhotoResponseSchema = PropertyPhotoAttributesSchema.extend({
 });
 
 export class PropertyPhoto extends Base {
-  static CreateSchema = PropertyPhotoAttributesSchema;
-  static UpdateSchema = PropertyPhotoAttributesSchema;
+  static CreateSchema = PropertyPhotoCreateSchema;
   static ResponseSchema = PropertyPhotoResponseSchema;
 
   constructor (data) {

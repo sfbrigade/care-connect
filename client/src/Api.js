@@ -317,11 +317,6 @@ const Api = {
         return instance.get('/api/deflections/detail-categories', { params });
       },
     },
-    propertyPhotos: {
-      create (deflectionId, data) {
-        return instance.post(`/api/deflections/${deflectionId}/property-photos`, data).catch(handleError);
-      },
-    },
   },
   lesc: {
     availability () {
@@ -450,6 +445,14 @@ const Api = {
       },
     },
   },
+  propertyPhotos: {
+    create (data) {
+      return instance.post('/api/property-photos', data).catch(handleError);
+    },
+    delete (id) {
+      return instance.delete(`/api/property-photos/${id}`).catch(handleError);
+    },
+  }
 };
 
 export default Api;

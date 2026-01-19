@@ -71,21 +71,45 @@ function PropertyForm () {
   });
 
   const uploadPhotoMutation = useMutation({
-    mutationFn: (data) => Api.deflections.propertyPhotos.create(id, data),
+    mutationFn: (file) => Api.propertyPhotos.create({ deflectionId: id, file }),
     onSuccess: async (response) => {
-      await queryClient.setQueryData(['deflections', id], response.data);
+      const cachedDeflection = queryClient.getQueryData(['deflections', id]);
+      if (cachedDeflection) {
+        cachedDeflection.propertyPhotos = [...(cachedDeflection.propertyPhotos ?? []), response.data];
+        queryClient.setQueryData(['deflections', id], cachedDeflection);
+      }
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
         const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
+        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = cachedDeflection;
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
       }
     },
   });
 
-  function onUploadPhoto (file) {
-    if (file) {
-      uploadPhotoMutation.mutate({ file });
+  const deletePhotoMutation = useMutation({
+    mutationFn: (propertyPhotoId) => Api.propertyPhotos.delete(propertyPhotoId),
+    onSuccess: async (response, propertyPhotoId) => {
+      const cachedDeflection = queryClient.getQueryData(['deflections', id]);
+      if (cachedDeflection) {
+        cachedDeflection.propertyPhotos = cachedDeflection.propertyPhotos.filter(propertyPhoto => propertyPhoto.id !== propertyPhotoId);
+        queryClient.setQueryData(['deflections', id], cachedDeflection);
+      }
+      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      if (cachedDeflections) {
+        const updatedDeflections = [...cachedDeflections];
+        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = cachedDeflection;
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+      }
+    },
+  });
+
+  function onChangePhoto (photoId, file) {
+    if (!photoId && file) {
+      uploadPhotoMutation.mutate(file);
+    }
+    if (photoId && !file) {
+      deletePhotoMutation.mutate(photoId);
     }
   }
 
@@ -127,14 +151,33 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
-              <PhotoInput
-                label='Photo'
-                id='file'
-                name='file'
-                onChange={onUploadPhoto}
-              >
-                <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
-              </PhotoInput>
+              {!!deflection?.propertyPhotos?.length && (
+                <Group gap='xs'>
+                  {deflection.propertyPhotos.map(photo => (
+                    <PhotoInput
+                      key={photo.id}
+                      label='Photo'
+                      id='file'
+                      name='file'
+                      value={photo.file}
+                      valueUrl={photo.fileUrl}
+                      onChange={(file) => onChangePhoto(photo.id, file)}
+                    >
+                      <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
+                    </PhotoInput>
+                  ))}
+                </Group>
+              )}
+              {!deflection?.propertyPhotos?.length && (
+                <PhotoInput
+                  label='Photo'
+                  id='file'
+                  name='file'
+                  onChange={(file) => onChangePhoto(null, file)}
+                >
+                  <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
+                </PhotoInput>
+              )}
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}

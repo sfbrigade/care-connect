@@ -106,7 +106,7 @@ class Base {
       return;
     }
     this[attribute] = newValue;
-    return async ({ id, callback }) => {
+    return async ({ id, callback } = {}) => {
       if (id) {
         this.id = id;
       }

@@ -1,7 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { z } from 'zod';
 
-import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
 export default async function (fastify, opts) {
@@ -10,20 +8,17 @@ export default async function (fastify, opts) {
       onRequest: fastify.requireUser,
       schema: {
         description: 'Add a new property photo to a deflection.',
-        params: z.object({
-          deflectionId: z.string().uuid(),
-        }),
         body: PropertyPhoto.CreateSchema,
         response: {
-          [StatusCodes.CREATED]: Deflection.ResponseSchema,
+          [StatusCodes.CREATED]: PropertyPhoto.ResponseSchema,
         },
       },
     },
     async function (request, reply) {
-      const { deflectionId } = request.params;
+      const { deflectionId } = request.body;
 
       // Verify deflection exists and user has access
-      let deflection = await fastify.prisma.deflection.findUnique({
+      const deflection = await fastify.prisma.deflection.findUnique({
         where: { id: deflectionId },
       });
 
@@ -49,18 +44,8 @@ export default async function (fastify, opts) {
           data,
         });
         await fileHandler?.({ id: data.id });
-        deflection = await tx.deflection.findUnique({
-          where: { id: deflectionId },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
-        });
       });
 
-      deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
-
-      return reply.code(StatusCodes.CREATED).send(deflection);
+      return reply.code(StatusCodes.CREATED).send(new PropertyPhoto(data));
     });
 }

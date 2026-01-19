@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box, CloseButton, Image, Input, Loader, Text } from '@mantine/core';
+import { Box, Button, CloseButton, Image, Input, Loader, Text } from '@mantine/core';
 import { useUncontrolled } from '@mantine/hooks';
 import classNames from 'classnames';
 
@@ -58,6 +58,7 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
                     <Box className={classes.preview}>
                       <Image src={valueUrl} alt='' />
                       <CloseButton className={classes.remove} onClick={onRemoved} />
+                      <Button onClick={onRemoved} variant='secondary' size='md' mt='md'>Change photo</Button>
                     </Box>
                   )}
                   {statuses.length === 0 && !_value && (
