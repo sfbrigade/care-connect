@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Box, Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -74,9 +74,10 @@ function PropertyForm () {
         <title>Personal property</title>
       </Head>
       <Container>
-        <Box mb='xl'>
+        <Group mb='xl' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-        </Box>
+          {isNew && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
+        </Group>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
@@ -110,7 +111,7 @@ function PropertyForm () {
                 placeholder='E.g., black backpack with clothing and toiletries.'
               />
               <Button type='submit' mb='xl'>
-                Save property details
+                {isNew ? 'Save details' : 'Save property'}
               </Button>
             </Stack>
           </Fieldset>

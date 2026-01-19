@@ -20,7 +20,7 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  property: z.enum(Object.values(PropertyEnum)).optional(),
+  property: z.enum(Object.values(PropertyEnum)).nullable().optional(),
   propertyDetails: z.string().nullable().optional(),
   deflectionDetails: z.array(z.string()).optional(),
 });

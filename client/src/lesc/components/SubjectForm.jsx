@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Box, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -30,6 +30,7 @@ const initialValues = {
 function SubjectForm () {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
@@ -49,6 +50,8 @@ function SubjectForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
+  const isNew = searchParams.get('isNew') === 'true' || !deflection?.subjectId;
+
   useEffect(() => {
     if (!isLoading) {
       if (deflection.subject) {
@@ -65,7 +68,6 @@ function SubjectForm () {
   const onSubmitMutation = useMutation({
     mutationFn: (data) => Api.deflections.subject(id, data),
     onSuccess: async (response) => {
-      const isNew = !deflection.subjectId;
       await queryClient.setQueryData(['deflections', id], response.data);
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
@@ -83,9 +85,10 @@ function SubjectForm () {
         <title>Subject details</title>
       </Head>
       <Container>
-        <Box mb='xl'>
-          <IconButtonLink icon={IconArrowLeft} to={deflection?.subjectId ? `/holds/${id}` : '/holds'} />
-        </Box>
+        <Group mb='xl' justify='space-between'>
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
+          {isNew && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+        </Group>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
@@ -208,7 +211,7 @@ function SubjectForm () {
                 </Accordion.Item>
               </Accordion>
               <Button type='submit'>
-                {deflection?.subjectId ? 'Save subject details' : 'Next: deflection details'}
+                {isNew ? 'Next: deflection details' : 'Save subject details'}
               </Button>
             </Stack>
           </Fieldset>

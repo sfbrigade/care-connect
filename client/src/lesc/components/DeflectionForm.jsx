@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Anchor, Box, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Anchor, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -93,9 +93,10 @@ function DeflectionForm () {
         <title>Deflection details</title>
       </Head>
       <Container>
-        <Box mb='xl'>
+        <Group mb='xl' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
-        </Box>
+          {isNew && <Text c='dimmed' size='lg'>Step 2 of 3</Text>}
+        </Group>
         <Group gap='xs' mb='xs'>
           <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
