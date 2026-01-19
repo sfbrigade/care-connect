@@ -102,7 +102,7 @@ function Deflection () {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject details</Button>
+              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject</Button>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['deflection', 'property', 'incident']}>
@@ -123,7 +123,7 @@ function Deflection () {
                   </Box>
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection details</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -131,7 +131,21 @@ function Deflection () {
               <Accordion.Control>
                 <Title order={3}>Property details</Title>
               </Accordion.Control>
-              <Accordion.Panel />
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  <Box>
+                    <Text c='dimmed'>Volume of property</Text>
+                    <Text>{t(`property.${deflection?.property}`)}</Text>
+                  </Box>
+                  <Box>
+                    <Text c='dimmed'>Description</Text>
+                    <Text>{deflection?.propertyDetails}</Text>
+                  </Box>
+                </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>Edit property</Button>
+                </Group>
+              </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='incident'>
               <Accordion.Control>

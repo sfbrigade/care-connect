@@ -10,6 +10,12 @@
       "CLOSED": "Closed - not accepting"
     }
   },
+  "property": {
+    "NONE": "No personal property",
+    "SMALL": "Small amount (one small bag)",
+    "MEDIUM": "Medium (1-2 standard bags)",
+    "LARGE": "Large (more than 2 bags)"
+  },
   "race": {
     "WHITE": "White",
     "BLACK": "Black",

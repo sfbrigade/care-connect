@@ -7,11 +7,13 @@ import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
 import DeflectionForm from '../components/DeflectionForm';
+import PropertyForm from '../components/PropertyForm';
 
 function LESCRoutes () {
   return (
     <Routes>
       <Route path='holds/:id/deflection' element={<DeflectionForm />} />
+      <Route path='holds/:id/property' element={<PropertyForm />} />
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />

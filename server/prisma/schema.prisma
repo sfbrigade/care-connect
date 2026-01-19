@@ -77,11 +77,11 @@ enum HoldStatusEnum {
   COMPLETED
 }
 
-enum SexEnum {
-  MALE
-  FEMALE
-  OTHER
-  UNKNOWN  
+enum PropertyEnum {
+  NONE
+  SMALL
+  MEDIUM
+  LARGE
 }
 
 enum RaceEnum {
@@ -89,6 +89,13 @@ enum RaceEnum {
   BLACK
   HISPANIC
   ASIAN
+  OTHER
+  UNKNOWN
+}
+
+enum SexEnum {
+  MALE
+  FEMALE
   OTHER
   UNKNOWN
 }
@@ -212,6 +219,8 @@ model User {
   invitesAccepted              Invite[]                @relation("AcceptedBy")
   invitesRevoked               Invite[]                @relation("RevokedBy")
   organizationsCreated         Organization[]          @relation("CreatedBy")
+  propertyPhotosCreated        PropertyPhoto[]         @relation("CreatedBy")
+  propertyPhotosUpdated        PropertyPhoto[]         @relation("UpdatedBy")
   titlesCreated                Title[]                 @relation("CreatedBy")
   unitsCreated                 Unit[]                  @relation("CreatedBy") 
 }
@@ -440,6 +449,8 @@ model Deflection {
   subjectId                    String?                 @db.Uuid
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   behavior                     String?
+  property                     PropertyEnum?
+  propertyDetails              String?
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                  String                  @db.Uuid
@@ -489,6 +500,7 @@ model Deflection {
 
   deflectionDetails            DeflectionDetail[]
   deflectionUpdates            DeflectionUpdate[]
+  propertyPhotos               PropertyPhoto[]
 }
 
 model DeflectionDetailCategory {
@@ -612,6 +624,19 @@ model DeflectionExitHousingStatus {
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
+}
+
+model PropertyPhoto {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId                 String                  @db.Uuid
+  file                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 }
 
 model Incident {

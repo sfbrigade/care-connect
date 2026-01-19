@@ -1,4 +1,4 @@
-import { Prisma, HoldStatusEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, HoldStatusEnum, PropertyEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -12,6 +12,7 @@ import DeflectionReleaseReason from './deflectionReleaseReason.js';
 import Facility from './facility.js';
 import Incident from './incident.js';
 import Organization from './organization.js';
+import PropertyPhoto from './propertyPhoto.js';
 import Subject from './subject.js';
 import Title from './title.js';
 import Unit from './unit.js';
@@ -19,6 +20,9 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
+  property: z.enum(Object.values(PropertyEnum)).optional(),
+  propertyDetails: z.string().nullable().optional(),
+  deflectionDetails: z.array(z.string()).optional(),
 });
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
@@ -28,9 +32,7 @@ const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
   subjectId: z.string().uuid().nullable().optional(),
 });
 
-const DeflectionUpdateSchema = DeflectionAttributesSchema.extend({
-  deflectionDetails: z.array(z.string()).optional(),
-}).partial();
+const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
 
 const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.string().uuid(),
@@ -41,6 +43,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
   deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
+  propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
   extensionCount: z.number().int().min(0),

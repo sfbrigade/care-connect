@@ -27,6 +27,7 @@ export default async function (fastify, opts) {
         include: {
           subject: true,
           deflectionDetails: true,
+          propertyPhotos: true,
         },
       });
 

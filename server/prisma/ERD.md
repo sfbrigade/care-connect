@@ -70,11 +70,11 @@ COMPLETED COMPLETED
     
 
 
-        SexEnum {
-            MALE MALE
-FEMALE FEMALE
-OTHER OTHER
-UNKNOWN UNKNOWN
+        PropertyEnum {
+            NONE NONE
+SMALL SMALL
+MEDIUM MEDIUM
+LARGE LARGE
         }
     
 
@@ -84,6 +84,15 @@ UNKNOWN UNKNOWN
 BLACK BLACK
 HISPANIC HISPANIC
 ASIAN ASIAN
+OTHER OTHER
+UNKNOWN UNKNOWN
+        }
+    
+
+
+        SexEnum {
+            MALE MALE
+FEMALE FEMALE
 OTHER OTHER
 UNKNOWN UNKNOWN
         }
@@ -334,6 +343,8 @@ EXITED EXITED
     String subjectId "❓"
     SubjectStatusEnum subjectStatus 
     String behavior "❓"
+    PropertyEnum property "❓"
+    String propertyDetails "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
@@ -458,6 +469,17 @@ EXITED EXITED
     }
   
 
+  "PropertyPhoto" {
+    String id "🗝️"
+    String deflectionId 
+    String file 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
   "Incident" {
     String id "🗝️"
     String facilityId "🗝️"
@@ -550,6 +572,8 @@ EXITED EXITED
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
+    "User" o{--}o "PropertyPhoto" : ""
+    "User" o{--}o "PropertyPhoto" : ""
     "Invite" o|--|o "Organization" : "organization"
     "Invite" o|--|o "Title" : "title"
     "Invite" o|--|| "User" : "createdBy"
@@ -600,6 +624,7 @@ EXITED EXITED
     "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
+    "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
@@ -620,6 +645,7 @@ EXITED EXITED
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionDetail" : ""
     "Deflection" o{--}o "DeflectionUpdate" : ""
+    "Deflection" o{--}o "PropertyPhoto" : ""
     "DeflectionDetailCategory" o|--|| "User" : "createdBy"
     "DeflectionDetailCategory" o|--|o "User" : "updatedBy"
     "DeflectionDetailCategory" o{--}o "DeflectionDetail" : ""
@@ -647,6 +673,9 @@ EXITED EXITED
     "DeflectionExitDestination" o|--|| "User" : "updatedBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "createdBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "updatedBy"
+    "PropertyPhoto" o|--|| "Deflection" : "deflection"
+    "PropertyPhoto" o|--|| "User" : "createdBy"
+    "PropertyPhoto" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"
