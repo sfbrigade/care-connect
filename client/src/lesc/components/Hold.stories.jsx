@@ -81,7 +81,22 @@ export const ExpiringSoon = {
   },
 };
 
-export const Arrived = {
+export const ArrivedIncomplete = {
+  args: {
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      },
+      behavior: 'This is the narrative',
+      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+    },
+    onDetailsClick: fn(),
+  }
+};
+
+export const ArrivedComplete = {
   args: {
     deflection: {
       ...deflection,

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 import { DateTime } from 'luxon';
 import { QRCodeSVG } from 'qrcode.react';
+import { IconLock } from '@tabler/icons-react';
 
 import { calculateAge, formatTimeRemaining } from '@/utils/format';
 
@@ -67,7 +68,16 @@ function Hold ({
         </Stack>
         {isArrived && (
           <Group justify='center'>
-            <QRCodeSVG value={transferUrl} size={160} />
+            <Box pos='relative'>
+              <Box opacity={isValid ? 1 : 0.1}>
+                <QRCodeSVG value={transferUrl} size={160} />
+              </Box>
+              {!isValid && (
+                <Group pos='absolute' w={80} h={80} bg='white' bdrs='50%' top={40} left={40} justify='center' align='center'>
+                  <IconLock size={24} color='black' />
+                </Group>
+              )}
+            </Box>
           </Group>
         )}
         <Group justify='space-between' wrap='nowrap'>
@@ -91,9 +101,6 @@ function Hold ({
           )}
           {!isNew && (isValid || isCancelled || isExpired) && (
             <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
-          )}
-          {!isNew && !isValid && !isExpired && !isCancelled && (
-            <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
           )}
         </Group>
       </Stack>

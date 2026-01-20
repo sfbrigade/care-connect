@@ -44,6 +44,19 @@ function Holds () {
     }
   }
 
+  const markLeftMutation = useMutation({
+    mutationFn: (id) => Api.incidents.left(id),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
+    }
+  });
+
+  function onLeftClick () {
+    if (incident?.id) {
+      markLeftMutation.mutate(incident.id);
+    }
+  }
+
   const createDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.create(data),
     onSuccess: (response) => {
@@ -115,6 +128,7 @@ function Holds () {
             arrivedAt={incident?.arrivedAt}
             leftAt={incident?.leftAt}
             onArrivedClick={onArrivedClick}
+            onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
           />
           <SegmentedControl
