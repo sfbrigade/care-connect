@@ -30,6 +30,20 @@ function Holds () {
 
   const [tab, setTab] = useState('active');
 
+  const markArrivedMutation = useMutation({
+    mutationFn: (id) => Api.incidents.arrived(id),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data.deflections);
+    },
+  });
+
+  function onArrivedClick () {
+    if (incident?.id) {
+      markArrivedMutation.mutate(incident.id);
+    }
+  }
+
   const createDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.create(data),
     onSuccess: (response) => {
@@ -98,7 +112,10 @@ function Holds () {
           <Facility
             facility={facility}
             bedTypes={bedTypes ?? facility.bedTypes}
-            onHoldClick={() => onHoldClick()}
+            arrivedAt={incident?.arrivedAt}
+            leftAt={incident?.leftAt}
+            onArrivedClick={onArrivedClick}
+            onHoldClick={onHoldClick}
           />
           <SegmentedControl
             fullWidth

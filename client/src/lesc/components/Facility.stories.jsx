@@ -81,14 +81,14 @@ export const Closed = {
 export const Arrived = {
   args: {
     ...Default.args,
-    arrivedAt: new Date(),
+    arrivedAt: new Date().toISOString(),
   }
 };
 
 export const Left = {
   args: {
     ...Default.args,
-    arrivedAt: new Date(),
-    leftAt: new Date(),
+    arrivedAt: new Date().toISOString(),
+    leftAt: new Date().toISOString(),
   }
 };

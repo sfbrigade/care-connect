@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import Deflection from './deflection.js';
 import Facility from './facility.js';
 import Organization from './organization.js';
 import Title from './title.js';
@@ -46,6 +47,7 @@ const IncidentResponseSchema = IncidentCreateSchema.extend({
   updatedById: z.string().uuid(),
   updatedBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),
+  deflections: z.array(Deflection.ResponseSchema).optional(),
 });
 
 export class Incident extends Base {

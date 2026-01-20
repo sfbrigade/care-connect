@@ -270,6 +270,9 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
     },
+    arrived (id) {
+      return instance.patch(`/api/incidents/${id}/arrived`).catch(handleError);
+    },
     extend (id) {
       return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
     },

@@ -10,7 +10,6 @@ import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
 import DeflectionRefusalReason from './deflectionRefusalReason.js';
 import DeflectionReleaseReason from './deflectionReleaseReason.js';
 import Facility from './facility.js';
-import Incident from './incident.js';
 import Organization from './organization.js';
 import PropertyPhoto from './propertyPhoto.js';
 import Subject from './subject.js';
@@ -36,9 +35,6 @@ const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
 
 const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.string().uuid(),
-  facility: Facility.ResponseSchema.optional(),
-  incident: Incident.ResponseSchema.optional(),
-  bedType: BedType.ResponseSchema.optional(),
   status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),

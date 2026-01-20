@@ -36,8 +36,8 @@ function Facility ({
           {hasArrived && !hasLeft && <Button px='sm' color='indigo.0' c='black' onClick={onLeftClick}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>
-        {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromJSDate(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
-        {hasLeft && <Text align='center' size='md' c='gray.5'>Left at {DateTime.fromJSDate(leftAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
+        {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
+        {hasLeft && <Text align='center' size='md' c='gray.5'>Left at {DateTime.fromISO(leftAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
       </Stack>
     </Card>
   );
