@@ -1,6 +1,8 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router';
 import { DateTime } from 'luxon';
+import { QRCodeSVG } from 'qrcode.react';
 
 import { calculateAge, formatTimeRemaining } from '@/utils/format';
 
@@ -10,6 +12,7 @@ function Hold ({
   onDetailsClick,
 }) {
   const { t } = useTranslation();
+  const location = useLocation();
   const displayId = deflection?.id ? deflection.id.slice(0, 3).toUpperCase() : '';
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
 
@@ -37,6 +40,9 @@ function Hold ({
     !!deflection?.subject?.race &&
     !!deflection?.behavior; // TODO: check property, move this logic somewhere reusable
 
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const transferUrl = `${location.origin}/transfer/${deflection.id}`;
+
   return (
     <Card bg='white' p='xl' withBorder>
       <Stack gap='xl'>
@@ -59,6 +65,11 @@ function Hold ({
             )}
           </Box>
         </Stack>
+        {isArrived && (
+          <Group justify='center'>
+            <QRCodeSVG value={transferUrl} size={160} />
+          </Group>
+        )}
         <Group justify='space-between' wrap='nowrap'>
           {isExpired && (
             <Title order={3} c='red.6'>Expired</Title>

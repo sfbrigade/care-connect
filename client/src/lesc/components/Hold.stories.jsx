@@ -80,3 +80,24 @@ export const ExpiringSoon = {
     onDetailsClick: fn(),
   },
 };
+
+export const Arrived = {
+  args: {
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+        sex: 'MALE',
+        race: 'WHITE',
+      },
+      behavior: 'This is the narrative',
+      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+    },
+    onDetailsClick: fn(),
+  }
+};

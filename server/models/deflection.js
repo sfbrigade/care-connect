@@ -2,14 +2,12 @@ import { Prisma, HoldStatusEnum, PropertyEnum, SubjectStatusEnum, TernaryEnum } 
 import { z } from 'zod';
 
 import Base from './base.js';
-import BedType from './bedType.js';
 import DeflectionCancelReason from './deflectionCancelReason.js';
 import DeflectionDetail from './deflectionDetail.js';
 import DeflectionExitDestination from './deflectionExitDestination.js';
 import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
 import DeflectionRefusalReason from './deflectionRefusalReason.js';
 import DeflectionReleaseReason from './deflectionReleaseReason.js';
-import Facility from './facility.js';
 import Organization from './organization.js';
 import PropertyPhoto from './propertyPhoto.js';
 import Subject from './subject.js';
