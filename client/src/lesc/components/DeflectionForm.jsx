@@ -96,7 +96,9 @@ function DeflectionForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
-          {isNew && <Text c='dimmed' size='lg'>Step 2 of 3</Text>}
+          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 2 of 3</Text>}
+          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
+          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>
       </Header>
       <Container>
@@ -108,7 +110,7 @@ function DeflectionForm () {
         <Title order={2} mb='xs'>Deflection details</Title>
         <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will be included in the legal forms.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized} variant='unstyled'>
+          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <Chip.Group
                 key={form.key('deflectionDetails')}

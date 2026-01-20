@@ -88,7 +88,9 @@ function SubjectForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
-          {isNew && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
+          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>
       </Header>
       <Container>
@@ -100,7 +102,7 @@ function SubjectForm () {
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized} variant='unstyled'>
+          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
                 key={form.key('firstName')}

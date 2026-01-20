@@ -101,15 +101,17 @@ function IncidentForm () {
         <title>Incident Details</title>
       </Head>
       <Header>
-        <Group>
+        <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
+          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>
       </Header>
       <Container>
         <Text c='dimmed' size='xl'>Start an incident</Text>
         <Title order={3} mb='xl'>Enter these details once. We’ll reuse them for all holds in this incident.</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized} variant='unstyled'>
+          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput

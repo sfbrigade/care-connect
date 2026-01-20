@@ -121,7 +121,9 @@ function PropertyForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-          {isNew && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
+          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
+          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
+          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>
       </Header>
       <Container>
@@ -133,7 +135,7 @@ function PropertyForm () {
         <Title order={2} mb='xs'>Personal property</Title>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the subject is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized} variant='unstyled'>
+          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <Chip.Group
                 key={form.key('property')}
