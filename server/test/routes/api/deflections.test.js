@@ -33,6 +33,13 @@ test('/api/deflections', async (t) => {
       });
       assert.ok(deflection);
       assert.deepStrictEqual(deflection.status, 'ACTIVE');
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: data.bedTypeId },
+      });
+      assert.ok(bedType);
+      assert.deepStrictEqual(bedType.holds, 5);
+      assert.deepStrictEqual(bedType.available, 3);
     });
 
     await t.test('requires authentication', async () => {
@@ -202,7 +209,6 @@ test('/api/deflections', async (t) => {
   await t.test('DELETE /:id', async (t) => {
     await t.test('cancels the deflection', async () => {
       const response = await app.inject().delete('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2?cancelReasonId=5150').headers(userHeaders);
-
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
@@ -219,6 +225,12 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.cancelReasonId, '5150');
       assert.ok(deflection.cancelledAt);
       assert.ok(deflection.cancelledById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: deflection.bedTypeId },
+      });
+      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.available, 5);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {

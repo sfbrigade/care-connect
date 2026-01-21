@@ -86,6 +86,13 @@ test('/api/incidents', async (t) => {
         where: { incidentId: incident.id },
       });
       assert.ok(deflections.length === 1);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: deflections[0].bedTypeId },
+      });
+      assert.ok(bedType);
+      assert.deepStrictEqual(bedType.holds, 5);
+      assert.deepStrictEqual(bedType.available, 3);
     });
 
     await t.test('requires authentication', async () => {

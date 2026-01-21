@@ -27,7 +27,7 @@ export default async function (fastify, opts) {
       const { id } = request.params;
       const { cancelReasonId } = request.query || {};
 
-      const deflection = await fastify.prisma.deflection.findUnique({
+      let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
       });
 
@@ -45,8 +45,9 @@ export default async function (fastify, opts) {
       }
 
       // create the update record for the cancellation
-      let updated;
       await fastify.prisma.$transaction(async (tx) => {
+        const { bedTypeId } = deflection;
+        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
         const update = await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
@@ -57,7 +58,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        updated = await tx.deflection.update({
+        deflection = await tx.deflection.update({
           where: { id },
           data: {
             status: Deflection.HoldStatus.CANCELLED,
@@ -72,10 +73,34 @@ export default async function (fastify, opts) {
             propertyPhotos: true,
           },
         });
+        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+        const updatedData = {
+          capacity,
+          unavailableUnoccupied,
+          unavailableOccupied,
+          occupied,
+          holds: holds - 1,
+          available: available + 1,
+          updateMethod: 'API',
+          updatedById: request.user.id,
+        };
+        await tx.bedTypeUpdate.create({
+          data: {
+            ...updatedData,
+            bedTypeId,
+            facilityId: deflection.facilityId,
+          }
+        });
+        await tx.bedType.update({
+          where: {
+            id: bedTypeId,
+          },
+          data: updatedData,
+        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      return reply.send(updated);
+      return reply.send(deflection);
     });
 }

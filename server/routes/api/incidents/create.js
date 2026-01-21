@@ -57,7 +57,6 @@ export default async function (fastify, opts) {
         if (bedTypeId) {
           // create the initial deflection/
           const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-          console.log('!!!', bedType);
           if (bedType.available > 0) {
             await tx.deflection.create({
               data: {
@@ -77,7 +76,7 @@ export default async function (fastify, opts) {
               available: available - 1,
               updateMethod: 'API',
               updatedById: request.user.id,
-            }
+            };
             await tx.bedTypeUpdate.create({
               data: {
                 ...updatedData,
