@@ -313,6 +313,18 @@ const Api = {
       index () {
         return instance.get('/api/deflections/cancel-reasons');
       },
+      get (id) {
+        return instance.get(`/api/deflections/cancel-reasons/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/deflections/cancel-reasons', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/deflections/cancel-reasons/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
+      },
     },
     detailCategories: {
       index ({ include } = {}) {
