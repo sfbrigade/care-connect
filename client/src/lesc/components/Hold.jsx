@@ -66,7 +66,7 @@ function Hold ({
             )}
           </Box>
         </Stack>
-        {isArrived && (
+        {isActive && isArrived && (
           <Group justify='center'>
             <Box pos='relative'>
               <Box opacity={isValid ? 1 : 0.1}>
