@@ -34,7 +34,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      await autoExpireHolds(fastify.prisma);
+      await autoExpireHolds(fastify.prisma, request.user);
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {

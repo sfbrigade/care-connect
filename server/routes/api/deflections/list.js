@@ -30,7 +30,7 @@ export default async function (fastify, opts) {
       const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status } = request.query;
       const where = {};
 
-      await autoExpireHolds(fastify.prisma);
+      await autoExpireHolds(fastify.prisma, request.user);
 
       if (active !== undefined) {
         if (active === 'true') {

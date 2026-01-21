@@ -30,7 +30,7 @@ export default async function (fastify, opts) {
       const now = new Date();
 
       // Auto-expire holds that have passed their expiration time
-      await autoExpireHolds(fastify.prisma, now);
+      await autoExpireHolds(fastify.prisma, request.user, now);
 
       const where = {
         facilityId,

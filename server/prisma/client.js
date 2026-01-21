@@ -7,8 +7,14 @@ const prisma = new PrismaClient({
   model: {
     bedType: {
       async findByIdForUpdate (tx, id) {
-        const result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR UPDATE`;
-        return result.length > 0 ? result[0] : null;
+        let result;
+        if (Array.isArray(id)) {
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ANY(${id}::uuid[]) FOR UPDATE`;
+          return result;
+        } else {
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR UPDATE`;
+          return result.length > 0 ? result[0] : null;
+        }
       }
     },
     $allModels: {
