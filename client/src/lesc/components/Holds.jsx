@@ -64,6 +64,7 @@ function Holds () {
       if (cachedDeflections) {
         queryClient.setQueryData(['deflections', incident?.id, 'active'], [response.data, ...cachedDeflections]);
       }
+      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
     },
   });
 
@@ -95,6 +96,7 @@ function Holds () {
       if (cachedDeflections) {
         queryClient.setQueryData(['deflections', incident?.id, 'active'], cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id));
       }
+      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
     },
   });
