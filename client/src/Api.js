@@ -324,62 +324,6 @@ const Api = {
       },
     },
   },
-  lesc: {
-    availability () {
-      return instance.get('/api/lesc/availability');
-    },
-    facilities: {
-      list () {
-        return instance.get('/api/lesc/facilities');
-      },
-    },
-    holds: {
-      forCheckin (id) {
-        return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
-      },
-    },
-    incidents: {
-      list () {
-        return instance.get('/api/lesc/incidents').catch(handleError);
-      },
-      create (data) {
-        return instance.post('/api/lesc/incidents', data).catch(handleError);
-      },
-      get (id) {
-        return instance.get(`/api/lesc/incidents/${id}`).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/lesc/incidents/${id}`, data).catch(handleError);
-      },
-      findByCad (cadNumber) {
-        return instance.get(`/api/lesc/incidents/by-cad/${encodeURIComponent(cadNumber)}`).catch(handleError);
-      },
-    },
-    intake: {
-      create (data) {
-        return instance.post('/api/lesc/intake', data).catch(handleError);
-      },
-      list () {
-        return instance.get('/api/lesc/intake').catch(handleError);
-      },
-      get (id) {
-        return instance.get(`/api/lesc/intake/${id}`).catch(handleError);
-      },
-    },
-    checkin: {
-      create (holdId, data = {}) {
-        return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
-      },
-    },
-    clients: {
-      get (id) {
-        return instance.get(`/api/lesc/clients/${id}`).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
-      },
-    },
-  },
   serviceTypes: {
     list () {
       return instance.get('/api/service-types');

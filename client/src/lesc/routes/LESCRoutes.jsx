@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router';
 
 import Holds from '../components/Holds';
-import CheckIn from '../components/CheckIn';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
@@ -16,8 +15,6 @@ function LESCRoutes () {
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
-      <Route path='checkin/:holdId' element={<CheckIn />} />
-      <Route path='checkin' element={<CheckIn />} />
       <Route path='incident' element={<IncidentForm />} />
       <Route path='' element={<Navigate to='holds' />} />
     </Routes>
