@@ -27,6 +27,8 @@ const initialValues = {
   city: '',
   state: '',
   postalCode: '',
+  narcoticsSubstance: null,
+  narcoticsParaphernalia: null,
 };
 
 function SubjectForm () {
@@ -41,6 +43,11 @@ function SubjectForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    transformValues: (values) => ({
+      ...values,
+      narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
+      narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
+    }),
   });
 
   const { data: incident } = useQuery({
@@ -59,7 +66,10 @@ function SubjectForm () {
     if (!isLoading) {
       if (deflection.subject) {
         form.setInitialValues({
+          ...initialValues,
           ...deflection.subject,
+          narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
+          narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toISODate() : '',
         });
         form.reset();
@@ -170,7 +180,7 @@ function SubjectForm () {
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
-              <Accordion variant='section' defaultValue='address'>
+              <Accordion variant='section' defaultValue={['address', 'narcotics']}>
                 <Divider />
                 <Accordion.Item value='address'>
                   <Accordion.Control>
@@ -212,6 +222,43 @@ function SubjectForm () {
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
+                {isNew && (
+                  <Accordion.Item value='narcotics'>
+                    <Accordion.Control>
+                      <Title order={3}>Narcotics</Title>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='xl'>
+                        <Input.Wrapper
+                          label={<>Possesses a controlled substance<span>*</span></>}
+                        >
+                          <Chip.Group
+                            key={form.key('narcoticsSubstance')}
+                            {...form.getInputProps('narcoticsSubstance')}
+                          >
+                            <Group gap='sm' mt='md'>
+                              <Chip value='true'>Yes</Chip>
+                              <Chip value='false'>No</Chip>
+                            </Group>
+                          </Chip.Group>
+                        </Input.Wrapper>
+                        <Input.Wrapper
+                          label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                        >
+                          <Chip.Group
+                            key={form.key('narcoticsParaphernalia')}
+                            {...form.getInputProps('narcoticsParaphernalia')}
+                          >
+                            <Group gap='sm' mt='md'>
+                              <Chip value='true'>Yes</Chip>
+                              <Chip value='false'>No</Chip>
+                            </Group>
+                          </Chip.Group>
+                        </Input.Wrapper>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
               </Accordion>
               <Button type='submit'>
                 {isNew ? 'Next: deflection details' : 'Save subject details'}

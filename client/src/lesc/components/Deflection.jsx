@@ -106,8 +106,32 @@ function Deflection () {
               <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject</Button>
             </Group>
           </Stack>
-          <Accordion variant='section' defaultValue={['deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'incident']}>
             <Divider />
+            <Accordion.Item value='narcotics'>
+              <Accordion.Control>
+                <Title order={3}>Narcotics</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
+                    <Box>
+                      <Text c='dimmed'>Controlled substance</Text>
+                      <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                    </Box>
+                  )}
+                  {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
+                    <Box>
+                      <Text c='dimmed'>Paraphernalia</Text>
+                      <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                    </Box>
+                  )}
+                </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>Edit narcotics</Button>
+                </Group>
+              </Accordion.Panel>
+            </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
                 <Title order={3}>Deflection details</Title>
