@@ -6,6 +6,7 @@ import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, St
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -35,6 +36,7 @@ function SubjectForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
+  const { t } = useTranslation();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -136,10 +138,9 @@ function SubjectForm () {
                   {...form.getInputProps('sex')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='MALE'>Male</Chip>
-                    <Chip value='FEMALE'>Female</Chip>
-                    <Chip value='OTHER'>Other</Chip>
-                    <Chip value='UNKNOWN'>Unknown</Chip>
+                    {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
+                      <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
+                    ))}
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
@@ -151,12 +152,9 @@ function SubjectForm () {
                   {...form.getInputProps('race')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='WHITE'>White</Chip>
-                    <Chip value='BLACK'>Black</Chip>
-                    <Chip value='HISPANIC'>Hispanic or Latin</Chip>
-                    <Chip value='ASIAN'>Asian</Chip>
-                    <Chip value='OTHER'>Other</Chip>
-                    <Chip value='UNKNOWN'>Unknown</Chip>
+                    {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
+                      <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
+                    ))}
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>

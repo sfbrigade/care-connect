@@ -115,7 +115,7 @@ function IncidentForm () {
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
-                  label='Arrest location'
+                  label={<>Arrest location<span>*</span></>}
                   rightSection={!isInitialized ? <Loader size={24} /> : <IconCurrentLocationFilled size={24} />}
                   value={formatAddress(form.getValues())}
                   readOnly
@@ -128,7 +128,7 @@ function IncidentForm () {
                     ref={addressRef}
                     key={form.key('addressLine1')}
                     {...form.getInputProps('addressLine1')}
-                    label='Arrest address line 1'
+                    label={<>Arrest address line 1<span>*</span></>}
                     rightSection={<IconCurrentLocationFilled size={24} />}
                   />
                   <TextInput
@@ -158,20 +158,20 @@ function IncidentForm () {
               <TextInput
                 key={form.key('arrestedAt')}
                 {...form.getInputProps('arrestedAt')}
-                label='Arrest date & time'
+                label={<>Arrest date & time<span>*</span></>}
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
                 key={form.key('cadNumber')}
                 {...form.getInputProps('cadNumber')}
-                label='CAD number'
+                label={<>CAD number<span>*</span></>}
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
                 key={form.key('supervisorBadgeNumber')}
                 {...form.getInputProps('supervisorBadgeNumber')}
-                label='Supervising Sergeant’s Star Number'
+                label={<>Supervising Sergeant’s Star Number<span>*</span></>}
                 onFocus={() => setShowAddressForm(false)}
               />
               <Button type='submit'>
