@@ -5,8 +5,14 @@ const prisma = new PrismaClient({
 }).$extends({
   name: 'paginate',
   model: {
+    bedType: {
+      async findByIdForUpdate(tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      }
+    },
     $allModels: {
-      async paginate ({ page, perPage, include, ...options }) {
+      async paginate({ page, perPage, include, ...options }) {
         const take = parseInt(perPage, 10);
         const skip = (parseInt(page, 10) - 1) * take;
         const context = Prisma.getExtensionContext(this);

@@ -55,15 +55,45 @@ export default async function (fastify, opts) {
           },
         });
         if (bedTypeId) {
-          // create the initial deflection/hold
-          await tx.deflection.create({
-            data: {
-              incidentId: incident.id,
-              facilityId: data.facilityId,
-              bedTypeId,
-              createdById: request.user.id,
+          // create the initial deflection/
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          console.log('!!!', bedType);
+          if (bedType.available > 0) {
+            await tx.deflection.create({
+              data: {
+                incidentId: incident.id,
+                facilityId: data.facilityId,
+                bedTypeId,
+                createdById: request.user.id,
+              }
+            });
+            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+            const updatedData = {
+              capacity,
+              unavailableUnoccupied,
+              unavailableOccupied,
+              occupied,
+              holds: holds + 1,
+              available: available - 1,
+              updateMethod: 'API',
+              updatedById: request.user.id,
             }
-          });
+            await tx.bedTypeUpdate.create({
+              data: {
+                ...updatedData,
+                bedTypeId,
+                facilityId: data.facilityId,
+              }
+            });
+            await tx.bedType.update({
+              where: {
+                id: bedTypeId,
+              },
+              data: updatedData,
+            });
+          } else {
+            return reply.code(StatusCodes.GONE).send();
+          }
         }
       });
 

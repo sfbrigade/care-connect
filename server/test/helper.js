@@ -34,19 +34,19 @@ configureMailer(nodemailerMock);
 
 // Fill in this config with all the configurations
 // needed for testing the application
-function config () {
+function config() {
   return {
     skipOverride: true // Register our application with fastify-plugin
   };
 }
 
 // automatically build and tear down our instance
-async function build (t) {
+async function build(t) {
   // PostgreSQL + Docker containers mode
   return await buildPostgres(t);
 }
 
-async function buildPostgres (t) {
+async function buildPostgres(t) {
   // disable the ryuk cleanup container, cannot connect from the compose network
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
@@ -141,7 +141,7 @@ async function buildPostgres (t) {
   const app = await helper.build(argv, config());
 
   // recreate the database from the template created above
-  async function recreateDb () {
+  async function recreateDb() {
     await t.prisma.$disconnect();
     await app.prisma.$disconnect();
     // Ensure prisma client is connected to template1 before executing raw SQL
@@ -149,7 +149,7 @@ async function buildPostgres (t) {
     const dbName = startedDbContainer.getDatabase();
     // Quote database name to handle special characters and ensure proper SQL escaping
     await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
-    await sleep(100);
+    await sleep(250);
     await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     await app.prisma.$connect();
     await t.prisma.$connect();
@@ -182,7 +182,7 @@ async function buildPostgres (t) {
   return app;
 }
 
-async function authenticate (app, email, password) {
+async function authenticate(app, email, password) {
   const response = await app.inject().post('/api/auth/login').payload({
     email,
     password,
@@ -198,19 +198,19 @@ async function authenticate (app, email, password) {
   };
 }
 
-function sleep (ms) {
+function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
 
-async function upload (fixtures) {
+async function upload(fixtures) {
   return Promise.all(
     fixtures.map((f) => s3.putObject(path.join('_uploads', f[1]), path.resolve(__dirname, `fixtures/assets/${f[0]}`)))
   );
 }
 
-function assetExists (assetPath) {
+function assetExists(assetPath) {
   return s3.objectExists(assetPath);
 }
 
