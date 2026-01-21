@@ -448,6 +448,8 @@ model Deflection {
   subject                      Subject?                @relation(fields: [subjectId], references: [id])
   subjectId                    String?                 @db.Uuid
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
+  narcoticsSubstance           Boolean?
+  narcoticsParaphernalia       Boolean?
   behavior                     String?
   property                     PropertyEnum?
   propertyDetails              String?

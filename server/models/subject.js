@@ -17,6 +17,8 @@ const SubjectAttributesSchema = z.object({
   state: z.string().nullable(),
   postalCode: z.string().nullable(),
   localId: z.string().nullable(),
+  narcoticsSubstance: z.boolean().nullable().optional(),
+  narcoticsParaphernalia: z.boolean().nullable().optional(),
 });
 
 const SubjectCreateSchema = SubjectAttributesSchema;

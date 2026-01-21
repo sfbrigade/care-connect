@@ -342,6 +342,8 @@ EXITED EXITED
     String bedTypeId 
     String subjectId "❓"
     SubjectStatusEnum subjectStatus 
+    Boolean narcoticsSubstance "❓"
+    Boolean narcoticsParaphernalia "❓"
     String behavior "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"

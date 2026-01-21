@@ -41,15 +41,25 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      if (!deflection.subjectId) {
-        await fastify.prisma.$transaction(async (tx) => {
+      const subjectData = { ...data };
+      delete subjectData.narcoticsSubstance;
+      delete subjectData.narcoticsParaphernalia;
+
+      const deflectionData = {
+        narcoticsSubstance: data.narcoticsSubstance ?? null,
+        narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
+      };
+
+      await fastify.prisma.$transaction(async (tx) => {
+        if (!deflection.subjectId) {
           const subject = await tx.subject.create({
-            data
+            data: subjectData,
           });
 
           deflection = await tx.deflection.update({
             where: { id },
             data: {
+              ...deflectionData,
               subjectId: subject.id,
             },
             include: {
@@ -58,14 +68,24 @@ export default async function (fastify, opts) {
               propertyPhotos: true,
             },
           });
-        });
-      } else {
-        const subject = await fastify.prisma.subject.update({
-          where: { id: deflection.subjectId },
-          data,
-        });
-        deflection.subject = subject;
-      }
+        } else {
+          await tx.subject.update({
+            where: { id: deflection.subjectId },
+            data: subjectData,
+          });
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              ...deflectionData,
+            },
+            include: {
+              subject: true,
+              deflectionDetails: true,
+              propertyPhotos: true,
+            },
+          });
+        }
+      });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

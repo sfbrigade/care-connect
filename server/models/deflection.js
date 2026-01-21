@@ -17,9 +17,11 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  property: z.enum(Object.values(PropertyEnum)).nullable().optional(),
-  propertyDetails: z.string().nullable().optional(),
-  deflectionDetails: z.array(z.string()).optional(),
+  narcoticsSubstance: z.boolean().nullable(),
+  narcoticsParaphernalia: z.boolean().nullable(),
+  property: z.enum(Object.values(PropertyEnum)).nullable(),
+  propertyDetails: z.string().nullable(),
+  deflectionDetails: z.array(z.string()),
 });
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({

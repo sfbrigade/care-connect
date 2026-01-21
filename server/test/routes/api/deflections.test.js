@@ -130,6 +130,8 @@ test('/api/deflections', async (t) => {
         addressLine2: 'Apt 1',
         driverLicense: 'DL1234',
         localId: '1234',
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: true,
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -144,6 +146,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(data.subject.driverLicense, 'DL1234');
       assert.deepStrictEqual(data.subject.localId, '1234');
+      assert.deepStrictEqual(data.narcoticsSubstance, false);
+      assert.deepStrictEqual(data.narcoticsParaphernalia, true);
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -159,6 +163,12 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(subject.driverLicense, 'DL1234');
       assert.deepStrictEqual(subject.localId, '1234');
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: '7a2f42d0-adbe-49fe-a71f-7e62dff9a059' },
+      });
+      assert.deepStrictEqual(deflection.narcoticsSubstance, false);
+      assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -173,6 +183,8 @@ test('/api/deflections', async (t) => {
         addressLine2: 'Apt 1',
         driverLicense: 'DL9876',
         localId: '9876',
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: true,
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -188,6 +200,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(data.subject.driverLicense, 'DL9876');
       assert.deepStrictEqual(data.subject.localId, '9876');
+      assert.deepStrictEqual(data.narcoticsSubstance, false);
+      assert.deepStrictEqual(data.narcoticsParaphernalia, true);
 
       // Verify in database
       const subject = await prisma.subject.findUnique({
@@ -203,6 +217,12 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(subject.driverLicense, 'DL9876');
       assert.deepStrictEqual(subject.localId, '9876');
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+      });
+      assert.deepStrictEqual(deflection.narcoticsSubstance, false);
+      assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
     });
   });
 
