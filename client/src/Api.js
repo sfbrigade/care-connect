@@ -189,9 +189,6 @@ const Api = {
     activeIncident (id) {
       return instance.get(`/api/facilities/${id}/active-incident`);
     },
-    availability (id) {
-      return instance.get(`/api/facilities/${id}/availability`);
-    },
     updateStatus (id, data) {
       return instance.post(`/api/facilities/${id}/status`, data).catch(handleError);
     },

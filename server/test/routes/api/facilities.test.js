@@ -16,10 +16,7 @@ test('/api/facilities', async (t) => {
       // Simulate request from LESC app via Referer header
       const response = await app.inject()
         .get('/api/facilities?type=LESC&include=services')
-        .headers({
-          ...userHeaders,
-          referer: 'http://localhost:3000/lesc/availability',
-        });
+        .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const facilities = JSON.parse(response.body);
@@ -35,10 +32,7 @@ test('/api/facilities', async (t) => {
       // Simulate request from DIDO app via Referer header
       const response = await app.inject()
         .get('/api/facilities?type=DIDO&include=services')
-        .headers({
-          ...userHeaders,
-          referer: 'http://localhost:3000/dido/',
-        });
+        .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const facilities = JSON.parse(response.body);
@@ -305,24 +299,6 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data, null);
-    });
-  });
-
-  await t.test('GET /:id/availability', async (t) => {
-    await t.test('returns availability for facility', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/availability')
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-      assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 1);
-      assert.deepStrictEqual(data[0].capacity, 10);
-      assert.deepStrictEqual(data[0].unavailableUnoccupied, 2);
-      assert.deepStrictEqual(data[0].unavailableOccupied, 0);
-      assert.deepStrictEqual(data[0].occupied, 0);
-      assert.deepStrictEqual(data[0].holds, 3);
-      assert.deepStrictEqual(data[0].available, 5);
     });
   });
 });
