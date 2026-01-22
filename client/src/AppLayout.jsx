@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppShell } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { matchPath, useLocation, useNavigate } from 'react-router';
@@ -32,6 +33,10 @@ function AppLayout () {
     '/invites/*',
     '/register',
   ].some(path => matchPath(path, location.pathname));
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <AppShell
