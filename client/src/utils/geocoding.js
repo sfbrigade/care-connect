@@ -49,12 +49,12 @@ export function getCurrentLocation () {
  * Reverse geocode coordinates to address using backend API
  * @param {number} latitude
  * @param {number} longitude
- * @returns {Promise<string|null>} Formatted address or null if geocoding fails
+ * @returns {Promise<Object|null>} Address object or null if geocoding fails
  */
 export async function reverseGeocode (latitude, longitude) {
   try {
     const response = await Api.geocode.reverse(latitude, longitude);
-    return response.data.address;
+    return response.data;
   } catch (error) {
     console.error('Reverse geocoding failed:', error);
     return null;
@@ -63,7 +63,7 @@ export async function reverseGeocode (latitude, longitude) {
 
 /**
  * Get current location and reverse geocode to address
- * @returns {Promise<string|null>} Formatted address or null if any step fails
+ * @returns {Promise<Object|null>} Address object or null if any step fails
  */
 export async function getCurrentLocationAddress () {
   try {

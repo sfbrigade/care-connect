@@ -1,0 +1,28 @@
+entity: deflectionCancelReason
+connectedFields: ['createdBy', 'updatedBy']
+items:
+  '5150':
+    id: '5150'
+    name: '5150'
+    createdBy: '@user1'
+    updatedBy: '@user1'  
+  jail:
+    id: 'jail'
+    name: 'Jail'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  hospital:
+    id: 'hospital'
+    name: 'Hospital'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  release_on_scene:
+    id: 'release_on_scene'
+    name: 'Release on Scene'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  facility_emergency:
+    id: 'facility_emergency'
+    name: 'Facility Emergency'
+    createdBy: '@user1'
+    updatedBy: '@user1'

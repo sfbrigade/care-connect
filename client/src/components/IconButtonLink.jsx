@@ -3,9 +3,9 @@ import { Link } from 'react-router';
 
 import classes from './IconButtonLink.module.css';
 
-function IconButtonLink ({ to, icon: Icon }) {
+function IconButtonLink ({ to, variant, icon: Icon }) {
   return (
-    <Button classNames={classes} component={Link} to={to}>
+    <Button className={variant === 'primary' ? '' : classes.default} classNames={classes} component={Link} to={to}>
       <Icon size={20} />
     </Button>
   );

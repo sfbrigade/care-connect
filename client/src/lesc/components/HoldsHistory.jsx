@@ -1,70 +1,46 @@
-import { Chip, Container, Stack, Text, Group } from '@mantine/core';
+import { useNavigate } from 'react-router';
+import { Box, Stack, Title, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+
 import Api from '@/Api';
-import Card from '@/components/Card';
-import { useState } from 'react';
-import { formatTimeRemaining, formatTimeUntil } from '@/utils/dateTime';
+import Hold from './Hold';
 
-/**
- * History view for holds - matches Figma "Availability Screen — History" design
- * Placeholder implementation
- */
-function HoldsHistory () {
-  const [filter, setFilter] = useState('thisWeek');
+function HoldsHistory ({ facility }) {
+  const navigate = useNavigate();
 
-  const { data: holds, isLoading } = useQuery({
-    queryKey: ['lesc-holds-history', filter],
-    queryFn: async () => {
-      const response = await Api.holds.list();
-      // Filter to historical holds (expired or cancelled)
-      return response.data.filter(hold => {
-        const expiresAt = new Date(hold.expiresAt);
-        return expiresAt < new Date() || hold.status === 'EXPIRED' || hold.status === 'CANCELLED';
-      });
-    },
+  const { data: deflections } = useQuery({
+    queryKey: ['deflections', facility?.id, 'inactive'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: false }).then(response => response.data),
+    enabled: !!facility,
   });
 
-  if (isLoading) {
-    return (
-      <Container>
-        <Text>Loading...</Text>
-      </Container>
-    );
-  }
-
   return (
-    <Container>
-      <Stack gap='md'>
-        <Group gap='sm'>
-          <Chip checked={filter === 'current'} onClick={() => setFilter('current')}>
-            Current holds
-          </Chip>
-          <Chip checked={filter === 'thisWeek'} onClick={() => setFilter('thisWeek')}>
-            This week
-          </Chip>
-        </Group>
-
-        {holds && holds.length === 0
-          ? (
-            <Text c='dimmed' ta='center' py='xl'>
-              No historical holds found.
-            </Text>
-            )
-          : (
-            <Stack gap='md'>
-              {holds?.map((hold) => (
-                <Card
-                  key={hold.id}
-                  timeRemaining={formatTimeRemaining(hold.expiresAt)}
-                  timeUntil={formatTimeUntil(hold.expiresAt)}
-                  badgeStatus={hold.status === 'EXPIRED' || hold.status === 'CANCELLED' ? 'expired' : 'active'}
-                  details={hold.notes || 'Details/Notes ????'}
-                />
-              ))}
-            </Stack>
-            )}
-      </Stack>
-    </Container>
+    <>
+      {(!deflections || deflections.length === 0) && (
+        <>
+          <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
+          <Box align='center'>
+            <Title order={4}>You don't have any past holds</Title>
+            <Text size='md' c='dimmed'>Completed, cancelled, and expired holds will show up here.</Text>
+          </Box>
+        </>
+      )}
+      {deflections && deflections.length > 0 && (
+        <>
+          <Stack gap='md'>
+            {deflections?.map((deflection) => (
+              <Hold
+                key={deflection.id}
+                deflection={deflection}
+                onDetailsClick={() => {
+                  navigate(`/holds/${deflection.id}`);
+                }}
+              />
+            ))}
+          </Stack>
+        </>
+      )}
+    </>
   );
 }
 

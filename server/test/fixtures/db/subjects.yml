@@ -1,0 +1,24 @@
+entity: subject
+connectedFields: []
+items:
+  subject1:
+    id: a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5
+    firstName: 'Test'
+    lastName: 'Client'
+    middleInitial: 'T'
+    dateOfBirth: '2000-01-01T00:00:00.000Z'
+    sex: 'MALE'
+    race: 'WHITE'
+    addressLine1: '123 Test St'
+    driverLicense: 'DL123'
+    localId: 'SF-123'
+  subject2:
+    firstName: 'Test'
+    lastName: 'Client2'
+    middleInitial: 'T'
+    dateOfBirth: '2001-05-01T00:00:00.000Z'
+    sex: 'FEMALE'
+    race: 'ASIAN'
+    addressLine1: '456 Test St'
+    driverLicense: 'DL456'
+    localId: 'SF-456'
