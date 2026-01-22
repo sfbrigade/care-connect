@@ -81,6 +81,27 @@ export const ExpiringSoon = {
   },
 };
 
+export const ExpiredTimer = {
+  args: {
+    deflection: {
+      ...deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const ExpiredStatus = {
+  args: {
+    deflection: {
+      ...deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      status: 'EXPIRED',
+    },
+    onDetailsClick: fn(),
+  },
+};
+
 export const ArrivedIncomplete = {
   args: {
     deflection: {

@@ -1,4 +1,5 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 import { DateTime } from 'luxon';
@@ -16,6 +17,8 @@ function Hold ({
   const location = useLocation();
   const displayId = String(deflection.id).padStart(6, '0');
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
+  const isActive = deflection.status === 'ACTIVE';
+  const [now, setNow] = useState(DateTime.now());
 
   let subjectAge;
   if (deflection?.subject?.dateOfBirth) {
@@ -30,10 +33,16 @@ function Hold ({
   }
 
   const isNew = !deflection?.subjectId;
-  const isActive = deflection.status === 'ACTIVE';
   const isCancelled = deflection.status === 'CANCELLED';
-  const isExpired = deflection.status === 'EXPIRED' || (isActive && DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 0);
-  const isExpiringSoon = isActive && DateTime.fromISO(deflection?.expiresAt).diffNow('minutes').minutes < 10;
+  const isExpiredStatus = deflection.status === 'EXPIRED';
+  const minutesUntilExpiration = deflection?.expiresAt
+    ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
+    : null;
+  const minutesSinceExpiration = minutesUntilExpiration !== null
+    ? Math.max(0, Math.floor(-minutesUntilExpiration))
+    : null;
+  const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
+  const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = !!deflection?.subject?.firstName &&
     !!deflection?.subject?.lastName &&
     !!deflection?.subject?.dateOfBirth &&
@@ -43,6 +52,17 @@ function Hold ({
 
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${location.origin}/transfer/${deflection.id}`;
+
+  useEffect(() => {
+    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus)) return undefined;
+
+    setNow(DateTime.now());
+    const intervalId = window.setInterval(() => {
+      setNow(DateTime.now());
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isActive, isExpiredStatus, deflection?.expiresAt]);
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -82,7 +102,11 @@ function Hold ({
         )}
         <Group justify='space-between' wrap='nowrap'>
           {isExpired && (
-            <Title order={3} c='red.6'>Expired</Title>
+            <Title order={3} c='red.6'>
+              {minutesSinceExpiration !== null
+                ? `Expired ${minutesSinceExpiration} minute${minutesSinceExpiration === 1 ? '' : 's'} ago`
+                : 'Expired'}
+            </Title>
           )}
           {isActive && !isExpired && (
             <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
