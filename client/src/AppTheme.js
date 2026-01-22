@@ -1,5 +1,6 @@
-import { createTheme, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Accordion, Alert, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
+import accordionClasses from './components/Accordion.module.css';
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
@@ -68,6 +69,12 @@ const AppTheme = createTheme({
   },
 
   components: {
+    Accordion: Accordion.extend({
+      defaultProps: {
+        chevronIconSize: 20,
+      },
+      classNames: accordionClasses,
+    }),
     Alert: Alert.extend({
       styles: {
         icon: {
@@ -98,6 +105,7 @@ const AppTheme = createTheme({
     }),
     Button: Button.extend({
       defaultProps: {
+        color: 'indigo.6',
         size: 'lg',
         radius: 'xl', // 24px border radius
       },
@@ -124,6 +132,7 @@ const AppTheme = createTheme({
     Chip: Chip.extend({
       defaultProps: {
         color: 'black',
+        size: 'xl',
       },
       classNames: chipClasses
     }),
@@ -131,6 +140,18 @@ const AppTheme = createTheme({
       defaultProps: {
         size: 'xs',
         px: 'xl'
+      }
+    }),
+    InputWrapper: Input.Wrapper.extend({
+      defaultProps: {
+        size: 'lg',
+      },
+      classNames: inputClasses
+    }),
+    Modal: Modal.extend({
+      defaultProps: {
+        padding: 'xl',
+        radius: 'lg'
       }
     }),
     SegmentedControl: SegmentedControl.extend({

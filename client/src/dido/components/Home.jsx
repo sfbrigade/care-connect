@@ -244,7 +244,7 @@ function Home () {
   const { data: facilities = [], isLoading, isError } = useQuery({
     queryKey: ['didoFacilitiesWithServices'],
     queryFn: async () => {
-      const response = await Api.facilities.list({ include: 'serviceType,bedStatuses', type: 'DIDO' });
+      const response = await Api.facilities.list({ include: 'serviceType,bedTypes', type: 'DIDO' });
       if (import.meta.env.DEV) {
         console.debug('[Home] Facilities response', response.data);
       }
@@ -351,8 +351,8 @@ function Home () {
     const categories = getFacilityCategories(facility);
     const primaryCategory = categories[0] ?? 'other';
     const primaryService = facility.serviceType?.name ?? null;
-    const primaryBadge = facility.bedStatuses?.[0]?.available
-      ? `${facility.bedStatuses[0].available} beds`
+    const primaryBadge = facility.bedTypes?.[0]?.available
+      ? `${facility.bedTypes[0].available} beds`
       : null;
     const displayAddress = formatAddress(facility);
     const primaryContact = facility.contacts?.find((contact) => contact.isPrimary) ?? facility.contacts?.[0] ?? null;

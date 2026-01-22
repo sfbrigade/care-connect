@@ -1,17 +1,9 @@
 import IconButtonLink from './IconButtonLink';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { BrowserRouter } from 'react-router';
 
 export default {
   title: 'Components/IconButtonLink',
   component: IconButtonLink,
-  decorators: [
-    (Story) => (
-      <BrowserRouter>
-        <Story />
-      </BrowserRouter>
-    ),
-  ],
   parameters: {
     layout: 'centered',
   },
@@ -20,6 +12,14 @@ export default {
 
 export const Default = {
   args: {
+    icon: IconArrowLeft,
+    to: '/',
+  },
+};
+
+export const Primary = {
+  args: {
+    variant: 'primary',
     icon: IconArrowLeft,
     to: '/',
   },
