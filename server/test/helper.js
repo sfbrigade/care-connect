@@ -149,7 +149,7 @@ async function buildPostgres (t) {
     const dbName = startedDbContainer.getDatabase();
     // Quote database name to handle special characters and ensure proper SQL escaping
     await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
-    await sleep(250);
+    await prisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
     await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
     await app.prisma.$connect();
     await t.prisma.$connect();
