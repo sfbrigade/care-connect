@@ -9,7 +9,7 @@ const PropertyPhotoAttributesSchema = z.object({
 });
 
 const PropertyPhotoCreateSchema = PropertyPhotoAttributesSchema.extend({
-  deflectionId: z.number(),
+  deflectionId: z.coerce.number(),
 });
 
 const PropertyPhotoResponseSchema = PropertyPhotoCreateSchema.extend({
