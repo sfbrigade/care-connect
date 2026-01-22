@@ -86,6 +86,9 @@ function AdminInvitesList () {
           <Button component={Link} to='new'>
             Invite a new User
           </Button>
+          <Button component={Link} to='batch' variant='light'>
+            Batch Invite
+          </Button>
         </Group>
         <Title order={2}>Invites</Title>
         <Table.ScrollContainer mb='lg'>

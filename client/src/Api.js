@@ -113,6 +113,9 @@ const Api = {
     create (data) {
       return instance.post('/api/invites', data).catch(handleError);
     },
+    bulk (data) {
+      return instance.post('/api/invites/bulk', data).catch(handleError);
+    },
     get (id) {
       return instance.get(`/api/invites/${id}`);
     },
@@ -186,8 +189,8 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
-    availability (id) {
-      return instance.get(`/api/facilities/${id}/availability`);
+    activeIncident (id) {
+      return instance.get(`/api/facilities/${id}/active-incident`);
     },
     updateStatus (id, data) {
       return instance.post(`/api/facilities/${id}/status`, data).catch(handleError);
@@ -195,18 +198,18 @@ const Api = {
     holds (id, { all = false, include = '' } = {}) {
       return instance.get(`/api/facilities/${id}/holds`, { params: { all, include } });
     },
-    bedStatuses: {
+    bedTypes: {
       index (facilityId, page = 1) {
-        return instance.get(`/api/facilities/${facilityId}/bed-statuses`, { params: { page } });
+        return instance.get(`/api/facilities/${facilityId}/bed-types`, { params: { page } });
       },
       create (facilityId, data) {
-        return instance.post(`/api/facilities/${facilityId}/bed-statuses`, data).catch(handleError);
+        return instance.post(`/api/facilities/${facilityId}/bed-types`, data).catch(handleError);
       },
-      update (facilityId, bedStatusId, data) {
-        return instance.patch(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`, data).catch(handleError);
+      update (facilityId, bedTypeId, data) {
+        return instance.patch(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`, data).catch(handleError);
       },
-      get (facilityId, bedStatusId) {
-        return instance.get(`/api/facilities/${facilityId}/bed-statuses/${bedStatusId}`);
+      get (facilityId, bedTypeId) {
+        return instance.get(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`);
       },
     },
     statusReasons: {
@@ -254,59 +257,82 @@ const Api = {
       return instance.patch('/api/holds/extend', { ids }).catch(handleError);
     },
   },
-  lesc: {
-    availability () {
-      return instance.get('/api/lesc/availability');
+  incidents: {
+    list () {
+      return instance.get('/api/incidents').catch(handleError);
     },
-    facilities: {
-      list () {
-        return instance.get('/api/lesc/facilities');
+    create (data, { bedTypeId } = {}) {
+      return instance.post(`/api/incidents${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`, data).catch(handleError);
+    },
+    get (id) {
+      return instance.get(`/api/incidents/${id}`).catch(handleError);
+    },
+    update (id, data) {
+      return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
+    },
+    arrived (id) {
+      return instance.patch(`/api/incidents/${id}/arrived`).catch(handleError);
+    },
+    left (id) {
+      return instance.patch(`/api/incidents/${id}/left`).catch(handleError);
+    },
+    extend (id) {
+      return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
+    },
+  },
+  deflections: {
+    list ({ incidentId, facilityId, active } = {}) {
+      const params = {};
+      if (incidentId) {
+        params.incidentId = incidentId;
+      }
+      if (facilityId) {
+        params.facilityId = facilityId;
+      }
+      if (active !== undefined) {
+        params.active = active;
+      }
+      return instance.get('/api/deflections', { params });
+    },
+    create (data) {
+      return instance.post('/api/deflections', data).catch(handleError);
+    },
+    get (id) {
+      return instance.get(`/api/deflections/${id}`);
+    },
+    update (id, data) {
+      return instance.patch(`/api/deflections/${id}`, data).catch(handleError);
+    },
+    subject (id, data) {
+      return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
+    },
+    cancel (id, { cancelReasonId } = {}) {
+      return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
+    },
+    cancelReasons: {
+      index () {
+        return instance.get('/api/deflections/cancel-reasons');
       },
-    },
-    holds: {
-      forCheckin (id) {
-        return instance.get(`/api/lesc/holds/${id}/for-checkin`).catch(handleError);
-      },
-    },
-    incidents: {
-      list () {
-        return instance.get('/api/lesc/incidents').catch(handleError);
+      get (id) {
+        return instance.get(`/api/deflections/cancel-reasons/${id}`);
       },
       create (data) {
-        return instance.post('/api/lesc/incidents', data).catch(handleError);
-      },
-      get (id) {
-        return instance.get(`/api/lesc/incidents/${id}`).catch(handleError);
+        return instance.post('/api/deflections/cancel-reasons', data).catch(handleError);
       },
       update (id, data) {
-        return instance.patch(`/api/lesc/incidents/${id}`, data).catch(handleError);
+        return instance.patch(`/api/deflections/cancel-reasons/${id}`, data).catch(handleError);
       },
-      findByCad (cadNumber) {
-        return instance.get(`/api/lesc/incidents/by-cad/${encodeURIComponent(cadNumber)}`).catch(handleError);
-      },
-    },
-    intake: {
-      create (data) {
-        return instance.post('/api/lesc/intake', data).catch(handleError);
-      },
-      list () {
-        return instance.get('/api/lesc/intake').catch(handleError);
-      },
-      get (id) {
-        return instance.get(`/api/lesc/intake/${id}`).catch(handleError);
+      delete (id) {
+        return instance.delete(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
       },
     },
-    checkin: {
-      create (holdId, data = {}) {
-        return instance.post(`/api/lesc/checkin/${holdId}`, data).catch(handleError);
-      },
-    },
-    clients: {
-      get (id) {
-        return instance.get(`/api/lesc/clients/${id}`).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/lesc/clients/${id}`, data).catch(handleError);
+    detailCategories: {
+      index ({ include } = {}) {
+        const params = {};
+        if (include) {
+          params.include = include;
+        }
+        return instance.get('/api/deflections/detail-categories', { params });
       },
     },
   },
@@ -381,6 +407,14 @@ const Api = {
       },
     },
   },
+  propertyPhotos: {
+    create (data) {
+      return instance.post('/api/property-photos', data).catch(handleError);
+    },
+    delete (id) {
+      return instance.delete(`/api/property-photos/${id}`).catch(handleError);
+    },
+  }
 };
 
 export default Api;

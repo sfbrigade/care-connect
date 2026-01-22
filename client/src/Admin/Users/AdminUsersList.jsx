@@ -33,6 +33,7 @@ function AdminUsersList () {
           <Button component={Link} to='/admin/invites/new'>
             Invite a new User
           </Button>
+          <Button component={Link} to='/admin/invites/batch'>Bulk Import New Users</Button>
         </Group>
         <Title order={2}>Users</Title>
         <Table.ScrollContainer>

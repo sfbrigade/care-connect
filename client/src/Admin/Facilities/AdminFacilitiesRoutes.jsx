@@ -3,17 +3,17 @@ import { Routes, Route } from 'react-router';
 import AdminFacilitiesList from './AdminFacilitiesList';
 import AdminFacilityForm from './AdminFacilityForm';
 import AdminFacilityStatusForm from './AdminFacilityStatusForm';
-import AdminBedStatusesList from './BedStatuses/AdminBedStatusesList';
-import AdminBedStatusForm from './BedStatuses/AdminBedStatusForm';
+import AdminBedTypesList from './BedTypes/AdminBedTypesList';
+import AdminBedTypeForm from './BedTypes/AdminBedTypeForm';
 
 function AdminFacilitiesRoutes () {
   return (
     <Routes>
       <Route path='new' element={<AdminFacilityForm />} />
       <Route path=':facilityId/status' element={<AdminFacilityStatusForm />} />
-      <Route path=':facilityId/bed-statuses/new' element={<AdminBedStatusForm />} />
-      <Route path=':facilityId/bed-statuses/:bedStatusId' element={<AdminBedStatusForm />} />
-      <Route path=':facilityId/bed-statuses' element={<AdminBedStatusesList />} />
+      <Route path=':facilityId/bed-types/new' element={<AdminBedTypeForm />} />
+      <Route path=':facilityId/bed-types/:bedTypeId' element={<AdminBedTypeForm />} />
+      <Route path=':facilityId/bed-types' element={<AdminBedTypesList />} />
       <Route path=':facilityId' element={<AdminFacilityForm />} />
       <Route path='' element={<AdminFacilitiesList />} />
     </Routes>

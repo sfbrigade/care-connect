@@ -21,7 +21,7 @@ export default async function main (prisma) {
     create: data,
     update: data,
   });
-  const bedStatusData = {
+  const bedTypeData = {
     facilityId: facility.id,
     type: 'CHAIR',
     capacity: 16,
@@ -29,21 +29,21 @@ export default async function main (prisma) {
     createdById: admin.id,
     updatedById: admin.id,
   };
-  let bedStatus = await prisma.bedStatus.findFirst({
+  let bedType = await prisma.bedType.findFirst({
     where: {
       facilityId: facility.id,
     },
   });
-  if (bedStatus) {
-    await prisma.bedStatus.update({
+  if (bedType) {
+    await prisma.bedType.update({
       where: {
-        id: bedStatus.id,
+        id: bedType.id,
       },
-      data: bedStatusData,
+      data: bedTypeData,
     });
   } else {
-    bedStatus = await prisma.bedStatus.create({
-      data: bedStatusData,
+    bedType = await prisma.bedType.create({
+      data: bedTypeData,
     });
   }
 

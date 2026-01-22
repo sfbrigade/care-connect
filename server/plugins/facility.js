@@ -10,7 +10,12 @@ export default fp(async function (fastify) {
   fastify.addHook('onRequest', async (request) => {
     const { host = '' } = request.headers;
     const subdomain = host.split('.')[0];
-    const data = await fastify.prisma.facility.findUnique({ where: { subdomain } });
+    const data = await fastify.prisma.facility.findUnique({
+      where: { subdomain },
+      include: {
+        bedTypes: true,
+      },
+    });
     if (data) {
       request.facility = new Facility(data);
     }

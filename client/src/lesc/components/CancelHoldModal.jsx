@@ -1,95 +1,69 @@
-import { Modal, Stack, Text, Group, Button } from '@mantine/core';
+import { useState } from 'react';
+import { Button, Chip, Group, Modal, Stack, Text, Title } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 
-/**
- * CancelHoldModal component matching Figma design
- * Confirmation modal for canceling a bed hold
- */
+import Api from '@/Api';
+
 function CancelHoldModal ({
+  deflection,
   opened,
   onClose,
   onConfirm,
-  holdIdentifier = '001',
-  holdName = 'John Doe',
   loading = false,
 }) {
+  const [cancelReasonId, setCancelReasonId] = useState();
+
+  const { data: cancelReasons } = useQuery({
+    queryKey: ['deflectionCancelReasons'],
+    queryFn: () => Api.deflections.cancelReasons.index().then(response => response.data),
+    enabled: !!deflection?.subjectId,
+  });
+
+  const name = [deflection.subject?.firstName, deflection.subject?.middleInitial, deflection.subject?.lastName].filter(Boolean).join(' ');
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
       title={null}
-      size='auto'
+      size='sm'
       centered
       lockScroll
       withCloseButton={false}
-      styles={{
-        content: {
-          borderRadius: '8px',
-          maxWidth: '329px',
-        },
-        body: {
-          padding: '24px 20px',
-        },
-      }}
     >
-      <Stack gap={24}>
-        <Text
-          style={{
-            fontSize: '20px',
-            lineHeight: '24px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 700,
-            color: '#000000',
-          }}
-        >
-          Cancel the hold for {holdIdentifier} {holdName}?
-        </Text>
-
-        <Text
-          style={{
-            fontSize: '14px',
-            lineHeight: '20px',
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 400,
-            color: '#868e96',
-          }}
-        >
-          This will release the bed back to available and remove their information from the system.
-          <br />
-          <br />
-          This action cannot be undone.
-        </Text>
-
-        <Group justify='flex-end' gap={24}>
+      <Stack gap='xl'>
+        <Stack gap='sm'>
+          {!name && <Title order={4}>Cancel this hold?</Title>}
+          {!!name && <Title order={4}>Cancel hold for {name}?</Title>}
+          {!deflection.subjectId && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
+          {!!deflection.subjectId && <Text size='sm' c='dimmed'>Canceling a hold means a chair will no longer be reserved. This person's identifying information will also be removed.</Text>}
+        </Stack>
+        {!!deflection.subjectId && (
+          <Chip.Group value={cancelReasonId} onChange={setCancelReasonId}>
+            <Group gap='sm'>
+              {cancelReasons?.map(reason => (
+                <Chip key={reason.id} value={reason.id} size='lg'>
+                  {reason.name}
+                </Chip>
+              ))}
+            </Group>
+          </Chip.Group>
+        )}
+        <Group grow>
           <Button
-            variant='subtle'
-            onClick={onClose}
-            disabled={loading}
-            style={{
-              fontSize: '14px',
-              lineHeight: '20px',
-              fontFamily: 'Roboto, sans-serif',
-              fontWeight: 400,
-              color: '#212529',
-              padding: 0,
-            }}
+            variant='light'
+            color='red.6'
+            onClick={() => onConfirm(cancelReasonId)}
+            disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
           >
-            Keep hold
+            Yes, cancel
           </Button>
           <Button
-            onClick={onConfirm}
-            loading={loading}
-            style={{
-              backgroundColor: '#000000',
-              color: '#ffffff',
-              borderRadius: '24px',
-              padding: '6px 16px',
-              fontSize: '14px',
-              lineHeight: '20px',
-              fontFamily: 'Roboto, sans-serif',
-              fontWeight: 400,
-            }}
+            variant='secondary'
+            onClick={onClose}
+            disabled={loading}
           >
-            Cancel hold
+            Keep hold
           </Button>
         </Group>
       </Stack>

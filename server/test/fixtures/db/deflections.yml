@@ -1,0 +1,41 @@
+entity: deflection
+connectedFields: [facility, bedType, subject, incident, createdBy]
+items:
+  activeHold:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    subject: '@subject1'
+    incident: '@incident1'
+    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user2'
+  extendedHold:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    subject: '@subject2'
+    incident: '@incident1'
+    expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user2'
+  anotherActiveHold:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user4'
+  expiredHold:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: '2024-12-27T09:53:41-07:00'
+    status: 'ACTIVE'
+    createdBy: '@user4'
+  cancelledHold:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: '2024-12-27T09:53:41-07:00'
+    status: 'CANCELLED'
+    cancelledAt: '2024-12-27T09:53:41-07:00'
+    createdBy: '@user4'

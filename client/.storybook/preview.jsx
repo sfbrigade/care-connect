@@ -6,8 +6,27 @@ import {
   MantineProvider,
   useMantineColorScheme,
 } from '@mantine/core';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { BrowserRouter } from 'react-router';
+
 // theme.ts file from previous step
 import AppTheme from '../src/AppTheme';
+
+import translation from '../../locales/en/translation.json';
+i18n
+  .use(initReactI18next)
+  .init({
+    lng: 'en',
+    interpolation: {
+      escapeValue: false,
+    },
+    resources: {
+      en: {
+        translation
+      }
+    }
+  });
 
 const channel = addons.getChannel();
 
@@ -34,6 +53,9 @@ const preview = {
     ),
     (renderStory) => (
       <MantineProvider theme={AppTheme}>{renderStory()}</MantineProvider>
+    ),
+    (renderStory) => (
+      <BrowserRouter>{renderStory()}</BrowserRouter>
     ),
   ],
   parameters: {
