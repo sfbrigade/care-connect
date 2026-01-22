@@ -16,7 +16,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
-    "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "test": "node --test-concurrency 4 --test $(find test -name '*.test.js')",
     "geocode:facilities": "node bin/geocode-facilities.js"
   },
   "license": "AGPL-3.0-only",
