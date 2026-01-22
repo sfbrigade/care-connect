@@ -113,6 +113,9 @@ const Api = {
     create (data) {
       return instance.post('/api/invites', data).catch(handleError);
     },
+    bulk (data) {
+      return instance.post('/api/invites/bulk', data).catch(handleError);
+    },
     get (id) {
       return instance.get(`/api/invites/${id}`);
     },

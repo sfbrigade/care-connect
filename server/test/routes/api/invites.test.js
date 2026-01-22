@@ -137,6 +137,46 @@ test('/api/invites', async (t) => {
     });
   });
 
+  await t.test('POST /bulk', async (t) => {
+    await t.test('creates invites and skips existing users/invites', async (t) => {
+      const response = await app.inject().post('/api/invites/bulk').payload({
+        invites: [
+          {
+            firstName: 'New',
+            lastName: 'Invite',
+            email: 'new.invite@test.com',
+          },
+          {
+            firstName: 'Existing',
+            lastName: 'User',
+            email: 'admin.user@test.com',
+          },
+          {
+            firstName: 'Existing',
+            lastName: 'Invite',
+            email: 'invited.user.2@test.com',
+          },
+        ]
+      }).headers(adminHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.invitedCount, 1);
+      assert.deepStrictEqual(data.existingCount, 2);
+      assert.deepStrictEqual(data.errorCount, 0);
+      assert.deepStrictEqual(data.errors.length, 0);
+
+      const createdInvite = await prisma.invite.findFirst({
+        where: { email: 'new.invite@test.com' },
+      });
+      assert.ok(createdInvite);
+
+      const sentMail = nodemailerMock.mock.getSentMail();
+      assert.deepStrictEqual(sentMail.length, 1);
+    });
+  });
+
   await t.test('GET /:id', async (t) => {
     await t.test('returns a valid Invite', async (t) => {
       const response = await app.inject().get('/api/invites/7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de');
