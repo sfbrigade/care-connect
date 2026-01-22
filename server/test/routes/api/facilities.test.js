@@ -289,7 +289,7 @@ test('/api/facilities', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.ok(data);
-      assert.deepStrictEqual(data.id, '2fa77128-586c-465a-9381-c441e633e3b2');
+      assert.deepStrictEqual(data.id, 1);
     });
 
     await t.test('returns null if no active incident for user and facility', async () => {
