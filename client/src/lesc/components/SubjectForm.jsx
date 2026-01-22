@@ -107,9 +107,9 @@ function SubjectForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
+          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
-          <Text size='md' c='dimmed'>Hold {deflection?.id?.substring(0, 3) ?? ''}</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>

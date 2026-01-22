@@ -12,7 +12,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Mark this incident as arrived',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: Incident.ResponseSchema,

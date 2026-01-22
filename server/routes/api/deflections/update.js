@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Update a deflection.',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         body: Deflection.UpdateSchema,
         response: {

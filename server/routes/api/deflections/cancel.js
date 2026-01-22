@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Cancel a deflection by id.',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         querystring: z.object({
           cancelReasonId: z.string().optional(),

@@ -438,11 +438,11 @@ model Subject {
 }
 
 model Deflection {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                           Int                     @id @default(autoincrement())
   facility                     Facility                @relation(fields: [facilityId], references: [id])
   facilityId                   String                  @db.Uuid
   incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
-  incidentId                   String                  @db.Uuid
+  incidentId                   Int
   bedType                      BedType                 @relation(fields: [facilityId, bedTypeId], references: [facilityId, id])
   bedTypeId                    String                  @db.Uuid 
   subject                      Subject?                @relation(fields: [subjectId], references: [id])
@@ -536,7 +536,7 @@ model DeflectionDetail {
 model DeflectionUpdate {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id])
-  deflectionId                 String                  @db.Uuid
+  deflectionId                 Int
   status                       HoldStatusEnum?
   expiresAt                    DateTime?
   extensionCount               Int?
@@ -631,7 +631,7 @@ model DeflectionExitHousingStatus {
 model PropertyPhoto {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
-  deflectionId                 String                  @db.Uuid
+  deflectionId                 Int
   file                         String
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
@@ -642,7 +642,7 @@ model PropertyPhoto {
 }
 
 model Incident {
-  id                           String                  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                           Int                     @unique @default(autoincrement())
   facilityId                   String                  @db.Uuid
   facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
   arrivedAt                    DateTime?

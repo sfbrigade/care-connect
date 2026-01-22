@@ -336,9 +336,9 @@ EXITED EXITED
   
 
   "Deflection" {
-    String id "🗝️"
+    Int id "🗝️"
     String facilityId 
-    String incidentId 
+    Int incidentId 
     String bedTypeId 
     String subjectId "❓"
     SubjectStatusEnum subjectStatus 
@@ -404,7 +404,7 @@ EXITED EXITED
 
   "DeflectionUpdate" {
     String id "🗝️"
-    String deflectionId 
+    Int deflectionId 
     HoldStatusEnum status "❓"
     DateTime expiresAt "❓"
     Int extensionCount "❓"
@@ -473,7 +473,7 @@ EXITED EXITED
 
   "PropertyPhoto" {
     String id "🗝️"
-    String deflectionId 
+    Int deflectionId 
     String file 
     DateTime createdAt 
     String createdById 
@@ -483,7 +483,7 @@ EXITED EXITED
   
 
   "Incident" {
-    String id "🗝️"
+    Int id "🗝️"
     String facilityId "🗝️"
     DateTime arrivedAt "❓"
     DateTime leftAt "❓"

@@ -126,7 +126,7 @@ test('/api/incidents', async (t) => {
 
   await t.test('GET /:id', async (t) => {
     await t.test('returns incident details', async () => {
-      const response = await app.inject().get('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2').headers(userHeaders);
+      const response = await app.inject().get('/api/incidents/1').headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
@@ -135,7 +135,7 @@ test('/api/incidents', async (t) => {
     });
 
     await t.test('returns 404 for non-existent incident', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const nonExistentId = '0';
       const response = await app.inject().get(`/api/incidents/${nonExistentId}`).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
@@ -144,7 +144,7 @@ test('/api/incidents', async (t) => {
 
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates incident details', async () => {
-      const response = await app.inject().patch('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2').payload({
+      const response = await app.inject().patch('/api/incidents/1').payload({
         cadNumber: 'CAD-UPDATED',
         city: 'Oakland',
       }).headers(userHeaders);
@@ -157,7 +157,7 @@ test('/api/incidents', async (t) => {
 
       // Verify in database
       const incident = await prisma.incident.findUnique({
-        where: { id: '2fa77128-586c-465a-9381-c441e633e3b2' },
+        where: { id: 1 },
       });
       assert.deepStrictEqual(incident.cadNumber, 'CAD-UPDATED');
       assert.deepStrictEqual(incident.city, 'Oakland');
@@ -165,7 +165,7 @@ test('/api/incidents', async (t) => {
 
     await t.test('cannot be updated by another non-admin user', async () => {
       const nonAdminUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
-      const response = await app.inject().patch('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2').payload({
+      const response = await app.inject().patch('/api/incidents/1').payload({
         cadNumber: 'Should Not Update',
       }).headers(nonAdminUserHeaders);
 
@@ -173,7 +173,7 @@ test('/api/incidents', async (t) => {
     });
 
     await t.test('requires authentication', async () => {
-      const response = await app.inject().patch('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2').payload({
+      const response = await app.inject().patch('/api/incidents/1').payload({
         cadNumber: 'Should Not Update',
       });
 
@@ -181,7 +181,7 @@ test('/api/incidents', async (t) => {
     });
 
     await t.test('returns 404 for non-existent incident', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const nonExistentId = '0';
       const response = await app.inject().patch(`/api/incidents/${nonExistentId}`).payload({
         cadNumber: 'Test',
       }).headers(userHeaders);
@@ -192,7 +192,7 @@ test('/api/incidents', async (t) => {
 
   await t.test('PATCH /:id/extend', async (t) => {
     await t.test('extends incident', async () => {
-      const response = await app.inject().patch('/api/incidents/2fa77128-586c-465a-9381-c441e633e3b2/extend').headers(userHeaders);
+      const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.length, 2);

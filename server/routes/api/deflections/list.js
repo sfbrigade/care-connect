@@ -14,7 +14,7 @@ export default async function (fastify, opts) {
         description: 'Returns a list of deflections.',
         querystring: z.object({
           facilityId: z.string().uuid().optional(),
-          incidentId: z.string().uuid().optional(),
+          incidentId: z.coerce.number().optional(),
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),

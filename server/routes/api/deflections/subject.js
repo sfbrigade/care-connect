@@ -12,7 +12,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Upsert the subject of a deflection.',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         body: Subject.UpdateSchema,
         response: {

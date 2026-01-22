@@ -83,9 +83,9 @@ function NarcoticsForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
+          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
-          <Text size='md' c='dimmed'>Hold {deflection?.id?.substring(0, 3) ?? ''}</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Narcotics details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>

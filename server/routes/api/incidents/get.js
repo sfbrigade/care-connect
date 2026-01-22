@@ -10,7 +10,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Get single incident details',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: Incident.ResponseSchema,

@@ -29,7 +29,7 @@ const IncidentCreateSchema = IncidentAttributesSchema.extend({
 const IncidentUpdateSchema = IncidentAttributesSchema.partial();
 
 const IncidentResponseSchema = IncidentCreateSchema.extend({
-  id: z.string().uuid(),
+  id: z.number(),
   facility: Facility.ResponseSchema.optional(),
   arrivedAt: z.coerce.date().nullable(),
   leftAt: z.coerce.date().nullable(),

@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Get single deflection details',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,

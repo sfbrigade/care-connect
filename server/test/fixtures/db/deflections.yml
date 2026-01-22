@@ -2,7 +2,6 @@ entity: deflection
 connectedFields: [facility, bedType, subject, incident, createdBy]
 items:
   activeHold:
-    id: b65ae02b-9b35-43e2-897b-eee6eb5a82e2
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject1'
@@ -11,7 +10,6 @@ items:
     status: 'ACTIVE'
     createdBy: '@user2'
   extendedHold:
-    id: 7a261ab8-a6b6-427a-a67e-2509332a7bdd
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject2'
@@ -20,7 +18,6 @@ items:
     status: 'ACTIVE'
     createdBy: '@user2'
   anotherActiveHold:
-    id: 7a2f42d0-adbe-49fe-a71f-7e62dff9a059
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     incident: '@incident2'
@@ -28,7 +25,6 @@ items:
     status: 'ACTIVE'
     createdBy: '@user4'
   expiredHold:
-    id: 00d1daba-df84-4fda-86f3-eb5a2939528b
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     incident: '@incident2'
@@ -36,7 +32,6 @@ items:
     status: 'ACTIVE'
     createdBy: '@user4'
   cancelledHold:
-    id: f2d6f235-5aeb-457e-8d42-b0cc096920c0
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     incident: '@incident2'

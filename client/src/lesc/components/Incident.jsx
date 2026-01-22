@@ -17,7 +17,7 @@ function Incident ({ incident, editLink }) {
       <Box>
         <Group gap='xs'>
           <Text size='md'>
-            Incident {incident?.cadNumber ?? ''}
+            Incident {incident ? String(incident.id).padStart(6, '0') : ''}
           </Text>
           {isIncomplete && <Text c='gray.5' size='md'>•</Text>}
           {isIncomplete && <Text c='red.6' size='md'>Details incomplete</Text>}

@@ -14,7 +14,7 @@ function Hold ({
 }) {
   const { t } = useTranslation();
   const location = useLocation();
-  const displayId = deflection?.id ? deflection.id.slice(0, 3).toUpperCase() : '';
+  const displayId = String(deflection.id).padStart(6, '0');
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
 
   let subjectAge;

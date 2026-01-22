@@ -66,9 +66,9 @@ function Deflection () {
       <Container>
         <Stack gap='xl'>
           <Group gap='xs'>
-            <Text size='md'>Incident {incident?.cadNumber ?? ''}</Text>
+            <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
             <Text c='gray.5' size='md'>•</Text>
-            <Text size='md' c='dimmed'>Hold {deflection?.id?.substring(0, 3) ?? ''}</Text>
+            <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>

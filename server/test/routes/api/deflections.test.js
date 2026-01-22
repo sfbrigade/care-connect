@@ -14,7 +14,7 @@ test('/api/deflections', async (t) => {
     await t.test('creates a new deflection', async () => {
       const response = await app.inject().post('/api/deflections').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
-        incidentId: '2fa77128-586c-465a-9381-c441e633e3b2',
+        incidentId: 1,
         bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
       }).headers(userHeaders);
 
@@ -23,7 +23,7 @@ test('/api/deflections', async (t) => {
 
       assert.ok(data.id);
       assert.deepStrictEqual(data.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
-      assert.deepStrictEqual(data.incidentId, '2fa77128-586c-465a-9381-c441e633e3b2');
+      assert.deepStrictEqual(data.incidentId, 1);
       assert.deepStrictEqual(data.bedTypeId, '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76');
       assert.deepStrictEqual(data.status, 'ACTIVE');
 
@@ -85,7 +85,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates deflection details', async () => {
-      const response = await app.inject().patch('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2').payload({
+      const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
         deflectionDetails: ['unable_to_stand', 'confused'],
       }).headers(userHeaders);
@@ -98,7 +98,7 @@ test('/api/deflections', async (t) => {
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
-        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+        where: { id: 4 },
         include: {
           deflectionDetails: true,
         },
@@ -108,7 +108,7 @@ test('/api/deflections', async (t) => {
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const nonExistentId = '0';
       const response = await app.inject().patch(`/api/deflections/${nonExistentId}`).payload({
         behavior: 'Cooperative',
       }).headers(userHeaders);
@@ -119,7 +119,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('PUT /:id/subject', async (t) => {
     await t.test('creates a new subject for a deflection', async () => {
-      const response = await app.inject().put('/api/deflections/7a2f42d0-adbe-49fe-a71f-7e62dff9a059/subject').payload({
+      const response = await app.inject().put('/api/deflections/2/subject').payload({
         firstName: 'John',
         lastName: 'Doe',
         middleInitial: 'D',
@@ -165,14 +165,14 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.localId, '1234');
 
       const deflection = await prisma.deflection.findUnique({
-        where: { id: '7a2f42d0-adbe-49fe-a71f-7e62dff9a059' },
+        where: { id: 2 },
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
     });
 
     await t.test('updates the subject of a deflection', async () => {
-      const response = await app.inject().put('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2/subject').payload({
+      const response = await app.inject().put('/api/deflections/4/subject').payload({
         firstName: 'Jane',
         lastName: 'Doe',
         middleInitial: 'D',
@@ -219,7 +219,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.localId, '9876');
 
       const deflection = await prisma.deflection.findUnique({
-        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+        where: { id: 4 },
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
@@ -228,7 +228,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('cancels the deflection', async () => {
-      const response = await app.inject().delete('/api/deflections/b65ae02b-9b35-43e2-897b-eee6eb5a82e2?cancelReasonId=5150').headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
@@ -239,7 +239,7 @@ test('/api/deflections', async (t) => {
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
-        where: { id: 'b65ae02b-9b35-43e2-897b-eee6eb5a82e2' },
+        where: { id: 4 },
       });
       assert.deepStrictEqual(deflection.status, 'CANCELLED');
       assert.deepStrictEqual(deflection.cancelReasonId, '5150');
@@ -254,7 +254,7 @@ test('/api/deflections', async (t) => {
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const nonExistentId = '0';
       const response = await app.inject().delete(`/api/deflections/${nonExistentId}`).payload({}).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
     });

@@ -12,7 +12,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Extends active deflections associated with this incident',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: z.array(Deflection.ResponseSchema),

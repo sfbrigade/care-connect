@@ -26,7 +26,7 @@ const DeflectionAttributesSchema = z.object({
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
   facilityId: z.string().uuid(),
-  incidentId: z.string().uuid(),
+  incidentId: z.number(),
   bedTypeId: z.string().uuid(),
   subjectId: z.string().uuid().nullable().optional(),
 });
@@ -34,7 +34,7 @@ const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
 const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
 
 const DeflectionResponseSchema = DeflectionCreateSchema.extend({
-  id: z.string().uuid(),
+  id: z.number(),
   status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),

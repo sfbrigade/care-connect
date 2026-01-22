@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Update an incident.',
         params: z.object({
-          id: z.string().uuid(),
+          id: z.coerce.number(),
         }),
         body: Incident.UpdateSchema,
         response: {
