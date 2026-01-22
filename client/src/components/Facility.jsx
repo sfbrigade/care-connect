@@ -1,5 +1,6 @@
 import Card from './Card';
 import CategoryIcon from './CategoryIcon';
+import FacilityAddressLink from './FacilityAddressLink';
 
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (
@@ -61,20 +62,19 @@ export default function Facility ({ facility, isSelected, onSelect }) {
             {facility.districtLabel}
           </span>
         )}
-        {facility.displayAddress && (
-          <span
-            style={{
-              fontSize: '13px',
-              lineHeight: '20px',
-              fontFamily: 'Roboto, sans-serif',
-              fontWeight: 400,
-              color: '#868e96',
-              margin: 0,
-            }}
-          >
-            {facility.displayAddress}
-          </span>
-        )}
+        <FacilityAddressLink
+          address={facility.displayAddress}
+          stopPropagation
+          style={{
+            fontSize: '13px',
+            lineHeight: '20px',
+            fontFamily: 'Roboto, sans-serif',
+            fontWeight: 400,
+            color: '#868e96',
+            margin: 0,
+            textDecoration: 'none',
+          }}
+        />
         {facility.primaryService && (
           <span
             style={{
