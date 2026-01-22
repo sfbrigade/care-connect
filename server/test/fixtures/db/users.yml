@@ -1,4 +1,5 @@
 entity: user
+connectedFields: [organization]
 items:
   user1:
     id: 555740af-17e9-48a3-93b8-d5236dfd2c29
@@ -16,6 +17,7 @@ items:
     hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
     isAdmin: false
     createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfpd"
   user3:
     id: 33409349-ebd1-4c04-af14-46959188b819
     firstName: Deactivated
@@ -25,6 +27,7 @@ items:
     isAdmin: false
     createdAt: '2024-12-27T09:53:41-07:00'
     deactivatedAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfpd"
   user4:
     id: aa1fdcf6-a63c-454e-9775-2d6fd116fdb1
     firstName: Another
@@ -35,3 +38,13 @@ items:
     passwordResetExpiresAt: '2024-12-27T09:53:41-07:00'
     isAdmin: false
     createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfpd"
+  sfsouser1:
+    id: 49acdf99-536f-49ac-8138-1c77e5087697
+    firstName: SFSO
+    lastName: User 1
+    email: sfsouser1@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfso"
