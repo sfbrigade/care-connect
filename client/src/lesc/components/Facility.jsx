@@ -3,6 +3,7 @@ import { IconAlertTriangle } from '@tabler/icons-react';
 import { inflect, pluralize } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
+import FacilityAddressLink from '../../components/FacilityAddressLink';
 
 function Facility ({
   facility,
@@ -19,6 +20,7 @@ function Facility ({
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
+  const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
 
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
@@ -29,7 +31,18 @@ function Facility ({
           {bedTypes?.map(bedType => (
             <Title key={bedType.id} order={3}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
           ))}
-          <Text size='sm'>{facility.name} <Text span c='gray.5'>•</Text> {[facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ')}</Text>
+          <Text size='sm'>
+            {facility.name}
+            {address && (
+              <>
+                {' '}
+                <Text span c='gray.5'>•</Text>{' '}
+                <FacilityAddressLink
+                  address={address}
+                />
+              </>
+            )}
+          </Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
           {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
