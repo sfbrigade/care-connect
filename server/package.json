@@ -1,6 +1,6 @@
 {
   "type": "module",
-  "name": "full-stack-starter-server",
+  "name": "care-connect-server",
   "version": "6.0.0",
   "main": "app.js",
   "directories": {
