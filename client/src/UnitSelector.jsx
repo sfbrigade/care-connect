@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Box, Button, Container, Stack, Title } from "@mantine/core";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router";
-import AutoComplete from "./components/AutoComplete";
+import Select from "./components/Select";
 
 import Api from "./Api";
 import { useAuthContext } from "./AuthContext";
@@ -35,8 +35,8 @@ function UnitSelector() {
   });
 
   function onConfirm() {
-    const translatedID = units.find((unit) => unit.name === unitName).id
-    onSubmitMutation.mutate({translatedID});
+    const translatedID = units.find((unit) => unit.name === unitName).id;
+    onSubmitMutation.mutate({ unitId: translatedID });
   }
 
   return (
@@ -50,7 +50,7 @@ function UnitSelector() {
         </Title>
         <Box mih="0" flex="0 2">
           <Stack gap="md">
-            <AutoComplete
+            <Select
               label="Select Unit"
               placeholder="Select a unit"
               data={units?.map((unit) => unit.name)}
@@ -58,6 +58,8 @@ function UnitSelector() {
               onChange={(e) => {
                 setUnitName(e);
               }}
+              radius="md"
+              size="lg"
             />
           </Stack>
         </Box>

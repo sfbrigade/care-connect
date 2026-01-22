@@ -1,8 +1,8 @@
-import  AutoComplete  from "./AutoComplete.jsx";
+import  Select from "./Select.jsx";
 
 export default {
-  title: 'Components/AutoComplete',
-  component: AutoComplete,
+  title: 'Components/Select',
+  component: Select,
   parameters:{
     layout: 'centered',
   },
@@ -14,8 +14,6 @@ export const primary = {
   args: {
     label: 'Label',
     placeholder: 'Placeholder',
-    value:'',
-    onChange: () => {},
     data: ['Option 1', 'Option 2', 'Option 3'],
   },
 };
