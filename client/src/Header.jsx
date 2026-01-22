@@ -29,8 +29,8 @@ function Header ({ opened, close, toggle, logout }) {
                 <Anchor component={NavLink} to='/admin'>Admin</Anchor>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item><Anchor component={NavLink} to='/admin/enums'>Enums</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/facility-status-reasons'>Facility Status Reasons</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/organizations'>Organizations</Anchor></Menu.Item>
                 <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>

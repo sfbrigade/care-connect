@@ -4,35 +4,19 @@ import { z } from 'zod';
 export default async function (fastify, opts) {
   fastify.get('/reverse',
     {
-      preHandler: fastify.requireUser,
+      // onRequest: fastify.requireUser,
       schema: {
         description: 'Reverse geocode coordinates to address using OpenRouteService API.',
         querystring: z.object({
-          latitude: z.string().transform((val) => {
-            const num = parseFloat(val);
-            if (isNaN(num)) {
-              throw new Error('Invalid latitude');
-            }
-            return num;
-          }),
-          longitude: z.string().transform((val) => {
-            const num = parseFloat(val);
-            if (isNaN(num)) {
-              throw new Error('Invalid longitude');
-            }
-            return num;
-          }),
+          latitude: z.coerce.number(),
+          longitude: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: z.object({
-            address: z.string().nullable(),
-            error: z.string().optional(),
-          }),
-          [StatusCodes.BAD_REQUEST]: z.object({
-            error: z.string(),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: z.object({
-            error: z.string(),
+            addressLine1: z.string().nullable(),
+            city: z.string().nullable(),
+            state: z.string().nullable(),
+            postalCode: z.string().nullable(),
           }),
         },
       },
@@ -43,10 +27,7 @@ export default async function (fastify, opts) {
       const API_KEY = process.env.OPENROUTESERVICE_API_KEY;
       if (!API_KEY) {
         fastify.log.warn('OPENROUTESERVICE_API_KEY not configured, skipping reverse geocoding');
-        return reply.send({
-          address: null,
-          error: 'Geocoding service not configured',
-        });
+        return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send();
       }
 
       const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
@@ -75,43 +56,27 @@ export default async function (fastify, opts) {
         if (!response.ok) {
           const text = await response.text();
           fastify.log.error(`Reverse geocode request failed (${response.status}): ${text}`);
-          return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-            address: null,
-            error: 'Failed to reverse geocode coordinates',
-          });
+          return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send();
         }
 
         const data = await response.json();
         const feature = data?.features?.[0];
 
         if (!feature) {
-          return reply.send({
-            address: null,
-            error: 'No address found for coordinates',
-          });
+          return reply.code(StatusCodes.NOT_FOUND).send();
         }
 
-        // Extract formatted address from properties.label or construct from properties
-        const address = feature.properties?.label ||
-          (feature.properties
-            ? [
-                feature.properties.name,
-                feature.properties.street,
-                feature.properties.locality,
-                feature.properties.region,
-                feature.properties.postalcode,
-              ].filter(Boolean).join(', ')
-            : null);
+        console.log(feature.properties);
 
         return reply.send({
-          address: address || null,
+          addressLine1: feature.properties?.name,
+          city: feature.properties?.locality,
+          state: feature.properties?.region_a,
+          postalCode: feature.properties?.postalcode,
         });
       } catch (error) {
         fastify.log.error(error, 'Error during reverse geocoding');
-        return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send({
-          address: null,
-          error: error.message || 'Failed to reverse geocode coordinates',
-        });
+        return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send();
       }
     });
 }
