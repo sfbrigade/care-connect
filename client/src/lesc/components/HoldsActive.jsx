@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text } from '@mantine/core';
+import { Box, Button, Stack, Title, Text, Center, Loader } from '@mantine/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
@@ -7,21 +7,29 @@ import Incident from './Incident';
 import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
 
-function HoldsActive ({ incident, onCancelHoldClick }) {
+function HoldsActive ({ incident, isLoadingIncident, onCancelHoldClick }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const { data: deflections } = useQuery({
+  const { data: deflections, isLoading: isDeflectionsLoading } = useQuery({
     queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    queryFn: () =>
+      Api.deflections
+        .list({ incidentId: incident.id, active: true })
+        .then((response) => response.data),
     enabled: !!incident,
   });
+
+  const isLoading = isDeflectionsLoading || isLoadingIncident;
 
   const extendAllHoldsMutation = useMutation({
     mutationFn: () => Api.incidents.extend(incident.id),
     onSuccess: (response) => {
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
+      queryClient.setQueryData(
+        ['deflections', incident?.id, 'active'],
+        response.data
+      );
       showToast('All active holds have been reset to 60 minutes.', 'success');
     },
     onError: () => {
@@ -35,19 +43,24 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
 
   return (
     <>
-      {incident && (
-        <Incident incident={incident} editLink='/incident' />
+      {incident && <Incident incident={incident} editLink='/incident' />}
+      {isLoading && (
+        <Center p='xl'>
+          <Loader size='xl' />
+        </Center>
       )}
-      {(!deflections || deflections.length === 0) && (
+      {!isLoading && (!deflections || deflections.length === 0) && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
             <Title order={4}>You don't have any active holds</Title>
-            <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
+            <Text size='md' c='dimmed'>
+              New holds will show up here once you start them.
+            </Text>
           </Box>
         </>
       )}
-      {deflections && deflections.length > 0 && (
+      {!isLoading && deflections && deflections.length > 0 && (
         <>
           <Stack gap='md'>
             {deflections?.map((deflection) => (
@@ -56,16 +69,16 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject`);
+                  navigate(
+                    deflection.subjectId
+                      ? `/holds/${deflection.id}`
+                      : `/holds/${deflection.id}/subject`
+                  );
                 }}
               />
             ))}
           </Stack>
-          <Button
-            variant='secondary'
-            fullWidth
-            onClick={onExtendAllClick}
-          >
+          <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
             Extend all holds
           </Button>
         </>

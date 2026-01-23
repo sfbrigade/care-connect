@@ -20,12 +20,18 @@ function Holds () {
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
-    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
+    queryFn: () =>
+      Api.facilities.bedTypes
+        .index(facility.id)
+        .then((response) => response.data),
   });
 
-  const { data: incident } = useQuery({
+  const { data: incident, isLoading: isIncidentLoading } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+    queryFn: () =>
+      Api.facilities
+        .activeIncident(facility.id)
+        .then((response) => response.data),
   });
 
   const [tab, setTab] = useState('active');
@@ -33,8 +39,14 @@ function Holds () {
   const markArrivedMutation = useMutation({
     mutationFn: (id) => Api.incidents.arrived(id),
     onSuccess: (response) => {
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data.deflections);
+      queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        response.data
+      );
+      queryClient.setQueryData(
+        ['deflections', incident?.id, 'active'],
+        response.data.deflections
+      );
     },
   });
 
@@ -47,8 +59,11 @@ function Holds () {
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
     onSuccess: (response) => {
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-    }
+      queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        null
+      );
+    },
   });
 
   function onLeftClick () {
@@ -60,9 +75,16 @@ function Holds () {
   const createDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.create(data),
     onSuccess: (response) => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      const cachedDeflections = queryClient.getQueryData([
+        'deflections',
+        incident?.id,
+        'active',
+      ]);
       if (cachedDeflections) {
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], [response.data, ...cachedDeflections]);
+        queryClient.setQueryData(
+          ['deflections', incident?.id, 'active'],
+          [response.data, ...cachedDeflections]
+        );
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
     },
@@ -92,9 +114,18 @@ function Holds () {
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
     onSuccess: (response) => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      const cachedDeflections = queryClient.getQueryData([
+        'deflections',
+        incident?.id,
+        'active',
+      ]);
       if (cachedDeflections) {
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id));
+        queryClient.setQueryData(
+          ['deflections', incident?.id, 'active'],
+          cachedDeflections.filter(
+            (deflection) => deflection.id !== selectedDeflection.id
+          )
+        );
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
@@ -143,13 +174,20 @@ function Holds () {
             ]}
           />
           {tab === 'active' && (
-            <HoldsActive incident={incident} onCancelHoldClick={onCancelHoldClick} />
+            <HoldsActive
+              incident={incident}
+              isLoadingIncident={isIncidentLoading}
+              onCancelHoldClick={onCancelHoldClick}
+            />
           )}
-          {tab === 'history' && (
-            <HoldsHistory facility={facility} />
-          )}
+          {tab === 'history' && <HoldsHistory facility={facility} />}
           <Text size='xs' c='gray.5' align='center'>
-            Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+            Last updated:{' '}
+            {facility?.updatedAt
+              ? DateTime.fromISO(facility.updatedAt).toLocaleString(
+                DateTime.TIME_SIMPLE
+              )
+              : ''}
           </Text>
         </Stack>
       </Container>
