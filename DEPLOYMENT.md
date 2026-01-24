@@ -72,8 +72,8 @@ This starts:
 
 Wait for output showing:
 ```
-full-stack-starter-server-1 | VITE v7.x.x ready in XXX ms
-full-stack-starter-server-1 | ➜  Local:   http://localhost:3333/
+care-connect-server-1 | VITE v7.x.x ready in XXX ms
+care-connect-server-1 | ➜  Local:   http://localhost:3333/
 ```
 
 ### 2.3 Access the Application
