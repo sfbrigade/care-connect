@@ -27,7 +27,7 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
-function IncidentForm () {
+function IncidentForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -168,7 +168,14 @@ function IncidentForm () {
                 key={form.key('cadNumber')}
                 {...form.getInputProps('cadNumber')}
                 label={<>CAD number<span>*</span></>}
-                type='number'
+                placeholder='Enter CAD Number'
+                description='CAD is provided by dispatch (MDT / radio).'
+                inputWrapperOrder={['label', 'input', 'description', 'error']}
+                maxLength={6}
+                onChange={(event) => {
+                  const value = event.target.value.replace(/\D/g, '');
+                  form.setFieldValue('cadNumber', value);
+                }}
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
@@ -176,7 +183,14 @@ function IncidentForm () {
                 key={form.key('supervisorBadgeNumber')}
                 {...form.getInputProps('supervisorBadgeNumber')}
                 label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                type='number'
+                placeholder='Enter Star Number'
+                description='You can skip now and come back to fill out before custody transfer'
+                inputWrapperOrder={['label', 'input', 'description', 'error']}
+                maxLength={4}
+                onChange={(event) => {
+                  const value = event.target.value.replace(/\D/g, '');
+                  form.setFieldValue('supervisorBadgeNumber', value);
+                }}
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
