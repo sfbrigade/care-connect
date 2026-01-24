@@ -1,5 +1,5 @@
 {
-  "name": "full-stack-starter",
+  "name": "care-connect",
   "version": "6.0.0",
   "workspaces": [
     "client",
