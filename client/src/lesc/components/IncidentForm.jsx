@@ -151,6 +151,8 @@ function IncidentForm () {
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
                       label='Arrest ZIP code'
+                      type='number'
+                      inputMode='numeric'
                     />
                   </Group>
                 </>
@@ -166,12 +168,16 @@ function IncidentForm () {
                 key={form.key('cadNumber')}
                 {...form.getInputProps('cadNumber')}
                 label={<>CAD number<span>*</span></>}
+                type='number'
+                inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
                 key={form.key('supervisorBadgeNumber')}
                 {...form.getInputProps('supervisorBadgeNumber')}
                 label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                type='number'
+                inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
               <Button type='submit'>
