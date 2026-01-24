@@ -37,15 +37,19 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Bed type record not found' });
       }
 
-      // Merge existing data with updates to calculate new metrics
-      const nextData = { ...existingBedType, ...data };
-
-      // Recalculate available
-      // available = capacity - unavailableUnoccupied - unavailableOccupied - occupied - holds
-      const available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
-
       let bedType;
       await fastify.prisma.$transaction(async (tx) => {
+        // refetch with lock
+        bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        // Merge existing data with updates to calculate new metrics
+        const nextData = { ...bedType, ...data };
+        // Recalculate available
+        // available = capacity - unavailableUnoccupied - unavailableOccupied - occupied - holds
+        const available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
+        if (available < 0) {
+          return reply.code(StatusCodes.BAD_REQUEST).send();
+        }
+
         // Create the update history record
         await tx.bedTypeUpdate.create({
           data: {
@@ -63,7 +67,7 @@ export default async function (fastify, opts) {
 
         // Update the actual bed type record
         bedType = await tx.bedType.update({
-          where: { bedTypeId: { id: bedTypeId, facilityId } },
+          where: { id: bedTypeId },
           data: {
             type: nextData.type,
             capacity: nextData.capacity,
