@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspace client && npm run build --workspace server",
-    "dev": "cp -n server/example.env server/.env; cp server/.env client/.env; nf -j Procfile.dev start",
+    "dev": "cross-env-shell \"cp .env.example .env && vite\"",
     "lint": "npm run lint --workspaces",
     "lint:check": "npm run lint:check --workspaces",
     "test": "npm test --workspaces"
