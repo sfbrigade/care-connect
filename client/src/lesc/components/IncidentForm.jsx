@@ -39,6 +39,10 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    validate: {
+      cadNumber: (val) => (val && val.toString().length > 6 ? 'CAD number must be 6 digits or less' : null),
+      supervisorBadgeNumber: (val) => (val && val.toString().length > 4 ? 'Star number must be 4 digits or less' : null),
+    },
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, { zone: 'local' }).toISO(),
@@ -168,6 +172,7 @@ function IncidentForm () {
                 key={form.key('cadNumber')}
                 {...form.getInputProps('cadNumber')}
                 label={<>CAD number<span>*</span></>}
+                description="CAD is provided by dispatch (MDT / radio)."
                 type='number'
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
@@ -176,6 +181,7 @@ function IncidentForm () {
                 key={form.key('supervisorBadgeNumber')}
                 {...form.getInputProps('supervisorBadgeNumber')}
                 label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                description="If you don't have the star number right now, you can come back and add it later before custody transfer."
                 type='number'
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
