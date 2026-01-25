@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, SegmentedControl, Stack, Text, Loader } from '@mantine/core';
+import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
@@ -18,12 +18,12 @@ function Holds () {
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
-  const { data: bedTypes, isFetching: isFetchingBedTypes } = useQuery({
+  const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
   });
 
-  const { data: incident , isFetching: isFetchingIncident } = useQuery({
+  const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
   });
@@ -117,52 +117,42 @@ function Holds () {
     setShowCancelModal(false);
   }
 
-  const isLoading = isFetchingBedTypes || isFetchingIncident;
-
   return (
     <>
       <Head>
         <title>Holds</title>
       </Head>
-      {isLoading ? (
-        <Container>
-          <Stack gap="xl" align="center" justify="center" style={{ minHeight: 200 }}>
-            <Loader size="lg" />
-          </Stack>
-        </Container>
-      ) : (
-        <Container>
-          <Stack gap='xl'>
-            <Facility
-              facility={facility}
-              bedTypes={bedTypes ?? facility.bedTypes}
-              arrivedAt={incident?.arrivedAt}
-              leftAt={incident?.leftAt}
-              onArrivedClick={onArrivedClick}
-              onLeftClick={onLeftClick}
-              onHoldClick={onHoldClick}
-            />
-            <SegmentedControl
-              fullWidth
-              value={tab}
-              onChange={setTab}
-              data={[
-                { label: 'Active holds', value: 'active' },
-                { label: 'History', value: 'history' },
-              ]}
-            />
-            {tab === 'active' && (
-              <HoldsActive incident={incident} onCancelHoldClick={onCancelHoldClick} />
-            )}
-            {tab === 'history' && (
-              <HoldsHistory facility={facility} />
-            )}
-            <Text size='xs' c='gray.5' align='center'>
-              Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
-            </Text>
-          </Stack>
-        </Container>
-      )}
+      <Container>
+        <Stack gap='xl'>
+          <Facility
+            facility={facility}
+            bedTypes={bedTypes ?? facility.bedTypes}
+            arrivedAt={incident?.arrivedAt}
+            leftAt={incident?.leftAt}
+            onArrivedClick={onArrivedClick}
+            onLeftClick={onLeftClick}
+            onHoldClick={onHoldClick}
+          />
+          <SegmentedControl
+            fullWidth
+            value={tab}
+            onChange={setTab}
+            data={[
+              { label: 'Active holds', value: 'active' },
+              { label: 'History', value: 'history' },
+            ]}
+          />
+          {tab === 'active' && (
+            <HoldsActive incident={incident} onCancelHoldClick={onCancelHoldClick} />
+          )}
+          {tab === 'history' && (
+            <HoldsHistory facility={facility} />
+          )}
+          <Text size='xs' c='gray.5' align='center'>
+            Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+          </Text>
+        </Stack>
+      </Container>
       {selectedDeflection && (
         <CancelHoldModal
           deflection={selectedDeflection}

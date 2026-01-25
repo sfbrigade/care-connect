@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text } from '@mantine/core';
+import { Box, Button, Stack, Title, Text, Container, Loader} from '@mantine/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
@@ -12,7 +12,7 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const { data: deflections } = useQuery({
+  const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
     queryKey: ['deflections', incident?.id, 'active'],
     queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
     enabled: !!incident,
@@ -35,6 +35,13 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
 
   return (
     <>
+      {isFetchingDeflections && (
+        <Container>
+          <Stack gap='xl' align='center' justify='center' style={{ minHeight: 200 }}>
+            <Loader size='lg' />
+          </Stack>
+        </Container>
+      )}
       {incident && (
         <Incident incident={incident} editLink='/incident' />
       )}
