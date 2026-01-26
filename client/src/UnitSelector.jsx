@@ -32,7 +32,7 @@ function UnitSelector () {
 
   const autocompleteData = units.map((unit) => ({
     value: unit.id,
-    label: unit.id,
+    label: unit.name,
   }));
   function onConfirm () {
     onSubmitMutation.mutate({ unitId });
@@ -41,9 +41,9 @@ function UnitSelector () {
   return (
     <Container>
       <Stack gap='xl' mah='calc(100vh - var(--app-shell-header-offset) - var(--app-shell-padding) - 1.25rem)'>
-        <Title flex='0 0' order={2}>What unit git statusare you assigned to today?</Title>
+        <Title flex='0 0' order={2}>What unit are you assigned to today?</Title>
         <Chip.Group value={unitId} onChange={setUnitId}>
-          <Box mih='0' flex='0 2' style={{ overflowY: 'scroll' }}>
+          {/* <Box mih='0' flex='0 2' style={{ overflowY: 'scroll' }}>
             <Stack gap='md'>
               {units?.map((unit) => (
                 <Chip
@@ -54,20 +54,20 @@ function UnitSelector () {
                 >
                   {unit.name}
                 </Chip>
-              ))}
+              ))} */}
 
               <Autocomplete
                 label='Unit'
                 placeholder='Start typing a unit name'
                 data={autocompleteData}
-                value={unitId}
+                value={autocompleteData.name}
                 onChange={setUnitId}
                 onOptionSubmit={(value) => setUnitId(value)}
                 clearable
                 nothingfound='No units found'
               />
-            </Stack>
-          </Box>
+            {/* </Stack>
+          </Box> */}
         </Chip.Group>
         <Box flex='0 0'>
           <Button disabled={!unitId} fullWidth mt='3rem' onClick={onConfirm}>Confirm unit</Button>
