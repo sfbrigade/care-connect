@@ -1,5 +1,9 @@
 # Care Connect
 
+## Contributing
+
+Please read CONTRIBUTING.md for information on how to contribute to this project.
+
 ## One-time Setup
 
 1. Clone the repo to a "local" directory (on your computer), then change
