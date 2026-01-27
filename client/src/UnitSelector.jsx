@@ -42,21 +42,7 @@ function UnitSelector () {
     <Container>
       <Stack gap='xl' mah='calc(100vh - var(--app-shell-header-offset) - var(--app-shell-padding) - 1.25rem)'>
         <Title flex='0 0' order={2}>What unit are you assigned to today?</Title>
-        <Chip.Group value={unitId} onChange={setUnitId}>
-          {/* <Box mih='0' flex='0 2' style={{ overflowY: 'scroll' }}>
-            <Stack gap='md'>
-              {units?.map((unit) => (
-                <Chip
-                  key={unit.id}
-                  color='gray.6'
-                  size='xl'
-                  value={unit.id}
-                >
-                  {unit.name}
-                </Chip>
-              ))} */}
-
-              <Autocomplete
+            <Autocomplete
                 label='Unit'
                 placeholder='Start typing a unit name'
                 data={autocompleteData}
@@ -66,10 +52,7 @@ function UnitSelector () {
                 clearable
                 nothingfound='No units found'
               />
-            {/* </Stack>
-          </Box> */}
-        </Chip.Group>
-        <Box flex='0 0'>
+         <Box flex='0 0'>
           <Button disabled={!unitId} fullWidth mt='3rem' onClick={onConfirm}>Confirm unit</Button>
         </Box>
       </Stack>
