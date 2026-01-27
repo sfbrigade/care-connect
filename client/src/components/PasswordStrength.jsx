@@ -1,15 +1,9 @@
 import { Box, Progress, Text } from '@mantine/core';
 
+import { getPasswordStrengthScore } from '@/utils/passwordStrength';
+
 function PasswordStrength ({ password }) {
-  let strength = 0;
-  if (password?.length > 0) {
-    strength += 1;
-    if (password?.length >= 12) {
-      strength += 1;
-      const parts = password.trim().split(' ');
-      strength += Math.min(parts.length - 1, 2);
-    }
-  }
+  const strength = getPasswordStrengthScore(password);
   return (
     <Box>
       <Text size='sm'>Password strength: <b>{strength < 2 ? 'Weak' : strength < 3 ? 'Medium' : 'Strong'}</b></Text>
