@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Chip, Container, Stack, Title, Autocomplete } from '@mantine/core';
+import { Box, Button, Container, Stack, Title, Autocomplete } from '@mantine/core';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
 
