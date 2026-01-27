@@ -27,9 +27,16 @@ export default {
     leftAt: {
       description: 'Left at date',
     },
+    hasActiveHold: {
+      description: 'Whether the current user has an active hold',
+    },
     onArrivedClick: {
       action: 'onArrivedClick',
       description: 'Callback for when the "I\'ve arrived" button is clicked',
+    },
+    onLeftClick: {
+      action: 'onLeftClick',
+      description: 'Callback for when the "I\'ve left" button is clicked',
     },
     onHoldClick: {
       action: 'onHoldClick',
@@ -51,7 +58,9 @@ export const Default = {
         available: 16,
       },
     ],
+    hasActiveHold: true,
     onArrivedClick: () => console.log('I\'ve arrived clicked'),
+    onLeftClick: () => console.log('I\'ve left clicked'),
     onHoldClick: () => console.log('Hold a Bed clicked'),
   },
 };
@@ -65,6 +74,13 @@ export const NoHoldsAvailable = {
         available: 0,
       },
     ],
+  },
+};
+
+export const NoActiveHold = {
+  args: {
+    ...Default.args,
+    hasActiveHold: false,
   },
 };
 
@@ -82,7 +98,7 @@ export const Arrived = {
   args: {
     ...Default.args,
     arrivedAt: new Date().toISOString(),
-  }
+  },
 };
 
 export const Left = {
@@ -90,5 +106,5 @@ export const Left = {
     ...Default.args,
     arrivedAt: new Date().toISOString(),
     leftAt: new Date().toISOString(),
-  }
+  },
 };
