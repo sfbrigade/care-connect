@@ -1,22 +1,15 @@
 import { useNavigate } from 'react-router';
 import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
 
-function HoldsActive ({ incident, onCancelHoldClick }) {
+function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-
-  const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
-    enabled: !!incident,
-  });
 
   const extendAllHoldsMutation = useMutation({
     mutationFn: () => Api.incidents.extend(incident.id),

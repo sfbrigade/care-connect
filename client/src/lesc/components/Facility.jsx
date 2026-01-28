@@ -10,6 +10,7 @@ function Facility ({
   bedTypes,
   arrivedAt,
   leftAt,
+  hasActiveHold,
   onArrivedClick,
   onLeftClick,
   onHoldClick,
@@ -20,6 +21,7 @@ function Facility ({
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
+  const isArrivedButtonDisabled = isClosed || !hasActiveHold;
   const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
 
   return (
@@ -45,7 +47,7 @@ function Facility ({
           </Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
-          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
+          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>I've arrived</Button>}
           {hasArrived && !hasLeft && <Button px='sm' color='indigo.0' c='black' onClick={onLeftClick}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>
