@@ -1,9 +1,50 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { v4 as uuidv4 } from 'uuid';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+async function seedUnitsForOrganization(prisma, adminUser, csvPath, organizationId) {
+  if (!fs.existsSync(csvPath)) {
+    console.warn(`CSV file not found at ${csvPath}, skipping ${organizationId} units seeding.`);
+    return 0;
+  }
+
+  const fileContent = fs.readFileSync(csvPath, 'utf8');
+  const unitIds = fileContent
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  let unitsSeeded = 0;
+
+  for (const unitName of unitIds) {
+    const uniqueId = uuidv4();
+
+    await prisma.unit.upsert({
+      where: { 
+        unitId: {
+          id: uniqueId,
+          organizationId,
+        },
+      },
+      update: {
+        name: unitName,
+      },
+      create: {
+        id: uniqueId,
+        name: unitName,
+        organizationId,
+        createdById: adminUser.id,
+      },
+    });
+    unitsSeeded++;
+  }
+
+  return unitsSeeded;
+}
 
 export default async function main(prisma) {
   console.log('Seeding units...');
@@ -16,42 +57,13 @@ export default async function main(prisma) {
     throw new Error('Admin user not found for seeding units');
   }
 
-  const csvPath = path.resolve(__dirname, '../../static-data/SFPD_units.csv');
+  // Seed SFPD units
+  const sfpdPath = path.resolve(__dirname, '../../static-data/SFPD_units.csv');
+  const sfpdCount = await seedUnitsForOrganization(prisma, adminUser, sfpdPath, 'sfpd');
 
-  if (!fs.existsSync(csvPath)) {
-    console.warn(`CSV file not found at ${csvPath}, skipping units seeding.`);
-    return;
-  }
+  // Seed SFSO units
+  const sfsoPath = path.resolve(__dirname, '../../static-data/SFSO_units.csv');
+  const sfsoCount = await seedUnitsForOrganization(prisma, adminUser, sfsoPath, 'sfso');
 
-  const fileContent = fs.readFileSync(csvPath, 'utf8');
-  const unitIds = fileContent
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0);
-
-  let unitsSeeded = 0;
-  const organizationId = 'sfpd';
-
-  for (const unitId of unitIds) {
-    await prisma.unit.upsert({
-      where: { 
-        unitId: {
-          id: unitId,
-          organizationId,
-        },
-      },
-      update: {
-        name: unitId,
-      },
-      create: {
-        id: unitId,
-        name: unitId,
-        organizationId,
-        createdById: adminUser.id,
-      },
-    });
-    unitsSeeded++;
-  }
-
-  console.log(`Done seeding units! (${unitsSeeded} units)`);
+  console.log(`Done seeding units! (SFPD: ${sfpdCount}, SFSO: ${sfsoCount})`);
 }
