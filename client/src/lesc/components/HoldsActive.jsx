@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text, Container, Loader} from '@mantine/core';
+import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
@@ -35,17 +35,13 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
 
   return (
     <>
-      {isFetchingDeflections && (
-        <Container>
-          <Stack gap='xl' align='center' justify='center' style={{ minHeight: 200 }}>
-            <Loader size='lg' />
-          </Stack>
-        </Container>
-      )}
       {incident && (
         <Incident incident={incident} editLink='/incident' />
       )}
-      {(!deflections || deflections.length === 0) && (
+      {isFetchingDeflections && (
+        <Loader mx='auto' my='xl' size='lg' />
+      )}
+      {!isFetchingDeflections && (!deflections || deflections.length === 0) && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
@@ -54,7 +50,7 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
           </Box>
         </>
       )}
-      {deflections && deflections.length > 0 && (
+      {!isFetchingDeflections && deflections && deflections.length > 0 && (
         <>
           <Stack gap='md'>
             {deflections?.map((deflection) => (
