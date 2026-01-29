@@ -1,7 +1,7 @@
 import MapLinkAnchor from './MapLinkAnchor';
 import { buildAddressQuery, getMapLink } from './mapLinkUtils';
 
-export default function FacilityAddressLinkFromParts({
+export default function FacilityAddressLinkFromParts ({
   addressLine1,
   addressLine2,
   city,
@@ -41,4 +41,3 @@ export default function FacilityAddressLinkFromParts({
     </MapLinkAnchor>
   );
 }
-

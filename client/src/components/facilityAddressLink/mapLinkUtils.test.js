@@ -91,4 +91,3 @@ describe('buildAddressQuery', () => {
       .toBe('444 6th St, Oakland');
   });
 });
-

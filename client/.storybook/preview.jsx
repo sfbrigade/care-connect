@@ -52,7 +52,7 @@ const preview = {
       <ColorSchemeWrapper>{renderStory()}</ColorSchemeWrapper>
     ),
     (renderStory) => (
-      <MantineProvider theme={AppTheme} forceColorScheme="light">{renderStory()}</MantineProvider>
+      <MantineProvider theme={AppTheme} forceColorScheme='light'>{renderStory()}</MantineProvider>
     ),
     (renderStory) => (
       <BrowserRouter>{renderStory()}</BrowserRouter>

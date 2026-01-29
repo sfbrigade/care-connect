@@ -1,7 +1,7 @@
 import MapLinkAnchor from './MapLinkAnchor';
 import { getMapLink } from './mapLinkUtils';
 
-export default function FacilityAddressLinkFromAddress({
+export default function FacilityAddressLinkFromAddress ({
   address,
   children,
   className,
@@ -25,4 +25,3 @@ export default function FacilityAddressLinkFromAddress({
     </MapLinkAnchor>
   );
 }
-

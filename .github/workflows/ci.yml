@@ -73,7 +73,7 @@ jobs:
       - name: Generate Prisma client
         run: cd server && npx prisma generate
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint:check
       - name: Run Tests
         run: cp server/example.env server/.env && npm test
 

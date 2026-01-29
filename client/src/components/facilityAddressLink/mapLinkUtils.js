@@ -1,4 +1,4 @@
-export function buildAddressQuery({
+export function buildAddressQuery ({
   addressLine1,
   addressLine2,
   city,
@@ -50,4 +50,3 @@ export const getMapLink = (query) => {
 
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 };
-
