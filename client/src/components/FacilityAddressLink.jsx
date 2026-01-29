@@ -1,3 +1,5 @@
+import { Anchor } from '@mantine/core';
+
 export const getMapLink = (address) => {
   const encodedAddress = encodeURIComponent(address);
 
@@ -34,19 +36,15 @@ export default function FacilityAddressLink ({
   const mapLink = getMapLink(address);
 
   return (
-    <a
+    <Anchor
       href={mapLink}
       target={mapLink.startsWith('http') ? '_blank' : undefined}
       rel={mapLink.startsWith('http') ? 'noreferrer' : undefined}
       onClick={stopPropagation ? (event) => event.stopPropagation() : undefined}
       className={className}
-      style={{
-        color: '#1a73e8',
-        textDecoration: 'none',
-        ...style,
-      }}
+      style={style}
     >
       {children ?? address}
-    </a>
+    </Anchor>
   );
 }
