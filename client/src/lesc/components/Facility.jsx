@@ -1,6 +1,6 @@
 import { Alert, Card, Text, Title, Group, Button, Stack } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
-import { inflect, pluralize } from 'inflection';
+import { inflect } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 import FacilityAddressLink from '../../components/FacilityAddressLink';
@@ -16,10 +16,10 @@ function Facility ({
   onHoldClick,
 }) {
   const { t } = useTranslation();
-  const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const hasArrived = !!arrivedAt;
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
+  const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
   const isArrivedButtonDisabled = isClosed || !hasActiveHold;
   const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
@@ -28,10 +28,9 @@ function Facility ({
     <Card bg='white' p='xl' w='100%' withBorder>
       <Stack gap='lg'>
         {isClosed && <Alert title='This facility is temporarily closed' color='red.6' variant='light' icon={<IconAlertTriangle size={20} />} />}
-        {!isClosed && isFull && <Alert title={`All ${pluralize(t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase())} are currently held`} color='yellow.6' variant='light' icon={<IconAlertTriangle size={20} />} />}
         <Stack gap='xs'>
           {bedTypes?.map(bedType => (
-            <Title key={bedType.id} order={3}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
+            <Title key={bedType.id} order={3} c={bedType.available === 0 ? '#FA5252' : undefined}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
           ))}
           <Text size='sm'>
             {facility.name}
