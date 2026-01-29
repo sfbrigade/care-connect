@@ -6,3 +6,9 @@
     color: var(--mantine-color-red-6);
   }
 }
+
+.input {
+  &:focus-within {
+    --input-bd: var(--mantine-color-indigo-6);
+  }
+}
