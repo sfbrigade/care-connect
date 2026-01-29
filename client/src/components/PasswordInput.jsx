@@ -15,11 +15,10 @@ function PasswordInput (props) {
         >
           {passwordVisible
             ? (
-              <IconEye size={20} color='#868e96' />
+              <IconEye size={20} color='var(--mantine-color-gray-6)' />
               )
-              
             : (
-               <IconEyeOff size={20} color='#868e96' />
+              <IconEyeOff size={20} color='var(--mantine-color-gray-6)' />
               )}
         </ActionIcon>
             }
