@@ -9,6 +9,7 @@ import { useAuthContext } from './AuthContext';
 function UnitSelector () {
   const { user } = useAuthContext();
   const [unitId, setUnitId] = useState();
+  const [unitName, setUnitName] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -34,6 +35,15 @@ function UnitSelector () {
     value: unit.id,
     label: unit.name,
   }));
+
+   function handleOptionSubmit(value) {
+    setUnitName(value);
+    const selectedUnit = units.find((unit) => unit.name === value);
+    if (selectedUnit) {
+      setUnitId(selectedUnit.id);
+    }
+  }
+  
   function onConfirm () {
     onSubmitMutation.mutate({ unitId });
   }
@@ -46,9 +56,8 @@ function UnitSelector () {
                 label='Unit'
                 placeholder='Start typing a unit name'
                 data={autocompleteData}
-                value={autocompleteData.name}
-                onChange={setUnitId}
-                onOptionSubmit={(value) => setUnitId(value)}
+                value={unitName}
+                onChange={handleOptionSubmit}
                 clearable
                 nothingfound='No units found'
               />
