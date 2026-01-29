@@ -30,7 +30,7 @@ function Facility ({
         {isClosed && <Alert title='This facility is temporarily closed' color='red.6' variant='light' icon={<IconAlertTriangle size={20} />} />}
         <Stack gap='xs'>
           {bedTypes?.map(bedType => (
-            <Title key={bedType.id} order={3} c={bedType.available === 0 ? '#FA5252' : undefined}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
+            <Title key={bedType.id} order={3} c={bedType.available === 0 ? 'red.6' : undefined}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
           ))}
           <Text size='sm'>
             {facility.name}
