@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Chip, Container, Stack, Title } from '@mantine/core';
+import { Box, Button, Container, Stack, Title, Autocomplete } from '@mantine/core';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -9,13 +9,14 @@ import { useAuthContext } from './AuthContext';
 function UnitSelector () {
   const { user } = useAuthContext();
   const [unitId, setUnitId] = useState();
+  const [unitName, setUnitName] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const from = location.state?.from || '/';
 
-  const { data: units } = useQuery({
+  const { data: units = [] } = useQuery({
     queryKey: ['organizations', user?.organizationId, 'units'],
     queryFn: () => Api.organizations.units.index(user.organizationId).then((response) => response.data),
     enabled: !!user?.organizationId,
@@ -30,6 +31,19 @@ function UnitSelector () {
     onError: (errors) => console.error(errors),
   });
 
+  const autocompleteData = units.map((unit) => ({
+    value: unit.id,
+    label: unit.name,
+  }));
+
+  function handleOptionSubmit (value) {
+    setUnitName(value);
+    const selectedUnit = units.find((unit) => unit.name === value);
+    if (selectedUnit) {
+      setUnitId(selectedUnit.id);
+    }
+  }
+
   function onConfirm () {
     onSubmitMutation.mutate({ unitId });
   }
@@ -38,22 +52,15 @@ function UnitSelector () {
     <Container>
       <Stack gap='xl' mah='calc(100vh - var(--app-shell-header-offset) - var(--app-shell-padding) - 1.25rem)'>
         <Title flex='0 0' order={2}>What unit are you assigned to today?</Title>
-        <Chip.Group value={unitId} onChange={setUnitId}>
-          <Box mih='0' flex='0 2' style={{ overflowY: 'scroll' }}>
-            <Stack gap='md'>
-              {units?.map((unit) => (
-                <Chip
-                  key={unit.id}
-                  color='gray.6'
-                  size='xl'
-                  value={unit.id}
-                >
-                  {unit.name}
-                </Chip>
-              ))}
-            </Stack>
-          </Box>
-        </Chip.Group>
+        <Autocomplete
+          label='Unit'
+          placeholder='Start typing a unit name'
+          data={autocompleteData}
+          value={unitName}
+          onChange={handleOptionSubmit}
+          clearable
+          nothingfound='No units found'
+        />
         <Box flex='0 0'>
           <Button disabled={!unitId} fullWidth mt='3rem' onClick={onConfirm}>Confirm unit</Button>
         </Box>

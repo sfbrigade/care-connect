@@ -33,4 +33,3 @@ describe('getPasswordStrengthScore', () => {
     expect(getPasswordStrengthScore('correct-horse-battery-staple-1234567890!@#$')).toBe(4);
   });
 });
-

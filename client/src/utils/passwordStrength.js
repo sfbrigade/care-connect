@@ -28,4 +28,3 @@ export function getPasswordStrengthScore (password) {
 
   return Math.max(0, Math.min(4, score));
 }
-
