@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import FacilityAddressLink from './FacilityAddressLink';
-
 import 'leaflet/dist/leaflet.css';
 import './FacilityMap.css';
 
@@ -429,20 +427,8 @@ function FacilityMap ({ facilities, userLocation = null, height = 350 }) {
           >
             <Popup>
               <strong>{facility.name}</strong>
-              {(facility.displayAddress || facility.addressLine1 || facility.addressLine2) && (
-                <div>
-                  <FacilityAddressLink
-                    addressLine1={facility.addressLine1}
-                    addressLine2={facility.addressLine2}
-                    city={facility.city}
-                    state={facility.state}
-                    postalCode={facility.postalCode}
-                    zip={facility.zip}
-                    country={facility.country}
-                  >
-                    {facility.displayAddress}
-                  </FacilityAddressLink>
-                </div>
+              {facility.displayAddress && (
+                <div>{facility.displayAddress}</div>
               )}
             </Popup>
           </Marker>
