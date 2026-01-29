@@ -27,6 +27,7 @@ function PropertyForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
+  const [selectedProperty, setSelectedProperty] = useState('');
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -140,6 +141,10 @@ function PropertyForm () {
               <Chip.Group
                 key={form.key('property')}
                 {...form.getInputProps('property')}
+                onChange={(value) => {
+                  setSelectedProperty(value);
+                  form.setValues({ property: value });
+                }}
               >
                 <Group gap='sm'>
                   {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
@@ -153,6 +158,15 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
+              {(selectedProperty === 'LARGE' || form.values.property === 'LARGE') && facility?.name === 'RESET' && (
+                <Group gap='xs'>
+                  <Text size='sm' c='red'>
+                    This may exceed RESET property limits (~10 gallons). Please confirm with RESET staff.
+                  </Text>
+                  <Button size='md' mt='md' variant='primary' onClick={() => { window.location.href = `tel:${facility?.phone}`; }}>Call {facility?.name}</Button>
+                </Group>
+
+              )}
               {!!deflection?.propertyPhotos?.length && (
                 <Group gap='xs'>
                   {deflection.propertyPhotos.map(photo => (

@@ -1,5 +1,12 @@
 .iconWrapper {
-  display: none;
+  display
+  : none;
+}
+.label {
+  --chip-bg: var(--mantine-color-gray-6);
+  --chip-hover: var(--mantine-color-gray-7);
+  white-space: normal;
+  height: auto;
 }
 
 .label[data-checked] {
@@ -12,3 +19,4 @@
     width: 100%;
   }
 }
+
