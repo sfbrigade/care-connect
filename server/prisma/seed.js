@@ -1,5 +1,6 @@
 import '../config.js';
 import prisma from './client.js';
+import seedAdminUser from './seeds/adminUser.js';
 import seedUsers from './seeds/users.js';
 import seedFacilities from './seeds/facilities.js';
 import seedServiceTypes from './seeds/serviceTypes.js';
@@ -12,11 +13,12 @@ import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
 
 try {
+  await seedAdminUser(prisma);
+  await seedOrganizations(prisma);
   await seedUsers(prisma);
   await seedFacilities(prisma);
   await seedServiceTypes(prisma);
   await seedResetCenter(prisma);
-  await seedOrganizations(prisma);
   await seedTitles(prisma);
   await seedUnits(prisma);
   await seedFacilityStatusReasons(prisma);

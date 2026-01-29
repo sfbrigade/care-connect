@@ -1,23 +1,15 @@
 import User from '#models/user.js';
 
 export default async function main (prisma) {
-  console.log('Seeding users...');
+  console.log('Seeding admin users...');
 
   const users = [
     {
-      email: 'sfpd@careconnectsf.org',
-      firstName: 'SFPD',
+      email: 'admin@careconnectsf.org',
+      firstName: 'Admin',
       lastName: 'User',
-      isAdmin: false,
-      organizationId: 'sfpd',
+      isAdmin: true,
     },
-    {
-      email: 'sfso@careconnectsf.org',
-      firstName: 'SFSO',
-      lastName: 'User',
-      isAdmin: false,
-      organizationId: 'sfso',
-    }
   ];
 
   for (const user of users) {
@@ -35,5 +27,5 @@ export default async function main (prisma) {
     }
   }
 
-  console.log('Done seeding users!');
+  console.log('Done seeding admin users!');
 }

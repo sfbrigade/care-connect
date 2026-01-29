@@ -228,7 +228,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('cancels the deflection', async () => {
-      const response = await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      let response = await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
@@ -246,11 +246,26 @@ test('/api/deflections', async (t) => {
       assert.ok(deflection.cancelledAt);
       assert.ok(deflection.cancelledById);
 
-      const bedType = await prisma.bedType.findUnique({
+      let bedType = await prisma.bedType.findUnique({
         where: { id: deflection.bedTypeId },
       });
       assert.deepStrictEqual(bedType.holds, 3);
       assert.deepStrictEqual(bedType.available, 5);
+
+      response = await app.inject().delete('/api/deflections/5?cancelReasonId=5150').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      bedType = await prisma.bedType.findUnique({
+        where: { id: deflection.bedTypeId },
+      });
+      assert.deepStrictEqual(bedType.holds, 2);
+      assert.deepStrictEqual(bedType.available, 6);
+
+      // incident is marked completed after cancellation of the last hold
+      const incident = await prisma.incident.findUnique({
+        where: { id: deflection.incidentId },
+      });
+      assert.ok(incident.completedAt);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
