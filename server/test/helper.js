@@ -2,6 +2,7 @@
 // between our tests.
 
 import util from 'node:util';
+import crypto from 'node:crypto';
 import { exec } from 'node:child_process';
 import fs from 'node:fs/promises';
 import helper from 'fastify-cli/helper.js';
@@ -40,58 +41,110 @@ function config () {
   };
 }
 
+// Try to load shared container info written by run-tests.js
+async function loadSharedContainerInfo () {
+  const infoPath = process.env.CARE_CONNECT_TEST_CONTAINERS;
+  if (!infoPath) return null;
+  try {
+    const data = await fs.readFile(infoPath, 'utf8');
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
 // automatically build and tear down our instance
 async function build (t) {
-  // PostgreSQL + Docker containers mode
   return await buildPostgres(t);
 }
 
 async function buildPostgres (t) {
-  // disable the ryuk cleanup container, cannot connect from the compose network
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
-  // extract current version of postgres image being used, start a new test container
-  let dbContainer = new PostgreSqlContainer(compose.services.db.image);
-  if (!process.env.CI) {
-    dbContainer = dbContainer.withNetworkMode('care-connect');
+
+  const shared = await loadSharedContainerInfo();
+  let startedDbContainer;
+  let startedStorageContainer;
+  let dbHost, dbPort, dbUsername, dbPassword;
+  let storageHost, storagePort;
+  const useShared = !!shared;
+
+  if (shared) {
+    // Use shared containers — create a unique database for this test file
+    dbHost = shared.db.host;
+    dbPort = shared.db.port;
+    dbUsername = shared.db.username;
+    dbPassword = shared.db.password;
+    storageHost = shared.storage.host;
+    storagePort = shared.storage.port;
+  } else {
+    // Fallback: start containers per test file (original behavior)
+    let dbContainer = new PostgreSqlContainer(compose.services.db.image);
+    if (!process.env.CI) {
+      dbContainer = dbContainer.withNetworkMode('care-connect');
+    }
+    startedDbContainer = await dbContainer.start();
+    dbHost = startedDbContainer.getHost();
+    dbPort = startedDbContainer.getPort();
+    dbUsername = startedDbContainer.getUsername();
+    dbPassword = startedDbContainer.getPassword();
+
+    let storageContainer = new GenericContainer(compose.services.storage.image)
+      .withEntrypoint(['minio', 'server', '/data'])
+      .withExposedPorts(9000);
+    if (!process.env.CI) {
+      storageContainer = storageContainer.withNetworkMode('care-connect');
+    }
+    startedStorageContainer = await storageContainer.start();
+    storageHost = startedStorageContainer.getHost();
+    storagePort = startedStorageContainer.getMappedPort(9000);
   }
-  const startedDbContainer = await dbContainer.start();
-  // set up the default template (template1) with the schema and fixtures
-  const TEMPLATE_DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`;
-  // run the migrations
+
+  // Generate a unique database name for this test file
+  const testDbName = `test_${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`;
+
+  // Connect to the default database to create our test database
+  const adminUrl = `postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/postgres`;
+  const adminPrisma = new PrismaClient({ datasourceUrl: adminUrl });
+  await adminPrisma.$executeRawUnsafe(`CREATE DATABASE "${testDbName}"`);
+  await adminPrisma.$disconnect();
+
+  // set up the template (template1 equivalent) — push schema + fixtures into our test db
+  const TEMPLATE_DATABASE_URL = `postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${testDbName}`;
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
   await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
     cwd: path.join(__dirname, '..'),
   });
-  const prisma = new PrismaClient({
+  const templatePrisma = new PrismaClient({
     datasourceUrl: TEMPLATE_DATABASE_URL,
   });
   // load fixtures
   const loader = new Loader();
   const resolver = new Resolver();
-  const builder = new Builder(prisma, new Parser());
+  const builder = new Builder(templatePrisma, new Parser());
   loader.load(path.resolve(__dirname, 'fixtures/db'));
   const fixtures = resolver.resolve(loader.fixtureConfigs);
   for (const fixture of fixturesIterator(fixtures)) {
     await builder.build(fixture);
   }
+
+  // Now create a template from this database so we can quickly recreate it
+  const templateDbName = `${testDbName}_template`;
+  const adminPrisma2 = new PrismaClient({ datasourceUrl: adminUrl });
+  await templatePrisma.$disconnect();
+  await adminPrisma2.$executeRawUnsafe(`CREATE DATABASE "${templateDbName}" TEMPLATE "${testDbName}"`);
+  await adminPrisma2.$disconnect();
+
   // configure test database url
-  process.env.DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/${startedDbContainer.getDatabase()}`;
+  process.env.DATABASE_URL = TEMPLATE_DATABASE_URL;
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
-  // set up a new storage container
-  let storageContainer = new GenericContainer(compose.services.storage.image)
-    .withEntrypoint(['minio', 'server', '/data'])
-    .withExposedPorts(9000);
-  if (!process.env.CI) {
-    storageContainer = storageContainer.withNetworkMode('care-connect');
-  }
-  const startedStorageContainer = await storageContainer.start();
+  // set up storage
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
   process.env.AWS_S3_SECRET_ACCESS_KEY = 'minioadmin';
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
-  process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
+  process.env.AWS_S3_ENDPOINT = `http://${storageHost}:${storagePort}`;
 
   // Reset S3 client to ensure it uses the new environment variables
   s3.reset();
@@ -140,17 +193,14 @@ async function buildPostgres (t) {
   // different from the production setup
   const app = await helper.build(argv, config());
 
-  // recreate the database from the template created above
+  // recreate the database from the template
   async function recreateDb () {
     await t.prisma.$disconnect();
     await app.prisma.$disconnect();
-    // Ensure prisma client is connected to template1 before executing raw SQL
-    await prisma.$connect();
-    const dbName = startedDbContainer.getDatabase();
-    // Quote database name to handle special characters and ensure proper SQL escaping
-    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
-    await prisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
-    await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
+    const recreateAdminPrisma = new PrismaClient({ datasourceUrl: adminUrl });
+    await recreateAdminPrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${testDbName}" WITH (FORCE)`);
+    await recreateAdminPrisma.$executeRawUnsafe(`CREATE DATABASE "${testDbName}" TEMPLATE "${templateDbName}"`);
+    await recreateAdminPrisma.$disconnect();
     await app.prisma.$connect();
     await t.prisma.$connect();
   }
@@ -172,11 +222,23 @@ async function buildPostgres (t) {
     return recreateDb();
   });
 
-  // tear down our app and the db container after we are done
+  // tear down after we are done
   t.after(async () => {
     await app.close();
-    await startedDbContainer.stop();
-    await startedStorageContainer.stop();
+    // Clean up databases
+    try {
+      await t.prisma.$disconnect();
+      const cleanupPrisma = new PrismaClient({ datasourceUrl: adminUrl });
+      await cleanupPrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${testDbName}" WITH (FORCE)`);
+      await cleanupPrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${templateDbName}" WITH (FORCE)`);
+      await cleanupPrisma.$disconnect();
+    } catch {
+      // best effort cleanup
+    }
+    if (!useShared) {
+      await startedDbContainer.stop();
+      await startedStorageContainer.stop();
+    }
   });
 
   return app;
