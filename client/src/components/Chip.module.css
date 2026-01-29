@@ -9,6 +9,11 @@
   height: auto;
 }
 
+.label {
+  white-space: normal;
+  height: auto;
+}
+
 .label[data-checked] {
   padding-inline: var(--chip-padding);
 }
