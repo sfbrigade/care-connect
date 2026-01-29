@@ -27,7 +27,7 @@ function PropertyForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
-  const [selectedProperty, setSelectedProperty] = useState('');
+  const [isLarge, setIsLarge] = useState(false);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -42,6 +42,9 @@ function PropertyForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    onValuesChange: (values) => {
+      setIsLarge(values.property === 'LARGE');
+    },
   });
 
   useEffect(() => {
@@ -141,10 +144,6 @@ function PropertyForm () {
               <Chip.Group
                 key={form.key('property')}
                 {...form.getInputProps('property')}
-                onChange={(value) => {
-                  setSelectedProperty(value);
-                  form.setValues({ property: value });
-                }}
               >
                 <Group gap='sm'>
                   {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
@@ -158,10 +157,10 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
-              {(selectedProperty === 'LARGE' || form.values.property === 'LARGE') && facility?.name === 'RESET' && (
+              {(isLarge && facility?.name === 'RESET') && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>
-                    This may exceed RESET property limits (~10 gallons). Please confirm with RESET staff.
+                    This may exceed {facility?.name} property limits (~10 gallons). Please confirm with {facility?.name} staff.
                   </Text>
                   <Button size='md' mt='md' variant='primary' onClick={() => { window.location.href = `tel:${facility?.phone}`; }}>Call {facility?.name}</Button>
                 </Group>
