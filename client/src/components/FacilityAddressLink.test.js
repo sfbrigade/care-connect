@@ -58,11 +58,6 @@ describe('getMapLink', () => {
 });
 
 describe('buildAddressQuery', () => {
-  it('returns the explicit query when provided', () => {
-    expect(buildAddressQuery({ query: '444 6th St, San Francisco, CA 94103' }))
-      .toBe('444 6th St, San Francisco, CA 94103');
-  });
-
   it('builds a query from address parts', () => {
     expect(buildAddressQuery({
       addressLine1: '444 6th St',
@@ -72,18 +67,13 @@ describe('buildAddressQuery', () => {
     })).toBe('444 6th St, San Francisco, CA, 94103');
   });
 
-  it('appends San Francisco when locality is missing', () => {
-    expect(buildAddressQuery({ address: '444 6th St' }))
-      .toBe('444 6th St, San Francisco, CA');
-  });
-
-  it('keeps address when it already contains locality', () => {
-    expect(buildAddressQuery({ address: '444 6th St, San Francisco, CA' }))
-      .toBe('444 6th St, San Francisco, CA');
-  });
-
   it('uses fallback locality when parts are incomplete and line address lacks locality', () => {
     expect(buildAddressQuery({ addressLine1: '444 6th St' }))
       .toBe('444 6th St, San Francisco, CA');
+  });
+
+  it('does not append fallback when line1 contains a comma', () => {
+    expect(buildAddressQuery({ addressLine1: '444 6th St, Oakland' }))
+      .toBe('444 6th St, Oakland');
   });
 });

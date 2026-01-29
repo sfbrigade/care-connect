@@ -52,6 +52,7 @@ function Facility ({
                   city={facility.city}
                   state={facility.state}
                   postalCode={facility.postalCode}
+                  zip={facility.zip}
                   country={facility.country}
                 />
               </>

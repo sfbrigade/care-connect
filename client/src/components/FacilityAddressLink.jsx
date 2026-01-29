@@ -1,5 +1,4 @@
 export function buildAddressQuery ({
-  address,
   addressLine1,
   addressLine2,
   city,
@@ -7,29 +6,11 @@ export function buildAddressQuery ({
   postalCode,
   zip,
   country,
-  query,
 } = {}) {
-  const explicitQuery = (query ?? '').toString().trim();
-  if (explicitQuery) {
-    return explicitQuery;
-  }
-
   const hasLocalityInAddress = (value) => {
-    if (!value) {
-      return false;
-    }
+    const normalized = (value ?? '').toString().trim();
 
-    const normalized = value.toString().trim();
-    if (!normalized) {
-      return false;
-    }
-
-    return (
-      /,\s*[A-Z]{2}\b/.test(normalized) ||
-      /\bCalifornia\b/i.test(normalized) ||
-      /\bCA\b/.test(normalized) ||
-      /\bSan Francisco\b/i.test(normalized)
-    );
+    return Boolean(normalized && normalized.includes(','));
   };
 
   const line1 = (addressLine1 ?? '').toString().trim();
@@ -38,8 +19,7 @@ export function buildAddressQuery ({
   const stateValue = (state ?? '').toString().trim();
   const hasCityOrState = Boolean(cityValue || stateValue);
   const fallbackLocality = 'San Francisco, CA';
-  const combinedAddressInput = [line1, line2, address].filter(Boolean).join(', ');
-  const useFallbackLocality = !hasCityOrState && !hasLocalityInAddress(combinedAddressInput);
+  const useFallbackLocality = !hasCityOrState && !hasLocalityInAddress(line1);
   const locality = [
     cityValue,
     stateValue,
@@ -58,19 +38,7 @@ export function buildAddressQuery ({
     nation,
   ].filter(Boolean).join(', ');
 
-  const fallback = (address ?? '').toString().trim();
-
-  if (candidate) {
-    return candidate;
-  }
-
-  if (fallback) {
-    return hasCityOrState || hasLocalityInAddress(fallback)
-      ? fallback
-      : [fallback, fallbackLocality].join(', ');
-  }
-
-  return null;
+  return candidate || null;
 }
 
 export const getMapLink = (query) => {
@@ -96,7 +64,6 @@ export const getMapLink = (query) => {
 };
 
 export default function FacilityAddressLink ({
-  address,
   addressLine1,
   addressLine2,
   city,
@@ -104,14 +71,12 @@ export default function FacilityAddressLink ({
   postalCode,
   zip,
   country,
-  query,
   children,
   className,
   style,
   stopPropagation = false,
 }) {
   const mapQuery = buildAddressQuery({
-    address,
     addressLine1,
     addressLine2,
     city,
@@ -119,7 +84,6 @@ export default function FacilityAddressLink ({
     postalCode,
     zip,
     country,
-    query,
   });
 
   if (!mapQuery) {
@@ -128,7 +92,7 @@ export default function FacilityAddressLink ({
 
   const mapLink = getMapLink(mapQuery);
   const fallbackDisplay = [addressLine1, addressLine2].filter(Boolean).join(', ');
-  const displayText = children ?? address ?? fallbackDisplay ?? mapQuery;
+  const displayText = children ?? fallbackDisplay ?? mapQuery;
 
   return (
     <a

@@ -63,12 +63,12 @@ export default function Facility ({ facility, isSelected, onSelect }) {
           </span>
         )}
         <FacilityAddressLink
-          address={facility.displayAddress}
           addressLine1={facility.addressLine1}
           addressLine2={facility.addressLine2}
           city={facility.city}
           state={facility.state}
           postalCode={facility.postalCode}
+          zip={facility.zip}
           country={facility.country}
           stopPropagation
           style={{
@@ -80,7 +80,9 @@ export default function Facility ({ facility, isSelected, onSelect }) {
             margin: 0,
             textDecoration: 'none',
           }}
-        />
+        >
+          {facility.displayAddress}
+        </FacilityAddressLink>
         {facility.primaryService && (
           <span
             style={{
