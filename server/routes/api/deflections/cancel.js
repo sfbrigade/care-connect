@@ -35,11 +35,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      // Check if already cancelled
-      if (deflection.status === Deflection.HoldStatus.CANCELLED) {
-        return reply.code(StatusCodes.GONE).send();
-      }
-
       if (deflection.createdById !== request.user.id && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
@@ -48,55 +43,82 @@ export default async function (fastify, opts) {
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = deflection;
         const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        const update = await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            status: Deflection.HoldStatus.CANCELLED,
-            cancelReasonId,
-            updatedById: request.user.id,
-            updatedAt: new Date(),
-          },
-        });
-
-        deflection = await tx.deflection.update({
+        // fetch deflection again after lock
+        deflection = await tx.deflection.findUnique({
           where: { id },
-          data: {
-            status: Deflection.HoldStatus.CANCELLED,
-            cancelReasonId: update.cancelReasonId,
-            cancelledAt: update.updatedAt,
-            cancelledById: update.updatedById,
-            updatedAt: update.updatedAt,
-          },
           include: {
             subject: true,
             deflectionDetails: true,
             propertyPhotos: true,
           },
         });
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied,
-          holds: holds - 1,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
+        if (deflection.status === Deflection.HoldStatus.ACTIVE) {
+          const update = await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              status: Deflection.HoldStatus.CANCELLED,
+              cancelReasonId,
+              updatedById: request.user.id,
+              updatedAt: new Date(),
+            },
+          });
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              status: Deflection.HoldStatus.CANCELLED,
+              cancelReasonId: update.cancelReasonId,
+              cancelledAt: update.updatedAt,
+              cancelledById: update.updatedById,
+              updatedAt: update.updatedAt,
+            },
+            include: {
+              subject: true,
+              deflectionDetails: true,
+              propertyPhotos: true,
+            },
+          });
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied,
+            holds: holds - 1,
+            available: available + 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId,
+              facilityId: deflection.facilityId,
+            }
+          });
+          await tx.bedType.update({
+            where: {
+              id: bedTypeId,
+            },
+            data: updatedData,
+          });
+          const activeDeflections = await tx.deflection.count({
+            where: {
+              incidentId: deflection.incidentId,
+              status: Deflection.HoldStatus.ACTIVE,
+            },
+          });
+          if (activeDeflections === 0) {
+            await tx.incident.update({
+              where: {
+                id: deflection.incidentId,
+              },
+              data: {
+                completedAt: new Date(),
+                updatedById: request.user.id,
+              },
+            });
           }
-        });
-        await tx.bedType.update({
-          where: {
-            id: bedTypeId,
-          },
-          data: updatedData,
-        });
+        }
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
