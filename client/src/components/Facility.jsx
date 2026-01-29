@@ -1,6 +1,6 @@
 import Card from './Card';
 import CategoryIcon from './CategoryIcon';
-import FacilityAddressLinkFromAddress from './FacilityAddressLink';
+import FacilityAddressLinkFromAddress from './facilityAddressLink/FacilityAddressLinkFromAddress';
 
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (

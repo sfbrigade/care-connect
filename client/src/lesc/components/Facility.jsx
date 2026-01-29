@@ -3,7 +3,7 @@ import { IconAlertTriangle } from '@tabler/icons-react';
 import { inflect, pluralize } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-import FacilityAddressLinkFromParts from '../../components/FacilityAddressLink';
+import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/FacilityAddressLinkFromParts';
 
 function Facility ({
   facility,

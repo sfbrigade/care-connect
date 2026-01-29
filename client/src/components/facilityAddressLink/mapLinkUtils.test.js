@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
 
-import { buildAddressQuery, getMapLink } from './FacilityAddressLink';
+import { buildAddressQuery, getMapLink } from './mapLinkUtils';
 
 const address = '123 Main St, San Francisco, CA';
 const encodedAddress = encodeURIComponent(address);
@@ -91,3 +91,4 @@ describe('buildAddressQuery', () => {
       .toBe('444 6th St, Oakland');
   });
 });
+
