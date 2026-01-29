@@ -64,6 +64,12 @@ export default function Facility ({ facility, isSelected, onSelect }) {
         )}
         <FacilityAddressLink
           address={facility.displayAddress}
+          addressLine1={facility.addressLine1}
+          addressLine2={facility.addressLine2}
+          city={facility.city}
+          state={facility.state}
+          postalCode={facility.postalCode}
+          country={facility.country}
           stopPropagation
           style={{
             fontSize: '13px',

@@ -1,5 +1,80 @@
-export const getMapLink = (address) => {
-  const encodedAddress = encodeURIComponent(address);
+export function buildAddressQuery ({
+  address,
+  addressLine1,
+  addressLine2,
+  city,
+  state,
+  postalCode,
+  zip,
+  country,
+  query,
+} = {}) {
+  const explicitQuery = (query ?? '').toString().trim();
+  if (explicitQuery) {
+    return explicitQuery;
+  }
+
+  const hasLocalityInAddress = (value) => {
+    if (!value) {
+      return false;
+    }
+
+    const normalized = value.toString().trim();
+    if (!normalized) {
+      return false;
+    }
+
+    return (
+      /,\s*[A-Z]{2}\b/.test(normalized) ||
+      /\bCalifornia\b/i.test(normalized) ||
+      /\bCA\b/.test(normalized) ||
+      /\bSan Francisco\b/i.test(normalized)
+    );
+  };
+
+  const line1 = (addressLine1 ?? '').toString().trim();
+  const line2 = (addressLine2 ?? '').toString().trim();
+  const cityValue = (city ?? '').toString().trim();
+  const stateValue = (state ?? '').toString().trim();
+  const hasCityOrState = Boolean(cityValue || stateValue);
+  const fallbackLocality = 'San Francisco, CA';
+  const combinedAddressInput = [line1, line2, address].filter(Boolean).join(', ');
+  const useFallbackLocality = !hasCityOrState && !hasLocalityInAddress(combinedAddressInput);
+  const locality = [
+    cityValue,
+    stateValue,
+    useFallbackLocality ? fallbackLocality : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const postal = (postalCode ?? zip ?? '').toString().trim();
+  const nation = (country ?? '').toString().trim();
+
+  const candidate = [
+    line1,
+    line2,
+    locality,
+    postal,
+    nation,
+  ].filter(Boolean).join(', ');
+
+  const fallback = (address ?? '').toString().trim();
+
+  if (candidate) {
+    return candidate;
+  }
+
+  if (fallback) {
+    return hasCityOrState || hasLocalityInAddress(fallback)
+      ? fallback
+      : [fallback, fallbackLocality].join(', ');
+  }
+
+  return null;
+}
+
+export const getMapLink = (query) => {
+  const encodedAddress = encodeURIComponent(query);
 
   if (typeof navigator === 'undefined') {
     return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
@@ -22,16 +97,38 @@ export const getMapLink = (address) => {
 
 export default function FacilityAddressLink ({
   address,
+  addressLine1,
+  addressLine2,
+  city,
+  state,
+  postalCode,
+  zip,
+  country,
+  query,
   children,
   className,
   style,
   stopPropagation = false,
 }) {
-  if (!address) {
+  const mapQuery = buildAddressQuery({
+    address,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    postalCode,
+    zip,
+    country,
+    query,
+  });
+
+  if (!mapQuery) {
     return null;
   }
 
-  const mapLink = getMapLink(address);
+  const mapLink = getMapLink(mapQuery);
+  const fallbackDisplay = [addressLine1, addressLine2].filter(Boolean).join(', ');
+  const displayText = children ?? address ?? fallbackDisplay ?? mapQuery;
 
   return (
     <a
@@ -46,7 +143,7 @@ export default function FacilityAddressLink ({
         ...style,
       }}
     >
-      {children ?? address}
+      {displayText}
     </a>
   );
 }

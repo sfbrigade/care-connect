@@ -22,7 +22,14 @@ function Facility ({
   const isClosed = facility.status === 'CLOSED';
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
   const isArrivedButtonDisabled = isClosed || !hasActiveHold;
-  const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
+  const hasAddressParts = [
+    facility.addressLine1,
+    facility.addressLine2,
+    facility.city,
+    facility.state,
+    facility.postalCode,
+    facility.country,
+  ].some(Boolean);
 
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
@@ -35,12 +42,17 @@ function Facility ({
           ))}
           <Text size='sm'>
             {facility.name}
-            {address && (
+            {hasAddressParts && (
               <>
                 {' '}
                 <Text span c='gray.5'>•</Text>{' '}
                 <FacilityAddressLink
-                  address={address}
+                  addressLine1={facility.addressLine1}
+                  addressLine2={facility.addressLine2}
+                  city={facility.city}
+                  state={facility.state}
+                  postalCode={facility.postalCode}
+                  country={facility.country}
                 />
               </>
             )}

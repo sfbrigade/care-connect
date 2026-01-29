@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
 
-import { getMapLink } from './FacilityAddressLink';
+import { buildAddressQuery, getMapLink } from './FacilityAddressLink';
 
 const address = '123 Main St, San Francisco, CA';
 const encodedAddress = encodeURIComponent(address);
@@ -54,5 +54,36 @@ describe('getMapLink', () => {
     setNavigator('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5)');
 
     expect(getMapLink(address)).toBe(googleMapsLink);
+  });
+});
+
+describe('buildAddressQuery', () => {
+  it('returns the explicit query when provided', () => {
+    expect(buildAddressQuery({ query: '444 6th St, San Francisco, CA 94103' }))
+      .toBe('444 6th St, San Francisco, CA 94103');
+  });
+
+  it('builds a query from address parts', () => {
+    expect(buildAddressQuery({
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+    })).toBe('444 6th St, San Francisco, CA, 94103');
+  });
+
+  it('appends San Francisco when locality is missing', () => {
+    expect(buildAddressQuery({ address: '444 6th St' }))
+      .toBe('444 6th St, San Francisco, CA');
+  });
+
+  it('keeps address when it already contains locality', () => {
+    expect(buildAddressQuery({ address: '444 6th St, San Francisco, CA' }))
+      .toBe('444 6th St, San Francisco, CA');
+  });
+
+  it('uses fallback locality when parts are incomplete and line address lacks locality', () => {
+    expect(buildAddressQuery({ addressLine1: '444 6th St' }))
+      .toBe('444 6th St, San Francisco, CA');
   });
 });
