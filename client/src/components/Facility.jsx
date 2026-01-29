@@ -1,6 +1,6 @@
 import Card from './Card';
 import CategoryIcon from './CategoryIcon';
-import FacilityAddressLink from './FacilityAddressLink';
+import FacilityAddressLinkFromAddress from './facilityAddressLink/FacilityAddressLinkFromAddress';
 
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (
@@ -62,7 +62,7 @@ export default function Facility ({ facility, isSelected, onSelect }) {
             {facility.districtLabel}
           </span>
         )}
-        <FacilityAddressLink
+        <FacilityAddressLinkFromAddress
           address={facility.displayAddress}
           stopPropagation
           style={{
@@ -74,7 +74,9 @@ export default function Facility ({ facility, isSelected, onSelect }) {
             margin: 0,
             textDecoration: 'none',
           }}
-        />
+        >
+          {facility.displayAddress}
+        </FacilityAddressLinkFromAddress>
         {facility.primaryService && (
           <span
             style={{

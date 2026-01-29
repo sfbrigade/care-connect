@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
 
-import { getMapLink } from './FacilityAddressLink';
+import { buildAddressQuery, getMapLink } from './mapLinkUtils';
 
 const address = '123 Main St, San Francisco, CA';
 const encodedAddress = encodeURIComponent(address);
@@ -54,5 +54,40 @@ describe('getMapLink', () => {
     setNavigator('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5)');
 
     expect(getMapLink(address)).toBe(googleMapsLink);
+  });
+});
+
+describe('buildAddressQuery', () => {
+  it('uses fallback locality when all parts are empty', () => {
+    expect(buildAddressQuery({})).toBe('San Francisco, CA');
+  });
+
+  it('builds a query from address parts', () => {
+    expect(buildAddressQuery({
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+    })).toBe('444 6th St, San Francisco, CA, 94103');
+  });
+
+  it('uses zip when postalCode is not provided', () => {
+    expect(buildAddressQuery({
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: null,
+      zip: '94103',
+    })).toBe('444 6th St, San Francisco, CA, 94103');
+  });
+
+  it('uses fallback locality when parts are incomplete and line address lacks locality', () => {
+    expect(buildAddressQuery({ addressLine1: '444 6th St' }))
+      .toBe('444 6th St, San Francisco, CA');
+  });
+
+  it('does not append fallback when line1 contains a comma', () => {
+    expect(buildAddressQuery({ addressLine1: '444 6th St, Oakland' }))
+      .toBe('444 6th St, Oakland');
   });
 });
