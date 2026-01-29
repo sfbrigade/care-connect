@@ -1,12 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { v4 as uuidv4 } from 'uuid';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-async function seedUnitsForOrganization(prisma, adminUser, csvPath, organizationId) {
+async function seedUnitsForOrganization (prisma, adminUser, csvPath, organizationId) {
   if (!fs.existsSync(csvPath)) {
     console.warn(`CSV file not found at ${csvPath}, skipping ${organizationId} units seeding.`);
     return 0;
@@ -21,10 +19,9 @@ async function seedUnitsForOrganization(prisma, adminUser, csvPath, organization
   let unitsSeeded = 0;
 
   for (const unitName of unitIds) {
-    const uniqueId = uuidv4();
-
+    const uniqueId = slugify(unitName);
     await prisma.unit.upsert({
-      where: { 
+      where: {
         unitId: {
           id: uniqueId,
           organizationId,
@@ -46,7 +43,7 @@ async function seedUnitsForOrganization(prisma, adminUser, csvPath, organization
   return unitsSeeded;
 }
 
-export default async function main(prisma) {
+export default async function main (prisma) {
   console.log('Seeding units...');
 
   const adminUser = await prisma.user.findUnique({
@@ -66,4 +63,12 @@ export default async function main(prisma) {
   const sfsoCount = await seedUnitsForOrganization(prisma, adminUser, sfsoPath, 'sfso');
 
   console.log(`Done seeding units! (SFPD: ${sfpdCount}, SFSO: ${sfsoCount})`);
+}
+function slugify (value) {
+  return (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
