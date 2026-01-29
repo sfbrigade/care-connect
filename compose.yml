@@ -9,14 +9,14 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     networks:
-      - full-stack-starter
+      - care-connect
   mail:
     image: dockage/mailcatcher:0.9.0
     ports:
       - 1025:1025
       - 1080:1080
     networks:
-      - full-stack-starter
+      - care-connect
   storage:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: minio server --console-address ":9001" /data
@@ -26,7 +26,7 @@ services:
     volumes:
       - ./data/minio:/data
     networks:
-      - full-stack-starter
+      - care-connect
   storage-setup:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
@@ -39,8 +39,8 @@ services:
       exit 0;
       "
     networks:
-      - full-stack-starter
+      - care-connect
 networks:
-  full-stack-starter:
-    name: full-stack-starter
+  care-connect:
+    name: care-connect
     driver: bridge

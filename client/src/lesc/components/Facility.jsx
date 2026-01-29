@@ -3,12 +3,14 @@ import { IconAlertTriangle } from '@tabler/icons-react';
 import { inflect, pluralize } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
+import FacilityAddressLink from '../../components/FacilityAddressLink';
 
 function Facility ({
   facility,
   bedTypes,
   arrivedAt,
   leftAt,
+  hasActiveHold,
   onArrivedClick,
   onLeftClick,
   onHoldClick,
@@ -19,6 +21,8 @@ function Facility ({
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
+  const isArrivedButtonDisabled = isClosed || !hasActiveHold;
+  const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
 
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
@@ -29,10 +33,21 @@ function Facility ({
           {bedTypes?.map(bedType => (
             <Title key={bedType.id} order={3}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
           ))}
-          <Text size='sm'>{facility.name} <Text span c='gray.5'>•</Text> {[facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ')}</Text>
+          <Text size='sm'>
+            {facility.name}
+            {address && (
+              <>
+                {' '}
+                <Text span c='gray.5'>•</Text>{' '}
+                <FacilityAddressLink
+                  address={address}
+                />
+              </>
+            )}
+          </Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
-          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
+          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>I've arrived</Button>}
           {hasArrived && !hasLeft && <Button px='sm' color='indigo.0' c='black' onClick={onLeftClick}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>

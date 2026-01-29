@@ -15,7 +15,7 @@ services:
       - SMTP_USER=
       - SMTP_PASS=
     networks:
-      - full-stack-starter
+      - care-connect
     ports:
       - 3000:3000 # fastify
       - 3333:3333 # vite

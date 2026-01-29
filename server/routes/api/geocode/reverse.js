@@ -69,10 +69,10 @@ export default async function (fastify, opts) {
         console.log(feature.properties);
 
         return reply.send({
-          addressLine1: feature.properties?.name,
-          city: feature.properties?.locality,
-          state: feature.properties?.region_a,
-          postalCode: feature.properties?.postalcode,
+          addressLine1: feature.properties?.name ?? null,
+          city: feature.properties?.locality ?? null,
+          state: feature.properties?.region_a ?? null,
+          postalCode: feature.properties?.postalcode ?? null,
         });
       } catch (error) {
         fastify.log.error(error, 'Error during reverse geocoding');

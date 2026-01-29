@@ -28,6 +28,12 @@ function Holds () {
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
   });
 
+  const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
+    queryKey: ['deflections', incident?.id, 'active'],
+    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    enabled: !!incident,
+  });
+
   const [tab, setTab] = useState('active');
 
   const markArrivedMutation = useMutation({
@@ -129,6 +135,7 @@ function Holds () {
             bedTypes={bedTypes ?? facility.bedTypes}
             arrivedAt={incident?.arrivedAt}
             leftAt={incident?.leftAt}
+            hasActiveHold={(deflections?.length ?? 0) > 0}
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
@@ -143,7 +150,7 @@ function Holds () {
             ]}
           />
           {tab === 'active' && (
-            <HoldsActive incident={incident} onCancelHoldClick={onCancelHoldClick} />
+            <HoldsActive incident={incident} deflections={deflections} isFetchingDeflections={isFetchingDeflections} onCancelHoldClick={onCancelHoldClick} />
           )}
           {tab === 'history' && (
             <HoldsHistory facility={facility} />
