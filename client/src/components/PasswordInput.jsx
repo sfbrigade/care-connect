@@ -15,10 +15,11 @@ function PasswordInput (props) {
         >
           {passwordVisible
             ? (
-              <IconEyeOff size={20} color='#868e96' />
-              )
-            : (
               <IconEye size={20} color='#868e96' />
+              )
+              
+            : (
+               <IconEyeOff size={20} color='#868e96' />
               )}
         </ActionIcon>
             }
