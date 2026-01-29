@@ -100,7 +100,11 @@ function Holds () {
     onSuccess: (response) => {
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id));
+        const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+        if (updatedDeflections.length === 0) {
+          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
+        }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
