@@ -63,11 +63,11 @@ export default function Facility ({ facility, isSelected, onSelect }) {
           </span>
         )}
         <FacilityAddressLink
-          addressLine1={facility.addressLine1}
-          addressLine2={facility.addressLine2}
-          city={facility.city}
-          state={facility.state}
-          postalCode={facility.postalCode}
+          addressLine1={facility.displayAddress.split(',')[0]}
+          addressLine2={facility.displayAddress.split(',')[1]}
+          city={facility.displayAddress.split(',')[2]}
+          state={facility.displayAddress.split(',')[3]}
+          postalCode={facility.displayAddress.split(',')[4]}
           zip={facility.zip}
           country={facility.country}
           stopPropagation

@@ -4,8 +4,6 @@ export function buildAddressQuery ({
   city,
   state,
   postalCode,
-  zip,
-  country,
 } = {}) {
   const hasLocalityInAddress = (value) => {
     const normalized = (value ?? '').toString().trim();
@@ -27,15 +25,13 @@ export function buildAddressQuery ({
   ]
     .filter(Boolean)
     .join(', ');
-  const postal = (postalCode ?? zip ?? '').toString().trim();
-  const nation = (country ?? '').toString().trim();
+  const postal = (postalCode ?? '').toString().trim();
 
   const candidate = [
     line1,
     line2,
     locality,
     postal,
-    nation,
   ].filter(Boolean).join(', ');
 
   return candidate || null;
@@ -63,14 +59,39 @@ export const getMapLink = (query) => {
   return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
 };
 
+function MapLinkAnchor ({
+  href,
+  stopPropagation = false,
+  className,
+  style,
+  children,
+}) {
+  const isHttpLink = href.startsWith('http');
+
+  return (
+    <a
+      href={href}
+      target={isHttpLink ? '_blank' : undefined}
+      rel={isHttpLink ? 'noreferrer' : undefined}
+      onClick={stopPropagation ? (event) => event.stopPropagation() : undefined}
+      className={className}
+      style={{
+        color: '#1a73e8',
+        textDecoration: 'none',
+        ...style,
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 export default function FacilityAddressLink ({
   addressLine1,
   addressLine2,
   city,
   state,
   postalCode,
-  zip,
-  country,
   children,
   className,
   style,
@@ -82,8 +103,6 @@ export default function FacilityAddressLink ({
     city,
     state,
     postalCode,
-    zip,
-    country,
   });
 
   if (!mapQuery) {
@@ -95,19 +114,39 @@ export default function FacilityAddressLink ({
   const displayText = children ?? fallbackDisplay ?? mapQuery;
 
   return (
-    <a
+    <MapLinkAnchor
       href={mapLink}
-      target={mapLink.startsWith('http') ? '_blank' : undefined}
-      rel={mapLink.startsWith('http') ? 'noreferrer' : undefined}
-      onClick={stopPropagation ? (event) => event.stopPropagation() : undefined}
+      stopPropagation={stopPropagation}
       className={className}
-      style={{
-        color: '#1a73e8',
-        textDecoration: 'none',
-        ...style,
-      }}
+      style={style}
     >
       {displayText}
-    </a>
+    </MapLinkAnchor>
   );
 }
+
+export function FacilityAddressLinkFromAddress ({
+  address,
+  children,
+  className,
+  style,
+  stopPropagation = false,
+}) {
+  if (!address) {
+    return null;
+  }
+
+  const mapLink = getMapLink(address);
+
+  return (
+    <MapLinkAnchor
+      href={mapLink}
+      stopPropagation={stopPropagation}
+      className={className}
+      style={style}
+    >
+      {children}
+    </MapLinkAnchor>
+  );
+}
+

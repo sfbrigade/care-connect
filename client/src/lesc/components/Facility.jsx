@@ -3,7 +3,7 @@ import { IconAlertTriangle } from '@tabler/icons-react';
 import { inflect, pluralize } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-import FacilityAddressLink from '../../components/FacilityAddressLink';
+import FacilityAddressLinkFromParts from '../../components/FacilityAddressLink';
 
 function Facility ({
   facility,
@@ -46,14 +46,12 @@ function Facility ({
               <>
                 {' '}
                 <Text span c='gray.5'>•</Text>{' '}
-                <FacilityAddressLink
+                <FacilityAddressLinkFromParts
                   addressLine1={facility.addressLine1}
                   addressLine2={facility.addressLine2}
                   city={facility.city}
                   state={facility.state}
                   postalCode={facility.postalCode}
-                  zip={facility.zip}
-                  country={facility.country}
                 />
               </>
             )}

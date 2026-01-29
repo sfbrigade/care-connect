@@ -58,12 +58,25 @@ describe('getMapLink', () => {
 });
 
 describe('buildAddressQuery', () => {
+  it('returns null when all parts are empty', () => {
+    expect(buildAddressQuery({})).toBe(null);
+  });
+
   it('builds a query from address parts', () => {
     expect(buildAddressQuery({
       addressLine1: '444 6th St',
       city: 'San Francisco',
       state: 'CA',
       postalCode: '94103',
+    })).toBe('444 6th St, San Francisco, CA, 94103');
+  });
+
+  it('uses zip when postalCode is not provided', () => {
+    expect(buildAddressQuery({
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      zip: '94103',
     })).toBe('444 6th St, San Francisco, CA, 94103');
   });
 
