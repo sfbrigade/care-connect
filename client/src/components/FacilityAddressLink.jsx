@@ -86,7 +86,7 @@ function MapLinkAnchor ({
   );
 }
 
-export default function FacilityAddressLink ({
+export default function FacilityAddressLinkFromParts ({
   addressLine1,
   addressLine2,
   city,
