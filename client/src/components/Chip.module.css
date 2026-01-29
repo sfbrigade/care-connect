@@ -17,7 +17,7 @@
 }
 
 .label[data-checked] {
-  padding-inline: var(--chip-padding);
+  padding: 0 var(--chip-padding);
 }
 
 .root[data-size='xl'] {
