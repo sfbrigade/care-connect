@@ -1,6 +1,6 @@
 import Card from './Card';
 import CategoryIcon from './CategoryIcon';
-import FacilityAddressLink from './FacilityAddressLink';
+import FacilityAddressLinkFromAddress from './FacilityAddressLink';
 
 export default function Facility ({ facility, isSelected, onSelect }) {
   return (
@@ -62,14 +62,8 @@ export default function Facility ({ facility, isSelected, onSelect }) {
             {facility.districtLabel}
           </span>
         )}
-        <FacilityAddressLink
-          addressLine1={facility.displayAddress.split(',')[0]}
-          addressLine2={facility.displayAddress.split(',')[1]}
-          city={facility.displayAddress.split(',')[2]}
-          state={facility.displayAddress.split(',')[3]}
-          postalCode={facility.displayAddress.split(',')[4]}
-          zip={facility.zip}
-          country={facility.country}
+        <FacilityAddressLinkFromAddress
+          address={facility.displayAddress}
           stopPropagation
           style={{
             fontSize: '13px',
@@ -82,7 +76,7 @@ export default function Facility ({ facility, isSelected, onSelect }) {
           }}
         >
           {facility.displayAddress}
-        </FacilityAddressLink>
+        </FacilityAddressLinkFromAddress>
         {facility.primaryService && (
           <span
             style={{
