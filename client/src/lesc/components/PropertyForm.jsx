@@ -157,14 +157,13 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
-              {(isLarge && facility?.name === 'RESET') && (
+              {isLarge && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>
                     This may exceed {facility?.name} property limits (~10 gallons). Please confirm with {facility?.name} staff.
                   </Text>
                   <Button size='md' mt='md' variant='primary' onClick={() => { window.location.href = `tel:${facility?.phone}`; }}>Call {facility?.name}</Button>
                 </Group>
-
               )}
               {!!deflection?.propertyPhotos?.length && (
                 <Group gap='xs'>
