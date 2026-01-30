@@ -167,19 +167,22 @@ function IncidentForm () {
               <TextInput
                 key={form.key('cadNumber')}
                 {...form.getInputProps('cadNumber')}
-                label={<>CAD number<span>*</span></>}
-                type='number'
-                inputMode='numeric'
+                label={<>CAD number<span>*</span></>}         
+                minLength={2}
+                maxLength={10}
                 onFocus={() => setShowAddressForm(false)}
               />
+              <Text size="xs" c="#868E96">CAD is provided by dispatch (MDT / radio).</Text>
               <TextInput
                 key={form.key('supervisorBadgeNumber')}
                 {...form.getInputProps('supervisorBadgeNumber')}
                 label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                type='number'
+                minLength={1}
+                maxLength={4}
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
+              <Text size="xs" c="#868E96">You can skip now and come back to fill out before custody transfer.</Text>
               <Button type='submit'>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
