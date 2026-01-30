@@ -31,7 +31,7 @@ function PosthogProvider () {
       posthog.init(apiKey, {
         api_host: apiHost || DEFAULT_API_HOST,
         capture_pageview: true,
-        disable_session_recording: !apiKey || isDev,
+        disable_session_recording: isDev,
       });
       posthogRef.current = posthog;
 
