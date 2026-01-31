@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
-import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/extend',
@@ -34,7 +33,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      await autoExpireHolds(fastify.prisma, request.user);
+      await fastify.prisma.deflection.expire();
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {
