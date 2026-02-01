@@ -1,4 +1,8 @@
-import { Prisma, PrismaClient, HoldStatusEnum } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { v4 as uuid } from 'uuid';
+
+import Deflection from '#models/deflection.js';
+import User from '#models/user.js';
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
@@ -19,13 +23,14 @@ const prisma = new PrismaClient({
     },
     deflection: {
       async expire (now = new Date()) {
+        await prisma.user.findOrCreateBatchUser();
         const bedTypeIds = (await prisma.deflection.findMany({
           distinct: ['bedTypeId'],
           select: {
             bedTypeId: true,
           },
           where: {
-            status: HoldStatusEnum.ACTIVE,
+            status: Deflection.HoldStatus.ACTIVE,
             expiresAt: {
               lte: now,
             },
@@ -37,7 +42,7 @@ const prisma = new PrismaClient({
             const deflections = await tx.deflection.findMany({
               where: {
                 bedTypeId,
-                status: HoldStatusEnum.ACTIVE,
+                status: Deflection.HoldStatus.ACTIVE,
                 expiresAt: {
                   lte: now,
                 },
@@ -45,8 +50,8 @@ const prisma = new PrismaClient({
             });
             const deflectionUpdates = deflections.map((deflection) => ({
               deflectionId: deflection.id,
-              status: HoldStatusEnum.EXPIRED,
-              updatedById: deflection.createdById,
+              status: Deflection.HoldStatus.EXPIRED,
+              updatedById: User.BATCH_USER_ID,
               updatedAt: now,
             }));
             await tx.deflectionUpdate.createMany({
@@ -59,7 +64,7 @@ const prisma = new PrismaClient({
                 },
               },
               data: {
-                status: HoldStatusEnum.EXPIRED,
+                status: Deflection.HoldStatus.EXPIRED,
                 updatedAt: now,
               },
             });
@@ -74,7 +79,7 @@ const prisma = new PrismaClient({
                 holds: bedType.holds - deflections.length,
                 available: bedType.available + deflections.length,
                 updateMethod: 'API',
-                updatedById: bedType.createdById,
+                updatedById: User.BATCH_USER_ID,
               },
             });
             await tx.bedType.update({
@@ -94,6 +99,28 @@ const prisma = new PrismaClient({
             });
           });
         }));
+      }
+    },
+    user: {
+      async findOrCreateBatchUser () {
+        let data = await prisma.user.findUnique({
+          where: { id: User.BATCH_USER_ID },
+        });
+        if (!data) {
+          data = {
+            id: User.BATCH_USER_ID,
+            firstName: 'Batch',
+            lastName: 'User',
+            email: 'batch.user@careconnectsf.org',
+            isAdmin: false,
+          };
+          const user = new User(data);
+          await user.setPassword(uuid());
+          data = await prisma.user.create({
+            data,
+          });
+        }
+        return data;
       }
     },
     $allModels: {
