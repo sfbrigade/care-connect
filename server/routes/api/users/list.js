@@ -23,6 +23,11 @@ export default async function (fastify, opts) {
     const options = {
       page,
       perPage,
+      where: {
+        id: {
+          not: User.BATCH_USER_ID,
+        },
+      },
       orderBy: [
         { lastName: 'asc' },
         { firstName: 'asc' },
