@@ -63,22 +63,6 @@ function MyComponent() {
 
 ## Shared Utilities
 
-### Auto-Expire Holds
-
-**Location**: `server/lib/lesc/lib/holds.js`
-
-Shared utility function for auto-expiring bed holds:
-
-```javascript
-export async function autoExpireHolds(prisma, now = new Date()) {
-  // Updates ACTIVE/EXTENDED holds with expiresAt <= now to EXPIRED
-}
-```
-
-**Used by**:
-- `server/routes/api/facility/availability.js`
-- `server/routes/api/holds/*.js`
-
 ### Date/Time Utilities
 
 **Location**: `client/src/utils/dateTime.js`
