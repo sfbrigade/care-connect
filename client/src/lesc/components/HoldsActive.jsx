@@ -6,7 +6,7 @@ import Incident from './Incident';
 import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
 
-function HoldsActive({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
+function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -22,7 +22,7 @@ function HoldsActive({ incident, deflections, isFetchingDeflections, onCancelHol
     },
   });
 
-  function onExtendAllClick() {
+  function onExtendAllClick () {
     extendAllHoldsMutation.mutate();
   }
 
@@ -57,13 +57,15 @@ function HoldsActive({ incident, deflections, isFetchingDeflections, onCancelHol
               />
             ))}
           </Stack>
-          {incident.arrivedAt != null ? (
-            ''
-          ) : (
-            <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
-              Extend all holds
-            </Button>
-          )}
+          {incident.arrivedAt != null
+            ? (
+                ''
+              )
+            : (
+              <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
+                Extend all holds
+              </Button>
+              )}
         </>
       )}
     </>
