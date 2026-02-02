@@ -1,33 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
-import { Head } from '@unhead/react';
-import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { Head } from "@unhead/react";
+import { IconArrowLeft, IconCurrentLocationFilled } from "@tabler/icons-react";
+import {
+  Button,
+  ActionIcon,
+  Container,
+  Fieldset,
+  Group,
+  Loader,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { DateTime } from "luxon";
 
-import Api from '@/Api';
-import Header from '@/components/Header';
-import IconButtonLink from '@/components/IconButtonLink';
-import { useFacilityContext } from '@/FacilityContext';
-import { formatAddress } from '@/utils/format';
-import { getCurrentLocationAddress } from '@/utils/geocoding';
+import Api from "@/Api";
+import Header from "@/components/Header";
+import IconButtonLink from "@/components/IconButtonLink";
+import { useFacilityContext } from "@/FacilityContext";
+import { formatAddress } from "@/utils/format";
+import {
+  getCurrentLocationAddress,
+} from "@/utils/geocoding";
 
 const initialValues = {
-  cadNumber: '',
-  addressLine1: '',
-  addressLine2: '',
-  city: '',
-  state: '',
-  postalCode: '',
-  latitude: '',
-  longitude: '',
-  arrestedAt: '',
-  supervisorBadgeNumber: '',
+  cadNumber: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  latitude: "",
+  longitude: "",
+  arrestedAt: "",
+  supervisorBadgeNumber: "",
 };
 
-function IncidentForm () {
+function IncidentForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -37,24 +50,32 @@ function IncidentForm () {
   const addressRef = useRef();
 
   const form = useForm({
-    mode: 'uncontrolled',
+    mode: "uncontrolled",
     initialValues,
-    transformValues: values => ({
+    transformValues: (values) => ({
       ...values,
-      arrestedAt: DateTime.fromISO(values.arrestedAt, { zone: 'local' }).toISO(),
+      arrestedAt: DateTime.fromISO(values.arrestedAt, {
+        zone: "local",
+      }).toISO(),
     }),
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+    queryKey: ["facilities", facility.id, "active-incident"],
+    queryFn: () =>
+      Api.facilities
+        .activeIncident(facility.id)
+        .then((response) => response.data),
   });
 
   useEffect(() => {
     if (!isLoading) {
       if (data) {
         let { arrestedAt } = data;
-        arrestedAt = DateTime.fromISO(arrestedAt).toISO({ includeOffset: false, precision: 'seconds' });
+        arrestedAt = DateTime.fromISO(arrestedAt).toISO({
+          includeOffset: false,
+          precision: "seconds",
+        });
         form.setInitialValues({
           ...data,
           arrestedAt,
@@ -62,120 +83,188 @@ function IncidentForm () {
         form.reset();
         setInitialized(true);
       } else {
-        const now = DateTime.now().toISO({ includeOffset: false, precision: 'seconds' });
-        getCurrentLocationAddress().then(address => {
-          form.setInitialValues({
-            ...initialValues,
-            ...address,
-            facilityId: facility.id,
-            arrestedAt: now,
-          });
-        }).catch(() => {
-          form.setInitialValues({
-            ...initialValues,
-            facilityId: facility.id,
-            arrestedAt: now,
-          });
-        }).finally(() => {
-          form.reset();
-          setInitialized(true);
+        const now = DateTime.now().toISO({
+          includeOffset: false,
+          precision: "seconds",
         });
+        getCurrentLocationAddress()
+          .then((address) => {
+            form.setInitialValues({
+              ...initialValues,
+              ...address,
+              facilityId: facility.id,
+              arrestedAt: now,
+            });
+          })
+          .catch(() => {
+            form.setInitialValues({
+              ...initialValues,
+              facilityId: facility.id,
+              arrestedAt: now,
+            });
+          })
+          .finally(() => {
+            form.reset();
+            setInitialized(true);
+          });
       }
     }
   }, [isLoading, data]);
 
   const onSubmitMutation = useMutation({
-    mutationFn: (data) => data.id ? Api.incidents.update(data.id, data) : Api.incidents.create(data, { bedTypeId: searchParams.get('bedTypeId') }),
+    mutationFn: (data) =>
+      data.id
+        ? Api.incidents.update(data.id, data)
+        : Api.incidents.create(data, {
+            bedTypeId: searchParams.get("bedTypeId"),
+          }),
     onSuccess: async (response) => {
       await queryClient.invalidateQueries({
-        queryKey: ['facilities', facility.id, 'bed-types'],
+        queryKey: ["facilities", facility.id, "bed-types"],
       });
-      await queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
-      navigate('/holds');
+      await queryClient.setQueryData(
+        ["facilities", facility.id, "active-incident"],
+        response.data,
+      );
+      navigate("/holds");
     },
   });
-
+  function LocationButton() {
+    return (
+      <ActionIcon onClick={getLocation} variant="transparent">
+        <IconCurrentLocationFilled size={24} style = {{color:"gray"}}/>
+      </ActionIcon>
+    );
+  }
+  const getLocation = () => {
+    getCurrentLocationAddress().then((address)=>{
+      form.setValues({
+        ...address
+      })
+    })
+  };
   return (
     <>
       <Head>
         <title>Incident Details</title>
       </Head>
       <Header>
-        <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/holds' />
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+        <Group w="100%" justify="space-between">
+          <IconButtonLink icon={IconArrowLeft} to="/holds" />
+          {onSubmitMutation.isPending && (
+            <Text c="dimmed" size="lg">
+              Saving...
+            </Text>
+          )}
+          {onSubmitMutation.isSuccess && (
+            <Text c="teal.6" size="lg">
+              Changes saved
+            </Text>
+          )}
         </Group>
       </Header>
       <Container>
-        <Text c='dimmed' size='xl'>Start an incident</Text>
-        <Title order={3} mb='xl'>Enter these details once. We’ll reuse them for all holds in this incident.</Title>
+        <Text c="dimmed" size="xl">
+          Start an incident
+        </Text>
+        <Title order={3} mb="xl">
+          Enter these details once. We’ll reuse them for all holds in this
+          incident.
+        </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
-            <Stack gap='xl'>
+          <Fieldset
+            disabled={!isInitialized || !onSubmitMutation.isIdle}
+            variant="unstyled"
+          >
+            <Stack gap="xl">
               {!showAddressForm && (
                 <TextInput
-                  label={<>Arrest location<span>*</span></>}
-                  rightSection={!isInitialized ? <Loader size={24} /> : <IconCurrentLocationFilled size={24} />}
+                  label={
+                    <>
+                      Arrest location<span>*</span>
+                    </>
+                  }
+                  rightSection={
+                    !isInitialized ? <Loader size={24} /> : <LocationButton />
+                  }
                   value={formatAddress(form.getValues())}
                   readOnly
-                  onFocus={() => { setShowAddressForm(true); setTimeout(() => addressRef.current?.focus(), 100); }}
+                  onFocus={() => {
+                    setShowAddressForm(true);
+                    setTimeout(() => addressRef.current?.focus(), 100);
+                  }}
                 />
               )}
               {showAddressForm && (
                 <>
                   <TextInput
                     ref={addressRef}
-                    key={form.key('addressLine1')}
-                    {...form.getInputProps('addressLine1')}
-                    label={<>Arrest address line 1<span>*</span></>}
-                    rightSection={<IconCurrentLocationFilled size={24} />}
+                    key={form.key("addressLine1")}
+                    {...form.getInputProps("addressLine1")}
+                    label={
+                      <>
+                        Arrest address line 1<span>*</span>
+                      </>
+                    }
+                    rightSection={<LocationButton />}
                   />
                   <TextInput
-                    key={form.key('addressLine2')}
-                    {...form.getInputProps('addressLine2')}
-                    label='Arrest address line 2'
+                    key={form.key("addressLine2")}
+                    {...form.getInputProps("addressLine2")}
+                    label="Arrest address line 2"
                   />
                   <TextInput
-                    key={form.key('city')}
-                    {...form.getInputProps('city')}
-                    label='Arrest city'
+                    key={form.key("city")}
+                    {...form.getInputProps("city")}
+                    label="Arrest city"
                   />
-                  <Group wrap='nowrap'>
+                  <Group wrap="nowrap">
                     <TextInput
-                      key={form.key('state')}
-                      {...form.getInputProps('state')}
-                      label='Arrest state'
+                      key={form.key("state")}
+                      {...form.getInputProps("state")}
+                      label="Arrest state"
                     />
                     <TextInput
-                      key={form.key('postalCode')}
-                      {...form.getInputProps('postalCode')}
-                      label='Arrest ZIP code'
+                      key={form.key("postalCode")}
+                      {...form.getInputProps("postalCode")}
+                      label="Arrest ZIP code"
                     />
                   </Group>
                 </>
               )}
               <TextInput
-                key={form.key('arrestedAt')}
-                {...form.getInputProps('arrestedAt')}
-                label={<>Arrest date & time<span>*</span></>}
-                type='datetime-local'
+                key={form.key("arrestedAt")}
+                {...form.getInputProps("arrestedAt")}
+                label={
+                  <>
+                    Arrest date & time<span>*</span>
+                  </>
+                }
+                type="datetime-local"
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
-                key={form.key('cadNumber')}
-                {...form.getInputProps('cadNumber')}
-                label={<>CAD number<span>*</span></>}
+                key={form.key("cadNumber")}
+                {...form.getInputProps("cadNumber")}
+                label={
+                  <>
+                    CAD number<span>*</span>
+                  </>
+                }
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
-                key={form.key('supervisorBadgeNumber')}
-                {...form.getInputProps('supervisorBadgeNumber')}
-                label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                key={form.key("supervisorBadgeNumber")}
+                {...form.getInputProps("supervisorBadgeNumber")}
+                label={
+                  <>
+                    Supervising Sergeant’s Star Number<span>*</span>
+                  </>
+                }
                 onFocus={() => setShowAddressForm(false)}
               />
-              <Button type='submit'>
-                {data?.id ? 'Save incident details' : 'Create incident & hold'}
+              <Button type="submit">
+                {data?.id ? "Save incident details" : "Create incident & hold"}
               </Button>
             </Stack>
           </Fieldset>
