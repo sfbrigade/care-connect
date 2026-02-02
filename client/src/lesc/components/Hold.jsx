@@ -6,7 +6,7 @@ import { DateTime } from 'luxon';
 import { QRCodeSVG } from 'qrcode.react';
 import { IconLock } from '@tabler/icons-react';
 
-import { calculateAge, formatTimeRemaining } from '@/utils/format';
+import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
 function Hold ({
@@ -40,9 +40,6 @@ function Hold ({
   const minutesUntilExpiration = deflection?.expiresAt
     ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
     : null;
-  const minutesSinceExpiration = minutesUntilExpiration !== null
-    ? Math.max(0, Math.floor(-minutesUntilExpiration))
-    : null;
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidIncident(incident) && isValidDeflection(deflection);
@@ -67,10 +64,22 @@ function Hold ({
         <Stack gap='sm'>
           <Group gap='xs'>
             <Text size='md' c='gray.6'>Hold {displayId}</Text>
-            {!isNew && !isValid && (
+            {!isNew && !isValid && !isCancelled && !isExpired && (
               <>
                 <Text size='md' c='gray.6'>•</Text>
                 <Text size='md' c='red.6'>Details incomplete</Text>
+              </>
+            )}
+            {isCancelled && (
+              <>
+                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}</Text>
+              </>
+            )}
+            {isExpired && (
+              <>
+                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='yellow.7'>Expired at {formatTime(deflection?.expiresAt)}</Text>
               </>
             )}
           </Group>
@@ -97,33 +106,27 @@ function Hold ({
             </Box>
           </Group>
         )}
-        <Group justify='space-between' wrap='nowrap'>
-          {isExpired && (
-            <Title order={3} c='red.6'>
-              {minutesSinceExpiration !== null
-                ? `Expired ${minutesSinceExpiration} minute${minutesSinceExpiration === 1 ? '' : 's'} ago`
-                : 'Expired'}
-            </Title>
-          )}
-          {isActive && !isExpired && (
-            <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-          )}
-          {isCancelled && (
-            <Title order={3} c='red.6'>Cancelled</Title>
-          )}
-          {isNew && !isExpired && !isCancelled && (
-            <Group gap='sm' wrap='nowrap'>
-              <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
-              <Button size='md' onClick={onDetailsClick}>Add Details</Button>
-            </Group>
-          )}
-          {!isNew && !isValid && !isExpired && !isCancelled && (
-            <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
-          )}
-          {!isNew && (isValid || isCancelled || isExpired) && (
-            <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
-          )}
-        </Group>
+        {!(isNew && (isCancelled || isExpired)) && (
+          <Group justify='space-between' wrap='nowrap'>
+            {isActive && !isExpired
+              ? (
+                <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
+                )
+              : <Box />}
+            {isNew && !isExpired && !isCancelled && (
+              <Group gap='sm' wrap='nowrap'>
+                <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
+                <Button size='md' onClick={onDetailsClick}>Add Details</Button>
+              </Group>
+            )}
+            {!isNew && !isValid && !isExpired && !isCancelled && (
+              <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
+            )}
+            {!isNew && (isValid || isCancelled || isExpired) && (
+              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+            )}
+          </Group>
+        )}
       </Stack>
     </Card>
   );

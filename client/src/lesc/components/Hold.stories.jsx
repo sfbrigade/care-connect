@@ -100,27 +100,6 @@ export const ExpiringSoon = {
   },
 };
 
-export const ExpiredTimer = {
-  args: {
-    deflection: {
-      ...deflection,
-      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    },
-    onDetailsClick: fn(),
-  },
-};
-
-export const ExpiredStatus = {
-  args: {
-    deflection: {
-      ...deflection,
-      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      status: 'EXPIRED',
-    },
-    onDetailsClick: fn(),
-  },
-};
-
 export const ArrivedIncomplete = {
   args: {
     deflection: {
@@ -144,4 +123,68 @@ export const ArrivedComplete = {
       subjectStatus: 'ONSITE_AWAITING_TRANSFER'
     },
   }
+};
+
+export const CancelledEmpty = {
+  args: {
+    ...Default.args,
+    deflection: {
+      ...Default.args.deflection,
+      status: 'CANCELLED',
+      cancelledAt: new Date().toISOString(),
+    },
+  }
+};
+
+export const CancelledWithSomeDetails = {
+  args: {
+    ...WithSomeSubjectDetails.args,
+    deflection: {
+      ...WithSomeSubjectDetails.args.deflection,
+      status: 'CANCELLED',
+      cancelledAt: new Date().toISOString(),
+    },
+  }
+};
+
+export const ExpiredTimer = {
+  args: {
+    deflection: {
+      ...deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const ExpiredStatus = {
+  args: {
+    deflection: {
+      ...deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      status: 'EXPIRED',
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const ExpiredTimerWithSomeDetails = {
+  args: {
+    deflection: {
+      ...WithSomeSubjectDetails.args.deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const ExpiredStatusWithSomeDetails = {
+  args: {
+    deflection: {
+      ...WithSomeSubjectDetails.args.deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      status: 'EXPIRED',
+    },
+    onDetailsClick: fn(),
+  },
 };
