@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import { Head } from "@unhead/react";
-import { IconArrowLeft, IconCurrentLocationFilled } from "@tabler/icons-react";
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { Head } from '@unhead/react';
+import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
 import {
   Button,
   ActionIcon,
@@ -13,34 +13,34 @@ import {
   Text,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { DateTime } from "luxon";
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { DateTime } from 'luxon';
 
-import Api from "@/Api";
-import Header from "@/components/Header";
-import IconButtonLink from "@/components/IconButtonLink";
-import { useFacilityContext } from "@/FacilityContext";
-import { formatAddress } from "@/utils/format";
+import Api from '@/Api';
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
+import { useFacilityContext } from '@/FacilityContext';
+import { formatAddress } from '@/utils/format';
 import {
   getCurrentLocationAddress,
-} from "@/utils/geocoding";
+} from '@/utils/geocoding';
 
 const initialValues = {
-  cadNumber: "",
-  addressLine1: "",
-  addressLine2: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  latitude: "",
-  longitude: "",
-  arrestedAt: "",
-  supervisorBadgeNumber: "",
+  cadNumber: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  latitude: '',
+  longitude: '',
+  arrestedAt: '',
+  supervisorBadgeNumber: '',
 };
 
-function IncidentForm() {
+function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -50,18 +50,18 @@ function IncidentForm() {
   const addressRef = useRef();
 
   const form = useForm({
-    mode: "uncontrolled",
+    mode: 'uncontrolled',
     initialValues,
     transformValues: (values) => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
-        zone: "local",
+        zone: 'local',
       }).toISO(),
     }),
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["facilities", facility.id, "active-incident"],
+    queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () =>
       Api.facilities
         .activeIncident(facility.id)
@@ -74,7 +74,7 @@ function IncidentForm() {
         let { arrestedAt } = data;
         arrestedAt = DateTime.fromISO(arrestedAt).toISO({
           includeOffset: false,
-          precision: "seconds",
+          precision: 'seconds',
         });
         form.setInitialValues({
           ...data,
@@ -85,7 +85,7 @@ function IncidentForm() {
       } else {
         const now = DateTime.now().toISO({
           includeOffset: false,
-          precision: "seconds",
+          precision: 'seconds',
         });
         getCurrentLocationAddress()
           .then((address) => {
@@ -116,32 +116,32 @@ function IncidentForm() {
       data.id
         ? Api.incidents.update(data.id, data)
         : Api.incidents.create(data, {
-            bedTypeId: searchParams.get("bedTypeId"),
-          }),
+          bedTypeId: searchParams.get('bedTypeId'),
+        }),
     onSuccess: async (response) => {
       await queryClient.invalidateQueries({
-        queryKey: ["facilities", facility.id, "bed-types"],
+        queryKey: ['facilities', facility.id, 'bed-types'],
       });
       await queryClient.setQueryData(
-        ["facilities", facility.id, "active-incident"],
-        response.data,
+        ['facilities', facility.id, 'active-incident'],
+        response.data
       );
-      navigate("/holds");
+      navigate('/holds');
     },
   });
-  function LocationButton() {
+  function LocationButton () {
     return (
-      <ActionIcon onClick={getLocation} variant="transparent">
-        <IconCurrentLocationFilled size={24} style = {{color:"gray"}}/>
+      <ActionIcon onClick={getLocation} variant='transparent'>
+        <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
       </ActionIcon>
     );
   }
   const getLocation = () => {
-    getCurrentLocationAddress().then((address)=>{
+    getCurrentLocationAddress().then((address) => {
       form.setValues({
         ...address
-      })
-    })
+      });
+    });
   };
   return (
     <>
@@ -149,34 +149,34 @@ function IncidentForm() {
         <title>Incident Details</title>
       </Head>
       <Header>
-        <Group w="100%" justify="space-between">
-          <IconButtonLink icon={IconArrowLeft} to="/holds" />
+        <Group w='100%' justify='space-between'>
+          <IconButtonLink icon={IconArrowLeft} to='/holds' />
           {onSubmitMutation.isPending && (
-            <Text c="dimmed" size="lg">
+            <Text c='dimmed' size='lg'>
               Saving...
             </Text>
           )}
           {onSubmitMutation.isSuccess && (
-            <Text c="teal.6" size="lg">
+            <Text c='teal.6' size='lg'>
               Changes saved
             </Text>
           )}
         </Group>
       </Header>
       <Container>
-        <Text c="dimmed" size="xl">
+        <Text c='dimmed' size='xl'>
           Start an incident
         </Text>
-        <Title order={3} mb="xl">
+        <Title order={3} mb='xl'>
           Enter these details once. We’ll reuse them for all holds in this
           incident.
         </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset
             disabled={!isInitialized || !onSubmitMutation.isIdle}
-            variant="unstyled"
+            variant='unstyled'
           >
-            <Stack gap="xl">
+            <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
                   label={
@@ -199,8 +199,8 @@ function IncidentForm() {
                 <>
                   <TextInput
                     ref={addressRef}
-                    key={form.key("addressLine1")}
-                    {...form.getInputProps("addressLine1")}
+                    key={form.key('addressLine1')}
+                    {...form.getInputProps('addressLine1')}
                     label={
                       <>
                         Arrest address line 1<span>*</span>
@@ -209,20 +209,20 @@ function IncidentForm() {
                     rightSection={<LocationButton />}
                   />
                   <TextInput
-                    key={form.key("addressLine2")}
-                    {...form.getInputProps("addressLine2")}
-                    label="Arrest address line 2"
+                    key={form.key('addressLine2')}
+                    {...form.getInputProps('addressLine2')}
+                    label='Arrest address line 2'
                   />
                   <TextInput
-                    key={form.key("city")}
-                    {...form.getInputProps("city")}
-                    label="Arrest city"
+                    key={form.key('city')}
+                    {...form.getInputProps('city')}
+                    label='Arrest city'
                   />
-                  <Group wrap="nowrap">
+                  <Group wrap='nowrap'>
                     <TextInput
-                      key={form.key("state")}
-                      {...form.getInputProps("state")}
-                      label="Arrest state"
+                      key={form.key('state')}
+                      {...form.getInputProps('state')}
+                      label='Arrest state'
                     />
                     <TextInput
                       key={form.key('postalCode')}
@@ -235,14 +235,14 @@ function IncidentForm() {
                 </>
               )}
               <TextInput
-                key={form.key("arrestedAt")}
-                {...form.getInputProps("arrestedAt")}
+                key={form.key('arrestedAt')}
+                {...form.getInputProps('arrestedAt')}
                 label={
                   <>
                     Arrest date & time<span>*</span>
                   </>
                 }
-                type="datetime-local"
+                type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
               <TextInput
@@ -261,8 +261,8 @@ function IncidentForm() {
                 inputMode='numeric'
                 onFocus={() => setShowAddressForm(false)}
               />
-              <Button type="submit">
-                {data?.id ? "Save incident details" : "Create incident & hold"}
+              <Button type='submit'>
+                {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
             </Stack>
           </Fieldset>
