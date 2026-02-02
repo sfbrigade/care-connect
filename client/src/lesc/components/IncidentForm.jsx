@@ -139,13 +139,13 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('city')}
                     {...form.getInputProps('city')}
-                    label='Arrest city'
+                    label={<>Arrest city<span>*</span></>}
                   />
                   <Group wrap='nowrap'>
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
-                      label='Arrest state'
+                      label={<>Arrest state<span>*</span></>}
                     />
                     <TextInput
                       key={form.key('postalCode')}

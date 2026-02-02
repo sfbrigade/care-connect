@@ -7,8 +7,10 @@ import { QRCodeSVG } from 'qrcode.react';
 import { IconLock } from '@tabler/icons-react';
 
 import { calculateAge, formatTimeRemaining } from '@/utils/format';
+import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
 function Hold ({
+  incident,
   deflection,
   onCancelClick,
   onDetailsClick,
@@ -43,12 +45,7 @@ function Hold ({
     : null;
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
-  const isValid = !!deflection?.subject?.firstName &&
-    !!deflection?.subject?.lastName &&
-    !!deflection?.subject?.dateOfBirth &&
-    !!deflection?.subject?.sex &&
-    !!deflection?.subject?.race &&
-    !!deflection?.behavior; // TODO: check property, move this logic somewhere reusable
+  const isValid = isValidIncident(incident) && isValidDeflection(deflection);
 
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${location.origin}/transfer/${deflection.id}`;

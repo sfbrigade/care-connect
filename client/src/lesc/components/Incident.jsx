@@ -26,7 +26,7 @@ function Incident ({ incident, editLink }) {
         </Group>
       </Box>
       <Box>
-        <IconButtonLink icon={IconPencilMinus} to={editLink} variant='primary' />
+        <IconButtonLink icon={IconPencilMinus} to={editLink} variant={isIncomplete ? 'primary' : 'default'} />
       </Box>
     </Group>
   );
