@@ -68,7 +68,7 @@ export const Static = {
           <Stack gap='xs' style={{ maxWidth: 560 }}>
             <Text fw={600}>Static toast examples</Text>
             <Text c='dimmed'>
-              Toasts are fixed to the top center of the viewport. Edit styles in
+              Toasts are fixed to the top center of the viewport on mobile and to the right on desktop. Edit styles in
               `ToastContainer.jsx` / `Notification.jsx` and see changes here.
             </Text>
           </Stack>
