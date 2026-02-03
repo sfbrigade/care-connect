@@ -1,12 +1,14 @@
 import { useContext } from 'react';
 import Notification from './Notification';
 import { ToastContext } from './ToastContext';
+import { useMobile } from '../hooks/useMobile';
 
 function ToastContainer () {
   const context = useContext(ToastContext);
   if (!context) return null;
 
   const { toasts, removeToast } = context;
+  const isMobile = useMobile();
 
   if (toasts.length === 0) return null;
 
@@ -15,10 +17,17 @@ function ToastContainer () {
       style={{
         position: 'fixed',
         top: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        ...(isMobile
+          ? {
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'min(90vw, 400px)',
+            }
+          : {
+              right: '16px',
+              width: '400px',
+            }),
         zIndex: 10000,
-        width: '335px',
         pointerEvents: 'none',
         display: 'flex',
         flexDirection: 'column',
