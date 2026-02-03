@@ -1,37 +1,42 @@
-import { IconCheck } from '@tabler/icons-react';
+import { IconCheck, IconX, IconExclamationMark, IconInfoCircle } from '@tabler/icons-react';
 
-/**
- * Notification component matching Figma design
- * Used for success notifications and other notification types
- */
+import { colors, textColors, uiColors } from '../colors';
+
+const notificationColors = {
+  success: {
+    iconBg: colors.success,
+    iconColor: textColors.dark,
+  },
+  error: {
+    iconBg: colors.error,
+    iconColor: textColors.light,
+  },
+  warning: {
+    iconBg: colors.warning,
+    iconColor: textColors.dark,
+  },
+  info: {
+    iconBg: colors.info,
+    iconColor: textColors.light,
+  },
+};
+
+const notificationIcon = {
+  success: <IconCheck size={16} color={textColors.dark} strokeWidth={2.5} />,
+  error: <IconX size={16} color={textColors.light} strokeWidth={2.5} />,
+  warning: <IconExclamationMark size={16} color={textColors.dark} strokeWidth={2.5} />,
+  info: <IconInfoCircle size={16} color={textColors.light} strokeWidth={2.5} />,
+};
+
 function Notification ({
   message = 'All holds extended to 11:45 AM',
   variant = 'success', // 'success', 'error', 'warning', 'info'
   ...props
 }) {
-  const variantConfig = {
-    success: {
-      iconBg: '#12b886',
-      iconColor: '#ffffff',
-    },
-    error: {
-      iconBg: '#fa5252',
-      iconColor: '#ffffff',
-    },
-    warning: {
-      iconBg: '#ffc107',
-      iconColor: '#212529',
-    },
-    info: {
-      iconBg: '#339af0',
-      iconColor: '#ffffff',
-    },
-  };
-
-  const config = variantConfig[variant] || variantConfig.success;
+  const config = notificationColors[variant] || notificationColors.success;
 
   const baseStyle = {
-    borderRadius: '8px',
+    borderRadius: '16px',
     boxShadow: '0px 7px 7px -5px rgba(0,0,0,0.04), 0px 10px 15px -5px rgba(0,0,0,0.1), 0px 1px 3px 0px rgba(0,0,0,0.05)',
     padding: '16px 12px',
     position: 'relative',
@@ -40,7 +45,7 @@ function Notification ({
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    backgroundColor: '#000000', // Black background
+    backgroundColor: uiColors.background.dark,
   };
 
   return (
@@ -49,7 +54,7 @@ function Notification ({
       style={{
         ...baseStyle,
         ...props.style,
-        backgroundColor: '#000000', // Ensure black background is always applied, even if overridden
+        backgroundColor: uiColors.background.dark,
       }}
     >
       <div
@@ -65,7 +70,7 @@ function Notification ({
           height: '24px',
         }}
       >
-        <IconCheck size={16} color={config.iconColor} strokeWidth={2.5} />
+        {notificationIcon[variant] || notificationIcon.success}
       </div>
       <p
         style={{
@@ -73,7 +78,7 @@ function Notification ({
           lineHeight: '20px',
           fontFamily: 'Roboto, sans-serif',
           fontWeight: 400,
-          color: '#ffffff',
+          color: uiColors.text.light,
           flex: 1,
           margin: 0,
           padding: 0,
