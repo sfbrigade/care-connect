@@ -6,7 +6,7 @@ function ToastContainer () {
   const context = useContext(ToastContext);
   if (!context) return null;
 
-  const { toasts } = context;
+  const { toasts, removeToast } = context;
 
   if (toasts.length === 0) return null;
 
@@ -35,9 +35,13 @@ function ToastContainer () {
         >
           <Notification
             message={toast.message}
+            messageSecondary={toast.messageSecondary}
             variant={toast.variant}
             style={{
               width: '100%',
+            }}
+            onDismiss={() => {
+              removeToast(toast.id);
             }}
           />
         </div>

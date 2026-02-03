@@ -30,7 +30,9 @@ const notificationIcon = {
 
 function Notification ({
   message = 'All holds extended to 11:45 AM',
+  messageSecondary,
   variant = 'success', // 'success', 'error', 'warning', 'info'
+  onDismiss,
   ...props
 }) {
   const config = notificationColors[variant] || notificationColors.success;
@@ -72,20 +74,59 @@ function Notification ({
       >
         {notificationIcon[variant] || notificationIcon.success}
       </div>
-      <p
+      <div
         style={{
-          fontSize: '14px',
-          lineHeight: '20px',
-          fontFamily: 'Roboto, sans-serif',
-          fontWeight: 400,
-          color: uiColors.text.light,
           flex: 1,
-          margin: 0,
-          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '2px',
         }}
       >
-        {message}
-      </p>
+        <p
+          style={{
+            fontSize: '14px',
+            lineHeight: '20px',
+            fontFamily: 'Roboto, sans-serif',
+            fontWeight: 400,
+            color: uiColors.text.light,
+            margin: 0,
+            padding: 0,
+          }}
+        >
+          {message}
+        </p>
+        {messageSecondary && (
+          <p
+            style={{
+              fontSize: '14px',
+              lineHeight: '20px',
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              color: '#9ca3af',
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            {messageSecondary}
+          </p>
+        )}
+      </div>
+      <div
+        onClick={onDismiss}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          width: '40px',
+          height: '40px',
+          cursor: 'pointer',
+          padding: '6px',
+          margin: '-6px',
+        }}
+      >
+        <IconX size={20} color="#9ca3af" strokeWidth={2} />
+      </div>
     </div>
   );
 }
