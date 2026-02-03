@@ -50,9 +50,8 @@ function Holds () {
   const markArrivedMutation = useMutation({
     mutationFn: (id) => Api.incidents.arrived(id),
     onSuccess: (response) => {
-      const updatedIncident = response.data;
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], updatedIncident);
-      queryClient.setQueryData(['deflections', updatedIncident?.id, 'active'], updatedIncident?.deflections ?? []);
+      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data.deflections);
     },
   });
 
