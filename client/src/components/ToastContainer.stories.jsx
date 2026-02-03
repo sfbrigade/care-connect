@@ -51,7 +51,7 @@ export const Static = {
   },
   render: (args) => {
     const [toasts, setToasts] = useState(args.toasts);
-    
+
     const removeToast = (id) => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     };
@@ -132,4 +132,3 @@ export const Interactive = {
     </ToastProvider>
   ),
 };
-

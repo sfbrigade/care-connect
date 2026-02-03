@@ -125,7 +125,7 @@ function Notification ({
           margin: '-6px',
         }}
       >
-        <IconX size={20} color="#9ca3af" strokeWidth={2} />
+        <IconX size={20} color='#9ca3af' strokeWidth={2} />
       </div>
     </div>
   );
