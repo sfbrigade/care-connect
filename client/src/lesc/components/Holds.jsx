@@ -53,10 +53,6 @@ function Holds () {
       const updatedIncident = response.data;
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], updatedIncident);
       queryClient.setQueryData(['deflections', updatedIncident?.id, 'active'], updatedIncident?.deflections ?? []);
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
-      if (updatedIncident?.id) {
-        queryClient.invalidateQueries({ queryKey: ['deflections', updatedIncident.id, 'active'] });
-      }
     },
   });
 
@@ -68,11 +64,8 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (_response, id) => {
+    onSuccess: (response) => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-      queryClient.setQueryData(['deflections', id, 'active'], []);
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', id, 'active'] });
     }
   });
 
@@ -89,9 +82,7 @@ function Holds () {
       if (cachedDeflections) {
         queryClient.setQueryData(['deflections', incident?.id, 'active'], [response.data, ...cachedDeflections]);
       }
-      queryClient.invalidateQueries({ queryKey: ['deflections', incident?.id, 'active'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
+      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
     },
   });
 
@@ -124,12 +115,10 @@ function Holds () {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
         if (updatedDeflections.length === 0) {
-          queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
+          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
         }
       }
-      queryClient.invalidateQueries({ queryKey: ['deflections', incident?.id, 'active'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
-      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
+      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
     },
   });
