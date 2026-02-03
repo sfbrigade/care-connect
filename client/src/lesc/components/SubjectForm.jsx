@@ -54,42 +54,7 @@ function SubjectForm () {
       if (values.dateOfBirth !== undefined) {
         setDobInput(formatInputDob(values.dateOfBirth));
       }
-    },
-    validate: {
-      dateOfBirth: (_value) => {
-        if (!DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).isValid) {
-          return 'Invalid date of birth';
-        }
-        const dateOfBirth = DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' });
-        const today = DateTime.now();
-        if (dateOfBirth > today) return 'Beyond Current Date Limit';
-        return null;
-      },
-      firstName: (value) => {
-        if (!value) {
-          return 'First name is required.';
-        }
-        return null;
-      },
-      lastName: (value) => {
-        if (!value) {
-          return 'Last name is required.';
-        }
-        return null;
-      },
-      sex: (value) => {
-        if (!value) {
-          return 'Sex is required.';
-        }
-        return null;
-      },
-      race: (value) => {
-        if (!value) {
-          return 'Race is required.';
-        }
-        return null;
-      },
-    },
+    }
   });
 
   const { data: incident } = useQuery({
