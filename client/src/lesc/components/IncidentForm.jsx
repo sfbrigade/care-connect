@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Button, Box, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -164,25 +164,34 @@ function IncidentForm () {
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
-              <TextInput
-                key={form.key('cadNumber')}
-                {...form.getInputProps('cadNumber')}
-                label={<>CAD number<span>*</span></>}
-                minLength={2}
-                maxLength={10}
-                onFocus={() => setShowAddressForm(false)}
-              />
-              <Text size='xs' c='#868E96'>CAD is provided by dispatch (MDT / radio).</Text>
-              <TextInput
-                key={form.key('supervisorBadgeNumber')}
-                {...form.getInputProps('supervisorBadgeNumber')}
-                label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                minLength={1}
-                maxLength={4}
-                inputMode='numeric'
-                onFocus={() => setShowAddressForm(false)}
-              />
-              <Text size='xs' c='#868E96'>You can skip now and come back to fill out before custody transfer.</Text>
+              <Box flex='0 0'>
+                <TextInput
+                  key={form.key('cadNumber')}
+                  {...form.getInputProps('cadNumber')}
+                  label={<>CAD number<span>*</span></>}
+                  minLength={2}
+                  maxLength={10}
+                  onFocus={() => setShowAddressForm(false)}
+                />
+                <Text size='md' color='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
+              </Box>
+              <Box flex='0 0'>
+                <TextInput
+                  key={form.key('supervisorBadgeNumber')}
+                  {...form.getInputProps('supervisorBadgeNumber')}
+                  label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                  minLength={1}
+                  maxLength={4}
+                  inputMode='numeric'
+                  onKeyDown={(e) => {
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onFocus={() => setShowAddressForm(false)}
+                />
+                <Text size='md' color='gray.6'>You can skip now and come back to fill out before custody transfer.</Text>
+              </Box>
               <Button type='submit'>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
