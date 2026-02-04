@@ -139,13 +139,13 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('city')}
                     {...form.getInputProps('city')}
-                    label='Arrest city'
+                    label={<>Arrest city<span>*</span></>}
                   />
                   <Group wrap='nowrap'>
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
-                      label='Arrest state'
+                      label={<>Arrest state<span>*</span></>}
                     />
                     <TextInput
                       key={form.key('postalCode')}
@@ -164,23 +164,35 @@ function IncidentForm () {
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
-              <TextInput
-                key={form.key('cadNumber')}
-                {...form.getInputProps('cadNumber')}
-                label={<>CAD number<span>*</span></>}
-                type='number'
-                inputMode='numeric'
-                onFocus={() => setShowAddressForm(false)}
-              />
-              <TextInput
-                key={form.key('supervisorBadgeNumber')}
-                {...form.getInputProps('supervisorBadgeNumber')}
-                label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                type='number'
-                inputMode='numeric'
-                onFocus={() => setShowAddressForm(false)}
-              />
-              <Button type='submit'>
+              <Stack gap='xs'>
+                <TextInput
+                  key={form.key('cadNumber')}
+                  {...form.getInputProps('cadNumber')}
+                  label={<>CAD number<span>*</span></>}
+                  minLength={2}
+                  maxLength={10}
+                  onFocus={() => setShowAddressForm(false)}
+                />
+                <Text size='md' c='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
+              </Stack>
+              <Stack gap='xs'>
+                <TextInput
+                  key={form.key('supervisorBadgeNumber')}
+                  {...form.getInputProps('supervisorBadgeNumber')}
+                  label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                  minLength={1}
+                  maxLength={4}
+                  inputMode='numeric'
+                  onKeyDown={(e) => {
+                    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
+                      e.preventDefault();
+                    }
+                  }}
+                  onFocus={() => setShowAddressForm(false)}
+                />
+                <Text size='md' c='gray.6'>If you don't have the Star Number right now, you must come back and add it before custody transfer.</Text>
+              </Stack>
+              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
             </Stack>
