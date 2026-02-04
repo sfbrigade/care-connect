@@ -79,6 +79,20 @@ export function formatDob (dateOfBirth) {
 }
 
 /**
+ * Format up to 8 digits as MM/DD/YYYY with slashes after 2 and 4 digits.
+ * @param {string} value - Date of birth
+ * @returns {string} - Formatted string like "12/25/1990" or null if invalid
+ */
+export function formatInputDob (value) {
+  if (!value) return '';
+  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 8);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+/**
  * Format date and time as MM/DD/YYYY HH:MM AM/PM
  * @param {string|Date} date - Date to format
  * @returns {string} - Formatted string like "12/25/1990 3:45 PM" or "TBD" if invalid
