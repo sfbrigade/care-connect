@@ -7,7 +7,7 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-
+import { formatInputDob } from '@/utils/format';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -39,6 +39,7 @@ function SubjectForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
+  const [dobInput, setDobInput] = useState('');
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -47,7 +48,13 @@ function SubjectForm () {
       ...values,
       narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
       narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
+      dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
     }),
+    onValuesChange: (values) => {
+      if (values.dateOfBirth !== undefined) {
+        setDobInput(formatInputDob(values.dateOfBirth));
+      }
+    }
   });
 
   const { data: incident } = useQuery({
@@ -64,13 +71,13 @@ function SubjectForm () {
 
   useEffect(() => {
     if (!isLoading) {
-      if (deflection.subject) {
+      if (deflection?.subject) {
         form.setInitialValues({
           ...initialValues,
           ...deflection.subject,
           narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
           narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
-          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toISODate() : '',
+          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         form.reset();
       }
@@ -92,6 +99,8 @@ function SubjectForm () {
     },
   });
 
+  const { defaultValue: _defaultValue, value: _value, ...dateOfBirthProps } = form.getInputProps('dateOfBirth');
+
   return (
     <>
       <Head>
@@ -111,6 +120,7 @@ function SubjectForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
+
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
@@ -137,8 +147,12 @@ function SubjectForm () {
               <TextInput
                 key={form.key('dateOfBirth')}
                 label={<>Date of birth<span>*</span></>}
-                type='date'
-                {...form.getInputProps('dateOfBirth')}
+                type='text'
+                inputMode='numeric'
+                maxLength={10}
+                placeholder='MM/DD/YYYY'
+                {...dateOfBirthProps}
+                value={dobInput}
               />
               <Input.Wrapper
                 label={<>Sex<span>*</span></>}
@@ -147,6 +161,7 @@ function SubjectForm () {
                   key={form.key('sex')}
                   {...form.getInputProps('sex')}
                 >
+                  {form.errors.sex && <Text color='red' size='sm'>{form.errors.sex}</Text>}
                   <Group gap='sm' mt='md'>
                     {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
                       <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
@@ -161,6 +176,7 @@ function SubjectForm () {
                   key={form.key('race')}
                   {...form.getInputProps('race')}
                 >
+                  {form.errors.race && <Text color='red' size='sm'>{form.errors.race}</Text>}
                   <Group gap='sm' mt='md'>
                     {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
                       <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
