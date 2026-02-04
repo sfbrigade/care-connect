@@ -17,8 +17,18 @@ export default {
   ],
 };
 
+const incident = {
+  id: '000123',
+  addressLine1: '123 Main St',
+  city: 'San Francisco',
+  state: 'CA',
+  arrestedAt: new Date().toISOString(),
+  cadNumber: '123456789A',
+  supervisorBadgeNumber: '1234',
+};
+
 const deflection = {
-  id: '0dc0363d-6a04-4eca-8e4e-5ad0158bc15a',
+  id: '012345',
   subjectId: null,
   subject: null,
   createdAt: new Date().toISOString(),
@@ -53,6 +63,7 @@ export const WithSomeSubjectDetails = {
 
 export const WithAllDetails = {
   args: {
+    incident,
     deflection: {
       ...deflection,
       subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
@@ -61,11 +72,19 @@ export const WithAllDetails = {
         firstName: 'John',
         middleInitial: 'D',
         lastName: 'Doe',
-        dateOfBirth: '2000-01-01',
+        dateOfBirth: '2000-01-01T00:00:00.000Z',
         sex: 'MALE',
         race: 'WHITE',
       },
+      narcoticsSubstance: false,
+      narcoticsParaphernalia: false,
+      deflectionDetails: [
+        {
+          id: 'unable_to_care_for_basic_needs'
+        }
+      ],
       behavior: 'This is the narrative',
+      property: 'NONE',
     },
     onDetailsClick: fn(),
   },
@@ -79,6 +98,53 @@ export const ExpiringSoon = {
     },
     onDetailsClick: fn(),
   },
+};
+
+export const ArrivedIncomplete = {
+  args: {
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      },
+      behavior: 'This is the narrative',
+      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+    },
+    onDetailsClick: fn(),
+  }
+};
+
+export const ArrivedComplete = {
+  args: {
+    ...WithAllDetails.args,
+    deflection: {
+      ...WithAllDetails.args.deflection,
+      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+    },
+  }
+};
+
+export const CancelledEmpty = {
+  args: {
+    ...Default.args,
+    deflection: {
+      ...Default.args.deflection,
+      status: 'CANCELLED',
+      cancelledAt: new Date().toISOString(),
+    },
+  }
+};
+
+export const CancelledWithSomeDetails = {
+  args: {
+    ...WithSomeSubjectDetails.args,
+    deflection: {
+      ...WithSomeSubjectDetails.args.deflection,
+      status: 'CANCELLED',
+      cancelledAt: new Date().toISOString(),
+    },
+  }
 };
 
 export const ExpiredTimer = {
@@ -102,38 +168,23 @@ export const ExpiredStatus = {
   },
 };
 
-export const ArrivedIncomplete = {
+export const ExpiredTimerWithSomeDetails = {
   args: {
     deflection: {
-      ...deflection,
-      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-      subject: {
-        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-      },
-      behavior: 'This is the narrative',
-      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+      ...WithSomeSubjectDetails.args.deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     },
     onDetailsClick: fn(),
-  }
+  },
 };
 
-export const ArrivedComplete = {
+export const ExpiredStatusWithSomeDetails = {
   args: {
     deflection: {
-      ...deflection,
-      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-      subject: {
-        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-        firstName: 'John',
-        middleInitial: 'D',
-        lastName: 'Doe',
-        dateOfBirth: '2000-01-01',
-        sex: 'MALE',
-        race: 'WHITE',
-      },
-      behavior: 'This is the narrative',
-      subjectStatus: 'ONSITE_AWAITING_TRANSFER'
+      ...WithSomeSubjectDetails.args.deflection,
+      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      status: 'EXPIRED',
     },
     onDetailsClick: fn(),
-  }
+  },
 };
