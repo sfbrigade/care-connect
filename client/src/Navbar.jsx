@@ -1,13 +1,5 @@
 import { NavLink } from 'react-router';
-import { Menu, Button, Text, Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
-import {
-  IconSettings,
-  IconSearch,
-  IconPhoto,
-  IconMessageCircle,
-  IconTrash,
-  IconArrowsLeftRight,
-} from '@tabler/icons-react';
+import { Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
 import { useAuthContext } from '@/AuthContext';
 
 function Navbar ({ close, logout }) {

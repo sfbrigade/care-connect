@@ -5,6 +5,7 @@ import {
   IconClipboardList,
   IconMessages,
   IconBug,
+  IconSettings,
   IconLogout
 } from '@tabler/icons-react';
 import { useAuthContext } from '@/AuthContext';
@@ -74,25 +75,35 @@ function Header ({ opened, close, toggle, logout }) {
             </Menu.Target>
 
             <Menu.Dropdown>
-              <Menu.Item leftSection={<IconHome size={14} />}>
+              <Menu.Item
+                leftSection={<IconHome size={14} />}
+                component={Link}
+                to='/'
+                label='Home'
+                onClick={close}
+              >
                 Home
               </Menu.Item>
-                <Menu.Item leftSection={<IconClipboardList size={14} />}>
+              <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to="/profile" onClick={close}>
                 Profile
               </Menu.Item>
               <Menu.Item leftSection={<IconBug size={14} />}>
                 Report a Bug
               </Menu.Item>
+                <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to="/account" onClick={close}>
+                Account Settings
+              </Menu.Item>
               <Menu.Item
                 color="red"
-                  leftSection={<IconLogout size={14} />}
+                leftSection={<IconLogout size={14} />}
+                to='/logout'
+                onClick={logout}
+                label='Log out'
               >
                 Logout
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-
-
           }
         </Group>
       </Group>
