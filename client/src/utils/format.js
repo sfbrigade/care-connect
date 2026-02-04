@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
  * Formatting utilities
  */
 
-export function formatAddress ({ addressLine1, addressLine2, city, state, postalCode }) {
+export function formatAddress({ addressLine1, addressLine2, city, state, postalCode }) {
   return `${addressLine1 ?? ''}${addressLine2 ? `, ${addressLine2}` : ''}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${postalCode ? ` ${postalCode}` : ''}`;
 }
 
@@ -13,7 +13,7 @@ export function formatAddress ({ addressLine1, addressLine2, city, state, postal
  * @param {string|Date} date - Date to convert
  * @returns {DateTime} - DateTime object
  */
-function dateTime (date) {
+function dateTime(date) {
   return typeof date === 'string' ? DateTime.fromISO(date) : DateTime.fromJSDate(date);
 }
 
@@ -22,7 +22,7 @@ function dateTime (date) {
  * @param {string|Date} expiresAt - Expiration date/time
  * @returns {string} - Formatted string like "0:45", "2:30", or "Expired"
  */
-export function formatTimeRemaining (expiresAt) {
+export function formatTimeRemaining(expiresAt) {
   const expires = dateTime(expiresAt);
   const now = DateTime.now();
 
@@ -36,7 +36,7 @@ export function formatTimeRemaining (expiresAt) {
  * @param {string|Date} expiresAt - Expiration date/time
  * @returns {string} - Formatted string like "Until 3:45 PM"
  */
-export function formatTimeUntil (expiresAt) {
+export function formatTimeUntil(expiresAt) {
   return `Until ${formatTime(expiresAt)}`;
 }
 
@@ -45,7 +45,7 @@ export function formatTimeUntil (expiresAt) {
  * @param {string|Date} date - Date to format
  * @returns {string} - Formatted string like "3:45 PM"
  */
-export function formatTime (date) {
+export function formatTime(date) {
   return dateTime(date).toLocaleString(DateTime.TIME_SIMPLE);
 }
 
@@ -54,7 +54,7 @@ export function formatTime (date) {
  * @param {string|Date} createdAt - Creation date/time
  * @returns {string} - Formatted string like "2 hours ago", "Yesterday", or "Jan 15"
  */
-export function formatCreatedAt (createdAt) {
+export function formatCreatedAt(createdAt) {
   return dateTime(createdAt).toRelative();
 }
 
@@ -63,9 +63,9 @@ export function formatCreatedAt (createdAt) {
  * @param {string|Date} dateOfBirth - Date of birth
  * @returns {number|null} - Age in years, or null if dateOfBirth is invalid
  */
-export function calculateAge (dateOfBirth) {
+export function calculateAge(dateOfBirth) {
   if (!dateOfBirth) return null;
-  return -Math.floor(dateTime(dateOfBirth).diffNow('years').years);
+  return -Math.trunc(dateTime(dateOfBirth).diffNow('years').years);
 }
 
 /**
@@ -73,7 +73,7 @@ export function calculateAge (dateOfBirth) {
  * @param {string|Date} dateOfBirth - Date of birth
  * @returns {string|null} - Formatted string like "12/25/1990" or null if invalid
  */
-export function formatDob (dateOfBirth) {
+export function formatDob(dateOfBirth) {
   if (!dateOfBirth) return null;
   return dateTime(dateOfBirth).toLocaleString(DateTime.DATE_SHORT);
 }
@@ -83,7 +83,7 @@ export function formatDob (dateOfBirth) {
  * @param {string} value - Date of birth
  * @returns {string} - Formatted string like "12/25/1990" or null if invalid
  */
-export function formatInputDob (value) {
+export function formatInputDob(value) {
   if (!value) return '';
   const digits = String(value ?? '').replace(/\D/g, '').slice(0, 8);
   if (digits.length === 0) return '';
@@ -97,7 +97,7 @@ export function formatInputDob (value) {
  * @param {string|Date} date - Date to format
  * @returns {string} - Formatted string like "12/25/1990 3:45 PM" or "TBD" if invalid
  */
-export function formatDateTime (date) {
+export function formatDateTime(date) {
   if (!date) return 'TBD';
   return dateTime(date).toLocaleString(DateTime.DATETIME_SHORT);
 }
