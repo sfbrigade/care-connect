@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
-import { autoExpireHolds } from '#lib/lesc/holds.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/left',
@@ -33,7 +32,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      await autoExpireHolds(fastify.prisma, request.user);
+      await fastify.prisma.deflection.expire();
 
       await fastify.prisma.$transaction(async (tx) => {
         const now = new Date();

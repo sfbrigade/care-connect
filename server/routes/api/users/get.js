@@ -22,6 +22,9 @@ export default async function (fastify, opts) {
     },
     async (request, reply) => {
       const { id } = request.params;
+      if (id === User.BATCH_USER_ID) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
       const data = await fastify.prisma.user.findUnique({
         where: { id },
         include: {

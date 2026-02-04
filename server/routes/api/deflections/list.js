@@ -4,8 +4,6 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
-import { autoExpireHolds } from '#lib/lesc/holds.js';
-
 export default async function (fastify, opts) {
   fastify.get('/',
     {
@@ -30,7 +28,7 @@ export default async function (fastify, opts) {
       const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status } = request.query;
       const where = {};
 
-      await autoExpireHolds(fastify.prisma, request.user);
+      await fastify.prisma.deflection.expire();
 
       if (active !== undefined) {
         if (active === 'true') {
