@@ -1,0 +1,13 @@
+{
+  "active": true,
+  "iteration": 1,
+  "minIterations": 1,
+  "maxIterations": 20,
+  "completionPromise": "COMPLETE",
+  "tasksMode": true,
+  "taskPromise": "READY_FOR_NEXT_TASK",
+  "prompt": "Continue work on issue #200 (narcotics validation). A previous loop made changes but couldn't test because Docker wasn't running.\n\nYour tasks:\n1. Read the PRD at agent_docs/prd-issue-200-narcotics-validation.md\n2. Read all previous research in agent_docs/issue-200/ (research.md, plan.md, plan-validation.md)\n3. Review what was actually implemented in SubjectForm.jsx and Hold.jsx - compare against the plan to verify the implementation is correct\n4. Start the dev environment with 'docker compose up -d'\n5. Verify all acceptance criteria (AC1-AC7) in the browser at http://localhost:5173\n6. Run the test suite with 'npm test'\n7. Update the draft PR if any fixes are needed\n\nTrack progress using .ralph/ralph-tasks.md",
+  "startedAt": "2026-02-04T22:29:26.816Z",
+  "model": "",
+  "agent": "claude-code"
+}
