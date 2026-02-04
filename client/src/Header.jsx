@@ -68,39 +68,38 @@ function Header ({ opened, close, toggle, logout }) {
         <Group hiddenFrom='sm' size='sm'>
           <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
-              <Burger opened={opened} onClick={toggle} />
-            </Menu.Target>
+            <Menu shadow='md' width={200}>
+              <Menu.Target>
+                <Burger opened={opened} onClick={toggle} />
+              </Menu.Target>
 
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<IconHome size={14} />}
-                component={Link}
-                to='/'
-                label='Home'
-                onClick={close}
-              >
-                Home
-              </Menu.Item>
-              <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to="/profile" onClick={close}>
-                Profile
-              </Menu.Item>
-              <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to="/account" onClick={close}>
-                Account Settings
-              </Menu.Item>
-              <Menu.Item
-                color="red"
-                leftSection={<IconLogout size={14} />}
-                to='/logout'
-                onClick={logout}
-                label='Log out'
-              >
-                Logout
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-          }
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconHome size={14} />}
+                  component={Link}
+                  to='/'
+                  label='Home'
+                  onClick={close}
+                >
+                  Home
+                </Menu.Item>
+                <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to='/profile' onClick={close}>
+                  Profile
+                </Menu.Item>
+                <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to='/account' onClick={close}>
+                  Account Settings
+                </Menu.Item>
+                <Menu.Item
+                  color='red'
+                  leftSection={<IconLogout size={14} />}
+                  to='/logout'
+                  onClick={logout}
+                  label='Log out'
+                >
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>}
         </Group>
       </Group>
     </Container>
