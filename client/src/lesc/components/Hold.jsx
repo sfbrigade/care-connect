@@ -9,7 +9,7 @@ import { IconLock } from '@tabler/icons-react';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
-function Hold({
+function Hold ({
   incident,
   deflection,
   onCancelClick,
@@ -111,7 +111,8 @@ function Hold({
             {isActive && !isExpired && !isArrived
               ? (
                 <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-              )
+
+                )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
