@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Button, Box, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Box, Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -164,7 +164,7 @@ function IncidentForm () {
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
-              <Box flex='0 0'>
+              <Stack gap='xs'>
                 <TextInput
                   key={form.key('cadNumber')}
                   {...form.getInputProps('cadNumber')}
@@ -173,9 +173,9 @@ function IncidentForm () {
                   maxLength={10}
                   onFocus={() => setShowAddressForm(false)}
                 />
-                <Text size='md' color='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
-              </Box>
-              <Box flex='0 0'>
+                <Text size='md' c='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
+              </Stack>
+              <Stack gap='xs'>
                 <TextInput
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
@@ -190,9 +190,9 @@ function IncidentForm () {
                   }}
                   onFocus={() => setShowAddressForm(false)}
                 />
-                <Text size='md' color='gray.6'>You can skip now and come back to fill out before custody transfer.</Text>
-              </Box>
-              <Button type='submit'>
+                <Text size='md' c='gray.6'>If you don't have the Star Number right now, you must come back and add it before custody transfer.</Text>
+              </Stack>
+              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
             </Stack>
