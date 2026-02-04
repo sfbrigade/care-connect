@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -38,7 +38,11 @@ function SubjectForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
+  const [accordionValue, setAccordionValue] = useState(['address', 'narcotics']);
+  const narcoticsSubstanceRef = useRef(null);
   const { t } = useTranslation();
+
+  const isNewFromParams = searchParams.get('isNew') === 'true';
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -92,6 +96,32 @@ function SubjectForm () {
     },
   });
 
+  const handleSubmit = (values) => {
+    // For new holds, validate narcotics questions are answered
+    if (isNew) {
+      const errors = {};
+      if (values.narcoticsSubstance === null) {
+        errors.narcoticsSubstance = 'This field is required';
+      }
+      if (values.narcoticsParaphernalia === null) {
+        errors.narcoticsParaphernalia = 'This field is required';
+      }
+      if (Object.keys(errors).length > 0) {
+        form.setErrors(errors);
+        // Auto-expand the narcotics accordion if collapsed
+        if (!accordionValue.includes('narcotics')) {
+          setAccordionValue([...accordionValue, 'narcotics']);
+        }
+        // Scroll to the narcotics section
+        setTimeout(() => {
+          narcoticsSubstanceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+        return;
+      }
+    }
+    onSubmitMutation.mutateAsync(values);
+  };
+
   return (
     <>
       <Head>
@@ -113,7 +143,7 @@ function SubjectForm () {
         </Group>
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
-        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
@@ -180,7 +210,7 @@ function SubjectForm () {
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
-              <Accordion variant='section' defaultValue={['address', 'narcotics']}>
+              <Accordion variant='section' value={accordionValue} onChange={setAccordionValue} multiple>
                 <Divider />
                 <Accordion.Item value='address'>
                   <Accordion.Control>
@@ -230,7 +260,9 @@ function SubjectForm () {
                     <Accordion.Panel>
                       <Stack gap='xl'>
                         <Input.Wrapper
+                          ref={narcoticsSubstanceRef}
                           label={<>Possesses a controlled substance<span>*</span></>}
+                          error={form.errors.narcoticsSubstance}
                         >
                           <Chip.Group
                             key={form.key('narcoticsSubstance')}
@@ -244,6 +276,7 @@ function SubjectForm () {
                         </Input.Wrapper>
                         <Input.Wrapper
                           label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                          error={form.errors.narcoticsParaphernalia}
                         >
                           <Chip.Group
                             key={form.key('narcoticsParaphernalia')}

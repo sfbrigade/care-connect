@@ -48,7 +48,9 @@ function Hold ({
     !!deflection?.subject?.dateOfBirth &&
     !!deflection?.subject?.sex &&
     !!deflection?.subject?.race &&
-    !!deflection?.behavior; // TODO: check property, move this logic somewhere reusable
+    !!deflection?.behavior &&
+    deflection?.narcoticsSubstance !== null &&
+    deflection?.narcoticsParaphernalia !== null;
 
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${location.origin}/transfer/${deflection.id}`;
