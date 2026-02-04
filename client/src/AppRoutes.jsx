@@ -15,7 +15,7 @@ import UsersRoutes from './Users/UsersRoutes';
 import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
-import ProfilePage from './Profile/ProfilePage';
+import UserProfilePage from './UserProfile/UserProfilePage';
 
 import DIDORoutes from './dido/routes/DIDORoutes';
 import LESCRoutes from './lesc/routes/LESCRoutes';
@@ -40,7 +40,7 @@ function AppRoutes () {
               <Route path='/account/*' element={<UsersRoutes />} />
               <Route path='/feedback' element={<FeedbackViewer />} />
               <Route path='/feedback/list' element={<FeedbackList />} />
-              <Route path='/profile' element={<ProfilePage />} />
+              <Route path='/profile' element={<UserProfilePage />} />
               <Route
                 path='/admin/*' element={
                   <Suspense fallback={<Container ta='center'><Loader /></Container>}>

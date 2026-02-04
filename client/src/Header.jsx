@@ -4,7 +4,6 @@ import {
   IconHome,
   IconClipboardList,
   IconMessages,
-  IconBug,
   IconSettings,
   IconLogout
 } from '@tabler/icons-react';
@@ -87,10 +86,7 @@ function Header ({ opened, close, toggle, logout }) {
               <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to="/profile" onClick={close}>
                 Profile
               </Menu.Item>
-              <Menu.Item leftSection={<IconBug size={14} />}>
-                Report a Bug
-              </Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to="/account" onClick={close}>
+              <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to="/account" onClick={close}>
                 Account Settings
               </Menu.Item>
               <Menu.Item
