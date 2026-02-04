@@ -42,8 +42,6 @@ function SubjectForm () {
   const narcoticsSubstanceRef = useRef(null);
   const { t } = useTranslation();
 
-  const isNewFromParams = searchParams.get('isNew') === 'true';
-
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
