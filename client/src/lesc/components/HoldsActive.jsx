@@ -49,6 +49,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
             {deflections?.map((deflection) => (
               <Hold
                 key={deflection.id}
+                incident={incident}
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
