@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Box, Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
