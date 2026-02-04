@@ -42,7 +42,7 @@ const options = {
 
 let mailer;
 
-export function configureMailer(lib) {
+export function configureMailer (lib) {
   const transport = lib.createTransport(options);
 
   mailer = new Email({
@@ -63,7 +63,7 @@ export function configureMailer(lib) {
 
 configureMailer(nodemailer);
 
-async function send(options) {
+async function send (options) {
   if (process.env.SMTP_ENABLED !== 'true') {
     return;
   }
