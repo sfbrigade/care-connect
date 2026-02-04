@@ -13,7 +13,7 @@ A previous loop claimed to complete these - verify against plan in `agent_docs/i
 - [x] Create draft PR for issue #200
 
 ## Remaining (Verification)
-- [ ] Start Docker environment (`docker compose up -d`)
+- [x] Start Docker environment (`docker compose up -d`) - Running at http://localhost:3333
 - [ ] Verify AC1: Cannot advance without narcotics answers
 - [ ] Verify AC2: Validation errors displayed
 - [ ] Verify AC3: Accordion auto-expands on error (if applicable)
