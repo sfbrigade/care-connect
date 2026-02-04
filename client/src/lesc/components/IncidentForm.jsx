@@ -27,6 +27,12 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
+function normalizeCadNumber (value) {
+  return String(value ?? '')
+    .replace(/[^0-9a-z]/gi, '')
+    .slice(0, 10);
+}
+
 function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -94,6 +100,8 @@ function IncidentForm () {
       navigate('/holds');
     },
   });
+
+  const cadNumberInputProps = form.getInputProps('cadNumber');
 
   return (
     <>
@@ -167,10 +175,19 @@ function IncidentForm () {
               <Stack gap='xs'>
                 <TextInput
                   key={form.key('cadNumber')}
-                  {...form.getInputProps('cadNumber')}
+                  {...cadNumberInputProps}
                   label={<>CAD number<span>*</span></>}
-                  minLength={2}
+                  type='text'
+                  inputMode='text'
                   maxLength={10}
+                  autoCapitalize='characters'
+                  onChange={(event) => {
+                    const normalized = normalizeCadNumber(event.currentTarget.value);
+                    if (event.currentTarget.value !== normalized) {
+                      event.currentTarget.value = normalized;
+                    }
+                    cadNumberInputProps.onChange(event);
+                  }}
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
