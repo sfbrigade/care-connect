@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Anchor, Button, Fieldset, Stack, Text, TextInput } from '@mantine/core';
 import { isEmail, isNotEmpty, hasLength, useForm } from '@mantine/form';
 import { Link } from 'react-router';
@@ -7,6 +8,7 @@ import PasswordInput from '@/components/PasswordInput';
 import PasswordStrength from '@/components/PasswordStrength';
 
 function RegistrationForm ({ invite, onSubmitMutation }) {
+  const [passwordValue, setPasswordValue] = useState('');
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: invite
@@ -36,6 +38,8 @@ function RegistrationForm ({ invite, onSubmitMutation }) {
       onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
     });
   }
+
+  const passwordInputProps = form.getInputProps('password');
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -74,13 +78,17 @@ function RegistrationForm ({ invite, onSubmitMutation }) {
             leftSection={<IconMail size={20} color='var(--mantine-color-dark-1)' />}
           />
           <PasswordInput
-            {...form.getInputProps('password')}
+            {...passwordInputProps}
+            onChange={(event) => {
+              passwordInputProps.onChange?.(event);
+              setPasswordValue(event.currentTarget.value);
+            }}
             key={form.key('password')}
             label='Password'
             placeholder='Enter password'
             leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
           />
-          <PasswordStrength password={form.getValues().password} />
+          <PasswordStrength password={passwordValue} />
           <Button fullWidth type='submit'>Create account</Button>
           <Text align='center' size='lg'>Or <Anchor component={Link} to='/login'>Login</Anchor></Text>
         </Stack>

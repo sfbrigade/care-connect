@@ -1,5 +1,9 @@
 # Care Connect
 
+## Contributing
+
+Please read CONTRIBUTING.md for information on how to contribute to this project.
+
 ## One-time Setup
 
 1. Clone the repo to a "local" directory (on your computer), then change
@@ -49,8 +53,17 @@
    ```
 
    This will populate the database with a complete setup for development, including an admin user that you can use to log in to the web app.
+
    The development admin user credentials are:
    - Email: admin@careconnectsf.org
+   - Password: abcd1234
+
+   SFPD test user credentials are:
+   - Email: sfpd@careconnectsf.org
+   - Password: abcd1234
+
+   SFSO test user credentials are:
+   - Email: sfso@careconnectsf.org
    - Password: abcd1234
 
 7. To stop the server, press CONTROL-C in the window with the running server.

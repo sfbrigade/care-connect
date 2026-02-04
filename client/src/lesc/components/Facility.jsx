@@ -1,52 +1,64 @@
 import { Alert, Card, Text, Title, Group, Button, Stack } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
-import { inflect, pluralize } from 'inflection';
+import { inflect } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-import FacilityAddressLink from '../../components/FacilityAddressLink';
+import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/FacilityAddressLinkFromParts';
 
 function Facility ({
   facility,
   bedTypes,
   arrivedAt,
   leftAt,
+  hasActiveHold,
   onArrivedClick,
   onLeftClick,
   onHoldClick,
 }) {
   const { t } = useTranslation();
-  const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const hasArrived = !!arrivedAt;
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
+  const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft);
-  const address = [facility.addressLine1, facility.addressLine2].filter(Boolean).join(', ');
+  const isArrivedButtonDisabled = isClosed || !hasActiveHold;
+  const hasAddressParts = [
+    facility.addressLine1,
+    facility.addressLine2,
+    facility.city,
+    facility.state,
+    facility.postalCode,
+    facility.country,
+  ].some(Boolean);
 
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
       <Stack gap='lg'>
         {isClosed && <Alert title='This facility is temporarily closed' color='red.6' variant='light' icon={<IconAlertTriangle size={20} />} />}
-        {!isClosed && isFull && <Alert title={`All ${pluralize(t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase())} are currently held`} color='yellow.6' variant='light' icon={<IconAlertTriangle size={20} />} />}
         <Stack gap='xs'>
           {bedTypes?.map(bedType => (
-            <Title key={bedType.id} order={3}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
+            <Title key={bedType.id} order={3} c={bedType.available === 0 ? 'red.6' : undefined}>{bedType.available} {inflect(t(`bedType.${bedType.type}`).toLocaleLowerCase(), bedType.available)} available</Title>
           ))}
           <Text size='sm'>
             {facility.name}
-            {address && (
+            {hasAddressParts && (
               <>
                 {' '}
                 <Text span c='gray.5'>•</Text>{' '}
-                <FacilityAddressLink
-                  address={address}
+                <FacilityAddressLinkFromParts
+                  addressLine1={facility.addressLine1}
+                  addressLine2={facility.addressLine2}
+                  city={facility.city}
+                  state={facility.state}
+                  postalCode={facility.postalCode}
                 />
               </>
             )}
           </Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
-          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isClosed}>I've arrived</Button>}
-          {hasArrived && !hasLeft && <Button px='sm' color='indigo.0' c='black' onClick={onLeftClick}>I've left</Button>}
+          {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>I've arrived</Button>}
+          {hasArrived && !hasLeft && <Button px='sm' onClick={onLeftClick}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>
         {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}

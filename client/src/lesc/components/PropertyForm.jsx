@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,7 @@ function PropertyForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
+  const [isLarge, setIsLarge] = useState(false);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -41,6 +42,9 @@ function PropertyForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    onValuesChange: (values) => {
+      setIsLarge(values.property === 'LARGE');
+    },
   });
 
   useEffect(() => {
@@ -153,6 +157,14 @@ function PropertyForm () {
                   ))}
                 </Group>
               </Chip.Group>
+              {isLarge && (
+                <Group gap='xs'>
+                  <Text size='sm' c='red'>
+                    This may exceed {facility?.name} property limits (~10 gallons). Please confirm with {facility?.name} staff.
+                  </Text>
+                  <Anchor href={`tel:${facility?.phone}`}>Call {facility?.name}</Anchor>
+                </Group>
+              )}
               {!!deflection?.propertyPhotos?.length && (
                 <Group gap='xs'>
                   {deflection.propertyPhotos.map(photo => (

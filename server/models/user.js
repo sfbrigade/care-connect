@@ -56,6 +56,7 @@ const UserUpdateSchema = UserAttributesSchema.extend({
 }).partial();
 
 export class User extends Base {
+  static BATCH_USER_ID = '00000000-0000-0000-0000-000000000000';
   static PasswordSchema = UserPasswordSchema;
   static RegisterSchema = UserRegisterSchema;
   static ResponseSchema = UserResponseSchema;

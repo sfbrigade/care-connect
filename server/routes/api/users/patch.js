@@ -27,6 +27,9 @@ export default async function (fastify, opts) {
       const error = request.validationError ?? errorCodes.FST_ERR_VALIDATION();
       error.validation ||= [];
       const { id } = request.params;
+      if (id === User.BATCH_USER_ID) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
       const { email, password, picture } = request.body;
       if (email && await fastify.prisma.user.findFirst({
         where: { id: { not: id }, email },

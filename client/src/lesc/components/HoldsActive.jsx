@@ -1,22 +1,15 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text } from '@mantine/core';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
+import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
 
-function HoldsActive ({ incident, onCancelHoldClick }) {
+function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-
-  const { data: deflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
-    enabled: !!incident,
-  });
 
   const extendAllHoldsMutation = useMutation({
     mutationFn: () => Api.incidents.extend(incident.id),
@@ -38,7 +31,10 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
       {incident && (
         <Incident incident={incident} editLink='/incident' />
       )}
-      {(!deflections || deflections.length === 0) && (
+      {isFetchingDeflections && (
+        <Loader mx='auto' my='xl' size='lg' />
+      )}
+      {!isFetchingDeflections && (!deflections || deflections.length === 0) && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
@@ -47,7 +43,7 @@ function HoldsActive ({ incident, onCancelHoldClick }) {
           </Box>
         </>
       )}
-      {deflections && deflections.length > 0 && (
+      {!isFetchingDeflections && deflections && deflections.length > 0 && (
         <>
           <Stack gap='md'>
             {deflections?.map((deflection) => (

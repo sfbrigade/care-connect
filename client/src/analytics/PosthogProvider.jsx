@@ -27,9 +27,11 @@ function PosthogProvider () {
       const { default: posthog } = await import('posthog-js');
       if (!isMounted) return;
 
+      const isDev = !!import.meta?.env?.DEV;
       posthog.init(apiKey, {
         api_host: apiHost || DEFAULT_API_HOST,
         capture_pageview: true,
+        disable_session_recording: isDev,
       });
       posthogRef.current = posthog;
 
