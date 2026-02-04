@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, Chip, Group, Modal, Stack, Text, Title } from '@mantine/core';
+import { ActionIcon, Button, Chip, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
+import { IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 
@@ -33,22 +34,30 @@ function CancelHoldModal ({
     >
       <Stack gap='xl'>
         <Stack gap='sm'>
-          {!name && <Title order={4}>Cancel this hold?</Title>}
-          {!!name && <Title order={4}>Cancel hold for {name}?</Title>}
+          <Group justify='space-between' align='center'>
+            {!name && <Title order={4}>Cancel this hold?</Title>}
+            {!!name && <Title order={4}>Cancel hold for {name}?</Title>}
+            <ActionIcon onClick={onClose} bg='rgba(134, 142, 150, 0.1)' c='black' radius='xl' w={40} h={40}>
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
           {!deflection.subjectId && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
           {!!deflection.subjectId && <Text size='sm' c='dimmed'>Canceling a hold means a chair will no longer be reserved. This person's identifying information will also be removed.</Text>}
+          {!!deflection.subjectId && (
+            <Stack gap='sm'>
+              <Text size='md'>Select a reason for canceling the hold</Text>
+              <Chip.Group value={cancelReasonId} onChange={setCancelReasonId}>
+                <Stack gap='sm' align='flex-start'>
+                  {cancelReasons?.map(reason => (
+                    <Chip key={reason.id} value={reason.id} size='md'>
+                      {reason.name}
+                    </Chip>
+                  ))}
+                </Stack>
+              </Chip.Group>
+            </Stack>
+          )}
         </Stack>
-        {!!deflection.subjectId && (
-          <Chip.Group value={cancelReasonId} onChange={setCancelReasonId}>
-            <Group gap='sm'>
-              {cancelReasons?.map(reason => (
-                <Chip key={reason.id} value={reason.id} size='lg'>
-                  {reason.name}
-                </Chip>
-              ))}
-            </Group>
-          </Chip.Group>
-        )}
         <Group grow>
           <Button
             variant='light'
