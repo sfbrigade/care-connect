@@ -9,7 +9,7 @@ import { IconLock } from '@tabler/icons-react';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
-function Hold ({
+function Hold({
   incident,
   deflection,
   onCancelClick,
@@ -48,7 +48,7 @@ function Hold ({
   const transferUrl = `${location.origin}/transfer/${deflection.id}`;
 
   useEffect(() => {
-    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus)) return undefined;
+    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
 
     setNow(DateTime.now());
     const intervalId = window.setInterval(() => {
@@ -56,7 +56,7 @@ function Hold ({
     }, 30000);
 
     return () => window.clearInterval(intervalId);
-  }, [isActive, isExpiredStatus, deflection?.expiresAt]);
+  }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -108,10 +108,10 @@ function Hold ({
         )}
         {!(isNew && (isCancelled || isExpired)) && (
           <Group justify='space-between' wrap='nowrap'>
-            {isActive && !isExpired
+            {isActive && !isExpired && !isArrived
               ? (
                 <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-                )
+              )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
