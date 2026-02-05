@@ -14,7 +14,7 @@ function UserProfilePage () {
         <IconButtonLink icon={IconArrowLeft} to={'/'} />
         {user && (
           <>
-            <Text mt='md' size='xl'>Personal Information</Text>
+            <Text size='xl'>Personal Information</Text>
             <Box my='md'>
               <Text size='sm' c='gray'>Name</Text>
               <Text size='sm'>{user.firstName} {user.lastName}</Text>

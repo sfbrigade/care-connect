@@ -5,7 +5,6 @@ import { matchPath, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import Header from './Header';
-import Navbar from './Navbar';
 
 import Api from './Api';
 import AppRoutes from './AppRoutes';
