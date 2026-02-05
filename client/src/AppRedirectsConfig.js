@@ -1,16 +1,30 @@
 import { matchPath } from 'react-router';
 
+import { UserRole } from '@/hooks/useUserRole';
+
 export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
 ];
 export const AUTH_PROTECTED_PATHS = [
-  '/holds/*',
   '/units',
+];
+export const ROLE_PROTECTED_PATHS = [
+  { pattern: '/holds/*', roles: [UserRole.SFPD] },
+  { pattern: '/holds', roles: [UserRole.SFPD] },
+  { pattern: '/incident', roles: [UserRole.SFPD] },
+  { pattern: '/sfso/*', roles: [UserRole.SFSO] },
+  { pattern: '/care/*', roles: [UserRole.CARE_TEAM] },
 ];
 export const REDIRECTS = [
   ['/admin', '/admin/users'],
   ['/passwords', '/passwords/forgot'],
 ];
+
+export function getDefaultPathForUser (user) {
+  if (user?.organizationId === UserRole.SFSO) return '/sfso/custody';
+  if (user?.organizationId === UserRole.CARE_TEAM) return '/care/dashboard';
+  return '/holds';
+}
 
 export function handleRedirects (authContext, location, pathname, handler) {
   let match;
@@ -23,6 +37,20 @@ export function handleRedirects (authContext, location, pathname, handler) {
         return handler('/');
       }
       break;
+    }
+  }
+  if (!match) {
+    for (const { pattern, roles } of ROLE_PROTECTED_PATHS) {
+      match = matchPath(pattern, pathname);
+      if (match) {
+        if (!authContext.user) {
+          return handler('/login', { from: location });
+        }
+        if (!authContext.user.isAdmin && !roles.includes(authContext.user.organizationId)) {
+          return handler(getDefaultPathForUser(authContext.user));
+        }
+        break;
+      }
     }
   }
   if (!match) {

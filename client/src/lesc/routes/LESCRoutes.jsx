@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router';
 
+import { useAuthContext } from '@/AuthContext';
+import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
+import Custody from '../components/Custody';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
@@ -9,6 +12,9 @@ import PropertyForm from '../components/PropertyForm';
 import NarcoticsForm from '../components/NarcoticsForm';
 
 function LESCRoutes () {
+  const { user } = useAuthContext();
+  const defaultPath = getDefaultPathForUser(user);
+
   return (
     <Routes>
       <Route path='holds/:id/deflection' element={<DeflectionForm />} />
@@ -18,7 +24,8 @@ function LESCRoutes () {
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
       <Route path='incident' element={<IncidentForm />} />
-      <Route path='' element={<Navigate to='holds' />} />
+      <Route path='sfso/custody' element={<Custody />} />
+      <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
 }
