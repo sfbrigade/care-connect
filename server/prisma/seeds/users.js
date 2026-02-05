@@ -10,6 +10,7 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'sfpd',
+      role: 'FIELD',
     },
     {
       email: 'sfso@careconnectsf.org',
@@ -17,7 +18,16 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'sfso',
-    }
+      role: 'CUSTODY',
+    },
+    {
+      email: 'care@careconnectsf.org',
+      firstName: 'Care',
+      lastName: 'User',
+      isAdmin: false,
+      organizationId: 'connections', // TODO: confirm connections org is meant to be "care team"
+      role: 'CARE',
+    },
   ];
 
   for (const user of users) {

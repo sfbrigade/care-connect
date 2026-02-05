@@ -24,6 +24,7 @@ const UserAttributesSchema = z.object({
   organizationId: z.string().nullable().optional(),
   titleId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
+  role: z.enum(['FIELD', 'CUSTODY', 'CARE']).nullable().optional(),
 });
 
 const UserPasswordSchema = z
@@ -63,25 +64,25 @@ export class User extends Base {
   static UpdateSchema = UserUpdateSchema;
 
   static Role = Object.freeze({
-    SFPD: 'sfpd',
-    SFSO: 'sfso',
-    CARE_TEAM: 'connections',
+    FIELD: 'FIELD',
+    CUSTODY: 'CUSTODY',
+    CARE: 'CARE',
   });
 
   constructor (data) {
     super(Prisma.UserScalarFieldEnum, data);
   }
 
-  get isSFPD () {
-    return this.organizationId === User.Role.SFPD;
+  get isField () {
+    return this.role === User.Role.FIELD;
   }
 
-  get isSFSO () {
-    return this.organizationId === User.Role.SFSO;
+  get isCustody () {
+    return this.role === User.Role.CUSTODY;
   }
 
-  get isCareTeam () {
-    return this.organizationId === User.Role.CARE_TEAM;
+  get isCare () {
+    return this.role === User.Role.CARE;
   }
 
   get pictureUrl () {

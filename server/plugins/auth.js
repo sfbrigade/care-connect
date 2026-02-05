@@ -76,7 +76,7 @@ export default fp(async function (fastify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
       if (request.user.isAdmin) return;
-      if (!allowedRoles.includes(request.user.organizationId)) {
+      if (!allowedRoles.includes(request.user.role)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
     };
@@ -85,8 +85,8 @@ export default fp(async function (fastify) {
   fastify.decorate('requireUser', requireUser);
   fastify.decorate('requireAdmin', requireAdmin);
   fastify.decorate('requireRole', requireRole);
-  fastify.decorate('requireSFPD', requireRole(User.Role.SFPD));
-  fastify.decorate('requireSFSO', requireRole(User.Role.SFSO));
-  fastify.decorate('requireCareTeam', requireRole(User.Role.CARE_TEAM));
-  fastify.decorate('requireLawEnforcement', requireRole(User.Role.SFPD, User.Role.SFSO));
+  fastify.decorate('requireField', requireRole(User.Role.FIELD));
+  fastify.decorate('requireCustody', requireRole(User.Role.CUSTODY));
+  fastify.decorate('requireCare', requireRole(User.Role.CARE));
+  fastify.decorate('requireLawEnforcement', requireRole(User.Role.FIELD, User.Role.CUSTODY));
 });
