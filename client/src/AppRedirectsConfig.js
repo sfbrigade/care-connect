@@ -9,11 +9,11 @@ export const AUTH_PROTECTED_PATHS = [
   '/units',
 ];
 export const ROLE_PROTECTED_PATHS = [
-  { pattern: '/holds/*', roles: [UserRole.SFPD] },
-  { pattern: '/holds', roles: [UserRole.SFPD] },
-  { pattern: '/incident', roles: [UserRole.SFPD] },
-  { pattern: '/sfso/*', roles: [UserRole.SFSO] },
-  { pattern: '/care/*', roles: [UserRole.CARE_TEAM] },
+  { pattern: '/holds/*', roles: [UserRole.FIELD] },
+  { pattern: '/holds', roles: [UserRole.FIELD] },
+  { pattern: '/incident', roles: [UserRole.FIELD] },
+  { pattern: '/sfso/*', roles: [UserRole.CUSTODY] },
+  { pattern: '/care/*', roles: [UserRole.CARE] },
 ];
 export const REDIRECTS = [
   ['/admin', '/admin/users'],
@@ -21,8 +21,8 @@ export const REDIRECTS = [
 ];
 
 export function getDefaultPathForUser (user) {
-  if (user?.organizationId === UserRole.SFSO) return '/sfso/custody';
-  if (user?.organizationId === UserRole.CARE_TEAM) return '/care/dashboard';
+  if (user?.role === UserRole.CUSTODY) return '/sfso/custody';
+  if (user?.role === UserRole.CARE) return '/care/dashboard';
   return '/holds';
 }
 
@@ -46,7 +46,7 @@ export function handleRedirects (authContext, location, pathname, handler) {
         if (!authContext.user) {
           return handler('/login', { from: location });
         }
-        if (!authContext.user.isAdmin && !roles.includes(authContext.user.organizationId)) {
+        if (!authContext.user.isAdmin && !roles.includes(authContext.user.role)) {
           return handler(getDefaultPathForUser(authContext.user));
         }
         break;
