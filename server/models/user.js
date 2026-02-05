@@ -40,6 +40,7 @@ const UserResponseSchema = UserAttributesSchema.extend({
   picture: z.string().nullable(),
   pictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
+  rank: z.string().nullable(),
   organization: Organization.ResponseSchema.nullable().optional(),
   title: Title.ResponseSchema.nullable().optional(),
   unit: Unit.ResponseSchema.nullable().optional(),
@@ -62,8 +63,30 @@ export class User extends Base {
   static ResponseSchema = UserResponseSchema;
   static UpdateSchema = UserUpdateSchema;
 
+  static Role = Object.freeze({
+    SFPD: 'sfpd',
+    SFSO: 'sfso',
+    CARE_TEAM: 'connections',
+  });
+
   constructor (data) {
     super(Prisma.UserScalarFieldEnum, data);
+  }
+
+  get rank () {
+    return this.title?.name ?? null;
+  }
+
+  get isSFPD () {
+    return this.organizationId === User.Role.SFPD;
+  }
+
+  get isSFSO () {
+    return this.organizationId === User.Role.SFSO;
+  }
+
+  get isCareTeam () {
+    return this.organizationId === User.Role.CARE_TEAM;
   }
 
   get pictureUrl () {
