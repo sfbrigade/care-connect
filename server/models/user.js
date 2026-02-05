@@ -73,10 +73,6 @@ export class User extends Base {
     super(Prisma.UserScalarFieldEnum, data);
   }
 
-  get rank () {
-    return this.title?.name ?? null;
-  }
-
   get isSFPD () {
     return this.organizationId === User.Role.SFPD;
   }
