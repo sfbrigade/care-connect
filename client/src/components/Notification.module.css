@@ -1,0 +1,18 @@
+.root {
+  background-color: var(--mantine-color-dark-6);
+  padding: .75rem 1rem;
+}
+
+.title {
+  color: white;
+  font-size: 1rem;
+}
+
+.description {
+  color: var(--mantine-color-gray-5);
+  font-size: 1rem;
+}
+
+.closeButton{
+  color: var(--mantine-color-gray-5);
+}
