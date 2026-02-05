@@ -1,12 +1,14 @@
 import { useContext } from 'react';
 import Notification from './Notification';
 import { ToastContext } from './ToastContext';
+import { useMobile } from '../hooks/useMobile';
 
 function ToastContainer () {
   const context = useContext(ToastContext);
   if (!context) return null;
 
-  const { toasts } = context;
+  const { toasts, removeToast } = context;
+  const isMobile = useMobile();
 
   if (toasts.length === 0) return null;
 
@@ -14,11 +16,18 @@ function ToastContainer () {
     <div
       style={{
         position: 'fixed',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        top: '16px',
+        ...(isMobile
+          ? {
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'min(90vw, 400px)',
+            }
+          : {
+              right: '16px',
+              width: '400px',
+            }),
         zIndex: 10000,
-        width: '335px',
         pointerEvents: 'none',
         display: 'flex',
         flexDirection: 'column',
@@ -35,9 +44,13 @@ function ToastContainer () {
         >
           <Notification
             message={toast.message}
+            messageSecondary={toast.messageSecondary}
             variant={toast.variant}
             style={{
               width: '100%',
+            }}
+            onDismiss={() => {
+              removeToast(toast.id);
             }}
           />
         </div>

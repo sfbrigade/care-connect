@@ -50,6 +50,7 @@ export function configureMailer (lib) {
       from: process.env.SMTP_FROM_EMAIL_ADDRESS,
     },
     send: true,
+    preview: false,
     transport,
     views: {
       options: {
