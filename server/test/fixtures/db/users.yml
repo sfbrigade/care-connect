@@ -16,6 +16,7 @@ items:
     email: regular.user@test.com
     hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
     isAdmin: false
+    role: FIELD
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfpd"
   user3:
@@ -25,6 +26,7 @@ items:
     email: deactivated.user@test.com
     hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
     isAdmin: false
+    role: FIELD
     createdAt: '2024-12-27T09:53:41-07:00'
     deactivatedAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfpd"
@@ -37,6 +39,7 @@ items:
     passwordResetToken: f071b4e6-5482-4a07-8e5a-15775d01759e
     passwordResetExpiresAt: '2024-12-27T09:53:41-07:00'
     isAdmin: false
+    role: FIELD
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfpd"
   sfsouser1:
@@ -46,5 +49,6 @@ items:
     email: sfsouser1@test.com
     hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
     isAdmin: false
+    role: CUSTODY
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfso"
