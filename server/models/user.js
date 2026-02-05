@@ -40,7 +40,6 @@ const UserResponseSchema = UserAttributesSchema.extend({
   picture: z.string().nullable(),
   pictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
-  rank: z.string().nullable(),
   organization: Organization.ResponseSchema.nullable().optional(),
   title: Title.ResponseSchema.nullable().optional(),
   unit: Unit.ResponseSchema.nullable().optional(),
