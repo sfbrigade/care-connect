@@ -47,6 +47,9 @@ export function handleRedirects (authContext, location, pathname, handler) {
           return handler('/login', { from: location });
         }
         if (!authContext.user.isAdmin && !roles.includes(authContext.user.role)) {
+          if (!authContext.user.role) {
+            return handler('/login');
+          }
           return handler(getDefaultPathForUser(authContext.user));
         }
         break;
