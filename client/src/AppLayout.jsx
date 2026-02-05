@@ -50,9 +50,6 @@ function AppLayout () {
           <Header opened={opened} close={close} toggle={toggle} logout={logout} />
         </AppShell.Header>
       )}
-      {/* <AppShell.Navbar>
-        <Navbar close={close} logout={logout} />
-      </AppShell.Navbar> */}
       <AppShell.Main px={0}>
         <AppRoutes />
       </AppShell.Main>

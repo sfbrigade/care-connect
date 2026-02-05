@@ -68,7 +68,7 @@ function Header ({ opened, close, toggle, logout }) {
         <Group hiddenFrom='sm' size='sm'>
           <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
-          <Menu shadow="md" width={200}>
+          <Menu shadow="md" width={200} onDismiss={close} >
             <Menu.Target>
               <Burger opened={opened} onClick={toggle} />
             </Menu.Target>
