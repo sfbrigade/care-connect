@@ -65,7 +65,7 @@ export function formatCreatedAt (createdAt) {
  */
 export function calculateAge (dateOfBirth) {
   if (!dateOfBirth) return null;
-  return -Math.floor(dateTime(dateOfBirth).diffNow('years').years);
+  return -Math.trunc(dateTime(dateOfBirth).diffNow('years').years);
 }
 
 /**

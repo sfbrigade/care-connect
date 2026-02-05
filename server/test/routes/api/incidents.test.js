@@ -196,9 +196,16 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.length, 2);
+
       const oneHourLater = DateTime.now().plus({ hours: 1 });
-      assert.ok(data[0].expiresAt.startsWith(oneHourLater.toISO({ includeOffset: false, precision: 'minute' })));
-      assert.ok(data[1].expiresAt.startsWith(oneHourLater.toISO({ includeOffset: false, precision: 'minute' })));
+
+      const expiresAt0 = DateTime.fromISO(data[0].expiresAt);
+      const diff0 = expiresAt0.diff(oneHourLater, 'minutes').minutes;
+      assert.ok(Math.abs(diff0) < 1, `Expected data[0].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt0.toISO()}`);
+
+      const expiresAt1 = DateTime.fromISO(data[1].expiresAt);
+      const diff1 = expiresAt1.diff(oneHourLater, 'minutes').minutes;
+      assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt1.toISO()}`);
     });
   });
 });

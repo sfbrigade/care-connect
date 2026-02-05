@@ -14,9 +14,9 @@ export function useToast () {
 export function ToastProvider ({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((message, variant = 'success', duration = 4000) => {
+  const showToast = useCallback((message, variant = 'success', duration = 4000, messageSecondary) => {
     const id = uuidv4();
-    const toast = { id, message, variant };
+    const toast = { id, message, variant, ...(messageSecondary && { messageSecondary }) };
 
     setToasts((prev) => [...prev, toast]);
 

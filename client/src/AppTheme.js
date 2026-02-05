@@ -1,10 +1,11 @@
-import { createTheme, Accordion, Alert, Anchor, Autocomplete, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Modal, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Accordion, Alert, Anchor, Autocomplete, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Modal, Notification, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import accordionClasses from './components/Accordion.module.css';
 import anchorClasses from './components/Anchor.module.css';
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
+import notificationClasses from './components/Notification.module.css';
 
 const AppTheme = createTheme({
   /** Your theme override here */
@@ -164,6 +165,12 @@ const AppTheme = createTheme({
         padding: 'xl',
         radius: 'lg'
       }
+    }),
+    Notification: Notification.extend({
+      defaultProps: {
+        radius: 'lg'
+      },
+      classNames: notificationClasses
     }),
     SegmentedControl: SegmentedControl.extend({
       defaultProps: {

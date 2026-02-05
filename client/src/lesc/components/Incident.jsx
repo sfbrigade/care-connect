@@ -3,13 +3,10 @@ import { IconPencilMinus } from '@tabler/icons-react';
 import { formatTime } from '@/utils/format';
 
 import IconButtonLink from '@/components/IconButtonLink';
+import { isValidIncident } from '@/utils/validators';
 
 function Incident ({ incident, editLink }) {
-  const isIncomplete = !incident?.cadNumber ||
-    !incident?.arrestedAt ||
-    !incident?.supervisorBadgeNumber ||
-    !(!!incident?.addressLine1 && !!incident?.city && !!incident?.state);
-
+  const isIncomplete = !isValidIncident(incident);
   const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
 
   return (
@@ -29,7 +26,7 @@ function Incident ({ incident, editLink }) {
         </Group>
       </Box>
       <Box>
-        <IconButtonLink icon={IconPencilMinus} to={editLink} variant='primary' />
+        <IconButtonLink icon={IconPencilMinus} to={editLink} variant={isIncomplete ? 'primary' : 'default'} />
       </Box>
     </Group>
   );
