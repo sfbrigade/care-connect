@@ -12,7 +12,7 @@ export const ROLE_PROTECTED_PATHS = [
   { pattern: '/holds/*', roles: [UserRole.FIELD] },
   { pattern: '/holds', roles: [UserRole.FIELD] },
   { pattern: '/incident', roles: [UserRole.FIELD] },
-  { pattern: '/sfso/*', roles: [UserRole.CUSTODY] },
+  { pattern: '/custody/*', roles: [UserRole.CUSTODY] },
   { pattern: '/care/*', roles: [UserRole.CARE] },
 ];
 export const REDIRECTS = [
@@ -21,7 +21,7 @@ export const REDIRECTS = [
 ];
 
 export function getDefaultPathForUser (user) {
-  if (user?.role === UserRole.CUSTODY) return '/sfso/custody';
+  if (user?.role === UserRole.CUSTODY) return '/custody';
   if (user?.role === UserRole.CARE) return '/care/dashboard';
   return '/holds';
 }

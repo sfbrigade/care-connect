@@ -24,7 +24,7 @@ function LESCRoutes () {
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
       <Route path='incident' element={<IncidentForm />} />
-      <Route path='sfso/custody' element={<Custody />} />
+      <Route path='custody' element={<Custody />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
