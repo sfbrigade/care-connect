@@ -49,6 +49,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
             {deflections?.map((deflection) => (
               <Hold
                 key={deflection.id}
+                incident={incident}
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
@@ -57,13 +58,11 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
               />
             ))}
           </Stack>
-          <Button
-            variant='secondary'
-            fullWidth
-            onClick={onExtendAllClick}
-          >
-            Extend all holds
-          </Button>
+          {!incident?.arrivedAt && (
+            <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
+              Extend all holds
+            </Button>
+          )}
         </>
       )}
     </>
