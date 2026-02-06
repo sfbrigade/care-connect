@@ -16,7 +16,7 @@ const SFSO_FORM_P04_PATH = '/static-data/forms/SFSO-FORM-P04-INVESTIGATIVE-DETEN
  * @param {Object} facility - Optional facility object
  * @returns {jsPDF} - The generated PDF document
  */
-export function generate647fTransferFormPDF (hold, facility = null) {
+export function generate647fTransferFormPDF(hold, facility = null) {
   if (!hold) {
     throw new Error('Hold information is required');
   }
@@ -119,6 +119,9 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   const agency = hold.incident?.agency || 'TBD';
   const charge = hold.incident?.charge || '647(f) RWS';
   const justification = hold.notes || 'TBD';
+  const substanceNot = hold.narcoticsSubstance === true ? '' : 'not ';
+  const paraphernaliaNot = hold.narcoticsParaphernalia === true ? '' : 'not ';
+  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot} found to be in possession of a controlled substance. Subject was ${paraphernaliaNot} found to be in possession of narcotics paraphernalia.`;
 
   addField('CAD Number:', cadNumber, true);
   addField('Date/Time Arrested:', dateTimeArrested, true);
@@ -139,7 +142,8 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   yPos += 5;
 
   doc.setFont('helvetica', 'normal');
-  const narrativeLines = doc.splitTextToSize(justification, rightMargin - leftMargin);
+  const narrativeText = `${justification}\n\n${narcoticsStatement}`;
+  const narrativeLines = doc.splitTextToSize(narrativeText, rightMargin - leftMargin);
   doc.text(narrativeLines, leftMargin, yPos);
   yPos += Math.max(10, narrativeLines.length * 5);
 
@@ -180,7 +184,7 @@ export function generate647fTransferFormPDF (hold, facility = null) {
  * @param {string|Date} date - Date to format
  * @returns {string} Formatted date string like "December 15, 2025 at 3:45 PM"
  */
-function formatDateForCertificate (date) {
+function formatDateForCertificate(date) {
   if (!date) {
     return 'TBD';
   }
@@ -212,7 +216,7 @@ function formatDateForCertificate (date) {
  * @param {Object} facility - Optional facility object
  * @returns {jsPDF} - The generated PDF document
  */
-export function generateCertificateOfReleasePDF (hold, facility = null) {
+export function generateCertificateOfReleasePDF(hold, facility = null) {
   if (!hold) {
     throw new Error('Hold information is required');
   }
@@ -284,7 +288,7 @@ export function generateCertificateOfReleasePDF (hold, facility = null) {
  * @param {string} pdfPath - Path to the PDF form file
  * @returns {Promise<Object>} Mapping object with label -> fieldName pairs
  */
-export async function analyzePDFFormMapping (pdfPath) {
+export async function analyzePDFFormMapping(pdfPath) {
   try {
     // Fetch the PDF file
     const response = await fetch(pdfPath);
@@ -419,7 +423,7 @@ export async function analyzePDFFormMapping (pdfPath) {
  * Analyze the SFSO Form P04 and log field mappings to console
  * Call this from browser console: await analyzeSFSOForm()
  */
-export async function analyzeSFSOForm () {
+export async function analyzeSFSOForm() {
   try {
     const result = await analyzePDFFormMapping(SFSO_FORM_P04_PATH);
 
@@ -460,7 +464,7 @@ export async function analyzeSFSOForm () {
  * This is helpful for identifying which field name corresponds to which position on the form
  * @returns {Promise<Uint8Array>} - Filled PDF as bytes
  */
-export async function fillSFSOFormP04Debug () {
+export async function fillSFSOFormP04Debug() {
   // Load the PDF form
   const response = await fetch(SFSO_FORM_P04_PATH);
   const pdfBytes = await response.arrayBuffer();
@@ -538,7 +542,7 @@ export async function fillSFSOFormP04Debug () {
  * @param {Object} currentUser - Current user (for reporting deputy)
  * @returns {Promise<Uint8Array>} - Filled PDF as bytes
  */
-export async function fillSFSOFormP04 (hold, facility = null, currentUser = null) {
+export async function fillSFSOFormP04(hold, facility = null, currentUser = null) {
   if (!hold) {
     throw new Error('Hold information is required');
   }
@@ -606,6 +610,10 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
   };
 
   // Map hold data to form fields
+  const substanceNot = hold.narcoticsSubstance === true ? '' : 'not ';
+  const paraphernaliaNot = hold.narcoticsParaphernalia === true ? '' : 'not ';
+  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
+
   const fieldMappings = {
     // Reporting Deputy - map to hold creator
     Text3: hold.createdBy
@@ -639,7 +647,7 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
       : (hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD'),
     LOCATION_OF_OCCURRENCE: hold.incident?.locationArrested || 'TBD',
     REPORTING_UNIT: hold.incident?.unit || 'TBD',
-    NARRATIVE: hold.notes || 'TBD',
+    NARRATIVE: `${hold.notes || 'TBD'}\n\n${narcoticsStatement}`,
     OTHER_INFORMATION: 'TBD', // Not available
 
     // Review/Approval (leave empty for now)
