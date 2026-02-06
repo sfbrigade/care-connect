@@ -70,7 +70,7 @@ export default async function (fastify, opts) {
             lastName: invite.lastName,
             email: invite.email,
             organizationId: invite.organizationId,
-            role: org?.defaultRole ?? null,
+            roles: org?.defaultRoles ?? [],
             titleId: invite.titleId,
             badgeNumber: invite.badgeNumber,
             prop115Certified: invite.prop115Certified,

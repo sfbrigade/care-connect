@@ -119,7 +119,7 @@ enum SubjectStatusEnum {
 model Organization {
   id                           String                  @id
   name                         String
-  defaultRole                  RoleEnum?
+  defaultRoles                 RoleEnum[]              @default([])
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                  String                  @db.Uuid
   createdAt                    DateTime                @default(now())
@@ -175,7 +175,7 @@ model User {
   email                        String                  @unique @db.Citext
   picture                      String?
   isAdmin                      Boolean                 @default(false)
-  role                         RoleEnum?
+  roles                        RoleEnum[]              @default([])
   organization                 Organization?           @relation(fields: [organizationId], references: [id])
   organizationId               String?
   title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])

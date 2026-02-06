@@ -5,7 +5,7 @@ import Base from './base.js';
 
 const OrganizationAttributesSchema = z.object({
   name: z.string(),
-  defaultRole: z.enum(['FIELD', 'CUSTODY', 'CARE']).nullable().optional(),
+  defaultRoles: z.array(z.enum(['FIELD', 'CUSTODY', 'CARE'])).optional(),
 });
 
 const OrganizationCreateSchema = OrganizationAttributesSchema.extend({

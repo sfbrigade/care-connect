@@ -21,8 +21,9 @@ export const REDIRECTS = [
 ];
 
 export function getDefaultPathForUser (user) {
-  if (user?.role === UserRole.CUSTODY) return '/custody';
-  if (user?.role === UserRole.CARE) return '/care/dashboard';
+  const roles = user?.roles ?? [];
+  if (roles.includes(UserRole.CUSTODY)) return '/custody';
+  if (roles.includes(UserRole.CARE)) return '/care/dashboard';
   return '/holds';
 }
 
@@ -46,8 +47,9 @@ export function handleRedirects (authContext, location, pathname, handler) {
         if (!authContext.user) {
           return handler('/login', { from: location });
         }
-        if (!authContext.user.isAdmin && !roles.includes(authContext.user.role)) {
-          if (!authContext.user.role) {
+        const userRoles = authContext.user.roles ?? [];
+        if (!authContext.user.isAdmin && !roles.some(r => userRoles.includes(r))) {
+          if (!userRoles.length) {
             return handler('/login');
           }
           return handler(getDefaultPathForUser(authContext.user));
