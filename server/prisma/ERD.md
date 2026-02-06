@@ -120,7 +120,7 @@ EXITED EXITED
   "Organization" {
     String id "🗝️"
     String name 
-    RoleEnum defaultRole "❓"
+    RoleEnum defaultRoles 
     String createdById 
     DateTime createdAt 
     DateTime updatedAt 
@@ -154,7 +154,7 @@ EXITED EXITED
     String email 
     String picture "❓"
     Boolean isAdmin 
-    RoleEnum role "❓"
+    RoleEnum roles 
     String organizationId "❓"
     String titleId "❓"
     String unitId "❓"
@@ -528,7 +528,7 @@ EXITED EXITED
     DateTime updatedAt 
     }
   
-    "Organization" o|--|o "RoleEnum" : "enum:defaultRole"
+    "Organization" o|--}o "RoleEnum" : "enum:defaultRoles"
     "Organization" o|--|| "User" : "createdBy"
     "Organization" o{--}o "Deflection" : ""
     "Organization" o{--}o "Incident" : ""
@@ -547,7 +547,7 @@ EXITED EXITED
     "Title" o{--}o "Incident" : ""
     "Title" o{--}o "Invite" : ""
     "Title" o{--}o "User" : ""
-    "User" o|--|o "RoleEnum" : "enum:role"
+    "User" o|--}o "RoleEnum" : "enum:roles"
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
