@@ -9,15 +9,17 @@ export const UserRole = Object.freeze({
 export function useUserRole () {
   const { user } = useAuthContext();
 
+  const userRoles = user?.roles ?? [];
+
   return {
-    isField: user?.role === UserRole.FIELD,
-    isCustody: user?.role === UserRole.CUSTODY,
-    isCare: user?.role === UserRole.CARE,
+    isField: userRoles.includes(UserRole.FIELD),
+    isCustody: userRoles.includes(UserRole.CUSTODY),
+    isCare: userRoles.includes(UserRole.CARE),
     isAdmin: user?.isAdmin ?? false,
     canAccess (roles) {
       if (!user) return false;
       if (user.isAdmin) return true;
-      return roles.includes(user.role);
+      return roles.some(r => userRoles.includes(r));
     },
   };
 }
