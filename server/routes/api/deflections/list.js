@@ -16,6 +16,7 @@ export default async function (fastify, opts) {
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
+          subjectStatus: z.enum(Object.values(Deflection.SubjectStatus)).optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),
         }),
@@ -25,7 +26,7 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status } = request.query;
+      const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
       const where = {};
 
       await fastify.prisma.deflection.expire();
@@ -54,7 +55,11 @@ export default async function (fastify, opts) {
         where.status = status;
       }
 
-      if (!request.user.isAdmin) {
+      if (subjectStatus) {
+        where.subjectStatus = subjectStatus;
+      }
+
+      if (!request.user.isAdmin && !(request.user.isCustody && facilityId)) {
         where.createdById = request.user.id;
       }
 
