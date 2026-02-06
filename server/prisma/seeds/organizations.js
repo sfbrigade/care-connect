@@ -2,17 +2,17 @@ const organizations = [
   {
     id: 'sfpd',
     name: 'San Francisco Police Department',
-    defaultRole: 'FIELD',
+    defaultRoles: ['FIELD'],
   },
   {
     id: 'sfso',
     name: "San Francisco Sheriff's Office",
-    defaultRole: 'CUSTODY',
+    defaultRoles: ['CUSTODY'],
   },
   {
     id: 'connections',
     name: 'Connections',
-    defaultRole: 'CARE',
+    defaultRoles: ['CARE'],
   }
 ];
 
