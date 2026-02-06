@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, RoleEnum } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -24,7 +24,7 @@ const UserAttributesSchema = z.object({
   organizationId: z.string().nullable().optional(),
   titleId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
-  roles: z.array(z.enum(['FIELD', 'CUSTODY', 'CARE'])).optional(),
+  roles: z.array(z.enum(Object.values(RoleEnum))).optional(),
 });
 
 const UserPasswordSchema = z
@@ -63,11 +63,7 @@ export class User extends Base {
   static ResponseSchema = UserResponseSchema;
   static UpdateSchema = UserUpdateSchema;
 
-  static Role = Object.freeze({
-    FIELD: 'FIELD',
-    CUSTODY: 'CUSTODY',
-    CARE: 'CARE',
-  });
+  static Role = RoleEnum;
 
   constructor (data) {
     super(Prisma.UserScalarFieldEnum, data);
