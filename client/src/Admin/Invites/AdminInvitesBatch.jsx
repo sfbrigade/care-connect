@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Container, FileInput, Group, Stack, Table, Text, Title } from '@mantine/core';
-import { useMutation } from '@tanstack/react-query';
+import { Alert, Button, Container, FileInput, Group, Select, Stack, Table, Text, Title } from '@mantine/core';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -35,6 +35,12 @@ function AdminInvitesBatch () {
   const [parseErrors, setParseErrors] = useState([]);
   const [submitError, setSubmitError] = useState(null);
   const [summary, setSummary] = useState(null);
+  const [organizationId, setOrganizationId] = useState('');
+
+  const { data: organizations } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => Api.organizations.index().then(response => response.data),
+  });
 
   function resetForm () {
     setRows([]);
@@ -83,7 +89,7 @@ function AdminInvitesBatch () {
   function handleSubmit () {
     setSubmitError(null);
     setSummary(null);
-    onSubmitMutation.mutate({ invites: rows });
+    onSubmitMutation.mutate({ invites: rows, organizationId: organizationId || null });
   }
 
   function handleReset () {
@@ -117,6 +123,15 @@ function AdminInvitesBatch () {
               )}
             </Alert>
           )}
+          <Select
+            label='Organization'
+            description='All invited users will be assigned to this organization'
+            data={[{ value: '', label: 'None' }, ...(organizations?.map((o) => ({ value: o.id, label: o.name })) || [])]}
+            value={organizationId}
+            onChange={(value) => setOrganizationId(value ?? '')}
+            maw={420}
+            disabled={onSubmitMutation.isPending}
+          />
           <FileInput
             label='Upload CSV'
             description='File must have the following columns: first_name, last_name, email'
