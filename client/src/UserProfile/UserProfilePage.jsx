@@ -11,7 +11,7 @@ function UserProfilePage () {
   return (
     <>
       <Card padding='xl'>
-        <IconButtonLink icon={IconArrowLeft} to={'/'} />
+        <IconButtonLink icon={IconArrowLeft} to='/' />
         {user && (
           <>
             <Text size='xl'>Personal Information</Text>
