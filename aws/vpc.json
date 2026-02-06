@@ -2,6 +2,10 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Template to set up a VPC with subnets, route tables, and an Elastic IP along with a Route 53 public hosted zone for a domain pointing to the Elastic IP",
   "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    },
     "Domain": {
       "Description": "Domain to create a hosted zone for",
       "Type": "String"
@@ -12,18 +16,33 @@
       "Description": "ID of the VPC",
       "Value": {
         "Ref": "VPC"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-vpc-id"
+        }
       }
     },
     "PublicSubnetAZ0Id": {
       "Description": "ID of the public subnet in availability zone 0",
       "Value": {
         "Ref": "PublicSubnetAZ0"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-subnet-az0-id"
+        }
       }
     },
     "PublicSubnetAZ1Id": {
       "Description": "ID of the public subnet in availability zone 1",
       "Value": {
         "Ref": "PublicSubnetAZ1"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-subnet-az1-id"
+        }
       }
     },
     "ElasticIPAllocationId": {
@@ -33,6 +52,11 @@
           "ElasticIP",
           "AllocationId"
         ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-allocation-id"
+        }
       }
     },
     "ElasticIPPublicIP": {
@@ -42,12 +66,22 @@
           "ElasticIP",
           "PublicIp"
         ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-public-ip"
+        }
       }
     },
     "PublicHostedZoneId": {
       "Description": "ID of the public hosted zone",
       "Value": {
         "Ref": "PublicHostedZone"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-hosted-zone-id"
+        }
       }
     },
     "PublicHostedZoneNameServers": {
@@ -62,6 +96,22 @@
             ]
           }
         ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-hosted-zone-name-servers"
+        }
+      }
+    },
+    "Domain": {
+      "Description": "The original domain name specified in the parameters",
+      "Value": {
+        "Ref": "Domain"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-domain"
+        }
       }
     }
   },
