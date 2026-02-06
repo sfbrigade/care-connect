@@ -195,8 +195,12 @@ describe('PDF Generator', () => {
     it('should include notes in justification narrative', () => {
       const doc = generate647fTransferFormPDF(mockHold);
 
-      const textCalls = doc.text.mock.calls.map(call => call[0]);
-      expect(textCalls.some(text => text.includes('Test justification narrative'))).toBe(true);
+      const textCalls = doc.text.mock.calls.flatMap(call =>
+        Array.isArray(call[0]) ? call[0] : [call[0]]
+      );
+      expect(textCalls.some(text =>
+        typeof text === 'string' && text.includes('Test justification narrative')
+      )).toBe(true);
     });
 
     it('should use TBD for justification when notes are missing', () => {
