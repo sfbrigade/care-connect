@@ -57,7 +57,24 @@ export default async function (fastify, opts) {
 
       if (subjectStatus) {
         const statuses = subjectStatus.split(',');
-        where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
+        const hasExited = statuses.includes('EXITED');
+
+        if (hasExited) {
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const otherStatuses = statuses.filter(s => s !== 'EXITED');
+
+          if (otherStatuses.length > 0) {
+            where.OR = [
+              { subjectStatus: otherStatuses.length > 1 ? { in: otherStatuses } : otherStatuses[0] },
+              { subjectStatus: 'EXITED', exitedAt: { gte: twentyFourHoursAgo } },
+            ];
+          } else {
+            where.subjectStatus = 'EXITED';
+            where.exitedAt = { gte: twentyFourHoursAgo };
+          }
+        } else {
+          where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
+        }
       }
 
       if (!request.user.isAdmin && !(request.user.isCustody && facilityId)) {

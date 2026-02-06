@@ -177,7 +177,15 @@ function Custody () {
                   </Accordion>
                   )
                 : (
-                  <Text c='dimmed' ta='center'>No released subjects</Text>
+                  <Stack align='center' gap='md' py='xl'>
+                    <Box
+                      w={160}
+                      h={160}
+                      style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
+                    />
+                    <Title order={3}>No subjects in released</Title>
+                    <Text c='dimmed' ta='center'>Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They&apos;re retained in legal records.</Text>
+                  </Stack>
                   )}
             </Stack>
           )}
