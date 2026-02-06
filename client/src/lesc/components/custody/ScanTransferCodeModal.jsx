@@ -67,12 +67,14 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
           </ActionIcon>
         </Group>
 
-        {isLoading ? (
+        {isLoading && (
           <Stack align='center' justify='center' flex={1}>
             <Loader size='lg' />
             <Text c='dimmed'>Transferring subject into custody...</Text>
           </Stack>
-        ) : manualEntry ? (
+        )}
+
+        {!isLoading && manualEntry && (
           <>
             {error && (
               <Alert icon={<IconAlertCircle size={16} />} color='red' onClose={() => setError(null)} withCloseButton>
@@ -100,7 +102,9 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
               Scan QR code instead
             </Button>
           </>
-        ) : (
+        )}
+
+        {!isLoading && !manualEntry && (
           <>
             {error && (
               <Alert icon={<IconAlertCircle size={16} />} color='red' onClose={() => setError(null)} withCloseButton>
