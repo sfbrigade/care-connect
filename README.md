@@ -14,11 +14,11 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    cd care-connect
    ```
 
-3. Install Docker Desktop: https://www.docker.com/products/docker-desktop
+2. Install Docker Desktop: https://www.docker.com/products/docker-desktop
 
    1. Windows users see notes below...
 
-4. Open a command-line shell, change into your repo directory, and execute these commands:
+3. Open a command-line shell, change into your repo directory, and execute these commands:
 
    ```
    docker compose pull
@@ -34,9 +34,9 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    server-1       | 5:31:23 PM client.1 |    ➜  Local:   http://localhost:3333/
    ```
 
-5. Now you should be able to open the web app in your browser at: http://localhost:3333/
+4. Now you should be able to open the web app in your browser at: http://localhost:3333/
 
-6. Open a new tab or window of your shell, change into your repo directory as needed, and execute this command:
+5. Open a new tab or window of your shell, change into your repo directory as needed, and execute this command:
 
    ```
    docker compose exec server bash -l
@@ -55,18 +55,21 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    This will populate the database with a complete setup for development, including an admin user that you can use to log in to the web app.
 
    The development admin user credentials are:
+
    - Email: admin@careconnectsf.org
    - Password: abcd1234
 
    SFPD test user credentials are:
+
    - Email: sfpd@careconnectsf.org
    - Password: abcd1234
 
    SFSO test user credentials are:
+
    - Email: sfso@careconnectsf.org
    - Password: abcd1234
 
-7. To stop the server, press CONTROL-C in the window with the running server.
+6. To stop the server, press CONTROL-C in the window with the running server.
    If it is successful, you will see something like this:
 
    ```
@@ -91,7 +94,7 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    Stopping care-connect_mailcatcher_1 ... done
    ```
 
-8. That's it! After all this setup is complete, the only command you need to run to get
+7. That's it! After all this setup is complete, the only command you need to run to get
    started again is the `docker compose up` command.
 
 ## Development Tools
@@ -128,6 +131,30 @@ This project includes components with helpful developer tools, such as the follo
    http://localhost:9001
 
    Username and password are: minioadmin/minioadmin
+
+## Mobile Testing with ngrok
+
+Some features (like QR code scanning) require camera access, which browsers only allow over HTTPS. To test on a mobile device, you can use [ngrok](https://ngrok.com/) to create a public HTTPS tunnel to your local dev server.
+
+1. [Sign up for a free ngrok account](https://dashboard.ngrok.com/signup) and install the CLI.
+
+2. Claim a free static domain from the [ngrok dashboard](https://dashboard.ngrok.com/domains) (e.g. `your-name.ngrok-free.app`).
+
+3. Add your domain to `client/.env.local` (create this file if it doesn't exist):
+
+   ```
+   NGROK_HOST=your-name.ngrok-free.app
+   ```
+
+4. Restart the dev server (`docker compose up`), then start the tunnel:
+
+   ```
+   ngrok http 3333 --url your-name.ngrok-free.app
+   ```
+
+5. Open the ngrok URL on your phone to test camera and other mobile features.
+
+> **Note:** `client/.env.local` is gitignored, so your personal ngrok domain won't be committed.
 
 ## Analytics
 
@@ -177,7 +204,8 @@ To test the client as it will be deployed to the server (rather than running in 
 ### Linting and Formatting
 
 To lint and format your code:
-   - **From Docker container**: Log in to a running container and run `npm run lint`
+
+- **From Docker container**: Log in to a running container and run `npm run lint`
 
 ## Shell Command Quick Reference
 
