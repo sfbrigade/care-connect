@@ -59,7 +59,7 @@ const deflectionDetailCategories = [
   },
 ];
 
-function createQueryClient() {
+function createQueryClient () {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -70,7 +70,7 @@ function createQueryClient() {
   });
 }
 
-function setupApiMocks() {
+function setupApiMocks () {
   Api.facilities.activeIncident = () => Promise.resolve({ data: incident });
   Api.deflections.get = () => Promise.resolve({ data: deflection });
   Api.deflections.update = (id, payload) => Promise.resolve({
@@ -84,7 +84,7 @@ function setupApiMocks() {
   };
 }
 
-function StoryShell({ entry }) {
+function StoryShell ({ entry }) {
   const queryClient = createQueryClient();
   queryClient.setQueryData(['facilities', facility.id, 'active-incident'], incident);
   queryClient.setQueryData(['deflections', deflection.id], deflection);
