@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -22,12 +22,25 @@ function PropertyForm () {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const isNew = searchParams.get('isNew') === 'true';
+  const isNewQuery = searchParams.get('isNew') === 'true';
+  const [isNewFlow, setIsNewFlow] = useState(() => {
+    if (isNewQuery) {
+      return true;
+    }
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.localStorage.getItem(`deflection-new-flow-${id}`) === 'true';
+  });
+  const isNew = isNewQuery;
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
+  const autoSaveTimerRef = useRef(null);
+  const lastSavedValuesRef = useRef(initialValues);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -43,32 +56,100 @@ function PropertyForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
+      if (!isInitialized) {
+        return;
+      }
       setIsLarge(values.property === 'LARGE');
+      scheduleAutoSave(values);
     },
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isInitialized) {
       if (deflection) {
-        form.setInitialValues({
+        const normalized = normalizeValues({
           property: deflection.property,
           propertyDetails: deflection.propertyDetails,
         });
+        lastSavedValuesRef.current = normalized;
+        form.setInitialValues(normalized);
         form.reset();
       }
       setInitialized(true);
+      setAutoSaveStatus('saved');
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, isInitialized, deflection]);
+
+  useEffect(() => {
+    if (isNew) {
+      setIsNewFlow(true);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(`deflection-new-flow-${id}`, 'true');
+      }
+    }
+  }, [isNew]);
+
+  useEffect(() => () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+  }, []);
+
+  function normalizeValues (values) {
+    return {
+      property: values.property ?? '',
+      propertyDetails: values.propertyDetails ?? '',
+    };
+  }
+
+  function valuesMatch (a, b) {
+    return a.property === b.property && a.propertyDetails === b.propertyDetails;
+  }
+
+  function scheduleAutoSave (values) {
+    const normalized = normalizeValues(values);
+    if (valuesMatch(normalized, lastSavedValuesRef.current)) {
+      return;
+    }
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveMutation.mutate(normalized);
+    }, 700);
+  }
+
+  async function updateDeflectionCache (updatedDeflection) {
+    await queryClient.setQueryData(['deflections', id], updatedDeflection);
+    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+    if (cachedDeflections) {
+      const updatedDeflections = [...cachedDeflections];
+      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+    }
+  }
+
+  const autoSaveMutation = useMutation({
+    mutationFn: (data) => Api.deflections.update(id, data),
+    onMutate: () => {
+      setAutoSaveStatus('saving');
+    },
+    onSuccess: async (response, variables) => {
+      await updateDeflectionCache(response.data);
+      lastSavedValuesRef.current = normalizeValues(variables);
+      setAutoSaveStatus('saved');
+    },
+    onError: () => {
+      setAutoSaveStatus('error');
+    },
+  });
 
   const onSubmitMutation = useMutation({
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
-      await queryClient.setQueryData(['deflections', id], response.data);
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+      await updateDeflectionCache(response.data);
+      if (isNewFlow && typeof window !== 'undefined') {
+        window.localStorage.removeItem(`deflection-new-flow-${id}`);
       }
       navigate(`/holds/${id}`);
     },
@@ -117,6 +198,19 @@ function PropertyForm () {
     }
   }
 
+  const headerStatus = (() => {
+    if (onSubmitMutation.isPending || autoSaveStatus === 'saving') {
+      return { text: 'Saving...', color: 'dimmed' };
+    }
+    if (autoSaveStatus === 'error') {
+      return { text: 'Save failed', color: 'red.6' };
+    }
+    if (autoSaveStatus === 'saved' || onSubmitMutation.isSuccess) {
+      return { text: 'Changes saved', color: 'teal.6' };
+    }
+    return null;
+  })();
+
   return (
     <>
       <Head>
@@ -125,9 +219,11 @@ function PropertyForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+          <Group gap='xs'>
+            {headerStatus && <Text c={headerStatus.color} size='lg'>{headerStatus.text}</Text>}
+            {headerStatus && isNewFlow && <Text c='gray.5' size='lg'>•</Text>}
+            {isNewFlow && <Text c='dimmed' size='lg'>3 of 3</Text>}
+          </Group>
         </Group>
       </Header>
       <Container>

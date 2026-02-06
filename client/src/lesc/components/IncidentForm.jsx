@@ -45,6 +45,15 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    validateInputOnBlur: true,
+    validate: {
+      supervisorBadgeNumber: (value) => {
+        if (!value || String(value).length !== 4) {
+          return 'Star number must be 4 digits';
+        }
+        return null;
+      },
+    },
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, { zone: 'local' }).toISO(),
@@ -197,9 +206,10 @@ function IncidentForm () {
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                  minLength={1}
+                  minLength={4}
                   maxLength={4}
                   inputMode='numeric'
+                  placeholder='4 digits'
                   onKeyDown={(e) => {
                     if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
                       e.preventDefault();

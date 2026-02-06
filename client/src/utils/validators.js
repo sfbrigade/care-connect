@@ -12,8 +12,8 @@ const IncidentSchema = z.object({
 
 const DeflectionSchema = z.object({
   subject: z.object({
-    firstName: z.string().check(z.minLength(2)),
-    lastName: z.string().check(z.minLength(2)),
+    firstName: z.string().check(z.minLength(1)),
+    lastName: z.string().check(z.minLength(1)),
     dateOfBirth: z.iso.datetime(),
     sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN']),
     race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN']),
