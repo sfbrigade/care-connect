@@ -1,7 +1,6 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
 import { DateTime } from 'luxon';
 import { QRCodeSVG } from 'qrcode.react';
 import { IconLock } from '@tabler/icons-react';
@@ -16,7 +15,6 @@ function Hold ({
   onDetailsClick,
 }) {
   const { t } = useTranslation();
-  const location = useLocation();
   const displayId = String(deflection.id).padStart(6, '0');
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
@@ -43,9 +41,8 @@ function Hold ({
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidIncident(incident) && isValidDeflection(deflection);
-
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
-  const transferUrl = `${location.origin}/transfer/${deflection.id}`;
+  const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   useEffect(() => {
     if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
