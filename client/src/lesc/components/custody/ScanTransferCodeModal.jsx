@@ -59,7 +59,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
       withCloseButton={false}
       padding={0}
     >
-      <Stack p='lg' gap='lg' h='100dvh'>
+      <Stack p='lg' gap='lg' h='100dvh' maw={500} mx='auto' w='100%'>
         <Group justify='space-between' align='center'>
           <Title order={3}>{manualEntry ? 'Enter Transfer Code' : 'Scan Transfer Code'}</Title>
           <ActionIcon variant='subtle' color='gray' size='lg' onClick={handleClose}>
