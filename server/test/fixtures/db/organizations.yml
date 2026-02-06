@@ -4,15 +4,15 @@ items:
   sfpd:
     id: sfpd
     name: 'SFPD'
-    defaultRole: FIELD
+    defaultRoles: [FIELD]
     createdBy: '@user1'
   sfso:
     id: sfso
     name: 'SFSO'
-    defaultRole: CUSTODY
+    defaultRoles: [CUSTODY]
     createdBy: '@user1'
   connections:
     id: connections
     name: 'Connections'
-    defaultRole: CARE
+    defaultRoles: [CARE]
     createdBy: '@user1'
