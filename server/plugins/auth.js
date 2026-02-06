@@ -76,7 +76,8 @@ export default fp(async function (fastify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
       if (request.user.isAdmin) return;
-      if (!allowedRoles.includes(request.user.role)) {
+      const userRoles = request.user.roles ?? [];
+      if (!allowedRoles.some(r => userRoles.includes(r))) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
     };

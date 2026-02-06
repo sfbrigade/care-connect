@@ -24,7 +24,7 @@ const UserAttributesSchema = z.object({
   organizationId: z.string().nullable().optional(),
   titleId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
-  role: z.enum(['FIELD', 'CUSTODY', 'CARE']).nullable().optional(),
+  roles: z.array(z.enum(['FIELD', 'CUSTODY', 'CARE'])).optional(),
 });
 
 const UserPasswordSchema = z
@@ -74,15 +74,15 @@ export class User extends Base {
   }
 
   get isField () {
-    return this.role === User.Role.FIELD;
+    return this.roles?.includes(User.Role.FIELD) ?? false;
   }
 
   get isCustody () {
-    return this.role === User.Role.CUSTODY;
+    return this.roles?.includes(User.Role.CUSTODY) ?? false;
   }
 
   get isCare () {
-    return this.role === User.Role.CARE;
+    return this.roles?.includes(User.Role.CARE) ?? false;
   }
 
   get pictureUrl () {
