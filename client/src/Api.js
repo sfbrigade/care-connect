@@ -281,7 +281,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active } = {}) {
+    list ({ incidentId, facilityId, active, subjectStatus } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -291,6 +291,9 @@ const Api = {
       }
       if (active !== undefined) {
         params.active = active;
+      }
+      if (subjectStatus) {
+        params.subjectStatus = subjectStatus;
       }
       return instance.get('/api/deflections', { params });
     },
@@ -305,6 +308,9 @@ const Api = {
     },
     subject (id, data) {
       return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
+    },
+    transfer (id) {
+      return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
     },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
