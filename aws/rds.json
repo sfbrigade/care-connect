@@ -1,0 +1,189 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template to create a new RDS Postgres DB instance",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    },
+    "InstanceType": {
+      "Description": "The DB instance type",
+      "Type": "String",
+      "Default": "db.t4g.small",
+      "AllowedValues": [
+        "db.t4g.micro",
+        "db.t4g.small",
+        "db.t4g.medium",
+        "db.t4g.large"
+      ]
+    },
+    "MultiAZ": {
+      "Description": "Whether to enable Multi-AZ",
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    }
+  },
+  "Outputs": {
+    "DatabaseResourceId": {
+      "Description": "The Resource ID of the database",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "DbiResourceId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-db-resource-id"
+        }
+      }
+    },
+    "DatabaseSecurityGroupId": {
+      "Description": "The ID of the security group for the database",
+      "Value": {
+        "Ref": "DatabaseSecurityGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-db-sg-id"
+        }
+      }
+    },
+    "DatabaseEndpoint": {
+      "Description": "The endpoint of the database",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-db-endpoint"
+        }
+      }
+    },
+    "DatabasePort": {
+      "Description": "The port of the database",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Port"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-db-port"
+        }
+      }
+    },
+    "DatabaseMasterUserPasswordSecretArn": {
+      "Description": "The ARN of the secret containing the master user password",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "MasterUserSecret.SecretArn"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-db-master-user-password-secret-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Sub": "${BaseName}-db-sg"
+        },
+        "GroupDescription": "Allow postgres inbound traffic",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      }
+    },
+    "DatabaseSecurityGroupIngressPublic": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "DatabaseSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "DatabaseSubnetGroup": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupName": {
+          "Fn::Sub": "${BaseName}-db-subnet-group"
+        },
+        "DBSubnetGroupDescription": "Subnet group for the RDS DB instance",
+        "SubnetIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${BaseName}-public-subnet-az0-id"
+            }
+          },
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${BaseName}-public-subnet-az1-id"
+            }
+          }
+        ]
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AllocatedStorage": 20,
+        "DBInstanceClass": {
+          "Ref": "InstanceType"
+        },
+        "DBInstanceIdentifier": {
+          "Fn::Sub": "${BaseName}-db"
+        },
+        "DBName": {
+          "Ref": "BaseName"
+        },
+        "DBSubnetGroupName": {
+          "Ref": "DatabaseSubnetGroup"
+        },
+        "EnableIAMDatabaseAuthentication": true,
+        "Engine": "postgres",
+        "EngineVersion": "17.6",
+        "ManageMasterUserPassword": true,
+        "MasterUsername": {
+          "Ref": "BaseName"
+        },
+        "MaxAllocatedStorage": 100,
+        "MultiAZ": {
+          "Ref": "MultiAZ"
+        },
+        "PubliclyAccessible": true,
+        "StorageEncrypted": true,
+        "VPCSecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "DatabaseSecurityGroup",
+              "GroupId"
+            ]
+          }
+        ]
+      },
+      "UpdateReplacePolicy": "Snapshot",
+      "DeletionPolicy": "Snapshot"
+    }
+  }
+}
