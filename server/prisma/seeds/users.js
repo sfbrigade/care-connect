@@ -25,7 +25,7 @@ export default async function main (prisma) {
       firstName: 'Care',
       lastName: 'User',
       isAdmin: false,
-      organizationId: 'connections', // TODO: confirm connections org is meant to be "care team"
+      organizationId: 'connections',
       role: 'CARE',
     },
   ];
