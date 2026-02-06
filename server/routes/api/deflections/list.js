@@ -16,7 +16,7 @@ export default async function (fastify, opts) {
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
-          subjectStatus: z.enum(Object.values(Deflection.SubjectStatus)).optional(),
+          subjectStatus: z.string().optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),
         }),
@@ -56,7 +56,8 @@ export default async function (fastify, opts) {
       }
 
       if (subjectStatus) {
-        where.subjectStatus = subjectStatus;
+        const statuses = subjectStatus.split(',');
+        where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
       }
 
       if (!request.user.isAdmin && !(request.user.isCustody && facilityId)) {

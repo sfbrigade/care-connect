@@ -4,6 +4,7 @@ import { useAuthContext } from '@/AuthContext';
 import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
 import Custody from '../components/custody/Custody';
+import CustodyDetail from '../components/custody/CustodyDetail';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
@@ -24,6 +25,7 @@ function LESCRoutes () {
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
       <Route path='incident' element={<IncidentForm />} />
+      <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>

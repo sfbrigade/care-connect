@@ -312,6 +312,9 @@ const Api = {
     transfer (id) {
       return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
     },
+    safetyCheck (id) {
+      return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
+    },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },
