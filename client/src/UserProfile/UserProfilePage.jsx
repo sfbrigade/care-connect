@@ -47,7 +47,7 @@ function UserProfilePage () {
         {!user && (
           <>
             <Text size='xl'>Please log in to view this page</Text>
-            <Anchor component={NavLink} to='/login' onClick={close}>
+            <Anchor component={NavLink} to='/login'>
               Log in
             </Anchor>
           </>
