@@ -68,14 +68,15 @@ function Header ({ opened, close, toggle, logout }) {
         <Group hiddenFrom='sm' size='sm'>
           <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
-            <Menu shadow='md' width={200} onDismiss={close}>
+            <Menu position='bottom-end' shadow='md' width={264} onDismiss={close}>
               <Menu.Target>
                 <Burger opened={opened} onClick={toggle} />
               </Menu.Target>
 
               <Menu.Dropdown>
                 <Menu.Item
-                  leftSection={<IconHome size={14} />}
+                  style={{minHeight: '48px'}}
+                  leftSection={<IconHome size={16.67} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/'
                   label='Home'
@@ -83,20 +84,38 @@ function Header ({ opened, close, toggle, logout }) {
                 >
                   Home
                 </Menu.Item>
-                <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to='/profile' onClick={close}>
+                <Menu.Item
+                  style={{minHeight: '48px'}}
+                  leftSection={<IconClipboardList size={16.67} color='var(--mantine-color-gray-5)' />}
+                  component={Link}
+                  to='/profile'
+                  onClick={close}
+                >
                   Profile
                 </Menu.Item>
-                <Menu.Item leftSection={<IconBug size={14} />} component={Link} to='#' onClick={close}>
+                <Menu.Item
+                  style={{minHeight: '48px'}}
+                  leftSection={<IconBug size={16.67} color='var(--mantine-color-gray-5)' />}
+                  component={Link}
+                  to='#'
+                  onClick={close}
+                >
                   Report a bug
                 </Menu.Item>
                 <Menu.Item
+                  style={{minHeight: '48px'}}
                   color='red'
-                  leftSection={<IconLogout size={14} />}
+                  leftSection={<IconLogout size={16.67} />}
                   to='/logout'
                   onClick={logout}
                   label='Log out'
                 >
                   Logout
+                </Menu.Item>
+                <Menu.Item style={{ minHeight: '32px' }}>
+                  <Text color='gray.5' size='xs'>
+                    Version 1.0
+                  </Text>
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>}
