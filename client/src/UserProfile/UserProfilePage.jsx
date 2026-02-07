@@ -19,21 +19,27 @@ function UserProfilePage () {
           <IconButtonLink icon={IconArrowLeft} to='/' />
         </Group>
       </Header>
-      <Card padding='xl'>
+      <Card px='xl' py='0'>
         {user && (
           <>
-            <Text size='xl'>Personal Information</Text>
+            <Box>
+              <Text size={'32px'}>{user.firstName} {user.lastName}</Text>
+              <Text c='gray.6' size={'14px'}>{user.title}</Text>
+            </Box>
+
+            <Text mt='2xl' size={'24px'}>Personal Information</Text>
+
             <Box my='md'>
-              <Text size='sm' c='gray'>Name</Text>
-              <Text size='sm'>{user.firstName} {user.lastName}</Text>
+              <Text size='md' c='gray.6'>Name</Text>
+              <Text size='md'>{user.firstName} {user.lastName}</Text>
             </Box>
 
             <Box>
-              <Text size='sm' c='gray'>Email Address</Text>
-              <Text size='sm'>{user.email}</Text>
+              <Text size='md' c='gray.6'>Email Address</Text>
+              <Text size='md'>{user.email}</Text>
             </Box>
 
-            <Text mt='md' size='xs' ta='center' c='gray.5'>
+            <Text mt='xl' size={'14px'} ta='center' c='gray.5'>
               For assistance with profile updates, please contact careconnect@sfgov.org
             </Text>
           </>
