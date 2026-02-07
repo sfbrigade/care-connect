@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Button, Alert, Stack, Text } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Button, Alert, Loader, Stack, Text } from '@mantine/core';
+import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
 
 import classes from './QRScanner.module.css';
@@ -31,12 +31,12 @@ function isSecureContext () {
     window.location.hostname === '127.0.0.1';
 }
 
-function Viewfinder ({ success = false }) {
+function Viewfinder ({ error = false }) {
   const size = 240;
   const len = 50;
   const thickness = 8;
   const radius = 20;
-  const color = success ? '#40c057' : 'white';
+  const color = error ? '#fa5252' : 'white';
 
   const corner = {
     position: 'absolute',
@@ -75,14 +75,17 @@ function Viewfinder ({ success = false }) {
  * @param {boolean} fullScreen - Render as full-screen camera feed with no built-in UI
  * @param {string} prompt - Prompt text displayed beneath the viewfinder in fullScreen mode
  */
-export default function QRScanner ({ onScanSuccess, onScanError, className = '', autoStart = false, fullScreen = false, prompt }) {
+export default function QRScanner ({ onScanSuccess, onScanError, className = '', autoStart = false, fullScreen = false, prompt, _debugScanPhase }) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [showStartButton, setShowStartButton] = useState(true);
-  const [scanSuccess, setScanSuccess] = useState(false);
+  const [scanPhase, setScanPhase] = useState('idle');
+  const displayPhase = _debugScanPhase || scanPhase;
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
   const hasStartedRef = useRef(false);
+  const pendingRef = useRef(false);
+  const lastScannedRef = useRef(null);
   const isIOSDevice = isIOS();
 
   const stopScanning = useCallback(async () => {
@@ -134,12 +137,37 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
         config.aspectRatio = 1.0;
       }
 
-      const onSuccess = (decodedText) => {
-        setScanSuccess(true);
-        setTimeout(() => {
-          onScanSuccess?.(decodedText);
-          stopScanning();
-        }, 600);
+      const onSuccess = async (decodedText) => {
+        if (pendingRef.current) return;
+        if (fullScreen && lastScannedRef.current === decodedText) return;
+        pendingRef.current = true;
+
+        if (fullScreen) {
+          lastScannedRef.current = decodedText;
+          setScanPhase('pending');
+
+          let succeeded = false;
+          try {
+            await onScanSuccess?.(decodedText);
+            succeeded = true;
+          } catch {
+            // parent handles error messaging
+          }
+
+          setScanPhase(succeeded ? 'success' : 'error');
+          setTimeout(() => {
+            setScanPhase('idle');
+            pendingRef.current = false;
+            setTimeout(() => { lastScannedRef.current = null; }, 2000);
+          }, succeeded ? 1200 : 800);
+        } else {
+          try {
+            await onScanSuccess?.(decodedText);
+            stopScanning();
+          } catch {
+            pendingRef.current = false;
+          }
+        }
       };
 
       const onError = (errorMessage) => {
@@ -261,7 +289,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
   // Uses ResizeObserver to wait for the container to have real dimensions
   // before starting — avoids race with Modal layout on narrow viewports.
   useEffect(() => {
-    if (autoStart && scannerRef.current && !isScanning && !error && !hasStartedRef.current) {
+    if (autoStart && !_debugScanPhase && scannerRef.current && !isScanning && !error && !hasStartedRef.current) {
       // In fullScreen mode, always auto-start — the parent modal was opened
       // by a user gesture so we have camera permission context even on iOS.
       // In normal mode, skip auto-start on iOS and show a start button instead.
@@ -287,14 +315,17 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           ref={scannerRef}
           className={classes.fullScreen}
         />
-        {prompt && (
-          <Stack align='center' className={classes.prompt}>
-            <Viewfinder success={scanSuccess} />
+        <Stack align='center' className={classes.prompt}>
+          {displayPhase === 'idle' && <Viewfinder />}
+          {displayPhase === 'pending' && <Loader color='white' size='xl' />}
+          {displayPhase === 'success' && <IconCircleCheck size={80} color='#40c057' stroke={1.5} />}
+          {displayPhase === 'error' && <Viewfinder error />}
+          {prompt && (
             <Text c='white' ta='center' fw={500} size='lg' maw={300} className={classes.promptText}>
               {prompt}
             </Text>
-          </Stack>
-        )}
+          )}
+        </Stack>
       </>
     );
   }

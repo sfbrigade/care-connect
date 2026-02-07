@@ -4,21 +4,41 @@ import { IconAlertCircle, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import QRScanner from '@/components/QRScanner';
 
-function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
+function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [manualEntry, setManualEntry] = useState(false);
   const [code, setCode] = useState('');
   const { facility } = useFacilityContext();
+  const { showToast } = useToast();
 
+  // TODO: this should probably check that the domain (from the other device's QR code url) is the same as this device's current domain
   function parseDeflectionId (text) {
     const urlMatch = text.match(/\/transfer\/(\d+)/);
     if (urlMatch) return parseInt(urlMatch[1], 10);
     const numMatch = text.trim().match(/^\d+$/);
     if (numMatch) return parseInt(numMatch[0], 10);
     return null;
+  }
+
+  async function handleScan (text) {
+    const deflectionId = parseDeflectionId(text);
+    if (!deflectionId) {
+      showToast('Invalid QR code format.', 'error');
+      throw new Error('Invalid code');
+    }
+
+    try {
+      await Api.deflections.transfer(deflectionId);
+      onSuccess?.();
+      showToast('Subject received. Transfer code confirmed.', 'success');
+    } catch (err) {
+      showToast(err._form || 'Failed to transfer subject into custody. Please try again.', 'error');
+      throw err;
+    }
   }
 
   async function handleTransfer (text) {
@@ -108,11 +128,11 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
       {!isLoading && !manualEntry && (
         <Box pos='relative' h='100dvh' w='100%' bg='black'>
           <QRScanner
-            onScanSuccess={(text) => handleTransfer(text)}
-            onScanError={(msg) => setError(msg)}
+            onScanSuccess={(text) => handleScan(text)}
             autoStart
             fullScreen
             prompt={`Scan the subject's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
+            _debugScanPhase={_debugScanPhase}
           />
 
           <Stack
@@ -141,18 +161,6 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess }) {
             <div />
 
             <Stack align='center' gap='lg' w='100%' maw={400} style={{ pointerEvents: 'auto' }}>
-              {error && (
-                <Alert
-                  icon={<IconAlertCircle size={16} />}
-                  color='red'
-                  onClose={() => setError(null)}
-                  withCloseButton
-                  w='100%'
-                >
-                  {error}
-                </Alert>
-              )}
-
               <Button
                 variant='outline'
                 color='white'
