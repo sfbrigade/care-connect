@@ -332,7 +332,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
   return (
     <div className={className}>
-      <div id={scannerId} ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
+      <div id='qr-reader' ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
 
       {error && (
         <Alert icon={<IconAlertCircle size={16} />} title='Camera Error' color='red' mt='md'>
