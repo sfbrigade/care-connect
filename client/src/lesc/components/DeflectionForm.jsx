@@ -147,7 +147,7 @@ function DeflectionForm () {
                 </Input.Wrapper>
               )}
               <Textarea
-                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' style={{ marginBottom: '0.5rem' }} c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
+                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
                 autosize
                 {...form.getInputProps('behavior')}
