@@ -2,7 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
-import { Button, Container, Fieldset, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core';
+import {
+  Button,
+  Container,
+  Fieldset,
+  Group,
+  Loader,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  ActionIcon,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -56,20 +67,28 @@ function IncidentForm () {
     },
     transformValues: values => ({
       ...values,
-      arrestedAt: DateTime.fromISO(values.arrestedAt, { zone: 'local' }).toISO(),
+      arrestedAt: DateTime.fromISO(values.arrestedAt, {
+        zone: 'local',
+      }).toISO(),
     }),
   });
 
   const { data, isLoading } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+    queryFn: () =>
+      Api.facilities
+        .activeIncident(facility.id)
+        .then((response) => response.data),
   });
 
   useEffect(() => {
     if (!isLoading) {
       if (data) {
         let { arrestedAt } = data;
-        arrestedAt = DateTime.fromISO(arrestedAt).toISO({ includeOffset: false, precision: 'seconds' });
+        arrestedAt = DateTime.fromISO(arrestedAt).toISO({
+          includeOffset: false,
+          precision: 'seconds',
+        });
         form.setInitialValues({
           ...data,
           arrestedAt,
@@ -77,35 +96,66 @@ function IncidentForm () {
         form.reset();
         setInitialized(true);
       } else {
-        const now = DateTime.now().toISO({ includeOffset: false, precision: 'seconds' });
-        getCurrentLocationAddress().then(address => {
-          form.setInitialValues({
-            ...initialValues,
-            ...address,
-            facilityId: facility.id,
-            arrestedAt: now,
-          });
-        }).catch(() => {
-          form.setInitialValues({
-            ...initialValues,
-            facilityId: facility.id,
-            arrestedAt: now,
-          });
-        }).finally(() => {
-          form.reset();
-          setInitialized(true);
+        const now = DateTime.now().toISO({
+          includeOffset: false,
+          precision: 'seconds',
         });
+        getCurrentLocationAddress()
+          .then((address) => {
+            form.setInitialValues({
+              ...initialValues,
+              ...address,
+              facilityId: facility.id,
+              arrestedAt: now,
+            });
+          })
+          .catch(() => {
+            form.setInitialValues({
+              ...initialValues,
+              facilityId: facility.id,
+              arrestedAt: now,
+            });
+          })
+          .finally(() => {
+            form.reset();
+            setInitialized(true);
+          });
       }
     }
   }, [isLoading, data]);
 
+  function LocationButton () {
+    return (
+      <ActionIcon onClick={getLocation} variant='transparent'>
+        <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
+      </ActionIcon>
+    );
+  }
+  const getLocation = () => {
+    setInitialized(false);
+    getCurrentLocationAddress().then((address) => {
+      setInitialized(true);
+      form.setValues({
+        ...address,
+      });
+    });
+  };
+
   const onSubmitMutation = useMutation({
-    mutationFn: (data) => data.id ? Api.incidents.update(data.id, data) : Api.incidents.create(data, { bedTypeId: searchParams.get('bedTypeId') }),
+    mutationFn: (data) =>
+      data.id
+        ? Api.incidents.update(data.id, data)
+        : Api.incidents.create(data, {
+          bedTypeId: searchParams.get('bedTypeId'),
+        }),
     onSuccess: async (response) => {
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
-      await queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        response.data
+      );
       navigate('/holds');
     },
   });
@@ -120,23 +170,48 @@ function IncidentForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to='/holds' />
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+          {onSubmitMutation.isPending && (
+            <Text c='dimmed' size='lg'>
+              Saving...
+            </Text>
+          )}
+          {onSubmitMutation.isSuccess && (
+            <Text c='teal.6' size='lg'>
+              Changes saved
+            </Text>
+          )}
         </Group>
       </Header>
       <Container>
-        <Text c='dimmed' size='xl'>Start an incident</Text>
-        <Title order={3} mb='xl'>Enter these details once. We’ll reuse them for all holds in this incident.</Title>
+        <Text c='dimmed' size='xl'>
+          Start an incident
+        </Text>
+        <Title order={3} mb='xl'>
+          Enter these details once. We’ll reuse them for all holds in this
+          incident.
+        </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset
+            disabled={!isInitialized || !onSubmitMutation.isIdle}
+            variant='unstyled'
+          >
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
-                  label={<>Arrest location<span>*</span></>}
-                  rightSection={!isInitialized ? <Loader size={24} /> : <IconCurrentLocationFilled size={24} />}
+                  label={
+                    <>
+                      Arrest location<span>*</span>
+                    </>
+                  }
+                  rightSection={
+                    !isInitialized ? <Loader size={24} /> : <LocationButton />
+                  }
                   value={formatAddress(form.getValues())}
                   readOnly
-                  onFocus={() => { setShowAddressForm(true); setTimeout(() => addressRef.current?.focus(), 100); }}
+                  onFocus={() => {
+                    setShowAddressForm(true);
+                    setTimeout(() => addressRef.current?.focus(), 100);
+                  }}
                 />
               )}
               {showAddressForm && (
@@ -145,8 +220,14 @@ function IncidentForm () {
                     ref={addressRef}
                     key={form.key('addressLine1')}
                     {...form.getInputProps('addressLine1')}
-                    label={<>Arrest address line 1<span>*</span></>}
-                    rightSection={<IconCurrentLocationFilled size={24} />}
+                    label={
+                      <>
+                        Arrest address line 1<span>*</span>
+                      </>
+                    }
+                    rightSection={
+                      !isInitialized ? <Loader size={24} /> : <LocationButton />
+                    }
                   />
                   <TextInput
                     key={form.key('addressLine2')}
@@ -156,13 +237,21 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('city')}
                     {...form.getInputProps('city')}
-                    label={<>Arrest city<span>*</span></>}
+                    label={
+                      <>
+                        Arrest city<span>*</span>
+                      </>
+                    }
                   />
                   <Group wrap='nowrap'>
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
-                      label={<>Arrest state<span>*</span></>}
+                      label={
+                        <>
+                          Arrest state<span>*</span>
+                        </>
+                      }
                     />
                     <TextInput
                       key={form.key('postalCode')}
@@ -177,7 +266,11 @@ function IncidentForm () {
               <TextInput
                 key={form.key('arrestedAt')}
                 {...form.getInputProps('arrestedAt')}
-                label={<>Arrest date & time<span>*</span></>}
+                label={
+                  <>
+                    Arrest date & time<span>*</span>
+                  </>
+                }
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
@@ -185,13 +278,19 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('cadNumber')}
                   {...cadNumberInputProps}
-                  label={<>CAD number<span>*</span></>}
+                  label={
+                    <>
+                      CAD number<span>*</span>
+                    </>
+                  }
                   type='text'
                   inputMode='text'
                   maxLength={10}
                   autoCapitalize='characters'
                   onChange={(event) => {
-                    const normalized = normalizeCadNumber(event.currentTarget.value);
+                    const normalized = normalizeCadNumber(
+                      event.currentTarget.value
+                    );
                     if (event.currentTarget.value !== normalized) {
                       event.currentTarget.value = normalized;
                     }
@@ -199,7 +298,9 @@ function IncidentForm () {
                   }}
                   onFocus={() => setShowAddressForm(false)}
                 />
-                <Text size='md' c='gray.6'>CAD is provided by dispatch (MDT / radio).</Text>
+                <Text size='md' c='gray.6'>
+                  CAD is provided by dispatch (MDT / radio).
+                </Text>
               </Stack>
               <Stack gap='xs'>
                 <TextInput
@@ -217,7 +318,10 @@ function IncidentForm () {
                   }}
                   onFocus={() => setShowAddressForm(false)}
                 />
-                <Text size='md' c='gray.6'>If you don't have the Star Number right now, you must come back and add it before custody transfer.</Text>
+                <Text size='md' c='gray.6'>
+                  If you don't have the Star Number right now, you must come
+                  back and add it before custody transfer.
+                </Text>
               </Stack>
               <Button type='submit' style={{ alignSelf: 'flex-start' }}>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}

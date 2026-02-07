@@ -253,8 +253,9 @@ function DeflectionForm () {
                 </Input.Wrapper>
               )}
               <Textarea
-                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
+                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
+                autosize
                 {...form.getInputProps('behavior')}
                 placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
