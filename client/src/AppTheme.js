@@ -5,6 +5,7 @@ import anchorClasses from './components/Anchor.module.css';
 import buttonClasses from './components/Button.module.css';
 import chipClasses from './components/Chip.module.css';
 import inputClasses from './components/Input.module.css';
+import menuClasses from './components/Menu.module.css';
 import notificationClasses from './components/Notification.module.css';
 
 const AppTheme = createTheme({
@@ -161,16 +162,11 @@ const AppTheme = createTheme({
       classNames: inputClasses
     }),
     Menu: Menu.extend({
-      styles: {
-        dropdown: {
-          borderRadius: 'md',
-          marginRight: 'xl'
-        },
-        item: {
-          padding: 'xs',
-          gap: 'sm'
-        }
+      defaultProps: {
+        radius: 'lg',
+        shadow: 'sm'
       },
+      classNames: menuClasses
     }),
     Modal: Modal.extend({
       defaultProps: {
