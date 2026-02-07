@@ -75,7 +75,7 @@ function Header ({ opened, close, toggle, logout }) {
 
               <Menu.Dropdown>
                 <Menu.Item
-                  style={{minHeight: '48px'}}
+                  style={{ minHeight: '48px' }}
                   leftSection={<IconHome size={16.67} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/'
@@ -85,7 +85,7 @@ function Header ({ opened, close, toggle, logout }) {
                   Home
                 </Menu.Item>
                 <Menu.Item
-                  style={{minHeight: '48px'}}
+                  style={{ minHeight: '48px' }}
                   leftSection={<IconClipboardList size={16.67} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/profile'
@@ -94,7 +94,7 @@ function Header ({ opened, close, toggle, logout }) {
                   Profile
                 </Menu.Item>
                 <Menu.Item
-                  style={{minHeight: '48px'}}
+                  style={{ minHeight: '48px' }}
                   leftSection={<IconBug size={16.67} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='#'
@@ -103,7 +103,7 @@ function Header ({ opened, close, toggle, logout }) {
                   Report a bug
                 </Menu.Item>
                 <Menu.Item
-                  style={{minHeight: '48px'}}
+                  style={{ minHeight: '48px' }}
                   color='red'
                   leftSection={<IconLogout size={16.67} />}
                   to='/logout'

@@ -23,11 +23,11 @@ function UserProfilePage () {
         {user && (
           <>
             <Box>
-              <Text size={'32px'}>{user.firstName} {user.lastName}</Text>
-              <Text c='gray.6' size={'14px'}>{user.title}</Text>
+              <Text size='32px'>{user.firstName} {user.lastName}</Text>
+              <Text c='gray.6' size='14px'>{user.title}</Text>
             </Box>
 
-            <Text mt='2xl' size={'24px'}>Personal Information</Text>
+            <Text mt='2xl' size='24px'>Personal Information</Text>
 
             <Box my='md'>
               <Text size='md' c='gray.6'>Name</Text>
@@ -39,7 +39,7 @@ function UserProfilePage () {
               <Text size='md'>{user.email}</Text>
             </Box>
 
-            <Text mt='xl' size={'14px'} ta='center' c='gray.5'>
+            <Text mt='xl' size='14px' ta='center' c='gray.5'>
               For assistance with profile updates, please contact careconnect@sfgov.org
             </Text>
           </>
