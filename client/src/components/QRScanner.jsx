@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Button, Alert, Text } from '@mantine/core';
-import { IconAlertCircle } from '@tabler/icons-react';
+import { Button, Alert, Loader, Stack, Text } from '@mantine/core';
+import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
+
+import classes from './QRScanner.module.css';
 
 /**
  * Detect if running on iOS
@@ -29,6 +31,40 @@ function isSecureContext () {
     window.location.hostname === '127.0.0.1';
 }
 
+function Viewfinder ({ error = false }) {
+  const size = 240;
+  const len = 50;
+  const thickness = 8;
+  const radius = 20;
+  const color = error ? '#fa5252' : 'white';
+
+  const corner = {
+    position: 'absolute',
+    width: len,
+    height: len,
+    borderColor: color,
+    borderStyle: 'solid',
+    borderWidth: 0,
+    transition: 'border-color 150ms ease',
+  };
+
+  const inset = thickness;
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      {/* Inner cutout — bright area is smaller than the corner brackets */}
+      <div
+        className={classes.viewfinder}
+        style={{ position: 'absolute', inset, borderRadius: radius - inset }}
+      />
+      <div style={{ ...corner, top: 0, left: 0, borderTopWidth: thickness, borderLeftWidth: thickness, borderTopLeftRadius: radius }} />
+      <div style={{ ...corner, top: 0, right: 0, borderTopWidth: thickness, borderRightWidth: thickness, borderTopRightRadius: radius }} />
+      <div style={{ ...corner, bottom: 0, left: 0, borderBottomWidth: thickness, borderLeftWidth: thickness, borderBottomLeftRadius: radius }} />
+      <div style={{ ...corner, bottom: 0, right: 0, borderBottomWidth: thickness, borderRightWidth: thickness, borderBottomRightRadius: radius }} />
+    </div>
+  );
+}
+
 /**
  * QR Code Scanner component
  * Uses device camera to scan QR codes
@@ -36,14 +72,20 @@ function isSecureContext () {
  * @param {function} onScanError - Callback for scan errors
  * @param {string} className - Additional CSS classes
  * @param {boolean} autoStart - Automatically start scanning when component mounts (iOS will ignore this)
+ * @param {boolean} fullScreen - Render as full-screen camera feed with no built-in UI
+ * @param {string} prompt - Prompt text displayed beneath the viewfinder in fullScreen mode
  */
-export default function QRScanner ({ onScanSuccess, onScanError, className = '', autoStart = false }) {
+export default function QRScanner ({ onScanSuccess, onScanError, className = '', autoStart = false, fullScreen = false, prompt, _debugScanPhase }) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
   const [showStartButton, setShowStartButton] = useState(true);
+  const [scanPhase, setScanPhase] = useState('idle');
+  const displayPhase = _debugScanPhase || scanPhase;
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
   const hasStartedRef = useRef(false);
+  const pendingRef = useRef(false);
+  const lastScannedRef = useRef(null);
   const isIOSDevice = isIOS();
 
   const stopScanning = useCallback(async () => {
@@ -86,10 +128,58 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       html5QrCodeRef.current = html5QrCode;
 
       const config = {
-        fps: isIOSDevice ? 5 : 10, // Lower FPS for iOS
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0,
+        fps: isIOSDevice ? 5 : 10,
         disableFlip: false,
+      };
+
+      if (!fullScreen) {
+        config.qrbox = { width: 250, height: 250 };
+        config.aspectRatio = 1.0;
+      }
+
+      const onSuccess = async (decodedText) => {
+        if (pendingRef.current) return;
+        if (fullScreen && lastScannedRef.current === decodedText) return;
+        pendingRef.current = true;
+
+        if (fullScreen) {
+          lastScannedRef.current = decodedText;
+          setScanPhase('pending');
+
+          let succeeded = false;
+          try {
+            await onScanSuccess?.(decodedText);
+            succeeded = true;
+          } catch {
+            // parent handles error messaging
+          }
+
+          setScanPhase(succeeded ? 'success' : 'error');
+          setTimeout(() => {
+            setScanPhase('idle');
+            pendingRef.current = false;
+            setTimeout(() => { lastScannedRef.current = null; }, 2000);
+          }, succeeded ? 1200 : 800);
+        } else {
+          try {
+            await onScanSuccess?.(decodedText);
+            stopScanning();
+          } catch {
+            pendingRef.current = false;
+          }
+        }
+      };
+
+      const onError = (errorMessage) => {
+        const isScanError =
+          errorMessage.includes('No QR code found') ||
+          errorMessage.includes('NotFoundException') ||
+          errorMessage.includes('No multi-format reads') ||
+          errorMessage.includes('QR code parse error');
+
+        if (!isScanError) {
+          onScanError?.(errorMessage);
+        }
       };
 
       // Try to get available cameras first (more reliable on iOS)
@@ -118,49 +208,9 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       // Try different approaches based on what's available
       try {
         if (cameraId) {
-          // Use camera ID (more reliable on iOS)
-          await html5QrCode.start(
-            cameraId,
-            config,
-            (decodedText) => {
-              onScanSuccess?.(decodedText);
-              stopScanning();
-            },
-            (errorMessage) => {
-              // Filter out normal scanning errors - these happen continuously while scanning
-              const isScanError =
-                errorMessage.includes('No QR code found') ||
-                errorMessage.includes('NotFoundException') ||
-                errorMessage.includes('No multi-format reads') ||
-                errorMessage.includes('QR code parse error');
-
-              if (!isScanError) {
-                onScanError?.(errorMessage);
-              }
-            }
-          );
+          await html5QrCode.start(cameraId, config, onSuccess, onError);
         } else {
-          // Fall back to config object
-          await html5QrCode.start(
-            { facingMode: 'environment' },
-            config,
-            (decodedText) => {
-              onScanSuccess?.(decodedText);
-              stopScanning();
-            },
-            (errorMessage) => {
-              // Filter out normal scanning errors - these happen continuously while scanning
-              const isScanError =
-                errorMessage.includes('No QR code found') ||
-                errorMessage.includes('NotFoundException') ||
-                errorMessage.includes('No multi-format reads') ||
-                errorMessage.includes('QR code parse error');
-
-              if (!isScanError) {
-                onScanError?.(errorMessage);
-              }
-            }
-          );
+          await html5QrCode.start({ facingMode: 'environment' }, config, onSuccess, onError);
         }
       } catch (cameraError) {
         // If back camera fails, try front camera
@@ -174,26 +224,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
             if (frontCamera && frontCamera.id !== cameraId) {
               console.log('Retrying with front camera:', frontCamera.id);
-              await html5QrCode.start(
-                frontCamera.id,
-                config,
-                (decodedText) => {
-                  onScanSuccess?.(decodedText);
-                  stopScanning();
-                },
-                (errorMessage) => {
-                  // Filter out normal scanning errors - these happen continuously while scanning
-                  const isScanError =
-                    errorMessage.includes('No QR code found') ||
-                    errorMessage.includes('NotFoundException') ||
-                    errorMessage.includes('No multi-format reads') ||
-                    errorMessage.includes('QR code parse error');
-
-                  if (!isScanError) {
-                    onScanError?.(errorMessage);
-                  }
-                }
-              );
+              await html5QrCode.start(frontCamera.id, config, onSuccess, onError);
             } else {
               throw cameraError;
             }
@@ -238,39 +269,70 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       onScanError?.(errorMsg);
       console.error('QR Scanner error:', err);
     }
-  }, [onScanSuccess, onScanError, stopScanning, isIOSDevice]);
+  }, [onScanSuccess, onScanError, stopScanning, isIOSDevice, fullScreen]);
 
+  // Unconditional cleanup on unmount — ensures camera is released
+  // regardless of isScanning state at unmount time
   useEffect(() => {
     return () => {
-      // Cleanup: stop scanning when component unmounts
-      if (html5QrCodeRef.current && isScanning) {
-        html5QrCodeRef.current.stop().catch(() => {
-          // Ignore errors during cleanup
-        });
+      if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop()
+          .then(() => html5QrCodeRef.current?.clear())
+          .catch(() => {});
+        html5QrCodeRef.current = null;
       }
     };
-  }, [isScanning]);
+  }, []);
 
   // Auto-start scanning when component mounts if autoStart is true
   // Note: iOS Safari requires user gesture, so auto-start won't work on iOS
+  // Uses ResizeObserver to wait for the container to have real dimensions
+  // before starting — avoids race with Modal layout on narrow viewports.
   useEffect(() => {
-    if (autoStart && !isIOSDevice && scannerRef.current && !isScanning && !error && !hasStartedRef.current) {
-      // Small delay to ensure DOM is ready
+    if (autoStart && !_debugScanPhase && scannerRef.current && !isScanning && !error && !hasStartedRef.current) {
+      // In fullScreen mode, always auto-start — the parent modal was opened
+      // by a user gesture so we have camera permission context even on iOS.
+      // In normal mode, skip auto-start on iOS and show a start button instead.
+      if (!fullScreen && isIOSDevice) {
+        setShowStartButton(true);
+        hasStartedRef.current = true;
+        return;
+      }
+
       const timer = setTimeout(() => {
         hasStartedRef.current = true;
         startScanning();
       }, 300);
       return () => clearTimeout(timer);
-    } else if (autoStart && isIOSDevice) {
-      // On iOS, show the start button instead of auto-starting
-      setShowStartButton(true);
-      hasStartedRef.current = true;
     }
-  }, [autoStart, isScanning, error, startScanning, isIOSDevice]);
+  }, [autoStart, isScanning, error, startScanning, isIOSDevice, fullScreen]);
+
+  if (fullScreen) {
+    return (
+      <>
+        <div
+          id='qr-reader'
+          ref={scannerRef}
+          className={classes.fullScreen}
+        />
+        <Stack align='center' className={classes.prompt}>
+          {displayPhase === 'idle' && <Viewfinder />}
+          {displayPhase === 'pending' && <Loader color='white' size='xl' />}
+          {displayPhase === 'success' && <IconCircleCheck size={80} color='#40c057' stroke={1.5} />}
+          {displayPhase === 'error' && <Viewfinder error />}
+          {prompt && (
+            <Text c='white' ta='center' fw={500} size='lg' maw={300} className={classes.promptText}>
+              {prompt}
+            </Text>
+          )}
+        </Stack>
+      </>
+    );
+  }
 
   return (
     <div className={className}>
-      <div id='qr-reader' ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
+      <div id={scannerId} ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
 
       {error && (
         <Alert icon={<IconAlertCircle size={16} />} title='Camera Error' color='red' mt='md'>
@@ -282,12 +344,12 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           )}
           {error.includes('HTTPS') && (
             <Text size='xs' mt='xs'>
-              If accessing from iPhone, you need HTTPS. Try using your Mac's IP address with HTTPS, or use a tool like ngrok.
+              If accessing from iPhone, you need HTTPS. Try using your Mac&apos;s IP address with HTTPS, or use a tool like ngrok.
             </Text>
           )}
           {error.includes('not supported by this browser') && (
             <Text size='xs' mt='xs'>
-              Make sure you're using Safari on iOS, or Chrome/Firefox/Safari on desktop.
+              Make sure you&apos;re using Safari on iOS, or Chrome/Firefox/Safari on desktop.
             </Text>
           )}
         </Alert>
@@ -331,4 +393,6 @@ QRScanner.propTypes = {
   onScanError: PropTypes.func,
   className: PropTypes.string,
   autoStart: PropTypes.bool,
+  fullScreen: PropTypes.bool,
+  prompt: PropTypes.string,
 };
