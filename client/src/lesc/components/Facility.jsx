@@ -58,7 +58,7 @@ function Facility ({
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
           {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>I've arrived</Button>}
-          {hasArrived && !hasLeft && <Button px='sm' onClick={onLeftClick}>I've left</Button>}
+          {hasArrived && !hasLeft && <Button px='sm' onClick={onLeftClick} disabled={hasActiveHold}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>
         {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
