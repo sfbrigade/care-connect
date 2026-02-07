@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router';
 import { useAuthContext } from '@/AuthContext';
 import { IconArrowLeft } from '@tabler/icons-react';
-
-import { Anchor, Box, Card, Text } from '@mantine/core';
+import { Head } from '@unhead/react';
+import Header from '@/components/Header';
+import { Anchor, Box, Card, Group, Text } from '@mantine/core';
 import IconButtonLink from '@/components/IconButtonLink';
 
 function UserProfilePage () {
@@ -10,8 +11,15 @@ function UserProfilePage () {
 
   return (
     <>
+      <Head>
+        <title>User Profile</title>
+      </Head>
+      <Header>
+        <Group w='100%' justify='space-between'>
+          <IconButtonLink icon={IconArrowLeft} to='/' />
+        </Group>
+      </Header>
       <Card padding='xl'>
-        <IconButtonLink icon={IconArrowLeft} to='/' />
         {user && (
           <>
             <Text size='xl'>Personal Information</Text>

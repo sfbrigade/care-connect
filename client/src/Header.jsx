@@ -1,10 +1,10 @@
 import { Link, NavLink } from 'react-router';
 import { Anchor, Avatar, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
+  IconBug,
   IconHome,
   IconClipboardList,
   IconMessages,
-  IconSettings,
   IconLogout
 } from '@tabler/icons-react';
 import { useAuthContext } from '@/AuthContext';
@@ -86,8 +86,8 @@ function Header ({ opened, close, toggle, logout }) {
                 <Menu.Item leftSection={<IconClipboardList size={14} />} component={Link} to='/profile' onClick={close}>
                   Profile
                 </Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={14} />} component={Link} to='/account' onClick={close}>
-                  Account Settings
+                <Menu.Item leftSection={<IconBug size={14} />} component={Link} to='#' onClick={close}>
+                  Report a bug
                 </Menu.Item>
                 <Menu.Item
                   color='red'
