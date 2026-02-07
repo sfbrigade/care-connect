@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ActionIcon, Alert, Box, Button, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconAlertCircle, IconX } from '@tabler/icons-react';
+import { ActionIcon, Box, Button, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
@@ -9,7 +9,6 @@ import QRScanner from '@/components/QRScanner';
 
 function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [manualEntry, setManualEntry] = useState(false);
   const [code, setCode] = useState('');
   const { facility } = useFacilityContext();
@@ -34,7 +33,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
     try {
       await Api.deflections.transfer(deflectionId);
       onSuccess?.();
-      showToast('Subject received. Transfer code confirmed.', 'success');
+      showToast('Subject received', 'success', 3000, 'Transfer code confirmed.');
     } catch (err) {
       showToast(err._form || 'Failed to transfer subject into custody. Please try again.', 'error');
       throw err;
@@ -44,18 +43,17 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
   async function handleTransfer (text) {
     const deflectionId = parseDeflectionId(text);
     if (!deflectionId) {
-      setError('Invalid code. Please enter a transfer code number or URL.');
+      showToast('Invalid code. Please enter a transfer code number or URL.', 'error');
       return;
     }
 
     setIsLoading(true);
-    setError(null);
     try {
       await Api.deflections.transfer(deflectionId);
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err._form || 'Failed to transfer subject into custody. Please try again.');
+      showToast(err._form || 'Failed to transfer subject into custody. Please try again.', 'error');
       setIsLoading(false);
     }
   }
@@ -66,7 +64,6 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
   }
 
   function handleClose () {
-    setError(null);
     setIsLoading(false);
     setManualEntry(false);
     setCode('');
@@ -97,12 +94,6 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
             </ActionIcon>
           </Group>
 
-          {error && (
-            <Alert icon={<IconAlertCircle size={16} />} color='red' onClose={() => setError(null)} withCloseButton>
-              {error}
-            </Alert>
-          )}
-
           <form onSubmit={handleManualSubmit}>
             <Stack gap='md'>
               <TextInput
@@ -119,7 +110,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
             </Stack>
           </form>
 
-          <Button variant='outline' fullWidth size='lg' onClick={() => { setManualEntry(false); setError(null); }}>
+          <Button variant='outline' fullWidth size='lg' onClick={() => setManualEntry(false)}>
             Scan QR code instead
           </Button>
         </Stack>
@@ -166,7 +157,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
                 color='white'
                 size='lg'
                 radius='xl'
-                onClick={() => { setManualEntry(true); setError(null); }}
+                onClick={() => setManualEntry(true)}
               >
                 Enter code manually
               </Button>
