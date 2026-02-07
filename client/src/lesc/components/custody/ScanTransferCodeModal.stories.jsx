@@ -1,7 +1,11 @@
 import { fn } from 'storybook/test';
 import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
+import { facilityContext } from '@/FacilityContext';
+import { ToastProvider } from '@/components/ToastContext';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
+
+const mockFacility = { id: 1, name: 'RESET' };
 
 export default {
   title: 'Custody/ScanTransferCodeModal',
@@ -14,6 +18,15 @@ export default {
     },
   },
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <facilityContext.Provider value={{ facility: mockFacility, setFacility: fn() }}>
+        <ToastProvider>
+          <Story />
+        </ToastProvider>
+      </facilityContext.Provider>
+    ),
+  ],
   argTypes: {
     opened: {
       control: 'boolean',
@@ -43,5 +56,32 @@ export const Opened = {
     opened: true,
     onClose: fn(),
     onSuccess: fn(),
+  },
+};
+
+export const ScanLoading = {
+  args: {
+    opened: true,
+    onClose: fn(),
+    onSuccess: fn(),
+    _debugScanPhase: 'pending',
+  },
+};
+
+export const ScanSuccess = {
+  args: {
+    opened: true,
+    onClose: fn(),
+    onSuccess: fn(),
+    _debugScanPhase: 'success',
+  },
+};
+
+export const ScanError = {
+  args: {
+    opened: true,
+    onClose: fn(),
+    onSuccess: fn(),
+    _debugScanPhase: 'error',
   },
 };

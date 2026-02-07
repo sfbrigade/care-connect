@@ -1,0 +1,33 @@
+.fullScreen {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden;
+  min-height: unset !important;
+  background: black;
+}
+
+.fullScreen video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.prompt {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.viewfinder {
+  border-radius: 20px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.promptText {
+  position: relative;
+  z-index: 1;
+}
