@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router';
 import { Divider, NavLink as MantineNavLink, Stack } from '@mantine/core';
+
 import { useAuthContext } from '@/AuthContext';
 
 function Navbar ({ close, logout }) {
