@@ -5,6 +5,7 @@ export const ADMIN_AUTH_PROTECTED_PATHS = [
 ];
 export const AUTH_PROTECTED_PATHS = [
   '/holds/*',
+  '/profile/*',
   '/units',
 ];
 export const REDIRECTS = [
