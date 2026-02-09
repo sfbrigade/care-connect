@@ -1,14 +1,40 @@
-import { Accordion, Box, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
+import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
+
+const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { facility } = useFacilityContext();
+  const { showToast } = useToast();
+
+  const releaseMutation = useMutation({
+    mutationFn: () => Api.deflections.release(deflection.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      showToast('Subject legally released', 'success');
+      navigate('/custody');
+    },
+    onError: () => {
+      showToast('Release not saved. Please try again.', 'error');
+    },
+  });
+
+  const isReleasable = RELEASABLE_STATUSES.includes(deflection?.subjectStatus);
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown subject';
   const address = formatAddress(deflection?.subject ?? {});
@@ -133,6 +159,15 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
+          {isReleasable && (
+            <Button
+              size='lg'
+              onClick={() => releaseMutation.mutate()}
+              loading={releaseMutation.isPending}
+            >
+              Mark as legally released
+            </Button>
+          )}
         </Stack>
       </Container>
     </>
