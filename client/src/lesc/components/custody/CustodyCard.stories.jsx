@@ -1,12 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { facilityContext } from '@/FacilityContext';
 import CustodyCard from './CustodyCard';
-
-const facility = { id: 'facility-1', name: 'LESC' };
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-});
 
 export default {
   title: 'LESC/Custody/CustodyCard',
@@ -15,13 +7,9 @@ export default {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <facilityContext.Provider value={{ facility }}>
-        <QueryClientProvider client={queryClient}>
-          <div style={{ padding: '20px', maxWidth: '480px', margin: '0 auto' }}>
-            <Story />
-          </div>
-        </QueryClientProvider>
-      </facilityContext.Provider>
+      <div style={{ padding: '20px', maxWidth: '480px', margin: '0 auto' }}>
+        <Story />
+      </div>
     ),
   ],
 };

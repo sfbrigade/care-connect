@@ -2,9 +2,8 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
-import { QRCodeSVG } from 'qrcode.react';
-import { IconLock } from '@tabler/icons-react';
 
+import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
@@ -92,16 +91,7 @@ function Hold ({
         </Stack>
         {isActive && isArrived && (
           <Group justify='center'>
-            <Box pos='relative'>
-              <Box opacity={isReadyForTransfer ? 1 : 0.1}>
-                <QRCodeSVG value={transferUrl} size={160} />
-              </Box>
-              {!isReadyForTransfer && (
-                <Group pos='absolute' w={80} h={80} bg='white' bdrs='50%' top={40} left={40} justify='center' align='center'>
-                  <IconLock size={24} color='black' />
-                </Group>
-              )}
-            </Box>
+            <LockedQRCode value={transferUrl} locked={!isValid} />
           </Group>
         )}
         {!(isNew && (isCancelled || isExpired)) && (
