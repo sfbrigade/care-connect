@@ -315,6 +315,9 @@ const Api = {
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },
+    admit (id) {
+      return instance.post(`/api/deflections/${id}/admit`).catch(handleError);
+    },
     release (id) {
       return instance.post(`/api/deflections/${id}/release`).catch(handleError);
     },

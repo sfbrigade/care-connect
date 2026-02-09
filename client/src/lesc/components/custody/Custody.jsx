@@ -43,6 +43,7 @@ function Custody () {
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: IN_CUSTODY_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -51,6 +52,7 @@ function Custody () {
   const { data: releasedDeflections } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
