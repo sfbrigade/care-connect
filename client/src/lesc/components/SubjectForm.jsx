@@ -315,16 +315,18 @@ function SubjectForm () {
                   </Accordion.Item>
                 )}
               </Accordion>
-              {isCustodyContext ? (
-                <Group>
-                  <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
-                  <Button type='submit'>Save changes</Button>
-                </Group>
-              ) : (
-                <Button type='submit'>
-                  {isNew ? 'Next: deflection details' : 'Save subject details'}
-                </Button>
-              )}
+              {isCustodyContext
+                ? (
+                  <Group>
+                    <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
+                    <Button type='submit'>Save changes</Button>
+                  </Group>
+                  )
+                : (
+                  <Button type='submit'>
+                    {isNew ? 'Next: deflection details' : 'Save subject details'}
+                  </Button>
+                  )}
             </Stack>
           </Fieldset>
         </form>

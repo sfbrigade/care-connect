@@ -15,13 +15,13 @@ import { BrowserRouter } from 'react-router';
 import AppTheme from '../src/AppTheme';
 import { facilityContext } from '../src/FacilityContext';
 
+import translation from '../../locales/en/translation.json';
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
 
 const defaultFacility = { id: 'storybook-facility', name: 'Storybook Facility' };
-
-import translation from '../../locales/en/translation.json';
 i18n
   .use(initReactI18next)
   .init({
