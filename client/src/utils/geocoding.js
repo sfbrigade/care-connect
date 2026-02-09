@@ -67,9 +67,11 @@ export async function reverseGeocode (latitude, longitude) {
  */
 export async function getCurrentLocationAddress () {
   try {
-    const location = await getCurrentLocation();
-    const address = await reverseGeocode(location.latitude, location.longitude);
-    return address;
+    const location = await getCurrentLocation().then((location) => {
+      const address = reverseGeocode(location.latitude, location.longitude);
+      return address;
+    });
+    return location;
   } catch (error) {
     console.error('Failed to get current location address:', error);
     return null;

@@ -1,7 +1,12 @@
 import { Link, NavLink } from 'react-router';
 import { Anchor, Avatar, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
-import { IconMessages } from '@tabler/icons-react';
-
+import {
+  IconBug,
+  IconHome,
+  IconClipboardList,
+  IconMessages,
+  IconLogout
+} from '@tabler/icons-react';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -62,7 +67,53 @@ function Header ({ opened, close, toggle, logout }) {
         </Group>
         <Group hiddenFrom='sm' size='sm'>
           <IconButtonLink icon={IconMessages} to='/feedback' />
-          {user && <Burger opened={opened} onClick={toggle} />}
+          {user &&
+            <Menu position='bottom-end' width={280} onDismiss={close}>
+              <Menu.Target>
+                <Burger opened={opened} onClick={toggle} />
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconHome size={20} color='var(--mantine-color-gray-5)' />}
+                  component={Link}
+                  to='/'
+                  label='Home'
+                  onClick={close}
+                >
+                  Home
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconClipboardList size={20} color='var(--mantine-color-gray-5)' />}
+                  component={Link}
+                  to='/profile'
+                  onClick={close}
+                >
+                  Profile
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconBug size={20} color='var(--mantine-color-gray-5)' />}
+                  component={Link}
+                  to='#'
+                  onClick={close}
+                >
+                  Report a bug
+                </Menu.Item>
+                <Menu.Item
+                  color='red'
+                  leftSection={<IconLogout size={20} />}
+                  to='/logout'
+                  onClick={logout}
+                >
+                  Logout
+                </Menu.Item>
+                <Menu.Item>
+                  <Text c='gray.5' size='xs'>
+                    Version 1.0
+                  </Text>
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>}
         </Group>
       </Group>
     </Container>
