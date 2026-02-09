@@ -36,6 +36,7 @@ function Custody () {
   const tab = searchParams.get('tab') || 'in-custody';
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
+  const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
@@ -71,6 +72,26 @@ function Custody () {
       }
     });
   }, [inCustodyDeflections, releasedDeflections]);
+
+  useEffect(() => {
+    if (!inCustodyDeflections && !releasedDeflections) return;
+    const targetId = window.sessionStorage.getItem('custodyHighlightTarget');
+    if (!targetId) return;
+    window.sessionStorage.removeItem('custodyHighlightTarget');
+    setHighlightedId(targetId);
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-card-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, [inCustodyDeflections, releasedDeflections]);
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timer = setTimeout(() => setHighlightedId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [highlightedId]);
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupByStatus(releasedDeflections);
@@ -113,7 +134,7 @@ function Custody () {
                           <Accordion.Panel>
                             <Stack gap='md'>
                               {items.map(d => (
-                                <CustodyCard key={d.id} deflection={d} />
+                                <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
                               ))}
                               {items.length === 0 && (
                                 <Text c='dimmed' size='sm'>None</Text>
@@ -151,7 +172,7 @@ function Custody () {
                       <Accordion.Panel>
                         <Stack gap='md'>
                           {(releasedGrouped.RELEASED ?? []).map(d => (
-                            <CustodyCard key={d.id} deflection={d} />
+                            <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
                           ))}
                           {!(releasedGrouped.RELEASED?.length) && (
                             <Text c='dimmed' size='sm'>None</Text>
@@ -166,7 +187,7 @@ function Custody () {
                       <Accordion.Panel>
                         <Stack gap='md'>
                           {(releasedGrouped.EXITED ?? []).map(d => (
-                            <CustodyCard key={d.id} deflection={d} />
+                            <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
                           ))}
                           {!(releasedGrouped.EXITED?.length) && (
                             <Text c='dimmed' size='sm'>None</Text>

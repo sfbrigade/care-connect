@@ -11,6 +11,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
@@ -30,8 +31,13 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      showToast('Safety check completed', 'success', 4000, 'Subject is ready for medical intake.');
+    },
+    onError: () => {
+      showToast('Safety check not saved. Please try again.', 'error');
     },
   });
 
