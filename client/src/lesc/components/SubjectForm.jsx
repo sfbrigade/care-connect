@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
@@ -11,7 +11,9 @@ import { formatInputDob } from '@/utils/format';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import File647fModal from './custody/File647fModal';
 
 const initialValues = {
   firstName: '',
@@ -33,13 +35,18 @@ const initialValues = {
 
 function SubjectForm () {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const isCustodyContext = location.pathname.startsWith('/custody');
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [dobInput, setDobInput] = useState('');
+  const [showFile647fModal, setShowFile647fModal] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState(null);
+  const { showToast } = useToast();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -95,11 +102,43 @@ function SubjectForm () {
         updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
       }
-      navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
+      if (isCustodyContext) {
+        setShowFile647fModal(false);
+        showToast('Changes saved.', 'success', 4000, 'A new 647(f) record was filed with SFPD.');
+        navigate(`/custody/${id}`);
+      } else {
+        navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
+      }
+    },
+    onError: () => {
+      if (isCustodyContext) {
+        showToast('Changes not saved. Please try again.', 'error');
+        setShowFile647fModal(false);
+      }
     },
   });
 
   const { defaultValue: _defaultValue, value: _value, ...dateOfBirthProps } = form.getInputProps('dateOfBirth');
+
+  const scrollToSection = searchParams.get('section');
+
+  useEffect(() => {
+    if (scrollToSection === 'narcotics' && isInitialized) {
+      const el = document.querySelector('[data-section="narcotics"]');
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+    }
+  }, [scrollToSection, isInitialized]);
+
+  function handleCustodySubmit (data) {
+    setPendingFormData(data);
+    setShowFile647fModal(true);
+  }
+
+  function confirmCustodySave () {
+    onSubmitMutation.mutateAsync(pendingFormData);
+  }
 
   return (
     <>
@@ -108,8 +147,8 @@ function SubjectForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
-          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+          <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} />
+          {isNew && !isCustodyContext && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
           {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
           {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>
@@ -123,7 +162,7 @@ function SubjectForm () {
 
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
-        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
@@ -238,8 +277,8 @@ function SubjectForm () {
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                {isNew && (
-                  <Accordion.Item value='narcotics'>
+                {(isNew || isCustodyContext) && (
+                  <Accordion.Item value='narcotics' data-section='narcotics'>
                     <Accordion.Control>
                       <Title order={3}>Narcotics</Title>
                     </Accordion.Control>
@@ -276,13 +315,28 @@ function SubjectForm () {
                   </Accordion.Item>
                 )}
               </Accordion>
-              <Button type='submit'>
-                {isNew ? 'Next: deflection details' : 'Save subject details'}
-              </Button>
+              {isCustodyContext ? (
+                <Group>
+                  <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
+                  <Button type='submit'>Save changes</Button>
+                </Group>
+              ) : (
+                <Button type='submit'>
+                  {isNew ? 'Next: deflection details' : 'Save subject details'}
+                </Button>
+              )}
             </Stack>
           </Fieldset>
         </form>
       </Container>
+      {isCustodyContext && (
+        <File647fModal
+          opened={showFile647fModal}
+          onClose={() => setShowFile647fModal(false)}
+          onConfirm={confirmCustodySave}
+          loading={onSubmitMutation.isPending}
+        />
+      )}
     </>
   );
 }
