@@ -32,6 +32,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
 
     try {
       await Api.deflections.transfer(deflectionId);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
       onSuccess?.();
       showToast('Subject received', 'success', 3000, 'Transfer code confirmed.');
     } catch (err) {
@@ -50,6 +51,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
     setIsLoading(true);
     try {
       await Api.deflections.transfer(deflectionId);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
       onSuccess?.();
       handleClose();
     } catch (err) {
