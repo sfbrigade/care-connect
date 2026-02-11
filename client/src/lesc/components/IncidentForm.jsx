@@ -22,6 +22,7 @@ import Api from '@/Api';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
@@ -49,6 +50,7 @@ function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -179,6 +181,7 @@ function IncidentForm () {
         queryKey: ['deflections', facility.id, 'inactive'],
       });
       setShowCancelModal(false);
+      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
       navigate('/holds');
     },
   });
