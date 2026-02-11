@@ -113,7 +113,7 @@ function Hold ({
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
-                <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
+                <Button size='md' variant='destructive' onClick={onCancelClick}>Cancel</Button>
                 <Button size='md' onClick={onDetailsClick}>Add Details</Button>
               </Group>
             )}

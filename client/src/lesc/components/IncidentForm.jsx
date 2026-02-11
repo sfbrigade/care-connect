@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
+import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
@@ -51,6 +52,7 @@ function IncidentForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const addressRef = useRef();
 
   const form = useForm({
@@ -70,6 +72,12 @@ function IncidentForm () {
       Api.facilities
         .activeIncident(facility.id)
         .then((response) => response.data),
+  });
+
+  const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
+    queryKey: ['deflections', data?.id, 'all'],
+    queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
+    enabled: !!data?.id,
   });
 
   useEffect(() => {
@@ -150,6 +158,38 @@ function IncidentForm () {
       navigate('/holds');
     },
   });
+
+  const cancelIncidentMutation = useMutation({
+    mutationFn: (id) => Api.incidents.cancel(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['facilities', facility.id, 'bed-types'],
+      });
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        null
+      );
+      await queryClient.removeQueries({
+        queryKey: ['deflections', data?.id, 'active'],
+      });
+      await queryClient.removeQueries({
+        queryKey: ['deflections', data?.id, 'all'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['deflections', facility.id, 'inactive'],
+      });
+      setShowCancelModal(false);
+      navigate('/holds');
+    },
+  });
+
+  async function onCancelIncidentConfirmed () {
+    if (data?.id) {
+      await cancelIncidentMutation.mutateAsync(data.id);
+    }
+  }
+
+  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections && (incidentDeflections?.every(deflection => !deflection.subjectId) ?? true);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -320,10 +360,27 @@ function IncidentForm () {
               <Button type='submit' style={{ alignSelf: 'flex-start' }}>
                 {data?.id ? 'Save incident details' : 'Create incident & hold'}
               </Button>
+              {canCancelIncident && (
+                <Button
+                  type='button'
+                  variant='destructive'
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => setShowCancelModal(true)}
+                  disabled={cancelIncidentMutation.isPending}
+                >
+                  Cancel incident
+                </Button>
+              )}
             </Stack>
           </Fieldset>
         </form>
       </Container>
+      <CancelIncidentModal
+        opened={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={onCancelIncidentConfirmed}
+        loading={cancelIncidentMutation.isPending}
+      />
     </>
   );
 }

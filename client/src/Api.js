@@ -279,6 +279,9 @@ const Api = {
     extend (id) {
       return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
     },
+    cancel (id) {
+      return instance.delete(`/api/incidents/${id}`).catch(handleError);
+    },
   },
   deflections: {
     list ({ incidentId, facilityId, active, subjectStatus } = {}) {

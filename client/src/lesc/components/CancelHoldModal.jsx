@@ -60,8 +60,7 @@ function CancelHoldModal ({
         </Stack>
         <Group grow>
           <Button
-            variant='light'
-            color='red.6'
+            variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
             disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
           >

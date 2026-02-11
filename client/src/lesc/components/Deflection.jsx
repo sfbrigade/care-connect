@@ -234,7 +234,7 @@ function Deflection () {
             </Accordion.Item>
           </Accordion>
           <Group mb='xl'>
-            <Button onClick={() => setShowCancelModal(true)} variant='light' color='red.6'>Cancel hold</Button>
+            <Button onClick={() => setShowCancelModal(true)} variant='destructive'>Cancel hold</Button>
           </Group>
         </Stack>
       </Container>
