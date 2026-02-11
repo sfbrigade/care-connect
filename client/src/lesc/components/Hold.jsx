@@ -84,7 +84,7 @@ function Hold ({ deflection, onCancelClick, onDetailsClick }) {
     reopenHoldMutation.mutate(deflection.id);
   };
   useEffect(() => {
-    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus)) { return undefined; }
+    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
 
     setNow(DateTime.now());
     const intervalId = window.setInterval(() => {
