@@ -26,6 +26,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
+import { hasMeaningfulHoldData } from './holdDataUtils';
 
 const initialValues = {
   cadNumber: '',
@@ -203,7 +204,7 @@ function IncidentForm () {
   }
 
   const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
-  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => !!deflection.subjectId);
+  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => hasMeaningfulHoldData(deflection));
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 
-function CancelReasonSelector ({ value, onChange, enabled = true, stacked = false }) {
+function CancelReasonSelector ({ value, onChange, enabled = true, stacked = false, label = 'Select a reason for canceling the hold(s)' }) {
   const { data: cancelReasons } = useQuery({
     queryKey: ['deflectionCancelReasons'],
     queryFn: () => Api.deflections.cancelReasons.index().then(response => response.data),
@@ -16,7 +16,7 @@ function CancelReasonSelector ({ value, onChange, enabled = true, stacked = fals
 
   return (
     <Stack gap='sm'>
-      <Text size='md'>Select a reason for canceling the hold(s)</Text>
+      <Text size='md'>{label}</Text>
       <Chip.Group value={value} onChange={onChange}>
         {!stacked && (
           <Group gap='sm' align='flex-start'>

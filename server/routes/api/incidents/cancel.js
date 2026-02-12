@@ -63,12 +63,36 @@ export default async function (fastify, opts) {
               bedTypeId: true,
               status: true,
               subjectId: true,
+              narcoticsSubstance: true,
+              narcoticsParaphernalia: true,
+              behavior: true,
+              property: true,
+              propertyDetails: true,
+              deflectionDetails: {
+                select: {
+                  id: true,
+                },
+              },
+              propertyPhotos: {
+                select: {
+                  id: true,
+                },
+              },
             },
           });
 
-          const hasHoldsWithSubjectDetails = deflections.some((deflection) => !!deflection.subjectId);
+          const hasHoldsWithDetails = deflections.some((deflection) => Boolean(
+            deflection.subjectId ||
+            deflection.narcoticsSubstance !== null ||
+            deflection.narcoticsParaphernalia !== null ||
+            deflection.behavior ||
+            deflection.property ||
+            deflection.propertyDetails ||
+            deflection.deflectionDetails.length ||
+            deflection.propertyPhotos.length
+          ));
 
-          if (hasHoldsWithSubjectDetails && !cancelReasonId) {
+          if (hasHoldsWithDetails && !cancelReasonId) {
             throw new Error('CANCEL_REASON_REQUIRED');
           }
 
@@ -111,7 +135,7 @@ export default async function (fastify, opts) {
             });
           }
 
-          if (!hasHoldsWithSubjectDetails) {
+          if (!hasHoldsWithDetails) {
             await tx.deflection.deleteMany({
               where: { incidentId: id },
             });
@@ -124,12 +148,23 @@ export default async function (fastify, opts) {
           }
 
           const now = new Date();
-          const deflectionsWithSubject = deflections.filter(deflection => !!deflection.subjectId);
-          const emptyDeflections = deflections.filter(deflection => !deflection.subjectId);
-          const activeDeflectionsWithSubject = deflectionsWithSubject.filter(deflection => deflection.status === 'ACTIVE');
+          const hasDetails = (deflection) => Boolean(
+            deflection.subjectId ||
+            deflection.narcoticsSubstance !== null ||
+            deflection.narcoticsParaphernalia !== null ||
+            deflection.behavior ||
+            deflection.property ||
+            deflection.propertyDetails ||
+            deflection.deflectionDetails.length ||
+            deflection.propertyPhotos.length
+          );
 
-          if (activeDeflectionsWithSubject.length > 0) {
-            const deflectionUpdates = activeDeflectionsWithSubject.map((deflection) => ({
+          const deflectionsWithDetails = deflections.filter(hasDetails);
+          const emptyDeflections = deflections.filter(deflection => !hasDetails(deflection));
+          const activeDeflectionsWithDetails = deflectionsWithDetails.filter(deflection => deflection.status === 'ACTIVE');
+
+          if (activeDeflectionsWithDetails.length > 0) {
+            const deflectionUpdates = activeDeflectionsWithDetails.map((deflection) => ({
               deflectionId: deflection.id,
               status: 'CANCELLED',
               cancelReasonId,
@@ -141,7 +176,7 @@ export default async function (fastify, opts) {
             await tx.deflection.updateMany({
               where: {
                 id: {
-                  in: activeDeflectionsWithSubject.map((deflection) => deflection.id),
+                  in: activeDeflectionsWithDetails.map((deflection) => deflection.id),
                 },
               },
               data: {

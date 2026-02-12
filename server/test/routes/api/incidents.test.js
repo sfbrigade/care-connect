@@ -297,6 +297,55 @@ test('/api/incidents', async (t) => {
       assert.ok(incidentStillExists);
     });
 
+    await t.test('requires cancellation reason when incident has partial hold details but no subject', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+      const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(createResponse.statusCode, StatusCodes.CREATED);
+      const createdIncident = JSON.parse(createResponse.body);
+
+      const [createdDeflection] = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+
+      const deflectionUpdateResponse = await app.inject().patch(`/api/deflections/${createdDeflection.id}`).payload({
+        behavior: 'Subject appears intoxicated and disoriented.',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(deflectionUpdateResponse.statusCode, StatusCodes.OK);
+
+      const deleteWithoutReasonResponse = await app.inject().delete(`/api/incidents/${createdIncident.id}`).headers(userHeaders);
+      assert.deepStrictEqual(deleteWithoutReasonResponse.statusCode, StatusCodes.CONFLICT);
+      const errorPayload = JSON.parse(deleteWithoutReasonResponse.body);
+      assert.deepStrictEqual(errorPayload.error, 'A cancellation reason is required when the incident contains holds with subject details.');
+
+      const deleteWithReasonResponse = await app.inject().delete(`/api/incidents/${createdIncident.id}?cancelReasonId=5150`).headers(userHeaders);
+      assert.deepStrictEqual(deleteWithReasonResponse.statusCode, StatusCodes.NO_CONTENT);
+
+      const incidentAfterCancel = await prisma.incident.findUnique({
+        where: { id: createdIncident.id },
+      });
+      assert.ok(incidentAfterCancel);
+      assert.ok(incidentAfterCancel.completedAt);
+
+      const deflectionsAfterCancel = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+      assert.deepStrictEqual(deflectionsAfterCancel.length, 1);
+      assert.deepStrictEqual(deflectionsAfterCancel[0].status, 'CANCELLED');
+      assert.deepStrictEqual(deflectionsAfterCancel[0].cancelReasonId, '5150');
+    });
+
     await t.test('keeps incident and detailed holds in history while deleting empty holds', async () => {
       const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
       const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
