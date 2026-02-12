@@ -12,6 +12,7 @@ import CancelHoldModal from './CancelHoldModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
 
 function Deflection () {
@@ -20,6 +21,7 @@ function Deflection () {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -50,6 +52,7 @@ function Deflection () {
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       setShowCancelModal(false);
+      showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
       navigate('/holds');
     },
   });
