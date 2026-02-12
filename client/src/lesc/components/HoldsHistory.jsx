@@ -7,7 +7,7 @@ import Api from '@/Api';
 import Hold from './Hold';
 import { formatAddress } from '@/utils/format';
 
-function HoldsHistory({ facility }) {
+function HoldsHistory ({ facility }) {
   const navigate = useNavigate();
 
   const { data: deflections, isFetching: isFetchingDeflections } = useQuery({

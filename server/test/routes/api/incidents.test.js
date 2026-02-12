@@ -213,6 +213,11 @@ test('/api/incidents', async (t) => {
   await t.test('DELETE /:id', async (t) => {
     await t.test('hard deletes an active incident and its empty holds', async () => {
       const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+
+      // Normalize any pre-seeded expired ACTIVE holds so this test only measures
+      // effects of the create/delete flow under test.
+      await prisma.deflection.expire();
+
       const beforeBedType = await prisma.bedType.findUnique({
         where: { id: bedTypeId },
       });
