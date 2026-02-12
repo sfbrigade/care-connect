@@ -40,7 +40,8 @@ function Hold ({
     : null;
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
-  const isValid = isValidIncident(incident) && isValidDeflection(deflection);
+  const isValid = isValidDeflection(deflection);
+  const isReadyForTransfer = isValidIncident(incident) && isValid;
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
@@ -92,10 +93,10 @@ function Hold ({
         {isActive && isArrived && (
           <Group justify='center'>
             <Box pos='relative'>
-              <Box opacity={isValid ? 1 : 0.1}>
+              <Box opacity={isReadyForTransfer ? 1 : 0.1}>
                 <QRCodeSVG value={transferUrl} size={160} />
               </Box>
-              {!isValid && (
+              {!isReadyForTransfer && (
                 <Group pos='absolute' w={80} h={80} bg='white' bdrs='50%' top={40} left={40} justify='center' align='center'>
                   <IconLock size={24} color='black' />
                 </Group>
@@ -108,7 +109,6 @@ function Hold ({
             {isActive && !isExpired && !isArrived
               ? (
                 <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-
                 )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
