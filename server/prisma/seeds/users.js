@@ -11,6 +11,7 @@ export default async function main (prisma) {
       isAdmin: false,
       organizationId: 'sfpd',
       roles: ['FIELD'],
+      badgeNumber: '1234',
     },
     {
       email: 'sfso@careconnectsf.org',
@@ -19,6 +20,7 @@ export default async function main (prisma) {
       isAdmin: false,
       organizationId: 'sfso',
       roles: ['CUSTODY'],
+      badgeNumber: '5678',
     },
     {
       email: 'care@careconnectsf.org',

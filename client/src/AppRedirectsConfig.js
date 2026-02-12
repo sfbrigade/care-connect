@@ -6,6 +6,7 @@ export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
 ];
 export const AUTH_PROTECTED_PATHS = [
+  '/profile/*',
   '/units',
 ];
 export const ROLE_PROTECTED_PATHS = [
