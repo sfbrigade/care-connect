@@ -184,6 +184,16 @@ function IncidentForm () {
       showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
       navigate('/holds');
     },
+    onError: (error) => {
+      const isNetworkError = !error?.response;
+
+      if (isNetworkError) {
+        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
   });
 
   async function onCancelIncidentConfirmed (cancelReasonId) {
