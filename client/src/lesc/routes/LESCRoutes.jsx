@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router';
 import { useAuthContext } from '@/AuthContext';
 import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
-import Custody from '../components/Custody';
+import Custody from '../components/custody/Custody';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
