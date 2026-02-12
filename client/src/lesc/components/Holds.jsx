@@ -154,6 +154,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
+            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
             fullWidth
