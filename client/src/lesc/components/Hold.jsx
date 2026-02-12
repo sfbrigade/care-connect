@@ -34,6 +34,7 @@ function Hold ({
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
+  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
   const isExpiredStatus = deflection.status === 'EXPIRED';
   const minutesUntilExpiration = deflection?.expiresAt
     ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
@@ -71,7 +72,7 @@ function Hold ({
             {isCancelled && (
               <>
                 <Text size='md' c='gray.6'>•</Text>
-                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}</Text>
+                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
               </>
             )}
             {isExpired && (

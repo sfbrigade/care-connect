@@ -10,6 +10,9 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.coerce.number(),
         }),
+        querystring: z.object({
+          cancelReasonId: z.string().optional(),
+        }).nullable().optional(),
         response: {
           [StatusCodes.NO_CONTENT]: z.null(),
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -21,6 +24,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
+      const { cancelReasonId } = request.query || {};
 
       const incident = await fastify.prisma.incident.findUnique({
         where: { id },
@@ -55,10 +59,18 @@ export default async function (fastify, opts) {
           const deflections = await tx.deflection.findMany({
             where: { incidentId: id },
             select: {
+              id: true,
               bedTypeId: true,
               status: true,
+              subjectId: true,
             },
           });
+
+          const hasHoldsWithSubjectDetails = deflections.some((deflection) => !!deflection.subjectId);
+
+          if (hasHoldsWithSubjectDetails && !cancelReasonId) {
+            throw new Error('CANCEL_REASON_REQUIRED');
+          }
 
           const activeHoldsByBedType = deflections.reduce((acc, deflection) => {
             if (deflection.status === 'ACTIVE') {
@@ -99,18 +111,77 @@ export default async function (fastify, opts) {
             });
           }
 
-          await tx.deflection.deleteMany({
-            where: { incidentId: id },
-          });
+          if (!hasHoldsWithSubjectDetails) {
+            await tx.deflection.deleteMany({
+              where: { incidentId: id },
+            });
 
-          await tx.incident.delete({
+            await tx.incident.delete({
+              where: { id },
+            });
+
+            return;
+          }
+
+          const now = new Date();
+          const deflectionsWithSubject = deflections.filter(deflection => !!deflection.subjectId);
+          const emptyDeflections = deflections.filter(deflection => !deflection.subjectId);
+          const activeDeflectionsWithSubject = deflectionsWithSubject.filter(deflection => deflection.status === 'ACTIVE');
+
+          if (activeDeflectionsWithSubject.length > 0) {
+            const deflectionUpdates = activeDeflectionsWithSubject.map((deflection) => ({
+              deflectionId: deflection.id,
+              status: 'CANCELLED',
+              cancelReasonId,
+              updatedById: request.user.id,
+              updatedAt: now,
+            }));
+            await tx.deflectionUpdate.createMany({ data: deflectionUpdates });
+
+            await tx.deflection.updateMany({
+              where: {
+                id: {
+                  in: activeDeflectionsWithSubject.map((deflection) => deflection.id),
+                },
+              },
+              data: {
+                status: 'CANCELLED',
+                cancelReasonId,
+                cancelledAt: now,
+                cancelledById: request.user.id,
+                updatedAt: now,
+              },
+            });
+          }
+
+          if (emptyDeflections.length > 0) {
+            await tx.deflection.deleteMany({
+              where: {
+                id: {
+                  in: emptyDeflections.map((deflection) => deflection.id),
+                },
+              },
+            });
+          }
+
+          await tx.incident.update({
             where: { id },
+            data: {
+              completedAt: now,
+              updatedById: request.user.id,
+            },
           });
         });
       } catch (error) {
         if (error.message === 'INCIDENT_NOT_ACTIVE') {
           return reply.code(StatusCodes.CONFLICT).send({
             error: 'Only active incidents can be cancelled.',
+          });
+        }
+
+        if (error.message === 'CANCEL_REASON_REQUIRED') {
+          return reply.code(StatusCodes.CONFLICT).send({
+            error: 'A cancellation reason is required when the incident contains holds with subject details.',
           });
         }
 

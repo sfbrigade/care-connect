@@ -162,7 +162,7 @@ function IncidentForm () {
   });
 
   const cancelIncidentMutation = useMutation({
-    mutationFn: (id) => Api.incidents.cancel(id),
+    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, { cancelReasonId }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
@@ -186,13 +186,14 @@ function IncidentForm () {
     },
   });
 
-  async function onCancelIncidentConfirmed () {
+  async function onCancelIncidentConfirmed (cancelReasonId) {
     if (data?.id) {
-      await cancelIncidentMutation.mutateAsync(data.id);
+      await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
     }
   }
 
-  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections && (incidentDeflections?.every(deflection => !deflection.subjectId) ?? true);
+  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
+  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => !!deflection.subjectId);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -382,6 +383,7 @@ function IncidentForm () {
         opened={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onConfirm={onCancelIncidentConfirmed}
+        requiresReason={incidentHasDetailedHolds}
         loading={cancelIncidentMutation.isPending}
       />
     </>

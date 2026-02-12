@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ActionIcon, Button, Chip, Group, Modal, Stack, Text, Title } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
+import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
-import Api from '@/Api';
+import CancelReasonSelector from './CancelReasonSelector';
 
 function CancelHoldModal ({
   deflection,
@@ -13,12 +12,6 @@ function CancelHoldModal ({
   loading = false,
 }) {
   const [cancelReasonId, setCancelReasonId] = useState();
-
-  const { data: cancelReasons } = useQuery({
-    queryKey: ['deflectionCancelReasons'],
-    queryFn: () => Api.deflections.cancelReasons.index().then(response => response.data),
-    enabled: !!deflection?.subjectId,
-  });
 
   const name = [deflection.subject?.firstName, deflection.subject?.middleInitial, deflection.subject?.lastName].filter(Boolean).join(' ');
 
@@ -43,20 +36,11 @@ function CancelHoldModal ({
           </Group>
           {!deflection.subjectId && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
           {!!deflection.subjectId && <Text size='sm' c='dimmed'>Canceling a hold means a chair will no longer be reserved. This person's identifying information will also be removed.</Text>}
-          {!!deflection.subjectId && (
-            <Stack gap='sm'>
-              <Text size='md'>Select a reason for canceling the hold</Text>
-              <Chip.Group value={cancelReasonId} onChange={setCancelReasonId}>
-                <Stack gap='sm' align='flex-start'>
-                  {cancelReasons?.map(reason => (
-                    <Chip key={reason.id} value={reason.id} size='md'>
-                      {reason.name}
-                    </Chip>
-                  ))}
-                </Stack>
-              </Chip.Group>
-            </Stack>
-          )}
+          <CancelReasonSelector
+            value={cancelReasonId}
+            onChange={setCancelReasonId}
+            enabled={!!deflection.subjectId}
+          />
         </Stack>
         <Group grow>
           <Button

@@ -279,8 +279,8 @@ const Api = {
     extend (id) {
       return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
     },
-    cancel (id) {
-      return instance.delete(`/api/incidents/${id}`).catch(handleError);
+    cancel (id, { cancelReasonId } = {}) {
+      return instance.delete(`/api/incidents/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`).catch(handleError);
     },
   },
   deflections: {
