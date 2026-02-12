@@ -59,8 +59,8 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
             ))}
           </Stack>
           {!incident?.arrivedAt && (
-            <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
-              Extend all holds
+            <Button disabled={extendAllHoldsMutation.isPending} variant='secondary' fullWidth onClick={onExtendAllClick}>
+              {extendAllHoldsMutation.isPending ? <Loader size='sm' /> : 'Extend all holds'}
             </Button>
           )}
         </>
