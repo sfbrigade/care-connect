@@ -140,21 +140,13 @@ Some features (like QR code scanning) require camera access, which browsers only
 
 2. Claim a free static domain from the [ngrok dashboard](https://dashboard.ngrok.com/domains) (e.g. `your-name.ngrok-free.app`).
 
-3. Add your domain to `client/.env.local` (create this file if it doesn't exist):
-
-   ```
-   NGROK_HOST=your-name.ngrok-free.app
-   ```
-
-4. Restart the dev server (`docker compose up`), then start the tunnel:
+3. Restart the dev server (`docker compose up`), then start the tunnel:
 
    ```
    ngrok http 3333 --url your-name.ngrok-free.app
    ```
 
-5. Open the ngrok URL on your phone to test camera and other mobile features.
-
-> **Note:** `client/.env.local` is gitignored, so your personal ngrok domain won't be committed.
+4. Open the ngrok URL on your phone to test camera and other mobile features.
 
 ## Analytics
 

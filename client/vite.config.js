@@ -45,11 +45,8 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       host: true, // Listen on all addresses
       // Allow all hosts to prevent "Invalid Host header" errors with ngrok
       strictPort: false,
-      // Allow ngrok domain and localhost
-      allowedHosts: [
-        'localhost',
-        ...(env.NGROK_HOST ? [env.NGROK_HOST] : []),
-      ],
+      // Allow all hosts to connect- this is used only for development...
+      allowedHosts: true,
       proxy: {
         '^/api|/static-data|/locales': {
           target: 'http://localhost:3000',
