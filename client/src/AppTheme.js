@@ -1,4 +1,4 @@
-import { createTheme, Accordion, Alert, Anchor, Autocomplete, Burger, Checkbox, Chip, Container, Button, Card, Badge, Input, Menu, Modal, Notification, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Accordion, Alert, Anchor, Autocomplete, Badge, Burger, Button, Card, Checkbox, Chip, Container, FileInput, Input, Menu, Modal, Notification, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import accordionClasses from './components/Accordion.module.css';
 import anchorClasses from './components/Anchor.module.css';
@@ -154,6 +154,13 @@ const AppTheme = createTheme({
         size: 'xs',
         px: 'xl'
       }
+    }),
+    FileInput: FileInput.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md'
+      },
+      classNames: inputClasses
     }),
     InputWrapper: Input.Wrapper.extend({
       defaultProps: {
