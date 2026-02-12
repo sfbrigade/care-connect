@@ -1,13 +1,11 @@
 /// <reference types="vitest/config" />
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 
 // https://vite.dev/config/
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig(({ command, ssrBuild, mode }) => {
-  // Load all env vars (empty prefix '' loads all, not just VITE_-prefixed)
-  const env = loadEnv(mode, process.cwd(), '');
   // Check if this is an SSR build - ssrBuild should be true when building with --ssr flag
   const isSSRBuild = ssrBuild === true || (command === 'build' && process.argv.includes('--ssr'));
 
@@ -46,10 +44,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       // Allow all hosts to prevent "Invalid Host header" errors with ngrok
       strictPort: false,
       // Allow ngrok domain and localhost
-      allowedHosts: [
-        'localhost',
-        ...(env.NGROK_HOST ? [env.NGROK_HOST] : []),
-      ],
+      allowedHosts: true,
       proxy: {
         '^/api|/static-data|/locales': {
           target: 'http://localhost:3000',
