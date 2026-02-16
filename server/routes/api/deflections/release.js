@@ -23,6 +23,7 @@ export default async function (fastify, opts) {
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
+          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
@@ -36,6 +37,10 @@ export default async function (fastify, opts) {
 
       if (!deflection) {
         return reply.code(StatusCodes.NOT_FOUND).send();
+      }
+
+      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
       if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
