@@ -334,7 +334,7 @@ To lint and format your code:
 ## License
 
 Care Connect
-Copyright © 2025 SF Civic Tech
+Copyright © 2026 SF Civic Tech
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
