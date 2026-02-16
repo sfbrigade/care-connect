@@ -48,7 +48,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
+        if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
