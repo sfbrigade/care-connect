@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
-import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
-import EmptyState from './EmptyState';
-import StatusAccordion from './StatusAccordion';
+import { Accordion, Box, Button, Container, Divider, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconQrcode } from '@tabler/icons-react';
@@ -11,21 +9,17 @@ import { IconQrcode } from '@tabler/icons-react';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatTime } from '@/utils/format';
+import CustodyCard from './CustodyCard';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
 
-const IN_CUSTODY_SECTIONS = [
+const SECTIONS = [
   { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update subject details as needed before completing the safety check.' },
   { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake' },
   { status: 'ADMITTED', label: 'In Medical Intake' },
   { status: 'IN_CHAIR', label: 'In-chair' },
-];
-
-const RELEASED_SECTIONS = [
-  { status: 'RELEASED', label: 'Still onsite' },
-  { status: 'EXITED', label: 'Exited facility' },
 ];
 
 function groupByStatus (deflections) {
@@ -105,7 +99,7 @@ function Custody () {
   const releasedGrouped = groupByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
 
-  const defaultOpenSections = IN_CUSTODY_SECTIONS
+  const defaultOpenSections = SECTIONS
     .filter(s => (inCustodyGrouped[s.status]?.length ?? 0) > 0)
     .map(s => s.status);
 
@@ -129,17 +123,41 @@ function Custody () {
             <Stack gap='md'>
               {hasInCustody
                 ? (
-                  <StatusAccordion
-                    sections={IN_CUSTODY_SECTIONS}
-                    groupedDeflections={inCustodyGrouped}
-                    defaultOpen={defaultOpenSections}
-                  />
+                  <Accordion variant='section' multiple defaultValue={defaultOpenSections}>
+                    <Divider />
+                    {SECTIONS.map(({ status, label, description }) => {
+                      const items = inCustodyGrouped[status] ?? [];
+                      return (
+                        <Accordion.Item key={status} value={status}>
+                          <Accordion.Control>
+                            <Title order={3}>{label}: {items.length}</Title>
+                            {description && <Text c='gray.5' size='sm'>{description}</Text>}
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <Stack gap='md'>
+                              {items.map(d => (
+                                <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                              ))}
+                              {items.length === 0 && (
+                                <Text c='dimmed' size='sm'>None</Text>
+                              )}
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      );
+                    })}
+                  </Accordion>
                   )
                 : (
-                  <EmptyState
-                    title='No subjects in custody'
-                    description="When you receive a subject from SFPD, they'll appear here."
-                  />
+                  <Stack align='center' gap='md' py='xl'>
+                    <Box
+                      w={160}
+                      h={160}
+                      style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
+                    />
+                    <Title order={3}>No subjects in custody</Title>
+                    <Text c='dimmed' ta='center'>When you receive a subject from SFPD, they'll appear here.</Text>
+                  </Stack>
                   )}
             </Stack>
           )}
@@ -147,17 +165,50 @@ function Custody () {
             <Stack gap='md'>
               {(releasedDeflections?.length ?? 0) > 0
                 ? (
-                  <StatusAccordion
-                    sections={RELEASED_SECTIONS}
-                    groupedDeflections={releasedGrouped}
-                    defaultOpen={['RELEASED', 'EXITED']}
-                  />
+                  <Accordion variant='section' multiple defaultValue={['RELEASED', 'EXITED']}>
+                    <Divider />
+                    <Accordion.Item value='RELEASED'>
+                      <Accordion.Control>
+                        <Title order={3}>Still onsite: {releasedGrouped.RELEASED?.length ?? 0}</Title>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap='md'>
+                          {(releasedGrouped.RELEASED ?? []).map(d => (
+                            <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                          ))}
+                          {!(releasedGrouped.RELEASED?.length) && (
+                            <Text c='dimmed' size='sm'>None</Text>
+                          )}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value='EXITED'>
+                      <Accordion.Control>
+                        <Title order={3}>Exited facility: {releasedGrouped.EXITED?.length ?? 0}</Title>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap='md'>
+                          {(releasedGrouped.EXITED ?? []).map(d => (
+                            <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                          ))}
+                          {!(releasedGrouped.EXITED?.length) && (
+                            <Text c='dimmed' size='sm'>None</Text>
+                          )}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
                   )
                 : (
-                  <EmptyState
-                    title='No subjects in released'
-                    description="Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
-                  />
+                  <Stack align='center' gap='md' py='xl'>
+                    <Box
+                      w={160}
+                      h={160}
+                      style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
+                    />
+                    <Title order={3}>No subjects in released</Title>
+                    <Text c='dimmed' ta='center'>Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They&apos;re retained in legal records.</Text>
+                  </Stack>
                   )}
             </Stack>
           )}

@@ -16,7 +16,6 @@ export default async function (fastify, opts) {
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
@@ -30,10 +29,6 @@ export default async function (fastify, opts) {
 
       if (!deflection) {
         return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-
-      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
       if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
@@ -53,7 +48,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 

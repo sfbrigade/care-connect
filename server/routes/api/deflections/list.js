@@ -16,7 +16,7 @@ export default async function (fastify, opts) {
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
-          subjectStatus: z.string().regex(new RegExp(`^(${Object.values(Deflection.SubjectStatus).join('|')})(,(${Object.values(Deflection.SubjectStatus).join('|')}))*$`)).optional(),
+          subjectStatus: z.string().optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),
         }),

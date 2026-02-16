@@ -23,7 +23,6 @@ export default async function (fastify, opts) {
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
@@ -39,78 +38,33 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
-      }
-
       if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
-        });
-
-        if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
-          return reply.code(StatusCodes.CONFLICT).send();
-        }
-
-        const now = new Date();
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
-            releasedAt: now,
-            releasedById: request.user.id,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
-        });
-
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
+      const now = new Date();
+      await fastify.prisma.deflectionUpdate.create({
+        data: {
+          deflectionId: id,
+          subjectStatus: Deflection.SubjectStatus.RELEASED,
           updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
-        });
+          updatedAt: now,
+        },
+      });
+
+      deflection = await fastify.prisma.deflection.update({
+        where: { id },
+        data: {
+          subjectStatus: Deflection.SubjectStatus.RELEASED,
+          releasedAt: now,
+          releasedById: request.user.id,
+          updatedAt: now,
+        },
+        include: {
+          subject: true,
+          deflectionDetails: true,
+          propertyPhotos: true,
+        },
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

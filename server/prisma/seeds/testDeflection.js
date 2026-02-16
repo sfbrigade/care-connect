@@ -27,14 +27,6 @@ export default async function main (prisma) {
     return;
   }
 
-  const sfsoUser = await prisma.user.findUnique({
-    where: { email: 'sfso@careconnectsf.org' },
-  });
-  if (!sfsoUser) {
-    console.warn('SFSO user not found, skipping test deflection seed.');
-    return;
-  }
-
   const facility = await prisma.facility.findUnique({
     where: { subdomain: 'reset' },
   });
@@ -108,15 +100,15 @@ export default async function main (prisma) {
         behavior: 'Cooperative',
         property: 'SMALL',
         transferredAt: now,
-        transferredById: sfsoUser.id,
+        transferredById: sfpdUser.id,
         ...(subjectStatus === 'ADMITTED' || subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
-          ? { admittedAt: now, admittedById: sfsoUser.id }
+          ? { admittedAt: now, admittedById: sfpdUser.id }
           : {}),
         ...(subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
-          ? { releasedAt: now, releasedById: sfsoUser.id, completedAt: now }
+          ? { releasedAt: now, releasedById: sfpdUser.id, completedAt: now }
           : {}),
         ...(subjectStatus === 'EXITED'
-          ? { exitedAt: now, exitedById: sfsoUser.id }
+          ? { exitedAt: now, exitedById: sfpdUser.id }
           : {}),
         ...(detail ? { deflectionDetails: { connect: { id: detail.id } } } : {}),
       },
