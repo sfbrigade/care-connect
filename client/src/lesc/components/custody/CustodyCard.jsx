@@ -58,11 +58,17 @@ function CustodyCard ({ deflection, highlighted }) {
           </Center>
         )}
         <Group wrap='nowrap' justify='flex-end'>
-          <Button size='md' variant='light' onClick={() => {
-            sessionStorage.setItem('custodyScrollTarget', deflection.id);
-            sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');
-            navigate(`/custody/${deflection.id}`);
-          }}>View details</Button>
+          <Button
+            size='md'
+            variant='light'
+            onClick={() => {
+              window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
+              window.sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');
+              navigate(`/custody/${deflection.id}`);
+            }}
+          >
+            View details
+          </Button>
           {deflection.subjectStatus === 'AWAITING_INTAKE' && (
             <Button size='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
           )}

@@ -70,10 +70,10 @@ function Custody () {
 
   useEffect(() => {
     if (!inCustodyDeflections && !releasedDeflections) return;
-    const targetId = sessionStorage.getItem('custodyScrollTarget');
+    const targetId = window.sessionStorage.getItem('custodyScrollTarget');
     if (!targetId) return;
-    sessionStorage.removeItem('custodyScrollTarget');
-    requestAnimationFrame(() => {
+    window.sessionStorage.removeItem('custodyScrollTarget');
+    window.requestAnimationFrame(() => {
       const el = document.getElementById(`custody-card-${targetId}`);
       if (el) {
         el.scrollIntoView({ block: 'center' });

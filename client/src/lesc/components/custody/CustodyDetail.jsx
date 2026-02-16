@@ -7,7 +7,7 @@ import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail () {
   const { id } = useParams();
-  const savedTab = sessionStorage.getItem('custodyTab') || 'in-custody';
+  const savedTab = window.sessionStorage.getItem('custodyTab') || 'in-custody';
   const backTo = savedTab === 'in-custody' ? '/custody' : '/custody?tab=released';
 
   const { data: deflection } = useQuery({

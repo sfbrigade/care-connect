@@ -5,10 +5,9 @@ import { DateTime } from 'luxon';
 
 import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidIncident } from '@/utils/validators';
+import { isValidDeflection } from '@/utils/validators';
 
 function Hold ({
-  incident,
   deflection,
   onCancelClick,
   onDetailsClick,
@@ -40,7 +39,6 @@ function Hold ({
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidDeflection(deflection);
-  const isReadyForTransfer = isValidIncident(incident) && isValid;
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
