@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { Accordion, Box, Button, Container, Divider, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
+import EmptyState from './EmptyState';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconQrcode } from '@tabler/icons-react';
@@ -126,15 +127,10 @@ function Custody () {
                   </Accordion>
                   )
                 : (
-                  <Stack align='center' gap='md' py='xl'>
-                    <Box
-                      w={160}
-                      h={160}
-                      style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
-                    />
-                    <Title order={3}>No subjects in custody</Title>
-                    <Text c='dimmed' ta='center'>When you receive a subject from SFPD, they'll appear here.</Text>
-                  </Stack>
+                  <EmptyState
+                    title='No subjects in custody'
+                    description="When you receive a subject from SFPD, they'll appear here."
+                  />
                   )}
             </Stack>
           )}
@@ -177,15 +173,10 @@ function Custody () {
                   </Accordion>
                   )
                 : (
-                  <Stack align='center' gap='md' py='xl'>
-                    <Box
-                      w={160}
-                      h={160}
-                      style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
-                    />
-                    <Title order={3}>No subjects in released</Title>
-                    <Text c='dimmed' ta='center'>Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They&apos;re retained in legal records.</Text>
-                  </Stack>
+                  <EmptyState
+                    title='No subjects in released'
+                    description="Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
+                  />
                   )}
             </Stack>
           )}
