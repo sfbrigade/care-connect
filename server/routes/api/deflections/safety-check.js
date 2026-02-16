@@ -16,6 +16,7 @@ export default async function (fastify, opts) {
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
+          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
@@ -31,31 +32,53 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
+      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
+
       if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      const now = new Date();
-      await fastify.prisma.deflectionUpdate.create({
-        data: {
-          deflectionId: id,
-          subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-          updatedById: request.user.id,
-          updatedAt: now,
-        },
-      });
+      await fastify.prisma.$transaction(async (tx) => {
+        const { bedTypeId } = deflection;
+        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        // re-fetch deflection after lock
+        deflection = await tx.deflection.findUnique({
+          where: { id },
+          include: {
+            subject: true,
+            deflectionDetails: true,
+            propertyPhotos: true,
+          },
+        });
 
-      deflection = await fastify.prisma.deflection.update({
-        where: { id },
-        data: {
-          subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-          updatedAt: now,
-        },
-        include: {
-          subject: true,
-          deflectionDetails: true,
-          propertyPhotos: true,
-        },
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
+          return reply.code(StatusCodes.CONFLICT).send();
+        }
+
+        const now = new Date();
+        await tx.deflectionUpdate.create({
+          data: {
+            deflectionId: id,
+            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+            updatedById: request.user.id,
+            updatedAt: now,
+          },
+        });
+
+        deflection = await tx.deflection.update({
+          where: { id },
+          data: {
+            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+            updatedAt: now,
+          },
+          include: {
+            subject: true,
+            deflectionDetails: true,
+            propertyPhotos: true,
+          },
+        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
