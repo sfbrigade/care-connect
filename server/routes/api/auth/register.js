@@ -58,12 +58,19 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.GONE).send(null);
         }
       }
+      let org;
+      if (invite?.organizationId) {
+        org = await fastify.prisma.organization.findUnique({
+          where: { id: invite.organizationId },
+        });
+      }
       let data = invite
         ? {
             firstName: invite.firstName,
             lastName: invite.lastName,
             email: invite.email,
             organizationId: invite.organizationId,
+            roles: org?.defaultRoles ?? [],
             titleId: invite.titleId,
             badgeNumber: invite.badgeNumber,
             prop115Certified: invite.prop115Certified,
