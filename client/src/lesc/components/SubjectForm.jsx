@@ -40,19 +40,8 @@ function SubjectForm () {
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [dobInput, setDobInput] = useState('');
-  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const autoSaveTimerRef = useRef(null);
-  const lastSavedValuesRef = useRef(null);
-  const isNewQuery = searchParams.get('isNew') === 'true';
-  const [isNewFlow, setIsNewFlow] = useState(() => {
-    if (isNewQuery) {
-      return true;
-    }
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.localStorage.getItem(`deflection-new-flow-${id}`) === 'true';
-  });
+  const isNew = searchParams.get('isNew') === 'true';
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -81,17 +70,6 @@ function SubjectForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const isNew = isNewQuery || !deflection?.subjectId;
-
-  useEffect(() => {
-    if (isNew) {
-      setIsNewFlow(true);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(`deflection-new-flow-${id}`, 'true');
-      }
-    }
-  }, [isNew]);
-
   useEffect(() => {
     if (!isLoading && !isInitialized) {
       if (deflection?.subject) {
@@ -103,12 +81,10 @@ function SubjectForm () {
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         setDobInput(normalized.dateOfBirth ?? '');
-        lastSavedValuesRef.current = normalized;
         form.setInitialValues(normalized);
         form.reset();
       }
       setInitialized(true);
-      setAutoSaveStatus('saved');
     }
   }, [isLoading, isInitialized, deflection]);
 
@@ -128,19 +104,6 @@ function SubjectForm () {
     };
   }
 
-  function valuesMatch (a, b) {
-    if (!b) {
-      return false;
-    }
-    const keys = Object.keys(initialValues);
-    for (const key of keys) {
-      if (a[key] !== b[key]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   function buildAutoSavePayload (values, dobString) {
     const normalized = normalizeValues(values);
     const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
@@ -154,9 +117,6 @@ function SubjectForm () {
 
   function scheduleAutoSave (values, dobString) {
     const normalized = normalizeValues(values);
-    if (valuesMatch(normalized, lastSavedValuesRef.current)) {
-      return;
-    }
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
@@ -178,16 +138,8 @@ function SubjectForm () {
 
   const autoSaveMutation = useMutation({
     mutationFn: ({ payload }) => Api.deflections.subject(id, payload),
-    onMutate: () => {
-      setAutoSaveStatus('saving');
-    },
-    onSuccess: async (response, variables) => {
+    onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      lastSavedValuesRef.current = variables.normalized;
-      setAutoSaveStatus('saved');
-    },
-    onError: () => {
-      setAutoSaveStatus('error');
     },
   });
 
@@ -195,23 +147,18 @@ function SubjectForm () {
     mutationFn: (data) => Api.deflections.subject(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      navigate(isNewFlow ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
+      navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
     },
   });
 
-  const dateOfBirthProps = form.getInputProps('dateOfBirth');
-  const headerStatus = (() => {
-    if (onSubmitMutation.isPending || autoSaveStatus === 'saving') {
-      return { text: 'Saving...', color: 'dimmed' };
-    }
-    if (autoSaveStatus === 'error') {
-      return { text: 'Save failed', color: 'red.6' };
-    }
-    if (autoSaveStatus === 'saved' || onSubmitMutation.isSuccess) {
-      return { text: 'Changes saved', color: 'teal.6' };
-    }
-    return null;
-  })();
+  let header;
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
+    header = <Text c='dimmed' size='lg'>Saving...</Text>;
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
+    header = <Text c='teal.6' size='lg'>Changes saved</Text>;
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
+    header = <Text c='red.6' size='lg'>An error has occurred</Text>;
+  }
 
   return (
     <>
@@ -222,9 +169,9 @@ function SubjectForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
           <Group gap='xs'>
-            {headerStatus && <Text c={headerStatus.color} size='lg'>{headerStatus.text}</Text>}
-            {headerStatus && isNewFlow && <Text c='gray.5' size='lg'>•</Text>}
-            {isNewFlow && <Text c='dimmed' size='lg'>1 of 3</Text>}
+            {header}
+            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
+            {isNew && <Text c='dimmed' size='lg'>1 of 3</Text>}
           </Group>
         </Group>
       </Header>
@@ -264,7 +211,7 @@ function SubjectForm () {
                 inputMode='numeric'
                 maxLength={10}
                 placeholder='MM/DD/YYYY'
-                {...dateOfBirthProps}
+                {...form.getInputProps('dateOfBirth')}
                 value={dobInput}
                 onChange={(event) => {
                   const formatted = formatInputDob(event.currentTarget.value);
