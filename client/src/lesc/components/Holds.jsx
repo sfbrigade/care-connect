@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -44,6 +44,15 @@ function Holds () {
   });
 
   const [tab, setTab] = useState('active');
+  const [showLeftButtonSticky, setShowLeftButtonSticky] = useState(false);
+  const [incidentIdForLeft, setIncidentIdForLeft] = useState(null);
+
+  useEffect(() => {
+    if (incident?.arrivedAt && !incident?.leftAt) {
+      setShowLeftButtonSticky(true);
+      setIncidentIdForLeft(incident.id);
+    }
+  }, [incident?.id, incident?.arrivedAt, incident?.leftAt]);
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 
@@ -56,22 +65,22 @@ function Holds () {
   });
 
   function onArrivedClick () {
-    if (incident?.id) {
-      markArrivedMutation.mutate(incident.id);
-    }
+    if (incident?.id) markArrivedMutation.mutate(incident.id);
   }
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
+      setShowLeftButtonSticky(false);
+      setIncidentIdForLeft(null);
     }
   });
 
   function onLeftClick () {
-    if (incident?.id) {
-      markLeftMutation.mutate(incident.id);
-    }
+    setShowLeftButtonSticky(false);
+    const id = incident?.id ?? incidentIdForLeft;
+    if (id) markLeftMutation.mutate(id);
   }
 
   const createDeflectionMutation = useMutation({
@@ -114,7 +123,7 @@ function Holds () {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
         if (updatedDeflections.length === 0) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
+          queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
         }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
@@ -154,6 +163,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
+            showLeftButtonSticky={showLeftButtonSticky}
           />
           <SegmentedControl
             fullWidth
