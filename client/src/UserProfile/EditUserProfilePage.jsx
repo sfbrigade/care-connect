@@ -12,6 +12,8 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 
+import UnitSelector from '../UnitSelector';
+
 function EditUserProfilePage () {
   const { user } = useAuthContext();
   const userId = user?.id;
@@ -81,7 +83,8 @@ function EditUserProfilePage () {
       </Header>
       <Container>
         <Stack>
-          <Title order={2}>Edit position details</Title>
+
+          <Title>Edit position details</Title>
           <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
             <Fieldset disabled={isLoading} variant='unstyled'>
               <Stack>
@@ -92,6 +95,7 @@ function EditUserProfilePage () {
                   placeholder='Enter badge or star number'
                   disabled
                 />
+                <UnitSelector title={false} show_btn={false} ></UnitSelector>
                 <Group>
                   <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
                   <Button variant='secondary' type='submit'>Save changes</Button>
