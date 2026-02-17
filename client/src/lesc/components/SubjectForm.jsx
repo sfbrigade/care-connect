@@ -157,7 +157,7 @@ function SubjectForm () {
   } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
     header = <Text c='teal.6' size='lg'>Changes saved</Text>;
   } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
-    header = <Text c='red.6' size='lg'>An error has occurred</Text>;
+    header = <Text c='red.6' size='lg'>Save failed</Text>;
   }
 
   return (
@@ -171,7 +171,7 @@ function SubjectForm () {
           <Group gap='xs'>
             {header}
             {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>1 of 3</Text>}
+            {isNew && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
           </Group>
         </Group>
       </Header>

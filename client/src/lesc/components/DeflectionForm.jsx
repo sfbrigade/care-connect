@@ -20,23 +20,11 @@ function DeflectionForm () {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const isNewQuery = searchParams.get('isNew') === 'true';
-  const [isNewFlow, setIsNewFlow] = useState(() => {
-    if (isNewQuery) {
-      return true;
-    }
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.localStorage.getItem(`deflection-new-flow-${id}`) === 'true';
-  });
-  const isNew = isNewQuery;
+  const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const autoSaveTimerRef = useRef(null);
-  const lastSavedValuesRef = useRef(initialValues);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -63,17 +51,7 @@ function DeflectionForm () {
       if (!isInitialized) {
         return;
       }
-      const newSelectedDetails = [];
-      const newDetailCategoryCounts = {};
-      for (const detailId of values.deflectionDetails) {
-        const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
-        if (category) {
-          newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
-          newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
-        }
-      }
-      setSelectedDetails(newSelectedDetails);
-      setDetailCategoryCounts(newDetailCategoryCounts);
+      countValues(values);
       scheduleAutoSave(values);
     }
   });
@@ -85,29 +63,33 @@ function DeflectionForm () {
           behavior: deflection.behavior,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
         });
-        lastSavedValuesRef.current = normalized;
         form.setInitialValues(normalized);
         form.reset();
+        countValues(normalized);
       }
       setInitialized(true);
-      setAutoSaveStatus('saved');
     }
   }, [isLoading, isInitialized, deflection]);
-
-  useEffect(() => {
-    if (isNew) {
-      setIsNewFlow(true);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(`deflection-new-flow-${id}`, 'true');
-      }
-    }
-  }, [isNew]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
   }, []);
+
+  function countValues (values) {
+    const newSelectedDetails = [];
+    const newDetailCategoryCounts = {};
+    for (const detailId of values.deflectionDetails) {
+      const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
+      if (category) {
+        newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
+        newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
+      }
+    }
+    setSelectedDetails(newSelectedDetails);
+    setDetailCategoryCounts(newDetailCategoryCounts);
+  }
 
   function normalizeValues (values) {
     return {
@@ -118,26 +100,8 @@ function DeflectionForm () {
     };
   }
 
-  function valuesMatch (a, b) {
-    if (a.behavior !== b.behavior) {
-      return false;
-    }
-    if (a.deflectionDetails.length !== b.deflectionDetails.length) {
-      return false;
-    }
-    for (let i = 0; i < a.deflectionDetails.length; i += 1) {
-      if (a.deflectionDetails[i] !== b.deflectionDetails[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   function scheduleAutoSave (values) {
     const normalized = normalizeValues(values);
-    if (valuesMatch(normalized, lastSavedValuesRef.current)) {
-      return;
-    }
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
@@ -158,16 +122,8 @@ function DeflectionForm () {
 
   const autoSaveMutation = useMutation({
     mutationFn: (data) => Api.deflections.update(id, data),
-    onMutate: () => {
-      setAutoSaveStatus('saving');
-    },
     onSuccess: async (response, variables) => {
       await updateDeflectionCache(response.data);
-      lastSavedValuesRef.current = normalizeValues(variables);
-      setAutoSaveStatus('saved');
-    },
-    onError: () => {
-      setAutoSaveStatus('error');
     },
   });
 
@@ -179,18 +135,14 @@ function DeflectionForm () {
     },
   });
 
-  const headerStatus = (() => {
-    if (onSubmitMutation.isPending || autoSaveStatus === 'saving') {
-      return { text: 'Saving...', color: 'dimmed' };
-    }
-    if (autoSaveStatus === 'error') {
-      return { text: 'Save failed', color: 'red.6' };
-    }
-    if (autoSaveStatus === 'saved' || onSubmitMutation.isSuccess) {
-      return { text: 'Changes saved', color: 'teal.6' };
-    }
-    return null;
-  })();
+  let header;
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
+    header = <Text c='dimmed' size='lg'>Saving...</Text>;
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
+    header = <Text c='teal.6' size='lg'>Changes saved</Text>;
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
+    header = <Text c='red.6' size='lg'>Save failed</Text>;
+  }
 
   return (
     <>
@@ -201,9 +153,9 @@ function DeflectionForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
           <Group gap='xs'>
-            {headerStatus && <Text c={headerStatus.color} size='lg'>{headerStatus.text}</Text>}
-            {headerStatus && isNewFlow && <Text c='gray.5' size='lg'>•</Text>}
-            {isNewFlow && <Text c='dimmed' size='lg'>2 of 3</Text>}
+            {header}
+            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
+            {isNew && <Text c='dimmed' size='lg'>2 of 3</Text>}
           </Group>
         </Group>
       </Header>

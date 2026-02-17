@@ -56,7 +56,6 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    validateInputOnBlur: true,
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
@@ -299,10 +298,8 @@ function IncidentForm () {
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
-                  minLength={4}
                   maxLength={4}
                   inputMode='numeric'
-                  placeholder='4 digits'
                   onKeyDown={(e) => {
                     if (!/[0-9]/.test(e.key) && e.key !== 'Backspace') {
                       e.preventDefault();
