@@ -10,9 +10,40 @@ export function useFacilityContext () {
 
 export function FacilityContextValue () {
   const staticContext = useStaticContext();
-  const [facility, setFacility] = useState(staticContext.facility);
+
+  const [facility, setFacility] = useState(() => {
+    // Production: use static context
+    if (staticContext.facility?.subdomain) {
+      return staticContext.facility;
+    }
+    // Dev: use localStorage if available (SSR-safe)
+    if (typeof window === 'undefined') {
+      return staticContext.facility;
+    }
+    try {
+      const saved = localStorage.getItem('selectedFacility');
+      return saved ? JSON.parse(saved) : staticContext.facility;
+    } catch {
+      // Corrupted localStorage, clear it and use default
+      localStorage.removeItem('selectedFacility');
+      return staticContext.facility;
+    }
+  });
+
+  const setFacilityWithPersistence = (newFacility) => {
+    setFacility(newFacility);
+    // Only update localStorage on client-side
+    if (typeof window === 'undefined') return;
+
+    if (newFacility?.subdomain) {
+      localStorage.setItem('selectedFacility', JSON.stringify(newFacility));
+    } else {
+      localStorage.removeItem('selectedFacility');
+    }
+  };
+
   return {
     facility,
-    setFacility,
+    setFacility: setFacilityWithPersistence,
   };
 }
