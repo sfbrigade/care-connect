@@ -153,7 +153,7 @@ export function generate647fTransferFormPDF (deflection, facility = null) {
   addSectionHeader('Additional Information');
   doc.setFontSize(10);
 
-  addField('Hold ID:', deflection.id, false);
+  addField('Hold ID:', `${deflection.id}`, false);
   addField('Service Type:', deflection.serviceTypeName || 'TBD', false);
   addField('Beds Requested:', deflection.bedsRequested?.toString() || 'TBD', false);
 
@@ -638,7 +638,7 @@ export async function fillSFSOFormP04 (hold, facility = null, currentUser = null
     ZIP_CODE: 'TBD', // Not available
     CONTACT_PHONE: 'TBD', // Not available
     ID_NO_SOCSECOPLICFBICII: 'TBD', // Not available
-    SF_NOXNO: hold.id.substring(0, 8).toUpperCase(),
+    SF_NOXNO: `${hold.id}`,
 
     // Incident Information
     // Use incident data when available, fallback to hold.createdAt or 'TBD'

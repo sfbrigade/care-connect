@@ -59,12 +59,12 @@ describe('PDF Generator', () => {
     // Clear the jsPDF mock constructor
     vi.mocked(jsPDF).mockClear();
     mockHold = {
-      id: '12345678-1234-1234-1234-123456789abc',
+      id: 123456,
       createdAt: '2024-01-15T10:30:00Z',
       notes: 'Test justification narrative',
       serviceTypeName: 'Emergency Shelter',
       bedsRequested: 2,
-      client: {
+      subject: {
         firstName: 'John',
         lastName: 'Doe',
         race: 'White',
@@ -229,8 +229,7 @@ describe('PDF Generator', () => {
       const doc = generate647fTransferFormPDF(mockHold);
 
       const textCalls = doc.text.mock.calls.map(call => call[0]);
-      // Hold ID should be first 8 characters uppercase
-      const holdIdCall = textCalls.find(text => text.includes('12345678'));
+      const holdIdCall = textCalls.find(text => text.includes('123456'));
       expect(holdIdCall).toBeDefined();
     });
 
