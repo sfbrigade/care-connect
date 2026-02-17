@@ -12,12 +12,12 @@ const SFSO_FORM_P04_PATH = '/static-data/forms/SFSO-FORM-P04-INVESTIGATIVE-DETEN
 
 /**
  * Generate a 647(f) Transfer Form PDF document
- * @param {Object} hold - Hold object containing client and hold information
+ * @param {Object} deflection - Hold object containing client and hold information
  * @param {Object} facility - Optional facility object
  * @returns {jsPDF} - The generated PDF document
  */
-export function generate647fTransferFormPDF (hold, facility = null) {
-  if (!hold) {
+export function generate647fTransferFormPDF (deflection, facility = null) {
+  if (!deflection) {
     throw new Error('Hold information is required');
   }
 
@@ -79,15 +79,15 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   addSectionHeader('Subject Information');
   doc.setFontSize(10);
 
-  const firstName = hold.client?.firstName || 'TBD';
-  const lastName = hold.client?.lastName || 'TBD';
-  const middleInitial = hold.client?.middleInitial || 'TBD';
-  const race = hold.client?.race || 'TBD';
-  const sex = hold.client?.sex || 'TBD';
-  const dob = hold.client?.dateOfBirth ? formatDob(hold.client.dateOfBirth) : 'TBD';
-  const address = hold.client?.address || 'TBD';
-  const driverLicense = hold.client?.driverLicense || 'TBD';
-  const localId = hold.client?.localId || 'TBD';
+  const firstName = deflection.subject?.firstName || 'TBD';
+  const lastName = deflection.subject?.lastName || 'TBD';
+  const middleInitial = deflection.subject?.middleInitial || 'TBD';
+  const race = deflection.subject?.race || 'TBD';
+  const sex = deflection.subject?.sex || 'TBD';
+  const dob = deflection.subject?.dateOfBirth ? formatDob(deflection.subject.dateOfBirth) : 'TBD';
+  const address = deflection.subject?.address || 'TBD';
+  const driverLicense = deflection.subject?.driverLicense || 'TBD';
+  const localId = deflection.subject?.localId || 'TBD';
 
   addField('Subject Last Name:', lastName, true);
   addField('Subject First Name:', firstName, true);
@@ -106,21 +106,21 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   doc.setFontSize(10);
 
   // Use incident data when available, fallback to TBD or existing logic
-  const cadNumber = hold.incident?.cadNumber || 'TBD';
-  const dateTimeArrested = hold.incident?.dateTimeArrested
-    ? formatDateTime(hold.incident.dateTimeArrested)
-    : (hold.createdAt ? formatDateTime(hold.createdAt) : 'TBD');
-  const transportingOfficer = hold.createdBy
-    ? `${hold.createdBy.firstName} ${hold.createdBy.lastName}`
+  const cadNumber = deflection.incident?.cadNumber || 'TBD';
+  const dateTimeArrested = deflection.incident?.dateTimeArrested
+    ? formatDateTime(deflection.incident.dateTimeArrested)
+    : (deflection.createdAt ? formatDateTime(deflection.createdAt) : 'TBD');
+  const transportingOfficer = deflection.createdBy
+    ? `${deflection.createdBy.firstName} ${deflection.createdBy.lastName}`
     : 'TBD';
-  const locationArrested = hold.incident?.locationArrested || 'TBD';
-  const unit = hold.createdBy?.unit || 'TBD';
-  const badgeNumber = hold.incident?.badgeNumber || 'TBD';
-  const agency = hold.incident?.agency || 'TBD';
-  const charge = hold.incident?.charge || '647(f) RWS';
-  const justification = hold.notes || 'TBD';
-  const substanceNot = hold.narcoticsSubstance === true ? '' : 'not ';
-  const paraphernaliaNot = hold.narcoticsParaphernalia === true ? '' : 'not ';
+  const locationArrested = deflection.incident?.locationArrested || 'TBD';
+  const unit = deflection.createdBy?.unit || 'TBD';
+  const badgeNumber = deflection.incident?.badgeNumber || 'TBD';
+  const agency = deflection.incident?.agency || 'TBD';
+  const charge = deflection.incident?.charge || '647(f) RWS';
+  const justification = deflection.notes || 'TBD';
+  const substanceNot = deflection.narcoticsSubstance === true ? '' : 'not ';
+  const paraphernaliaNot = deflection.narcoticsParaphernalia === true ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot} found to be in possession of a controlled substance. Subject was ${paraphernaliaNot} found to be in possession of narcotics paraphernalia.`;
 
   addField('CAD Number:', cadNumber, true);
@@ -153,9 +153,9 @@ export function generate647fTransferFormPDF (hold, facility = null) {
   addSectionHeader('Additional Information');
   doc.setFontSize(10);
 
-  addField('Hold ID:', hold.id.substring(0, 8).toUpperCase(), false);
-  addField('Service Type:', hold.serviceTypeName || 'TBD', false);
-  addField('Beds Requested:', hold.bedsRequested?.toString() || 'TBD', false);
+  addField('Hold ID:', deflection.id, false);
+  addField('Service Type:', deflection.serviceTypeName || 'TBD', false);
+  addField('Beds Requested:', deflection.bedsRequested?.toString() || 'TBD', false);
 
   if (facility) {
     addField('Facility:', facility.name || 'TBD', false);
