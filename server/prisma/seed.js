@@ -11,6 +11,7 @@ import seedUnits from './seeds/units.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
+import seedTestDeflection from './seeds/testDeflection.js';
 
 try {
   await seedAdminUser(prisma);
@@ -24,6 +25,7 @@ try {
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
   await seedDeflectionDetails(prisma);
+  await seedTestDeflection(prisma);
 } catch (error) {
   console.error('Error seeding:', error);
   process.exit(1);

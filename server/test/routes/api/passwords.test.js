@@ -117,11 +117,13 @@ test('/api/passwords', async (t) => {
         lastName: 'User',
         email: 'regular.user@test.com',
         isAdmin: false,
+        roles: ['FIELD'],
         picture: null,
         pictureUrl: null,
         organization: {
           id: 'sfpd',
           name: 'SFPD',
+          defaultRoles: ['FIELD'],
           createdById: '555740af-17e9-48a3-93b8-d5236dfd2c29',
           createdAt: data.organization.createdAt,
           updatedAt: data.organization.updatedAt,
