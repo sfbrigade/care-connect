@@ -57,14 +57,6 @@ function IncidentForm () {
     mode: 'uncontrolled',
     initialValues,
     validateInputOnBlur: true,
-    validate: {
-      supervisorBadgeNumber: (value) => {
-        if (!value || String(value).length !== 4) {
-          return 'Star number must be 4 digits';
-        }
-        return null;
-      },
-    },
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
