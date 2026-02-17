@@ -6,6 +6,8 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
@@ -17,6 +19,7 @@ function Holds () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -128,6 +131,7 @@ function Holds () {
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
+      showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
     },
   });
 
@@ -164,6 +168,7 @@ function Holds () {
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
             showLeftButtonSticky={showLeftButtonSticky}
+            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
             fullWidth

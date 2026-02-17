@@ -1,4 +1,4 @@
-import { Alert, Card, Text, Title, Group, Button, Stack } from '@mantine/core';
+import { Alert, Card, Loader, Text, Title, Group, Button, Stack } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { inflect } from 'inflection';
 import { DateTime } from 'luxon';
@@ -15,6 +15,7 @@ function Facility ({
   onArrivedClick,
   onLeftClick,
   onHoldClick,
+  isPending,
 }) {
   const { t } = useTranslation();
   const hasArrived = !!arrivedAt;
@@ -22,8 +23,8 @@ function Facility ({
   const showLeftButton = (hasArrived && !hasLeft) || (showLeftButtonSticky && !hasLeft);
   const isClosed = facility.status === 'CLOSED';
   const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
-  const isArrivedButtonDisabled = isClosed || !hasActiveHold;
-  const isHoldButtonDisabled = isClosed || isFull || (hasArrived && !hasLeft) || showLeftButton;
+  const isHoldButtonDisabled = isPending || isClosed || isFull || (hasArrived && !hasLeft) || showLeftButton;
+  const isArrivedButtonDisabled = isPending || isClosed || !hasActiveHold;
   const hasAddressParts = [
     facility.addressLine1,
     facility.addressLine2,
@@ -59,7 +60,7 @@ function Facility ({
           </Text>
         </Stack>
         <Group gap='sm' grow wrap='nowrap'>
-          {(!hasArrived || hasLeft) && !showLeftButton && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>I've arrived</Button>}
+          {(!hasArrived || hasLeft) && !showLeftButton && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>{isPending ? <Loader size='sm' /> : "I've arrived"}</Button>}
           {showLeftButton && <Button px='sm' onClick={onLeftClick} disabled={hasActiveHold}>I've left</Button>}
           <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
         </Group>
