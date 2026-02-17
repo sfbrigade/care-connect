@@ -21,11 +21,11 @@ export function FacilityContextValue () {
       return staticContext.facility;
     }
     try {
-      const saved = localStorage.getItem('selectedFacility');
+      const saved = window.localStorage.getItem('selectedFacility');
       return saved ? JSON.parse(saved) : staticContext.facility;
     } catch {
       // Corrupted localStorage, clear it and use default
-      localStorage.removeItem('selectedFacility');
+      window.localStorage.removeItem('selectedFacility');
       return staticContext.facility;
     }
   });
@@ -36,9 +36,9 @@ export function FacilityContextValue () {
     if (typeof window === 'undefined') return;
 
     if (newFacility?.subdomain) {
-      localStorage.setItem('selectedFacility', JSON.stringify(newFacility));
+      window.localStorage.setItem('selectedFacility', JSON.stringify(newFacility));
     } else {
-      localStorage.removeItem('selectedFacility');
+      window.localStorage.removeItem('selectedFacility');
     }
   };
 
