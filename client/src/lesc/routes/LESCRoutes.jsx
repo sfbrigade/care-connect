@@ -16,6 +16,7 @@ import DeflectionForm from '../components/DeflectionForm';
 import PropertyForm from '../components/PropertyForm';
 import NarcoticsForm from '../components/NarcoticsForm';
 import DrugUseForm from '../components/DrugUseForm';
+import TestFormPreview from '@/forms/TestFormPreview';
 
 function LESCRoutes () {
   const { user } = useAuthContext();
@@ -39,6 +40,7 @@ function LESCRoutes () {
       <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />
       <Route path='care/:id/exit' element={<CareExitDetails />} />
       <Route path='care' element={<Care />} />
+      <Route path='forms/test' element={<TestFormPreview />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
