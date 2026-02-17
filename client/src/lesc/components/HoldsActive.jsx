@@ -53,7 +53,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject`);
+                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
                 }}
               />
             ))}

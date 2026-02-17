@@ -56,7 +56,7 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: (values) => ({
+    transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
         zone: 'local',
@@ -297,12 +297,7 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
-                  label={
-                    <>
-                      Supervising Sergeant’s Star Number<span>*</span>
-                    </>
-                  }
-                  minLength={1}
+                  label={<>Supervising Sergeant’s Star Number<span>*</span></>}
                   maxLength={4}
                   inputMode='numeric'
                   onKeyDown={(e) => {
