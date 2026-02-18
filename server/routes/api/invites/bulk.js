@@ -10,6 +10,8 @@ const BulkInviteItemSchema = Invite.AttibutesSchema.pick({
 });
 
 const BulkInviteRequestSchema = z.object({
+  organizationId: z.string().nullable().optional(),
+  message: z.string().nullable().optional(),
   invites: z.array(BulkInviteItemSchema).min(1),
 });
 
@@ -38,7 +40,7 @@ export default async function (fastify, opts) {
       onRequest: fastify.requireAdmin,
     },
     async function (request, reply) {
-      const { invites } = request.body;
+      const { invites, organizationId, message } = request.body;
       let invitedCount = 0;
       let existingCount = 0;
       const errors = [];
@@ -74,6 +76,8 @@ export default async function (fastify, opts) {
               firstName,
               lastName,
               email,
+              organizationId: organizationId || null,
+              message,
               createdById: request.user.id,
             },
           });

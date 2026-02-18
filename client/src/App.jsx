@@ -28,7 +28,7 @@ function App () {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider theme={AppTheme}>
+      <MantineProvider theme={AppTheme} forceColorScheme='light'>
         <ModalsProvider>
           <ToastProvider>
             <AuthContextProvider>
