@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Anchor, Button, Container, Fieldset, Group, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
@@ -20,6 +20,7 @@ function EditUserProfilePage () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const [unitId, setUnitId] = useState();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -71,6 +72,11 @@ function EditUserProfilePage () {
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
 
+  function handleUnitSelectorData(data) {
+    setUnitId(data);
+    form.setValues({ 'unitId': data });
+  }
+
   return (
     <>
       <Head>
@@ -95,7 +101,12 @@ function EditUserProfilePage () {
                   placeholder='Enter badge or star number'
                   disabled
                 />
-                <UnitSelector title={false} show_btn={false} ></UnitSelector>
+                <UnitSelector
+                  sendUnitIdToParent={handleUnitSelectorData}
+                  title={false}
+                  show_btn={false}
+                >
+                </UnitSelector>
                 <Group>
                   <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
                   <Button variant='secondary' type='submit'>Save changes</Button>
