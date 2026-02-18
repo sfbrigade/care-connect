@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Container, FileInput, Group, Select, Stack, Table, Text, Title } from '@mantine/core';
+import { Alert, Button, Container, FileInput, Group, Select, Stack, Table, Text, Textarea, Title } from '@mantine/core';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
@@ -36,6 +36,7 @@ function AdminInvitesBatch () {
   const [submitError, setSubmitError] = useState(null);
   const [summary, setSummary] = useState(null);
   const [organizationId, setOrganizationId] = useState('');
+  const [message, setMessage] = useState('');
 
   const { data: organizations } = useQuery({
     queryKey: ['organizations'],
@@ -89,7 +90,7 @@ function AdminInvitesBatch () {
   function handleSubmit () {
     setSubmitError(null);
     setSummary(null);
-    onSubmitMutation.mutate({ invites: rows, organizationId: organizationId || null });
+    onSubmitMutation.mutate({ invites: rows, organizationId: organizationId || null, message: message || null });
   }
 
   function handleReset () {
@@ -140,6 +141,13 @@ function AdminInvitesBatch () {
             maw={420}
             value={file}
             onChange={handleFile}
+            disabled={onSubmitMutation.isPending}
+          />
+          <Textarea
+            label='Message'
+            maw={420}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
             disabled={onSubmitMutation.isPending}
           />
           {parseErrors.length > 0 && (

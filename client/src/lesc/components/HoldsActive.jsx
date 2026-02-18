@@ -53,14 +53,14 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
                 deflection={deflection}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject`);
+                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
                 }}
               />
             ))}
           </Stack>
           {!incident?.arrivedAt && (
-            <Button variant='secondary' fullWidth onClick={onExtendAllClick}>
-              Extend all holds
+            <Button disabled={extendAllHoldsMutation.isPending} variant='secondary' fullWidth onClick={onExtendAllClick}>
+              {extendAllHoldsMutation.isPending ? <Loader size='sm' /> : 'Extend all holds'}
             </Button>
           )}
         </>
