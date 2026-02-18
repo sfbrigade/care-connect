@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create --base dev --title \"Add CLAUDE.md for Claude Code context\" --body \"$\\(cat <<''EOF''\n## Summary\n- Adds a `CLAUDE.md` file providing Claude Code with project commands, architecture overview, and code conventions\n- Covers Docker-based development, linting, testing \\(client + server\\), build, database, and Storybook commands\n- Documents multi-tenant facility routing, client/server architecture, key data models, dev service URLs, and code style\n\n## Test plan\n- [ ] Verify CLAUDE.md renders correctly on GitHub\n- [ ] Confirm no sensitive information is included\nEOF\n\\)\")",
+      "Bash(docker compose exec:*)",
+      "Bash(npx esbuild:*)",
+      "Bash(npm run build:forms:*)",
+      "Bash(npm run lint:check:*)",
+      "Bash(npm run lint:*)"
+    ]
+  }
+}
