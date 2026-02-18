@@ -1,8 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
-const h = React.createElement;
-
 const styles = StyleSheet.create({
   page: {
     padding: 40,
@@ -51,16 +49,20 @@ const styles = StyleSheet.create({
 });
 
 function Field ({ label, value }) {
-  return h(View, { style: styles.row },
-    h(Text, { style: styles.label }, `${label}:`),
-    h(Text, { style: styles.value }, value || 'N/A')
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}:</Text>
+      <Text style={styles.value}>{value || 'N/A'}</Text>
+    </View>
   );
 }
 
 function Section ({ title, children }) {
-  return h(View, { style: styles.section },
-    h(Text, { style: styles.sectionTitle }, title),
-    children
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
   );
 }
 
@@ -77,35 +79,37 @@ export default function TestForm ({ data = {} }) {
     notes = 'This is a test form generated using @react-pdf/renderer. It demonstrates how to create PDF documents using React components.',
   } = data;
 
-  return h(Document, null,
-    h(Page, { size: 'LETTER', style: styles.page },
-      h(Text, { style: styles.header }, 'Test Transfer Form'),
+  return (
+    <Document>
+      <Page size='LETTER' style={styles.page}>
+        <Text style={styles.header}>Test Transfer Form</Text>
 
-      h(Section, { title: 'Subject Information' },
-        h(Field, { label: 'Last Name', value: subjectLastName }),
-        h(Field, { label: 'First Name', value: subjectFirstName }),
-        h(Field, { label: 'Date of Birth', value: dateOfBirth })
-      ),
+        <Section title='Subject Information'>
+          <Field label='Last Name' value={subjectLastName} />
+          <Field label='First Name' value={subjectFirstName} />
+          <Field label='Date of Birth' value={dateOfBirth} />
+        </Section>
 
-      h(Section, { title: 'Case Information' },
-        h(Field, { label: 'Case Number', value: caseNumber }),
-        h(Field, { label: 'Incident Date', value: incidentDate }),
-        h(Field, { label: 'Location', value: incidentLocation })
-      ),
+        <Section title='Case Information'>
+          <Field label='Case Number' value={caseNumber} />
+          <Field label='Incident Date' value={incidentDate} />
+          <Field label='Location' value={incidentLocation} />
+        </Section>
 
-      h(Section, { title: 'Officer Information' },
-        h(Field, { label: 'Officer Name', value: officerName }),
-        h(Field, { label: 'Badge Number', value: badgeNumber })
-      ),
+        <Section title='Officer Information'>
+          <Field label='Officer Name' value={officerName} />
+          <Field label='Badge Number' value={badgeNumber} />
+        </Section>
 
-      h(Section, { title: 'Notes' },
-        h(Text, { style: { fontSize: 10, lineHeight: 1.4 } }, notes)
-      ),
+        <Section title='Notes'>
+          <Text style={{ fontSize: 10, lineHeight: 1.4 }}>{notes}</Text>
+        </Section>
 
-      h(View, { style: styles.footer },
-        h(Text, null, `Generated: ${new Date().toLocaleString()}`),
-        h(Text, null, 'Page 1 of 1')
-      )
-    )
+        <View style={styles.footer}>
+          <Text>Generated: {new Date().toLocaleString()}</Text>
+          <Text>Page 1 of 1</Text>
+        </View>
+      </Page>
+    </Document>
   );
 }

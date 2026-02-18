@@ -1,3 +1,6 @@
 import neostandard from 'neostandard';
 
-export default neostandard({ semi: true });
+export default [
+  { ignores: ['lib/forms/dist/'] },
+  ...neostandard({ semi: true }),
+];

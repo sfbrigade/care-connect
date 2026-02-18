@@ -29,7 +29,7 @@ export default async function (fastify, opts) {
       const [React, { renderToBuffer }, { default: TestForm }] = await Promise.all([
         import('react'),
         import('@react-pdf/renderer'),
-        import('../../../lib/forms/TestForm.js'),
+        import('../../../lib/forms/dist/TestForm.js'),
       ]);
 
       const pdfBuffer = await renderToBuffer(
