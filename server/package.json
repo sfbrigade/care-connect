@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "build": "npm run prisma:generate",
+    "build": "npm run prisma:generate && npm run build:forms",
+    "build:forms": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external",
     "dev": "prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
@@ -66,7 +67,6 @@
     "nodemailer-mock": "^2.0.9",
     "prisma": "^6.16.2",
     "testcontainers": "^11.6.0",
-    "tsx": "^4.21.0",
     "yaml": "^2.8.1"
   },
   "imports": {
