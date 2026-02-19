@@ -32,10 +32,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
-      }
-
       if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
