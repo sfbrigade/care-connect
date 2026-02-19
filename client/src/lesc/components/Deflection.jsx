@@ -47,7 +47,7 @@ function Deflection () {
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
           queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
         }
       }

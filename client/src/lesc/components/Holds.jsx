@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -47,15 +47,6 @@ function Holds () {
   });
 
   const [tab, setTab] = useState('active');
-  const [showLeftButtonSticky, setShowLeftButtonSticky] = useState(false);
-  const [incidentIdForLeft, setIncidentIdForLeft] = useState(null);
-
-  useEffect(() => {
-    if (incident?.arrivedAt && !incident?.leftAt) {
-      setShowLeftButtonSticky(true);
-      setIncidentIdForLeft(incident.id);
-    }
-  }, [incident?.id, incident?.arrivedAt, incident?.leftAt]);
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 
@@ -75,15 +66,13 @@ function Holds () {
     mutationFn: (id) => Api.incidents.left(id),
     onSuccess: () => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-      setShowLeftButtonSticky(false);
-      setIncidentIdForLeft(null);
     }
   });
 
   function onLeftClick () {
-    setShowLeftButtonSticky(false);
-    const id = incident?.id ?? incidentIdForLeft;
-    if (id) markLeftMutation.mutate(id);
+    if (incident?.id) {
+      markLeftMutation.mutate(incident.id);
+    }
   }
 
   const createDeflectionMutation = useMutation({
@@ -120,12 +109,12 @@ function Holds () {
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
           queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
         }
       }
@@ -167,7 +156,6 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
-            showLeftButtonSticky={showLeftButtonSticky}
             isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
