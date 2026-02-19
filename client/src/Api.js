@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-import { INSUFFICIENT_SPACE_ON_RESOURCE, StatusCodes } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 import { capitalize } from 'inflection';
 
 const instance = axios.create({
@@ -340,7 +340,7 @@ const Api = {
       update (id, data) {
         return instance.patch(`/api/deflections/cancel-reasons/${id}`, data).catch(handleError);
       },
-      reopen(id){
+      reopen (id) {
         return instance.post(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
       },
       delete (id) {
