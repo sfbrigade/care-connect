@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { BrowserRouter } from 'react-router';
+import translation from '../../locales/en/translation.json';
 
 // theme.ts file from previous step
 import AppTheme from '../src/AppTheme';
@@ -20,8 +21,6 @@ const queryClient = new QueryClient({
 });
 
 const defaultFacility = { id: 'storybook-facility', name: 'Storybook Facility' };
-
-import translation from '../../locales/en/translation.json';
 i18n
   .use(initReactI18next)
   .init({
