@@ -7,6 +7,7 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
@@ -14,15 +15,11 @@ import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import { hasMeaningfulHoldData } from './holdDataUtils';
 
-import { useToast } from '@/components/ToastContext';
-import { useFacilityContext } from '@/FacilityContext';
-
 function Holds () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],

@@ -11,7 +11,6 @@ import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
-import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
