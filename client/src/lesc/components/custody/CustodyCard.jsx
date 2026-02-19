@@ -1,4 +1,4 @@
-import { Button, Card, Center, Group, Stack, Text, Title, Box } from '@mantine/core';
+import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -46,9 +46,10 @@ function CustodyCard ({ deflection }) {
           )}
         </Box>
         {deflection.subjectStatus === 'READY_FOR_INTAKE' && (
-          <Center>
+          <Stack align='center' gap='xs'>
             <QRCodeSVG value={`${window.location.origin}/admit/${deflection.id}`} size={160} />
-          </Center>
+            <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
+          </Stack>
         )}
         <Group wrap='nowrap' justify='flex-end'>
           <Button
