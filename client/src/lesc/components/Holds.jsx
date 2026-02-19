@@ -13,7 +13,6 @@ import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
-import { hasMeaningfulHoldData } from './holdDataUtils';
 
 function Holds () {
   const navigate = useNavigate();
@@ -173,7 +172,7 @@ function Holds () {
   const isLastActiveHoldSelected = !!selectedDeflection && (deflections?.length ?? 0) === 1;
 
   const incidentContainsOnlyEmptyHolds = incidentDeflections
-    ? incidentDeflections.every(deflection => !hasMeaningfulHoldData(deflection))
+    ? incidentDeflections.every(deflection => !deflection.subjectId)
     : false; // Default false to avoid triggering auto-cancel in a loading/error state
 
   const shouldCancelIncidentWithHold =

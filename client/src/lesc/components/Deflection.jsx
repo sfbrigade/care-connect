@@ -15,7 +15,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
-import { hasMeaningfulHoldData } from './holdDataUtils';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
 function Deflection () {
@@ -103,7 +102,7 @@ function Deflection () {
 
   const activeHoldsCount = activeDeflections?.length;
   const isLastActiveDetailedHold =
-    hasMeaningfulHoldData(deflection) &&
+    !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
     activeHoldsCount === 1;
 

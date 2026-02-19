@@ -26,7 +26,6 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
-import { hasMeaningfulHoldData } from './holdDataUtils';
 
 const initialValues = {
   cadNumber: '',
@@ -204,7 +203,7 @@ function IncidentForm () {
   }
 
   const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
-  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => hasMeaningfulHoldData(deflection));
+  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => deflection.subjectId);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -367,20 +366,22 @@ function IncidentForm () {
                   back and add it before custody transfer.
                 </Text>
               </Stack>
-              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
-                {data?.id ? 'Save incident details' : 'Create incident & hold'}
-              </Button>
-              {canCancelIncident && (
-                <Button
-                  type='button'
-                  variant='destructive'
-                  style={{ alignSelf: 'flex-start' }}
-                  onClick={() => setShowCancelModal(true)}
-                  disabled={cancelIncidentMutation.isPending}
-                >
-                  Cancel incident
+              <Stack gap='sm'>
+                <Button type='submit' style={{ alignSelf: 'flex-start' }}>
+                  {data?.id ? 'Save incident details' : 'Create incident & hold'}
                 </Button>
-              )}
+                {canCancelIncident && (
+                  <Button
+                    type='button'
+                    variant='destructive'
+                    style={{ alignSelf: 'flex-start' }}
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={cancelIncidentMutation.isPending}
+                  >
+                    Cancel incident
+                  </Button>
+                )}
+              </Stack>
             </Stack>
           </Fieldset>
         </form>
