@@ -59,7 +59,9 @@ function Holds () {
   });
 
   function onArrivedClick () {
-    if (incident?.id) markArrivedMutation.mutate(incident.id);
+    if (incident?.id) {
+      markArrivedMutation.mutate(incident.id);
+    }
   }
 
   const markLeftMutation = useMutation({
