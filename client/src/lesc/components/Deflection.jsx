@@ -14,8 +14,10 @@ import Header from '@/components/Header';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { hasMeaningfulHoldData } from './holdDataUtils';
+import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
 function Deflection () {
   const { id } = useParams();
@@ -54,12 +56,13 @@ function Deflection () {
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
           queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
         }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       setShowCancelModal(false);
+      showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
       navigate('/holds');
     },
   });
@@ -119,6 +122,18 @@ function Deflection () {
     });
   }
 
+  function on647fClick () {
+    try {
+      const doc = generate647fTransferFormPDF(deflection, facility);
+      // Open PDF in browser
+      doc.output('dataurlnewwindow');
+      showToast('647(f) Transfer Form opened in new window', 'success');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast('Failed to generate PDF', 'error');
+    }
+  }
+
   return (
     <>
       <Head>
@@ -134,6 +149,13 @@ function Deflection () {
             <Text c='gray.5' size='md'>•</Text>
             <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
+          {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
+            <>
+              <Group>
+                <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
+              </Group>
+            </>
+          )}
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>
             {deflection?.subject?.dateOfBirth && (

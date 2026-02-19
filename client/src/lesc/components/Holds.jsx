@@ -6,6 +6,8 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
@@ -20,6 +22,7 @@ function Holds () {
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -72,7 +75,7 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
     }
   });
@@ -117,17 +120,18 @@ function Holds () {
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
+          queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
         }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
+      showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
     },
   });
 
@@ -219,6 +223,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
+            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
             fullWidth
