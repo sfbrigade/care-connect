@@ -107,10 +107,13 @@ export default async function (fastify, opts) {
               status: Deflection.HoldStatus.ACTIVE,
             },
           });
+          // if the user has not arrived yet, close the incident if there no more deflections
           if (activeDeflections === 0) {
-            await tx.incident.update({
+            // note- using updateMany because update throws an error if no record matches
+            await tx.incident.updateMany({
               where: {
                 id: deflection.incidentId,
+                arrivedAt: null
               },
               data: {
                 completedAt: new Date(),

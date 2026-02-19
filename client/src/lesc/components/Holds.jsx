@@ -66,7 +66,7 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
     }
   });
@@ -111,13 +111,13 @@ function Holds () {
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
+          queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
         }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
