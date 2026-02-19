@@ -78,7 +78,6 @@ export default async function main (prisma) {
     const incident = await prisma.incident.create({
       data: {
         facilityId: facility.id,
-        arrivedAt: new Date(),
         addressLine1: '850 Bryant St',
         city: 'San Francisco',
         state: 'CA',

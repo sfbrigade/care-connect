@@ -89,9 +89,10 @@ function Hold ({
           </Box>
         </Stack>
         {isActive && isArrived && (
-          <Group justify='center'>
+          <Stack align='center' gap='xs'>
             <LockedQRCode value={transferUrl} locked={!isValid} />
-          </Group>
+            <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
+          </Stack>
         )}
         {!(isNew && (isCancelled || isExpired)) && (
           <Group justify='space-between' wrap='nowrap'>

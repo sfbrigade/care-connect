@@ -39,10 +39,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!request.user.isAdmin && deflection.facilityId !== request.facility?.id) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
-      }
-
       if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
