@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -7,7 +7,7 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-
+import { formatInputDob } from '@/utils/format';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -39,6 +39,9 @@ function SubjectForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
+  const [dobInput, setDobInput] = useState('');
+  const autoSaveTimerRef = useRef(null);
+  const isNew = searchParams.get('isNew') === 'true';
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -47,7 +50,14 @@ function SubjectForm () {
       ...values,
       narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
       narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
+      dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
     }),
+    onValuesChange: (values) => {
+      if (!isInitialized) {
+        return;
+      }
+      scheduleAutoSave(values, dobInput);
+    }
   });
 
   const { data: incident } = useQuery({
@@ -60,37 +70,95 @@ function SubjectForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const isNew = searchParams.get('isNew') === 'true' || !deflection?.subjectId;
-
   useEffect(() => {
-    if (!isLoading) {
-      if (deflection.subject) {
-        form.setInitialValues({
+    if (!isLoading && !isInitialized) {
+      if (deflection?.subject) {
+        const normalized = normalizeValues({
           ...initialValues,
           ...deflection.subject,
           narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
           narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
-          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toISODate() : '',
+          dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
+        setDobInput(normalized.dateOfBirth ?? '');
+        form.setInitialValues(normalized);
         form.reset();
       }
       setInitialized(true);
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, isInitialized, deflection]);
+
+  useEffect(() => () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+  }, []);
+
+  function normalizeValues (values) {
+    return {
+      ...initialValues,
+      ...values,
+      narcoticsSubstance: values.narcoticsSubstance ?? null,
+      narcoticsParaphernalia: values.narcoticsParaphernalia ?? null,
+      dateOfBirth: values.dateOfBirth ?? '',
+    };
+  }
+
+  function buildAutoSavePayload (values, dobString) {
+    const normalized = normalizeValues(values);
+    const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+    return {
+      ...normalized,
+      narcoticsSubstance: normalized.narcoticsSubstance !== null ? normalized.narcoticsSubstance === 'true' : null,
+      narcoticsParaphernalia: normalized.narcoticsParaphernalia !== null ? normalized.narcoticsParaphernalia === 'true' : null,
+      dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
+    };
+  }
+
+  function scheduleAutoSave (values, dobString) {
+    const normalized = normalizeValues(values);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      const payload = buildAutoSavePayload(values, dobString);
+      autoSaveMutation.mutate({ payload, normalized });
+    }, 700);
+  }
+
+  async function updateDeflectionCache (updatedDeflection) {
+    await queryClient.setQueryData(['deflections', id], updatedDeflection);
+    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+    if (cachedDeflections) {
+      const updatedDeflections = [...cachedDeflections];
+      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+    }
+  }
+
+  const autoSaveMutation = useMutation({
+    mutationFn: ({ payload }) => Api.deflections.subject(id, payload),
+    onSuccess: async (response) => {
+      await updateDeflectionCache(response.data);
+    },
+  });
 
   const onSubmitMutation = useMutation({
     mutationFn: (data) => Api.deflections.subject(id, data),
     onSuccess: async (response) => {
-      await queryClient.setQueryData(['deflections', id], response.data);
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-      }
+      await updateDeflectionCache(response.data);
       navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
     },
   });
+
+  let header;
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
+    header = <Text c='dimmed' size='lg'>Saving...</Text>;
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
+    header = <Text c='teal.6' size='lg'>Changes saved</Text>;
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
+    header = <Text c='red.6' size='lg'>Save failed</Text>;
+  }
 
   return (
     <>
@@ -100,9 +168,11 @@ function SubjectForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? '/holds' : `/holds/${id}`} />
-          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+          <Group gap='xs'>
+            {header}
+            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
+            {isNew && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+          </Group>
         </Group>
       </Header>
       <Container>
@@ -111,6 +181,7 @@ function SubjectForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
+
         <Title order={2} mb='xs'>Subject details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
@@ -135,10 +206,19 @@ function SubjectForm () {
                 {...form.getInputProps('middleInitial')}
               />
               <TextInput
-                key={form.key('dateOfBirth')}
                 label={<>Date of birth<span>*</span></>}
-                type='date'
+                type='text'
+                inputMode='numeric'
+                maxLength={10}
+                placeholder='MM/DD/YYYY'
                 {...form.getInputProps('dateOfBirth')}
+                value={dobInput}
+                onChange={(event) => {
+                  const formatted = formatInputDob(event.currentTarget.value);
+                  setDobInput(formatted);
+                  form.setFieldValue('dateOfBirth', formatted);
+                  scheduleAutoSave(form.getValues(), formatted);
+                }}
               />
               <Input.Wrapper
                 label={<>Sex<span>*</span></>}
@@ -147,6 +227,7 @@ function SubjectForm () {
                   key={form.key('sex')}
                   {...form.getInputProps('sex')}
                 >
+                  {form.errors.sex && <Text color='red' size='sm'>{form.errors.sex}</Text>}
                   <Group gap='sm' mt='md'>
                     {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
                       <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
@@ -161,6 +242,7 @@ function SubjectForm () {
                   key={form.key('race')}
                   {...form.getInputProps('race')}
                 >
+                  {form.errors.race && <Text color='red' size='sm'>{form.errors.race}</Text>}
                   <Group gap='sm' mt='md'>
                     {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
                       <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
