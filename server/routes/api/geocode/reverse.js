@@ -60,22 +60,27 @@ export default async function (fastify, opts) {
         }
 
         const data = await response.json();
-        const feature = data?.features?.[0];
+        let result;
+        for (const feature of (data?.features ?? [])) {
+          const street = feature.properties?.street;
+          const houseNumber = feature.properties?.housenumber;
+          const streetAddress = street ? [houseNumber, street].filter(Boolean).join(' ') : null;
+          result = {
+            addressLine1: streetAddress ?? feature.properties?.label ?? null,
+            city: feature.properties?.locality ?? null,
+            state: feature.properties?.region_a ?? null,
+            postalCode: feature.properties?.postalcode ?? null,
+          };
+          if (streetAddress) {
+            break;
+          }
+        }
 
-        if (!feature) {
+        if (!result) {
           return reply.code(StatusCodes.NOT_FOUND).send();
         }
 
-        const street = feature.properties?.street;
-        const houseNumber = feature.properties?.housenumber;
-        const streetAddress = street ? [houseNumber, street].filter(Boolean).join(' ') : null;
-
-        return reply.send({
-          addressLine1: streetAddress ?? feature.properties?.label ?? null,
-          city: feature.properties?.locality ?? null,
-          state: feature.properties?.region_a ?? null,
-          postalCode: feature.properties?.postalcode ?? null,
-        });
+        return reply.send(result);
       } catch (error) {
         fastify.log.error(error, 'Error during reverse geocoding');
         return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send();
