@@ -43,6 +43,7 @@ const prisma = new PrismaClient({
               where: {
                 bedTypeId,
                 status: Deflection.HoldStatus.ACTIVE,
+                subjectStatus: Deflection.SubjectStatus.DETAINED,
                 expiresAt: {
                   lte: now,
                 },
@@ -69,7 +70,7 @@ const prisma = new PrismaClient({
               },
             });
 
-            // If the incident has no more active deflections, mark it as completed
+            // If the incident has no more active deflections, and the user has not arrived, mark it as completed
             const incidentIds = [...new Set(deflections.map((deflection) => deflection.incidentId))];
             for (const incidentId of incidentIds) {
               const activeDeflectionsCount = await tx.deflection.count({
@@ -80,8 +81,11 @@ const prisma = new PrismaClient({
               });
 
               if (activeDeflectionsCount === 0) {
-                await tx.incident.update({
-                  where: { id: incidentId },
+                await tx.incident.updateMany({
+                  where: {
+                    id: incidentId,
+                    arrivedAt: null
+                  },
                   data: {
                     completedAt: now,
                     updatedById: User.BATCH_USER_ID,
