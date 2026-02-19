@@ -157,7 +157,7 @@ function Holds () {
             <HoldsActive incident={incident} deflections={deflections} isFetchingDeflections={isFetchingDeflections} onCancelHoldClick={onCancelHoldClick} />
           )}
           {tab === 'history' && (
-            <HoldsHistory facility={facility} incident = {incident}/>
+            <HoldsHistory facility={facility} incident={incident} />
           )}
           <Text size='xs' c='gray.5' align='center'>
             Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
