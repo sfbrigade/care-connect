@@ -3,22 +3,6 @@ import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
 import CancelHoldModal from './CancelHoldModal';
 
-const deflectionWithSubject = {
-  id: 123,
-  subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-  subject: {
-    firstName: 'John',
-    middleInitial: 'D',
-    lastName: 'Doe',
-  },
-};
-
-const deflectionWithoutSubject = {
-  id: 456,
-  subjectId: null,
-  subject: null,
-};
-
 export default {
   title: 'LESC/CancelHoldModal',
   component: CancelHoldModal,
@@ -29,75 +13,74 @@ export default {
       iframeHeight: 600,
     },
   },
+  decorators: [
+    (Story, context) => {
+      const [opened, { open, close }] = useDisclosure(false);
+      return (
+        <>
+          <Button onClick={open}>Open Cancel Hold Modal</Button>
+          <Story args={{ ...context.args, opened, onClose: close, onConfirm: fn() }} />
+        </>
+      );
+    },
+  ],
   tags: ['autodocs'],
-};
-
-export const WithSubject = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => close())}
-          deflection={deflectionWithSubject}
-        />
-      </>
-    );
+  argTypes: {
+    opened: {
+      control: 'boolean',
+      description: 'Whether the modal is open',
+    },
+    loading: {
+      control: 'boolean',
+      description: 'Whether the cancel action is in progress',
+    },
   },
 };
 
-export const WithoutSubject = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => close())}
-          deflection={deflectionWithoutSubject}
-        />
-      </>
-    );
+export const Default = {
+  args: {
+    deflection: {
+      id: '012345',
+      subjectId: null,
+      subject: null,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 59 * 60 * 1000).toISOString(),
+      status: 'ACTIVE',
+    }
+  },
+};
+
+export const WithSubject = {
+  args: {
+    deflection: {
+      ...Default.args.deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+        sex: 'MALE',
+      },
+    }
   },
 };
 
 export const Loading = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn()}
-          deflection={deflectionWithSubject}
-          loading
-        />
-      </>
-    );
-  },
+  args: {
+    deflection: {
+      ...Default.args.deflection,
+    },
+    loading: true,
+  }
 };
 
-export const OpenedWithSubject = {
+export const LoadingWithSubject = {
   args: {
-    opened: true,
-    onClose: fn(),
-    onConfirm: fn(),
-    deflection: deflectionWithSubject,
-  },
-};
-
-export const OpenedWithoutSubject = {
-  args: {
-    opened: true,
-    onClose: fn(),
-    onConfirm: fn(),
-    deflection: deflectionWithoutSubject,
-  },
+    deflection: {
+      ...WithSubject.args.deflection,
+    },
+    loading: true,
+  }
 };

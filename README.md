@@ -49,8 +49,11 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
 
    ```
    cd server
+   npx prisma migrate deploy
    npx prisma db seed
    ```
+
+   The first command creates the database and applies all migrations. The second command populates it with development data.
 
    This will populate the database with a complete setup for development, including an admin user that you can use to log in to the web app.
 
@@ -334,7 +337,7 @@ To lint and format your code:
 ## License
 
 Care Connect
-Copyright © 2025 SF Civic Tech
+Copyright © 2026 SF Civic Tech
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as

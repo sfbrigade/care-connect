@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
-import { Button, Stack, Text, Textarea, TextInput, Alert } from '@mantine/core';
+import { Button, SimpleGrid, Stack, Text, Textarea, TextInput, Alert } from '@mantine/core';
 
 import Api from '@/Api';
 
 function FeedbackForm ({ onSuccess }) {
+  const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [success, setSuccess] = useState(false);
@@ -91,21 +93,36 @@ function FeedbackForm ({ onSuccess }) {
           </Alert>
         )}
 
-        <Button
-          type='submit'
-          disabled={!message.trim() || mutation.isPending}
-          loading={mutation.isPending}
-          styles={{
-            root: {
-              backgroundColor: '#000000',
-              color: '#ffffff',
-              borderRadius: '24px',
-              padding: '8px 20px',
-            },
-          }}
-        >
-          Share feedback
-        </Button>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <Button
+            type='submit'
+            disabled={!message.trim() || mutation.isPending}
+            loading={mutation.isPending}
+            styles={{
+              root: {
+                backgroundColor: '#000000',
+                color: '#ffffff',
+                borderRadius: '24px',
+                padding: '8px 20px',
+              },
+            }}
+          >
+            Share feedback
+          </Button>
+          <Button
+            variant='default'
+            onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
+            disabled={mutation.isPending}
+            styles={{
+              root: {
+                borderRadius: '24px',
+                padding: '8px 20px',
+              },
+            }}
+          >
+            Go back
+          </Button>
+        </SimpleGrid>
       </Stack>
     </form>
   );

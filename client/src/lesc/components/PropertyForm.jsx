@@ -111,7 +111,7 @@ function PropertyForm () {
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      navigate(`/holds/${id}`);
+      navigate(isNew ? '/holds' : `/holds/${id}`);
     },
   });
 
