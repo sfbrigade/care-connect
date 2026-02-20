@@ -10,13 +10,14 @@ import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 
 const initialValues = {
   behavior: '',
   deflectionDetails: [],
 };
 
-function DeflectionForm () {
+function DeflectionForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -71,13 +72,42 @@ function DeflectionForm () {
     }
   }, [isLoading, isInitialized, deflection]);
 
+  useEffect(() => {
+    if (!isInitialized || !deflectionDetailCategories) {
+      return;
+    }
+    countValues(form.getValues());
+  }, [isInitialized, deflectionDetailCategories]);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+
+    if (selectedDetails.length === 0) {
+      if (form.getValues().behavior !== '') {
+        form.setFieldValue('behavior', '');
+      }
+      return;
+    }
+
+    const narrative = buildDeflectionNarrative({
+      incident,
+      observedBehaviorNames: selectedDetails.map(detail => detail?.name),
+    });
+
+    if (form.getValues().behavior !== narrative) {
+      form.setFieldValue('behavior', narrative);
+    }
+  }, [isInitialized, incident, selectedDetails]);
+
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
   }, []);
 
-  function countValues (values) {
+  function countValues(values) {
     const newSelectedDetails = [];
     const newDetailCategoryCounts = {};
     for (const detailId of values.deflectionDetails) {
@@ -91,7 +121,7 @@ function DeflectionForm () {
     setDetailCategoryCounts(newDetailCategoryCounts);
   }
 
-  function normalizeValues (values) {
+  function normalizeValues(values) {
     return {
       behavior: values.behavior ?? '',
       deflectionDetails: [...(values.deflectionDetails ?? [])]
@@ -100,7 +130,7 @@ function DeflectionForm () {
     };
   }
 
-  function scheduleAutoSave (values) {
+  function scheduleAutoSave(values) {
     const normalized = normalizeValues(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
@@ -110,7 +140,7 @@ function DeflectionForm () {
     }, 700);
   }
 
-  async function updateDeflectionCache (updatedDeflection) {
+  async function updateDeflectionCache(updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
     const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
     if (cachedDeflections) {
@@ -205,7 +235,7 @@ function DeflectionForm () {
                 </Input.Wrapper>
               )}
               <Textarea
-                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
+                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>This is generated based on your selections but you can also edit or add to the narrative.</Text></>}
                 key={form.key('behavior')}
                 autosize
                 {...form.getInputProps('behavior')}
