@@ -3,6 +3,7 @@ import { ActionIcon, Anchor, Box, Image, Modal, Stack, Text, Textarea } from '@m
 import { useDisclosure } from '@mantine/hooks';
 import { IconMicrophone, IconPlayerStop } from '@tabler/icons-react';
 
+import { useToast } from '@/components/ToastContext';
 import { useMobile } from '@/hooks/useMobile';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { isAndroid, isIOS } from '@/utils/platform';
@@ -49,14 +50,21 @@ export default function DictationTextarea ({ form, field, ...textareaProps }) {
 }
 
 function AndroidDictation ({ form, field, ...textareaProps }) {
+  const { showToast } = useToast();
+
   const appendTranscript = useCallback((transcript) => {
     const current = form.getValues()[field] || '';
     const separator = current && !current.endsWith(' ') ? ' ' : '';
     form.setFieldValue(field, current + separator + transcript);
   }, [form, field]);
 
+  const handleError = useCallback((message) => {
+    showToast(message, 'error');
+  }, [showToast]);
+
   const { isListening, isSupported, start, stop } = useSpeechRecognition({
     onResult: appendTranscript,
+    onError: handleError,
   });
 
   if (!isSupported) {
@@ -95,7 +103,7 @@ function IOSDictation ({ ...textareaProps }) {
       <Modal opened={opened} onClose={close} title='Use voice dictation' centered>
         <Stack gap='md'>
           <Text size='sm'>
-            You can use your voice to fill out the Narrative on your iOS device. To start, tap the microphone icon on your keyboard.
+            You can use your voice to fill out this field on your iOS device. To start, tap the microphone icon on your keyboard.
           </Text>
           <Image
             src={iosKeyboardHint}
