@@ -31,33 +31,66 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
-
-      const now = new Date();
-      await fastify.prisma.deflectionUpdate.create({
-        data: {
-          deflectionId: id,
-          subjectStatus: Deflection.SubjectStatus.ADMITTED,
+      await fastify.prisma.$transaction(async (tx) => {
+        const { bedTypeId } = deflection;
+        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        // re-fetch deflection after lock
+        deflection = await tx.deflection.findUnique({
+          where: { id },
+        });
+        // ensure correct subject state
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
+          return reply.code(StatusCodes.CONFLICT).send();
+        }
+        // update deflection
+        const now = new Date();
+        await tx.deflectionUpdate.create({
+          data: {
+            deflectionId: id,
+            subjectStatus: Deflection.SubjectStatus.ADMITTED,
+            updatedById: request.user.id,
+            updatedAt: now,
+          },
+        });
+        deflection = await tx.deflection.update({
+          where: { id },
+          data: {
+            subjectStatus: Deflection.SubjectStatus.ADMITTED,
+            admittedAt: now,
+            admittedById: request.user.id,
+            updatedAt: now,
+          },
+          include: {
+            subject: true,
+            deflectionDetails: true,
+            propertyPhotos: true,
+          },
+        });
+        // update bed type counts
+        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+        const updatedData = {
+          capacity,
+          unavailableUnoccupied,
+          unavailableOccupied,
+          occupied: occupied + 1,
+          holds: holds - 1,
+          available,
+          updateMethod: 'API',
           updatedById: request.user.id,
-          updatedAt: now,
-        },
-      });
-
-      deflection = await fastify.prisma.deflection.update({
-        where: { id },
-        data: {
-          subjectStatus: Deflection.SubjectStatus.ADMITTED,
-          admittedAt: now,
-          admittedById: request.user.id,
-          updatedAt: now,
-        },
-        include: {
-          subject: true,
-          deflectionDetails: true,
-          propertyPhotos: true,
-        },
+        };
+        await tx.bedTypeUpdate.create({
+          data: {
+            ...updatedData,
+            bedTypeId,
+            facilityId: deflection.facilityId,
+          }
+        });
+        await tx.bedType.update({
+          where: {
+            id: bedTypeId,
+          },
+          data: updatedData,
+        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

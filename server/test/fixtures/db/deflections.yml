@@ -17,6 +17,15 @@ items:
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     createdBy: '@user2'
+  readyForIntake:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    subject: '@subject3'
+    subjectStatus: 'READY_FOR_INTAKE'
+    incident: '@incident1'
+    expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user2'
   anotherActiveHold:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
