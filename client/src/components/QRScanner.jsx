@@ -4,15 +4,9 @@ import { Button, Alert, Loader, Stack, Text } from '@mantine/core';
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
 
-import classes from './QRScanner.module.css';
+import { isIOS } from '@/utils/platform';
 
-/**
- * Detect if running on iOS
- */
-function isIOS () {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-}
+import classes from './QRScanner.module.css';
 
 /**
  * Check if browser supports camera access
