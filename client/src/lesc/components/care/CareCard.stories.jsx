@@ -1,8 +1,8 @@
-import CustodyCard from './CustodyCard';
+import CareCard from './CareCard';
 
 export default {
-  title: 'LESC/Custody/CustodyCard',
-  component: CustodyCard,
+  title: 'LESC/Care/CareCard',
+  component: CareCard,
   parameters: { layout: 'fullscreen' },
   tags: ['autodocs'],
   decorators: [
@@ -26,30 +26,12 @@ const subject = {
 const baseDeflection = {
   id: 123,
   subject,
-  subjectStatus: 'AWAITING_INTAKE',
-};
-
-export const AwaitingIntake = {
-  args: {
-    deflection: baseDeflection,
-  },
-};
-
-export const ReadyForIntake = {
-  args: {
-    deflection: {
-      ...baseDeflection,
-      subjectStatus: 'READY_FOR_INTAKE',
-    },
-  },
+  subjectStatus: 'ADMITTED',
 };
 
 export const Admitted = {
   args: {
-    deflection: {
-      ...baseDeflection,
-      subjectStatus: 'ADMITTED',
-    },
+    deflection: baseDeflection,
   },
 };
 
@@ -62,30 +44,12 @@ export const InChair = {
   },
 };
 
-export const Released = {
-  args: {
-    deflection: {
-      ...baseDeflection,
-      subjectStatus: 'RELEASED',
-    },
-  },
-};
-
-export const Exited = {
-  args: {
-    deflection: {
-      ...baseDeflection,
-      subjectStatus: 'EXITED',
-    },
-  },
-};
-
 export const UnknownSubject = {
   args: {
     deflection: {
       id: 456,
       subject: null,
-      subjectStatus: 'AWAITING_INTAKE',
+      subjectStatus: 'ADMITTED',
     },
   },
 };

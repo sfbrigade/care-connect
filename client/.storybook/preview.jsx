@@ -6,14 +6,21 @@ import {
   MantineProvider,
   useMantineColorScheme,
 } from '@mantine/core';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { BrowserRouter } from 'react-router';
+import translation from '../../locales/en/translation.json';
 
 // theme.ts file from previous step
 import AppTheme from '../src/AppTheme';
+import { facilityContext } from '../src/FacilityContext';
 
-import translation from '../../locales/en/translation.json';
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+
+const defaultFacility = { id: 'storybook-facility', name: 'Storybook Facility' };
 i18n
   .use(initReactI18next)
   .init({
@@ -53,6 +60,13 @@ const preview = {
     ),
     (renderStory) => (
       <MantineProvider theme={AppTheme} forceColorScheme='light'>{renderStory()}</MantineProvider>
+    ),
+    (renderStory) => (
+      <facilityContext.Provider value={{ facility: defaultFacility }}>
+        <QueryClientProvider client={queryClient}>
+          {renderStory()}
+        </QueryClientProvider>
+      </facilityContext.Provider>
     ),
     (renderStory) => (
       <BrowserRouter>{renderStory()}</BrowserRouter>

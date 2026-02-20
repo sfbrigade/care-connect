@@ -3,6 +3,22 @@ import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
 import CancelHoldModal from './CancelHoldModal';
 
+const deflectionWithSubject = {
+  id: 123,
+  subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+  subject: {
+    firstName: 'John',
+    middleInitial: 'D',
+    lastName: 'Doe',
+  },
+};
+
+const deflectionWithoutSubject = {
+  id: 456,
+  subjectId: null,
+  subject: null,
+};
+
 export default {
   title: 'LESC/CancelHoldModal',
   component: CancelHoldModal,
@@ -14,30 +30,9 @@ export default {
     },
   },
   tags: ['autodocs'],
-  argTypes: {
-    opened: {
-      control: 'boolean',
-      description: 'Whether the modal is open',
-    },
-    holdIdentifier: {
-      control: 'text',
-      description: 'Hold identifier (e.g., "001")',
-    },
-    holdName: {
-      control: 'text',
-      description: 'Name of the person associated with the hold',
-    },
-    loading: {
-      control: 'boolean',
-      description: 'Whether the cancel action is in progress',
-    },
-  },
 };
 
-export const Default = {
-  args: {
-    opened: true
-  },
+export const WithSubject = {
   render: () => {
     const [opened, { open, close }] = useDisclosure(false);
     return (
@@ -46,19 +41,15 @@ export const Default = {
         <CancelHoldModal
           opened={opened}
           onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
+          onConfirm={fn(() => close())}
+          deflection={deflectionWithSubject}
         />
       </>
     );
-  }
+  },
 };
 
-export const WithDifferentName = {
+export const WithoutSubject = {
   render: () => {
     const [opened, { open, close }] = useDisclosure(false);
     return (
@@ -67,12 +58,8 @@ export const WithDifferentName = {
         <CancelHoldModal
           opened={opened}
           onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='002'
-          holdName='Jane Smith'
+          onConfirm={fn(() => close())}
+          deflection={deflectionWithoutSubject}
         />
       </>
     );
@@ -88,15 +75,8 @@ export const Loading = {
         <CancelHoldModal
           opened={opened}
           onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            // Simulate async operation
-            setTimeout(() => {
-              close();
-            }, 2000);
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
+          onConfirm={fn()}
+          deflection={deflectionWithSubject}
           loading
         />
       </>
@@ -104,34 +84,20 @@ export const Loading = {
   },
 };
 
-export const Opened = {
+export const OpenedWithSubject = {
   args: {
     opened: true,
     onClose: fn(),
     onConfirm: fn(),
-    holdIdentifier: '001',
-    holdName: 'John Doe',
-    loading: false,
+    deflection: deflectionWithSubject,
   },
 };
 
-export const Interactive = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <div style={{ padding: '20px' }}>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
-        />
-      </div>
-    );
+export const OpenedWithoutSubject = {
+  args: {
+    opened: true,
+    onClose: fn(),
+    onConfirm: fn(),
+    deflection: deflectionWithoutSubject,
   },
 };

@@ -1,25 +1,44 @@
-import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { useNavigate } from 'react-router';
+import { Accordion, Box, Button, Card, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconExternalLink } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
-import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
+import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
 const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+
+  const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
+  const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
+
+  const safetyCheckMutation = useMutation({
+    mutationFn: () => Api.deflections.safetyCheck(deflection.id),
+    onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      showToast('Safety check completed', 'success', 4000, 'Subject is ready for medical intake.');
+    },
+    onError: () => {
+      showToast('Safety check not saved. Please try again.', 'error');
+    },
+  });
 
   const releaseMutation = useMutation({
     mutationFn: () => Api.deflections.release(deflection.id),
@@ -39,6 +58,19 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown subject';
   const address = formatAddress(deflection?.subject ?? {});
 
+  function open647fPdf () {
+    const holdData = {
+      id: String(deflection.id),
+      client: deflection.subject,
+      incident: {},
+      createdBy: null,
+      notes: deflection.behavior,
+    };
+    const doc = generate647fTransferFormPDF(holdData);
+    const blobUrl = doc.output('bloburl');
+    window.open(blobUrl, '_blank');
+  }
+
   return (
     <>
       <Header>
@@ -46,7 +78,36 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+          <Group gap='xs'>
+            {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
+            {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
+            <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+          </Group>
+          {(isAwaitingSafetyCheck || isReadyForIntake) && (
+            <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
+              <Stack gap='md' align='center'>
+                <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
+                <Text fw={500}>Transfer code: {isReadyForIntake ? String(deflection.id).padStart(6, '0') : '******'}</Text>
+                {isAwaitingSafetyCheck && (
+                  <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
+                )}
+              </Stack>
+            </Card>
+          )}
+          <Stack gap='xs' align='flex-start'>
+            {isAwaitingSafetyCheck && (
+              <Button onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>
+                Mark safety check complete
+              </Button>
+            )}
+            <Button
+              onClick={open647fPdf}
+              variant='outline'
+              rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
+            >
+              647(f).pdf
+            </Button>
+          </Stack>
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>
             {deflection?.subject?.dateOfBirth && (
@@ -79,6 +140,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                 <Text>{address}</Text>
               </Box>
             )}
+            <Group mt='md'>
+              <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+            </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property']}>
             <Divider />
@@ -100,6 +164,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                       <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
                     </Box>
                   )}
+                  <Group mt='sm'>
+                    <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                  </Group>
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
