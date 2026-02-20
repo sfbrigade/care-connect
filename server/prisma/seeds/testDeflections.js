@@ -67,6 +67,7 @@ export default async function main (prisma) {
   const detail = await prisma.deflectionDetail.findFirst();
 
   let holdsPlaced = 0;
+  let incident;
   for (let i = 0; i < TEST_SUBJECTS.length; i++) {
     const subjectData = TEST_SUBJECTS[i];
     const subjectStatus = TEST_STATUSES[i];
@@ -75,21 +76,28 @@ export default async function main (prisma) {
       data: subjectData,
     });
 
-    const incident = await prisma.incident.create({
-      data: {
-        facilityId: facility.id,
-        addressLine1: '850 Bryant St',
-        city: 'San Francisco',
-        state: 'CA',
-        postalCode: '94103',
-        arrestedAt: new Date(),
-        cadNumber: `25020${1234 + i}`,
-        supervisorBadgeNumber: '1234',
-        createdById: sfpdUser.id,
-        createdByOrganizationId: sfpdUser.organizationId,
-        updatedById: sfpdUser.id,
-      },
-    });
+    if ((i % 3) === 0) {
+      const arrivedAt = new Date(Date.now() - 60 * 60 * 1000);
+      const now = new Date();
+      incident = await prisma.incident.create({
+        data: {
+          facilityId: facility.id,
+          addressLine1: '850 Bryant St',
+          city: 'San Francisco',
+          state: 'CA',
+          postalCode: '94103',
+          arrestedAt: new Date(),
+          cadNumber: `25020${1234 + i}`,
+          supervisorBadgeNumber: '1234',
+          arrivedAt,
+          leftAt: now,
+          completedAt: now,
+          createdById: sfpdUser.id,
+          createdByOrganizationId: sfpdUser.organizationId,
+          updatedById: sfpdUser.id,
+        },
+      });
+    }
 
     const now = new Date();
     const isActive = !['RELEASED', 'EXITED'].includes(subjectStatus);

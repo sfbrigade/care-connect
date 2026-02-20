@@ -75,6 +75,10 @@ export default async function (fastify, opts) {
         } else {
           where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
         }
+      } else if (request.user.isField) {
+        if (active === 'true') {
+          where.subjectStatus = { in: [Deflection.SubjectStatus.DETAINED, Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER] };
+        }
       }
 
       if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId)) {
