@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Anchor, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Anchor, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import DictationTextarea from '@/components/DictationTextarea';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 
@@ -146,12 +147,14 @@ function DeflectionForm () {
                   <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
                 </Input.Wrapper>
               )}
-              <Textarea
+              <DictationTextarea
+                form={form}
+                field='behavior'
                 label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
                 autosize
                 {...form.getInputProps('behavior')}
-                placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
+                placeholder='E.g. "Subject was unable to stand without assistance and repeatedly stepped into traffic…"'
               />
               <Button type='submit' mb='xl'>
                 {isNew ? 'Next: Personal property' : 'Save deflection details'}
