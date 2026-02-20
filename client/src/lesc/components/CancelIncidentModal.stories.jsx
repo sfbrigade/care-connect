@@ -14,33 +14,41 @@ export default {
       iframeHeight: 500,
     },
   },
+  decorators: [
+    (Story, context) => {
+      const [opened, { open, close }] = useDisclosure(false);
+      return (
+        <>
+          <Button onClick={open}>Open Cancel Hold Modal</Button>
+          <Story args={{ ...context.args, opened, onClose: close, onConfirm: fn() }} />
+        </>
+      );
+    },
+  ],
   tags: ['autodocs'],
 };
 
 export const Default = {
   args: {
-    opened: true,
-    onClose: fn(),
-    onConfirm: fn(),
-    loading: false,
+
   },
 };
 
-export const Interactive = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-
-    return (
-      <div style={{ padding: '20px' }}>
-        <Button onClick={open}>Open Cancel Incident Modal</Button>
-        <CancelIncidentModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            close();
-          })}
-        />
-      </div>
-    );
+export const WithReason = {
+  args: {
+    requiresReason: true,
   },
+};
+
+export const LastHold = {
+  args: {
+    isLastHoldDetailedCancellation: true,
+  }
+};
+
+export const LastHoldWithReason = {
+  args: {
+    isLastHoldDetailedCancellation: true,
+    requiresReason: true,
+  }
 };
