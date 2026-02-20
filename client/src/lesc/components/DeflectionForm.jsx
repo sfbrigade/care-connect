@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import BooleanInput from '@/components/BooleanInput';
+import DictationTextarea from '@/components/DictationTextarea';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
@@ -262,7 +263,9 @@ function DeflectionForm () {
                   {generatedNarrative || 'Select from observations above to generate narrative text.'}
                 </Text>
               </Input.Wrapper>
-              <Textarea
+              <DictationTextarea
+                form={form}
+                field='behaviorAdditions'
                 label='Add to 647(f) narrative (optional)'
                 key={form.key('behaviorAdditions')}
                 autosize
