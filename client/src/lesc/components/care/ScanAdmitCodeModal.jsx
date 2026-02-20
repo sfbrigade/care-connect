@@ -3,12 +3,12 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import ScanCodeModal from '@/components/ScanCodeModal';
 
-function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
+function ScanAdmitCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
 
   function parseDeflectionId (text) {
-    const urlMatch = text.match(/\/transfer\/(\d+)/);
+    const urlMatch = text.match(/\/admit\/(\d+)/);
     if (urlMatch) return parseInt(urlMatch[1], 10);
     const numMatch = text.trim().match(/^\d+$/);
     if (numMatch) return parseInt(numMatch[0], 10);
@@ -18,17 +18,17 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
   async function handleScan (text) {
     const deflectionId = parseDeflectionId(text);
     if (!deflectionId) {
-      showToast('Invalid code. Please enter a transfer code number or URL.', 'error');
+      showToast('Invalid code. Please enter an admit code number or URL.', 'error');
       throw new Error('Invalid code');
     }
 
     try {
-      await Api.deflections.transfer(deflectionId);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+      await Api.deflections.admit(deflectionId);
+      window.sessionStorage.setItem('careHighlightTarget', String(deflectionId));
       onSuccess?.();
-      showToast('Subject received', 'success', 3000, 'Transfer code confirmed.');
+      showToast('Subject admitted', 'success', 3000, 'Admit code confirmed.');
     } catch (err) {
-      showToast(err._form || 'Failed to transfer subject into custody. Please try again.', 'error');
+      showToast(err._form || 'Failed to admit subject. Please try again.', 'error');
       throw err;
     }
   }
@@ -38,12 +38,12 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       opened={opened}
       onClose={onClose}
       onScan={handleScan}
-      prompt={`Scan the subject's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
-      manualEntryTitle='Enter Transfer Code'
-      loadingText='Transferring subject into custody...'
+      prompt={`Scan the subject's QR code to admit to ${facility?.name || 'this facility'}.`}
+      manualEntryTitle='Enter Admit Code'
+      loadingText='Admitting subject...'
       _debugScanPhase={_debugScanPhase}
     />
   );
 }
 
-export default ScanTransferCodeModal;
+export default ScanAdmitCodeModal;

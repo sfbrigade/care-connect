@@ -77,7 +77,7 @@ export default async function (fastify, opts) {
         }
       }
 
-      if (!request.user.isAdmin && !(request.user.isCustody && facilityId)) {
+      if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId)) {
         where.createdById = request.user.id;
       }
 

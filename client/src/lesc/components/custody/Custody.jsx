@@ -42,12 +42,14 @@ function Custody () {
   const tab = searchParams.get('tab') || 'in-custody';
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
+  const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: IN_CUSTODY_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -56,6 +58,7 @@ function Custody () {
   const { data: releasedDeflections } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -77,6 +80,26 @@ function Custody () {
       }
     });
   }, [inCustodyDeflections, releasedDeflections]);
+
+  useEffect(() => {
+    if (!inCustodyDeflections && !releasedDeflections) return;
+    const targetId = window.sessionStorage.getItem('custodyHighlightTarget');
+    if (!targetId) return;
+    window.sessionStorage.removeItem('custodyHighlightTarget');
+    setHighlightedId(targetId);
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-card-${targetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, [inCustodyDeflections, releasedDeflections]);
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timer = setTimeout(() => setHighlightedId(null), 3000);
+    return () => clearTimeout(timer);
+  }, [highlightedId]);
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupByStatus(releasedDeflections);

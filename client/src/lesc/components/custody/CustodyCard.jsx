@@ -6,14 +6,16 @@ import { QRCodeSVG } from 'qrcode.react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import { calculateAge } from '@/utils/format';
 
-function CustodyCard ({ deflection }) {
+function CustodyCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
+  const { showToast } = useToast();
 
   const displayId = String(deflection.id).padStart(6, '0');
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown subject';
@@ -29,12 +31,17 @@ function CustodyCard ({ deflection }) {
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      showToast('Safety check completed', 'success', 4000, 'Subject is ready for medical intake.');
+    },
+    onError: () => {
+      showToast('Safety check not saved. Please try again.', 'error');
     },
   });
 
   return (
-    <Card bg='white' p={{ base: 'md', sm: 'xl' }} withBorder id={`custody-card-${deflection.id}`}>
+    <Card bg='white' p={{ base: 'md', sm: 'xl' }} withBorder id={`custody-card-${deflection.id}`} style={highlighted ? { animation: 'cardHighlight 3s ease-out' } : undefined}>
       <Stack gap='sm'>
         <Text size='md' c='gray.6'>Hold {displayId}</Text>
         <Box>
