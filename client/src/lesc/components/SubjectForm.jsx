@@ -258,7 +258,7 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('localId')}
-                label='SF ID (if available)'
+                label='SF Number (if available)'
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
