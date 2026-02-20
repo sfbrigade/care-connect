@@ -13,19 +13,22 @@ export default {
       iframeHeight: 600,
     },
   },
+  decorators: [
+    (Story, context) => {
+      const [opened, { open, close }] = useDisclosure(false);
+      return (
+        <>
+          <Button onClick={open}>Open Cancel Hold Modal</Button>
+          <Story args={{ ...context.args, opened, onClose: close, onConfirm: fn() }} />
+        </>
+      );
+    },
+  ],
   tags: ['autodocs'],
   argTypes: {
     opened: {
       control: 'boolean',
       description: 'Whether the modal is open',
-    },
-    holdIdentifier: {
-      control: 'text',
-      description: 'Hold identifier (e.g., "001")',
-    },
-    holdName: {
-      control: 'text',
-      description: 'Name of the person associated with the hold',
     },
     loading: {
       control: 'boolean',
@@ -36,102 +39,30 @@ export default {
 
 export const Default = {
   args: {
-    opened: true
-  },
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
-        />
-      </>
-    );
-  }
-};
-
-export const WithDifferentName = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='002'
-          holdName='Jane Smith'
-        />
-      </>
-    );
+    deflection: {
+      id: '012345',
+      subjectId: null,
+      subject: null,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 59 * 60 * 1000).toISOString(),
+      status: 'ACTIVE',
+    }
   },
 };
 
-export const Loading = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            // Simulate async operation
-            setTimeout(() => {
-              close();
-            }, 2000);
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
-          loading
-        />
-      </>
-    );
-  },
-};
-
-export const Opened = {
+export const WithSubject = {
   args: {
-    opened: true,
-    onClose: fn(),
-    onConfirm: fn(),
-    holdIdentifier: '001',
-    holdName: 'John Doe',
-    loading: false,
-  },
-};
-
-export const Interactive = {
-  render: () => {
-    const [opened, { open, close }] = useDisclosure(false);
-    return (
-      <div style={{ padding: '20px' }}>
-        <Button onClick={open}>Open Cancel Hold Modal</Button>
-        <CancelHoldModal
-          opened={opened}
-          onClose={close}
-          onConfirm={fn(() => {
-            console.log('Cancel hold confirmed');
-            close();
-          })}
-          holdIdentifier='001'
-          holdName='John Doe'
-        />
-      </div>
-    );
+    deflection: {
+      ...Default.args.deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+        sex: 'MALE',
+      },
+    }
   },
 };

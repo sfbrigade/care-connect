@@ -27,6 +27,7 @@ export default async function (fastify, opts) {
         where: { id },
         include: {
           subject: true,
+          cancelReason: true,
           deflectionDetails: true,
           propertyPhotos: true,
         },

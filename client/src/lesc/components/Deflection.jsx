@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
+import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -32,6 +33,12 @@ function Deflection () {
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
+  });
+
+  const { data: activeDeflections, isFetching: isFetchingActiveDeflections } = useQuery({
+    queryKey: ['deflections', incident?.id, 'active'],
+    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    enabled: !!incident,
   });
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
@@ -58,7 +65,56 @@ function Deflection () {
     },
   });
 
+  const cancelIncidentMutation = useMutation({
+    mutationFn: ({ incidentId, cancelReasonId }) => Api.incidents.cancel(incidentId, { cancelReasonId }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['facilities', facility.id, 'bed-types'],
+      });
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        null
+      );
+      await queryClient.removeQueries({
+        queryKey: ['deflections', incident?.id, 'active'],
+      });
+      await queryClient.removeQueries({
+        queryKey: ['deflections', incident?.id, 'all'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['deflections', facility.id, 'inactive'],
+      });
+      setShowCancelModal(false);
+      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
+      navigate('/holds');
+    },
+    onError: (error) => {
+      const isNetworkError = !error?.response;
+
+      if (isNetworkError) {
+        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
+  const activeHoldsCount = activeDeflections?.length;
+  const isLastActiveDetailedHold =
+    !!deflection?.subjectId &&
+    deflection?.status === 'ACTIVE' &&
+    activeHoldsCount === 1;
+
   async function onCancelHoldConfirmed (cancelReasonId) {
+    if (isLastActiveDetailedHold && incident?.id) {
+      await cancelIncidentMutation.mutateAsync({
+        incidentId: incident.id,
+        cancelReasonId,
+      });
+      return;
+    }
+
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
@@ -257,17 +313,27 @@ function Deflection () {
             </Accordion.Item>
           </Accordion>
           <Group mb='xl'>
-            <Button onClick={() => setShowCancelModal(true)} variant='light' color='red.6'>Cancel hold</Button>
+            <Button onClick={() => setShowCancelModal(true)} variant='destructive' disabled={isFetchingActiveDeflections}>Cancel hold</Button>
           </Group>
         </Stack>
       </Container>
-      {!!deflection && showCancelModal && (
+      {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
         <CancelHoldModal
           deflection={deflection}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
-          loading={cancelDeflectionMutation.isPending}
+          loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
+        />
+      )}
+      {!!deflection && showCancelModal && isLastActiveDetailedHold && (
+        <CancelIncidentModal
+          opened={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={onCancelHoldConfirmed}
+          requiresReason
+          isLastHoldDetailedCancellation
+          loading={cancelIncidentMutation.isPending}
         />
       )}
     </>
