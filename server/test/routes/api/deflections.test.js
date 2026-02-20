@@ -9,9 +9,12 @@ test('/api/deflections', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
+  const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new deflection', async () => {
+      await prisma.deflection.expire();
+
       const response = await app.inject().post('/api/deflections').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         incidentId: 1,
@@ -114,6 +117,42 @@ test('/api/deflections', async (t) => {
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('POST /:id/admit', async (t) => {
+    await t.test('admits the subject of the deflection', async () => {
+      await prisma.deflection.expire();
+
+      let bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.available, 4);
+
+      const response = await app.inject().post('/api/deflections/6/admit').headers(careUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'ADMITTED');
+      assert.ok(data.admittedAt);
+      assert.ok(data.admittedById);
+
+      // Verify in database
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 6 },
+      });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ADMITTED');
+      assert.ok(deflection.admittedAt);
+      assert.ok(deflection.admittedById);
+
+      bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 1);
+      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.available, 4);
     });
   });
 
@@ -228,6 +267,8 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('cancels the deflection', async () => {
+      await prisma.deflection.expire();
+
       let response = await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
@@ -260,6 +301,15 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.holds, 2);
       assert.deepStrictEqual(bedType.available, 6);
+
+      response = await app.inject().delete('/api/deflections/6?cancelReasonId=5150').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      bedType = await prisma.bedType.findUnique({
+        where: { id: deflection.bedTypeId },
+      });
+      assert.deepStrictEqual(bedType.holds, 1);
+      assert.deepStrictEqual(bedType.available, 7);
 
       // incident is marked completed after cancellation of the last hold
       const incident = await prisma.incident.findUnique({

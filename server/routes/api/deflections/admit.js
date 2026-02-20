@@ -5,18 +5,17 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
 export default async function (fastify, opts) {
-  fastify.post('/:id/transfer',
+  fastify.post('/:id/admit',
     {
-      onRequest: fastify.requireCustody,
+      onRequest: fastify.requireCare,
       schema: {
-        description: 'Transfer a deflection into custody.',
+        description: 'Admit a deflection subject, transitioning from READY_FOR_INTAKE to ADMITTED.',
         params: z.object({
           id: z.coerce.number(),
         }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
@@ -32,43 +31,33 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
-
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = deflection;
         const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
         // re-fetch deflection after lock
         deflection = await tx.deflection.findUnique({
           where: { id },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
         });
-
-        if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
+        // ensure correct subject state
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-
+        // update deflection
         const now = new Date();
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
+            subjectStatus: Deflection.SubjectStatus.ADMITTED,
             updatedById: request.user.id,
             updatedAt: now,
           },
         });
-
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
-            transferredAt: now,
-            transferredById: request.user.id,
+            subjectStatus: Deflection.SubjectStatus.ADMITTED,
+            admittedAt: now,
+            admittedById: request.user.id,
             updatedAt: now,
           },
           include: {
@@ -77,7 +66,7 @@ export default async function (fastify, opts) {
             propertyPhotos: true,
           },
         });
-
+        // update bed type counts
         const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
         const updatedData = {
           capacity,
@@ -94,10 +83,12 @@ export default async function (fastify, opts) {
             ...updatedData,
             bedTypeId,
             facilityId: deflection.facilityId,
-          },
+          }
         });
         await tx.bedType.update({
-          where: { id: bedTypeId },
+          where: {
+            id: bedTypeId,
+          },
           data: updatedData,
         });
       });

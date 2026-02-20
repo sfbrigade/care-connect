@@ -3,13 +3,13 @@ import { useDisclosure } from '@mantine/hooks';
 import { Button } from '@mantine/core';
 import { facilityContext } from '@/FacilityContext';
 import { ToastProvider } from '@/components/ToastContext';
-import ScanTransferCodeModal from './ScanTransferCodeModal';
+import ScanAdmitCodeModal from './ScanAdmitCodeModal';
 
 const mockFacility = { id: 1, name: 'RESET' };
 
 export default {
-  title: 'LESC/Custody/ScanTransferCodeModal',
-  component: ScanTransferCodeModal,
+  title: 'LESC/Care/ScanAdmitCodeModal',
+  component: ScanAdmitCodeModal,
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -40,8 +40,8 @@ export const Default = {
     const [opened, { open, close }] = useDisclosure(false);
     return (
       <>
-        <Button onClick={open}>Open Scan Transfer Code Modal</Button>
-        <ScanTransferCodeModal
+        <Button onClick={open}>Open Scan Admit Code Modal</Button>
+        <ScanAdmitCodeModal
           opened={opened}
           onClose={close}
           onSuccess={fn()}

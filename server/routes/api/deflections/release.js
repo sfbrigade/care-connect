@@ -4,12 +4,19 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
+const RELEASABLE_STATUSES = [
+  Deflection.SubjectStatus.AWAITING_INTAKE,
+  Deflection.SubjectStatus.READY_FOR_INTAKE,
+  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_CHAIR,
+];
+
 export default async function (fastify, opts) {
-  fastify.post('/:id/transfer',
+  fastify.post('/:id/release',
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Transfer a deflection into custody.',
+        description: 'Mark a subject as legally released, transitioning to RELEASED status.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -32,7 +39,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
+      if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
@@ -49,7 +56,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
+        if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
@@ -57,7 +64,7 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
+            subjectStatus: Deflection.SubjectStatus.RELEASED,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -66,9 +73,9 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
-            transferredAt: now,
-            transferredById: request.user.id,
+            subjectStatus: Deflection.SubjectStatus.RELEASED,
+            releasedAt: now,
+            releasedById: request.user.id,
             updatedAt: now,
           },
           include: {
@@ -83,9 +90,9 @@ export default async function (fastify, opts) {
           capacity,
           unavailableUnoccupied,
           unavailableOccupied,
-          occupied: occupied + 1,
-          holds: holds - 1,
-          available,
+          occupied: occupied - 1,
+          holds,
+          available: available + 1,
           updateMethod: 'API',
           updatedById: request.user.id,
         };

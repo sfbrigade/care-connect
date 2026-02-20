@@ -66,3 +66,21 @@ export const WithSubject = {
     }
   },
 };
+
+export const Loading = {
+  args: {
+    deflection: {
+      ...Default.args.deflection,
+    },
+    loading: true,
+  }
+};
+
+export const LoadingWithSubject = {
+  args: {
+    deflection: {
+      ...WithSubject.args.deflection,
+    },
+    loading: true,
+  }
+};
