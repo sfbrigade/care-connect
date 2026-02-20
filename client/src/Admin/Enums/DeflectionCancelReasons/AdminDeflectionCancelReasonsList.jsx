@@ -5,7 +5,7 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 
-function AdminDeflectionCancelReasonsList() {
+function AdminDeflectionCancelReasonsList () {
   const { data: cancelReasons, isLoading } = useQuery({
     queryKey: ['deflection-cancel-reasons'],
     queryFn: async () => {

@@ -5,7 +5,7 @@ import { IconChevronRight } from '@tabler/icons-react';
 import AdminFacilityStatusReasonsRoutes from './FacilityStatusReasons/AdminFacilityStatusReasonsRoutes';
 import AdminDeflectionCancelReasonsRoutes from './DeflectionCancelReasons/AdminDeflectionCancelReasonsRoutes';
 
-function AdminEnumsRoutes() {
+function AdminEnumsRoutes () {
   return (
     <Container size='xl'>
       <Grid>
