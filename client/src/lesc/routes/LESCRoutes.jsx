@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router';
 import { useAuthContext } from '@/AuthContext';
 import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
+import Care from '../components/care/Care';
 import Custody from '../components/custody/Custody';
 import CustodyDetail from '../components/custody/CustodyDetail';
 import IncidentForm from '../components/IncidentForm';
@@ -28,6 +29,7 @@ function LESCRoutes () {
       <Route path='custody/:id/subject' element={<SubjectForm />} />
       <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
+      <Route path='care' element={<Care />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
