@@ -9,11 +9,13 @@ import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
+import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
+import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
 function Deflection () {
   const { id } = useParams();
@@ -33,6 +35,12 @@ function Deflection () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
+  const { data: activeDeflections, isFetching: isFetchingActiveDeflections } = useQuery({
+    queryKey: ['deflections', incident?.id, 'active'],
+    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    enabled: !!incident,
+  });
+
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
@@ -46,7 +54,7 @@ function Deflection () {
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
           queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
         }
       }
@@ -57,10 +65,71 @@ function Deflection () {
     },
   });
 
+  const cancelIncidentMutation = useMutation({
+    mutationFn: ({ incidentId, cancelReasonId }) => Api.incidents.cancel(incidentId, { cancelReasonId }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['facilities', facility.id, 'bed-types'],
+      });
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        null
+      );
+      await queryClient.removeQueries({
+        queryKey: ['deflections', incident?.id, 'active'],
+      });
+      await queryClient.removeQueries({
+        queryKey: ['deflections', incident?.id, 'all'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['deflections', facility.id, 'inactive'],
+      });
+      setShowCancelModal(false);
+      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
+      navigate('/holds');
+    },
+    onError: (error) => {
+      const isNetworkError = !error?.response;
+
+      if (isNetworkError) {
+        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
+  const activeHoldsCount = activeDeflections?.length;
+  const isLastActiveDetailedHold =
+    !!deflection?.subjectId &&
+    deflection?.status === 'ACTIVE' &&
+    activeHoldsCount === 1;
+
   async function onCancelHoldConfirmed (cancelReasonId) {
+    if (isLastActiveDetailedHold && incident?.id) {
+      await cancelIncidentMutation.mutateAsync({
+        incidentId: incident.id,
+        cancelReasonId,
+      });
+      return;
+    }
+
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
+  }
+
+  function on647fClick () {
+    try {
+      const doc = generate647fTransferFormPDF(deflection, facility);
+      // Open PDF in browser
+      doc.output('dataurlnewwindow');
+      showToast('647(f) Transfer Form opened in new window', 'success');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showToast('Failed to generate PDF', 'error');
+    }
   }
 
   return (
@@ -78,6 +147,13 @@ function Deflection () {
             <Text c='gray.5' size='md'>•</Text>
             <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
+          {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
+            <>
+              <Group>
+                <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
+              </Group>
+            </>
+          )}
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>
             {deflection?.subject?.dateOfBirth && (
@@ -237,17 +313,27 @@ function Deflection () {
             </Accordion.Item>
           </Accordion>
           <Group mb='xl'>
-            <Button onClick={() => setShowCancelModal(true)} variant='light' color='red.6'>Cancel hold</Button>
+            <Button onClick={() => setShowCancelModal(true)} variant='destructive' disabled={isFetchingActiveDeflections}>Cancel hold</Button>
           </Group>
         </Stack>
       </Container>
-      {!!deflection && showCancelModal && (
+      {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
         <CancelHoldModal
           deflection={deflection}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
-          loading={cancelDeflectionMutation.isPending}
+          loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
+        />
+      )}
+      {!!deflection && showCancelModal && isLastActiveDetailedHold && (
+        <CancelIncidentModal
+          opened={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={onCancelHoldConfirmed}
+          requiresReason
+          isLastHoldDetailedCancellation
+          loading={cancelIncidentMutation.isPending}
         />
       )}
     </>

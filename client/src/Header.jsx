@@ -17,11 +17,11 @@ function Header ({ opened, close, toggle, logout }) {
 
   return (
     <Container h='100%' size='xl'>
-      <Group h='100%' align='center' justify='space-between'>
-        <Link to='/' onClick={close}>
+      <Group h='100%' align='center' justify='space-between' wrap='nowrap'>
+        <Link to='/' onClick={close} style={{ minWidth: 0 }}>
           <Box>
-            <Title order={3} c='black'>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
-            {user?.unit && <Text size='sm' color='dimmed'>{user.unit.name}</Text>}
+            <Title order={3} c='black' truncate>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
+            {user?.unit && <Text size='sm' color='dimmed' truncate>{user.unit.name}</Text>}
           </Box>
         </Link>
         <Group visibleFrom='sm' gap='xl'>
@@ -65,7 +65,7 @@ function Header ({ opened, close, toggle, logout }) {
           )}
           <IconButtonLink icon={IconMessages} to='/feedback' />
         </Group>
-        <Group hiddenFrom='sm' size='sm'>
+        <Group hiddenFrom='sm' size='sm' wrap='nowrap' style={{ flexShrink: 0 }}>
           <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
             <Menu position='bottom-end' width={280} onDismiss={close}>

@@ -6,14 +6,18 @@ import {
   MantineProvider,
   useMantineColorScheme,
 } from '@mantine/core';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { BrowserRouter } from 'react-router';
 
+import translation from '../../locales/en/translation.json';
+
 // theme.ts file from previous step
 import AppTheme from '../src/AppTheme';
+import { facilityContext } from '../src/FacilityContext';
 
-import translation from '../../locales/en/translation.json';
+const defaultFacility = { id: 'storybook-facility', name: 'Storybook Facility' };
 i18n
   .use(initReactI18next)
   .init({
@@ -45,6 +49,13 @@ function ColorSchemeWrapper ({
   return <>{children}</>;
 }
 
+const mockedQueryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
+mockedQueryClient.setQueryData(['deflectionCancelReasons'],
+  [{ name: '5150', id: '5150' }, { name: 'Facility Emergency', id: 'facility_emergency' }, { name: 'Hospital', id: 'hospital' }, { name: 'Jail', id: 'jail' }, { name: 'Release on Scene', id: 'release_on_scene' }]
+);
+
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {
   decorators: [
@@ -56,6 +67,14 @@ const preview = {
     ),
     (renderStory) => (
       <BrowserRouter>{renderStory()}</BrowserRouter>
+    ),
+    (renderStory) => (
+      <QueryClientProvider client={mockedQueryClient}>{renderStory()}</QueryClientProvider>
+    ),
+    (renderStory) => (
+      <facilityContext.Provider value={{ facility: defaultFacility }}>
+        {renderStory()}
+      </facilityContext.Provider>
     ),
   ],
   parameters: {

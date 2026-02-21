@@ -52,3 +52,13 @@ items:
     roles: [CUSTODY]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfso"
+  careuser1:
+    id: 3f42ae6e-505d-499c-97f5-8fe712818f5b
+    firstName: Care
+    lastName: User 1
+    email: careuser1@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [CARE]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@connections"

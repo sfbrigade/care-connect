@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -28,6 +28,7 @@ function PropertyForm () {
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
+  const autoSaveTimerRef = useRef(null);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -43,34 +44,74 @@ function PropertyForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
+      if (!isInitialized) {
+        return;
+      }
       setIsLarge(values.property === 'LARGE');
+      scheduleAutoSave(values);
     },
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isInitialized) {
       if (deflection) {
-        form.setInitialValues({
+        const normalized = normalizeValues({
           property: deflection.property,
           propertyDetails: deflection.propertyDetails,
         });
+        form.setInitialValues(normalized);
         form.reset();
+        setIsLarge(normalized.property === 'LARGE');
       }
       setInitialized(true);
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, isInitialized, deflection]);
+
+  useEffect(() => () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+  }, []);
+
+  function normalizeValues (values) {
+    return {
+      property: values.property ?? '',
+      propertyDetails: values.propertyDetails ?? '',
+    };
+  }
+
+  function scheduleAutoSave (values) {
+    const normalized = normalizeValues(values);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveMutation.mutate(normalized);
+    }, 700);
+  }
+
+  async function updateDeflectionCache (updatedDeflection) {
+    await queryClient.setQueryData(['deflections', id], updatedDeflection);
+    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+    if (cachedDeflections) {
+      const updatedDeflections = [...cachedDeflections];
+      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+    }
+  }
+
+  const autoSaveMutation = useMutation({
+    mutationFn: (data) => Api.deflections.update(id, data),
+    onSuccess: async (response) => {
+      await updateDeflectionCache(response.data);
+    },
+  });
 
   const onSubmitMutation = useMutation({
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
-      await queryClient.setQueryData(['deflections', id], response.data);
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-      }
-      navigate(`/holds/${id}`);
+      await updateDeflectionCache(response.data);
+      navigate(isNew ? '/holds' : `/holds/${id}`);
     },
   });
 
@@ -117,6 +158,15 @@ function PropertyForm () {
     }
   }
 
+  let header;
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
+    header = <Text c='dimmed' size='lg'>Saving...</Text>;
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
+    header = <Text c='teal.6' size='lg'>Changes saved</Text>;
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
+    header = <Text c='red.6' size='lg'>Save failed</Text>;
+  }
+
   return (
     <>
       <Head>
@@ -125,9 +175,11 @@ function PropertyForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 3 of 3</Text>}
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+          <Group gap='xs'>
+            {header}
+            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
+            {isNew && <Text c='dimmed' size='lg'>3 of 3</Text>}
+          </Group>
         </Group>
       </Header>
       <Container>

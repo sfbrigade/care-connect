@@ -22,3 +22,13 @@ items:
     addressLine1: '456 Test St'
     driverLicense: 'DL456'
     localId: 'SF-456'
+  subject3:
+    firstName: 'Test'
+    lastName: 'Client3'
+    middleInitial: 'T'
+    dateOfBirth: '2002-07-01T00:00:00.000Z'
+    sex: 'FEMALE'
+    race: 'HISPANIC'
+    addressLine1: '789 Test St'
+    driverLicense: 'DL789'
+    localId: 'SF-789'
