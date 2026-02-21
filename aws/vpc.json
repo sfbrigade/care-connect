@@ -123,6 +123,62 @@
         }
       }
     },
+    "NatElasticIP0AllocationId": {
+      "Description": "Elastic IP 0 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP0",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-0-allocation-id"
+        }
+      }
+    },
+    "NatElasticIP1AllocationId": {
+      "Description": "Elastic IP 1 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP1",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-1-allocation-id"
+        }
+      }
+    },
+    "NatElasticIP0PublicIP": {
+      "Description": "Public IP address of the Elastic IP 0",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP0",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-0-public-ip"
+        }
+      }
+    },
+    "NatElasticIP1PublicIP": {
+      "Description": "Public IP address of the Elastic IP 1",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP1",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-1-public-ip"
+        }
+      }
+    },
     "PublicHostedZoneId": {
       "Description": "ID of the public hosted zone",
       "Value": {
@@ -203,6 +259,20 @@
       },
       "DependsOn": "VPC"
     },
+    "NatElasticIP0": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
+    "NatElasticIP1": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
     "NatGateway0": {
       "Type": "AWS::EC2::NatGateway",
       "Properties": {
@@ -211,7 +281,7 @@
         },
         "AllocationId": {
           "Fn::GetAtt": [
-            "ElasticIP0",
+            "NatElasticIP0",
             "AllocationId"
           ]
         }
@@ -225,7 +295,7 @@
         },
         "AllocationId": {
           "Fn::GetAtt": [
-            "ElasticIP1",
+            "NatElasticIP1",
             "AllocationId"
           ]
         }
