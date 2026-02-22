@@ -1,7 +1,6 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router';
 import { DateTime } from 'luxon';
 import { QRCodeSVG } from 'qrcode.react';
 import { IconLock } from '@tabler/icons-react';
@@ -12,7 +11,6 @@ import Api from '@/Api';
 
 function Hold ({ deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const displayId = String(deflection.id).padStart(6, '0');
   const displayName =
