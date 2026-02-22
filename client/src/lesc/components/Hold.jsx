@@ -60,7 +60,7 @@ function Hold ({ deflection, onCancelClick, onDetailsClick }) {
     !!deflection?.behavior; // TODO: check property, move this logic somewhere reusable
 
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
-  const transferUrl = `${location.origin}/transfer/${deflection.id}`;
+  const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
     queryKey: ['deflections', 'cancelReasons', deflection.cancelReasonId],
@@ -91,7 +91,7 @@ function Hold ({ deflection, onCancelClick, onDetailsClick }) {
     }, 30000);
 
     return () => window.clearInterval(intervalId);
-  }, [isActive, isExpiredStatus, deflection?.expiresAt]);
+  }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
 
   function cancelReasonMessage () {
     if (deflection.cancelReasonId != null) {
@@ -125,7 +125,7 @@ function Hold ({ deflection, onCancelClick, onDetailsClick }) {
         {isActive && isArrived && (
           <Group justify='center'>
             <Box pos='relative'>
-              <Box opacity={isValid ? 1 : 0.1}>
+              <Box opacity={isReadyForTransfer ? 1 : 0.1}>
                 <QRCodeSVG value={transferUrl} size={160} />
               </Box>
               {!isValid && (

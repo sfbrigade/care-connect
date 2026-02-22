@@ -57,7 +57,9 @@ async function buildPostgres (t) {
   }
   const startedDbContainer = await dbContainer.start();
   // set up the default template (template1) with the schema and fixtures
-  const TEMPLATE_DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`;
+  const templateDbUrl = new URL(`postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`);
+  templateDbUrl.searchParams.set('connection_limit', '1');
+  const TEMPLATE_DATABASE_URL = templateDbUrl.toString();
   // run the migrations
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
   await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
@@ -75,6 +77,7 @@ async function buildPostgres (t) {
   for (const fixture of fixturesIterator(fixtures)) {
     await builder.build(fixture);
   }
+  await prisma.$disconnect();
   // configure test database url
   process.env.DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/${startedDbContainer.getDatabase()}`;
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
@@ -144,13 +147,14 @@ async function buildPostgres (t) {
   async function recreateDb () {
     await t.prisma.$disconnect();
     await app.prisma.$disconnect();
-    // Ensure prisma client is connected to template1 before executing raw SQL
-    await prisma.$connect();
+    const templatePrisma = new PrismaClient({ datasourceUrl: TEMPLATE_DATABASE_URL });
+    await templatePrisma.$connect();
     const dbName = startedDbContainer.getDatabase();
     // Quote database name to handle special characters and ensure proper SQL escaping
-    await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
-    await prisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
-    await prisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
+    await templatePrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
+    await templatePrisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
+    await templatePrisma.$executeRawUnsafe(`CREATE DATABASE "${dbName}"`);
+    await templatePrisma.$disconnect();
     await app.prisma.$connect();
     await t.prisma.$connect();
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -24,6 +24,7 @@ function DeflectionForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
+  const autoSaveTimerRef = useRef(null);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -47,46 +48,101 @@ function DeflectionForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
-      const newSelectedDetails = [];
-      const newDetailCategoryCounts = {};
-      for (const detailId of values.deflectionDetails) {
-        const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
-        if (category) {
-          newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
-          newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
-        }
+      if (!isInitialized) {
+        return;
       }
-      setSelectedDetails(newSelectedDetails);
-      setDetailCategoryCounts(newDetailCategoryCounts);
+      countValues(values);
+      scheduleAutoSave(values);
     }
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isInitialized) {
       if (deflection) {
-        form.setInitialValues({
+        const normalized = normalizeValues({
           behavior: deflection.behavior,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
         });
+        form.setInitialValues(normalized);
         form.reset();
+        countValues(normalized);
       }
       setInitialized(true);
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, isInitialized, deflection]);
+
+  useEffect(() => () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+  }, []);
+
+  function countValues (values) {
+    const newSelectedDetails = [];
+    const newDetailCategoryCounts = {};
+    for (const detailId of values.deflectionDetails) {
+      const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
+      if (category) {
+        newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
+        newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
+      }
+    }
+    setSelectedDetails(newSelectedDetails);
+    setDetailCategoryCounts(newDetailCategoryCounts);
+  }
+
+  function normalizeValues (values) {
+    return {
+      behavior: values.behavior ?? '',
+      deflectionDetails: [...(values.deflectionDetails ?? [])]
+        .map(detailId => detailId)
+        .sort((a, b) => String(a).localeCompare(String(b))),
+    };
+  }
+
+  function scheduleAutoSave (values) {
+    const normalized = normalizeValues(values);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveMutation.mutate(normalized);
+    }, 700);
+  }
+
+  async function updateDeflectionCache (updatedDeflection) {
+    await queryClient.setQueryData(['deflections', id], updatedDeflection);
+    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+    if (cachedDeflections) {
+      const updatedDeflections = [...cachedDeflections];
+      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+    }
+  }
+
+  const autoSaveMutation = useMutation({
+    mutationFn: (data) => Api.deflections.update(id, data),
+    onSuccess: async (response, variables) => {
+      await updateDeflectionCache(response.data);
+    },
+  });
 
   const onSubmitMutation = useMutation({
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
-      await queryClient.setQueryData(['deflections', id], response.data);
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-      }
+      await updateDeflectionCache(response.data);
       navigate(isNew ? `/holds/${id}/property?isNew=true` : `/holds/${id}`);
     },
   });
+
+  let header;
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
+    header = <Text c='dimmed' size='lg'>Saving...</Text>;
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
+    header = <Text c='teal.6' size='lg'>Changes saved</Text>;
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
+    header = <Text c='red.6' size='lg'>Save failed</Text>;
+  }
 
   return (
     <>
@@ -96,9 +152,11 @@ function DeflectionForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
-          {isNew && onSubmitMutation.isIdle && <Text c='dimmed' size='lg'>Step 2 of 3</Text>}
-          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
-          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+          <Group gap='xs'>
+            {header}
+            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
+            {isNew && <Text c='dimmed' size='lg'>2 of 3</Text>}
+          </Group>
         </Group>
       </Header>
       <Container>
@@ -147,8 +205,9 @@ function DeflectionForm () {
                 </Input.Wrapper>
               )}
               <Textarea
-                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
+                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
+                autosize
                 {...form.getInputProps('behavior')}
                 placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
               />

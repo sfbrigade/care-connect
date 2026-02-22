@@ -6,6 +6,8 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
@@ -17,24 +19,36 @@ function Holds () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
   });
 
-  const { data: incident } = useQuery({
+  const { data: incident, dataUpdatedAt: incidentUpdatedAt } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
   });
 
-  const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
+  const { data: deflections, isFetching: isFetchingDeflections, dataUpdatedAt: deflectionsUpdatedAt } = useQuery({
     queryKey: ['deflections', incident?.id, 'active'],
     queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
     enabled: !!incident,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
   });
 
   const [tab, setTab] = useState('active');
+
+  const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 
   const markArrivedMutation = useMutation({
     mutationFn: (id) => Api.incidents.arrived(id),
@@ -108,6 +122,7 @@ function Holds () {
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       onCloseCancelModal();
+      showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
     },
   });
 
@@ -143,6 +158,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
+            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
             fullWidth
@@ -160,7 +176,7 @@ function Holds () {
             <HoldsHistory facility={facility} incident={incident} />
           )}
           <Text size='xs' c='gray.5' align='center'>
-            Last updated: {facility?.updatedAt ? DateTime.fromISO(facility.updatedAt).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+            Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
           </Text>
         </Stack>
       </Container>

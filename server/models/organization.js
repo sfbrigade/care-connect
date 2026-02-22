@@ -1,10 +1,11 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, RoleEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 
 const OrganizationAttributesSchema = z.object({
   name: z.string(),
+  defaultRoles: z.array(z.enum(Object.values(RoleEnum))).optional(),
 });
 
 const OrganizationCreateSchema = OrganizationAttributesSchema.extend({
