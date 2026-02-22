@@ -15,7 +15,7 @@ function Hold ({
 }) {
   const { t } = useTranslation();
   const displayId = String(deflection.id).padStart(6, '0');
-  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
+  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add person details';
   const isActive = deflection.status === 'ACTIVE';
   const [now, setNow] = useState(DateTime.now());
 
