@@ -9,8 +9,8 @@ items:
     unavailableUnoccupied: 2
     unavailableOccupied: 0
     occupied: 0
-    holds: 4
-    available: 4
+    holds: 5
+    available: 3
     createdBy: '@user1'
     updatedBy: '@user1'
   lescFacility2BedType:

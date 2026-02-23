@@ -19,8 +19,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
+import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
@@ -48,9 +50,11 @@ function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const addressRef = useRef();
 
   const form = useForm({
@@ -70,6 +74,12 @@ function IncidentForm () {
       Api.facilities
         .activeIncident(facility.id)
         .then((response) => response.data),
+  });
+
+  const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
+    queryKey: ['deflections', data?.id, 'all'],
+    queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
+    enabled: !!data?.id,
   });
 
   useEffect(() => {
@@ -150,6 +160,50 @@ function IncidentForm () {
       navigate('/holds');
     },
   });
+
+  const cancelIncidentMutation = useMutation({
+    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, { cancelReasonId }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['facilities', facility.id, 'bed-types'],
+      });
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        null
+      );
+      await queryClient.removeQueries({
+        queryKey: ['deflections', data?.id, 'active'],
+      });
+      await queryClient.removeQueries({
+        queryKey: ['deflections', data?.id, 'all'],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['deflections', facility.id, 'inactive'],
+      });
+      setShowCancelModal(false);
+      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
+      navigate('/holds');
+    },
+    onError: (error) => {
+      const isNetworkError = !error?.response;
+
+      if (isNetworkError) {
+        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
+  async function onCancelIncidentConfirmed (cancelReasonId) {
+    if (data?.id) {
+      await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
+    }
+  }
+
+  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
+  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => deflection.subjectId);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -312,13 +366,33 @@ function IncidentForm () {
                   back and add it before custody transfer.
                 </Text>
               </Stack>
-              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
-                {data?.id ? 'Save incident details' : 'Create incident & hold'}
-              </Button>
+              <Stack gap='sm'>
+                <Button type='submit' style={{ alignSelf: 'flex-start' }}>
+                  {data?.id ? 'Save incident details' : 'Create incident & hold'}
+                </Button>
+                {canCancelIncident && (
+                  <Button
+                    type='button'
+                    variant='destructive'
+                    style={{ alignSelf: 'flex-start' }}
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={cancelIncidentMutation.isPending}
+                  >
+                    Cancel incident
+                  </Button>
+                )}
+              </Stack>
             </Stack>
           </Fieldset>
         </form>
       </Container>
+      <CancelIncidentModal
+        opened={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={onCancelIncidentConfirmed}
+        requiresReason={incidentHasDetailedHolds}
+        loading={cancelIncidentMutation.isPending}
+      />
     </>
   );
 }

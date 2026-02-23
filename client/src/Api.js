@@ -279,6 +279,9 @@ const Api = {
     extend (id) {
       return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
     },
+    cancel (id, { cancelReasonId } = {}) {
+      return instance.delete(`/api/incidents/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`).catch(handleError);
+    },
   },
   deflections: {
     list ({ incidentId, facilityId, active, subjectStatus } = {}) {
@@ -311,6 +314,15 @@ const Api = {
     },
     transfer (id) {
       return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
+    },
+    safetyCheck (id) {
+      return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
+    },
+    admit (id) {
+      return instance.post(`/api/deflections/${id}/admit`).catch(handleError);
+    },
+    release (id) {
+      return instance.post(`/api/deflections/${id}/release`).catch(handleError);
     },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);

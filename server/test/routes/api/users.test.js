@@ -19,12 +19,13 @@ test('/api/users', async (t) => {
         url: '/api/users'
       }).headers(adminHeaders);
       const data = JSON.parse(response.payload);
-      assert.deepStrictEqual(data.length, 5);
+      assert.deepStrictEqual(data.length, 6);
       assert.deepStrictEqual(data[0].email, 'admin.user@test.com');
       assert.deepStrictEqual(data[1].email, 'another.user@test.com');
       assert.deepStrictEqual(data[2].email, 'deactivated.user@test.com');
       assert.deepStrictEqual(data[3].email, 'regular.user@test.com');
-      assert.deepStrictEqual(data[4].email, 'sfsouser1@test.com');
+      assert.deepStrictEqual(data[4].email, 'careuser1@test.com');
+      assert.deepStrictEqual(data[5].email, 'sfsouser1@test.com');
     });
   });
 

@@ -9,6 +9,7 @@ test('/api/incidents', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new incident', async () => {
@@ -61,6 +62,8 @@ test('/api/incidents', async (t) => {
     });
 
     await t.test('creates an incident with a deflection/bed hold', async () => {
+      await prisma.deflection.expire();
+
       const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         cadNumber: '',
@@ -195,7 +198,7 @@ test('/api/incidents', async (t) => {
       const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 3);
 
       const oneHourLater = DateTime.now().plus({ hours: 1 });
 
@@ -206,6 +209,161 @@ test('/api/incidents', async (t) => {
       const expiresAt1 = DateTime.fromISO(data[1].expiresAt);
       const diff1 = expiresAt1.diff(oneHourLater, 'minutes').minutes;
       assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt1.toISO()}`);
+
+      const expiresAt2 = DateTime.fromISO(data[2].expiresAt);
+      const diff2 = expiresAt2.diff(oneHourLater, 'minutes').minutes;
+      assert.ok(Math.abs(diff2) < 1, `Expected data[2].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt2.toISO()}`);
+    });
+  });
+
+  await t.test('DELETE /:id', async (t) => {
+    await t.test('cancels an active incident and its empty holds', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+
+      // Normalize any pre-seeded expired ACTIVE holds so this test only measures
+      // effects of the create/delete flow under test.
+      await prisma.deflection.expire();
+
+      const beforeBedType = await prisma.bedType.findUnique({
+        where: { id: bedTypeId },
+      });
+
+      const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(createResponse.statusCode, StatusCodes.CREATED);
+      const createdIncident = JSON.parse(createResponse.body);
+
+      const createdDeflections = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+      assert.deepStrictEqual(createdDeflections.length, 1);
+      assert.deepStrictEqual(createdDeflections[0].subjectId, null);
+
+      const deleteResponse = await app.inject().delete(`/api/incidents/${createdIncident.id}`).headers(userHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.NO_CONTENT);
+
+      const incidentAfterDelete = await prisma.incident.findUnique({
+        where: { id: createdIncident.id },
+      });
+      assert.ok(incidentAfterDelete?.completedAt);
+
+      const deflectionsAfterDelete = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+      assert.ok(deflectionsAfterDelete.reduce((acc, deflection) => acc && deflection.status === 'CANCELLED', true));
+
+      const afterBedType = await prisma.bedType.findUnique({
+        where: { id: bedTypeId },
+      });
+      assert.deepStrictEqual(afterBedType.holds, beforeBedType.holds);
+      assert.deepStrictEqual(afterBedType.available, beforeBedType.available);
+    });
+
+    await t.test('requires cancellation reason when incident has holds with subject details', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+      const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(createResponse.statusCode, StatusCodes.CREATED);
+      const createdIncident = JSON.parse(createResponse.body);
+
+      const [createdDeflection] = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+
+      const subjectResponse = await app.inject().put(`/api/deflections/${createdDeflection.id}/subject`).payload({
+        firstName: 'John',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(subjectResponse.statusCode, StatusCodes.OK);
+
+      const deleteResponse = await app.inject().delete(`/api/incidents/${createdIncident.id}`).headers(userHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const errorPayload = JSON.parse(deleteResponse.body);
+      assert.deepStrictEqual(errorPayload.error, 'A cancellation reason is required when the incident contains holds with subject details.');
+
+      const incidentStillExists = await prisma.incident.findUnique({
+        where: { id: createdIncident.id },
+      });
+      assert.ok(incidentStillExists);
+    });
+
+    await t.test('cancels an incident with non-empty holds with a cancel reason', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+      const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(createResponse.statusCode, StatusCodes.CREATED);
+      const createdIncident = JSON.parse(createResponse.body);
+
+      const [detailedDeflection] = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+
+      const subjectResponse = await app.inject().put(`/api/deflections/${detailedDeflection.id}/subject`).payload({
+        firstName: 'John',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(subjectResponse.statusCode, StatusCodes.OK);
+
+      const createSecondDeflectionResponse = await app.inject().post('/api/deflections').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        incidentId: createdIncident.id,
+        bedTypeId,
+      }).headers(userHeaders);
+      assert.deepStrictEqual(createSecondDeflectionResponse.statusCode, StatusCodes.CREATED);
+
+      const deleteResponse = await app.inject().delete(`/api/incidents/${createdIncident.id}?cancelReasonId=5150`).headers(userHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.NO_CONTENT);
+
+      const incidentAfterDelete = await prisma.incident.findUnique({
+        where: { id: createdIncident.id },
+      });
+      assert.ok(incidentAfterDelete);
+      assert.ok(incidentAfterDelete.completedAt);
+
+      const deflectionsAfterCancel = await prisma.deflection.findMany({
+        where: { incidentId: createdIncident.id },
+      });
+
+      assert.deepStrictEqual(deflectionsAfterCancel.length, 2);
+      assert.ok(deflectionsAfterCancel.reduce((acc, deflection) => acc && deflection.status === 'CANCELLED', true));
+      assert.ok(deflectionsAfterCancel.reduce((acc, deflection) => acc && (deflection.subjectId ? deflection.cancelReasonId === '5150' : !deflection.cancelReasonId), true));
+      assert.ok(deflectionsAfterCancel.reduce((acc, deflection) => acc && deflection.cancelledAt, true));
+    });
+
+    await t.test('cannot be cancelled by another non-admin user', async () => {
+      const deleteResponse = await app.inject().delete('/api/incidents/1').headers(anotherUserHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 });

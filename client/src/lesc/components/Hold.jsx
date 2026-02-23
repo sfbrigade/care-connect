@@ -38,6 +38,7 @@ function Hold ({ deflection, onCancelClick, onDetailsClick }) {
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
+  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
   const isExpiredStatus = deflection.status === 'EXPIRED';
   const minutesUntilExpiration = deflection?.expiresAt
     ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes

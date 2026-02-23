@@ -7,19 +7,18 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 
-import { useFacilityContext } from '@/FacilityContext';
-
 function Holds () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
-  const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -46,6 +45,12 @@ function Holds () {
     refetchOnMount: 'always',
   });
 
+  const { data: incidentDeflections } = useQuery({
+    queryKey: ['deflections', incident?.id, 'all'],
+    queryFn: () => Api.deflections.list({ incidentId: incident.id }).then(response => response.data),
+    enabled: !!incident,
+  });
+
   const [tab, setTab] = useState('active');
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
@@ -66,7 +71,7 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
     }
   });
@@ -111,13 +116,13 @@ function Holds () {
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
       if (cachedDeflections) {
         const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
         queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
+        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
+          queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
         }
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
@@ -126,12 +131,68 @@ function Holds () {
     },
   });
 
+  const cancelIncidentMutation = useMutation({
+    mutationFn: ({ id }) => Api.incidents.cancel(id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['facilities', facility.id, 'bed-types'],
+        }),
+        queryClient.setQueryData(
+          ['facilities', facility.id, 'active-incident'],
+          null
+        ),
+        queryClient.removeQueries({
+          queryKey: ['deflections', incident?.id, 'active'],
+        }),
+        queryClient.removeQueries({
+          queryKey: ['deflections', incident?.id, 'all'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['deflections', facility.id, 'inactive'],
+        }),
+      ]);
+
+      onCloseCancelModal();
+      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
+    },
+    onError: (error) => {
+      // Axios-specific: errors with no `response` property did not receive a server response
+      const isNetworkError = !error?.response;
+
+      if (isNetworkError) {
+        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      showToast('We couldn\'t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
+  const isLastActiveHoldSelected = !!selectedDeflection && (deflections?.length ?? 0) === 1;
+
+  const incidentContainsOnlyEmptyHolds = incidentDeflections
+    ? incidentDeflections.every(deflection => !deflection.subjectId)
+    : false; // Default false to avoid triggering auto-cancel in a loading/error state
+
+  const shouldCancelIncidentWithHold =
+    isLastActiveHoldSelected &&
+    !selectedDeflection?.subjectId &&
+    incidentContainsOnlyEmptyHolds;
+
   function onCancelHoldClick (deflection) {
     setSelectedDeflection(deflection);
     setShowCancelModal(true);
   }
 
   async function onCancelHoldConfirmed (cancelReasonId) {
+    if (shouldCancelIncidentWithHold && incident?.id) {
+      await cancelIncidentMutation.mutateAsync({
+        id: incident.id,
+      });
+      return;
+    }
+
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
@@ -186,6 +247,8 @@ function Holds () {
           opened={showCancelModal}
           onClose={onCloseCancelModal}
           onConfirm={onCancelHoldConfirmed}
+          lastHoldWillCancelIncident={shouldCancelIncidentWithHold}
+          loading={cancelDeflectionMutation.isPending || cancelIncidentMutation.isPending}
         />
       )}
     </>
