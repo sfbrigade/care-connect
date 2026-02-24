@@ -17,6 +17,7 @@ const micButtonStyle = {
   zIndex: 1,
 };
 
+// Reserve space so text doesn't flow under the mic button
 const textareaInputStyle = {
   paddingRight: '3rem',
 };
@@ -25,7 +26,7 @@ const textareaInputStyle = {
  * Drop-in replacement for Mantine Textarea with dictation support.
  *
  * - Android mobile: mic button starts/stops Web Speech API dictation
- * - iOS mobile: mic button opens a hint modal pointing to the native keyboard mic
+ * - iOS mobile: no mic button, but we show hint text that can be tapped for a help modal
  * - Desktop / unsupported: renders a plain Textarea
  *
  * @param {object} props - All standard Textarea props, plus:
