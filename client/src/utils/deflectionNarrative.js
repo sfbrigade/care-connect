@@ -2,9 +2,9 @@ import { DateTime } from 'luxon';
 
 import { formatAddress } from './format';
 
-const ADD_MANUALLY = '[ADD MANUALLY]'
+const ADD_MANUALLY = '[ADD MANUALLY]';
 
-function formatIncidentDateTime(arrestedAt) {
+function formatIncidentDateTime (arrestedAt) {
   if (!arrestedAt) {
     return {
       date: ADD_MANUALLY,
@@ -29,7 +29,7 @@ function formatIncidentDateTime(arrestedAt) {
   };
 }
 
-export function buildDeflectionNarrative({ incident, observedBehaviorNames } = {}) {
+export function buildDeflectionNarrative ({ incident, observedBehaviorNames } = {}) {
   const address = formatAddress(incident ?? {}) || ADD_MANUALLY;
   const { date, time } = formatIncidentDateTime(incident?.arrestedAt);
   const behaviors = (observedBehaviorNames ?? []).filter(Boolean).join('; ') || ADD_MANUALLY;

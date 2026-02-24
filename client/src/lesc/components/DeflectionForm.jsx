@@ -17,7 +17,7 @@ const initialValues = {
   deflectionDetails: [],
 };
 
-function DeflectionForm() {
+function DeflectionForm () {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -107,7 +107,7 @@ function DeflectionForm() {
     }
   }, []);
 
-  function countValues(values) {
+  function countValues (values) {
     const newSelectedDetails = [];
     const newDetailCategoryCounts = {};
     for (const detailId of values.deflectionDetails) {
@@ -121,7 +121,7 @@ function DeflectionForm() {
     setDetailCategoryCounts(newDetailCategoryCounts);
   }
 
-  function normalizeValues(values) {
+  function normalizeValues (values) {
     return {
       behavior: values.behavior ?? '',
       deflectionDetails: [...(values.deflectionDetails ?? [])]
@@ -130,7 +130,7 @@ function DeflectionForm() {
     };
   }
 
-  function scheduleAutoSave(values) {
+  function scheduleAutoSave (values) {
     const normalized = normalizeValues(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
@@ -140,7 +140,7 @@ function DeflectionForm() {
     }, 700);
   }
 
-  async function updateDeflectionCache(updatedDeflection) {
+  async function updateDeflectionCache (updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
     const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
     if (cachedDeflections) {
