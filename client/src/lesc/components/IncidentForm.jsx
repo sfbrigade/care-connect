@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
 import Api from '@/Api';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
@@ -207,10 +208,11 @@ function IncidentForm () {
               )}
               {showAddressForm && (
                 <>
-                  <TextInput
+                  <AddressAutocomplete
                     ref={addressRef}
+                    form={form}
+                    field='addressLine1'
                     key={form.key('addressLine1')}
-                    {...form.getInputProps('addressLine1')}
                     label={
                       <>
                         Arrest address line 1<span>*</span>
