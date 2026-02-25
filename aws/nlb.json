@@ -7,7 +7,19 @@
       "Type": "String"
     }
   },
-  "Outputs": {},
+  "Outputs": {
+    "ApplicationLoadBalancerTargetGroupArn": {
+      "Description": "The ARN of the application load balancer target group",
+      "Value": {
+        "Ref": "ApplicationLoadBalancerTargetGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb-target-group-arn"
+        }
+      }
+    }
+  },
   "Resources": {
     "SSLCertificate": {
       "Type": "AWS::CertificateManager::Certificate",
@@ -47,7 +59,7 @@
             }
           }
         ]
-      },
+      }
     },
     "ApplicationLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
