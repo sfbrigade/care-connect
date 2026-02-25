@@ -8,7 +8,7 @@ import ScanTransferCodeModal from './ScanTransferCodeModal';
 const mockFacility = { id: 1, name: 'RESET' };
 
 export default {
-  title: 'Custody/ScanTransferCodeModal',
+  title: 'LESC/Custody/ScanTransferCodeModal',
   component: ScanTransferCodeModal,
   parameters: {
     layout: 'fullscreen',

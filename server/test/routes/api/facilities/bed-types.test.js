@@ -36,6 +36,9 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates bed type and creates bed type update', async () => {
+      // fixtures contain one expired deflection, this will create 1 update record
+      await app.prisma.deflection.expire();
+
       const updateData = {
         capacity: 25,
         unavailableUnoccupied: 0,
@@ -57,16 +60,20 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       // Check calculated available: 25 - 0 - 0 - 0 (occupied default) - 0 (holds default) = 25
       assert.deepStrictEqual(updatedBedType.available, 21);
 
-      // Check if BedTypeUpdate record was created
+      // Check if an additional BedTypeUpdate record was created
       const updates = await app.prisma.bedTypeUpdate.findMany({
         where: { bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        orderBy: { updatedAt: 'desc' },
       });
-      assert.deepStrictEqual(updates.length, 1);
+      assert.deepStrictEqual(updates.length, 2);
       assert.deepStrictEqual(updates[0].capacity, 25);
       assert.deepStrictEqual(updates[0].updateNotes, 'Increased capacity');
     });
 
     await t.test('updates occupied manually and recalculates available', async () => {
+      // fixtures contain one expired deflection, this will create 1 update record
+      await app.prisma.deflection.expire();
+
       const updateData = {
         unavailableUnoccupied: 1,
         unavailableOccupied: 1,
@@ -90,7 +97,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       // Check history count
       const count = await app.prisma.bedTypeUpdate.count({ where: { bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' } });
-      assert.deepStrictEqual(count, 1);
+      assert.deepStrictEqual(count, 2);
     });
 
     await t.test('returns 404 if bed type not found', async () => {
