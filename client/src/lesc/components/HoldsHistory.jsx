@@ -95,24 +95,24 @@ function HoldsHistory ({ incident, facility }) {
                   <Box>
                     <Text size='lg'>Incident {String(group.incidentId).padStart(6, '0')}</Text>
                     {(address || group.incident?.arrestedAt) && (
-                        <Text size='md' c='dimmed'>
-                            {address}
-                            {address && group.incident?.arrestedAt ? ' • ' : ''}
-                            {group.incident?.arrestedAt
-                                ? DateTime.fromISO(group.incident.arrestedAt).toLocaleString(DateTime.TIME_SIMPLE)
-                                : ''}
-                          </Text>
-                      )}
+                      <Text size='md' c='dimmed'>
+                        {address}
+                        {address && group.incident?.arrestedAt ? ' • ' : ''}
+                        {group.incident?.arrestedAt
+                          ? DateTime.fromISO(group.incident.arrestedAt).toLocaleString(DateTime.TIME_SIMPLE)
+                          : ''}
+                      </Text>
+                    )}
                   </Box>
                   {group.deflections.map((deflection) => (
                     <Hold
-                        incident={incident}
-                        key={deflection.id}
-                        deflection={deflection}
-                        onDetailsClick={() => {
-                            navigate(`/holds/${deflection.id}`);
-                          }}
-                      />
+                      incident={incident}
+                      key={deflection.id}
+                      deflection={deflection}
+                      onDetailsClick={() => {
+                        navigate(`/holds/${deflection.id}`);
+                      }}
+                    />
                   ))}
                 </Stack>
               );
