@@ -109,8 +109,8 @@
         "Family": {
           "Fn::Sub": "${BaseName}-ecs-task-definition"
         },
-        "Cpu": "256",
-        "Memory": "512",
+        "Cpu": "2048",
+        "Memory": "4096",
         "NetworkMode": "awsvpc",
         "RequiresCompatibilities": [
           "FARGATE"
