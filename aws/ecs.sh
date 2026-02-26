@@ -4,7 +4,24 @@ read -p "Stack base name (lowercase, letters, numbers, hyphen only) [$1]: " BASE
 BASE_NAME=${BASE_NAME:-$1}
 read -p "Image URL [$2]: " IMAGE_URL
 IMAGE_URL=${IMAGE_URL:-$2}
-read -p "Session Secret [$3]: " SESSION_SECRET
-SESSION_SECRET=${SESSION_SECRET:-$3}
+read -p "Environment [$3]: " ENVIRONMENT
+ENVIRONMENT=${ENVIRONMENT:-$3}
 
-aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name ${BASE_NAME}-ecs --template-body file://./ecs.json --parameters ParameterKey=BaseName,ParameterValue=$BASE_NAME ParameterKey=ImageURL,ParameterValue=$IMAGE_URL ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET --output text
+set -a
+source ./.env.$ENVIRONMENT
+set +a
+
+echo "GEOCODE_RATE_LIMIT_MS: $GEOCODE_RATE_LIMIT_MS"
+echo "OPENROUTESERVICE_API_KEY: $OPENROUTESERVICE_API_KEY"
+echo "OPENROUTESERVICE_BASE_URL: $OPENROUTESERVICE_BASE_URL"
+echo "SESSION_SECRET: $SESSION_SECRET"
+echo "VITE_POSTHOG_KEY: $VITE_POSTHOG_KEY"
+echo "VITE_POSTHOG_HOST: $VITE_POSTHOG_HOST"
+echo "VITE_SITE_TITLE: $VITE_SITE_TITLE"
+
+read -p "Continue? [y/N]: " CONT
+if [[ "$CONT" != "y" ]]; then
+    exit 1
+fi
+
+aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name ${BASE_NAME}-ecs --template-body file://./ecs.json --parameters ParameterKey=BaseName,ParameterValue=$BASE_NAME ParameterKey=ImageURL,ParameterValue=$IMAGE_URL ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET ParameterKey=GeocodeRateLimitMs,ParameterValue=$GEOCODE_RATE_LIMIT_MS ParameterKey=OpenrouteserviceApiKey,ParameterValue=$OPENROUTESERVICE_API_KEY ParameterKey=OpenrouteserviceBaseUrl,ParameterValue=$OPENROUTESERVICE_BASE_URL ParameterKey=PosthogKey,ParameterValue=$VITE_POSTHOG_KEY ParameterKey=PosthogHost,ParameterValue=$VITE_POSTHOG_HOST ParameterKey=SiteTitle,ParameterValue=$VITE_SITE_TITLE --output text

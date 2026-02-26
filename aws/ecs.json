@@ -10,9 +10,33 @@
       "Type": "String",
       "Description": "The URL of the Docker image (e.g., your-ecr-repo-url/image:tag)"
     },
+    "GeocodeRateLimitMs": {
+      "Type": "Number",
+      "Description": "The rate limit for geocoding in milliseconds"
+    },
+    "OpenrouteserviceApiKey": {
+      "Type": "String",
+      "Description": "The API key for Openrouteservice"
+    },
+    "OpenrouteserviceBaseUrl": {
+      "Type": "String",
+      "Description": "The base URL for Openrouteservice"
+    },
+    "PosthogKey": {
+      "Type": "String",
+      "Description": "The API key for PostHog"
+    },
+    "PosthogHost": {
+      "Type": "String",
+      "Description": "The host for PostHog"
+    },
     "SessionSecret": {
       "Type": "String",
       "Description": "The session secret for the application"
+    },
+    "SiteTitle": {
+      "Type": "String",
+      "Description": "The title of the site"
     }
   },
   "Outputs": {},
@@ -281,6 +305,24 @@
                 "Value": "0.0.0.0"
               },
               {
+                "Name": "GEOCODE_RATE_LIMIT_MS",
+                "Value": {
+                  "Ref": "GeocodeRateLimitMs"
+                }
+              },
+              {
+                "Name": "OPENROUTESERVICE_API_KEY",
+                "Value": {
+                  "Ref": "OpenrouteserviceApiKey"
+                }
+              },
+              {
+                "Name": "OPENROUTESERVICE_BASE_URL",
+                "Value": {
+                  "Ref": "OpenrouteserviceBaseUrl"
+                }
+              },
+              {
                 "Name": "SESSION_SECRET",
                 "Value": {
                   "Ref": "SessionSecret"
@@ -304,6 +346,24 @@
                       }
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_KEY",
+                "Value": {
+                  "Ref": "PosthogKey"
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_HOST",
+                "Value": {
+                  "Ref": "PosthogHost"
+                }
+              },
+              {
+                "Name": "VITE_SITE_TITLE",
+                "Value": {
+                  "Ref": "SiteTitle"
                 }
               }
             ],

@@ -59,7 +59,7 @@ profile*
 
 # project specific
 .env
-.env.local
+.env.*
 data
 *.pem
 *.zip
