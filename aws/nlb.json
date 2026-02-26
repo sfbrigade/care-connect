@@ -8,6 +8,17 @@
     }
   },
   "Outputs": {
+    "ApplicationLoadBalancerSecurityGroupId": {
+      "Description": "The ID of the application load balancer security group",
+      "Value": {
+        "Ref": "ApplicationLoadBalancerSecurityGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb-security-group-id"
+        }
+      }
+    },
     "ApplicationLoadBalancerTargetGroupArn": {
       "Description": "The ARN of the application load balancer target group",
       "Value": {
@@ -69,6 +80,11 @@
         },
         "Scheme": "internal",
         "Type": "application",
+        "SecurityGroups": [
+          {
+            "Ref": "ApplicationLoadBalancerSecurityGroup"
+          }
+        ],
         "SubnetMappings": [
           {
             "SubnetId": {
@@ -116,7 +132,6 @@
             "Type": "redirect",
             "RedirectConfig": {
               "Protocol": "HTTPS",
-              "Port": 443,
               "Host": "#{host}",
               "Path": "/#{path}",
               "Query": "#{query}",
@@ -152,6 +167,31 @@
         ]
       }
     },
+    "ApplicationLoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the application load balancer",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        },
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443
+          }
+        ]
+      }
+    },
     "NetworkLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
       "Properties": {
@@ -160,6 +200,11 @@
         },
         "Scheme": "internet-facing",
         "Type": "network",
+        "SecurityGroups": [
+          {
+            "Ref": "NetworkLoadBalancerSecurityGroup"
+          }
+        ],
         "SubnetMappings": [
           {
             "SubnetId": {
@@ -276,6 +321,31 @@
             "TargetGroupArn": {
               "Ref": "NetworkLoadBalancerTargetGroup443"
             }
+          }
+        ]
+      }
+    },
+    "NetworkLoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the network load balancer",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        },
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443
           }
         ]
       }
