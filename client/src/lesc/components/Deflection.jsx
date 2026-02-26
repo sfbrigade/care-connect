@@ -132,6 +132,21 @@ function Deflection () {
     }
   }
 
+  function getDrugTypeLabel (value) {
+    switch (value) {
+      case 'INTOXICATING_LIQUOR':
+        return 'Intoxicating liquor';
+      case 'DRUG':
+        return 'Drug';
+      case 'TOLUENE':
+        return 'Toluene';
+      case 'COMBINATION':
+        return 'Combination';
+      default:
+        return value;
+    }
+  }
+
   return (
     <>
       <Head>
@@ -190,7 +205,7 @@ function Deflection () {
               <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject</Button>
             </Group>
           </Stack>
-          <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='narcotics'>
               <Accordion.Control>
@@ -213,6 +228,30 @@ function Deflection () {
                 </Stack>
                 <Group mt='md'>
                   <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>Edit narcotics</Button>
+                </Group>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value='drug-use'>
+              <Accordion.Control>
+                <Title order={3}>Drug use</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined && (
+                    <Box>
+                      <Text c='dimmed'>Evidence of drug use</Text>
+                      <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                    </Box>
+                  )}
+                  {deflection?.drugUseEvidence === true && !!deflection?.drugType && (
+                    <Box>
+                      <Text c='dimmed'>Drug type</Text>
+                      <Text>{getDrugTypeLabel(deflection.drugType)}</Text>
+                    </Box>
+                  )}
+                </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)} variant='secondary'>Edit drug use</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>

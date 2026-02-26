@@ -31,6 +31,8 @@ const initialValues = {
   postalCode: '',
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
+  drugUseEvidence: null,
+  drugType: null,
 };
 
 function SubjectForm () {
@@ -47,6 +49,7 @@ function SubjectForm () {
   const [dobInput, setDobInput] = useState('');
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
+  const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -57,9 +60,12 @@ function SubjectForm () {
       ...values,
       narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
       narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
+      drugUseEvidence: values.drugUseEvidence !== null ? values.drugUseEvidence === 'true' : null,
+      drugType: values.drugUseEvidence === 'true' ? values.drugType ?? null : null,
       dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
     }),
     onValuesChange: (values) => {
+      setShowDrugTypeQuestion(values.drugUseEvidence === 'true');
       if (!isInitialized) {
         return;
       }
@@ -90,11 +96,16 @@ function SubjectForm () {
           ...deflection.subject,
           narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
           narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
+          drugUseEvidence: deflection.drugUseEvidence !== null ? JSON.stringify(deflection.drugUseEvidence) : null,
+          drugType: deflection.drugType ?? null,
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         setDobInput(normalized.dateOfBirth ?? '');
+        setShowDrugTypeQuestion(normalized.drugUseEvidence === 'true');
         form.setInitialValues(normalized);
         form.reset();
+      } else {
+        setShowDrugTypeQuestion(false);
       }
       setInitialized(true);
     }
@@ -112,6 +123,8 @@ function SubjectForm () {
       ...values,
       narcoticsSubstance: values.narcoticsSubstance ?? null,
       narcoticsParaphernalia: values.narcoticsParaphernalia ?? null,
+      drugUseEvidence: values.drugUseEvidence ?? null,
+      drugType: values.drugType ?? null,
       dateOfBirth: values.dateOfBirth ?? '',
     };
   }
@@ -123,6 +136,8 @@ function SubjectForm () {
       ...normalized,
       narcoticsSubstance: normalized.narcoticsSubstance !== null ? normalized.narcoticsSubstance === 'true' : null,
       narcoticsParaphernalia: normalized.narcoticsParaphernalia !== null ? normalized.narcoticsParaphernalia === 'true' : null,
+      drugUseEvidence: normalized.drugUseEvidence !== null ? normalized.drugUseEvidence === 'true' : null,
+      drugType: normalized.drugUseEvidence === 'true' ? normalized.drugType ?? null : null,
       dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
     };
   }
@@ -187,11 +202,12 @@ function SubjectForm () {
   const scrollToSection = searchParams.get('section');
 
   useEffect(() => {
-    if (scrollToSection === 'narcotics' && isInitialized) {
-      const el = document.querySelector('[data-section="narcotics"]');
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
-      }
+    if (!scrollToSection || !isInitialized) {
+      return;
+    }
+    const el = document.querySelector(`[data-section="${scrollToSection}"]`);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   }, [scrollToSection, isInitialized]);
 
@@ -383,6 +399,38 @@ function SubjectForm () {
                             </Group>
                           </Chip.Group>
                         </Input.Wrapper>
+                        <Divider />
+                        <Stack gap='xl' data-section='drug-use'>
+                          <Title order={3}>Drug use</Title>
+                          <Stack gap='xl'>
+                            <Input.Wrapper label='Evidence of drug use'>
+                              <Chip.Group
+                                key={form.key('drugUseEvidence')}
+                                {...form.getInputProps('drugUseEvidence')}
+                              >
+                                <Group gap='sm' mt='md'>
+                                  <Chip value='true'>Yes</Chip>
+                                  <Chip value='false'>No</Chip>
+                                </Group>
+                              </Chip.Group>
+                            </Input.Wrapper>
+                            {showDrugTypeQuestion && (
+                              <Input.Wrapper label='Drug type'>
+                                <Chip.Group
+                                  key={form.key('drugType')}
+                                  {...form.getInputProps('drugType')}
+                                >
+                                  <Group gap='sm' mt='md'>
+                                    <Chip value='INTOXICATING_LIQUOR'>Intoxicating liquor</Chip>
+                                    <Chip value='DRUG'>Drug</Chip>
+                                    <Chip value='TOLUENE'>Toluene</Chip>
+                                    <Chip value='COMBINATION'>Combination</Chip>
+                                  </Group>
+                                </Chip.Group>
+                              </Input.Wrapper>
+                            )}
+                          </Stack>
+                        </Stack>
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>

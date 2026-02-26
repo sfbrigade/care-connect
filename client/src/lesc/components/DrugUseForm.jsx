@@ -1,0 +1,136 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import { Head } from '@unhead/react';
+import { IconArrowLeft } from '@tabler/icons-react';
+import { Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import Api from '@/Api';
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
+import { useFacilityContext } from '@/FacilityContext';
+
+const initialValues = {
+  drugUseEvidence: null,
+  drugType: null,
+};
+
+function DrugUseForm () {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const queryClient = useQueryClient();
+  const { facility } = useFacilityContext();
+  const [isInitialized, setInitialized] = useState(false);
+  const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
+
+  const form = useForm({
+    mode: 'uncontrolled',
+    initialValues,
+    transformValues: (values) => ({
+      drugUseEvidence: values.drugUseEvidence !== null ? values.drugUseEvidence === 'true' : null,
+      drugType: values.drugUseEvidence === 'true' ? values.drugType ?? null : null,
+    }),
+    onValuesChange: (values) => {
+      setShowDrugTypeQuestion(values.drugUseEvidence === 'true');
+    }
+  });
+
+  const { data: incident } = useQuery({
+    queryKey: ['facilities', facility.id, 'active-incident'],
+    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+  });
+
+  const { data: deflection, isLoading } = useQuery({
+    queryKey: ['deflections', id],
+    queryFn: () => Api.deflections.get(id).then(response => response.data),
+  });
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (deflection) {
+        form.setInitialValues({
+          drugUseEvidence: deflection.drugUseEvidence !== null ? JSON.stringify(deflection.drugUseEvidence) : null,
+          drugType: deflection.drugType ?? null,
+        });
+        setShowDrugTypeQuestion(deflection.drugUseEvidence === true);
+        form.reset();
+      }
+      setInitialized(true);
+    }
+  }, [isLoading, deflection]);
+
+  const onSubmitMutation = useMutation({
+    mutationFn: (data) => Api.deflections.update(id, data),
+    onSuccess: async (response) => {
+      await queryClient.setQueryData(['deflections', id], response.data);
+      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
+      if (cachedDeflections) {
+        const updatedDeflections = [...cachedDeflections];
+        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = response.data;
+        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+      }
+      navigate(`/holds/${id}`);
+    },
+  });
+
+  return (
+    <>
+      <Head>
+        <title>Drug use details</title>
+      </Head>
+      <Header>
+        <Group w='100%' justify='space-between'>
+          <IconButtonLink icon={IconArrowLeft} to={`/holds/${id}`} />
+          {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
+          {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
+        </Group>
+      </Header>
+      <Container>
+        <Group gap='xs' mb='xs'>
+          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+          <Text c='gray.5' size='md'>•</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+        </Group>
+        <Title order={2} mb='xs'>Drug use details</Title>
+        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+            <Stack gap='xl'>
+              <Input.Wrapper label='Evidence of drug use'>
+                <Chip.Group
+                  key={form.key('drugUseEvidence')}
+                  {...form.getInputProps('drugUseEvidence')}
+                >
+                  <Group gap='sm' mt='md'>
+                    <Chip value='true'>Yes</Chip>
+                    <Chip value='false'>No</Chip>
+                  </Group>
+                </Chip.Group>
+              </Input.Wrapper>
+              {showDrugTypeQuestion && (
+                <Input.Wrapper label='Drug type'>
+                  <Chip.Group
+                    key={form.key('drugType')}
+                    {...form.getInputProps('drugType')}
+                  >
+                    <Group gap='sm' mt='md'>
+                      <Chip value='INTOXICATING_LIQUOR'>Intoxicating liquor</Chip>
+                      <Chip value='DRUG'>Drug</Chip>
+                      <Chip value='TOLUENE'>Toluene</Chip>
+                      <Chip value='COMBINATION'>Combination</Chip>
+                    </Group>
+                  </Chip.Group>
+                </Input.Wrapper>
+              )}
+              <Button type='submit'>
+                Save drug use details
+              </Button>
+            </Stack>
+          </Fieldset>
+        </form>
+      </Container>
+    </>
+  );
+}
+
+export default DrugUseForm;

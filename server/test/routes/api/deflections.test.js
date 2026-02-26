@@ -171,6 +171,8 @@ test('/api/deflections', async (t) => {
         localId: '1234',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: true,
+        drugType: 'TOLUENE',
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -187,6 +189,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '1234');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, true);
+      assert.deepStrictEqual(data.drugType, 'TOLUENE');
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -208,6 +212,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, true);
+      assert.deepStrictEqual(deflection.drugType, 'TOLUENE');
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -224,6 +230,8 @@ test('/api/deflections', async (t) => {
         localId: '9876',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: false,
+        drugType: 'DRUG',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -241,6 +249,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '9876');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, false);
+      assert.deepStrictEqual(data.drugType, null);
 
       // Verify in database
       const subject = await prisma.subject.findUnique({
@@ -262,6 +272,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, false);
+      assert.deepStrictEqual(deflection.drugType, null);
     });
   });
 

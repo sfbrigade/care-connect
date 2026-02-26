@@ -84,6 +84,13 @@ enum PropertyEnum {
   LARGE
 }
 
+enum DrugTypeEnum {
+  INTOXICATING_LIQUOR
+  DRUG
+  TOLUENE
+  COMBINATION
+}
+
 enum RaceEnum {
   WHITE
   BLACK
@@ -460,6 +467,8 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
+  drugUseEvidence              Boolean?
+  drugType                     DrugTypeEnum?
   behavior                     String?
   property                     PropertyEnum?
   propertyDetails              String?
