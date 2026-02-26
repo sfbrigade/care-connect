@@ -93,7 +93,7 @@
         "Name": {
           "Fn::Sub": "${BaseName}-alb-target-group"
         },
-        "Port": 80,
+        "Port": 3000,
         "Protocol": "HTTP",
         "TargetType": "ip",
         "VpcId": {
