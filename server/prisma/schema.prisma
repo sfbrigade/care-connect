@@ -460,6 +460,7 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
+  volunteeredToReset           Boolean?
   behavior                     String?
   property                     PropertyEnum?
   propertyDetails              String?

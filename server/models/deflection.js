@@ -19,6 +19,7 @@ const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
+  volunteeredToReset: z.boolean().nullable(),
   property: z.enum(Object.values(PropertyEnum)).catch(null).nullable(),
   propertyDetails: z.string().nullable(),
   deflectionDetails: z.array(z.string()),

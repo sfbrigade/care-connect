@@ -356,6 +356,7 @@ EXITED EXITED
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
+    Boolean volunteeredToReset "❓"
     String behavior "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
