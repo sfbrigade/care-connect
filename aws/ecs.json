@@ -277,6 +277,10 @@
                 }
               },
               {
+                "Name": "FASTIFY_ADDRESS",
+                "Value": "0.0.0.0"
+              },
+              {
                 "Name": "SESSION_SECRET",
                 "Value": {
                   "Ref": "SessionSecret"
@@ -392,7 +396,11 @@
         },
         "SecurityGroupIngress": [
           {
-            "CidrIp": "0.0.0.0/0",
+            "SourceSecurityGroupId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-alb-security-group-id"
+              }
+            },
             "IpProtocol": "tcp",
             "FromPort": 3000,
             "ToPort": 3000
