@@ -19,6 +19,7 @@ const IncidentAttributesSchema = z.object({
   latitude: z.coerce.number().nullable(),
   longitude: z.coerce.number().nullable(),
   arrestedAt: z.coerce.date().catch(null).nullable(),
+  encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']),
   supervisorBadgeNumber: z.string().nullable(),
 });
 
