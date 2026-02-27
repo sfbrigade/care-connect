@@ -357,6 +357,7 @@ EXITED EXITED
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
     String behavior "❓"
+    String releaseNarrative "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     DateTime createdAt 

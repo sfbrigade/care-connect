@@ -461,6 +461,7 @@ model Deflection {
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
   behavior                     String?
+  releaseNarrative             String?
   property                     PropertyEnum?
   propertyDetails              String?
   createdAt                    DateTime                @default(now())

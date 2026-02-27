@@ -161,7 +161,7 @@ function SubjectForm () {
       await updateDeflectionCache(response.data);
       if (isCustodyContext) {
         setShowFile647fModal(false);
-        showToast('Changes saved.', 'success', 4000, 'A new 647(f) record was filed with SFPD.');
+        showToast('Changes saved.', 'success');
         navigate(`/custody/${id}`);
       } else {
         navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
