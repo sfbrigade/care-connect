@@ -133,6 +133,7 @@
             "RedirectConfig": {
               "Protocol": "HTTPS",
               "Host": "#{host}",
+              "Port": 443,
               "Path": "/#{path}",
               "Query": "#{query}",
               "StatusCode": "HTTP_301"
