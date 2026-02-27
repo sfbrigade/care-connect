@@ -408,8 +408,8 @@ const Api = {
       },
     },
     units: {
-      index (organizationId, page = 1) {
-        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page } });
+      index (organizationId, page = 1, perPage = 25) {
+        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page, perPage } });
       },
       get (organizationId, id) {
         return instance.get(`/api/organizations/${organizationId}/units/${id}`);
