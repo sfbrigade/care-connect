@@ -9,6 +9,12 @@ a {
   cursor: pointer;
 }
 
+@keyframes cardHighlight {
+  0% { box-shadow: 0 0 0 3px var(--mantine-color-blue-5); }
+  70% { box-shadow: 0 0 0 3px var(--mantine-color-blue-5); }
+  100% { box-shadow: 0 0 0 3px transparent; }
+}
+
 @keyframes slideDown {
   from {
     transform: translateY(-12px);

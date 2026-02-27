@@ -2,11 +2,10 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
-import { QRCodeSVG } from 'qrcode.react';
-import { IconLock } from '@tabler/icons-react';
 
+import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidIncident } from '@/utils/validators';
+import { isValidDeflection } from '@/utils/validators';
 
 function Hold ({
   incident,
@@ -34,6 +33,7 @@ function Hold ({
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
+  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
   const isExpiredStatus = deflection.status === 'EXPIRED';
   const minutesUntilExpiration = deflection?.expiresAt
     ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
@@ -41,7 +41,6 @@ function Hold ({
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidDeflection(deflection);
-  const isReadyForTransfer = isValidIncident(incident) && isValid;
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
@@ -71,7 +70,7 @@ function Hold ({
             {isCancelled && (
               <>
                 <Text size='md' c='gray.6'>•</Text>
-                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}</Text>
+                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
               </>
             )}
             {isExpired && (
@@ -91,18 +90,10 @@ function Hold ({
           </Box>
         </Stack>
         {isActive && isArrived && (
-          <Group justify='center'>
-            <Box pos='relative'>
-              <Box opacity={isReadyForTransfer ? 1 : 0.1}>
-                <QRCodeSVG value={transferUrl} size={160} />
-              </Box>
-              {!isReadyForTransfer && (
-                <Group pos='absolute' w={80} h={80} bg='white' bdrs='50%' top={40} left={40} justify='center' align='center'>
-                  <IconLock size={24} color='black' />
-                </Group>
-              )}
-            </Box>
-          </Group>
+          <Stack align='center' gap='xs'>
+            <LockedQRCode value={transferUrl} locked={!isValid} />
+            <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
+          </Stack>
         )}
         {!(isNew && (isCancelled || isExpired)) && (
           <Group justify='space-between' wrap='nowrap'>
@@ -113,7 +104,7 @@ function Hold ({
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
-                <Button size='md' variant='light' color='red.6' onClick={onCancelClick}>Cancel</Button>
+                <Button size='md' variant='destructive' onClick={onCancelClick}>Cancel</Button>
                 <Button size='md' onClick={onDetailsClick}>Add Details</Button>
               </Group>
             )}
