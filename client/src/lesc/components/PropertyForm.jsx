@@ -189,7 +189,7 @@ function PropertyForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Personal property</Title>
-        <Text c='dimmed' size='md' mb='xl'>Document any personal property the subject is bringing.</Text>
+        <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
