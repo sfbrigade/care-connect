@@ -315,6 +315,15 @@ const Api = {
     transfer (id) {
       return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
     },
+    safetyCheck (id) {
+      return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
+    },
+    admit (id) {
+      return instance.post(`/api/deflections/${id}/admit`).catch(handleError);
+    },
+    release (id) {
+      return instance.post(`/api/deflections/${id}/release`).catch(handleError);
+    },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },
@@ -399,8 +408,8 @@ const Api = {
       },
     },
     units: {
-      index (organizationId, page = 1) {
-        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page } });
+      index (organizationId, page = 1, perPage = 25) {
+        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page, perPage } });
       },
       get (organizationId, id) {
         return instance.get(`/api/organizations/${organizationId}/units/${id}`);

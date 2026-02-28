@@ -5,11 +5,11 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
 export default async function (fastify, opts) {
-  fastify.post('/:id/transfer',
+  fastify.post('/:id/safety-check',
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Transfer a deflection into custody.',
+        description: 'Complete a safety check for a deflection, transitioning from AWAITING_INTAKE to READY_FOR_INTAKE.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -32,13 +32,13 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
+      if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
         // re-fetch deflection after lock
         deflection = await tx.deflection.findUnique({
           where: { id },
@@ -49,7 +49,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
@@ -57,7 +57,7 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
+            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -66,9 +66,7 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.AWAITING_INTAKE,
-            transferredAt: now,
-            transferredById: request.user.id,
+            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
             updatedAt: now,
           },
           include: {
@@ -76,29 +74,6 @@ export default async function (fastify, opts) {
             deflectionDetails: true,
             propertyPhotos: true,
           },
-        });
-
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied + 1,
-          holds: holds - 1,
-          available,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
         });
       });
 

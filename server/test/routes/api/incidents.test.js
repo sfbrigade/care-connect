@@ -62,6 +62,8 @@ test('/api/incidents', async (t) => {
     });
 
     await t.test('creates an incident with a deflection/bed hold', async () => {
+      await prisma.deflection.expire();
+
       const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         cadNumber: '',
@@ -196,7 +198,7 @@ test('/api/incidents', async (t) => {
       const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 3);
 
       const oneHourLater = DateTime.now().plus({ hours: 1 });
 
@@ -207,6 +209,10 @@ test('/api/incidents', async (t) => {
       const expiresAt1 = DateTime.fromISO(data[1].expiresAt);
       const diff1 = expiresAt1.diff(oneHourLater, 'minutes').minutes;
       assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt1.toISO()}`);
+
+      const expiresAt2 = DateTime.fromISO(data[2].expiresAt);
+      const diff2 = expiresAt2.diff(oneHourLater, 'minutes').minutes;
+      assert.ok(Math.abs(diff2) < 1, `Expected data[2].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt2.toISO()}`);
     });
   });
 

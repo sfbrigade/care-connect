@@ -2,11 +2,10 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
-import { QRCodeSVG } from 'qrcode.react';
-import { IconLock } from '@tabler/icons-react';
 
+import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidIncident } from '@/utils/validators';
+import { isValidDeflection } from '@/utils/validators';
 
 function Hold ({
   incident,
@@ -42,7 +41,6 @@ function Hold ({
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidDeflection(deflection);
-  const isReadyForTransfer = isValidIncident(incident) && isValid;
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
@@ -92,18 +90,10 @@ function Hold ({
           </Box>
         </Stack>
         {isActive && isArrived && (
-          <Group justify='center'>
-            <Box pos='relative'>
-              <Box opacity={isReadyForTransfer ? 1 : 0.1}>
-                <QRCodeSVG value={transferUrl} size={160} />
-              </Box>
-              {!isReadyForTransfer && (
-                <Group pos='absolute' w={80} h={80} bg='white' bdrs='50%' top={40} left={40} justify='center' align='center'>
-                  <IconLock size={24} color='black' />
-                </Group>
-              )}
-            </Box>
-          </Group>
+          <Stack align='center' gap='xs'>
+            <LockedQRCode value={transferUrl} locked={!isValid} />
+            <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
+          </Stack>
         )}
         {!(isNew && (isCancelled || isExpired)) && (
           <Group justify='space-between' wrap='nowrap'>

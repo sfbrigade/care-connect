@@ -16,7 +16,7 @@ export default async function (fastify, opts) {
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
-          subjectStatus: z.enum(Object.values(Deflection.SubjectStatus)).optional(),
+          subjectStatus: z.string().regex(new RegExp(`^(${Object.values(Deflection.SubjectStatus).join('|')})(,(${Object.values(Deflection.SubjectStatus).join('|')}))*$`)).optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),
         }),
@@ -56,10 +56,32 @@ export default async function (fastify, opts) {
       }
 
       if (subjectStatus) {
-        where.subjectStatus = subjectStatus;
+        const statuses = subjectStatus.split(',');
+        const hasExited = statuses.includes('EXITED');
+
+        if (hasExited) {
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const otherStatuses = statuses.filter(s => s !== 'EXITED');
+
+          if (otherStatuses.length > 0) {
+            where.OR = [
+              { subjectStatus: otherStatuses.length > 1 ? { in: otherStatuses } : otherStatuses[0] },
+              { subjectStatus: 'EXITED', exitedAt: { gte: twentyFourHoursAgo } },
+            ];
+          } else {
+            where.subjectStatus = 'EXITED';
+            where.exitedAt = { gte: twentyFourHoursAgo };
+          }
+        } else {
+          where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
+        }
+      } else if (request.user.isField) {
+        if (active === 'true') {
+          where.subjectStatus = { in: [Deflection.SubjectStatus.DETAINED, Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER] };
+        }
       }
 
-      if (!request.user.isAdmin && !(request.user.isCustody && facilityId)) {
+      if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId)) {
         where.createdById = request.user.id;
       }
 

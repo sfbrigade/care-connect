@@ -10,9 +10,33 @@ export function useFacilityContext () {
 
 export function FacilityContextValue () {
   const staticContext = useStaticContext();
-  const [facility, setFacility] = useState(staticContext.facility);
+
+  const [facility, setFacility] = useState(() => {
+    if (import.meta.env.DEV && !!window) {
+      try {
+        const saved = window.localStorage.getItem('selectedFacility');
+        return saved ? JSON.parse(saved) : staticContext.facility;
+      } catch {
+        // Corrupted localStorage, clear it and use default
+        window.localStorage.removeItem('selectedFacility');
+      }
+    }
+    return staticContext.facility;
+  });
+
+  const setFacilityWithPersistence = (newFacility) => {
+    setFacility(newFacility);
+    if (import.meta.env.DEV && !!window) {
+      if (newFacility?.subdomain) {
+        window.localStorage.setItem('selectedFacility', JSON.stringify(newFacility));
+      } else {
+        window.localStorage.removeItem('selectedFacility');
+      }
+    }
+  };
+
   return {
     facility,
-    setFacility,
+    setFacility: setFacilityWithPersistence,
   };
 }
