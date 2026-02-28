@@ -209,7 +209,7 @@ function DeflectionForm () {
                 key={form.key('behavior')}
                 autosize
                 {...form.getInputProps('behavior')}
-                placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
+                placeholder='E.g. “Person was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>
                 {isNew ? 'Next: Personal property' : 'Save arrest details'}

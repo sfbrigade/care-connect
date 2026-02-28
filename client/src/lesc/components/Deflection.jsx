@@ -187,7 +187,7 @@ function Deflection () {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject</Button>
+              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'incident']}>

@@ -17,7 +17,7 @@ const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR'
 const RELEASED_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update subject details as needed before completing the safety check.' },
+  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update person details as needed before completing the safety check.' },
   { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake' },
   { status: 'ADMITTED', label: 'In Medical Intake' },
   { status: 'IN_CHAIR', label: 'In-chair' },
@@ -137,8 +137,8 @@ function Custody () {
                   )
                 : (
                   <EmptyState
-                    title='No subjects in custody'
-                    description="When you receive a subject from SFPD, they'll appear here."
+                    title='No persons in custody'
+                    description="When you receive a person from SFPD, they'll appear here."
                   />
                   )}
             </Stack>
@@ -155,8 +155,8 @@ function Custody () {
                   )
                 : (
                   <EmptyState
-                    title='No subjects in released'
-                    description="Released subjects appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
+                    title='No persons in released'
+                    description="Released persons appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
                   />
                   )}
             </Stack>

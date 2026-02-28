@@ -207,7 +207,7 @@ function SubjectForm () {
   return (
     <>
       <Head>
-        <title>Subject details</title>
+        <title>Person details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -226,7 +226,7 @@ function SubjectForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
 
-        <Title order={2} mb='xs'>Subject details</Title>
+        <Title order={2} mb='xs'>Person details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
@@ -397,7 +397,7 @@ function SubjectForm () {
                   )
                 : (
                   <Button type='submit'>
-                    {isNew ? 'Next: arrest details' : 'Save subject details'}
+                    {isNew ? 'Next: arrest details' : 'Save person details'}
                   </Button>
                   )}
             </Stack>
