@@ -172,7 +172,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Deflection details</Title>
+                <Title order={3}>Arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>

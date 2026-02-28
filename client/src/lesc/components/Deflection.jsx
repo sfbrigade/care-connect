@@ -218,7 +218,7 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Deflection details</Title>
+                <Title order={3}>Arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -236,7 +236,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit arrest</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>

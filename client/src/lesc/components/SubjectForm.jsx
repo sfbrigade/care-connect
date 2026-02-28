@@ -397,7 +397,7 @@ function SubjectForm () {
                   )
                 : (
                   <Button type='submit'>
-                    {isNew ? 'Next: deflection details' : 'Save person details'}
+                    {isNew ? 'Next: arrest details' : 'Save person details'}
                   </Button>
                   )}
             </Stack>
