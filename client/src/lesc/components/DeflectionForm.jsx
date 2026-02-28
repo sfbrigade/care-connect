@@ -147,7 +147,7 @@ function DeflectionForm () {
   return (
     <>
       <Head>
-        <title>Deflection details</title>
+        <title>Arrest details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -165,7 +165,7 @@ function DeflectionForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Deflection details</Title>
+        <Title order={2} mb='xs'>Arrest details</Title>
         <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will be included in the legal forms.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
@@ -212,7 +212,7 @@ function DeflectionForm () {
                 placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>
-                {isNew ? 'Next: Personal property' : 'Save deflection details'}
+                {isNew ? 'Next: Personal property' : 'Save arrest details'}
               </Button>
             </Stack>
           </Fieldset>
