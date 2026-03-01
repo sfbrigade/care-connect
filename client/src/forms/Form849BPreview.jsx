@@ -117,7 +117,7 @@ export default function Form849BPreview () {
           <IconArrowLeft />
         </ActionIcon>
         <div>
-          <Title order={2}>849B Certificate of Release</Title>
+          <Title order={2}>849(b) Certificate of Release</Title>
           <Text c='dimmed' size='sm'>
             Deflection #{deflectionId} — {subjectName}
           </Text>
@@ -127,7 +127,7 @@ export default function Form849BPreview () {
       <Stack gap='md'>
         {!isReleased(deflection) && (
           <Alert icon={<IconInfoCircle size={16} />} color='yellow' title='Subject not yet released'>
-            The 849B Certificate of Release can only be generated after the subject has been released.
+            The 849(b) Certificate of Release can only be generated after the subject has been released.
             The current status is: {deflection?.subjectStatus || 'unknown'}.
           </Alert>
         )}
@@ -139,7 +139,7 @@ export default function Form849BPreview () {
               <div>
                 <Text fw={500}>Generate Certificate of Release</Text>
                 <Text size='sm' c='dimmed'>
-                  SF Sheriff&apos;s Dept Form 849B for {subjectName}
+                  SF Sheriff&apos;s Dept Form 849(b) for {subjectName}
                 </Text>
               </div>
             </Group>
@@ -175,7 +175,7 @@ export default function Form849BPreview () {
           {!pdfUrl && !pdfLoading && (
             <Text c='dimmed' ta='center' py='xl'>
               {isReleased(deflection)
-                ? 'Click "Generate PDF" to preview the 849B form'
+                ? 'Click "Generate PDF" to preview the 849(b) form'
                 : 'The form will be available once the subject has been released'}
             </Text>
           )}
