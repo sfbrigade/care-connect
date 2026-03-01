@@ -1,10 +1,8 @@
 import Api from '@/Api';
-import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import ScanCodeModal from '@/components/ScanCodeModal';
 
 function ScanAdmitCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
-  const { facility } = useFacilityContext();
   const { showToast } = useToast();
 
   function parseDeflectionId (text) {
@@ -38,7 +36,7 @@ function ScanAdmitCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
       opened={opened}
       onClose={onClose}
       onScan={handleScan}
-      prompt={`Scan the subject's QR code to admit to ${facility?.name || 'this facility'}.`}
+      prompt={'Point the camera at the person\'s transfer code to begin intake.'}
       manualEntryTitle='Enter Admit Code'
       loadingText='Admitting subject...'
       _debugScanPhase={_debugScanPhase}
