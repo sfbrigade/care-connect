@@ -48,7 +48,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       allowedHosts: true,
       proxy: {
         '^/api|/static-data|/locales': {
-          target: 'http://localhost:3000',
+          target: 'http://127.0.0.1:3000',
           changeOrigin: false,
         }
       }
