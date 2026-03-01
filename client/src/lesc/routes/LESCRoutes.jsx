@@ -18,6 +18,7 @@ import NarcoticsForm from '../components/NarcoticsForm';
 import DrugUseForm from '../components/DrugUseForm';
 import TestFormPreview from '@/forms/TestFormPreview';
 import Form849BPreview from '@/forms/Form849BPreview';
+import Form849BDevPreview from '@/forms/Form849BDevPreview';
 
 function LESCRoutes () {
   const { user } = useAuthContext();
@@ -43,6 +44,7 @@ function LESCRoutes () {
       <Route path='care' element={<Care />} />
       <Route path='forms/test' element={<TestFormPreview />} />
       <Route path='forms/849b/:deflectionId' element={<Form849BPreview />} />
+      <Route path='forms/849b-dev/:deflectionId' element={<Form849BDevPreview />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
