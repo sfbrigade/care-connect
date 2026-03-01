@@ -11,10 +11,10 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Times-Bold',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 36,
     letterSpacing: 1,
   },
   paragraph: {
@@ -187,11 +187,10 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
         <View style={{ marginBottom: 4 }}>
           <View style={styles.row}>
             <Text style={styles.bodyText}>
-              As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975, ch.1117), I hereby certify that the
+              As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975, ch.1117), I hereby certify that the taking into custody of
             </Text>
           </View>
           <View style={[styles.row, { marginTop: 2 }]}>
-            <Text style={styles.bodyText}>taking into custody of </Text>
             <UnderlinedValue value={subjectName} />
             <Text style={styles.bodyText}> on </Text>
             <UnderlinedValue value={`${detention.month}  ${detention.date}  ${detention.year}`} width={200} />
@@ -255,8 +254,6 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
         <View style={styles.legalBlock}>
           <Text style={styles.legalText}>
             paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal Code Section 849, Penal Code
-          </Text>
-          <Text style={styles.legalText}>
             Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on the reverse of this certificate.
           </Text>
         </View>
