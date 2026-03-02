@@ -1,36 +1,15 @@
 import React from 'react';
 
-function formatDate (dateStr) {
-  if (!dateStr) return { month: '', date: '', year: '' };
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return { month: '', date: '', year: '' };
-  return {
-    month: d.toLocaleString('en-US', { month: 'long' }),
-    date: String(d.getDate()),
-    year: String(d.getFullYear()),
-  };
-}
-
-function formatTime (dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
+// Uses .form-container instead of body so styles work in both standalone
+// (FormContainer renders <body class="form-container">) and embedded mode
+// (FormContainer renders <div class="form-container">).
 const css = `
   @page {
     size: letter;
     margin: 0.5in 0.5in 0.65in 0.5in;
   }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
+  .form-container {
     font-family: 'Times New Roman', Times, serif;
     font-size: 12pt;
     line-height: 1.6;
@@ -184,6 +163,24 @@ const css = `
   }
 `;
 
+function formatDate (dateStr) {
+  if (!dateStr) return { month: '', date: '', year: '' };
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return { month: '', date: '', year: '' };
+  return {
+    month: d.toLocaleString('en-US', { month: 'long' }),
+    date: String(d.getDate()),
+    year: String(d.getFullYear()),
+  };
+}
+
+function formatTime (dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 /** Underlined inline field with an optional sub-label. */
 function Field ({ value, width, label }) {
   const valueStyle = width ? { minWidth: width } : { flex: '1' };
@@ -228,77 +225,73 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
   const releaseTime = formatTime(releaseDate);
 
   return (
-    <html lang='en'>
-      <head>
-        <meta charSet='utf-8' />
-        {/* eslint-disable-next-line react/no-danger */}
-        <style dangerouslySetInnerHTML={{ __html: css }} />
-      </head>
-      <body>
-        <div className='page'>
-          <h1 className='title'>
-            SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
-          </h1>
+    <>
+      {/* eslint-disable-next-line react/no-danger */}
+      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <div className='page'>
+        <h1 className='title'>
+          DRP
+          SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
+        </h1>
 
-          {/* ── Paragraph 1: detention ── */}
-          <p className='para'>
-            As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975,
-            ch.1117), I hereby certify that the taking into custody of{' '}
-            <Field value={subjectName} label="Subject's Name" />{' '}
-            on{' '}
-            <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
-            at{' '}
-            <Field value={detentionTime} width='55pt' label='Time' />{' '}
-            hours by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
+        {/* ── Paragraph 1: detention ── */}
+        <p className='para'>
+          As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975,
+          ch.1117), I hereby certify that the taking into custody of{' '}
+          <Field value={subjectName} label="Subject's Name" />{' '}
+          on{' '}
+          <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
+          at{' '}
+          <Field value={detentionTime} width='55pt' label='Time' />{' '}
+          hours by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
+        </p>
+
+        {/* ── Paragraph 2: release ── */}
+        <p className='para' style={{ marginTop: '10pt' }}>
+          <Field value={subjectName} label="Subject's Name" />{' '}
+          was released on{' '}
+          <DateField month={release.month} date={release.date} year={release.year} time={releaseTime} />{' '}
+          by the San Francisco Sheriff&apos;s Department pursuant to the provisions of:
+        </p>
+
+        {/* ── Legal text ── */}
+        <div className='legal-block'>
+          <p>
+            paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
+            Code Section 849, Penal Code
           </p>
-
-          {/* ── Paragraph 2: release ── */}
-          <p className='para' style={{ marginTop: '10pt' }}>
-            <Field value={subjectName} label="Subject's Name" />{' '}
-            was released on{' '}
-            <DateField month={release.month} date={release.date} year={release.year} time={releaseTime} />{' '}
-            by the San Francisco Sheriff&apos;s Department pursuant to the provisions of:
+          <p>
+            Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on
+            the reverse of this certificate.
           </p>
+        </div>
 
-          {/* ── Legal text ── */}
-          <div className='legal-block'>
-            <p>
-              paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
-              Code Section 849, Penal Code
-            </p>
-            <p>
-              Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on
-              the reverse of this certificate.
-            </p>
+        {/* ── Signature section ── */}
+        <div className='sig-section'>
+          <div className='sig-row'>
+            <span className='sig-row__label'>Deputy&apos;s Rank, Name &amp; Star#</span>
+            <span className='sig-row__line'>{deputyRankNameStar}</span>
+            <span className='sig-row__unit-label'>Unit Identifier:</span>
+            <span className='sig-row__unit-line'>{unitIdentifier}</span>
           </div>
+          <div className='sig-print-label'>Print</div>
 
-          {/* ── Signature section ── */}
-          <div className='sig-section'>
-            <div className='sig-row'>
-              <span className='sig-row__label'>Deputy&apos;s Rank, Name &amp; Star#</span>
-              <span className='sig-row__line'>{deputyRankNameStar}</span>
-              <span className='sig-row__unit-label'>Unit Identifier:</span>
-              <span className='sig-row__unit-line'>{unitIdentifier}</span>
-            </div>
-            <div className='sig-print-label'>Print</div>
-
-            <div className='sig-row'>
-              <span className='sig-row__label'>Deputy&apos;s Signature &amp; Star#</span>
-              <span className='sig-row__line' />
-            </div>
-          </div>
-
-          {/* ── Footer ── */}
-          <div className='footer'>
-            <span>White to Citizen</span>
-            <span>Canary to Central Records &amp; Warrants Unit</span>
-            <span className='footer__right'>
-              Pink to Incident Report<br />
-              Updated 04-22-2019
-            </span>
+          <div className='sig-row'>
+            <span className='sig-row__label'>Deputy&apos;s Signature &amp; Star#</span>
+            <span className='sig-row__line' />
           </div>
         </div>
-      </body>
-    </html>
+
+        {/* ── Footer ── */}
+        <div className='footer'>
+          <span>White to Citizen</span>
+          <span>Canary to Central Records &amp; Warrants Unit</span>
+          <span className='footer__right'>
+            Pink to Incident Report<br />
+            Updated 04-22-2019
+          </span>
+        </div>
+      </div>
+    </>
   );
 }

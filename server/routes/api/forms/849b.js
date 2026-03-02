@@ -72,16 +72,24 @@ const errorResponses = {
   [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({ error: z.string() }),
 };
 
+const dataSchema = z.object({
+  subjectName: z.string(),
+  detentionDate: z.string().nullable(),
+  releaseDate: z.string(),
+  deputyRankNameStar: z.string(),
+  unitIdentifier: z.string(),
+});
+
 export default async function (fastify, opts) {
   fastify.get(
-    '/849b/html/:deflectionId',
+    '/849b/data/:deflectionId',
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Render an 849B Certificate of Release as HTML for a deflection',
+        description: 'Return form data for an 849B Certificate of Release as JSON',
         params: paramsSchema,
         response: {
-          [StatusCodes.OK]: z.any().describe('HTML page'),
+          [StatusCodes.OK]: dataSchema,
           ...errorResponses,
         },
       },
@@ -99,17 +107,7 @@ export default async function (fastify, opts) {
         });
       }
 
-      const [{ renderFormToHtml }, { default: CertificateOfRelease849BForm }] = await Promise.all([
-        import('#lib/pdf.js'),
-        import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
-      ]);
-
-      const html = renderFormToHtml(CertificateOfRelease849BForm, result.data);
-
-      return reply
-        .code(StatusCodes.OK)
-        .header('Content-Type', 'text/html; charset=utf-8')
-        .send(html);
+      return result.data;
     }
   );
 
@@ -144,7 +142,7 @@ export default async function (fastify, opts) {
         import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
       ]);
 
-      const html = renderFormToHtml(CertificateOfRelease849BForm, result.data);
+      const html = await renderFormToHtml(CertificateOfRelease849BForm, result.data);
 
       const pdfBuffer = await Promise.race([
         renderToPdf(html),
