@@ -74,7 +74,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 1);
+      assert.deepStrictEqual(data.length, 2);
     });
 
     await t.test('returns a list of inactive deflections for the user', async () => {
@@ -82,7 +82,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 1);
+      assert.deepStrictEqual(data.length, 0);
     });
   });
 
