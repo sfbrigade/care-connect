@@ -371,9 +371,10 @@ const Api = {
     },
   },
   geocode: {
-    autocomplete (text) {
+    autocomplete (text, { signal } = {}) {
       return instance.get('/api/geocode/autocomplete', {
         params: { text },
+        signal,
       }).catch(handleError);
     },
     place (placeId) {
