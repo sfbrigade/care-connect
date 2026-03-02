@@ -1,8 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import location from '#lib/location.js';
-import { buildAddressLine1 } from '#lib/location.js';
+import location, { buildAddressLine1 } from '#lib/location.js';
 
 export default async function (fastify, opts) {
   fastify.get('/search',
