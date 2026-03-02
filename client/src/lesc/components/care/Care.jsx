@@ -34,6 +34,7 @@ function Care () {
   const tab = searchParams.get('tab') === 'not-in-custody' ? 'not-in-custody' : 'in-custody';
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
+  const [scanModalInstance, setScanModalInstance] = useState(0);
   const [highlightedId, setHighlightedId] = useState(null);
   const [collapsedSections, setCollapsedSections] = useState({
     ADMITTED: false,
@@ -226,18 +227,24 @@ function Care () {
             size='lg'
             radius='xl'
             leftSection={<IconScan size={20} />}
-            onClick={() => setScanModalOpened(true)}
+            onClick={() => {
+              setScanModalInstance((prev) => prev + 1);
+              setScanModalOpened(true);
+            }}
           >
             Scan transfer code
           </Button>
         </Container>
       </Box>
 
-      <ScanAdmitCodeModal
-        opened={scanModalOpened}
-        onClose={() => setScanModalOpened(false)}
-        onSuccess={handleScanSuccess}
-      />
+      {scanModalOpened && (
+        <ScanAdmitCodeModal
+          key={scanModalInstance}
+          opened={scanModalOpened}
+          onClose={() => setScanModalOpened(false)}
+          onSuccess={handleScanSuccess}
+        />
+      )}
 
       <Box h='104px' />
     </>

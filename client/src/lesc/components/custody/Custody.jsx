@@ -192,11 +192,13 @@ function Custody () {
           </Container>
         </Box>
       )}
-      <ScanTransferCodeModal
-        opened={scanModalOpened}
-        onClose={() => setScanModalOpened(false)}
-        onSuccess={handleScanSuccess}
-      />
+      {scanModalOpened && (
+        <ScanTransferCodeModal
+          opened={scanModalOpened}
+          onClose={() => setScanModalOpened(false)}
+          onSuccess={handleScanSuccess}
+        />
+      )}
     </>
   );
 }

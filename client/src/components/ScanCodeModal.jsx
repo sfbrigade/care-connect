@@ -42,6 +42,10 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
     onClose();
   }
 
+  if (!opened) {
+    return null;
+  }
+
   return (
     <Modal
       opened={opened}
@@ -49,6 +53,7 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
       fullScreen
       withCloseButton={false}
       padding={0}
+      closeOnClickOutside={false}
     >
       {isLoading && (
         <Stack align='center' justify='center' h='100dvh'>
