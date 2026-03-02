@@ -93,16 +93,15 @@ export default async function (fastify, opts) {
       };
 
       // lazy-load heavy dependencies to avoid blocking server startup
-      const [React, { renderToBuffer }, { default: CertificateOfRelease849BForm }] = await Promise.all([
-        import('react'),
-        import('@react-pdf/renderer'),
+      const [{ renderFormToHtml, renderToPdf }, { default: CertificateOfRelease849BForm }] = await Promise.all([
+        import('#lib/pdf.js'),
         import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
       ]);
 
+      const html = renderFormToHtml(CertificateOfRelease849BForm, data);
+
       const pdfBuffer = await Promise.race([
-        renderToBuffer(
-          React.createElement(CertificateOfRelease849BForm, { data })
-        ),
+        renderToPdf(html),
         new Promise((_resolve, reject) =>
           setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
         ),

@@ -1,19 +1,9 @@
 import { useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
 import { Container, Title, Paper, TextInput, Textarea, Button, Group, Stack, Loader, Text } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
-
 export default function TestFormPreview () {
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [numPages, setNumPages] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -26,7 +16,7 @@ export default function TestFormPreview () {
       officerName: 'Officer Smith',
       badgeNumber: '12345',
       incidentLocation: '123 Main Street, San Francisco, CA',
-      notes: 'This is a test form generated using @react-pdf/renderer.',
+      notes: 'This is a test form generated using Chromium-based HTML-to-PDF rendering.',
     },
   });
 
@@ -68,16 +58,12 @@ export default function TestFormPreview () {
     }
   };
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-  };
-
   return (
     <Container size='xl' py='xl'>
       <Title order={1} mb='lg'>PDF Form Test</Title>
       <Text c='dimmed' mb='xl'>
-        This page demonstrates server-side PDF generation using @react-pdf/renderer.
-        Fill in the form fields and click "Generate PDF" to see the result.
+        This page demonstrates server-side PDF generation using Chromium-based HTML-to-PDF rendering.
+        Fill in the form fields and click &quot;Generate PDF&quot; to see the result.
       </Text>
 
       <Group align='flex-start' gap='xl'>
@@ -143,25 +129,15 @@ export default function TestFormPreview () {
           )}
           {!pdfUrl && !loading && (
             <Text c='dimmed' ta='center' py='xl'>
-              Click "Generate PDF" to preview the form
+              Click &quot;Generate PDF&quot; to preview the form
             </Text>
           )}
           {pdfUrl && !loading && (
-            <div style={{ border: '1px solid #ddd', background: '#f5f5f5' }}>
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={<Loader />}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Page
-                    key={`page_${index + 1}`}
-                    pageNumber={index + 1}
-                    width={550}
-                  />
-                ))}
-              </Document>
-            </div>
+            <iframe
+              src={pdfUrl}
+              title='Test Form Preview'
+              style={{ width: '100%', height: '700px', border: 'none', display: 'block' }}
+            />
           )}
         </Paper>
       </Group>

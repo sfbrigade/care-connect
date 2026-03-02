@@ -1,19 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Document, Page, pdfjs } from 'react-pdf';
 import { ActionIcon, Alert, Button, Container, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft, IconDownload, IconFileTypePdf, IconInfoCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
-
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
 
 const isReleased = (deflection) => !!deflection?.releasedAt;
 
@@ -21,7 +12,6 @@ export default function Form849BPreview () {
   const { deflectionId } = useParams();
   const navigate = useNavigate();
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [numPages, setNumPages] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState(null);
 
@@ -78,10 +68,6 @@ export default function Form849BPreview () {
       link.download = `849B-Certificate-of-Release-${deflectionId}.pdf`;
       link.click();
     }
-  };
-
-  const onDocumentLoadSuccess = ({ numPages: n }) => {
-    setNumPages(n);
   };
 
   if (isLoading) {
@@ -186,21 +172,11 @@ export default function Form849BPreview () {
             </Group>
           )}
           {pdfUrl && !pdfLoading && (
-            <div style={{ border: '1px solid #ddd', background: '#f5f5f5', display: 'flex', justifyContent: 'center' }}>
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={<Loader />}
-              >
-                {Array.from(new Array(numPages), (el, index) => (
-                  <Page
-                    key={`page_${index + 1}`}
-                    pageNumber={index + 1}
-                    width={700}
-                  />
-                ))}
-              </Document>
-            </div>
+            <iframe
+              src={pdfUrl}
+              title='849B Certificate of Release'
+              style={{ width: '100%', height: '800px', border: 'none', display: 'block' }}
+            />
           )}
         </Paper>
       </Stack>

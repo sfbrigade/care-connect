@@ -26,15 +26,13 @@ export default async function (fastify, opts) {
       const data = request.query || {};
 
       // lazy-load heavy dependencies to avoid blocking server startup
-      const [React, { renderToBuffer }, { default: TestForm }] = await Promise.all([
-        import('react'),
-        import('@react-pdf/renderer'),
+      const [{ renderFormToHtml, renderToPdf }, { default: TestForm }] = await Promise.all([
+        import('#lib/pdf.js'),
         import('../../../lib/forms/dist/TestForm.js'),
       ]);
 
-      const pdfBuffer = await renderToBuffer(
-        React.createElement(TestForm, { data })
-      );
+      const html = renderFormToHtml(TestForm, data);
+      const pdfBuffer = await renderToPdf(html);
 
       return reply
         .code(StatusCodes.OK)
