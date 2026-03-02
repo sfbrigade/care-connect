@@ -37,16 +37,11 @@ async function suggest (text) {
   return client.send(command);
 }
 
-function reset () {
-  client = undefined;
-}
-
 function buildAddressLine1 (address) {
   return [address?.AddressNumber, address?.Street].filter(Boolean).join(' ');
 }
 
 export default {
   suggest,
-  reset,
   buildAddressLine1,
 };
