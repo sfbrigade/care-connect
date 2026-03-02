@@ -319,7 +319,7 @@ const Api = {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },
     admit (id) {
-      return instance.post(`/api/deflections/${id}/admit`).catch(handleError);
+      return instance.post(`/api/deflections/${id}/admit`);
     },
     release (id) {
       return instance.post(`/api/deflections/${id}/release`).catch(handleError);

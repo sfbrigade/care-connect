@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActionIcon, Box, Button, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
@@ -8,6 +8,13 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
   const [isLoading, setIsLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
   const [code, setCode] = useState('');
+
+  useEffect(() => {
+    if (!opened) return;
+    setIsLoading(false);
+    setManualEntry(false);
+    setCode('');
+  }, [opened]);
 
   async function handleScan (text) {
     await onScan(text);

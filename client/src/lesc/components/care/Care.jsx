@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Accordion, Box, Button, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { ActionIcon, Box, Button, Container, Divider, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconQrcode } from '@tabler/icons-react';
+import { IconChevronUp, IconScan } from '@tabler/icons-react';
+import { useSearchParams } from 'react-router';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
@@ -11,10 +12,11 @@ import { formatTime } from '@/utils/format';
 import CareCard from './CareCard';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
 
-const CARE_STATUSES = 'ADMITTED,IN_CHAIR';
+const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
+const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
-const SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake' },
+const IN_CUSTODY_SECTIONS = [
+  { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
   { status: 'IN_CHAIR', label: 'In-chair' },
 ];
 
@@ -28,26 +30,39 @@ function groupByStatus (deflections) {
 }
 
 function Care () {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'not-in-custody' ? 'not-in-custody' : 'in-custody';
+  const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
+  const [collapsedSections, setCollapsedSections] = useState({
+    ADMITTED: false,
+    IN_CHAIR: false,
+    NOT_IN_CUSTODY: false,
+  });
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
 
-  const { data: deflections, dataUpdatedAt } = useQuery({
+  const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: CARE_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: IN_CUSTODY_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
   });
 
-  function handleScanSuccess () {
-    queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-  }
+  const { data: notInCustodyDeflections = [] } = useQuery({
+    queryKey: ['deflections', facility.id, 'care-not-in-custody'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
 
   useEffect(() => {
-    if (!deflections) return;
+    if (!inCustodyDeflections.length) return;
     const targetId = window.sessionStorage.getItem('careHighlightTarget');
     if (!targetId) return;
     window.sessionStorage.removeItem('careHighlightTarget');
@@ -58,7 +73,7 @@ function Care () {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-  }, [deflections]);
+  }, [inCustodyDeflections]);
 
   useEffect(() => {
     if (!highlightedId) return;
@@ -66,63 +81,138 @@ function Care () {
     return () => clearTimeout(timer);
   }, [highlightedId]);
 
-  const grouped = groupByStatus(deflections);
-  const hasDeflections = (deflections?.length ?? 0) > 0;
+  const groupedInCustody = useMemo(() => groupByStatus(inCustodyDeflections), [inCustodyDeflections]);
+  const notInCustodyCount = notInCustodyDeflections.length;
 
-  const defaultOpenSections = SECTIONS
-    .filter(s => (grouped[s.status]?.length ?? 0) > 0)
-    .map(s => s.status);
+  function toggleSection (sectionKey) {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey],
+    }));
+  }
+
+  function handleScanSuccess () {
+    queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+  }
 
   return (
     <>
       <Head>
         <title>Care</title>
       </Head>
-      <Container pt='md'>
-        <Stack gap='xl'>
-          <Stack gap='md'>
-            {hasDeflections
-              ? (
-                <Accordion variant='section' multiple defaultValue={defaultOpenSections}>
-                  <Divider />
-                  {SECTIONS.map(({ status, label }) => {
-                    const items = grouped[status] ?? [];
-                    return (
-                      <Accordion.Item key={status} value={status}>
-                        <Accordion.Control>
-                          <Title order={3}>{label}: {items.length}</Title>
-                        </Accordion.Control>
-                        <Accordion.Panel>
-                          <Stack gap='md'>
-                            {items.map(d => (
-                              <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
-                            ))}
-                            {items.length === 0 && (
-                              <Text c='dimmed' size='sm'>None</Text>
-                            )}
-                          </Stack>
-                        </Accordion.Panel>
-                      </Accordion.Item>
-                    );
-                  })}
-                </Accordion>
-                )
-              : (
-                <Stack align='center' gap='md' py='xl'>
-                  <Box
-                    w={160}
-                    h={160}
-                    style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
+      <Container pt='md' pb='xl'>
+        <Stack gap='lg'>
+          <SegmentedControl
+            fullWidth
+            value={tab}
+            onChange={setTab}
+            data={[
+              { label: 'In custody', value: 'in-custody' },
+              { label: 'Not in custody', value: 'not-in-custody' },
+            ]}
+          />
+          <Divider />
+
+          {tab === 'in-custody' && (
+            <Stack gap='lg'>
+              {IN_CUSTODY_SECTIONS.map(({ status, label, description }, index) => {
+                const items = groupedInCustody[status] ?? [];
+                const isCollapsed = collapsedSections[status];
+
+                return (
+                  <Stack key={status} gap='sm'>
+                    {index > 0 && <Divider />}
+                    <Group justify='space-between' align='flex-start' wrap='nowrap'>
+                      <Box>
+                        <Title order={3}>{label}: {items.length}</Title>
+                        {description && <Text c='gray.5' size='md'>{description}</Text>}
+                      </Box>
+                      <ActionIcon
+                        variant='subtle'
+                        color='gray'
+                        radius='xl'
+                        size='xl'
+                        aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${label} section`}
+                        aria-expanded={!isCollapsed}
+                        onClick={() => toggleSection(status)}
+                        style={{ backgroundColor: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)' }}
+                      >
+                        <IconChevronUp
+                          size={20}
+                          style={{
+                            transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 150ms ease',
+                          }}
+                        />
+                      </ActionIcon>
+                    </Group>
+
+                    {!isCollapsed && (
+                      <Stack gap='sm'>
+                        {items.map(d => (
+                          <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                        ))}
+                        {items.length === 0 && status !== 'IN_CHAIR' && (
+                          <Text c='dimmed' size='sm'>None</Text>
+                        )}
+                      </Stack>
+                    )}
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+
+          {tab === 'not-in-custody' && (
+            <Stack gap='sm'>
+              <Group justify='space-between' align='center' wrap='nowrap'>
+                <Title order={3}>Not in custody: {notInCustodyCount}</Title>
+                <ActionIcon
+                  variant='subtle'
+                  color='gray'
+                  radius='xl'
+                  size='xl'
+                  aria-label={`${collapsedSections.NOT_IN_CUSTODY ? 'Expand' : 'Collapse'} Not in custody section`}
+                  aria-expanded={!collapsedSections.NOT_IN_CUSTODY}
+                  onClick={() => toggleSection('NOT_IN_CUSTODY')}
+                  style={{ backgroundColor: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)' }}
+                >
+                  <IconChevronUp
+                    size={20}
+                    style={{
+                      transform: collapsedSections.NOT_IN_CUSTODY ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 150ms ease',
+                    }}
                   />
-                  <Title order={3}>No admitted subjects</Title>
-                  <Text c='dimmed' ta='center'>When you admit a subject, they&apos;ll appear here.</Text>
-                </Stack>
-                )}
-          </Stack>
+                </ActionIcon>
+              </Group>
+
+              {!collapsedSections.NOT_IN_CUSTODY && (
+                <>
+                  {notInCustodyCount === 0 && (
+                    <Text c='dimmed' size='sm'>No records in this section.</Text>
+                  )}
+
+                  {notInCustodyDeflections.map(d => (
+                    <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                  ))}
+                </>
+              )}
+            </Stack>
+          )}
+
+          <Divider />
+
+          {dataUpdatedAt > 0 && (
+            <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
+          )}
         </Stack>
       </Container>
+
       <Box
-        pos='sticky'
+        pos='fixed'
+        left={0}
+        right={0}
         bottom={0}
         bg='gray.0'
         pt='md'
@@ -130,29 +220,26 @@ function Care () {
         style={{ zIndex: 10 }}
       >
         <Container>
-          <Stack gap='xs'>
-            <Button
-              variant='light'
-              fullWidth
-              size='lg'
-              leftSection={<IconQrcode size={20} />}
-              onClick={() => setScanModalOpened(true)}
-            >
-              Scan an admit code
-            </Button>
-            {dataUpdatedAt > 0 && (
-              <Group justify='center'>
-                <Text size='sm' c='dimmed'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
-              </Group>
-            )}
-          </Stack>
+          <Button
+            variant='outline'
+            fullWidth
+            size='lg'
+            radius='xl'
+            leftSection={<IconScan size={20} />}
+            onClick={() => setScanModalOpened(true)}
+          >
+            Scan transfer code
+          </Button>
         </Container>
       </Box>
+
       <ScanAdmitCodeModal
         opened={scanModalOpened}
         onClose={() => setScanModalOpened(false)}
         onSuccess={handleScanSuccess}
       />
+
+      <Box h='104px' />
     </>
   );
 }
