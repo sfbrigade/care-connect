@@ -1,4 +1,4 @@
-import { GeoPlacesClient, SuggestCommand, GetPlaceCommand } from '@aws-sdk/client-geo-places';
+import { GeoPlacesClient, SuggestCommand } from '@aws-sdk/client-geo-places';
 
 // SF bounding box: [west, south, east, north]
 const SF_BOUNDING_BOX = [-122.5155, 37.7080, -122.3570, 37.8120];
@@ -33,16 +33,6 @@ async function suggest (text) {
   return client.send(command);
 }
 
-async function getPlace (placeId) {
-  init();
-  const command = new GetPlaceCommand({
-    PlaceId: placeId,
-    Language: 'en',
-    IntendedUse: 'SingleUse',
-  });
-  return client.send(command);
-}
-
 function reset () {
   client = undefined;
 }
@@ -53,6 +43,5 @@ export function buildAddressLine1 (address) {
 
 export default {
   suggest,
-  getPlace,
   reset,
 };
