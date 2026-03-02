@@ -31,7 +31,7 @@ export default async function (fastify, opts) {
         import('../../../lib/forms/dist/TestForm.js'),
       ]);
 
-      const html = renderFormToHtml(TestForm, data);
+      const html = await renderFormToHtml(TestForm, data);
       const pdfBuffer = await renderToPdf(html);
 
       return reply

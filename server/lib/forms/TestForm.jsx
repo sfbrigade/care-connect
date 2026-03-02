@@ -6,13 +6,7 @@ const css = `
     margin: 0.5in;
   }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
+  .form-container {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 10pt;
     color: #000;
@@ -103,41 +97,36 @@ export default function TestForm ({ data = {} }) {
   } = data;
 
   return (
-    <html lang='en'>
-      <head>
-        <meta charSet='utf-8' />
-        {/* eslint-disable-next-line react/no-danger */}
-        <style dangerouslySetInnerHTML={{ __html: css }} />
-      </head>
-      <body>
-        <h1 className='form-title'>Test Transfer Form</h1>
+    <>
+      {/* eslint-disable-next-line react/no-danger */}
+      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <h1 className='form-title'>Test Transfer Form</h1>
 
-        <Section title='Subject Information'>
-          <Field label='Last Name' value={subjectLastName} />
-          <Field label='First Name' value={subjectFirstName} />
-          <Field label='Date of Birth' value={dateOfBirth} />
-        </Section>
+      <Section title='Subject Information'>
+        <Field label='Last Name' value={subjectLastName} />
+        <Field label='First Name' value={subjectFirstName} />
+        <Field label='Date of Birth' value={dateOfBirth} />
+      </Section>
 
-        <Section title='Case Information'>
-          <Field label='Case Number' value={caseNumber} />
-          <Field label='Incident Date' value={incidentDate} />
-          <Field label='Location' value={incidentLocation} />
-        </Section>
+      <Section title='Case Information'>
+        <Field label='Case Number' value={caseNumber} />
+        <Field label='Incident Date' value={incidentDate} />
+        <Field label='Location' value={incidentLocation} />
+      </Section>
 
-        <Section title='Officer Information'>
-          <Field label='Officer Name' value={officerName} />
-          <Field label='Badge Number' value={badgeNumber} />
-        </Section>
+      <Section title='Officer Information'>
+        <Field label='Officer Name' value={officerName} />
+        <Field label='Badge Number' value={badgeNumber} />
+      </Section>
 
-        <Section title='Notes'>
-          <p className='notes-text'>{notes}</p>
-        </Section>
+      <Section title='Notes'>
+        <p className='notes-text'>{notes}</p>
+      </Section>
 
-        <div className='footer'>
-          <span>Generated: {new Date().toLocaleString()}</span>
-          <span>Page 1 of 1</span>
-        </div>
-      </body>
-    </html>
+      <div className='footer'>
+        <span>Generated: {new Date().toLocaleString()}</span>
+        <span>Page 1 of 1</span>
+      </div>
+    </>
   );
 }

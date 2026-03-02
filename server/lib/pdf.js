@@ -2,7 +2,6 @@ import { existsSync } from 'fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import puppeteer from 'puppeteer-core';
-
 // Probe common paths in order of preference; CHROMIUM_PATH env var overrides all.
 const CHROMIUM_CANDIDATES = [
   process.env.CHROMIUM_PATH,
@@ -21,13 +20,31 @@ function getChromiumExecutable () {
   );
 }
 
+// Lazily loaded and cached so that pdf.js itself can be imported at server startup
+// without requiring the forms dist build to already be complete.  The compiled
+// FormContainer.js is only needed at the moment the first PDF is actually rendered.
+let _FormContainer = null;
+async function getFormContainer () {
+  if (!_FormContainer) {
+    const mod = await import('./forms/dist/FormContainer.js');
+    _FormContainer = mod.default;
+  }
+  return _FormContainer;
+}
+
 /**
  * Renders a React form component to a full HTML document string.
- * The component must return a complete <html> element (including <head> with styles).
+ * The component should render its form content only (no <html>/<body> wrapper);
+ * FormContainer provides the document shell in standalone mode.
  */
-export function renderFormToHtml (FormComponent, data) {
-  const markup = renderToStaticMarkup(React.createElement(FormComponent, { data }));
-  return '<!DOCTYPE html>' + markup;
+export async function renderFormToHtml (FormComponent, data) {
+  const FormContainer = await getFormContainer();
+  const element = React.createElement(
+    FormContainer,
+    { standalone: true },
+    React.createElement(FormComponent, { data })
+  );
+  return '<!DOCTYPE html>' + renderToStaticMarkup(element);
 }
 
 /**
