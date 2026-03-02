@@ -375,7 +375,7 @@ const Api = {
       return instance.get('/api/geocode/search', {
         params: { text },
         signal,
-      }).catch(handleError);
+      });
     },
     reverse (latitude, longitude) {
       return instance.get('/api/geocode/reverse', {

@@ -46,8 +46,9 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
               : r.addressLine1,
           })));
       })
-      .catch((_err) => {
+      .catch((err) => {
         if (controller.signal.aborted) return;
+        console.error('Address search failed:', err);
         setData([]);
         resultsRef.current = [];
       })
