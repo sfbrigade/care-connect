@@ -49,7 +49,7 @@ export default function Form849BPreview () {
         URL.revokeObjectURL(pdfUrl);
       }
 
-      setPdfUrl(url);
+      setPdfUrl(`${url}#navpanes=0&zoom=FitH`);
     } catch (err) {
       if (err.name === 'AbortError') {
         setPdfError('PDF generation timed out. Please try again.');
