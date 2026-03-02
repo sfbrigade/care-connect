@@ -31,16 +31,10 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
         if (controller.signal.aborted) return;
         const results = response?.data ?? [];
         resultsRef.current = results;
-        const seen = new Set();
         setData(results
-          .filter((r) => r.addressLine1)
-          .filter((r) => {
-            if (seen.has(r.addressLine1)) return false;
-            seen.add(r.addressLine1);
-            return true;
-          })
+          .filter((r) => r.placeId && r.addressLine1)
           .map((r) => ({
-            value: r.addressLine1,
+            value: r.placeId,
             label: r.neighborhood
               ? `${r.addressLine1} (${r.neighborhood})`
               : r.addressLine1,
@@ -69,8 +63,8 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
     form.setFieldValue(field, value);
   }
 
-  function handleOptionSubmit (val) {
-    const match = resultsRef.current.find((r) => r.addressLine1 === val);
+  function handleOptionSubmit (placeId) {
+    const match = resultsRef.current.find((r) => r.placeId === placeId);
     if (!match) return;
 
     setValue(match.addressLine1);
