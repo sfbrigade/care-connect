@@ -371,8 +371,8 @@ const Api = {
     },
   },
   geocode: {
-    autocomplete (text, { signal } = {}) {
-      return instance.get('/api/geocode/autocomplete', {
+    search (text, { signal } = {}) {
+      return instance.get('/api/geocode/search', {
         params: { text },
         signal,
       }).catch(handleError);

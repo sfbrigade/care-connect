@@ -5,11 +5,11 @@ import location from '#lib/location.js';
 import { buildAddressLine1 } from '#lib/location.js';
 
 export default async function (fastify, opts) {
-  fastify.get('/autocomplete',
+  fastify.get('/search',
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Suggest addresses using AWS Location Service.',
+        description: 'Search for addresses using AWS Location Service.',
         querystring: z.object({
           text: z.string().min(1),
         }),
@@ -53,7 +53,7 @@ export default async function (fastify, opts) {
 
         return reply.send(results);
       } catch (error) {
-        fastify.log.error(error, 'Error during address autocomplete');
+        fastify.log.error(error, 'Error during address search');
         return reply.code(StatusCodes.INTERNAL_SERVER_ERROR).send();
       }
     });

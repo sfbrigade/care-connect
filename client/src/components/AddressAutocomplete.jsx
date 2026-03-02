@@ -26,7 +26,7 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
     abortControllerRef.current = controller;
 
     setLoading(true);
-    Api.geocode.autocomplete(debounced, { signal: controller.signal })
+    Api.geocode.search(debounced, { signal: controller.signal })
       .then((response) => {
         if (controller.signal.aborted) return;
         const results = response?.data ?? [];
