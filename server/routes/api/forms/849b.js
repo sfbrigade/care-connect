@@ -3,102 +3,148 @@ import { z } from 'zod';
 
 const RENDER_TIMEOUT_MS = 15000;
 
+const deflectionInclude = {
+  subject: true,
+  incident: {
+    include: {
+      createdByOrganization: true,
+      createdByUnit: true,
+      createdByTitle: true,
+    },
+  },
+  createdBy: {
+    include: {
+      organization: true,
+      unit: true,
+      title: true,
+    },
+  },
+  releasedBy: {
+    include: {
+      organization: true,
+      unit: true,
+      title: true,
+    },
+  },
+};
+
+async function fetchFormData (fastify, deflectionId) {
+  const deflection = await fastify.prisma.deflection.findUnique({
+    where: { id: deflectionId },
+    include: deflectionInclude,
+  });
+
+  if (!deflection) return { error: 'not_found' };
+  if (!deflection.releasedAt) return { error: 'not_released' };
+
+  const subject = deflection.subject;
+  const subjectName = subject
+    ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
+    : '';
+
+  const deputy = deflection.releasedBy || deflection.createdBy;
+  const deputyTitle = deputy?.title?.name || '';
+  const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
+  const deputyBadge = deputy?.badgeNumber || '';
+  const deputyRankNameStar = [deputyTitle, deputyName, deputyBadge ? `#${deputyBadge}` : '']
+    .filter(Boolean)
+    .join(' ');
+
+  const unitIdentifier = deflection.incident?.createdByUnit?.name ||
+    deputy?.unit?.name ||
+    '';
+
+  return {
+    data: {
+      subjectName,
+      detentionDate: deflection.createdAt?.toISOString() || null,
+      releaseDate: deflection.releasedAt.toISOString(),
+      deputyRankNameStar,
+      unitIdentifier,
+    },
+  };
+}
+
+const paramsSchema = z.object({ deflectionId: z.coerce.number() });
+
+const errorResponses = {
+  [StatusCodes.NOT_FOUND]: z.object({ error: z.string() }),
+  [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({ error: z.string() }),
+};
+
 export default async function (fastify, opts) {
+  fastify.get(
+    '/849b/html/:deflectionId',
+    {
+      onRequest: fastify.requireUser,
+      schema: {
+        description: 'Render an 849B Certificate of Release as HTML for a deflection',
+        params: paramsSchema,
+        response: {
+          [StatusCodes.OK]: z.any().describe('HTML page'),
+          ...errorResponses,
+        },
+      },
+    },
+    async function (request, reply) {
+      const { deflectionId } = request.params;
+      const result = await fetchFormData(fastify, deflectionId);
+
+      if (result.error === 'not_found') {
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection not found' });
+      }
+      if (result.error === 'not_released') {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          error: 'This deflection has not been released yet. The 849B Certificate of Release can only be generated after the subject has been released.',
+        });
+      }
+
+      const [{ renderFormToHtml }, { default: CertificateOfRelease849BForm }] = await Promise.all([
+        import('#lib/pdf.js'),
+        import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
+      ]);
+
+      const html = renderFormToHtml(CertificateOfRelease849BForm, result.data);
+
+      return reply
+        .code(StatusCodes.OK)
+        .header('Content-Type', 'text/html; charset=utf-8')
+        .send(html);
+    }
+  );
+
   fastify.get(
     '/849b/pdf/:deflectionId',
     {
       onRequest: fastify.requireUser,
       schema: {
         description: 'Generate an 849B Certificate of Release PDF for a deflection',
-        params: z.object({
-          deflectionId: z.coerce.number(),
-        }),
+        params: paramsSchema,
         response: {
           [StatusCodes.OK]: z.any().describe('PDF file'),
-          [StatusCodes.NOT_FOUND]: z.object({
-            error: z.string(),
-          }),
-          [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({
-            error: z.string(),
-          }),
+          ...errorResponses,
         },
       },
     },
     async function (request, reply) {
       const { deflectionId } = request.params;
+      const result = await fetchFormData(fastify, deflectionId);
 
-      const deflection = await fastify.prisma.deflection.findUnique({
-        where: { id: deflectionId },
-        include: {
-          subject: true,
-          incident: {
-            include: {
-              createdByOrganization: true,
-              createdByUnit: true,
-              createdByTitle: true,
-            },
-          },
-          createdBy: {
-            include: {
-              organization: true,
-              unit: true,
-              title: true,
-            },
-          },
-          releasedBy: {
-            include: {
-              organization: true,
-              unit: true,
-              title: true,
-            },
-          },
-        },
-      });
-
-      if (!deflection) {
+      if (result.error === 'not_found') {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection not found' });
       }
-
-      if (!deflection.releasedAt) {
+      if (result.error === 'not_released') {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           error: 'This deflection has not been released yet. The 849B Certificate of Release can only be generated after the subject has been released.',
         });
       }
 
-      const subject = deflection.subject;
-      const subjectName = subject
-        ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
-        : '';
-
-      // Build deputy info from the releasing user, or fall back to the creating user
-      const deputy = deflection.releasedBy || deflection.createdBy;
-      const deputyTitle = deputy?.title?.name || '';
-      const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
-      const deputyBadge = deputy?.badgeNumber || '';
-      const deputyRankNameStar = [deputyTitle, deputyName, deputyBadge ? `#${deputyBadge}` : '']
-        .filter(Boolean)
-        .join(' ');
-
-      // Unit identifier from incident or deputy
-      const unitIdentifier = deflection.incident?.createdByUnit?.name ||
-        deputy?.unit?.name ||
-        '';
-
-      const data = {
-        subjectName,
-        detentionDate: deflection.createdAt?.toISOString() || null,
-        releaseDate: deflection.releasedAt.toISOString(),
-        deputyRankNameStar,
-        unitIdentifier,
-      };
-
-      // lazy-load heavy dependencies to avoid blocking server startup
       const [{ renderFormToHtml, renderToPdf }, { default: CertificateOfRelease849BForm }] = await Promise.all([
         import('#lib/pdf.js'),
         import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
       ]);
 
-      const html = renderFormToHtml(CertificateOfRelease849BForm, data);
+      const html = renderFormToHtml(CertificateOfRelease849BForm, result.data);
 
       const pdfBuffer = await Promise.race([
         renderToPdf(html),
