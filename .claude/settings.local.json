@@ -13,7 +13,8 @@
       "Bash(npx esbuild:*)",
       "Bash(npm run build:forms:*)",
       "Bash(npm run lint:check:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(docker compose restart:*)"
     ]
   }
 }
