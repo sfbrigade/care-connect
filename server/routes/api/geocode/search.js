@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import location, { buildAddressLine1 } from '#lib/location.js';
+import location from '#lib/location.js';
 
 export default async function (fastify, opts) {
   fastify.get('/search',
@@ -40,7 +40,7 @@ export default async function (fastify, opts) {
             return {
               placeId: item.Place.PlaceId,
               label: address.Label ?? item.Title,
-              addressLine1: buildAddressLine1(address),
+              addressLine1: location.buildAddressLine1(address),
               city: address.Locality ?? null,
               state: address.Region?.Code ?? null,
               postalCode: address.PostalCode ?? null,

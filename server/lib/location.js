@@ -37,11 +37,12 @@ function reset () {
   client = undefined;
 }
 
-export function buildAddressLine1 (address) {
+function buildAddressLine1 (address) {
   return [address?.AddressNumber, address?.Street].filter(Boolean).join(' ');
 }
 
 export default {
   suggest,
   reset,
+  buildAddressLine1,
 };
