@@ -59,6 +59,10 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
     setValue(val);
   }
 
+  function handleFocus (e) {
+    e.target.select();
+  }
+
   function handleBlur () {
     form.setFieldValue(field, value);
   }
@@ -84,6 +88,7 @@ const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, fie
       {...props}
       value={value}
       onChange={handleChange}
+      onFocus={handleFocus}
       onBlur={handleBlur}
       onOptionSubmit={handleOptionSubmit}
       data={data}
