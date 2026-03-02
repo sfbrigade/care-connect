@@ -371,6 +371,16 @@ const Api = {
     },
   },
   geocode: {
+    autocomplete (text) {
+      return instance.get('/api/geocode/autocomplete', {
+        params: { text },
+      }).catch(handleError);
+    },
+    place (placeId) {
+      return instance.get('/api/geocode/place', {
+        params: { placeId },
+      }).catch(handleError);
+    },
     reverse (latitude, longitude) {
       return instance.get('/api/geocode/reverse', {
         params: { latitude, longitude }
