@@ -1,5 +1,9 @@
 import { GeoPlacesClient, SuggestCommand } from '@aws-sdk/client-geo-places';
 
+// AWS GeoPlaces client for address autocomplete.
+// Requires an IAM user with the "geo-places:Suggest" permission.
+// Set AWS_LOCATION_ACCESS_KEY_ID and AWS_LOCATION_SECRET_ACCESS_KEY in .env.
+
 // SF bounding box: [west, south, east, north]
 const SF_BOUNDING_BOX = [-122.5155, 37.7080, -122.3570, 37.8120];
 
