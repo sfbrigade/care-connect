@@ -10,7 +10,7 @@ function AdminEnumsRoutes () {
     <Container size='xl'>
       <Grid>
         <Grid.Col span={4}>
-          <MantineNavLink component={NavLink} to='/admin/enums/deflection-cancel-reasons' label='Deflection Cancel Reasons' rightSection={<IconChevronRight />} />
+          <MantineNavLink component={NavLink} to='/admin/enums/deflection-cancel-reasons' label='Arrest Cancel Reasons' rightSection={<IconChevronRight />} />
           <MantineNavLink component={NavLink} to='/admin/enums/facility-status-reasons' label='Facility Status Reasons' rightSection={<IconChevronRight />} />
         </Grid.Col>
         <Grid.Col span={8}>
