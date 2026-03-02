@@ -55,7 +55,7 @@ function Custody () {
     refetchOnMount: 'always',
   });
 
-  const { data: releasedDeflections } = useQuery({
+  const { data: releasedDeflections, dataUpdatedAt: releasedDataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
@@ -157,6 +157,7 @@ function Custody () {
                   <EmptyState
                     title='No persons in released'
                     description="Released persons appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
+                    updatedAt={releasedDataUpdatedAt}
                   />
                   )}
             </Stack>

@@ -1,6 +1,9 @@
 import { Box, Stack, Text, Title } from '@mantine/core';
+import { DateTime } from 'luxon';
 
-function EmptyState ({ title, description }) {
+import { formatTime } from '@/utils/format';
+
+function EmptyState ({ title, description, updatedAt }) {
   return (
     <Stack align='center' gap='md' py='xl'>
       <Box
@@ -10,6 +13,9 @@ function EmptyState ({ title, description }) {
       />
       <Title order={3}>{title}</Title>
       <Text c='dimmed' ta='center'>{description}</Text>
+      {updatedAt > 0 && (
+        <Text size='sm' c='dimmed'>Updated at {formatTime(DateTime.fromMillis(updatedAt).toISO())}</Text>
+      )}
     </Stack>
   );
 }
