@@ -1,68 +1,91 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontFamily: 'Helvetica',
-  },
-  header: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  section: {
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    paddingBottom: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    width: 120,
-  },
-  value: {
-    fontSize: 10,
-    flex: 1,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
-    fontSize: 8,
-    color: '#666',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-});
+const css = `
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    color: #000;
+  }
+
+  h1.form-title {
+    font-size: 18pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20pt;
+  }
+
+  .section {
+    margin-bottom: 15pt;
+  }
+
+  .section-title {
+    font-size: 12pt;
+    font-weight: bold;
+    border-bottom: 1pt solid #333;
+    padding-bottom: 4pt;
+    margin-bottom: 8pt;
+  }
+
+  .field-row {
+    display: flex;
+    margin-bottom: 6pt;
+  }
+
+  .field-label {
+    font-weight: bold;
+    width: 120pt;
+    flex-shrink: 0;
+  }
+
+  .field-value {
+    flex: 1;
+  }
+
+  .notes-text {
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 8pt;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    border-top: 0.5pt solid #ccc;
+    padding-top: 4pt;
+  }
+`;
 
 function Field ({ label, value }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}:</Text>
-      <Text style={styles.value}>{value || 'N/A'}</Text>
-    </View>
+    <div className='field-row'>
+      <span className='field-label'>{label}:</span>
+      <span className='field-value'>{value || 'N/A'}</span>
+    </div>
   );
 }
 
 function Section ({ title, children }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <div className='section'>
+      <div className='section-title'>{title}</div>
       {children}
-    </View>
+    </div>
   );
 }
 
@@ -76,13 +99,18 @@ export default function TestForm ({ data = {} }) {
     badgeNumber = '12345',
     incidentDate = new Date().toLocaleDateString(),
     incidentLocation = '123 Main Street, San Francisco, CA',
-    notes = 'This is a test form generated using @react-pdf/renderer. It demonstrates how to create PDF documents using React components.',
+    notes = 'This is a test form generated using Chromium-based HTML-to-PDF rendering. It demonstrates how to create PDF documents using React components with real CSS.',
   } = data;
 
   return (
-    <Document>
-      <Page size='LETTER' style={styles.page}>
-        <Text style={styles.header}>Test Transfer Form</Text>
+    <html lang='en'>
+      <head>
+        <meta charSet='utf-8' />
+        {/* eslint-disable-next-line react/no-danger */}
+        <style dangerouslySetInnerHTML={{ __html: css }} />
+      </head>
+      <body>
+        <h1 className='form-title'>Test Transfer Form</h1>
 
         <Section title='Subject Information'>
           <Field label='Last Name' value={subjectLastName} />
@@ -102,14 +130,14 @@ export default function TestForm ({ data = {} }) {
         </Section>
 
         <Section title='Notes'>
-          <Text style={{ fontSize: 10, lineHeight: 1.4 }}>{notes}</Text>
+          <p className='notes-text'>{notes}</p>
         </Section>
 
-        <View style={styles.footer}>
-          <Text>Generated: {new Date().toLocaleString()}</Text>
-          <Text>Page 1 of 1</Text>
-        </View>
-      </Page>
-    </Document>
+        <div className='footer'>
+          <span>Generated: {new Date().toLocaleString()}</span>
+          <span>Page 1 of 1</span>
+        </div>
+      </body>
+    </html>
   );
 }

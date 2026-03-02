@@ -1,140 +1,4 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-
-const styles = StyleSheet.create({
-  page: {
-    padding: 50,
-    paddingTop: 40,
-    paddingBottom: 60,
-    fontFamily: 'Times-Roman',
-    fontSize: 12,
-    lineHeight: 1.6,
-  },
-  title: {
-    fontSize: 16,
-    fontFamily: 'Times-Bold',
-    textAlign: 'center',
-    marginBottom: 36,
-    letterSpacing: 1,
-  },
-  paragraph: {
-    marginBottom: 4,
-  },
-  bodyText: {
-    fontSize: 12,
-    fontFamily: 'Times-Roman',
-  },
-  // Inline field: underlined value within running text
-  fieldInline: {
-    fontFamily: 'Times-Bold',
-    textDecoration: 'underline',
-    fontSize: 12,
-  },
-  // Blank underline for empty fields
-  blankLine: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-  },
-  // Field label (small, underneath a line)
-  fieldLabel: {
-    fontSize: 8,
-    textAlign: 'center',
-    color: '#333',
-    marginTop: 1,
-  },
-  // Row containers
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  // Underlined value box
-  fieldValue: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    minHeight: 16,
-    paddingBottom: 1,
-    paddingHorizontal: 4,
-  },
-  fieldValueText: {
-    fontSize: 12,
-    fontFamily: 'Times-Roman',
-  },
-  // Legal text block
-  legalBlock: {
-    marginTop: 12,
-    marginBottom: 12,
-    paddingLeft: 40,
-  },
-  legalText: {
-    fontSize: 11,
-    fontFamily: 'Times-Roman',
-    lineHeight: 1.5,
-  },
-  // Signature area
-  signatureSection: {
-    marginTop: 24,
-  },
-  signatureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 4,
-  },
-  signatureLabel: {
-    fontSize: 12,
-    fontFamily: 'Times-Roman',
-    width: 180,
-  },
-  signatureLine: {
-    flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    minHeight: 16,
-    paddingBottom: 1,
-    paddingHorizontal: 4,
-  },
-  unitLabel: {
-    fontSize: 12,
-    fontFamily: 'Times-Roman',
-    width: 100,
-    textAlign: 'right',
-    marginLeft: 8,
-  },
-  unitLine: {
-    width: 100,
-    borderBottomWidth: 1,
-    borderBottomColor: '#000',
-    minHeight: 16,
-    paddingBottom: 1,
-    paddingHorizontal: 4,
-  },
-  printLabel: {
-    fontSize: 8,
-    textAlign: 'center',
-    color: '#333',
-    marginTop: 1,
-    marginBottom: 12,
-  },
-  // Footer
-  footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 50,
-    right: 50,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  footerText: {
-    fontSize: 9,
-    fontFamily: 'Times-Roman',
-  },
-  footerUpdate: {
-    fontSize: 9,
-    fontFamily: 'Times-Roman',
-    textAlign: 'right',
-  },
-});
 
 function formatDate (dateStr) {
   if (!dateStr) return { month: '', date: '', year: '' };
@@ -154,11 +18,198 @@ function formatTime (dateStr) {
   return d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function UnderlinedValue ({ value, width, align }) {
+const css = `
+  @page {
+    size: letter;
+    margin: 0.5in 0.5in 0.65in 0.5in;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #000;
+  }
+
+  .page {
+    position: relative;
+    min-height: 9.5in;
+  }
+
+  h1.title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20pt;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+  }
+
+  /*
+   * An inline field renders as a small flex column:
+   *   ┌──────────────────┐
+   *   │   value text     │  ← underlined border-bottom
+   *   │  sub-label text  │  ← tiny centred label
+   *   └──────────────────┘
+   * inline-flex + vertical-align:bottom keeps the underline
+   * flush with the surrounding text baseline.
+   */
+  .field {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    vertical-align: bottom;
+    margin: 0 2px;
+  }
+
+  .field__value {
+    border-bottom: 1pt solid #000;
+    padding: 0 4px 1px;
+    min-height: 15pt;
+    font-weight: bold;
+  }
+
+  .field__label {
+    font-size: 7.5pt;
+    color: #444;
+    text-align: center;
+    margin-top: 1pt;
+    font-weight: normal;
+  }
+
+  /* Date-style field with Month / Date / Year (/ Time) sub-labels */
+  .date-field {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    vertical-align: bottom;
+    margin: 0 2px;
+    min-width: 220pt;
+  }
+
+  .date-field__value {
+    border-bottom: 1pt solid #000;
+    padding: 0 4px 1px;
+    min-height: 15pt;
+    letter-spacing: 0.1em;
+  }
+
+  .date-field__labels {
+    display: flex;
+    justify-content: space-around;
+    font-size: 7.5pt;
+    color: #444;
+    margin-top: 1pt;
+  }
+
+  .para {
+    margin-bottom: 6pt;
+    line-height: 1.8;
+  }
+
+  /* Indented legal text */
+  .legal-block {
+    margin: 10pt 0 10pt 36pt;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* Signature rows */
+  .sig-section {
+    margin-top: 20pt;
+  }
+
+  .sig-row {
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 3pt;
+  }
+
+  .sig-row__label {
+    flex-shrink: 0;
+    width: 175pt;
+  }
+
+  .sig-row__line {
+    flex: 1;
+    border-bottom: 1pt solid #000;
+    min-height: 15pt;
+    padding: 0 4px 1px;
+  }
+
+  .sig-row__unit-label {
+    flex-shrink: 0;
+    width: 90pt;
+    text-align: right;
+    margin-left: 8pt;
+  }
+
+  .sig-row__unit-line {
+    flex-shrink: 0;
+    width: 90pt;
+    border-bottom: 1pt solid #000;
+    min-height: 15pt;
+    padding: 0 4px 1px;
+    margin-left: 4pt;
+  }
+
+  .sig-print-label {
+    font-size: 7.5pt;
+    color: #444;
+    text-align: center;
+    margin-top: 1pt;
+    margin-bottom: 10pt;
+    padding-left: 175pt;
+  }
+
+  /* Footer pinned to bottom of the printable area */
+  .footer {
+    position: absolute;
+    bottom: -0.35in;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+  }
+
+  .footer__right {
+    text-align: right;
+  }
+`;
+
+/** Underlined inline field with an optional sub-label. */
+function Field ({ value, width, label }) {
+  const valueStyle = width ? { minWidth: width } : { flex: '1' };
   return (
-    <View style={[styles.fieldValue, width ? { width } : { flex: 1 }, align ? { alignItems: align } : {}]}>
-      <Text style={styles.fieldValueText}>{value || ''}</Text>
-    </View>
+    <span className='field'>
+      <span className='field__value' style={valueStyle}>{value || ''}</span>
+      {label && <span className='field__label'>{label}</span>}
+    </span>
+  );
+}
+
+/** Date field with Month / Date / Year (and optionally Time) sub-labels. */
+function DateField ({ month, date, year, time }) {
+  const parts = [month, date, year, time].filter((v) => v !== undefined && v !== null && v !== '');
+  const value = parts.join('\u00a0\u00a0');
+  const showTime = time !== undefined && time !== null && time !== '';
+  return (
+    <span className='date-field'>
+      <span className='date-field__value'>{value}</span>
+      <span className='date-field__labels'>
+        <span>Month</span>
+        <span>Date</span>
+        <span>Year</span>
+        {showTime && <span>Time</span>}
+      </span>
+    </span>
   );
 }
 
@@ -177,128 +228,77 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
   const releaseTime = formatTime(releaseDate);
 
   return (
-    <Document>
-      <Page size='LETTER' style={styles.page}>
-        <Text style={styles.title}>
-          SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
-        </Text>
+    <html lang='en'>
+      <head>
+        <meta charSet='utf-8' />
+        {/* eslint-disable-next-line react/no-danger */}
+        <style dangerouslySetInnerHTML={{ __html: css }} />
+      </head>
+      <body>
+        <div className='page'>
+          <h1 className='title'>
+            SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
+          </h1>
 
-        {/* Paragraph 1: detention */}
-        <View style={{ marginBottom: 4 }}>
-          <View style={styles.row}>
-            <Text style={styles.bodyText}>
-              As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975, ch.1117), I hereby certify that the taking into custody of
-            </Text>
-          </View>
-          <View style={[styles.row, { marginTop: 2 }]}>
-            <UnderlinedValue value={subjectName} />
-            <Text style={styles.bodyText}> on </Text>
-            <UnderlinedValue value={`${detention.month}  ${detention.date}  ${detention.year}`} width={200} />
-            <Text style={styles.bodyText}> at</Text>
-          </View>
-          <View style={[styles.row, { marginBottom: 0, marginTop: -1 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Subject&apos;s Name</Text>
-            </View>
-            <View style={{ width: 200 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <Text style={styles.fieldLabel}>Month</Text>
-                <Text style={styles.fieldLabel}>Date</Text>
-                <Text style={styles.fieldLabel}>Year</Text>
-              </View>
-            </View>
-            <View style={{ width: 12 }} />
-          </View>
-        </View>
+          {/* ── Paragraph 1: detention ── */}
+          <p className='para'>
+            As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975,
+            ch.1117), I hereby certify that the taking into custody of{' '}
+            <Field value={subjectName} label="Subject's Name" />{' '}
+            on{' '}
+            <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
+            at{' '}
+            <Field value={detentionTime} width='55pt' label='Time' />{' '}
+            hours by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
+          </p>
 
-        <View style={{ marginBottom: 12 }}>
-          <View style={styles.row}>
-            <UnderlinedValue value={detentionTime} width={80} />
-            <Text style={styles.bodyText}> hours by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.</Text>
-          </View>
-          <View style={[styles.row, { marginBottom: 0, marginTop: -1 }]}>
-            <View style={{ width: 80 }}>
-              <Text style={styles.fieldLabel}>Time</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Paragraph 2: release */}
-        <View style={{ marginBottom: 4 }}>
-          <View style={styles.row}>
-            <UnderlinedValue value={subjectName} />
-            <Text style={styles.bodyText}> was released on </Text>
-            <UnderlinedValue value={`${release.month}  ${release.date}  ${release.year}  ${releaseTime}`} width={300} />
-          </View>
-          <View style={[styles.row, { marginBottom: 0, marginTop: -1 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Subject&apos;s Name</Text>
-            </View>
-            <View style={{ width: 300 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <Text style={styles.fieldLabel}>Month</Text>
-                <Text style={styles.fieldLabel}>Date</Text>
-                <Text style={styles.fieldLabel}>Year</Text>
-                <Text style={styles.fieldLabel}>Time</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Legal provisions */}
-        <View style={{ marginTop: 8, marginBottom: 4 }}>
-          <Text style={styles.bodyText}>
+          {/* ── Paragraph 2: release ── */}
+          <p className='para' style={{ marginTop: '10pt' }}>
+            <Field value={subjectName} label="Subject's Name" />{' '}
+            was released on{' '}
+            <DateField month={release.month} date={release.date} year={release.year} time={releaseTime} />{' '}
             by the San Francisco Sheriff&apos;s Department pursuant to the provisions of:
-          </Text>
-        </View>
-        <View style={styles.legalBlock}>
-          <Text style={styles.legalText}>
-            paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal Code Section 849, Penal Code
-            Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on the reverse of this certificate.
-          </Text>
-        </View>
+          </p>
 
-        {/* Deputy info */}
-        <View style={styles.signatureSection}>
-          {/* Deputy Rank, Name & Star# + Unit Identifier */}
-          <View style={styles.signatureRow}>
-            <Text style={styles.signatureLabel}>Deputy&apos;s Rank, Name &amp; Star#</Text>
-            <View style={[styles.signatureLine, { marginRight: 8 }]}>
-              <Text style={styles.fieldValueText}>{deputyRankNameStar}</Text>
-            </View>
-            <Text style={styles.unitLabel}>Unit Identifier:</Text>
-            <View style={styles.unitLine}>
-              <Text style={styles.fieldValueText}>{unitIdentifier}</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-            <View style={{ width: 180 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.printLabel}>Print</Text>
-            </View>
-          </View>
+          {/* ── Legal text ── */}
+          <div className='legal-block'>
+            <p>
+              paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
+              Code Section 849, Penal Code
+            </p>
+            <p>
+              Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on
+              the reverse of this certificate.
+            </p>
+          </div>
 
-          {/* Deputy Signature & Star# */}
-          <View style={styles.signatureRow}>
-            <Text style={styles.signatureLabel}>Deputy&apos;s Signature &amp; Star#</Text>
-            <View style={styles.signatureLine}>
-              <Text style={styles.fieldValueText} />
-            </View>
-          </View>
-        </View>
+          {/* ── Signature section ── */}
+          <div className='sig-section'>
+            <div className='sig-row'>
+              <span className='sig-row__label'>Deputy&apos;s Rank, Name &amp; Star#</span>
+              <span className='sig-row__line'>{deputyRankNameStar}</span>
+              <span className='sig-row__unit-label'>Unit Identifier:</span>
+              <span className='sig-row__unit-line'>{unitIdentifier}</span>
+            </div>
+            <div className='sig-print-label'>Print</div>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>White to Citizen</Text>
-            <Text style={styles.footerText}>Canary to Central Records &amp; Warrants Unit</Text>
-            <View>
-              <Text style={styles.footerUpdate}>Pink to Incident Report</Text>
-              <Text style={styles.footerUpdate}>Updated 04-22-2019</Text>
-            </View>
-          </View>
-        </View>
-      </Page>
-    </Document>
+            <div className='sig-row'>
+              <span className='sig-row__label'>Deputy&apos;s Signature &amp; Star#</span>
+              <span className='sig-row__line' />
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div className='footer'>
+            <span>White to Citizen</span>
+            <span>Canary to Central Records &amp; Warrants Unit</span>
+            <span className='footer__right'>
+              Pink to Incident Report<br />
+              Updated 04-22-2019
+            </span>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
