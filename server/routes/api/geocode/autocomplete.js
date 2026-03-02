@@ -7,6 +7,7 @@ import { buildAddressLine1 } from '#lib/location.js';
 export default async function (fastify, opts) {
   fastify.get('/autocomplete',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Suggest addresses using AWS Location Service.',
         querystring: z.object({

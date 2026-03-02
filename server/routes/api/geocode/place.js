@@ -7,6 +7,7 @@ import { buildAddressLine1 } from '#lib/location.js';
 export default async function (fastify, opts) {
   fastify.get('/place',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Get full place details including coordinates from AWS Location Service.',
         querystring: z.object({
