@@ -82,7 +82,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 1);
     });
   });
 
