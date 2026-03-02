@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Anchor, Button, Container, Fieldset, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Anchor, Button, Checkbox, Container, Fieldset, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ function EditUserProfilePage () {
     mode: 'uncontrolled',
     initialValues: {
       badgeNumber: '',
+      organizationId: '',
       unitId: '',
       titleId: '',
       prop115Certified: false,
@@ -34,31 +35,34 @@ function EditUserProfilePage () {
     queryFn: () => Api.users.get(userId),
   });
 
-  // const { data: units } = useQuery({
-  //   queryKey: ['organizations', form.getValues().organizationId, 'units'],
-  //   queryFn: () => Api.organizations.units.index(form.getValues().organizationId).then(response => response.data),
-  //   enabled: !!form.getValues().organizationId,
-  // });
+  const { data: units } = useQuery({
+    queryKey: ['organizations', form.getValues().organizationId, 'units'],
+    queryFn: () => Api.organizations.units.index(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
+  });
 
-  // const { data: titles } = useQuery({
-  //   queryKey: ['organizations', form.getValues().organizationId, 'titles'],
-  //   queryFn: () => Api.organizations.titles.index(form.getValues().organizationId).then(response => response.data),
-  //   enabled: !!form.getValues().organizationId,
-  // });
+  const { data: titles } = useQuery({
+    queryKey: ['organizations', form.getValues().organizationId, 'titles'],
+    queryFn: () => Api.organizations.titles.index(form.getValues().organizationId).then(response => response.data),
+    enabled: !!form.getValues().organizationId,
+  });
 
   useEffect(() => {
     if (response) {
-      form.setInitialValues({
+      const values = {
         ...response.data,
         password: '',
-      });
-      form.reset();
+      };
+      form.setInitialValues(values);
+      form.setValues(values);
+      form.resetDirty(values);
     }
   }, [response]);
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.users.update(userId, values),
     onSuccess: (response) => {
+      queryClient.setQueryData(['users', userId], response);
       if (userId === user?.id) {
         queryClient.setQueryData(['users', 'me'], response.data);
       }
@@ -90,8 +94,30 @@ function EditUserProfilePage () {
                   key={form.key('badgeNumber')}
                   label='Star Number'
                   placeholder='Enter badge or star number'
-                  disabled
                 />
+                {form.getValues().organizationId === 'sfso' && (
+                  <Select
+                    {...form.getInputProps('titleId')}
+                    key={form.key('titleId')}
+                    label='Rank'
+                    data={titles?.map((title) => ({ value: title.id, label: title.name })) || []}
+                  />
+                )}
+                {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+                  <Select
+                    {...form.getInputProps('unitId')}
+                    key={form.key('unitId')}
+                    label='Unit'
+                    data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
+                  />
+                )}
+                {form.getValues().organizationId === 'sfso' && (
+                  <Checkbox
+                    {...form.getInputProps('prop115Certified', { type: 'checkbox' })}
+                    key={form.key('prop115Certified')}
+                    label='Prop 115 certified'
+                  />
+                )}
                 <Group>
                   <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
                   <Button variant='secondary' type='submit'>Save changes</Button>
