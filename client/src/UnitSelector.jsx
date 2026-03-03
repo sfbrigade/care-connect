@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, Container, Stack, Title, Autocomplete } from '@mantine/core';
+import { Box, Button, Container, Stack, Title, Autocomplete, Loader } from '@mantine/core';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -16,10 +16,12 @@ function UnitSelector({ title = true, show_btn = true, sendUnitIdToParent}) {
 
   const from = location.state?.from || '/';
 
-  const { data: units = [] } = useQuery({
+  const { data: units = [], isLoading } = useQuery({
     queryKey: ['organizations', user?.organizationId, 'units'],
-    queryFn: () => Api.organizations.units.index(user.organizationId).then((response) => response.data),
+    queryFn: () => Api.organizations.units.index(user.organizationId, 1, 1000)
+      .then((response) => response.data),
     enabled: !!user?.organizationId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - prevent unnecessary refetches
   });
 
   const onSubmitMutation = useMutation({
@@ -61,6 +63,8 @@ function UnitSelector({ title = true, show_btn = true, sendUnitIdToParent}) {
         value={unitName}
         onChange={handleOptionSubmit}
         clearable
+        disabled={isLoading}
+        rightSection={isLoading ? <Loader size='sm' /> : null}
         nothingfound='No units found'
       />
       {show_btn && (

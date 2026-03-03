@@ -26,9 +26,9 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       await Api.deflections.transfer(deflectionId);
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
       onSuccess?.();
-      showToast('Subject received', 'success', 3000, 'Transfer code confirmed.');
+      showToast('Person received', 'success', 3000, 'Transfer code confirmed.');
     } catch (err) {
-      showToast(err._form || 'Failed to transfer subject into custody. Please try again.', 'error');
+      showToast(err._form || 'Failed to transfer person into custody. Please try again.', 'error');
       throw err;
     }
   }
@@ -38,9 +38,9 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       opened={opened}
       onClose={onClose}
       onScan={handleScan}
-      prompt={`Scan the subject's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
+      prompt={`Scan the person's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
       manualEntryTitle='Enter Transfer Code'
-      loadingText='Transferring subject into custody...'
+      loadingText='Transferring person into custody...'
       _debugScanPhase={_debugScanPhase}
     />
   );
