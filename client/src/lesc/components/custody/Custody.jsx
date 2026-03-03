@@ -13,6 +13,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import { formatTime } from '@/utils/format';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
+import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
@@ -107,6 +108,18 @@ function Custody () {
     const timer = setTimeout(() => setHighlightedId(null), 3000);
     return () => clearTimeout(timer);
   }, [highlightedId]);
+
+  useEffect(() => {
+    const payload = window.sessionStorage.getItem(RELEASE_TOAST_KEY);
+    if (!payload) return;
+    window.sessionStorage.removeItem(RELEASE_TOAST_KEY);
+    try {
+      const parsed = JSON.parse(payload);
+      showToast(parsed.title, parsed.variant, 4000, parsed.body);
+    } catch {
+      showToast('Couldn\'t save release', 'warning', 4000, 'Please check your connection and try again.');
+    }
+  }, [showToast]);
 
   useEffect(() => {
     if (!Array.isArray(inCustodyDeflections)) return;

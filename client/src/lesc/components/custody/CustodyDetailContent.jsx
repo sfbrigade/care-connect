@@ -28,7 +28,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
+  const showCustodyReleaseFooter = !isCareView && isInChair;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -248,7 +250,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
-              {isReleasable && (
+              {isReleasable && !showCustodyReleaseFooter && (
                 <Button
                   size='lg'
                   onClick={() => releaseMutation.mutate()}
@@ -297,7 +299,42 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Container>
         </Box>
       )}
-      {careFooterState.showFooter && <Box h='104px' />}
+      {showCustodyReleaseFooter && (
+        <Box
+          pos='fixed'
+          left={0}
+          right={0}
+          bottom={0}
+          bg='gray.0'
+          pt='md'
+          pb='xl'
+          style={{ zIndex: 10 }}
+        >
+          <Container>
+            <Group justify='center' gap='sm' wrap='nowrap'>
+              <ActionIcon
+                variant='outline'
+                color='indigo'
+                radius='50%'
+                size={48}
+                aria-label='More actions'
+                style={{ minWidth: 48, flex: '0 0 48px' }}
+              >
+                <IconDots size={24} />
+              </ActionIcon>
+              <Button
+                color='indigo'
+                radius='xl'
+                size='lg'
+                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+              >
+                Start legal release
+              </Button>
+            </Group>
+          </Container>
+        </Box>
+      )}
+      {(careFooterState.showFooter || showCustodyReleaseFooter) && <Box h='104px' />}
     </>
   );
 }

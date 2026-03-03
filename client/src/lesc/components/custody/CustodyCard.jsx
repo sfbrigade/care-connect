@@ -8,6 +8,7 @@ import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import { calculateAge } from '@/utils/format';
+import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
 function CustodyCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
@@ -29,6 +30,8 @@ function CustodyCard ({ deflection, highlighted }) {
   }
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
+  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
+  const canStartLegalRelease = isFailedIntake || isInChair;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -42,16 +45,19 @@ function CustodyCard ({ deflection, highlighted }) {
     },
   });
 
-  const legalReleaseMutation = useMutation({
-    mutationFn: () => Api.deflections.release(deflection.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      showToast('Person legally released', 'success');
-    },
-    onError: () => {
-      showToast('Release not saved. Please try again.', 'error');
-    },
-  });
+  function openCertificatePdf () {
+    const holdData = {
+      id: String(deflection.id),
+      client: deflection.subject,
+      incident: {},
+      createdAt: deflection.createdAt,
+      transferredAt: deflection.releasedAt,
+      createdBy: null,
+    };
+    const doc = generateCertificateOfReleasePDF(holdData);
+    const blobUrl = doc.output('bloburl');
+    window.open(blobUrl, '_blank');
+  }
 
   return (
     <Card
@@ -104,13 +110,20 @@ function CustodyCard ({ deflection, highlighted }) {
           {deflection.subjectStatus === 'AWAITING_INTAKE' && (
             <Button size='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
           )}
-          {isFailedIntake && (
+          {canStartLegalRelease && (
             <Button
               size='md'
-              onClick={() => legalReleaseMutation.mutate()}
-              loading={legalReleaseMutation.isPending}
+              onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Legal release
+            </Button>
+          )}
+          {deflection.subjectStatus === 'RELEASED' && (
+            <Button
+              size='md'
+              onClick={openCertificatePdf}
+            >
+              Print certificate
             </Button>
           )}
         </Group>
