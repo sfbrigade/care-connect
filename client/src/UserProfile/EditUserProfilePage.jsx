@@ -120,7 +120,7 @@ function EditUserProfilePage () {
                 <UnitSelector
                   sendUnitIdToParent={handleUnitSelectorData}
                   title={false}
-                  show_btn={false}
+                  showButton={false}
                 />
                 <Radio.Group
                   onChange={handleRankChange}

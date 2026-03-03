@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Box, Button, Container, Stack, Title, Autocomplete, Loader } from '@mantine/core';
+import { Box, Button, Stack, Title, Autocomplete, Loader } from '@mantine/core';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
 
 import Api from './Api';
 import { useAuthContext } from './AuthContext';
 
-function UnitSelector ({ title = true, show_btn = true, sendUnitIdToParent }) {
+function UnitSelector ({ title = true, showButton = true, sendUnitIdToParent }) {
   const { user } = useAuthContext();
   const [unitId, setUnitId] = useState();
   const [unitName, setUnitName] = useState('');
@@ -67,7 +67,7 @@ function UnitSelector ({ title = true, show_btn = true, sendUnitIdToParent }) {
         rightSection={isLoading ? <Loader size='sm' /> : null}
         nothingfound='No units found'
       />
-      {show_btn && (
+      {showButton && (
         <Box flex='0 0'>
           <Button disabled={!unitId} fullWidth mt='3rem' onClick={onConfirm}>Confirm unit</Button>
         </Box>
