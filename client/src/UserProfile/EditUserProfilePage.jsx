@@ -38,15 +38,15 @@ function EditUserProfilePage () {
     queryFn: () => Api.users.get(userId),
   });
 
-  function handleProp115Change(value) {
+  function handleProp115Change (value) {
     const radioValue = value === 'true';
     setProp115Value(value);
-    form.setValues({ 'prop115Certified': radioValue });
+    form.setValues({ prop115Certified: radioValue });
   }
 
-  function handleRankChange(value) {
+  function handleRankChange (value) {
     setRankValue(value);
-    form.setValues({ 'titleId': value });
+    form.setValues({ titleId: value });
   }
 
   // const { data: units } = useQuery({
@@ -69,8 +69,8 @@ function EditUserProfilePage () {
       });
       form.reset();
 
-      setRankValue(response?.data?.titleId)
-      setProp115Value(response?.data?.prop115Certified.toString())
+      setRankValue(response?.data?.titleId);
+      setProp115Value(response?.data?.prop115Certified.toString());
     }
   }, [response]);
 
@@ -90,8 +90,8 @@ function EditUserProfilePage () {
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
 
-  function handleUnitSelectorData(data) {
-    form.setValues({ 'unitId': data });
+  function handleUnitSelectorData (data) {
+    form.setValues({ unitId: data });
   }
 
   return (
@@ -121,11 +121,10 @@ function EditUserProfilePage () {
                   sendUnitIdToParent={handleUnitSelectorData}
                   title={false}
                   show_btn={false}
-                >
-                </UnitSelector>
+                />
                 <Radio.Group
                   onChange={handleRankChange}
-                  label="Rank"
+                  label='Rank'
                   value={rankValue}
                 >
                   <Stack>
@@ -133,14 +132,15 @@ function EditUserProfilePage () {
                       <Radio
                         label={title.name}
                         value={title.id}
-                        key={title.id} />
+                        key={title.id}
+                      />
                     ))}
                   </Stack>
                 </Radio.Group>
 
                 <Radio.Group
                   onChange={handleProp115Change}
-                  label="Prop 115 certification"
+                  label='Prop 115 certification'
                   value={prop115Value}
                 >
                   <Stack>

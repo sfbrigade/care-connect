@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router';
 import Api from './Api';
 import { useAuthContext } from './AuthContext';
 
-function UnitSelector({ title = true, show_btn = true, sendUnitIdToParent}) {
+function UnitSelector ({ title = true, show_btn = true, sendUnitIdToParent }) {
   const { user } = useAuthContext();
   const [unitId, setUnitId] = useState();
   const [unitName, setUnitName] = useState('');
@@ -43,7 +43,7 @@ function UnitSelector({ title = true, show_btn = true, sendUnitIdToParent}) {
     const selectedUnit = units.find((unit) => unit.name === value);
     if (selectedUnit) {
       setUnitId(selectedUnit.id);
-      sendUnitIdToParent(selectedUnit.id)
+      sendUnitIdToParent(selectedUnit.id);
     }
   }
 
