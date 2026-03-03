@@ -21,6 +21,12 @@ const IN_CUSTODY_SECTIONS = [
   { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
   { status: 'IN_CHAIR', label: 'In-chair' },
 ];
+const NOT_IN_CUSTODY_SECTIONS = [
+  { status: 'STILL_ONSITE', label: 'Still onsite' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail' },
+];
+const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
 function groupByStatus (deflections) {
   const grouped = {};
@@ -29,6 +35,16 @@ function groupByStatus (deflections) {
     grouped[d.subjectStatus].push(d);
   }
   return grouped;
+}
+
+function hasSavedExitDraft (deflectionId) {
+  if (typeof window === 'undefined') return false;
+  try {
+    const draftMap = JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
+    return Boolean(draftMap?.[String(deflectionId)]?.exitDetailsSaved);
+  } catch {
+    return false;
+  }
 }
 
 function Care () {
@@ -43,7 +59,9 @@ function Care () {
   const [collapsedSections, setCollapsedSections] = useState({
     ADMITTED: false,
     IN_CHAIR: false,
-    NOT_IN_CUSTODY: false,
+    STILL_ONSITE: false,
+    EXITED_FACILITY: false,
+    TRANSFERRED_TO_JAIL: false,
   });
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
@@ -68,7 +86,7 @@ function Care () {
   });
 
   useEffect(() => {
-    if (!inCustodyDeflections.length) return;
+    if (!inCustodyDeflections.length && !notInCustodyDeflections.length) return;
     const targetId = window.sessionStorage.getItem('careHighlightTarget');
     if (!targetId) return;
     window.sessionStorage.removeItem('careHighlightTarget');
@@ -79,7 +97,7 @@ function Care () {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-  }, [inCustodyDeflections]);
+  }, [inCustodyDeflections, notInCustodyDeflections]);
 
   useEffect(() => {
     if (!highlightedId) return;
@@ -88,7 +106,15 @@ function Care () {
   }, [highlightedId]);
 
   const groupedInCustody = useMemo(() => groupByStatus(inCustodyDeflections), [inCustodyDeflections]);
-  const notInCustodyCount = notInCustodyDeflections.length;
+  const groupedNotInCustody = useMemo(() => ({
+    STILL_ONSITE: notInCustodyDeflections.filter(d => d.subjectStatus === 'RELEASED'),
+    EXITED_FACILITY: notInCustodyDeflections.filter(
+      d => d.subjectStatus === 'EXITED' && d.exitDestinationId !== 'jail'
+    ),
+    TRANSFERRED_TO_JAIL: notInCustodyDeflections.filter(
+      d => d.subjectStatus === 'EXITED' && d.exitDestinationId === 'jail'
+    ),
+  }), [notInCustodyDeflections]);
 
   function toggleSection (sectionKey) {
     setCollapsedSections((prev) => ({
@@ -151,7 +177,8 @@ function Care () {
             <Stack gap='lg'>
               {IN_CUSTODY_SECTIONS.map(({ status, label, description }, index) => {
                 const items = groupedInCustody[status] ?? [];
-                const isCollapsed = collapsedSections[status];
+                const isEmpty = items.length === 0;
+                const isCollapsed = isEmpty ? false : collapsedSections[status];
 
                 return (
                   <Stack key={status} gap='sm'>
@@ -166,9 +193,10 @@ function Care () {
                         color='gray'
                         radius='xl'
                         size='xl'
+                        disabled={isEmpty}
                         aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${label} section`}
                         aria-expanded={!isCollapsed}
-                        onClick={() => toggleSection(status)}
+                        onClick={!isEmpty ? () => toggleSection(status) : undefined}
                         style={{ backgroundColor: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)' }}
                       >
                         <IconChevronUp
@@ -189,15 +217,17 @@ function Care () {
                             deflection={d}
                             highlighted={String(d.id) === highlightedId}
                             onCompleteIntake={() => setIntakeModalDeflection(d)}
+                            hasExitDraft={hasSavedExitDraft(d.id)}
+                            onExitDetails={() => {
+                              window.sessionStorage.setItem('careTab', tab);
+                              navigate(`/care/${d.id}/exit`);
+                            }}
                             onViewDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
                               navigate(`/care/${d.id}`);
                             }}
                           />
                         ))}
-                        {items.length === 0 && status !== 'IN_CHAIR' && (
-                          <Text c='dimmed' size='sm'>None</Text>
-                        )}
                       </Stack>
                     )}
                   </Stack>
@@ -207,49 +237,64 @@ function Care () {
           )}
 
           {tab === 'not-in-custody' && (
-            <Stack gap='sm'>
-              <Group justify='space-between' align='center' wrap='nowrap'>
-                <Title order={3}>Not in custody: {notInCustodyCount}</Title>
-                <ActionIcon
-                  variant='subtle'
-                  color='gray'
-                  radius='xl'
-                  size='xl'
-                  aria-label={`${collapsedSections.NOT_IN_CUSTODY ? 'Expand' : 'Collapse'} Not in custody section`}
-                  aria-expanded={!collapsedSections.NOT_IN_CUSTODY}
-                  onClick={() => toggleSection('NOT_IN_CUSTODY')}
-                  style={{ backgroundColor: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)' }}
-                >
-                  <IconChevronUp
-                    size={20}
-                    style={{
-                      transform: collapsedSections.NOT_IN_CUSTODY ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 150ms ease',
-                    }}
-                  />
-                </ActionIcon>
-              </Group>
+            <Stack gap='lg'>
+              {NOT_IN_CUSTODY_SECTIONS.map(({ status, label }, index) => {
+                const items = groupedNotInCustody[status] ?? [];
+                const isEmpty = items.length === 0;
+                const isCollapsed = isEmpty ? false : collapsedSections[status];
 
-              {!collapsedSections.NOT_IN_CUSTODY && (
-                <>
-                  {notInCustodyCount === 0 && (
-                    <Text c='dimmed' size='sm'>No records in this section.</Text>
-                  )}
+                return (
+                  <Stack key={status} gap='sm'>
+                    {index > 0 && <Divider />}
+                    <Group justify='space-between' align='flex-start' wrap='nowrap'>
+                      <Box>
+                        <Title order={3}>{label}: {items.length}</Title>
+                      </Box>
+                      <ActionIcon
+                        variant='subtle'
+                        color='gray'
+                        radius='xl'
+                        size='xl'
+                        disabled={isEmpty}
+                        aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${label} section`}
+                        aria-expanded={!isCollapsed}
+                        onClick={!isEmpty ? () => toggleSection(status) : undefined}
+                        style={{ backgroundColor: 'rgb(from var(--mantine-color-gray-6) R G B / 0.1)' }}
+                      >
+                        <IconChevronUp
+                          size={20}
+                          style={{
+                            transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 150ms ease',
+                          }}
+                        />
+                      </ActionIcon>
+                    </Group>
 
-                  {notInCustodyDeflections.map(d => (
-                    <CareCard
-                      key={d.id}
-                      deflection={d}
-                      highlighted={String(d.id) === highlightedId}
-                      onCompleteIntake={() => setIntakeModalDeflection(d)}
-                      onViewDetails={() => {
-                        window.sessionStorage.setItem('careTab', tab);
-                        navigate(`/care/${d.id}`);
-                      }}
-                    />
-                  ))}
-                </>
-              )}
+                    {!isCollapsed && (
+                      <Stack gap='sm'>
+                        {items.map(d => (
+                          <CareCard
+                            key={d.id}
+                            deflection={d}
+                            highlighted={String(d.id) === highlightedId}
+                            onCompleteIntake={() => setIntakeModalDeflection(d)}
+                            hasExitDraft={hasSavedExitDraft(d.id)}
+                            onExitDetails={() => {
+                              window.sessionStorage.setItem('careTab', tab);
+                              navigate(`/care/${d.id}/exit`);
+                            }}
+                            onViewDetails={() => {
+                              window.sessionStorage.setItem('careTab', tab);
+                              navigate(`/care/${d.id}`);
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                );
+              })}
             </Stack>
           )}
 

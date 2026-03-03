@@ -324,6 +324,12 @@ const Api = {
     completeIntake (id, { completed }) {
       return instance.post(`/api/deflections/${id}/intake-complete`, { completed }).catch(handleError);
     },
+    saveExitDetails (id, data) {
+      return instance.post(`/api/deflections/${id}/exit-details`, data).catch(handleError);
+    },
+    exit (id, data) {
+      return instance.post(`/api/deflections/${id}/exit`, data).catch(handleError);
+    },
     release (id) {
       return instance.post(`/api/deflections/${id}/release`).catch(handleError);
     },
