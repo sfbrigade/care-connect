@@ -7,9 +7,9 @@ const SpeechRecognition = typeof window !== 'undefined'
 /**
  * Hook for Web Speech API speech-to-text with live interim results.
  *
- * Uses continuous=false + interimResults=true for cross-platform consistency
- * (Android & iOS). The hook manages a live `transcript` that updates as the
- * user speaks. When recognition ends, `isListening` flips to false but
+ * Uses continuous=true + interimResults=true so the user controls when to
+ * stop. The hook manages a live `transcript` that updates as the user
+ * speaks. When recognition ends (via stop() or browser timeout), `isListening` flips to false but
  * `transcript` is preserved — the consumer should read it, commit it, then
  * call `resetTranscript()`.
  *
