@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
-import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconExternalLink } from '@tabler/icons-react';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
 
-const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const navigate = useNavigate();
@@ -27,10 +27,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
+  const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
-  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
-  const showCustodyReleaseFooter = !isCareView && isInChair;
+  const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
+  const showStartLegalReleasePrimary = !isAwaitingSafetyCheck;
+  const showOverflowStartLegalRelease = isAwaitingSafetyCheck;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -44,21 +46,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       showToast('Safety check not saved. Please try again.', 'error');
     },
   });
-
-  const releaseMutation = useMutation({
-    mutationFn: () => Api.deflections.release(deflection.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Person legally released', 'success');
-      navigate('/custody');
-    },
-    onError: () => {
-      showToast('Release not saved. Please try again.', 'error');
-    },
-  });
-
-  const isReleasable = RELEASABLE_STATUSES.includes(deflection?.subjectStatus);
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
@@ -102,11 +89,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           )}
           {!isCareView && (
             <Stack gap='xs' align='flex-start'>
-              {isAwaitingSafetyCheck && (
-                <Button onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>
-                  Mark safety check complete
-                </Button>
-              )}
               <Button
                 onClick={open647fPdf}
                 variant='outline'
@@ -250,15 +232,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>
-              {isReleasable && !showCustodyReleaseFooter && (
-                <Button
-                  size='lg'
-                  onClick={() => releaseMutation.mutate()}
-                  loading={releaseMutation.isPending}
-                >
-                  Mark as legally released
-                </Button>
-              )}
             </>
           )}
         </Stack>
@@ -299,7 +272,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Container>
         </Box>
       )}
-      {showCustodyReleaseFooter && (
+      {showCustodyActionFooter && (
         <Box
           pos='fixed'
           left={0}
@@ -312,29 +285,62 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              <ActionIcon
-                variant='outline'
-                color='indigo'
-                radius='50%'
-                size={48}
-                aria-label='More actions'
-                style={{ minWidth: 48, flex: '0 0 48px' }}
-              >
-                <IconDots size={24} />
-              </ActionIcon>
+              <Menu position='top-start' shadow='sm' radius='lg' width={260} withinPortal>
+                <Menu.Target>
+                  <ActionIcon
+                    variant='outline'
+                    color='indigo'
+                    radius='50%'
+                    size={48}
+                    aria-label='More actions'
+                    style={{ minWidth: 48, flex: '0 0 48px' }}
+                  >
+                    <IconDots size={24} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {showOverflowStartLegalRelease && (
+                    <Menu.Item
+                      leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                      onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                    >
+                      Start legal release
+                    </Menu.Item>
+                  )}
+                  <Menu.Item
+                    leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
+                  >
+                    Record exit to jail
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => showToast('Record death flow is not yet available.', 'warning')}
+                  >
+                    Record death
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               <Button
                 color='indigo'
                 radius='xl'
                 size='lg'
-                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                onClick={() => {
+                  if (isAwaitingSafetyCheck) {
+                    safetyCheckMutation.mutate();
+                    return;
+                  }
+                  navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                }}
+                loading={safetyCheckMutation.isPending}
               >
-                Start legal release
+                {showStartLegalReleasePrimary || isFailedIntake ? 'Start legal release' : 'Complete safety check'}
               </Button>
             </Group>
           </Container>
         </Box>
       )}
-      {(careFooterState.showFooter || showCustodyReleaseFooter) && <Box h='104px' />}
+      {(careFooterState.showFooter || showCustodyActionFooter) && <Box h='104px' />}
     </>
   );
 }
