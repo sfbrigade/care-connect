@@ -28,6 +28,8 @@ function CustodyCard ({ deflection, highlighted }) {
     subjectDetails.push(t(`sex.${deflection.subject.sex}`));
   }
 
+  const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
+
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
@@ -40,10 +42,39 @@ function CustodyCard ({ deflection, highlighted }) {
     },
   });
 
+  const legalReleaseMutation = useMutation({
+    mutationFn: () => Api.deflections.release(deflection.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      showToast('Person legally released', 'success');
+    },
+    onError: () => {
+      showToast('Release not saved. Please try again.', 'error');
+    },
+  });
+
   return (
-    <Card bg='white' p={{ base: 'md', sm: 'xl' }} withBorder id={`custody-card-${deflection.id}`} style={highlighted ? { animation: 'cardHighlight 3s ease-out' } : undefined}>
+    <Card
+      bg='white'
+      p={{ base: 'md', sm: 'xl' }}
+      withBorder
+      id={`custody-card-${deflection.id}`}
+      style={{
+        borderColor: highlighted ? 'var(--mantine-color-indigo-6)' : undefined,
+        animation: highlighted ? 'cardHighlight 3s ease-out' : undefined,
+      }}
+    >
       <Stack gap='sm'>
-        <Text size='md' c='gray.6'>Hold {displayId}</Text>
+        {!isFailedIntake && (
+          <Text size='md' c='gray.6'>Hold {displayId}</Text>
+        )}
+        {isFailedIntake && (
+          <Group gap={4} wrap='nowrap'>
+            <Text size='md' c='gray.6'>Hold {displayId}</Text>
+            <Text size='md' c='gray.5'>&middot;</Text>
+            <Text size='md' c='red.6'>Intake not completed</Text>
+          </Group>
+        )}
         <Box>
           <Title order={3}>{displayName}</Title>
           {subjectDetails.length > 0 && (
@@ -72,6 +103,15 @@ function CustodyCard ({ deflection, highlighted }) {
           </Button>
           {deflection.subjectStatus === 'AWAITING_INTAKE' && (
             <Button size='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
+          )}
+          {isFailedIntake && (
+            <Button
+              size='md'
+              onClick={() => legalReleaseMutation.mutate()}
+              loading={legalReleaseMutation.isPending}
+            >
+              Legal release
+            </Button>
           )}
         </Group>
       </Stack>

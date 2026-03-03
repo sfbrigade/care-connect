@@ -62,6 +62,16 @@ export const InChair = {
   },
 };
 
+export const FailedIntake = {
+  args: {
+    deflection: {
+      ...baseDeflection,
+      subjectStatus: 'FAILED_INTAKE',
+      releaseReason: { name: 'Needs legal release' },
+    },
+  },
+};
+
 export const Released = {
   args: {
     deflection: {

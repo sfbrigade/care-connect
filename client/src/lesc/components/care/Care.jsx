@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActionIcon, Box, Button, Container, Divider, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
@@ -8,8 +8,10 @@ import { useNavigate, useSearchParams } from 'react-router';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import { formatTime } from '@/utils/format';
 import CareCard from './CareCard';
+import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
@@ -36,6 +38,7 @@ function Care () {
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
+  const [intakeModalDeflection, setIntakeModalDeflection] = useState(null);
   const [highlightedId, setHighlightedId] = useState(null);
   const [collapsedSections, setCollapsedSections] = useState({
     ADMITTED: false,
@@ -44,6 +47,7 @@ function Care () {
   });
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
@@ -96,6 +100,34 @@ function Care () {
   function handleScanSuccess () {
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
   }
+
+  const completeIntakeMutation = useMutation({
+    mutationFn: ({ deflectionId, completed }) => Api.deflections.completeIntake(deflectionId, { completed }),
+    onSuccess: (_, variables) => {
+      if (variables.completed) {
+        window.sessionStorage.setItem('careHighlightTarget', String(variables.deflectionId));
+        showToast(
+          'Intake completed',
+          'success',
+          4000,
+          "Person moved to 'In-chair' for Sheriff's review."
+        );
+      } else {
+        window.sessionStorage.setItem('custodyHighlightTarget', String(variables.deflectionId));
+        showToast(
+          'Intake not completed',
+          'warning',
+          4000,
+          'Person moved back. Please review their status before release or exit.'
+        );
+      }
+      setIntakeModalDeflection(null);
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+    },
+    onError: () => {
+      showToast('Intake update not saved. Please try again.', 'error');
+    },
+  });
 
   return (
     <>
@@ -156,6 +188,7 @@ function Care () {
                             key={d.id}
                             deflection={d}
                             highlighted={String(d.id) === highlightedId}
+                            onCompleteIntake={() => setIntakeModalDeflection(d)}
                             onViewDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
                               navigate(`/care/${d.id}`);
@@ -208,6 +241,7 @@ function Care () {
                       key={d.id}
                       deflection={d}
                       highlighted={String(d.id) === highlightedId}
+                      onCompleteIntake={() => setIntakeModalDeflection(d)}
                       onViewDetails={() => {
                         window.sessionStorage.setItem('careTab', tab);
                         navigate(`/care/${d.id}`);
@@ -262,6 +296,20 @@ function Care () {
           onSuccess={handleScanSuccess}
         />
       )}
+
+      <CompleteIntakeModal
+        opened={!!intakeModalDeflection}
+        onClose={() => setIntakeModalDeflection(null)}
+        loading={completeIntakeMutation.isPending}
+        onConfirmCompleted={() => {
+          if (!intakeModalDeflection) return;
+          completeIntakeMutation.mutate({ deflectionId: intakeModalDeflection.id, completed: true });
+        }}
+        onConfirmNotCompleted={() => {
+          if (!intakeModalDeflection) return;
+          completeIntakeMutation.mutate({ deflectionId: intakeModalDeflection.id, completed: false });
+        }}
+      />
 
       <Box h='104px' />
     </>

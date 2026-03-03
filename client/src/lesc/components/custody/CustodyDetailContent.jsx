@@ -14,7 +14,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
-const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const navigate = useNavigate();

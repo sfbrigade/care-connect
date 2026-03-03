@@ -321,6 +321,9 @@ const Api = {
     admit (id) {
       return instance.post(`/api/deflections/${id}/admit`);
     },
+    completeIntake (id, { completed }) {
+      return instance.post(`/api/deflections/${id}/intake-complete`, { completed }).catch(handleError);
+    },
     release (id) {
       return instance.post(`/api/deflections/${id}/release`).catch(handleError);
     },

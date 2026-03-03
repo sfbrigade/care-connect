@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { calculateAge } from '@/utils/format';
 
-function CareCard ({ deflection, highlighted, onViewDetails }) {
+function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake }) {
   const { t } = useTranslation();
 
   const displayId = String(deflection.id).padStart(6, '0');
@@ -18,6 +18,7 @@ function CareCard ({ deflection, highlighted, onViewDetails }) {
   }
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
+  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
 
   return (
     <Card
@@ -25,7 +26,7 @@ function CareCard ({ deflection, highlighted, onViewDetails }) {
       p='xl'
       id={`care-card-${deflection.id}`}
       style={{
-        border: highlighted
+        border: highlighted || isInChair
           ? '1px solid var(--mantine-color-indigo-6)'
           : '1px solid var(--mantine-color-gray-3)',
         borderRadius: '16px',
@@ -47,7 +48,7 @@ function CareCard ({ deflection, highlighted, onViewDetails }) {
         <Group wrap='nowrap' justify='flex-start'>
           <Button size='md' variant='light' color='indigo' onClick={onViewDetails}>View details</Button>
           {isInMedicalIntake && (
-            <Button size='md' color='indigo'>Complete intake</Button>
+            <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
           )}
         </Group>
       </Stack>

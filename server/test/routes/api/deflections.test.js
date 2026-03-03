@@ -228,6 +228,58 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/intake-complete', async (t) => {
+    await t.test('moves admitted subject to in-chair when intake is completed', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'ADMITTED',
+          admittedAt: new Date(),
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/intake-complete')
+        .payload({ completed: true })
+        .headers(careUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'IN_CHAIR');
+      assertCareSubjectRedaction(data.subject);
+
+      const updated = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.deepStrictEqual(updated.subjectStatus, 'IN_CHAIR');
+    });
+
+    await t.test('moves admitted subject to failed intake when intake is not completed', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'ADMITTED',
+          admittedAt: new Date(),
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/intake-complete')
+        .payload({ completed: false })
+        .headers(careUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'FAILED_INTAKE');
+      assert.ok(data.rejectedAt);
+      assert.ok(data.rejectedById);
+      assertCareSubjectRedaction(data.subject);
+
+      const updated = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.deepStrictEqual(updated.subjectStatus, 'FAILED_INTAKE');
+      assert.ok(updated.rejectedAt);
+      assert.ok(updated.rejectedById);
+    });
+  });
+
   await t.test('PUT /:id/subject', async (t) => {
     await t.test('creates a new subject for a deflection', async () => {
       const response = await app.inject().put('/api/deflections/2/subject').payload({

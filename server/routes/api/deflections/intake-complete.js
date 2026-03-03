@@ -5,33 +5,28 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
-const RELEASABLE_STATUSES = [
-  Deflection.SubjectStatus.AWAITING_INTAKE,
-  Deflection.SubjectStatus.FAILED_INTAKE,
-  Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
-  Deflection.SubjectStatus.IN_CHAIR,
-];
-
 export default async function (fastify, opts) {
-  fastify.post('/:id/release',
+  fastify.post('/:id/intake-complete',
     {
-      onRequest: fastify.requireCustody,
+      onRequest: fastify.requireCare,
       schema: {
-        description: 'Mark a subject as legally released, transitioning to RELEASED status.',
+        description: 'Mark medical intake outcome, transitioning from ADMITTED to IN_CHAIR or FAILED_INTAKE.',
         params: z.object({
           id: z.coerce.number(),
+        }),
+        body: z.object({
+          completed: z.boolean(),
         }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
         },
       },
     },
     async function (request, reply) {
       const { id } = request.params;
+      const { completed } = request.body;
 
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -41,14 +36,14 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
+      if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
+        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+
         deflection = await tx.deflection.findUnique({
           where: { id },
           include: {
@@ -58,15 +53,19 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
+        if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
         const now = new Date();
+        const nextSubjectStatus = completed
+          ? Deflection.SubjectStatus.IN_CHAIR
+          : Deflection.SubjectStatus.FAILED_INTAKE;
+
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
+            subjectStatus: nextSubjectStatus,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -75,9 +74,13 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
-            releasedAt: now,
-            releasedById: request.user.id,
+            subjectStatus: nextSubjectStatus,
+            ...(completed
+              ? {}
+              : {
+                  rejectedAt: now,
+                  rejectedById: request.user.id,
+                }),
             updatedAt: now,
           },
           include: {
@@ -86,33 +89,11 @@ export default async function (fastify, opts) {
             propertyPhotos: true,
           },
         });
-
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
-        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
-    });
+    }
+  );
 }

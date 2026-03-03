@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
@@ -10,10 +10,11 @@ import { IconQrcode } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import { formatTime } from '@/utils/format';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 
-const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
+const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
@@ -31,8 +32,11 @@ const RELEASED_SECTIONS = [
 function groupByStatus (deflections) {
   const grouped = {};
   for (const d of deflections ?? []) {
-    grouped[d.subjectStatus] ||= [];
-    grouped[d.subjectStatus].push(d);
+    const status = d.subjectStatus === 'FAILED_INTAKE'
+      ? 'AWAITING_INTAKE'
+      : d.subjectStatus;
+    grouped[status] ||= [];
+    grouped[status].push(d);
   }
   return grouped;
 }
@@ -45,6 +49,9 @@ function Custody () {
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const seenFailedIntakeIdsRef = useRef(new Set());
+  const initializedFailedIntakeRef = useRef(false);
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -100,6 +107,30 @@ function Custody () {
     const timer = setTimeout(() => setHighlightedId(null), 3000);
     return () => clearTimeout(timer);
   }, [highlightedId]);
+
+  useEffect(() => {
+    if (!Array.isArray(inCustodyDeflections)) return;
+
+    const currentFailed = inCustodyDeflections.filter(d => d.subjectStatus === 'FAILED_INTAKE');
+    const previousSeen = seenFailedIntakeIdsRef.current;
+
+    if (!initializedFailedIntakeRef.current) {
+      seenFailedIntakeIdsRef.current = new Set(currentFailed.map(d => d.id));
+      initializedFailedIntakeRef.current = true;
+      return;
+    }
+
+    for (const d of currentFailed) {
+      if (previousSeen.has(d.id)) continue;
+      const personName = [d?.subject?.firstName, d?.subject?.lastName].filter(Boolean).join(' ') || 'This person';
+      showToast(
+        `Intake not completed. ${personName} moved back. Please review their status before release or exit.`,
+        'warning'
+      );
+    }
+
+    seenFailedIntakeIdsRef.current = new Set(currentFailed.map(d => d.id));
+  }, [inCustodyDeflections, showToast]);
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupByStatus(releasedDeflections);
