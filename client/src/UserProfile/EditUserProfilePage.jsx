@@ -20,9 +20,8 @@ function EditUserProfilePage () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const [unitId, setUnitId] = useState();
   const [rankValue, setRankValue] = useState();
-  const [prop115Value, setProp115Value] = useState(false);
+  const [prop115Value, setProp115Value] = useState('false');
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -41,7 +40,7 @@ function EditUserProfilePage () {
 
   function handleProp115Change(value) {
     const radioValue = value === 'true';
-    setProp115Value(radioValue);
+    setProp115Value(value);
     form.setValues({ 'prop115Certified': radioValue });
   }
 
@@ -69,26 +68,11 @@ function EditUserProfilePage () {
         password: '',
       });
       form.reset();
+
+      setRankValue(response?.data?.titleId)
+      setProp115Value(response?.data?.prop115Certified.toString())
     }
   }, [response]);
-
-  //NOT WORKING CODE
-  const handleSubmit = async (values) => {
-    try {
-      const response = await onSubmitMutation.mutateAsync(values);
-      console.log(response)
-      if (response.status === 500) {
-        showToast('Your changes couldn’t be saved. Check your internet connection and try again.', 'error');
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      else if (response.status === 200) {
-        showToast('Your profile has been updated', 'success');
-        navigate('/profile');
-      }
-    } catch (error) {
-      console.log('An error occurred:', error.message);
-    };
-  }
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.users.update(userId, values),
@@ -96,8 +80,8 @@ function EditUserProfilePage () {
       if (userId === user?.id) {
         queryClient.setQueryData(['users', 'me'], response.data);
       }
-      // showToast('Your profile has been updated', 'success');
-      // navigate('/profile');
+      showToast('Your profile has been updated', 'success');
+      navigate('/profile');
     },
     onError: (error) => {
       form.setErrors(error);
@@ -107,7 +91,6 @@ function EditUserProfilePage () {
   });
 
   function handleUnitSelectorData(data) {
-    setUnitId(data);
     form.setValues({ 'unitId': data });
   }
 
@@ -123,10 +106,8 @@ function EditUserProfilePage () {
       </Header>
       <Container>
         <Stack>
-
           <Title>Edit position details</Title>
-          {/* <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}> */}
-          <form onSubmit={form.onSubmit(handleSubmit)}>
+          <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
             <Fieldset disabled={isLoading} variant='unstyled'>
               <Stack>
                 <TextInput
@@ -142,10 +123,10 @@ function EditUserProfilePage () {
                   show_btn={false}
                 >
                 </UnitSelector>
-
                 <Radio.Group
                   onChange={handleRankChange}
                   label="Rank"
+                  value={rankValue}
                 >
                   <Stack>
                     {titles?.map((title) => (
@@ -160,10 +141,11 @@ function EditUserProfilePage () {
                 <Radio.Group
                   onChange={handleProp115Change}
                   label="Prop 115 certification"
+                  value={prop115Value}
                 >
                   <Stack>
-                    <Radio label='Yes' value='true' checked={prop115Value === true} />
-                    <Radio label='No' value='false' checked={prop115Value === false} />
+                    <Radio label='Yes' value='true' />
+                    <Radio label='No' value='false' />
                   </Stack>
                 </Radio.Group>
 
