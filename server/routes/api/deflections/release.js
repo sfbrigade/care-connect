@@ -41,6 +41,8 @@ export default async function (fastify, opts) {
         body: z.object({
           releaseReason: ReleaseReasonEnum.optional(),
           exitDestination: ExitDestinationEnum.optional(),
+          otherReleaseReason: z.string().trim().min(1).optional(),
+          otherReleaseDestination: z.string().trim().min(1).optional(),
         }).optional(),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
@@ -54,13 +56,33 @@ export default async function (fastify, opts) {
       const { id } = request.params;
       const releaseReason = request.body?.releaseReason || 'SOBERED';
       const exitDestination = request.body?.exitDestination || null;
+      const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
+      const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
       const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+      const isOtherRelease = releaseReason === 'OTHER';
+      const isExitRelease = isMedicalRelease || isOtherRelease;
 
       if (isMedicalRelease && !exitDestination) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
             path: 'exitDestination',
             message: 'Exit destination is required for medical release.',
+          }],
+        });
+      }
+      if (isOtherRelease && !otherReleaseReason) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'otherReleaseReason',
+            message: 'Other release reason is required.',
+          }],
+        });
+      }
+      if (isOtherRelease && !otherReleaseDestination) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'otherReleaseDestination',
+            message: 'Other release destination is required.',
           }],
         });
       }
@@ -104,8 +126,10 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (isMedicalRelease) {
-          const destinationDef = EXIT_DESTINATION_DEFS[exitDestination];
+        if (isExitRelease) {
+          const destinationDef = isMedicalRelease
+            ? EXIT_DESTINATION_DEFS[exitDestination]
+            : EXIT_DESTINATION_DEFS.OTHER;
 
           await tx.deflectionExitDestination.upsert({
             where: { id: destinationDef.id },
@@ -127,6 +151,8 @@ export default async function (fastify, opts) {
               deflectionId: id,
               subjectStatus: Deflection.SubjectStatus.EXITED,
               exitDestinationId: destinationDef.id,
+              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
               updatedById: request.user.id,
               updatedAt: now,
             },
@@ -136,16 +162,20 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: isMedicalRelease
+            subjectStatus: isExitRelease
               ? Deflection.SubjectStatus.EXITED
               : Deflection.SubjectStatus.RELEASED,
             releasedAt: now,
             releasedById: request.user.id,
-            ...(isMedicalRelease
+            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+            ...(isExitRelease
               ? {
                   exitedAt: now,
                   exitedById: request.user.id,
-                  exitDestinationId: EXIT_DESTINATION_DEFS[exitDestination].id,
+                  exitDestinationId: isMedicalRelease
+                    ? EXIT_DESTINATION_DEFS[exitDestination].id
+                    : EXIT_DESTINATION_DEFS.OTHER.id,
                 }
               : {}),
             updatedAt: now,

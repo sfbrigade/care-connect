@@ -41,9 +41,12 @@ function LegalReleaseQuestions () {
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
+  const [otherDestination, setOtherDestination] = useState('');
   const [medicalExitDestination, setMedicalExitDestination] = useState(null);
 
   const isMedicalRelease = releaseReason === 'medical_issue';
+  const isOtherRelease = releaseReason === 'other';
+  const isExitRelease = isMedicalRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -79,13 +82,17 @@ function LegalReleaseQuestions () {
       if (isMedicalRelease) {
         payload.exitDestination = medicalExitDestination === 'hospital' ? 'HOSPITAL' : 'OTHER';
       }
+      if (isOtherRelease) {
+        payload.otherReleaseReason = otherReason.trim();
+        payload.otherReleaseDestination = otherDestination.trim();
+      }
 
       return Api.deflections.release(id, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      if (isMedicalRelease) {
+      if (isExitRelease) {
         showToast('Exit recorded', 'success', 4000, 'Person now appears in Exited facility under Not in custody (last 24 hours).');
         navigate(backTo);
         return;
@@ -199,13 +206,30 @@ function LegalReleaseQuestions () {
                 </Stack>
               </>
             )}
-            {releaseReason === 'other' && (
-              <Textarea
-                value={otherReason}
-                onChange={(event) => setOtherReason(event.currentTarget.value)}
-                minRows={3}
-                placeholder='Please specify'
-              />
+            {isOtherRelease && (
+              <>
+                <Stack gap={4} w='100%'>
+                  <Text fw={600} size='lg'>Other release reason</Text>
+                  <Textarea
+                    value={otherReason}
+                    onChange={(event) => setOtherReason(event.currentTarget.value)}
+                    minRows={1}
+                    placeholder='For example: Facility emergency'
+                  />
+                </Stack>
+                <Stack gap={4} w='100%'>
+                  <Text fw={600} size='lg'>Other release destination</Text>
+                  <Textarea
+                    value={otherDestination}
+                    onChange={(event) => setOtherDestination(event.currentTarget.value)}
+                    minRows={1}
+                    placeholder='For example: Alternate care site'
+                  />
+                </Stack>
+                <Text size='md' c='dimmed'>
+                  For &ldquo;Other&rdquo;, add a reason and destination. This release will also mark the person as exited from RESET.
+                </Text>
+              </>
             )}
           </Stack>
 
@@ -227,10 +251,11 @@ function LegalReleaseQuestions () {
               disabled={
                 !releaseReason ||
                 (releaseReason === 'medical_issue' && !medicalExitDestination) ||
-                (releaseReason !== 'sobered' && releaseReason !== 'medical_issue')
+                (releaseReason === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
+                (releaseReason !== 'sobered' && releaseReason !== 'medical_issue' && releaseReason !== 'other')
               }
             >
-              {isMedicalRelease ? 'Confirm release and exit' : 'Confirm release'}
+              {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}
             </Button>
           </Group>
           <Box h={8} />

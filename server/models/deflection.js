@@ -71,6 +71,8 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   releasedBy: User.ResponseSchema.nullable().optional(),
   releaseReasonId: z.string().nullable(),
   releaseReason: DeflectionReleaseReason.ResponseSchema.nullable().optional(),
+  otherReleaseReason: z.string().nullable().optional(),
+  otherReleaseDestination: z.string().nullable().optional(),
   refusalReasonId: z.string().nullable(),
   refusalReason: DeflectionRefusalReason.ResponseSchema.nullable().optional(),
   exitedAt: z.coerce.date().nullable(),

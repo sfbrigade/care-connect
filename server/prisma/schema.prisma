@@ -502,6 +502,8 @@ model Deflection {
   releasedById                 String?                 @db.Uuid
   releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
   releaseReasonId              String?
+  otherReleaseReason           String?
+  otherReleaseDestination      String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitedAt                     DateTime?
@@ -560,6 +562,8 @@ model DeflectionUpdate {
   subjectStatus                SubjectStatusEnum?
   releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
   releaseReasonId              String?
+  otherReleaseReason           String?
+  otherReleaseDestination      String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])

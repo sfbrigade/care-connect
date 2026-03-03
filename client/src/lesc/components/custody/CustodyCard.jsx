@@ -31,7 +31,8 @@ function CustodyCard ({ deflection, highlighted }) {
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
   const isInChair = deflection.subjectStatus === 'IN_CHAIR';
-  const canStartLegalRelease = isFailedIntake || isInChair;
+  const isReadyForMedicalIntake = deflection.subjectStatus === 'READY_FOR_INTAKE';
+  const canStartLegalRelease = isFailedIntake || isInChair || isReadyForMedicalIntake;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -115,7 +116,7 @@ function CustodyCard ({ deflection, highlighted }) {
               size='md'
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
-              Legal release
+              {isReadyForMedicalIntake ? 'Start legal release' : 'Legal release'}
             </Button>
           )}
           {deflection.subjectStatus === 'RELEASED' && (
