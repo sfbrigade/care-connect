@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Chip, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -10,6 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
+import { getCareExitBackTo, getCareExitSuccessPayload } from './careFlowUtils';
 
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -89,6 +90,7 @@ function removeExitDraft (id) {
 
 function CareExitDetails () {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
@@ -103,7 +105,8 @@ function CareExitDetails () {
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
 
   const savedTab = window.sessionStorage.getItem('careTab') || 'in-custody';
-  const backTo = savedTab === 'not-in-custody' ? '/care?tab=not-in-custody' : '/care';
+  const fromDetail = searchParams.get('from') === 'detail';
+  const backTo = getCareExitBackTo({ fromDetail, id, savedTab });
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -165,13 +168,14 @@ function CareExitDetails () {
       connectionToCare,
     }),
     onSuccess: () => {
+      const successPayload = getCareExitSuccessPayload(id);
       setConfirmExitOpened(false);
       removeExitDraft(id);
-      window.sessionStorage.setItem('careHighlightTarget', String(id));
+      window.sessionStorage.setItem('careHighlightTarget', successPayload.highlightTarget);
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      showToast('Exit recorded', 'success', 4000, 'Person now appears in Exited facility under Not in custody (last 24 hours).');
-      navigate('/care?tab=not-in-custody');
+      showToast(successPayload.toastTitle, 'success', 4000, successPayload.toastBody);
+      navigate(successPayload.navigateTo);
     },
     onError: () => {
       setConfirmExitOpened(false);

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
-import { Accordion, Box, Button, Card, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconExternalLink } from '@tabler/icons-react';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconDots, IconExternalLink } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
+import { getCareDetailFooterState } from './careDetailFooterUtils';
 
 const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
@@ -23,6 +24,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const isCareView = viewerMode === 'care';
+  const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
@@ -259,6 +261,43 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           )}
         </Stack>
       </Container>
+      {careFooterState.showFooter && (
+        <Box
+          pos='fixed'
+          left={0}
+          right={0}
+          bottom={0}
+          bg='gray.0'
+          pt='md'
+          pb='xl'
+          style={{ zIndex: 10 }}
+        >
+          <Container>
+            <Group justify='center' gap='sm' wrap='nowrap'>
+              <ActionIcon
+                variant='outline'
+                color='indigo'
+                radius='50%'
+                size={48}
+                disabled={careFooterState.overflowDisabled}
+                aria-label='More actions'
+                style={{ minWidth: 48, flex: '0 0 48px' }}
+              >
+                <IconDots size={24} />
+              </ActionIcon>
+              <Button
+                color='indigo'
+                radius='xl'
+                size='lg'
+                onClick={() => navigate(careFooterState.startExitPath)}
+              >
+                Start exit
+              </Button>
+            </Group>
+          </Container>
+        </Box>
+      )}
+      {careFooterState.showFooter && <Box h='104px' />}
     </>
   );
 }

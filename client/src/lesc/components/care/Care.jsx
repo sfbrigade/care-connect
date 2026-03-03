@@ -13,6 +13,7 @@ import { formatTime } from '@/utils/format';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
+import { groupCareNotInCustodySections, isCareSectionCaretDisabled } from './careFlowUtils';
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
@@ -106,15 +107,10 @@ function Care () {
   }, [highlightedId]);
 
   const groupedInCustody = useMemo(() => groupByStatus(inCustodyDeflections), [inCustodyDeflections]);
-  const groupedNotInCustody = useMemo(() => ({
-    STILL_ONSITE: notInCustodyDeflections.filter(d => d.subjectStatus === 'RELEASED'),
-    EXITED_FACILITY: notInCustodyDeflections.filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId !== 'jail'
-    ),
-    TRANSFERRED_TO_JAIL: notInCustodyDeflections.filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId === 'jail'
-    ),
-  }), [notInCustodyDeflections]);
+  const groupedNotInCustody = useMemo(
+    () => groupCareNotInCustodySections(notInCustodyDeflections),
+    [notInCustodyDeflections]
+  );
 
   function toggleSection (sectionKey) {
     setCollapsedSections((prev) => ({
@@ -177,7 +173,7 @@ function Care () {
             <Stack gap='lg'>
               {IN_CUSTODY_SECTIONS.map(({ status, label, description }, index) => {
                 const items = groupedInCustody[status] ?? [];
-                const isEmpty = items.length === 0;
+                const isEmpty = isCareSectionCaretDisabled(items);
                 const isCollapsed = isEmpty ? false : collapsedSections[status];
 
                 return (
@@ -240,7 +236,7 @@ function Care () {
             <Stack gap='lg'>
               {NOT_IN_CUSTODY_SECTIONS.map(({ status, label }, index) => {
                 const items = groupedNotInCustody[status] ?? [];
-                const isEmpty = items.length === 0;
+                const isEmpty = isCareSectionCaretDisabled(items);
                 const isCollapsed = isEmpty ? false : collapsedSections[status];
 
                 return (

@@ -2,6 +2,7 @@ import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
 import { calculateAge } from '@/utils/format';
+import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
   const { t } = useTranslation();
@@ -19,6 +20,7 @@ function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, o
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
   const isInChair = deflection.subjectStatus === 'IN_CHAIR';
+  const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
     <Card
@@ -46,7 +48,9 @@ function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, o
         </Box>
 
         <Group wrap='nowrap' justify='flex-end'>
-          <Button size='md' variant='light' color='indigo' onClick={onViewDetails}>View details</Button>
+          {showViewDetails && (
+            <Button size='md' variant='light' color='indigo' onClick={onViewDetails}>View details</Button>
+          )}
           {isInMedicalIntake && (
             <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
           )}
