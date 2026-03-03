@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { calculateAge } from '@/utils/format';
 
-function CareCard ({ deflection, highlighted }) {
+function CareCard ({ deflection, highlighted, onViewDetails }) {
   const { t } = useTranslation();
 
   const displayId = String(deflection.id).padStart(6, '0');
@@ -45,7 +45,7 @@ function CareCard ({ deflection, highlighted }) {
         </Box>
 
         <Group wrap='nowrap' justify='flex-start'>
-          <Button size='md' variant='light' color='indigo'>View details</Button>
+          <Button size='md' variant='light' color='indigo' onClick={onViewDetails}>View details</Button>
           {isInMedicalIntake && (
             <Button size='md' color='indigo'>Complete intake</Button>
           )}

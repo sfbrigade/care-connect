@@ -16,12 +16,13 @@ import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 
 const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 
-function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
+function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const isCareView = viewerMode === 'care';
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
@@ -56,6 +57,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
   const isReleasable = RELEASABLE_STATUSES.includes(deflection?.subjectStatus);
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
+  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
 
   function open647fPdf () {
@@ -83,7 +85,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
             {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
             <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
-          {(isAwaitingSafetyCheck || isReadyForIntake) && (
+          {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
               <Stack gap='md' align='center'>
                 <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
@@ -94,22 +96,36 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
               </Stack>
             </Card>
           )}
-          <Stack gap='xs' align='flex-start'>
-            {isAwaitingSafetyCheck && (
-              <Button onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>
-                Mark safety check complete
+          {!isCareView && (
+            <Stack gap='xs' align='flex-start'>
+              {isAwaitingSafetyCheck && (
+                <Button onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>
+                  Mark safety check complete
+                </Button>
+              )}
+              <Button
+                onClick={open647fPdf}
+                variant='outline'
+                rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
+              >
+                647(f).pdf
               </Button>
-            )}
-            <Button
-              onClick={open647fPdf}
-              variant='outline'
-              rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
-            >
-              647(f).pdf
-            </Button>
-          </Stack>
+            </Stack>
+          )}
           <Stack gap='sm'>
-            <Title order={2}>{name}</Title>
+            <Title order={2}>{isCareView ? careDisplayName : name}</Title>
+            {isCareView && (
+              <>
+                <Box>
+                  <Text c='dimmed'>First name</Text>
+                  <Text>{deflection?.subject?.firstName || 'Unknown'}</Text>
+                </Box>
+                <Box>
+                  <Text c='dimmed'>Last name</Text>
+                  <Text>{deflection?.subject?.lastName || 'Unknown'}</Text>
+                </Box>
+              </>
+            )}
             {deflection?.subject?.dateOfBirth && (
               <Box>
                 <Text c='dimmed'>Date of birth</Text>
@@ -118,7 +134,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
             )}
             {deflection?.subject?.sex && (
               <Box>
-                <Text c='dimmed'>Sex</Text>
+                <Text c='dimmed'>{isCareView ? 'Gender' : 'Sex'}</Text>
                 <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
               </Box>
             )}
@@ -128,112 +144,118 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                 <Text>{t(`race.${deflection.subject.race}`)}</Text>
               </Box>
             )}
-            {deflection?.subject?.driverLicense && (
+            {!isCareView && deflection?.subject?.driverLicense && (
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
                 <Text>{deflection.subject.driverLicense}</Text>
               </Box>
             )}
-            {address && (
+            {!isCareView && address && (
               <Box>
                 <Text c='dimmed'>Address</Text>
                 <Text>{address}</Text>
               </Box>
             )}
-            <Group mt='md'>
-              <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
-            </Group>
+            {!isCareView && (
+              <Group mt='md'>
+                <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+              </Group>
+            )}
           </Stack>
-          <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property']}>
-            <Divider />
-            <Accordion.Item value='narcotics'>
-              <Accordion.Control>
-                <Title order={3}>Narcotics</Title>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Controlled substance</Text>
-                      <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Paraphernalia</Text>
-                      <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  <Group mt='sm'>
-                    <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
-                  </Group>
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='deflection'>
-              <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {!!deflection?.deflectionDetails?.length && (
-                    <Box>
-                      <Text c='dimmed'>Selected observations</Text>
-                      <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                    </Box>
-                  )}
-                  {!!deflection?.behavior && (
-                    <Box>
-                      <Text c='dimmed'>Narrative (arrestable behavior)</Text>
-                      <Text>{deflection?.behavior}</Text>
-                    </Box>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='property'>
-              <Accordion.Control>
-                <Title order={3}>Property details</Title>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {!!deflection?.propertyPhotos?.length && (
-                    <Group gap='sm'>
-                      {deflection?.propertyPhotos?.map(photo => (
-                        <Image
-                          key={photo.id}
-                          src={photo.fileUrl}
-                          w={160}
-                          h='auto'
-                          fit='contain'
-                        />
-                      ))}
-                    </Group>
-                  )}
-                  {!!deflection?.property && (
-                    <Box>
-                      <Text c='dimmed'>Volume of property</Text>
-                      <Text>{t(`property.${deflection?.property}`)}</Text>
-                    </Box>
-                  )}
-                  {!!deflection?.propertyDetails && (
-                    <Box>
-                      <Text c='dimmed'>Description</Text>
-                      <Text>{deflection?.propertyDetails}</Text>
-                    </Box>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-          {isReleasable && (
-            <Button
-              size='lg'
-              onClick={() => releaseMutation.mutate()}
-              loading={releaseMutation.isPending}
-            >
-              Mark as legally released
-            </Button>
+          {!isCareView && (
+            <>
+              <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property']}>
+                <Divider />
+                <Accordion.Item value='narcotics'>
+                  <Accordion.Control>
+                    <Title order={3}>Narcotics</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
+                        <Box>
+                          <Text c='dimmed'>Controlled substance</Text>
+                          <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
+                        <Box>
+                          <Text c='dimmed'>Paraphernalia</Text>
+                          <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      <Group mt='sm'>
+                        <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                      </Group>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='deflection'>
+                  <Accordion.Control>
+                    <Title order={3}>Arrest details</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {!!deflection?.deflectionDetails?.length && (
+                        <Box>
+                          <Text c='dimmed'>Selected observations</Text>
+                          <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                        </Box>
+                      )}
+                      {!!deflection?.behavior && (
+                        <Box>
+                          <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                          <Text>{deflection?.behavior}</Text>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='property'>
+                  <Accordion.Control>
+                    <Title order={3}>Property details</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {!!deflection?.propertyPhotos?.length && (
+                        <Group gap='sm'>
+                          {deflection?.propertyPhotos?.map(photo => (
+                            <Image
+                              key={photo.id}
+                              src={photo.fileUrl}
+                              w={160}
+                              h='auto'
+                              fit='contain'
+                            />
+                          ))}
+                        </Group>
+                      )}
+                      {!!deflection?.property && (
+                        <Box>
+                          <Text c='dimmed'>Volume of property</Text>
+                          <Text>{t(`property.${deflection?.property}`)}</Text>
+                        </Box>
+                      )}
+                      {!!deflection?.propertyDetails && (
+                        <Box>
+                          <Text c='dimmed'>Description</Text>
+                          <Text>{deflection?.propertyDetails}</Text>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+              {isReleasable && (
+                <Button
+                  size='lg'
+                  onClick={() => releaseMutation.mutate()}
+                  loading={releaseMutation.isPending}
+                >
+                  Mark as legally released
+                </Button>
+              )}
+            </>
           )}
         </Stack>
       </Container>

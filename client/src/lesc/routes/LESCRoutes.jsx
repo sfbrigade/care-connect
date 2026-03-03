@@ -29,6 +29,7 @@ function LESCRoutes () {
       <Route path='custody/:id/subject' element={<SubjectForm />} />
       <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
+      <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />
       <Route path='care' element={<Care />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>

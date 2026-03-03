@@ -4,6 +4,18 @@ import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
 
+function assertCareSubjectRedaction (subject) {
+  assert.ok(subject);
+  assert.strictEqual(subject.middleInitial, null);
+  assert.strictEqual(subject.driverLicense, null);
+  assert.strictEqual(subject.addressLine1, null);
+  assert.strictEqual(subject.addressLine2, null);
+  assert.strictEqual(subject.city, null);
+  assert.strictEqual(subject.state, null);
+  assert.strictEqual(subject.postalCode, null);
+  assert.strictEqual(subject.localId, null);
+}
+
 test('/api/deflections', async (t) => {
   const app = await build(t);
   const { prisma } = app;
@@ -87,6 +99,62 @@ test('/api/deflections', async (t) => {
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 0);
     });
+
+    await t.test('redacts restricted subject fields for care users', async () => {
+      const response = await app.inject()
+        .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=READY_FOR_INTAKE')
+        .headers(careUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(Array.isArray(data));
+      assert.deepStrictEqual(data.length, 1);
+      assert.deepStrictEqual(data[0].subject.firstName, 'Test');
+      assert.deepStrictEqual(data[0].subject.lastName, 'Client3');
+      assert.ok(data[0].subject.dateOfBirth);
+      assert.deepStrictEqual(data[0].subject.sex, 'FEMALE');
+      assert.deepStrictEqual(data[0].subject.race, 'HISPANIC');
+      assertCareSubjectRedaction(data[0].subject);
+    });
+
+    await t.test('does not redact subject fields for field users', async () => {
+      const response = await app.inject().get('/api/deflections?active=true').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      const holdWithSubject = data.find(d => d.subject);
+      assert.ok(holdWithSubject);
+      assert.deepStrictEqual(holdWithSubject.subject.addressLine1, '123 Test St');
+      assert.deepStrictEqual(holdWithSubject.subject.driverLicense, 'DL123');
+      assert.deepStrictEqual(holdWithSubject.subject.localId, 'SF-123');
+    });
+  });
+
+  await t.test('GET /:id', async (t) => {
+    await t.test('returns a single deflection for the owner', async () => {
+      const response = await app.inject().get('/api/deflections/4').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.id, 4);
+      assert.deepStrictEqual(data.subject.addressLine1, '123 Test St');
+      assert.deepStrictEqual(data.subject.driverLicense, 'DL123');
+      assert.deepStrictEqual(data.subject.localId, 'SF-123');
+    });
+
+    await t.test('redacts restricted subject fields for care users', async () => {
+      const response = await app.inject().get('/api/deflections/4').headers(careUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subject.firstName, 'Test');
+      assert.deepStrictEqual(data.subject.lastName, 'Client');
+      assert.deepStrictEqual(data.subject.sex, 'MALE');
+      assert.deepStrictEqual(data.subject.race, 'WHITE');
+      assertCareSubjectRedaction(data.subject);
+    });
+
+    await t.test('forbids reading another field user deflection', async () => {
+      const response = await app.inject().get('/api/deflections/4').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
   });
 
   await t.test('PATCH /:id', async (t) => {
@@ -141,6 +209,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subjectStatus, 'ADMITTED');
       assert.ok(data.admittedAt);
       assert.ok(data.admittedById);
+      assertCareSubjectRedaction(data.subject);
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({

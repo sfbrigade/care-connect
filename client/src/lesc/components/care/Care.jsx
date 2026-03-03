@@ -4,7 +4,7 @@ import { ActionIcon, Box, Button, Container, Divider, Group, SegmentedControl, S
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconChevronUp, IconScan } from '@tabler/icons-react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
@@ -30,6 +30,7 @@ function groupByStatus (deflections) {
 }
 
 function Care () {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'not-in-custody' ? 'not-in-custody' : 'in-custody';
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
@@ -151,7 +152,15 @@ function Care () {
                     {!isCollapsed && (
                       <Stack gap='sm'>
                         {items.map(d => (
-                          <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                          <CareCard
+                            key={d.id}
+                            deflection={d}
+                            highlighted={String(d.id) === highlightedId}
+                            onViewDetails={() => {
+                              window.sessionStorage.setItem('careTab', tab);
+                              navigate(`/care/${d.id}`);
+                            }}
+                          />
                         ))}
                         {items.length === 0 && status !== 'IN_CHAIR' && (
                           <Text c='dimmed' size='sm'>None</Text>
@@ -195,7 +204,15 @@ function Care () {
                   )}
 
                   {notInCustodyDeflections.map(d => (
-                    <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                    <CareCard
+                      key={d.id}
+                      deflection={d}
+                      highlighted={String(d.id) === highlightedId}
+                      onViewDetails={() => {
+                        window.sessionStorage.setItem('careTab', tab);
+                        navigate(`/care/${d.id}`);
+                      }}
+                    />
                   ))}
                 </>
               )}
