@@ -8,7 +8,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import { isAndroid, isIOS } from '@/utils/platform';
 
-import iosKeyboardHint from '@/assets/images/ios-keyboard-dictation-hint.png';
+import iosKeyboardHint from '@/assets/images/ios-keyboard-dictation-hint.webp';
 
 const micButtonStyle = {
   position: 'absolute',
