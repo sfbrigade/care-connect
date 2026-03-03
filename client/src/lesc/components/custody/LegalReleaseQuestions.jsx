@@ -8,6 +8,7 @@ import { DateTime } from 'luxon';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
 import { IconArrowLeft } from '@tabler/icons-react';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';
@@ -31,6 +32,7 @@ function LegalReleaseQuestions () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const backTo = searchParams.get('from') === 'detail'
     ? `/custody/${id}`
     : '/custody';
@@ -39,6 +41,9 @@ function LegalReleaseQuestions () {
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
+  const [medicalExitDestination, setMedicalExitDestination] = useState(null);
+
+  const isMedicalRelease = releaseReason === 'medical_issue';
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -64,10 +69,27 @@ function LegalReleaseQuestions () {
   });
 
   const releaseMutation = useMutation({
-    mutationFn: () => Api.deflections.release(id),
+    mutationFn: () => {
+      const payload = {
+        releaseReason: releaseReason === 'medical_issue'
+          ? 'MEDICAL_ISSUE'
+          : (releaseReason === 'other' ? 'OTHER' : 'SOBERED'),
+      };
+
+      if (isMedicalRelease) {
+        payload.exitDestination = medicalExitDestination === 'hospital' ? 'HOSPITAL' : 'OTHER';
+      }
+
+      return Api.deflections.release(id, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      if (isMedicalRelease) {
+        showToast('Exit recorded', 'success', 4000, 'Person now appears in Exited facility under Not in custody (last 24 hours).');
+        navigate(backTo);
+        return;
+      }
       window.sessionStorage.setItem(RELEASE_TOAST_KEY, JSON.stringify({
         variant: 'success',
         title: 'Person legally released',
@@ -161,6 +183,22 @@ function LegalReleaseQuestions () {
                 <Chip value='other'>Other (please specify)</Chip>
               </Stack>
             </Chip.Group>
+            {isMedicalRelease && (
+              <>
+                <Text size='lg' fz={24} lh='32px'>
+                  This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
+                </Text>
+                <Stack gap='sm'>
+                  <Text fw={600} size='lg'>Exit destination<Text span c='red.6'>*</Text></Text>
+                  <Chip.Group value={medicalExitDestination} onChange={setMedicalExitDestination}>
+                    <Group gap='sm'>
+                      <Chip value='hospital'>Hospital</Chip>
+                      <Chip value='other'>Other</Chip>
+                    </Group>
+                  </Chip.Group>
+                </Stack>
+              </>
+            )}
             {releaseReason === 'other' && (
               <Textarea
                 value={otherReason}
@@ -186,9 +224,13 @@ function LegalReleaseQuestions () {
                 releaseMutation.mutate();
               }}
               loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
-              disabled={releaseReason !== 'sobered'}
+              disabled={
+                !releaseReason ||
+                (releaseReason === 'medical_issue' && !medicalExitDestination) ||
+                (releaseReason !== 'sobered' && releaseReason !== 'medical_issue')
+              }
             >
-              Confirm release
+              {isMedicalRelease ? 'Confirm release and exit' : 'Confirm release'}
             </Button>
           </Group>
           <Box h={8} />

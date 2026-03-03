@@ -330,8 +330,8 @@ const Api = {
     exit (id, data) {
       return instance.post(`/api/deflections/${id}/exit`, data).catch(handleError);
     },
-    release (id) {
-      return instance.post(`/api/deflections/${id}/release`);
+    release (id, data = {}) {
+      return instance.post(`/api/deflections/${id}/release`, data);
     },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);

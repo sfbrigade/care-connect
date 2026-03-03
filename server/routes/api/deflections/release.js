@@ -13,6 +13,22 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
+const ReleaseReasonEnum = z.enum([
+  'SOBERED',
+  'MEDICAL_ISSUE',
+  'OTHER',
+]);
+
+const ExitDestinationEnum = z.enum([
+  'HOSPITAL',
+  'OTHER',
+]);
+
+const EXIT_DESTINATION_DEFS = {
+  HOSPITAL: { id: 'hospital', name: 'Hospital' },
+  OTHER: { id: 'other', name: 'Other' },
+};
+
 export default async function (fastify, opts) {
   fastify.post('/:id/release',
     {
@@ -22,6 +38,10 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.coerce.number(),
         }),
+        body: z.object({
+          releaseReason: ReleaseReasonEnum.optional(),
+          exitDestination: ExitDestinationEnum.optional(),
+        }).optional(),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -32,6 +52,18 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
+      const releaseReason = request.body?.releaseReason || 'SOBERED';
+      const exitDestination = request.body?.exitDestination || null;
+      const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+
+      if (isMedicalRelease && !exitDestination) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'exitDestination',
+            message: 'Exit destination is required for medical release.',
+          }],
+        });
+      }
 
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -72,18 +104,57 @@ export default async function (fastify, opts) {
           },
         });
 
+        if (isMedicalRelease) {
+          const destinationDef = EXIT_DESTINATION_DEFS[exitDestination];
+
+          await tx.deflectionExitDestination.upsert({
+            where: { id: destinationDef.id },
+            create: {
+              id: destinationDef.id,
+              name: destinationDef.name,
+              createdById: request.user.id,
+              updatedById: request.user.id,
+            },
+            update: {
+              name: destinationDef.name,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              exitDestinationId: destinationDef.id,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+        }
+
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
+            subjectStatus: isMedicalRelease
+              ? Deflection.SubjectStatus.EXITED
+              : Deflection.SubjectStatus.RELEASED,
             releasedAt: now,
             releasedById: request.user.id,
+            ...(isMedicalRelease
+              ? {
+                  exitedAt: now,
+                  exitedById: request.user.id,
+                  exitDestinationId: EXIT_DESTINATION_DEFS[exitDestination].id,
+                }
+              : {}),
             updatedAt: now,
           },
           include: {
             subject: true,
             deflectionDetails: true,
             propertyPhotos: true,
+            exitDestination: true,
           },
         });
 
