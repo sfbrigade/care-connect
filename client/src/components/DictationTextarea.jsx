@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActionIcon, Anchor, Box, Image, Modal, Stack, Text, Textarea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconMicrophone, IconPlayerStop } from '@tabler/icons-react';
@@ -53,29 +53,59 @@ export default function DictationTextarea ({ form, field, ...textareaProps }) {
 function AndroidDictation ({ form, field, ...textareaProps }) {
   const { showToast } = useToast();
 
-  const appendTranscript = useCallback((transcript) => {
-    const current = form.getValues()[field] || '';
-    const separator = current && !current.endsWith(' ') ? ' ' : '';
-    form.setFieldValue(field, current + separator + transcript);
-  }, [form, field]);
+  // The form uses mode: 'uncontrolled', so getInputProps returns defaultValue
+  // (not value). Strip both plus onChange so we can fully control the textarea.
+  const { value, onChange: formOnChange, defaultValue, ...safeProps } = textareaProps;
+
+  const [localValue, setLocalValue] = useState(() => form.getValues()[field] ?? '');
 
   const handleError = useCallback((message) => {
     showToast(message, 'error');
   }, [showToast]);
 
-  const { isListening, isSupported, start, stop } = useSpeechRecognition({
-    onResult: appendTranscript,
+  const { isListening, isSupported, transcript, resetTranscript, start, stop } = useSpeechRecognition({
     onError: handleError,
   });
+
+  // When recognition ends and there's a transcript, commit it to local value
+  // and form state, then clear the hook's transcript. Running in useEffect
+  // (after render) avoids the "cannot update component while rendering" error.
+  useEffect(() => {
+    if (!isListening && transcript) {
+      const current = localValue;
+      const separator = current && !current.endsWith(' ') ? ' ' : '';
+      const committed = current + separator + transcript;
+      setLocalValue(committed);
+      form.setFieldValue(field, committed);
+      resetTranscript();
+    }
+  }, [isListening, transcript, localValue, form, field, resetTranscript]);
 
   if (!isSupported) {
     return <Textarea {...textareaProps} />;
   }
 
+  // Always include transcript in display — this avoids any flash when
+  // recognition ends, since transcript is preserved until we consume it.
+  const displayValue = transcript
+    ? localValue + (localValue && !localValue.endsWith(' ') ? ' ' : '') + transcript
+    : localValue;
+
+  function handleChange (e) {
+    if (!isListening) {
+      const val = e.currentTarget.value;
+      setLocalValue(val);
+      form.setFieldValue(field, val);
+    }
+  }
+
   return (
     <Box pos='relative'>
       <Textarea
-        {...textareaProps}
+        {...safeProps}
+        value={displayValue}
+        onChange={handleChange}
+        readOnly={isListening}
         styles={{ input: textareaInputStyle }}
       />
       <ActionIcon
