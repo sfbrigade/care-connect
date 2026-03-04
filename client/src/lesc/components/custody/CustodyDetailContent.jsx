@@ -16,6 +16,7 @@ import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import DeflectionStatusChip from '../DeflectionStatusChip';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
+import { getCareStatusChip } from './careStatusChipUtils';
 import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import ExitToJailModal from './ExitToJailModal';
@@ -48,6 +49,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isLegallyReleased || isExited;
   const custodyStatusChip = getCustodyStatusChip(deflection);
+  const careStatusChip = getCareStatusChip({ deflection, careFooterState });
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -154,6 +156,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Group>
           {!isCareView && (
             <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+          )}
+          {isCareView && (
+            <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
           )}
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
