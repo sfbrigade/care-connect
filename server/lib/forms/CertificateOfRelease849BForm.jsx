@@ -27,8 +27,8 @@ function Field ({ value, width, label }) {
   const valueStyle = width ? { minWidth: width } : { flex: '1' };
   return (
     <span className='field'>
-      <span className='field__value' style={valueStyle}>{value || ''}</span>
-      {label && <span className='field__label'>{label}</span>}
+      <span className='value' style={valueStyle}>{value || ''}</span>
+      {label && <span className='label'>{label}</span>}
     </span>
   );
 }
@@ -40,8 +40,8 @@ function DateField ({ month, date, year, time }) {
   const showTime = time !== undefined && time !== null && time !== '';
   return (
     <span className='date-field'>
-      <span className='date-field__value'>{value}</span>
-      <span className='date-field__labels'>
+      <span className='value'>{value}</span>
+      <span className='labels'>
         <span>Month</span>
         <span>Date</span>
         <span>Year</span>
@@ -50,6 +50,32 @@ function DateField ({ month, date, year, time }) {
     </span>
   );
 }
+
+function Header () {
+  return (
+    <header>
+      Care<span style={{ color: '#888' }}>Connect</span> <span style={{ fontWeight: 'bold', color: '#bbb' }}>RESET</span>
+    </header>
+  );
+}
+
+// TODO: inject the css in FormContainer so it's shared across forms
+
+const pageMarginX = '.75in';
+const pageMarginY = '.5in';
+const pageCSS = `
+  @page {
+    size: letter;
+    margin: ${pageMarginY} ${pageMarginX};
+  }
+  
+  .form-container {
+    --page-margin-top: ${pageMarginY};
+    --page-margin-right: ${pageMarginX};
+    --page-margin-bottom: ${pageMarginY};
+    --page-margin-left: ${pageMarginX};
+  }
+`;
 
 export default function CertificateOfRelease849BForm ({ data = {} }) {
   const {
@@ -68,26 +94,39 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
   return (
     <>
       {/* eslint-disable-next-line react/no-danger */}
+      <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
+      {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className='page'>
+        <Header />
+
         <h1 className='title'>
-          SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
+          San Francisco Sheriff's Department Certificate of Release
         </h1>
 
         {/* ── Paragraph 1: detention ── */}
-        <p className='para'>
+        <p>
           As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975,
-          ch.1117), I hereby certify that the taking into custody of{' '}
-          <Field value={subjectName} label="Subject's Name" />{' '}
-          on{' '}
-          <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
-          at{' '}
-          <Field value={detentionTime} width='55pt' label='Time' />{' '}
-          hours by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
+          ch.1117), I hereby certify that the taking into custody
+          <span className='field-block'>
+            <span>of{' '}
+              <Field value={subjectName} label="Subject's Name" />{' '}
+            </span>
+            <span>
+              on{' '}
+              <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
+            </span>
+            <span>
+              at{' '}
+              <Field value={detentionTime} width='55pt' label='Time' />{' '}
+              hours
+            </span>
+          </span>
+          by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
         </p>
 
         {/* ── Paragraph 2: release ── */}
-        <p className='para' style={{ marginTop: '10pt' }}>
+        <p style={{ marginTop: '2em' }}>
           <Field value={subjectName} label="Subject's Name" />{' '}
           was released on{' '}
           <DateField month={release.month} date={release.date} year={release.year} time={releaseTime} />{' '}
@@ -95,39 +134,37 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
         </p>
 
         {/* ── Legal text ── */}
-        <div className='legal-block'>
-          <p>
-            paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
-            Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 - pertinent
-            portions of which appear on the reverse of this certificate.
-          </p>
-        </div>
+        <blockquote>
+          paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
+          Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 - pertinent
+          portions of which appear on the reverse of this certificate.
+        </blockquote>
 
         {/* ── Signature section ── */}
         <div className='sig-section'>
           <div className='sig-row'>
-            <span className='sig-row__label'>Deputy&apos;s Rank, Name &amp; Star#</span>
-            <span className='sig-row__line'>{deputyRankNameStar}</span>
-            <span className='sig-row__unit-label'>Unit Identifier:</span>
-            <span className='sig-row__unit-line'>{unitIdentifier}</span>
+            <span className='label'>Deputy&apos;s Rank, Name &amp; Star#</span>
+            <span className='line'>{deputyRankNameStar}</span>
+            <span className='unit-label'>Unit Identifier:</span>
+            <span className='unit-line'>{unitIdentifier}</span>
           </div>
-          <div className='sig-print-label'>Print</div>
+          <div className='print-label'>Print</div>
 
           <div className='sig-row'>
-            <span className='sig-row__label'>Deputy&apos;s Signature &amp; Star#</span>
-            <span className='sig-row__line' />
+            <span className='label'>Deputy&apos;s Signature &amp; Star#</span>
+            <span className='line' />
           </div>
         </div>
 
         {/* ── Footer ── */}
-        <div className='footer'>
-          <span>White to Citizen</span>
-          <span>Canary to Central Records &amp; Warrants Unit</span>
-          <span className='footer__right'>
-            Pink to Incident Report<br />
-            Updated 04-22-2019
+        <footer>
+          <span>
+            Generated {new Date().toLocaleString('en-US', { timeZone: FORM_TIMEZONE, hour12: false })}
           </span>
-        </div>
+          <span className='right'>
+            Updated 4/22/2019
+          </span>
+        </footer>
       </div>
     </>
   );

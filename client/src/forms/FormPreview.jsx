@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Center, Loader } from '@mantine/core';
@@ -20,9 +21,37 @@ async function fetchFormData (formId, deflectionId) {
   return response.json();
 }
 
+// Natural page dimensions: 8.5in × 11in at 96 dpi
+const PAGE_WIDTH = 816;
+
 export default function FormPreview () {
   const { formId, deflectionId } = useParams();
   const FormComponent = FORM_REGISTRY[formId];
+
+  // wrapperRef measures available width; pageRef tracks the page's natural height.
+  // Both are needed because CSS transform doesn't affect layout flow, so we must
+  // explicitly size the wrapper to prevent it from collapsing around scaled content.
+  const wrapperRef = useRef(null);
+  const pageRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const [pageHeight, setPageHeight] = useState(0);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const page = pageRef.current;
+    if (!wrapper || !page) return;
+
+    const wrapperRO = new ResizeObserver(([entry]) => {
+      setScale(Math.min(1, entry.contentRect.width / PAGE_WIDTH));
+    });
+    const pageRO = new ResizeObserver(([entry]) => {
+      setPageHeight(entry.contentRect.height);
+    });
+
+    wrapperRO.observe(wrapper);
+    pageRO.observe(page);
+    return () => { wrapperRO.disconnect(); pageRO.disconnect(); };
+  }, []);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['form-data', formId, deflectionId],
@@ -58,24 +87,32 @@ export default function FormPreview () {
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#e0e0e0',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
       padding: '24px',
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '816px',  // 8.5in at 96dpi
-        minHeight: '1056px', // 11in at 96dpi
-        backgroundColor: '#fff',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-        // Mirror the @page margins so the inner content area is 720px —
-        // the same as Puppeteer's print content area (8.5in - 0.5in - 0.5in).
-        padding: '48px 48px 62px 48px', // 0.5in 0.5in 0.65in 0.5in
-      }}>
-        <FormContainer standalone={false}>
-          <FormComponent data={data} />
-        </FormContainer>
+      {/* Wrapper: constrains available width and reserves space for the scaled page */}
+      <div
+        ref={wrapperRef}
+        style={{
+          maxWidth: PAGE_WIDTH,
+          margin: '0 auto',
+          height: pageHeight * scale,
+        }}
+      >
+        {/* Page: rendered at natural size, then scaled down to fit the wrapper */}
+        <div
+          ref={pageRef}
+          style={{
+            width: PAGE_WIDTH,
+            backgroundColor: '#fff',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+            transformOrigin: 'top left',
+            transform: `scale(${scale})`,
+          }}
+        >
+          <FormContainer standalone={false}>
+            <FormComponent data={data} />
+          </FormContainer>
+        </div>
       </div>
     </div>
   );
