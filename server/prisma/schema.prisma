@@ -121,6 +121,8 @@ enum SubjectStatusEnum {
   IN_CHAIR
   RELEASED
   EXITED
+  DEATH_IN_FACILITY
+  DEATH_IN_CUSTODY
 }
 
 model Organization {

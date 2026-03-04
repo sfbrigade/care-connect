@@ -21,6 +21,7 @@ test('/api/deflections', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
+  const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
 
   await t.test('POST /', async (t) => {
@@ -277,6 +278,105 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(updated.subjectStatus, 'FAILED_INTAKE');
       assert.ok(updated.rejectedAt);
       assert.ok(updated.rejectedById);
+    });
+  });
+
+  await t.test('POST /:id/record-death', async (t) => {
+    await t.test('records death in custody and releases a hold for pre-intake statuses', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'READY_FOR_INTAKE',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/record-death`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_CUSTODY');
+      assert.deepStrictEqual(data.releaseReasonId, 'death-in-custody');
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_CUSTODY');
+      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death-in-custody');
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records death in facility for legally released status and does not change bed counts', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 4, available: 4 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'RELEASED',
+          releasedAt: new Date(),
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/record-death`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_FACILITY');
+      assert.deepStrictEqual(data.releaseReasonId, 'death-in-facility');
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_FACILITY');
+      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death-in-facility');
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.available, 4);
+
+      const custodyListResponse = await app.inject()
+        .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED')
+        .headers(custodyUserHeaders);
+      assert.deepStrictEqual(custodyListResponse.statusCode, StatusCodes.OK);
+      const listData = JSON.parse(custodyListResponse.body);
+      assert.ok(Array.isArray(listData));
+      assert.ok(!listData.some(d => d.id === testDeflection.id));
+    });
+
+    await t.test('returns conflict when status is not eligible for death recording', async () => {
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: { subjectStatus: 'DETAINED' },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/4/record-death')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     });
   });
 

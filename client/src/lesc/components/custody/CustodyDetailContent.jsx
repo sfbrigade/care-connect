@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
@@ -14,10 +15,12 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
+import RecordDeathModal from './RecordDeathModal';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
+  const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -28,10 +31,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
   const showStartLegalReleasePrimary = !isAwaitingSafetyCheck && !isReadyForIntake;
   const showOverflowStartLegalRelease = isAwaitingSafetyCheck;
+  const showSingleOverflowButton = isReadyForIntake || isLegallyReleased;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -43,6 +48,21 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
     onError: () => {
       showToast('Safety check not saved. Please try again.', 'error');
+    },
+  });
+
+  const recordDeathMutation = useMutation({
+    mutationFn: () => Api.deflections.recordDeath(deflection.id),
+    onSuccess: () => {
+      setRecordDeathModalOpened(false);
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Death recorded', 'success', 4000, 'Death recorded. All associated holds or chairs have been released.');
+      navigate('/custody');
+    },
+    onError: () => {
+      showToast('Couldn\'t record death', 'error', 4000, 'Please check your connection and try again.');
     },
   });
 
@@ -284,7 +304,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              {isReadyForIntake
+              {showSingleOverflowButton
                 ? (
                   <Menu
                     position='top-start'
@@ -303,21 +323,25 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       </Button>
                     </Menu.Target>
                     <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                      >
-                        Start legal release
-                      </Menu.Item>
-                      <Menu.Item
-                        leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
-                      >
-                        Record exit to jail
-                      </Menu.Item>
+                      {!isLegallyReleased && (
+                        <>
+                          <Menu.Item
+                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                          >
+                            Start legal release
+                          </Menu.Item>
+                          <Menu.Item
+                            leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
+                          >
+                            Record exit to jail
+                          </Menu.Item>
+                        </>
+                      )}
                       <Menu.Item
                         leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => showToast('Record death flow is not yet available.', 'warning')}
+                        onClick={() => setRecordDeathModalOpened(true)}
                       >
                         Record death
                       </Menu.Item>
@@ -362,7 +386,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </Menu.Item>
                         <Menu.Item
                           leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => showToast('Record death flow is not yet available.', 'warning')}
+                          onClick={() => setRecordDeathModalOpened(true)}
                         >
                           Record death
                         </Menu.Item>
@@ -390,6 +414,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         </Box>
       )}
       {(careFooterState.showFooter || showCustodyActionFooter) && <Box h='104px' />}
+      <RecordDeathModal
+        opened={recordDeathModalOpened}
+        onClose={() => setRecordDeathModalOpened(false)}
+        onConfirm={() => recordDeathMutation.mutate()}
+        loading={recordDeathMutation.isPending}
+      />
     </>
   );
 }
