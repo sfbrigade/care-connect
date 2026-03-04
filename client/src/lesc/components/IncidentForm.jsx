@@ -4,9 +4,11 @@ import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
 import {
   Button,
+  Chip,
   Container,
   Fieldset,
   Group,
+  Input,
   Loader,
   Stack,
   Text,
@@ -29,6 +31,7 @@ import { getCurrentLocationAddress } from '@/utils/geocoding';
 
 const initialValues = {
   cadNumber: '',
+  encounteredVia: '',
   addressLine1: '',
   addressLine2: '',
   city: '',
@@ -60,6 +63,9 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    validate: {
+      encounteredVia: value => (value ? null : 'Encountered via is required')
+    },
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
@@ -319,6 +325,20 @@ function IncidentForm () {
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
+              <Input.Wrapper
+                label={<>Encountered via<span>*</span></>}
+              >
+                <Chip.Group
+                  key={form.key('encounteredVia')}
+                  {...form.getInputProps('encounteredVia')}
+                >
+                  {form.errors.encounteredVia && <Text c='red' size='sm'>{form.errors.encounteredVia}</Text>}
+                  <Group gap='sm' mt='md'>
+                    <Chip value='ON_VIEW'>On view</Chip>
+                    <Chip value='DISPATCHED'>Dispatched</Chip>
+                  </Group>
+                </Chip.Group>
+              </Input.Wrapper>
               <Stack gap='xs'>
                 <TextInput
                   key={form.key('cadNumber')}

@@ -6,6 +6,7 @@ const IncidentSchema = z.object({
   city: z.string().check(z.minLength(2)),
   state: z.string().check(z.minLength(2)),
   arrestedAt: z.iso.datetime(),
+  encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']),
   cadNumber: z.string().check(z.minLength(2)),
   supervisorBadgeNumber: z.string().check(z.length(4)),
 });

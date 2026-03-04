@@ -18,6 +18,7 @@ test('Prisma Client Extensions', async (t) => {
       const incident = await prisma.incident.create({
         data: {
           facilityId,
+          encounteredVia: 'ON_VIEW',
           createdById: user.id,
           updatedById: user.id,
         },
