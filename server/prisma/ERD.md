@@ -368,6 +368,11 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String behavior "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
+    Boolean propertyReturned "❓"
+    String propertyReturnReason "❓"
+    String propertyReturnOtherReason "❓"
+    DateTime propertyReturnedAt "❓"
+    String propertyReturnedById "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
@@ -436,6 +441,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String releaseReasonId "❓"
     String otherReleaseReason "❓"
     String otherReleaseDestination "❓"
+    Boolean propertyReturned "❓"
+    String propertyReturnReason "❓"
+    String propertyReturnOtherReason "❓"
     String refusalReasonId "❓"
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
@@ -591,6 +599,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
@@ -655,6 +664,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
+    "Deflection" o|--|o "User" : "propertyReturnedBy"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"

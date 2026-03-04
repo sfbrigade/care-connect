@@ -438,6 +438,136 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/property-return', async (t) => {
+    async function createReleasedDeflection ({
+      subjectStatus = 'RELEASED',
+      property = 'SMALL',
+      propertyDetails = 'Black backpack',
+      propertyReturned = null,
+      propertyReturnReason = null,
+      propertyReturnOtherReason = null,
+    } = {}) {
+      return prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus,
+          property,
+          propertyDetails,
+          propertyReturned,
+          propertyReturnReason,
+          propertyReturnOtherReason,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          releasedAt: subjectStatus === 'RELEASED' ? new Date() : null,
+          releasedById: subjectStatus === 'RELEASED' ? '49acdf99-536f-49ac-8138-1c77e5087697' : null,
+        },
+      });
+    }
+
+    await t.test('records property returned as yes for a legally released person with property', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.propertyReturned, true);
+      assert.strictEqual(data.propertyReturnReason, null);
+      assert.strictEqual(data.propertyReturnOtherReason, null);
+      assert.ok(data.propertyReturnedAt);
+      assert.ok(data.propertyReturnedById);
+    });
+
+    await t.test('records property not returned with reason and otherReason', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: false, reason: 'OTHER', otherReason: 'Evidence hold' })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.propertyReturned, false);
+      assert.deepStrictEqual(data.propertyReturnReason, 'OTHER');
+      assert.deepStrictEqual(data.propertyReturnOtherReason, 'Evidence hold');
+      assert.ok(data.propertyReturnedAt);
+      assert.ok(data.propertyReturnedById);
+    });
+
+    await t.test('returns conflict with ALREADY_RECORDED when property return was already recorded', async () => {
+      const deflection = await createReleasedDeflection({
+        propertyReturned: true,
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'ALREADY_RECORDED');
+    });
+
+    await t.test('returns 422 when returned=false and reason is missing', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: false })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when reason is OTHER and otherReason is missing', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: false, reason: 'OTHER' })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns conflict when deflection is not legally released', async () => {
+      const deflection = await createReleasedDeflection({
+        subjectStatus: 'IN_CHAIR',
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'NOT_LEGALLY_RELEASED');
+    });
+
+    await t.test('returns conflict when no property is associated', async () => {
+      const deflection = await createReleasedDeflection({
+        property: null,
+        propertyDetails: null,
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ returned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'NO_ASSOCIATED_PROPERTY');
+    });
+  });
+
   await t.test('PUT /:id/subject', async (t) => {
     await t.test('creates a new subject for a deflection', async () => {
       const response = await app.inject().put('/api/deflections/2/subject').payload({
