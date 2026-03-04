@@ -1,0 +1,166 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
+import React from 'react';
+import { MantineProvider } from '@mantine/core';
+
+import CustodyCard from './CustodyCard';
+
+const { mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+  mockSafetyCheck: vi.fn(),
+  mockShowToast: vi.fn(),
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key) => key,
+  }),
+}));
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+vi.mock('../../../Api', () => ({
+  default: {
+    deflections: {
+      safetyCheck: mockSafetyCheck,
+    },
+  },
+}));
+
+vi.mock('../../../FacilityContext', () => ({
+  useFacilityContext: () => ({
+    facility: { id: 42 },
+  }),
+}));
+
+vi.mock('../../../components/ToastContext', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
+}));
+
+function buildDeflection (overrides = {}) {
+  return {
+    id: 123,
+    subjectStatus: 'AWAITING_INTAKE',
+    subject: {
+      firstName: 'John',
+      middleInitial: 'D',
+      lastName: 'Doe',
+      dateOfBirth: '1990-06-15',
+      sex: 'MALE',
+    },
+    ...overrides,
+  };
+}
+
+function renderCard (deflection) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/custody?tab=in-custody']}>
+          <CustodyCard deflection={deflection} highlighted={false} />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </MantineProvider>
+  );
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  window.sessionStorage.clear();
+  mockSafetyCheck.mockResolvedValue({ data: {} });
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('CustodyCard', () => {
+  it('shows View details and Mark complete for awaiting intake', () => {
+    renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
+
+    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark complete' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
+  });
+
+  it('shows intake-not-completed banner and legal release for failed intake', () => {
+    renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
+
+    expect(screen.getByText('Intake not completed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+  });
+
+  it('shows qr code and only View details for ready for intake', () => {
+    renderCard(buildDeflection({ subjectStatus: 'READY_FOR_INTAKE' }));
+
+    expect(screen.getByText('Transfer code: 123')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
+  });
+
+  it.each(['ADMITTED', 'IN_CHAIR', 'RELEASED'])(
+    'shows only View details for %s',
+    (status) => {
+      renderCard(buildDeflection({ subjectStatus: status }));
+
+      expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
+    }
+  );
+
+  it('shows no buttons for exited', () => {
+    renderCard(buildDeflection({ subjectStatus: 'EXITED' }));
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('navigates to details when View details is clicked', () => {
+    renderCard(buildDeflection({ subjectStatus: 'ADMITTED' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'View details' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/custody/123');
+    expect(window.sessionStorage.getItem('custodyScrollTarget')).toBe('123');
+    expect(window.sessionStorage.getItem('custodyTab')).toBe('in-custody');
+  });
+
+  it('navigates to legal release when Legal release is clicked', () => {
+    renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Legal release' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/custody/123/legal-release');
+  });
+
+  it('calls safety check mutation when Mark complete is clicked', async () => {
+    renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
+
+    await waitFor(() => {
+      expect(mockSafetyCheck).toHaveBeenCalledWith(123);
+    });
+  });
+});

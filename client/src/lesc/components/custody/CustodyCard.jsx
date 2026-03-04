@@ -4,11 +4,10 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 
-import Api from '@/Api';
-import { useFacilityContext } from '@/FacilityContext';
-import { useToast } from '@/components/ToastContext';
-import { calculateAge } from '@/utils/format';
-import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
+import Api from '../../../Api';
+import { useFacilityContext } from '../../../FacilityContext';
+import { useToast } from '../../../components/ToastContext';
+import { calculateAge } from '../../../utils/format';
 
 function CustodyCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
@@ -30,8 +29,10 @@ function CustodyCard ({ deflection, highlighted }) {
   }
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
-  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
-  const canStartLegalRelease = isFailedIntake || isInChair;
+  const showViewDetails = deflection.subjectStatus !== 'EXITED';
+  const showMarkComplete = deflection.subjectStatus === 'AWAITING_INTAKE';
+  const showLegalRelease = deflection.subjectStatus === 'FAILED_INTAKE';
+  const showQrCode = deflection.subjectStatus === 'READY_FOR_INTAKE';
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -45,20 +46,6 @@ function CustodyCard ({ deflection, highlighted }) {
     },
   });
 
-  function openCertificatePdf () {
-    const holdData = {
-      id: String(deflection.id),
-      client: deflection.subject,
-      incident: {},
-      createdAt: deflection.createdAt,
-      transferredAt: deflection.releasedAt,
-      createdBy: null,
-    };
-    const doc = generateCertificateOfReleasePDF(holdData);
-    const blobUrl = doc.output('bloburl');
-    window.open(blobUrl, '_blank');
-  }
-
   return (
     <Card
       bg='white'
@@ -71,16 +58,18 @@ function CustodyCard ({ deflection, highlighted }) {
       }}
     >
       <Stack gap='sm'>
-        {!isFailedIntake && (
-          <Text size='md' c='gray.6'>Hold {displayId}</Text>
-        )}
         {isFailedIntake && (
-          <Group gap={4} wrap='nowrap'>
-            <Text size='md' c='gray.6'>Hold {displayId}</Text>
-            <Text size='md' c='gray.5'>&middot;</Text>
-            <Text size='md' c='red.6'>Intake not completed</Text>
-          </Group>
+          <Text size='md' c='red.6'>Intake not completed</Text>
         )}
+        <Group gap={4} wrap='nowrap'>
+          <Text size='md' c='gray.6'>Hold {displayId}</Text>
+          {isFailedIntake && (
+            <>
+              <Text size='md' c='gray.5'>&middot;</Text>
+              <Text size='md' c='gray.6'>Pending safety check</Text>
+            </>
+          )}
+        </Group>
         <Box>
           <Title order={3}>{displayName}</Title>
           {subjectDetails.length > 0 && (
@@ -89,41 +78,35 @@ function CustodyCard ({ deflection, highlighted }) {
             </Text>
           )}
         </Box>
-        {deflection.subjectStatus === 'READY_FOR_INTAKE' && (
+        {showQrCode && (
           <Stack align='center' gap='xs'>
             <QRCodeSVG value={`${window.location.origin}/admit/${deflection.id}`} size={160} />
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}
         <Group wrap='nowrap' justify='flex-end'>
-          <Button
-            size='md'
-            variant='light'
-            onClick={() => {
-              window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
-              window.sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');
-              navigate(`/custody/${deflection.id}`);
-            }}
-          >
-            View details
-          </Button>
-          {deflection.subjectStatus === 'AWAITING_INTAKE' && (
+          {showViewDetails && (
+            <Button
+              size='md'
+              variant='light'
+              onClick={() => {
+                window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
+                window.sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');
+                navigate(`/custody/${deflection.id}`);
+              }}
+            >
+              View details
+            </Button>
+          )}
+          {showMarkComplete && (
             <Button size='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
           )}
-          {canStartLegalRelease && (
+          {showLegalRelease && (
             <Button
               size='md'
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Legal release
-            </Button>
-          )}
-          {deflection.subjectStatus === 'RELEASED' && (
-            <Button
-              size='md'
-              onClick={openCertificatePdf}
-            >
-              Print certificate
             </Button>
           )}
         </Group>
