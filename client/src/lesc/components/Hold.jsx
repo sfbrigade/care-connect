@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 
-function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
+function Hold({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -24,6 +24,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
       .filter(Boolean)
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
+  const isCompleted = deflection.status === 'COMPLETED';
   const [now, setNow] = useState(DateTime.now());
 
   let subjectAge;
@@ -48,6 +49,9 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidDeflection(deflection);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
+  const completedAt = deflection?.completedAt ?? deflection?.transferredAt;
+  const showFooter = isActive;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -80,7 +84,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
     return () => window.clearInterval(intervalId);
   }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
 
-  function cancelReasonMessage () {
+  function cancelReasonMessage() {
     if (deflection.cancelReasonId != null) {
       return `Cancelled at ${formatTime(deflection?.cancelledAt) || 'Unknown'} (${cancelReason?.name || 'unknown reason'})`;
     }
@@ -88,26 +92,32 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
 
   return (
     <Card bg='white' p='xl' withBorder>
-      <Stack gap='xl'>
+      <Stack gap='2xl'>
         <Stack gap='sm'>
           <Group gap='xs'>
             <Text size='md' c='gray.6'>Hold {displayId}</Text>
-            {!isNew && !isValid && !isCancelled && !isExpired && (
+            {hasIncompleteDetails && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='red.6'>Details incomplete</Text>
               </>
             )}
             {isCancelled && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
-                <Text size='md' c='yellow.7'>{cancelReasonMessage()}</Text>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='yellow.7'>Canceled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
               </>
             )}
             {isExpired && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='yellow.7'>Expired at {formatTime(deflection?.expiresAt)}</Text>
+              </>
+            )}
+            {isCompleted && completedAt && (
+              <>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='teal.5'>Completed at {formatTime(completedAt)}</Text>
               </>
             )}
           </Group>
@@ -124,12 +134,12 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}
-        {!(isNew && (isCancelled || isExpired)) && (
+        {showFooter && (
           <Group justify='space-between' wrap='nowrap'>
             {isActive && !isExpired && !isArrived
               ? (
                 <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-                )
+              )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
@@ -141,19 +151,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
             {!isNew && (isValid || isCancelled || isExpired) && (
-              <Group gap='sm' wrap='nowrap'>
-                <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
-                {(isCancelled || isExpired) && (deflection?.incidentId === incident?.id)
-                  ? (
-                    <Button
-                      size='md'
-                      onClick={reopenHold}
-                    >
-                      Reopen Hold
-                    </Button>
-                    )
-                  : ''}
-              </Group>
+              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
             )}
           </Group>
         )}
