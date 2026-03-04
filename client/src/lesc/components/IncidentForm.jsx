@@ -83,7 +83,7 @@ function IncidentForm () {
   });
 
   const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
-    queryKey: ['deflections', data?.id, 'all'],
+    queryKey: ['deflections', data?.id, 'active'],
     queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
     enabled: !!data?.id,
   });
@@ -179,9 +179,6 @@ function IncidentForm () {
       );
       await queryClient.removeQueries({
         queryKey: ['deflections', data?.id, 'active'],
-      });
-      await queryClient.removeQueries({
-        queryKey: ['deflections', data?.id, 'all'],
       });
       await queryClient.invalidateQueries({
         queryKey: ['deflections', facility.id, 'inactive'],
