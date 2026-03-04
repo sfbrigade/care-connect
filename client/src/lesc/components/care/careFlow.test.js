@@ -51,20 +51,35 @@ describe('Care flow unit tests', () => {
     expect(getCareExitBackTo({ fromDetail: false, id: '123', savedTab: 'in-custody' })).toBe('/care');
   });
 
-  it('builds care detail footer state for Start exit + overflow disabled rules', () => {
-    const careState = getCareDetailFooterState({
+  it('builds care detail footer state by status/action mode', () => {
+    const admittedState = getCareDetailFooterState({
       viewerMode: 'care',
-      deflection: { id: 55, subjectStatus: 'IN_CHAIR' },
+      deflection: { id: 55, subjectStatus: 'ADMITTED' },
     });
-    expect(careState).toEqual({
+    expect(admittedState).toEqual({
       showFooter: true,
-      overflowDisabled: true,
+      primaryLabel: 'Complete intake',
+      primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
 
+    const releasedState = getCareDetailFooterState({
+      viewerMode: 'care',
+      deflection: { id: 99, subjectStatus: 'RELEASED' },
+    });
+    expect(releasedState.showFooter).toBe(true);
+    expect(releasedState.primaryAction).toBe('start-exit');
+    expect(releasedState.startExitPath).toBe('/care/99/exit?from=detail');
+
+    const inChairState = getCareDetailFooterState({
+      viewerMode: 'care',
+      deflection: { id: 56, subjectStatus: 'IN_CHAIR' },
+    });
+    expect(inChairState.showFooter).toBe(false);
+
     const nonCareState = getCareDetailFooterState({
       viewerMode: 'custody',
-      deflection: { id: 55, subjectStatus: 'IN_CHAIR' },
+      deflection: { id: 55, subjectStatus: 'ADMITTED' },
     });
     expect(nonCareState.showFooter).toBe(false);
   });

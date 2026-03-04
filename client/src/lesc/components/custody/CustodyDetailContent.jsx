@@ -15,12 +15,14 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
+import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
+  const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const navigate = useNavigate();
@@ -86,6 +88,35 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
     onError: () => {
       showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const completeIntakeMutation = useMutation({
+    mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      setCompleteIntakeModalOpened(false);
+
+      if (variables.completed) {
+        showToast(
+          'Intake completed',
+          'success',
+          4000,
+          "Person moved to 'In-chair' for Sheriff's review."
+        );
+      } else {
+        showToast(
+          'Intake not completed',
+          'warning',
+          4000,
+          'Person moved back. Please review their status before release or exit.'
+        );
+      }
+    },
+    onError: () => {
+      showToast('Intake update not saved. Please try again.', 'error');
     },
   });
 
@@ -291,24 +322,21 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              <ActionIcon
-                variant='outline'
-                color='indigo'
-                radius='50%'
-                size={48}
-                disabled={careFooterState.overflowDisabled}
-                aria-label='More actions'
-                style={{ minWidth: 48, flex: '0 0 48px' }}
-              >
-                <IconDots size={24} />
-              </ActionIcon>
               <Button
                 color='indigo'
                 radius='xl'
                 size='lg'
-                onClick={() => navigate(careFooterState.startExitPath)}
+                onClick={() => {
+                  if (careFooterState.primaryAction === 'complete-intake') {
+                    setCompleteIntakeModalOpened(true);
+                    return;
+                  }
+                  if (careFooterState.primaryAction === 'start-exit') {
+                    navigate(careFooterState.startExitPath);
+                  }
+                }}
               >
-                Start exit
+                {careFooterState.primaryLabel}
               </Button>
             </Group>
           </Container>
@@ -452,6 +480,13 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setExitToJailModalOpened(false)}
         onConfirm={() => exitToJailMutation.mutate()}
         loading={exitToJailMutation.isPending}
+      />
+      <CompleteIntakeModal
+        opened={completeIntakeModalOpened}
+        onClose={() => setCompleteIntakeModalOpened(false)}
+        loading={completeIntakeMutation.isPending}
+        onConfirmCompleted={() => completeIntakeMutation.mutate({ completed: true })}
+        onConfirmNotCompleted={() => completeIntakeMutation.mutate({ completed: false })}
       />
     </>
   );
