@@ -14,7 +14,9 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
+import DeflectionStatusChip from '../DeflectionStatusChip';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
+import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
@@ -45,6 +47,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const custodyStatusChip = getCustodyStatusChip(deflection);
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -149,6 +152,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
             <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
+          {!isCareView && (
+            <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+          )}
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
               <Stack gap='md' align='center'>
