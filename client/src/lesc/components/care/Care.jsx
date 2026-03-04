@@ -24,8 +24,8 @@ const IN_CUSTODY_SECTIONS = [
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'STILL_ONSITE', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -234,7 +234,7 @@ function Care () {
 
           {tab === 'not-in-custody' && (
             <Stack gap='lg'>
-              {NOT_IN_CUSTODY_SECTIONS.map(({ status, label }, index) => {
+              {NOT_IN_CUSTODY_SECTIONS.map(({ status, label, description }, index) => {
                 const items = groupedNotInCustody[status] ?? [];
                 const isEmpty = isCareSectionCaretDisabled(items);
                 const isCollapsed = isEmpty ? false : collapsedSections[status];
@@ -245,6 +245,7 @@ function Care () {
                     <Group justify='space-between' align='flex-start' wrap='nowrap'>
                       <Box>
                         <Title order={3}>{label}: {items.length}</Title>
+                        {description && <Text c='gray.5' size='md'>{description}</Text>}
                       </Box>
                       <ActionIcon
                         variant='subtle'

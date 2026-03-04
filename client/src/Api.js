@@ -333,6 +333,9 @@ const Api = {
     release (id, data = {}) {
       return instance.post(`/api/deflections/${id}/release`, data);
     },
+    exitToJail (id) {
+      return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
+    },
     recordDeath (id) {
       return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);
     },

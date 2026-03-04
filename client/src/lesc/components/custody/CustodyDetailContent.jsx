@@ -15,11 +15,13 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
+import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
+  const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -63,6 +65,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
     onError: () => {
       showToast('Couldn\'t record death', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const exitToJailMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToJail(deflection.id),
+    onSuccess: () => {
+      setExitToJailModalOpened(false);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      navigate('/custody?tab=released');
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
     },
   });
 
@@ -333,7 +352,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           </Menu.Item>
                           <Menu.Item
                             leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
+                            onClick={() => setExitToJailModalOpened(true)}
                           >
                             Record exit to jail
                           </Menu.Item>
@@ -378,12 +397,14 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             Start legal release
                           </Menu.Item>
                         )}
-                        <Menu.Item
-                          leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
-                        >
-                          Record exit to jail
-                        </Menu.Item>
+                        {isReadyForIntake && (
+                          <Menu.Item
+                            leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => setExitToJailModalOpened(true)}
+                          >
+                            Record exit to jail
+                          </Menu.Item>
+                        )}
                         <Menu.Item
                           leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setRecordDeathModalOpened(true)}
@@ -419,6 +440,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setRecordDeathModalOpened(false)}
         onConfirm={() => recordDeathMutation.mutate()}
         loading={recordDeathMutation.isPending}
+      />
+      <ExitToJailModal
+        opened={exitToJailModalOpened}
+        onClose={() => setExitToJailModalOpened(false)}
+        onConfirm={() => exitToJailMutation.mutate()}
+        loading={exitToJailMutation.isPending}
       />
     </>
   );
