@@ -17,6 +17,8 @@ import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection } from '@/utils/validators';
+import DeflectionStatusChip from './DeflectionStatusChip';
+import { getSfpdDeflectionStatusChip } from './deflectionStatusChipUtils';
 
 function Deflection () {
   const { id } = useParams();
@@ -60,6 +62,7 @@ function Deflection () {
   const showFinishDetailsFooter = !!deflection && !detailsComplete && !isCustodyTransferred;
   const showCancelOnlyFooter = !!deflection && detailsComplete && !isCustodyTransferred;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
+  const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -160,6 +163,7 @@ function Deflection () {
             <Text c='gray.5' size='md'>•</Text>
             <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
+          <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
             <>
               <Group>
