@@ -9,6 +9,13 @@ const embeddedCss = `
     padding: 0;
   }
 `;
+//  @media screen {
+//    /* Cancel any per-form screen margins on .page — the FormPreview wrapper
+//       supplies equivalent padding so the inner content area matches the PDF. */
+//    .form-container .page {
+//      margin: 0;
+//    }
+//  }
 
 // In standalone mode we can use the global selector freely since nothing else is on the page.
 const standaloneCss = `

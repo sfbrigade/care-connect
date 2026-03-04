@@ -14,7 +14,13 @@
       "Bash(npm run build:forms:*)",
       "Bash(npm run lint:check:*)",
       "Bash(npm run lint:*)",
-      "Bash(docker compose restart:*)"
+      "Bash(docker compose restart:*)",
+      "Bash(docker compose -f C:/Projects/c4sf/CareConnect/care-connect/docker-compose.yml exec server bash -lc \"cd /app && npm run build:forms 2>&1\")",
+      "Bash(docker ps --format \"{{.Names}}\\\\t{{.Image}}\")",
+      "Bash(docker exec care-connect-server-1 bash -lc \"cd /app && npm run build:forms 2>&1\")",
+      "Bash(docker exec care-connect-server-1 bash -lc \"pwd && ls /\")",
+      "Bash(docker exec care-connect-server-1 bash -lc \"cd /opt/node/app && npm run build:forms 2>&1\")",
+      "Bash(docker exec care-connect-server-1 bash -lc \"cd /opt/node/app && ls && ls server/\")"
     ]
   }
 }

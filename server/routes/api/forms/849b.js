@@ -137,9 +137,10 @@ export default async function (fastify, opts) {
         });
       }
 
+      const cacheBust = `?t=${Date.now()}`;
       const [{ renderFormToHtml, renderToPdf }, { default: CertificateOfRelease849BForm }] = await Promise.all([
         import('#lib/pdf.js'),
-        import('../../../lib/forms/dist/CertificateOfRelease849BForm.js'),
+        import(`../../../lib/forms/dist/CertificateOfRelease849BForm.js${cacheBust}`),
       ]);
 
       const html = await renderFormToHtml(CertificateOfRelease849BForm, result.data);
