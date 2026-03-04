@@ -18,7 +18,7 @@ import { getCareDetailFooterState } from './careDetailFooterUtils';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
@@ -33,12 +33,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
+  const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
+  const isExited = deflection?.subjectStatus === 'EXITED';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
-  const showStartLegalReleasePrimary = !isAwaitingSafetyCheck && !isReadyForIntake;
-  const showOverflowStartLegalRelease = isAwaitingSafetyCheck;
-  const showSingleOverflowButton = isReadyForIntake || isLegallyReleased;
+  const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
+  const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
+  const showPrimaryPrintCertificate = isLegallyReleased || isExited;
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -323,7 +327,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              {showSingleOverflowButton
+              {showMoreActionsPrimaryOnly
                 ? (
                   <Menu
                     position='top-start'
@@ -334,30 +338,28 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   >
                     <Menu.Target>
                       <Button
+                        variant='outline'
                         color='indigo'
                         radius='xl'
                         size='lg'
+                        leftSection={<IconDots size={22} />}
                       >
                         More actions
                       </Button>
                     </Menu.Target>
                     <Menu.Dropdown>
-                      {!isLegallyReleased && (
-                        <>
-                          <Menu.Item
-                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                          >
-                            Start legal release
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => setExitToJailModalOpened(true)}
-                          >
-                            Record exit to jail
-                          </Menu.Item>
-                        </>
-                      )}
+                      <Menu.Item
+                        leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                        onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                      >
+                        Start legal release
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                        onClick={() => setExitToJailModalOpened(true)}
+                      >
+                        Record exit to jail
+                      </Menu.Item>
                       <Menu.Item
                         leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                         onClick={() => setRecordDeathModalOpened(true)}
@@ -369,50 +371,50 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   )
                 : (
                   <>
-                    <Menu
-                      position='top-start'
-                      shadow='sm'
-                      radius='lg'
-                      width={260}
-                      withinPortal
-                    >
-                      <Menu.Target>
-                        <ActionIcon
-                          variant='outline'
-                          color='indigo'
-                          radius='50%'
-                          size={48}
-                          aria-label='More actions'
-                          style={{ minWidth: 48, flex: '0 0 48px' }}
-                        >
-                          <IconDots size={24} />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        {showOverflowStartLegalRelease && (
-                          <Menu.Item
-                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                    {!isExited && (
+                      <Menu
+                        position='top-start'
+                        shadow='sm'
+                        radius='lg'
+                        width={260}
+                        withinPortal
+                      >
+                        <Menu.Target>
+                          <ActionIcon
+                            variant='outline'
+                            color='indigo'
+                            radius='50%'
+                            size={48}
+                            aria-label='More actions'
+                            style={{ minWidth: 48, flex: '0 0 48px' }}
                           >
-                            Start legal release
-                          </Menu.Item>
-                        )}
-                        {isReadyForIntake && (
+                            <IconDots size={24} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          {(isAwaitingSafetyCheck || isFailedIntake) && (
+                            <Menu.Item
+                              leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                            >
+                              Start legal release
+                            </Menu.Item>
+                          )}
                           <Menu.Item
                             leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                             onClick={() => setExitToJailModalOpened(true)}
                           >
                             Record exit to jail
                           </Menu.Item>
-                        )}
-                        <Menu.Item
-                          leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => setRecordDeathModalOpened(true)}
-                        >
-                          Record death
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
+                          <Menu.Item
+                            leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => setRecordDeathModalOpened(true)}
+                          >
+                            Record death
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    )}
                     <Button
                       color='indigo'
                       radius='xl'
@@ -422,11 +424,15 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           safetyCheckMutation.mutate();
                           return;
                         }
-                        navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                        if (showPrimaryStartLegalRelease) {
+                          navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                        }
                       }}
-                      loading={safetyCheckMutation.isPending}
+                      loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
                     >
-                      {showStartLegalReleasePrimary ? 'Start legal release' : 'Complete safety check'}
+                      {isAwaitingSafetyCheck
+                        ? 'Complete safety check'
+                        : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
                     </Button>
                   </>
                   )}
