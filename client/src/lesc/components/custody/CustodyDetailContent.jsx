@@ -276,11 +276,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       </Container>
       {careFooterState.showFooter && (
         <Box
+          className='action-footer-gradient'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          bg='gray.0'
           pt='md'
           pb='xl'
           style={{ zIndex: 10 }}
@@ -312,11 +312,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       )}
       {showCustodyActionFooter && (
         <Box
+          className='action-footer-gradient'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          bg='gray.0'
           pt='md'
           pb='xl'
           style={{ zIndex: 10 }}

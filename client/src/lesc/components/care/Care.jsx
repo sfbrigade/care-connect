@@ -304,11 +304,11 @@ function Care () {
       </Container>
 
       <Box
+        className='action-footer-gradient'
         pos='fixed'
         left={0}
         right={0}
         bottom={0}
-        bg='gray.0'
         pt='md'
         pb='xl'
         style={{ zIndex: 10 }}

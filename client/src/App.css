@@ -25,3 +25,7 @@ a {
     opacity: 1;
   }
 }
+
+.action-footer-gradient {
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0.00) 0%, #F8F9FA 100%);
+}

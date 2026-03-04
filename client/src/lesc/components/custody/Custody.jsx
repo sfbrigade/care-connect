@@ -246,9 +246,9 @@ function Custody () {
       </Container>
       {tab === 'in-custody' && (
         <Box
+          className='action-footer-gradient'
           pos='sticky'
           bottom={0}
-          bg='gray.0'
           pt='md'
           pb='xl'
           style={{ zIndex: 10 }}
