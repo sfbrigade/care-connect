@@ -1,7 +1,7 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 
-import { calculateAge } from '@/utils/format';
+import { calculateAge } from '../../../utils/format';
 import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
@@ -19,7 +19,7 @@ function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, o
   }
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
-  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
+  const isReleased = deflection.subjectStatus === 'RELEASED';
   const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
@@ -54,8 +54,8 @@ function CareCard ({ deflection, highlighted, onViewDetails, onCompleteIntake, o
           {isInMedicalIntake && (
             <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
           )}
-          {isInChair && (
-            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Complete exit' : 'Start exit'}</Button>
+          {isReleased && (
+            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
           )}
         </Group>
       </Stack>

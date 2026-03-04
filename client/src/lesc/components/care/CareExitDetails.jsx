@@ -15,7 +15,6 @@ import { getCareExitBackTo, getCareExitSuccessPayload } from './careFlowUtils';
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
 const EXIT_DESTINATION_OPTIONS = [
-  { value: 'JAIL', label: 'Jail' },
   { value: 'HOSPITAL', label: 'Hospital' },
   { value: 'STREET', label: 'Street' },
   { value: 'HOME', label: 'Home' },

@@ -44,13 +44,21 @@ function groupByStatus (deflections) {
 }
 
 function groupReleasedByStatus (deflections) {
+  function isTransferredToJailWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'jail' &&
+      !deflection?.releasedAt
+    );
+  }
+
   return {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId !== 'jail'
+      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId === 'jail'
+      d => isTransferredToJailWithoutLegalRelease(d)
     ),
   };
 }

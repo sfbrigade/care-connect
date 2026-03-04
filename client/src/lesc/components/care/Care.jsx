@@ -13,7 +13,7 @@ import { formatTime } from '@/utils/format';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
-import { groupCareNotInCustodySections, isCareSectionCaretDisabled } from './careFlowUtils';
+import { groupCareNotInCustodySections, hasPersistedExitDetails, isCareSectionCaretDisabled } from './careFlowUtils';
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
@@ -46,6 +46,10 @@ function hasSavedExitDraft (deflectionId) {
   } catch {
     return false;
   }
+}
+
+function hasSavedOrPersistedExitDetails (deflection) {
+  return hasSavedExitDraft(deflection.id) || hasPersistedExitDetails(deflection);
 }
 
 function Care () {
@@ -213,10 +217,10 @@ function Care () {
                             deflection={d}
                             highlighted={String(d.id) === highlightedId}
                             onCompleteIntake={() => setIntakeModalDeflection(d)}
-                            hasExitDraft={hasSavedExitDraft(d.id)}
+                            hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                             onExitDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
-                              navigate(`/care/${d.id}/exit`);
+                              navigate(`/care/${d.id}/exit?from=detail`);
                             }}
                             onViewDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
@@ -276,10 +280,10 @@ function Care () {
                             deflection={d}
                             highlighted={String(d.id) === highlightedId}
                             onCompleteIntake={() => setIntakeModalDeflection(d)}
-                            hasExitDraft={hasSavedExitDraft(d.id)}
+                            hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                             onExitDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
-                              navigate(`/care/${d.id}/exit`);
+                              navigate(`/care/${d.id}/exit?from=detail`);
                             }}
                             onViewDetails={() => {
                               window.sessionStorage.setItem('careTab', tab);
