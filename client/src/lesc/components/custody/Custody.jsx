@@ -63,12 +63,18 @@ function groupReleasedByStatus (deflections) {
   };
 }
 
+function areStringArraysEqual (a = [], b = []) {
+  if (a.length !== b.length) return false;
+  return a.every((item, idx) => item === b[idx]);
+}
+
 function Custody () {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'in-custody';
   const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
+  const [inCustodyOpenSections, setInCustodyOpenSections] = useState([]);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -194,6 +200,34 @@ function Custody () {
     .filter(s => (inCustodyGrouped[s.status]?.length ?? 0) > 0)
     .map(s => s.status);
 
+  useEffect(() => {
+    if (tab !== 'in-custody') return;
+    setInCustodyOpenSections((prev) => {
+      if (areStringArraysEqual(prev, defaultOpenSections)) return prev;
+      return defaultOpenSections;
+    });
+  }, [defaultOpenSections, tab]);
+
+  useEffect(() => {
+    if (!inCustodyDeflections) return;
+
+    const sectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
+    if (!sectionTarget) return;
+    window.sessionStorage.removeItem('custodyInCustodySectionTarget');
+
+    setInCustodyOpenSections(prev => (
+      prev.includes(sectionTarget) ? prev : [...prev, sectionTarget]
+    ));
+
+    sectionScrolledRef.current = true;
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-section-${sectionTarget}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }, [inCustodyDeflections]);
+
   return (
     <>
       <Head>
@@ -207,7 +241,7 @@ function Custody () {
             onChange={setTab}
             data={[
               { label: 'In Custody', value: 'in-custody' },
-              { label: 'Released', value: 'released' },
+              { label: 'Not in custody', value: 'released' },
             ]}
           />
           {tab === 'in-custody' && (
@@ -218,6 +252,8 @@ function Custody () {
                     sections={IN_CUSTODY_SECTIONS}
                     groupedDeflections={inCustodyGrouped}
                     defaultOpen={defaultOpenSections}
+                    value={inCustodyOpenSections}
+                    onChange={setInCustodyOpenSections}
                     highlightedId={highlightedId}
                   />
                   )

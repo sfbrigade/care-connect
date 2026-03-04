@@ -2,13 +2,19 @@ import { Accordion, Divider, Stack, Text, Title } from '@mantine/core';
 
 import CustodyCard from './CustodyCard';
 
-function StatusAccordion ({ sections, groupedDeflections, defaultOpen, highlightedId }) {
+function StatusAccordion ({ sections, groupedDeflections, defaultOpen, highlightedId, value, onChange }) {
   const defaultValue = defaultOpen ?? sections
     .filter(s => (groupedDeflections[s.status]?.length ?? 0) > 0)
     .map(s => s.status);
 
   return (
-    <Accordion variant='section' multiple defaultValue={defaultValue}>
+    <Accordion
+      variant='section'
+      multiple
+      defaultValue={defaultValue}
+      value={value}
+      onChange={onChange}
+    >
       <Divider />
       {sections.map(({ status, label, description }) => {
         const items = groupedDeflections[status] ?? [];

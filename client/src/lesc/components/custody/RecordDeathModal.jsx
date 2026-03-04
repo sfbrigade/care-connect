@@ -47,12 +47,6 @@ function RecordDeathModal ({
             size='lg'
             onClick={onClose}
             disabled={loading}
-            styles={{
-              root: {
-                '&:focus': { outline: 'none', boxShadow: 'none' },
-                '&:focus-visible': { outline: 'none', boxShadow: 'none' },
-              },
-            }}
           >
             No, cancel
           </Button>

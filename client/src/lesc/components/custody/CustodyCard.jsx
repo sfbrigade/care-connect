@@ -38,6 +38,8 @@ function CustodyCard ({ deflection, highlighted }) {
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyInCustodySectionTarget', 'READY_FOR_INTAKE');
+      window.sessionStorage.setItem('custodyTab', 'in-custody');
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
