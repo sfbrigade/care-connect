@@ -65,7 +65,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      console.log(data);
+
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 3);
     });
@@ -74,7 +74,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections?active=true').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      console.log(data);
+
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 1);
     });
@@ -83,7 +83,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections?active=false').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      console.log(data);
+
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 0);
     });
