@@ -1,171 +1,202 @@
-@page {
-	size: letter;
-	margin: 0.5in 0.5in 0.65in 0.5in;
-}
-
 /*
  Uses .form-container instead of body so styles work in both standalone
  (FormContainer renders <body class="form-container">) and embedded mode
  (FormContainer renders <div class="form-container">).
 */
+	/*
+	@page {
+		size: letter;
+		margin: 0.5in 0.75in 0.65in 0.75in;
+	}
+	*/
 .form-container {
-	font-family: Arial, sans-serif;
-/*
-	font-family: 'Times New Roman', Times, serif;
-*/
+	font-family: Roboto, sans-serif;
 	font-size: 12pt;
 	line-height: 1.6;
-}
 
-.page {
-	position: relative;
-	min-height: 9.5in;
-	color: red;
-}
+	/*
+	--page-margin-top: 0.5in;
+	--page-margin-right: 0.75in;
+	--page-margin-bottom: 0.65in;
+	--page-margin-left: 0.75in;
+	*/
 
-@media screen {
 	.page {
-		margin: 0.5in 0.5in 0.65in 0.5in;
+		position: relative;
+		height: calc(11in - var(--page-margin-top) - var(--page-margin-bottom));
+		box-sizing: border-box;
 	}
-}
 
-h1.title {
-	font-size: 14pt;
-	font-weight: bold;
-	text-align: center;
-	margin-bottom: 20pt;
-	letter-spacing: 0.04em;
-	line-height: 1.3;
-}
+	.page {
+		header {
+			font-size: 16pt;
+			margin-bottom: 2rem;
+			text-align: right;
 
-/*
- * An inline field renders as a small flex column:
- *   ┌──────────────────┐
- *   │   value text     │  ← underlined border-bottom
- *   │  sub-label text  │  ← tiny centred label
- *   └──────────────────┘
- * inline-flex + vertical-align:bottom keeps the underline
- * flush with the surrounding text baseline.
- */
-.field {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: stretch;
-	vertical-align: bottom;
-	margin: 0 2px;
-}
+			strong {
+				color: #666;
+			}
+		}
 
-.field__value {
-	border-bottom: 1pt solid #000;
-	padding: 0 4px 1px;
-	min-height: 15pt;
-	font-weight: bold;
-}
+		h1.title {
+			font-size: 14pt;
+			font-weight: bold;
+			margin-bottom: 2em;
+			letter-spacing: 0.04em;
+			line-height: 1.3;
+		}
 
-.field__label {
-	font-size: 7.5pt;
-	color: #444;
-	text-align: center;
-	margin-top: 1pt;
-	font-weight: normal;
-}
+		/*
+		 * An inline field renders as a small flex column:
+		 *   ┌──────────────────┐
+		 *   │   value text     │  ← underlined border-bottom
+		 *   │  sub-label text  │  ← tiny centred label
+		 *   └──────────────────┘
+		 * inline-flex + vertical-align:bottom keeps the underline
+		 * flush with the surrounding text baseline.
+		 */
+		.field {
+			display: inline-flex;
+			flex-direction: column;
+			align-items: stretch;
+			vertical-align: top;
+			margin: 0 2px;
 
-/* Date-style field with Month / Date / Year (/ Time) sub-labels */
-.date-field {
-	display: inline-flex;
-	flex-direction: column;
-	align-items: stretch;
-	vertical-align: bottom;
-	margin: 0 2px;
-	min-width: 220pt;
-}
+			.value {
+				border-bottom: 1pt solid #000;
+				padding: 0 4px 1px;
+				min-height: 15pt;
+				font-weight: bold;
+			}
 
-.date-field__value {
-	border-bottom: 1pt solid #000;
-	padding: 0 4px 1px;
-	min-height: 15pt;
-	letter-spacing: 0.1em;
-}
+			.label {
+				font-size: 7.5pt;
+				color: #444;
+				text-align: center;
+				margin-top: 1pt;
+				font-weight: normal;
+			}
+		}
 
-.date-field__labels {
-	display: flex;
-	justify-content: space-around;
-	font-size: 7.5pt;
-	color: #444;
-	margin-top: 1pt;
-}
+		/* Date-style field with Month / Date / Year (/ Time) sub-labels */
+		.date-field {
+			display: inline-flex;
+			flex-direction: column;
+			align-items: stretch;
+			vertical-align: top;
+			margin: 0 2px;
+			min-width: 220pt;
 
-.para {
-	margin-bottom: 6pt;
-	line-height: 1.8;
-}
+			.value {
+				border-bottom: 1pt solid #000;
+				padding: 0 4px 1px;
+				min-height: 15pt;
+				/*letter-spacing: 0.1em;*/
+			}
 
-/* Indented legal text */
-.legal-block {
-	margin: 10pt 0 10pt 36pt;
-	font-size: 11pt;
-	line-height: 1.5;
-}
+			.labels {
+				display: flex;
+				justify-content: space-around;
+				font-size: 7.5pt;
+				color: #444;
+				margin-top: 1pt;
+			}
+		}
 
-/* Signature rows */
-.sig-section {
-	margin-top: 20pt;
-}
+		p {
+			margin-bottom: 6pt;
+			line-height: 1.8;
 
-.sig-row {
-	display: flex;
-	align-items: flex-end;
-	margin-bottom: 3pt;
-}
+			.field-block {
+				padding-left: 3em;
+				display: block;
 
-.sig-row__label {
-	flex-shrink: 0;
-	width: 175pt;
-}
+				& > span {
+					display: block;
+				}
+			}
+		}
 
-.sig-row__line {
-	flex: 1;
-	border-bottom: 1pt solid #000;
-	min-height: 15pt;
-	padding: 0 4px 1px;
-}
+		/* Indented legal text */
+		blockquote {
+			margin: 1.5em 4em 1.5em 4em;
+			font-size: smaller;
+			line-height: 1.8;
+		}
 
-.sig-row__unit-label {
-	flex-shrink: 0;
-	width: 90pt;
-	text-align: right;
-	margin-left: 8pt;
-}
+		/* Signature rows */
+		.sig-section {
+			margin-top: 3em;
 
-.sig-row__unit-line {
-	flex-shrink: 0;
-	width: 90pt;
-	border-bottom: 1pt solid #000;
-	min-height: 15pt;
-	padding: 0 4px 1px;
-	margin-left: 4pt;
-}
+			.sig-row {
+				display: flex;
+				align-items: flex-end;
+				margin-bottom: 3pt;
 
-.sig-print-label {
-	font-size: 7.5pt;
-	color: #444;
-	text-align: center;
-	margin-top: 1pt;
-	margin-bottom: 10pt;
-	padding-left: 175pt;
-}
+				.label {
+					flex-shrink: 0;
+					width: 175pt;
+				}
 
-/* Footer pinned to bottom of the printable area */
-.footer {
-	position: absolute;
-	bottom: -0.35in;
-	left: 0;
-	right: 0;
-	display: flex;
-	justify-content: space-between;
-	font-size: 9pt;
-}
+				.line {
+					flex: 1;
+					border-bottom: 1pt solid #000;
+					min-height: 15pt;
+					padding: 0 4px 1px;
+				}
 
-.footer__right {
-	text-align: right;
+				.unit-label {
+					flex-shrink: 0;
+					width: 90pt;
+					text-align: right;
+					margin-left: 8pt;
+				}
+
+				.unit-line {
+					flex-shrink: 0;
+					width: 90pt;
+					border-bottom: 1pt solid #000;
+					min-height: 15pt;
+					padding: 0 4px 1px;
+					margin-left: 4pt;
+				}
+			}
+
+			.print-label {
+				font-size: 7.5pt;
+				color: #444;
+				text-align: center;
+				margin-top: 1pt;
+				margin-bottom: 10pt;
+				padding-left: 175pt;
+			}
+		}
+
+		/* Footer pinned to bottom of the printable area */
+		footer {
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			display: flex;
+			justify-content: space-between;
+			font-size: x-small;
+
+			.right {
+				text-align: right;
+			}
+		}
+	}
+
+	@media screen {
+		.page {
+			padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+
+			footer {
+				bottom: var(--page-margin-bottom);
+				left: var(--page-margin-left);
+				right: var(--page-margin-right);
+			}
+		}
+	}
 }

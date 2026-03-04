@@ -68,7 +68,12 @@ export async function renderToPdf (html, options = {}) {
 
   try {
     const page = await browser.newPage();
+
+    // wait for fonts to load so that Puppeteer doesn't fall back to the default fonts
+    // installed with debian
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.evaluateHandle('document.fonts.ready');
+
     return await page.pdf({
       format: options.format || 'Letter',
       margin: options.margin,

@@ -28,6 +28,7 @@ function cssAsText() {
       // Handle CSS files marked with ?raw-text query
       if (id.includes('?raw-text')) {
         const filePath = id.split('?')[0];
+        this.addWatchFile(filePath);
         const code = fs.readFileSync(filePath, 'utf-8');
         return `export default ${JSON.stringify(code)}`;
       }

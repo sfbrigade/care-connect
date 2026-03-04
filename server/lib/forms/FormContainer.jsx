@@ -45,6 +45,9 @@ export default function FormContainer ({ children, standalone = true }) {
       <html lang='en'>
         <head>
           <meta charSet='utf-8' />
+          <link rel='preconnect' href='https://fonts.googleapis.com' />
+          <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin />
+          <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap' rel='stylesheet' />
           {/* eslint-disable-next-line react/no-danger */}
           <style dangerouslySetInnerHTML={{ __html: standaloneCss }} />
         </head>
