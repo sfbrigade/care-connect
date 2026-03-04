@@ -1,5 +1,5 @@
 server: npm run dev -w server -- --port 3000
 client: npm run dev -w client -- --host --port 3333
-forms: npm run build:forms -w server -- --watch
+forms: npm run build:forms:watch -w server
 prisma: npm run prisma:studio -w server
 storybook: npm run storybook -w client

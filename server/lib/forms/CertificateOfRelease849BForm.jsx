@@ -1,176 +1,17 @@
 import React from 'react';
+import css from './pdf-forms.css';
 
-// Uses .form-container instead of body so styles work in both standalone
-// (FormContainer renders <body class="form-container">) and embedded mode
-// (FormContainer renders <div class="form-container">).
-const css = `
-  @page {
-    size: letter;
-    margin: 0.5in 0.5in 0.65in 0.5in;
-  }
-
-  .form-container {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 12pt;
-    line-height: 1.6;
-    color: #000;
-  }
-
-  .page {
-    position: relative;
-    min-height: 9.5in;
-  }
-
-  h1.title {
-    font-size: 14pt;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 20pt;
-    letter-spacing: 0.04em;
-    line-height: 1.3;
-  }
-
-  /*
-   * An inline field renders as a small flex column:
-   *   ┌──────────────────┐
-   *   │   value text     │  ← underlined border-bottom
-   *   │  sub-label text  │  ← tiny centred label
-   *   └──────────────────┘
-   * inline-flex + vertical-align:bottom keeps the underline
-   * flush with the surrounding text baseline.
-   */
-  .field {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: stretch;
-    vertical-align: bottom;
-    margin: 0 2px;
-  }
-
-  .field__value {
-    border-bottom: 1pt solid #000;
-    padding: 0 4px 1px;
-    min-height: 15pt;
-    font-weight: bold;
-  }
-
-  .field__label {
-    font-size: 7.5pt;
-    color: #444;
-    text-align: center;
-    margin-top: 1pt;
-    font-weight: normal;
-  }
-
-  /* Date-style field with Month / Date / Year (/ Time) sub-labels */
-  .date-field {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: stretch;
-    vertical-align: bottom;
-    margin: 0 2px;
-    min-width: 220pt;
-  }
-
-  .date-field__value {
-    border-bottom: 1pt solid #000;
-    padding: 0 4px 1px;
-    min-height: 15pt;
-    letter-spacing: 0.1em;
-  }
-
-  .date-field__labels {
-    display: flex;
-    justify-content: space-around;
-    font-size: 7.5pt;
-    color: #444;
-    margin-top: 1pt;
-  }
-
-  .para {
-    margin-bottom: 6pt;
-    line-height: 1.8;
-  }
-
-  /* Indented legal text */
-  .legal-block {
-    margin: 10pt 0 10pt 36pt;
-    font-size: 11pt;
-    line-height: 1.5;
-  }
-
-  /* Signature rows */
-  .sig-section {
-    margin-top: 20pt;
-  }
-
-  .sig-row {
-    display: flex;
-    align-items: flex-end;
-    margin-bottom: 3pt;
-  }
-
-  .sig-row__label {
-    flex-shrink: 0;
-    width: 175pt;
-  }
-
-  .sig-row__line {
-    flex: 1;
-    border-bottom: 1pt solid #000;
-    min-height: 15pt;
-    padding: 0 4px 1px;
-  }
-
-  .sig-row__unit-label {
-    flex-shrink: 0;
-    width: 90pt;
-    text-align: right;
-    margin-left: 8pt;
-  }
-
-  .sig-row__unit-line {
-    flex-shrink: 0;
-    width: 90pt;
-    border-bottom: 1pt solid #000;
-    min-height: 15pt;
-    padding: 0 4px 1px;
-    margin-left: 4pt;
-  }
-
-  .sig-print-label {
-    font-size: 7.5pt;
-    color: #444;
-    text-align: center;
-    margin-top: 1pt;
-    margin-bottom: 10pt;
-    padding-left: 175pt;
-  }
-
-  /* Footer pinned to bottom of the printable area */
-  .footer {
-    position: absolute;
-    bottom: -0.35in;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    font-size: 9pt;
-  }
-
-  .footer__right {
-    text-align: right;
-  }
-`;
+const FORM_TIMEZONE = 'America/Los_Angeles';
 
 function formatDate (dateStr) {
   if (!dateStr) return { month: '', date: '', year: '' };
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return { month: '', date: '', year: '' };
+  const opts = { timeZone: FORM_TIMEZONE };
   return {
-    month: d.toLocaleString('en-US', { month: 'long' }),
-    date: String(d.getDate()),
-    year: String(d.getFullYear()),
+    month: d.toLocaleString('en-US', { ...opts, month: 'long' }),
+    date: d.toLocaleString('en-US', { ...opts, day: 'numeric' }),
+    year: d.toLocaleString('en-US', { ...opts, year: 'numeric' }),
   };
 }
 
@@ -178,7 +19,7 @@ function formatTime (dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleString('en-US', { timeZone: FORM_TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 /** Underlined inline field with an optional sub-label. */
@@ -230,7 +71,6 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className='page'>
         <h1 className='title'>
-          DRP
           SAN FRANCISCO SHERIFF&apos;S DEPARTMENT CERTIFICATE OF RELEASE
         </h1>
 
@@ -258,11 +98,8 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
         <div className='legal-block'>
           <p>
             paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
-            Code Section 849, Penal Code
-          </p>
-          <p>
-            Section 849.5, and Penal Code Section 851.6 - pertinent portions of which appear on
-            the reverse of this certificate.
+            Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 - pertinent
+            portions of which appear on the reverse of this certificate.
           </p>
         </div>
 

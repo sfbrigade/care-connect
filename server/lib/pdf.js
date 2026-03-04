@@ -20,16 +20,11 @@ function getChromiumExecutable () {
   );
 }
 
-// Lazily loaded and cached so that pdf.js itself can be imported at server startup
-// without requiring the forms dist build to already be complete.  The compiled
-// FormContainer.js is only needed at the moment the first PDF is actually rendered.
-let _FormContainer = null;
+// Always re-import with a cache-busting timestamp so that changes to the compiled
+// dist files (e.g. from build:forms:watch) are picked up without a server restart.
 async function getFormContainer () {
-  if (!_FormContainer) {
-    const mod = await import('./forms/dist/FormContainer.js');
-    _FormContainer = mod.default;
-  }
-  return _FormContainer;
+  const mod = await import(`./forms/dist/FormContainer.js?t=${Date.now()}`);
+  return mod.default;
 }
 
 /**

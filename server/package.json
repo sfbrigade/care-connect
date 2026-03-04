@@ -8,9 +8,9 @@
   },
   "scripts": {
     "build": "npm run prisma:generate && npm run build:forms",
-    "build:forms": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external",
-    "build:forms:watch": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external --watch=forever",
-    "dev": "prisma db push --accept-data-loss; npm run build:forms; npm run build:forms:watch & fastify start -w -l info -P app.js",
+    "build:forms": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external --loader:.css=text --bundle",
+    "build:forms:watch": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external --loader:.css=text --bundle --watch=forever",
+    "dev": "prisma db push --accept-data-loss && npm run build:forms && fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
     "pretest": "npm run prisma:generate && eslint",

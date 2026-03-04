@@ -55,8 +55,28 @@ export default function FormPreview () {
   }
 
   return (
-    <FormContainer standalone={false}>
-      <FormComponent data={data} />
-    </FormContainer>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#e0e0e0',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      padding: '24px',
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '816px',  // 8.5in at 96dpi
+        minHeight: '1056px', // 11in at 96dpi
+        backgroundColor: '#fff',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+        // Mirror the @page margins so the inner content area is 720px —
+        // the same as Puppeteer's print content area (8.5in - 0.5in - 0.5in).
+        padding: '48px 48px 62px 48px', // 0.5in 0.5in 0.65in 0.5in
+      }}>
+        <FormContainer standalone={false}>
+          <FormComponent data={data} />
+        </FormContainer>
+      </div>
+    </div>
   );
 }
