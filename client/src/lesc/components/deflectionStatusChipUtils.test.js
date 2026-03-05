@@ -9,6 +9,7 @@ function buildIncident (overrides = {}) {
     city: 'San Francisco',
     state: 'CA',
     arrestedAt: '2026-03-04T10:00:00.000Z',
+    encounteredVia: 'ON_VIEW',
     cadNumber: 'CAD-1234',
     supervisorBadgeNumber: '1234',
     ...overrides,
