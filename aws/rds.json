@@ -84,10 +84,7 @@
     "DatabaseMasterUserPasswordSecretArn": {
       "Description": "The ARN of the secret containing the master user password",
       "Value": {
-        "Fn::GetAtt": [
-          "Database",
-          "MasterUserSecret.SecretArn"
-        ]
+        "Ref": "DatabaseMasterUserPasswordSecret"
       },
       "Export": {
         "Name": {
@@ -144,10 +141,27 @@
         ]
       }
     },
+    "DatabaseMasterUserPasswordSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/rds/db/${BaseName}/master-user-credentials"
+        },
+        "GenerateSecretString": {
+          "SecretStringTemplate": {
+            "Fn::Sub": "{\"username\":\"${BaseName}\"}"
+          },
+          "GenerateStringKey": "password",
+          "PasswordLength": 32,
+          "ExcludePunctuation": true
+        }
+      }
+    },
     "Database": {
       "Type": "AWS::RDS::DBInstance",
       "Properties": {
         "AllocatedStorage": 20,
+        "BackupRetentionPeriod": 7,
         "DBInstanceClass": {
           "Ref": "InstanceType"
         },
@@ -163,9 +177,20 @@
         "EnableIAMDatabaseAuthentication": true,
         "Engine": "postgres",
         "EngineVersion": "17.6",
-        "ManageMasterUserPassword": true,
         "MasterUsername": {
           "Ref": "BaseName"
+        },
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "DatabaseMasterUserPasswordSecret"
+              },
+              ":SecretString:password}}"
+            ]
+          ]
         },
         "MaxAllocatedStorage": 100,
         "MultiAZ": {
@@ -183,7 +208,8 @@
         ]
       },
       "UpdateReplacePolicy": "Snapshot",
-      "DeletionPolicy": "Snapshot"
+      "DeletionPolicy": "Snapshot",
+      "DependsOn": "DatabaseMasterUserPasswordSecret"
     }
   }
 }
