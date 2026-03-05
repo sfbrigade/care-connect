@@ -16,6 +16,7 @@ test('/api/incidents', async (t) => {
       const now = new Date().toISOString();
       const response = await app.inject().post('/api/incidents').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'ON_VIEW',
         cadNumber: 'CAD-12345',
         addressLine1: '123 Main St',
         addressLine2: 'Apt 1',
@@ -32,6 +33,7 @@ test('/api/incidents', async (t) => {
 
       assert.ok(data.id);
       assert.deepStrictEqual(data.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
+      assert.deepStrictEqual(data.encounteredVia, 'ON_VIEW');
       assert.deepStrictEqual(data.cadNumber, 'CAD-12345');
       assert.deepStrictEqual(data.addressLine1, '123 Main St');
       assert.deepStrictEqual(data.addressLine2, 'Apt 1');
@@ -49,6 +51,7 @@ test('/api/incidents', async (t) => {
       });
       assert.ok(incident);
       assert.deepStrictEqual(incident.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
+      assert.deepStrictEqual(incident.encounteredVia, 'ON_VIEW');
       assert.deepStrictEqual(incident.cadNumber, 'CAD-12345');
       assert.deepStrictEqual(incident.addressLine1, '123 Main St');
       assert.deepStrictEqual(incident.addressLine2, 'Apt 1');
@@ -66,6 +69,7 @@ test('/api/incidents', async (t) => {
 
       const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
         cadNumber: '',
         addressLine1: '',
         addressLine2: '',
@@ -96,6 +100,14 @@ test('/api/incidents', async (t) => {
       assert.ok(bedType);
       assert.deepStrictEqual(bedType.holds, 5);
       assert.deepStrictEqual(bedType.available, 3);
+    });
+
+    await t.test('requires encounteredVia', async () => {
+      const response = await app.inject().post('/api/incidents').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        cadNumber: 'CAD-12345',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
     await t.test('requires authentication', async () => {
@@ -135,6 +147,7 @@ test('/api/incidents', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.cadNumber, 'CAD-123');
+      assert.deepStrictEqual(data.encounteredVia, 'ON_VIEW');
     });
 
     await t.test('returns 404 for non-existent incident', async () => {
@@ -148,6 +161,7 @@ test('/api/incidents', async (t) => {
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates incident details', async () => {
       const response = await app.inject().patch('/api/incidents/1').payload({
+        encounteredVia: 'DISPATCHED',
         cadNumber: 'CAD-UPDATED',
         city: 'Oakland',
       }).headers(userHeaders);
@@ -156,6 +170,7 @@ test('/api/incidents', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.cadNumber, 'CAD-UPDATED');
+      assert.deepStrictEqual(data.encounteredVia, 'DISPATCHED');
       assert.deepStrictEqual(data.city, 'Oakland');
 
       // Verify in database
@@ -163,6 +178,7 @@ test('/api/incidents', async (t) => {
         where: { id: 1 },
       });
       assert.deepStrictEqual(incident.cadNumber, 'CAD-UPDATED');
+      assert.deepStrictEqual(incident.encounteredVia, 'DISPATCHED');
       assert.deepStrictEqual(incident.city, 'Oakland');
     });
 
@@ -230,6 +246,7 @@ test('/api/incidents', async (t) => {
 
       const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
         cadNumber: '',
         addressLine1: '',
         addressLine2: '',
@@ -274,6 +291,7 @@ test('/api/incidents', async (t) => {
       const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
       const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
         cadNumber: '',
         addressLine1: '',
         addressLine2: '',
@@ -312,6 +330,7 @@ test('/api/incidents', async (t) => {
       const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
       const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
         cadNumber: '',
         addressLine1: '',
         addressLine2: '',
