@@ -233,7 +233,7 @@ function DeflectionForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Deflection details</Title>
+        <Title order={2} mb='xs'>Arrest details</Title>
         <Text c='dimmed' size='md' mb='xl'>Select what you observed. This text will be inserted in the 647(f). Add to it using the form below.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
