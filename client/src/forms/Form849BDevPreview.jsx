@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Container, Group, Loader, Alert } from '@mantine/core';
 
 import Api from '@/Api';
-import CertificateOfRelease849BForm from '../../../server/lib/forms/CertificateOfRelease849BForm.jsx';
+import CertificateOfReleaseForm from 'care-connect-server/lib/forms/CertificateOfReleaseForm.jsx';
 
 function buildFormData (deflection) {
   const subject = deflection?.subject;
@@ -65,7 +65,7 @@ export default function Form849BDevPreview () {
 
   return (
     <PDFViewer style={{ width: '100%', height: '100vh', border: 'none' }}>
-      <CertificateOfRelease849BForm data={data} />
+      <CertificateOfReleaseForm data={data} />
     </PDFViewer>
   );
 }

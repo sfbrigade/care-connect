@@ -79,7 +79,7 @@ const pageCSS = `
   }
 `;
 
-export default function CertificateOfRelease849BForm ({ data = {} }) {
+export default function CertificateOfReleaseForm ({ data = {} }) {
   const {
     subjectName = '',
     detentionDate = null,
@@ -138,7 +138,7 @@ export default function CertificateOfRelease849BForm ({ data = {} }) {
         {/* ── Legal text ── */}
         <blockquote>
           paragraph (1) of subdivision (b) of Penal Code Section 849, paragraph (3) of Penal
-          Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 - pertinent
+          Code Section 849, Penal Code Section 849.5, and Penal Code Section 851.6 &mdash; pertinent
           portions of which appear on the reverse of this certificate.
         </blockquote>
 
