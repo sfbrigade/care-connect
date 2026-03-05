@@ -78,9 +78,6 @@ function Deflection () {
       await queryClient.removeQueries({
         queryKey: ['deflections', incident?.id, 'active'],
       });
-      await queryClient.removeQueries({
-        queryKey: ['deflections', incident?.id, 'all'],
-      });
       await queryClient.invalidateQueries({
         queryKey: ['deflections', facility.id, 'inactive'],
       });
@@ -202,7 +199,7 @@ function Deflection () {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit subject</Button>
+              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
@@ -257,7 +254,7 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Deflection details</Title>
+                <Title order={3}>Arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -275,7 +272,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit deflection</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit arrest</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>

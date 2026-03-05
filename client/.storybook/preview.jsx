@@ -11,6 +11,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { BrowserRouter } from 'react-router';
 
+import { ToastProvider } from '@/components/ToastContext';
+
 import translation from '../../locales/en/translation.json';
 
 // theme.ts file from previous step
@@ -52,8 +54,11 @@ function ColorSchemeWrapper ({
 const mockedQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
-mockedQueryClient.setQueryData(['deflectionCancelReasons'],
+mockedQueryClient.setQueryData(['deflection-cancel-reasons'],
   [{ name: '5150', id: '5150' }, { name: 'Facility Emergency', id: 'facility_emergency' }, { name: 'Hospital', id: 'hospital' }, { name: 'Jail', id: 'jail' }, { name: 'Release on Scene', id: 'release_on_scene' }]
+);
+mockedQueryClient.setQueryData(['deflection-cancel-reasons', 'facility_emergency'],
+  { name: 'Facility Emergency', id: 'facility_emergency' }
 );
 
 /** @type { import('@storybook/react-vite').Preview } */
@@ -70,6 +75,9 @@ const preview = {
     ),
     (renderStory) => (
       <QueryClientProvider client={mockedQueryClient}>{renderStory()}</QueryClientProvider>
+    ),
+    (renderStory) => (
+      <ToastProvider>{renderStory()}</ToastProvider>
     ),
     (renderStory) => (
       <facilityContext.Provider value={{ facility: defaultFacility }}>

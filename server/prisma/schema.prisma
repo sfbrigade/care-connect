@@ -91,6 +91,11 @@ enum DrugTypeEnum {
   COMBINATION
 }
 
+enum EncounteredViaEnum {
+  ON_VIEW
+  DISPATCHED
+}
+
 enum RaceEnum {
   WHITE
   BLACK
@@ -675,6 +680,7 @@ model Incident {
   latitude                     Decimal?                @db.Decimal(9, 6)
   longitude                    Decimal?                @db.Decimal(9, 6)
   arrestedAt                   DateTime?
+  encounteredVia               EncounteredViaEnum
   cadNumber                    String?
   supervisorBadgeNumber        String?
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)

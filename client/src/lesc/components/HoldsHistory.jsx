@@ -7,7 +7,7 @@ import Api from '@/Api';
 import Hold from './Hold';
 import { formatAddress } from '@/utils/format';
 
-function HoldsHistory ({ facility }) {
+function HoldsHistory ({ incident, facility }) {
   const navigate = useNavigate();
 
   const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
@@ -21,22 +21,22 @@ function HoldsHistory ({ facility }) {
 
   // Single-pass partition: collect cancelled IDs, group cancelled, and separate non-cancelled
   const { cancelledIncidentIds, cancelledByIncident, nonCancelledDeflections } =
-    safeDeflections.reduce(
-      (acc, deflection) => {
-        if (deflection.status === 'CANCELLED') {
-          acc.cancelledIncidentIds.add(deflection.incidentId);
+        safeDeflections.reduce(
+          (acc, deflection) => {
+            if (deflection.status === 'CANCELLED') {
+              acc.cancelledIncidentIds.add(deflection.incidentId);
 
-          if (!acc.cancelledByIncident[deflection.incidentId]) {
-            acc.cancelledByIncident[deflection.incidentId] = [];
-          }
-          acc.cancelledByIncident[deflection.incidentId].push(deflection);
-        } else {
-          acc.nonCancelledDeflections.push(deflection);
-        }
-        return acc;
-      },
-      { cancelledIncidentIds: new Set(), cancelledByIncident: {}, nonCancelledDeflections: [] }
-    );
+              if (!acc.cancelledByIncident[deflection.incidentId]) {
+                acc.cancelledByIncident[deflection.incidentId] = [];
+              }
+              acc.cancelledByIncident[deflection.incidentId].push(deflection);
+            } else {
+              acc.nonCancelledDeflections.push(deflection);
+            }
+            return acc;
+          },
+          { cancelledIncidentIds: new Set(), cancelledByIncident: {}, nonCancelledDeflections: [] }
+        );
 
   const cancelledIncidentIdList = [...cancelledIncidentIds];
 
@@ -70,7 +70,6 @@ function HoldsHistory ({ facility }) {
         .sort((a, b) => b - a)[0] ?? 0,
     }))
     .sort((a, b) => b.latestCancelledAtMs - a.latestCancelledAtMs);
-
   return (
     <>
       {isFetchingDeflections && (
@@ -107,6 +106,7 @@ function HoldsHistory ({ facility }) {
                   </Box>
                   {group.deflections.map((deflection) => (
                     <Hold
+                      incident={incident}
                       key={deflection.id}
                       deflection={deflection}
                       onDetailsClick={() => {
@@ -119,6 +119,7 @@ function HoldsHistory ({ facility }) {
             })}
             {nonCancelledDeflections.map((deflection) => (
               <Hold
+                incident={incident}
                 key={deflection.id}
                 deflection={deflection}
                 onDetailsClick={() => {
