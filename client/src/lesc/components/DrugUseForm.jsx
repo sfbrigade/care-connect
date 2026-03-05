@@ -5,6 +5,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -23,6 +24,7 @@ function DrugUseForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
+  const { t } = useTranslation();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -114,10 +116,10 @@ function DrugUseForm () {
                     {...form.getInputProps('drugType')}
                   >
                     <Group gap='sm' mt='md'>
-                      <Chip value='INTOXICATING_LIQUOR'>Intoxicating liquor</Chip>
-                      <Chip value='DRUG'>Drug</Chip>
-                      <Chip value='TOLUENE'>Toluene</Chip>
-                      <Chip value='COMBINATION'>Combination</Chip>
+                      <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
+                      <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
+                      <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
+                      <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
                     </Group>
                   </Chip.Group>
                 </Input.Wrapper>
