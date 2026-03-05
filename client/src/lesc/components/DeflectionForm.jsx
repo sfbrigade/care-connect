@@ -201,7 +201,6 @@ function DeflectionForm () {
     },
   });
   const behaviorAdditionsInputProps = form.getInputProps('behaviorAdditions');
-  const combinedNarrativePreview = composeBehavior(generatedNarrative, form.getValues().behaviorAdditions ?? '');
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -282,7 +281,7 @@ function DeflectionForm () {
               <Input.Wrapper label='647(f) narrative'>
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
                 <Text style={{ whiteSpace: 'pre-wrap' }}>
-                  {combinedNarrativePreview || 'Select observations to generate narrative text.'}
+                  {generatedNarrative || 'Select observations to generate narrative text.'}
                 </Text>
               </Input.Wrapper>
               <Textarea
