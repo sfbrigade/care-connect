@@ -5,15 +5,12 @@ import { DateTime } from 'luxon';
 import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
-import { useToast } from '@/components/ToastContext';
 
-function Hold({ incident, deflection, onCancelClick, onDetailsClick }) {
+function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
   const displayId = String(deflection.id).padStart(6, '0');
   const displayName =
     [
@@ -59,19 +56,7 @@ function Hold({ incident, deflection, onCancelClick, onDetailsClick }) {
     queryFn: () => Api.deflections.cancelReasons.get(deflection.cancelReasonId).then(response => response.data),
     enabled: !!deflection.cancelReasonId,
   });
-
-  const reopenHoldMutation = useMutation({
-    mutationFn: () => Api.deflections.reopen(deflection.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'active']);
-      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'inactive']);
-      showToast('Hold reopened', 'success', 4000, `Hold for ${displayName} was reopened.`);
-    },
-  });
-
-  const reopenHold = () => {
-    reopenHoldMutation.mutate(deflection.id);
-  };
+  const cancelReasonLabel = cancelReason?.name;
 
   useEffect(() => {
     if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
@@ -83,12 +68,6 @@ function Hold({ incident, deflection, onCancelClick, onDetailsClick }) {
 
     return () => window.clearInterval(intervalId);
   }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
-
-  function cancelReasonMessage() {
-    if (deflection.cancelReasonId != null) {
-      return `Cancelled at ${formatTime(deflection?.cancelledAt) || 'Unknown'} (${cancelReason?.name || 'unknown reason'})`;
-    }
-  }
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -139,7 +118,7 @@ function Hold({ incident, deflection, onCancelClick, onDetailsClick }) {
             {isActive && !isExpired && !isArrived
               ? (
                 <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
-              )
+                )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (
               <Group gap='sm' wrap='nowrap'>
