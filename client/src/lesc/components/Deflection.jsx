@@ -78,9 +78,6 @@ function Deflection () {
       await queryClient.removeQueries({
         queryKey: ['deflections', incident?.id, 'active'],
       });
-      await queryClient.removeQueries({
-        queryKey: ['deflections', incident?.id, 'all'],
-      });
       await queryClient.invalidateQueries({
         queryKey: ['deflections', facility.id, 'inactive'],
       });
