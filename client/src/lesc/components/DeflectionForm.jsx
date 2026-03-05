@@ -11,7 +11,7 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
-import { buildDeflectionUpdatePayload, composeBehavior, extractBehaviorAdditions } from '@/utils/deflectionBehavior';
+import { buildDeflectionUpdatePayload, extractBehaviorAdditions } from '@/utils/deflectionBehavior';
 
 const initialValues = {
   behaviorAdditions: '',
