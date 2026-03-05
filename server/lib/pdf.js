@@ -31,12 +31,17 @@ async function getFormContainer () {
  * Renders a React form component to a full HTML document string.
  * The component should render its form content only (no <html>/<body> wrapper);
  * FormContainer provides the document shell in standalone mode.
+ * 
+ * @param {React.Component} FormComponent - The form component to render
+ * @param {object} data - Data to pass to the form component
+ * @param {object} [options] - Additional options
+ * @param {string} [options.title] - Document title for PDF metadata
  */
-export async function renderFormToHtml (FormComponent, data) {
+export async function renderFormToHtml (FormComponent, data, options = {}) {
   const FormContainer = await getFormContainer();
   const element = React.createElement(
     FormContainer,
-    { standalone: true },
+    { standalone: true, title: options.title },
     React.createElement(FormComponent, { data })
   );
   return '<!DOCTYPE html>' + renderToStaticMarkup(element);
