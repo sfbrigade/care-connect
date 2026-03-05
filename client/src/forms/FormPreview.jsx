@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert, Center, Loader } from '@mantine/core';
 
 import FormContainer from '../../../server/lib/forms/FormContainer.jsx';
-import CertificateOfRelease849BForm from '../../../server/lib/forms/CertificateOfRelease849BForm.jsx';
+import CertificateOfReleaseForm from 'care-connect-server/lib/forms/CertificateOfReleaseForm.jsx';
 
 // Registry mapping form IDs (from the URL) to their React components.
 // Add new form entries here as they are created.
 const FORM_REGISTRY = {
-  '849b': CertificateOfRelease849BForm,
+  '849b': CertificateOfReleaseForm,
 };
 
 async function fetchFormData (formId, deflectionId) {

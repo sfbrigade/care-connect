@@ -8,20 +8,12 @@
 	font-size: 12pt;
 	line-height: 1.6;
 
-	/*
-	--page-margin-top: 0.5in;
-	--page-margin-right: 0.75in;
-	--page-margin-bottom: 0.65in;
-	--page-margin-left: 0.75in;
-	*/
-
+	/* the --page-margin-* vars are defined in the React code and injected into the CSS */
 	.page {
 		position: relative;
 		height: calc(11in - var(--page-margin-top) - var(--page-margin-bottom));
 		box-sizing: border-box;
-	}
 
-	.page {
 		header {
 			font-size: 16pt;
 			margin-bottom: 2rem;
