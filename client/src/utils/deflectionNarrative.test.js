@@ -31,14 +31,14 @@ describe('deflectionNarrative', () => {
     ].join('\n'));
   });
 
-  it('uses [ADD MANUALLY] placeholders for missing incident details', () => {
+  it('uses [DETAILS MISSING] placeholders for missing incident details', () => {
     const narrative = buildDeflectionNarrative({
       incident: {},
       observedBehaviorNames: ['unable to follow simple physical instructions'],
     });
 
     expect(narrative).toBe([
-      'Officer encountered this individual at [ADD MANUALLY] on [ADD MANUALLY] at [ADD MANUALLY].',
+      'Officer encountered this individual at [DETAILS MISSING] on [DETAILS MISSING] at [DETAILS MISSING].',
       'Officer observed the following behaviors: unable to follow simple physical instructions.',
       'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
     ].join('\n'));

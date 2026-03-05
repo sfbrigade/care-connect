@@ -11,9 +11,10 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
+import { buildDeflectionUpdatePayload, composeBehavior, extractBehaviorAdditions } from '@/utils/deflectionBehavior';
 
 const initialValues = {
-  behavior: '',
+  behaviorAdditions: '',
   deflectionDetails: [],
 };
 
@@ -26,6 +27,9 @@ function DeflectionForm () {
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
   const autoSaveTimerRef = useRef(null);
+  const lastDetailSelectionKeyRef = useRef('');
+  const isAdditionsSeededRef = useRef(false);
+  const [generatedNarrative, setGeneratedNarrative] = useState('');
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -52,7 +56,11 @@ function DeflectionForm () {
       if (!isInitialized) {
         return;
       }
-      countValues(values);
+      const nextDetailSelectionKey = getDetailSelectionKey(values.deflectionDetails);
+      if (nextDetailSelectionKey !== lastDetailSelectionKeyRef.current) {
+        lastDetailSelectionKeyRef.current = nextDetailSelectionKey;
+        countValues(values);
+      }
       scheduleAutoSave(values);
     }
   });
@@ -60,12 +68,13 @@ function DeflectionForm () {
   useEffect(() => {
     if (!isLoading && !isInitialized) {
       if (deflection) {
-        const normalized = normalizeValues({
-          behavior: deflection.behavior,
+        const normalized = normalizeFormValues({
+          behaviorAdditions: deflection.behavior,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
         });
         form.setInitialValues(normalized);
         form.reset();
+        lastDetailSelectionKeyRef.current = getDetailSelectionKey(normalized.deflectionDetails);
         countValues(normalized);
       }
       setInitialized(true);
@@ -84,28 +93,40 @@ function DeflectionForm () {
       return;
     }
 
-    if (selectedDetails.length === 0) {
-      if (form.getValues().behavior !== '') {
-        form.setFieldValue('behavior', '');
-      }
+    let nextGeneratedNarrative = '';
+    if (selectedDetails.length > 0) {
+      nextGeneratedNarrative = buildDeflectionNarrative({
+        incident,
+        observedBehaviorNames: selectedDetails.map(detail => detail?.name),
+      });
+    }
+    setGeneratedNarrative(nextGeneratedNarrative);
+  }, [isInitialized, incident, selectedDetails]);
+
+  useEffect(() => {
+    if (!isInitialized || isAdditionsSeededRef.current) {
       return;
     }
-
-    const narrative = buildDeflectionNarrative({
-      incident,
-      observedBehaviorNames: selectedDetails.map(detail => detail?.name),
-    });
-
-    if (form.getValues().behavior !== narrative) {
-      form.setFieldValue('behavior', narrative);
+    if (selectedDetails.length > 0 && !generatedNarrative) {
+      return;
     }
-  }, [isInitialized, incident, selectedDetails]);
+    const currentBehavior = form.getValues().behaviorAdditions ?? '';
+    const extractedAdditions = extractBehaviorAdditions(currentBehavior, generatedNarrative);
+    if (currentBehavior !== extractedAdditions) {
+      form.setFieldValue('behaviorAdditions', extractedAdditions);
+    }
+    isAdditionsSeededRef.current = true;
+  }, [isInitialized, generatedNarrative, selectedDetails]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+      if (isInitialized) {
+        autoSaveMutation.mutate(buildUpdatePayload(form.getValues()));
+      }
     }
-  }, []);
+  }, [isInitialized]);
 
   function countValues (values) {
     const newSelectedDetails = [];
@@ -121,17 +142,32 @@ function DeflectionForm () {
     setDetailCategoryCounts(newDetailCategoryCounts);
   }
 
-  function normalizeValues (values) {
+  function getDetailSelectionKey (deflectionDetails = []) {
+    return [...deflectionDetails]
+      .map(detailId => String(detailId))
+      .sort((a, b) => a.localeCompare(b))
+      .join('|');
+  }
+
+  function normalizeFormValues (values) {
     return {
-      behavior: values.behavior ?? '',
+      behaviorAdditions: values.behaviorAdditions ?? '',
       deflectionDetails: [...(values.deflectionDetails ?? [])]
-        .map(detailId => detailId)
+        .map((detailId) => detailId)
         .sort((a, b) => String(a).localeCompare(String(b))),
     };
   }
 
+  function buildUpdatePayload (values) {
+    return buildDeflectionUpdatePayload({
+      generatedNarrative,
+      behaviorAdditions: values.behaviorAdditions ?? '',
+      deflectionDetails: values.deflectionDetails,
+    });
+  }
+
   function scheduleAutoSave (values) {
-    const normalized = normalizeValues(values);
+    const normalized = buildUpdatePayload(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
@@ -164,6 +200,8 @@ function DeflectionForm () {
       navigate(isNew ? `/holds/${id}/property?isNew=true` : `/holds/${id}`);
     },
   });
+  const behaviorAdditionsInputProps = form.getInputProps('behaviorAdditions');
+  const combinedNarrativePreview = composeBehavior(generatedNarrative, form.getValues().behaviorAdditions ?? '');
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -196,8 +234,14 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Deflection details</Title>
-        <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will be included in the legal forms.</Text>
-        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+        <Text c='dimmed' size='md' mb='xl'>Select what you observed. This text will be inserted in the 647(f). Add to it using the form below.</Text>
+        <form onSubmit={form.onSubmit((values) => {
+          if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+          }
+          return onSubmitMutation.mutateAsync(buildUpdatePayload(values));
+        })}
+        >
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <Chip.Group
@@ -234,11 +278,17 @@ function DeflectionForm () {
                   <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
                 </Input.Wrapper>
               )}
+              <Input.Wrapper label='647(f) narrative'>
+                <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
+                <Text style={{ whiteSpace: 'pre-wrap' }}>
+                  {combinedNarrativePreview || 'Select observations to generate narrative text.'}
+                </Text>
+              </Input.Wrapper>
               <Textarea
-                label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>This is generated based on your selections but you can also edit or add to the narrative.</Text></>}
-                key={form.key('behavior')}
+                label='Add to narrative (optional)'
+                key={form.key('behaviorAdditions')}
                 autosize
-                {...form.getInputProps('behavior')}
+                {...behaviorAdditionsInputProps}
                 placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>

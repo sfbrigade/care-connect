@@ -2,13 +2,13 @@ import { DateTime } from 'luxon';
 
 import { formatAddress } from './format';
 
-const ADD_MANUALLY = '[ADD MANUALLY]';
+const DETAILS_MISSING = '[DETAILS MISSING]';
 
 function formatIncidentDateTime (arrestedAt) {
   if (!arrestedAt) {
     return {
-      date: ADD_MANUALLY,
-      time: ADD_MANUALLY,
+      date: DETAILS_MISSING,
+      time: DETAILS_MISSING,
     };
   }
 
@@ -16,23 +16,23 @@ function formatIncidentDateTime (arrestedAt) {
 
   if (!dateTime.isValid) {
     return {
-      date: ADD_MANUALLY,
-      time: ADD_MANUALLY,
+      date: DETAILS_MISSING,
+      time: DETAILS_MISSING,
     };
   }
 
   const time = dateTime.toLocaleString(DateTime.TIME_SIMPLE).replace(/\u202f|\u00a0/g, ' ');
 
   return {
-    date: dateTime.toLocaleString(DateTime.DATE_SHORT) || ADD_MANUALLY,
-    time: time || ADD_MANUALLY,
+    date: dateTime.toLocaleString(DateTime.DATE_SHORT) || DETAILS_MISSING,
+    time: time || DETAILS_MISSING,
   };
 }
 
 export function buildDeflectionNarrative ({ incident, observedBehaviorNames } = {}) {
-  const address = formatAddress(incident ?? {}) || ADD_MANUALLY;
+  const address = formatAddress(incident ?? {}) || DETAILS_MISSING;
   const { date, time } = formatIncidentDateTime(incident?.arrestedAt);
-  const behaviors = (observedBehaviorNames ?? []).filter(Boolean).join('; ') || ADD_MANUALLY;
+  const behaviors = (observedBehaviorNames ?? []).filter(Boolean).join('; ') || DETAILS_MISSING;
 
   return [
     `Officer encountered this individual at ${address} on ${date} at ${time}.`,
