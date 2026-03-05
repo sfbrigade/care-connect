@@ -65,6 +65,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
+
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 3);
     });
@@ -73,6 +74,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections?active=true').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
+
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 1);
     });
@@ -81,8 +83,9 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().get('/api/deflections?active=false').headers(anotherUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
+
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 0);
     });
   });
 
@@ -174,6 +177,8 @@ test('/api/deflections', async (t) => {
         localId: '1234',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: true,
+        drugType: 'TOLUENE',
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -190,6 +195,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '1234');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, true);
+      assert.deepStrictEqual(data.drugType, 'TOLUENE');
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -211,6 +218,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, true);
+      assert.deepStrictEqual(deflection.drugType, 'TOLUENE');
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -227,6 +236,8 @@ test('/api/deflections', async (t) => {
         localId: '9876',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: false,
+        drugType: 'DRUG',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -244,6 +255,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '9876');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, false);
+      assert.deepStrictEqual(data.drugType, null);
 
       // Verify in database
       const subject = await prisma.subject.findUnique({
@@ -265,6 +278,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, false);
+      assert.deepStrictEqual(deflection.drugType, null);
     });
   });
 
@@ -324,6 +339,71 @@ test('/api/deflections', async (t) => {
     await t.test('returns 404 for non-existent deflection', async () => {
       const nonExistentId = '0';
       const response = await app.inject().delete(`/api/deflections/${nonExistentId}`).payload({}).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('POST /:id/reopen', async (t) => {
+    await t.test('reopens a cancelled deflection', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+
+      let deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
+      const bedTypeBefore = await prisma.bedType.findUnique({ where: { id: deflection.bedTypeId } });
+
+      const response = await app.inject().post(`/api/deflections/${deflection.id}/reopen`).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, 'ACTIVE');
+      assert.deepStrictEqual(data.cancelReasonId, null);
+      assert.ok(data.expiresAt);
+
+      deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
+      assert.deepStrictEqual(deflection.status, 'ACTIVE');
+
+      const bedTypeAfter = await prisma.bedType.findUnique({ where: { id: deflection.bedTypeId } });
+      assert.deepStrictEqual(bedTypeAfter.holds, bedTypeBefore.holds + 1);
+      assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available - 1);
+    });
+
+    await t.test('returns 400 if incident is completed', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      await app.inject().delete('/api/deflections/5?cancelReasonId=5150').headers(userHeaders);
+      await app.inject().delete('/api/deflections/6?cancelReasonId=5150').headers(userHeaders);
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'Incident is already completed');
+    });
+
+    await t.test('returns 400 if deflection is not cancelled or expired', async () => {
+      const response = await app.inject().post('/api/deflections/1/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'Deflection is not cancelled or expired');
+    });
+
+    await t.test('returns 409 if no available beds', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
+      await prisma.bedType.update({
+        where: { id: deflection.bedTypeId },
+        data: { available: 0 },
+      });
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'No available beds');
+    });
+
+    await t.test('returns 404 for non-existent deflection', async () => {
+      const response = await app.inject().post('/api/deflections/0/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
     });
   });

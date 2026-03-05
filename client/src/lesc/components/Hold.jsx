@@ -2,20 +2,27 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
-
 import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-function Hold ({
-  incident,
-  deflection,
-  onCancelClick,
-  onDetailsClick,
-}) {
+import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+
+function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const displayId = String(deflection.id).padStart(6, '0');
-  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Let’s add subject details';
+  const displayName =
+    [
+      deflection?.subject?.firstName,
+      deflection?.subject?.middleInitial,
+      deflection?.subject?.lastName,
+    ]
+      .filter(Boolean)
+      .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
   const [now, setNow] = useState(DateTime.now());
 
@@ -33,7 +40,6 @@ function Hold ({
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
-  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
   const isExpiredStatus = deflection.status === 'EXPIRED';
   const minutesUntilExpiration = deflection?.expiresAt
     ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
@@ -43,6 +49,25 @@ function Hold ({
   const isValid = isValidDeflection(deflection);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
+
+  const { data: cancelReason } = useQuery({
+    queryKey: ['deflection-cancel-reasons', deflection.cancelReasonId],
+    queryFn: () => Api.deflections.cancelReasons.get(deflection.cancelReasonId).then(response => response.data),
+    enabled: !!deflection.cancelReasonId,
+  });
+
+  const reopenHoldMutation = useMutation({
+    mutationFn: () => Api.deflections.reopen(deflection.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'active']);
+      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'inactive']);
+      showToast('Hold reopened', 'success', 4000, `Hold for ${displayName} was reopened.`);
+    },
+  });
+
+  const reopenHold = () => {
+    reopenHoldMutation.mutate(deflection.id);
+  };
 
   useEffect(() => {
     if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
@@ -54,6 +79,12 @@ function Hold ({
 
     return () => window.clearInterval(intervalId);
   }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
+
+  function cancelReasonMessage () {
+    if (deflection.cancelReasonId != null) {
+      return `Cancelled at ${formatTime(deflection?.cancelledAt) || 'Unknown'} (${cancelReason?.name || 'unknown reason'})`;
+    }
+  }
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -70,7 +101,7 @@ function Hold ({
             {isCancelled && (
               <>
                 <Text size='md' c='gray.6'>•</Text>
-                <Text size='md' c='yellow.7'>Cancelled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
+                <Text size='md' c='yellow.7'>{cancelReasonMessage()}</Text>
               </>
             )}
             {isExpired && (
@@ -83,9 +114,7 @@ function Hold ({
           <Box>
             <Title order={3}>{displayName}</Title>
             {subjectDetails.length > 0 && (
-              <Text size='md'>
-                {subjectDetails.join(', ')}
-              </Text>
+              <Text size='md'>{subjectDetails.join(', ')}</Text>
             )}
           </Box>
         </Stack>
@@ -112,7 +141,19 @@ function Hold ({
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
             {!isNew && (isValid || isCancelled || isExpired) && (
-              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+              <Group gap='sm' wrap='nowrap'>
+                <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+                {(isCancelled || isExpired) && (deflection?.incidentId === incident?.id)
+                  ? (
+                    <Button
+                      size='md'
+                      onClick={reopenHold}
+                    >
+                      Reopen Hold
+                    </Button>
+                    )
+                  : ''}
+              </Group>
             )}
           </Group>
         )}

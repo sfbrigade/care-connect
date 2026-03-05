@@ -79,6 +79,22 @@ LARGE LARGE
     
 
 
+        DrugTypeEnum {
+            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
+DRUG DRUG
+TOLUENE TOLUENE
+COMBINATION COMBINATION
+        }
+    
+
+
+        EncounteredViaEnum {
+            ON_VIEW ON_VIEW
+DISPATCHED DISPATCHED
+        }
+    
+
+
         RaceEnum {
             WHITE WHITE
 BLACK BLACK
@@ -357,6 +373,8 @@ EXITED EXITED
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
     Boolean volunteeredToReset "❓"
+    Boolean drugUseEvidence "❓"
+    DrugTypeEnum drugType "❓"
     String behavior "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
@@ -509,6 +527,7 @@ EXITED EXITED
     Decimal latitude "❓"
     Decimal longitude "❓"
     DateTime arrestedAt "❓"
+    EncounteredViaEnum encounteredVia 
     String cadNumber "❓"
     String supervisorBadgeNumber "❓"
     String createdById 
@@ -641,6 +660,7 @@ EXITED EXITED
     "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
+    "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
@@ -694,6 +714,7 @@ EXITED EXITED
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
+    "Incident" o|--|| "EncounteredViaEnum" : "enum:encounteredVia"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"
     "Incident" o|--|o "Title" : "createdByTitle"
