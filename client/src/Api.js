@@ -327,6 +327,9 @@ const Api = {
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },
+    reopen (id) {
+      return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
+    },
     cancelReasons: {
       index () {
         return instance.get('/api/deflections/cancel-reasons');
@@ -408,8 +411,8 @@ const Api = {
       },
     },
     units: {
-      index (organizationId, page = 1) {
-        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page } });
+      index (organizationId, page = 1, perPage = 25) {
+        return instance.get(`/api/organizations/${organizationId}/units`, { params: { page, perPage } });
       },
       get (organizationId, id) {
         return instance.get(`/api/organizations/${organizationId}/units/${id}`);

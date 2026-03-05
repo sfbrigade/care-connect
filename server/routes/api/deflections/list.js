@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 
-export default async function (fastify, opts) {
+export default async function (fastify) {
   fastify.get('/',
     {
       onRequest: fastify.requireUser,
@@ -36,6 +36,7 @@ export default async function (fastify, opts) {
           where.status = Deflection.HoldStatus.ACTIVE;
         } else {
           where.status = { not: Deflection.HoldStatus.ACTIVE };
+          where.subject = { isNot: null };
         }
       }
 
