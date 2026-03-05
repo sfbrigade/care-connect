@@ -3,12 +3,6 @@
  (FormContainer renders <body class="form-container">) and embedded mode
  (FormContainer renders <div class="form-container">).
 */
-	/*
-	@page {
-		size: letter;
-		margin: 0.5in 0.75in 0.65in 0.75in;
-	}
-	*/
 .form-container {
 	font-family: Roboto, sans-serif;
 	font-size: 12pt;

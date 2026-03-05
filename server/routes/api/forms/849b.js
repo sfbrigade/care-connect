@@ -143,7 +143,8 @@ export default async function (fastify, opts) {
         import(`../../../lib/forms/dist/CertificateOfRelease849BForm.js${cacheBust}`),
       ]);
 
-      const html = await renderFormToHtml(CertificateOfRelease849BForm, result.data);
+      const title = '849(b) Certificate of Release';
+      const html = await renderFormToHtml(CertificateOfRelease849BForm, result.data, { title });
 
       const pdfBuffer = await Promise.race([
         renderToPdf(html),

@@ -61,6 +61,8 @@ function Header () {
 
 // TODO: inject the css in FormContainer so it's shared across forms
 
+// set the margins here so we can pass them into the pageCSS template and share them with the --page-margin- variables,
+// since you can use vars with @page rules.
 const pageMarginX = '.75in';
 const pageMarginY = '.5in';
 const pageCSS = `

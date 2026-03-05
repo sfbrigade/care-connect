@@ -39,12 +39,13 @@ const standaloneCss = `
  *     body for font/layout rules so they work in both modes).
  *   - Render their content as plain JSX (no <html>/<head>/<body> wrapper).
  */
-export default function FormContainer ({ children, standalone = true }) {
+export default function FormContainer ({ children, standalone = true, title = 'CareConnect Form' }) {
   if (standalone) {
     return (
       <html lang='en'>
         <head>
           <meta charSet='utf-8' />
+          <title>{title}</title>
           <link rel='preconnect' href='https://fonts.googleapis.com' />
           <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin />
           <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap' rel='stylesheet' />
