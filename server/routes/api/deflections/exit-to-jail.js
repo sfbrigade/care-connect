@@ -75,6 +75,8 @@ export default async function (fastify, opts) {
           },
         });
 
+        const previousSubjectStatus = deflection.subjectStatus;
+
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
@@ -105,7 +107,7 @@ export default async function (fastify, opts) {
         const isHoldOnlyStatus = [
           Deflection.SubjectStatus.AWAITING_INTAKE,
           Deflection.SubjectStatus.READY_FOR_INTAKE,
-        ].includes(deflection.subjectStatus);
+        ].includes(previousSubjectStatus);
         const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
         const updatedBedTypeData = {
           capacity,

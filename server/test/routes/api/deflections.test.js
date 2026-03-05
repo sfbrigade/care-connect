@@ -373,7 +373,7 @@ test('/api/deflections', async (t) => {
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'FAILED_INTAKE',
           admittedAt: new Date(),
-          admittedById: '2e21de8f-d0f2-43f0-b79d-992710212553',
+          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           rejectedAt: new Date(),
           rejectedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
