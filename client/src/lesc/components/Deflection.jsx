@@ -129,21 +129,6 @@ function Deflection () {
     }
   }
 
-  function getDrugTypeLabel (value) {
-    switch (value) {
-      case 'INTOXICATING_LIQUOR':
-        return 'Intoxicating liquor';
-      case 'DRUG':
-        return 'Drug';
-      case 'TOLUENE':
-        return 'Toluene';
-      case 'COMBINATION':
-        return 'Combination';
-      default:
-        return value;
-    }
-  }
-
   return (
     <>
       <Head>
@@ -243,7 +228,7 @@ function Deflection () {
                   {deflection?.drugUseEvidence === true && !!deflection?.drugType && (
                     <Box>
                       <Text c='dimmed'>Drug type</Text>
-                      <Text>{getDrugTypeLabel(deflection.drugType)}</Text>
+                      <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                     </Box>
                   )}
                 </Stack>
