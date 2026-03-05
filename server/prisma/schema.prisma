@@ -84,6 +84,13 @@ enum PropertyEnum {
   LARGE
 }
 
+enum DrugTypeEnum {
+  INTOXICATING_LIQUOR
+  DRUG
+  TOLUENE
+  COMBINATION
+}
+
 enum EncounteredViaEnum {
   ON_VIEW
   DISPATCHED
@@ -465,6 +472,8 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
+  drugUseEvidence              Boolean?
+  drugType                     DrugTypeEnum?
   behavior                     String?
   property                     PropertyEnum?
   propertyDetails              String?

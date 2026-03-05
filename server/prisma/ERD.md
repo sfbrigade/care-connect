@@ -79,6 +79,15 @@ LARGE LARGE
     
 
 
+        DrugTypeEnum {
+            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
+DRUG DRUG
+TOLUENE TOLUENE
+COMBINATION COMBINATION
+        }
+    
+
+
         EncounteredViaEnum {
             ON_VIEW ON_VIEW
 DISPATCHED DISPATCHED
@@ -363,6 +372,8 @@ EXITED EXITED
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
+    Boolean drugUseEvidence "❓"
+    DrugTypeEnum drugType "❓"
     String behavior "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
@@ -648,6 +659,7 @@ EXITED EXITED
     "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
+    "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
