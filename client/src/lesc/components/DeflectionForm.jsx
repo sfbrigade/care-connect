@@ -215,7 +215,7 @@ function DeflectionForm () {
   return (
     <>
       <Head>
-        <title>Deflection details</title>
+        <title>Arrest details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -238,6 +238,7 @@ function DeflectionForm () {
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
           }
           return onSubmitMutation.mutateAsync(buildUpdatePayload(values));
         })}
@@ -292,7 +293,7 @@ function DeflectionForm () {
                 placeholder='E.g. “Subject was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>
-                {isNew ? 'Next: Personal property' : 'Save deflection details'}
+                {isNew ? 'Next: Personal property' : 'Save arrest details'}
               </Button>
             </Stack>
           </Fieldset>
