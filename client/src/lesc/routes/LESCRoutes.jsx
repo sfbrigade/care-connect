@@ -18,6 +18,7 @@ import NarcoticsForm from '../components/NarcoticsForm';
 import DrugUseForm from '../components/DrugUseForm';
 import TestFormPreview from '@/forms/TestFormPreview';
 import Form849BPreview from '@/forms/Form849BPreview';
+import FormPage from '@/forms/FormPage';
 import FormPreview from '@/forms/FormPreview';
 
 function LESCRoutes () {
@@ -42,8 +43,7 @@ function LESCRoutes () {
       <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />
       <Route path='care/:id/exit' element={<CareExitDetails />} />
       <Route path='care' element={<Care />} />
-      <Route path='forms/test' element={<TestFormPreview />} />
-      <Route path='forms/849b/:deflectionId' element={<Form849BPreview />} />
+      <Route path='forms/:formId/:deflectionId' element={<FormPage />} />
       <Route path='forms/preview/:formId/:deflectionId' element={<FormPreview />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
