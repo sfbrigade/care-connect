@@ -327,6 +327,9 @@ const Api = {
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },
+    reopen (id) {
+      return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
+    },
     cancelReasons: {
       index () {
         return instance.get('/api/deflections/cancel-reasons');

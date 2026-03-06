@@ -87,6 +87,7 @@ export default async function main (prisma) {
           state: 'CA',
           postalCode: '94103',
           arrestedAt: new Date(),
+          encounteredVia: 'DISPATCHED',
           cadNumber: `25020${1234 + i}`,
           supervisorBadgeNumber: '1234',
           arrivedAt,
