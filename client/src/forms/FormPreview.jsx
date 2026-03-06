@@ -85,9 +85,17 @@ export default function FormPreview () {
     );
   }
 
+  // Drive the outer div's minHeight from the measured page so the gray
+  // background always surrounds the white page, even inside Mantine's
+  // AppShell grid layout where '100vh' alone isn't enough to push the
+  // container below a tall scaled page.
+  const outerMinHeight = pageHeight > 0
+    ? `max(100vh, ${Math.ceil(pageHeight * scale) + 48}px)`
+    : '100vh';
+
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: outerMinHeight,
       backgroundColor: '#e0e0e0',
       padding: '24px',
     }}>
