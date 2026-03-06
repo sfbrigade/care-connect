@@ -62,6 +62,29 @@ function buildNarrative ({ arrestedAt, officerName, subjectFullName, arrivedAtRe
 }
 
 const tableCSS = `
+  /*
+   * pdf-forms.css fixes .page to exactly one page height and pins the footer
+   * with position:absolute. Override both here so this form can grow beyond
+   * one page without clipping content, and so the footer flows inline after
+   * the last row rather than overlapping it.
+   * Specificity: .form-container .page.form-849b [0,3,0] > .form-container .page [0,2,0]
+   */
+  .form-container .page.form-849b {
+    height: auto;
+    min-height: calc(11in - var(--page-margin-top) - var(--page-margin-bottom));
+  }
+  .form-container .page.form-849b footer {
+    position: static;
+    margin-top: 1.5em;
+  }
+  @media screen {
+    .form-container .page.form-849b footer {
+      bottom: auto;
+      left: auto;
+      right: auto;
+    }
+  }
+
   .form-849b .form-table {
     width: 100%;
     border-collapse: collapse;
