@@ -34,7 +34,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Safety check completed', 'success', 4000, 'Subject is ready for medical intake.');
+      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
     onError: () => {
       showToast('Safety check not saved. Please try again.', 'error');
@@ -46,7 +46,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Subject legally released', 'success');
+      showToast('Person legally released', 'success');
       navigate('/custody');
     },
     onError: () => {
@@ -56,7 +56,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
 
   const isReleasable = RELEASABLE_STATUSES.includes(deflection?.subjectStatus);
 
-  const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown subject';
+  const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
