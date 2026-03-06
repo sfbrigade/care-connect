@@ -376,6 +376,7 @@ EXITED EXITED
     Boolean drugUseEvidence "❓"
     DrugTypeEnum drugType "❓"
     String behavior "❓"
+    String behaviorAdditions "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     DateTime createdAt 
