@@ -9,8 +9,8 @@ function formatDate (dateStr) {
   if (isNaN(d.getTime())) return { month: '', date: '', year: '' };
   const opts = { timeZone: FORM_TIMEZONE };
   return {
-    month: d.toLocaleString('en-US', { ...opts, month: 'long' }),
-    date: d.toLocaleString('en-US', { ...opts, day: 'numeric' }),
+    month: d.toLocaleString('en-US', { ...opts, month: '2-digit' }),
+    date: d.toLocaleString('en-US', { ...opts, day: '2-digit' }),
     year: d.toLocaleString('en-US', { ...opts, year: 'numeric' }),
   };
 }
@@ -29,24 +29,6 @@ function Field ({ value, width, label }) {
     <span className='field'>
       <span className='value' style={valueStyle}>{value || ''}</span>
       {label && <span className='label'>{label}</span>}
-    </span>
-  );
-}
-
-/** Date field with Month / Date / Year (and optionally Time) sub-labels. */
-function DateField ({ month, date, year, time }) {
-  const parts = [month, date, year, time].filter((v) => v !== undefined && v !== null && v !== '');
-  const value = parts.join('\u00a0\u00a0');
-  const showTime = time !== undefined && time !== null && time !== '';
-  return (
-    <span className='date-field'>
-      <span className='value'>{value}</span>
-      <span className='labels'>
-        <span>Month</span>
-        <span>Date</span>
-        <span>Year</span>
-        {showTime && <span>Time</span>}
-      </span>
     </span>
   );
 }
@@ -103,36 +85,29 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
         <Header />
 
         <h1 className='title'>
-          San Francisco Sheriff's Department Certificate of Release
+          San Francisco Sheriff’s Department Certificate of Release
         </h1>
 
         {/* ── Paragraph 1: detention ── */}
         <p>
           As required by the provisions of Penal Code Section 851.6 (as amended by Stats 1975,
-          ch.1117), I hereby certify that the taking into custody
-          <span className='field-block'>
-            <span>of{' '}
-              <Field value={subjectName} label="Subject's Name" />{' '}
-            </span>
-            <span>
-              on{' '}
-              <DateField month={detention.month} date={detention.date} year={detention.year} />{' '}
-            </span>
-            <span>
-              at{' '}
-              <Field value={detentionTime} width='55pt' label='Time' />{' '}
-              hours
-            </span>
-          </span>
-          by the San Francisco Sheriff&apos;s Department was a detention only, not an arrest.
+          ch.1117), I hereby certify that the taking into custody of{' '}
+          <Field value={subjectName} label="Subject's Name" />{' '}
+          on{' '}
+          <Field value={`${detention.year}-${detention.month}-${detention.date}`} label='Date' />{' '}
+          at{' '}
+          <Field value={detentionTime} label='Time' />{' '}
+          hours by the San Francisco Sheriff’s Department was a detention only, not an arrest.
         </p>
 
         {/* ── Paragraph 2: release ── */}
         <p style={{ marginTop: '2em' }}>
           <Field value={subjectName} label="Subject's Name" />{' '}
           was released on{' '}
-          <DateField month={release.month} date={release.date} year={release.year} time={releaseTime} />{' '}
-          by the San Francisco Sheriff&apos;s Department pursuant to the provisions of:
+          <Field value={`${release.year}-${release.month}-${release.date}`} label='Date' />{' '}
+          at{' '}
+          <Field value={releaseTime} label='Time' />{' '}
+          hours by the San Francisco Sheriff’s Department pursuant to the provisions of:
         </p>
 
         {/* ── Legal text ── */}
@@ -145,7 +120,7 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
         {/* ── Signature section ── */}
         <div className='sig-section'>
           <div className='sig-row'>
-            <span className='label'>Deputy&apos;s Rank, Name &amp; Star#</span>
+            <span className='label'>Deputy’s Rank, Name &amp; Star#</span>
             <span className='line'>{deputyRankNameStar}</span>
             <span className='unit-label'>Unit Identifier:</span>
             <span className='unit-line'>{unitIdentifier}</span>
@@ -153,7 +128,7 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
           <div className='print-label'>Print</div>
 
           <div className='sig-row'>
-            <span className='label'>Deputy&apos;s Signature &amp; Star#</span>
+            <span className='label'>Deputy’s Signature &amp; Star#</span>
             <span className='line' />
           </div>
         </div>

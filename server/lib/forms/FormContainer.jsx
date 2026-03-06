@@ -48,8 +48,6 @@ export default function FormContainer ({ children, standalone = true, title = 'C
           <title>{title}</title>
           <link rel='preconnect' href='https://fonts.googleapis.com' />
           <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin />
-          <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap' rel='stylesheet' />
-          {/* eslint-disable-next-line react/no-danger */}
           <style dangerouslySetInnerHTML={{ __html: standaloneCss }} />
         </head>
         <body className='form-container'>
@@ -61,7 +59,6 @@ export default function FormContainer ({ children, standalone = true, title = 'C
 
   return (
     <div className='form-container'>
-      {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: embeddedCss }} />
       {children}
     </div>
