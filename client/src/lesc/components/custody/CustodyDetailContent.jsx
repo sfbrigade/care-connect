@@ -109,19 +109,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
     saveReleaseNarrativeMutation.mutate();
   }
 
-  const editButtonProps = {
-    variant: 'light',
-    color: 'blue',
-    radius: 'xl',
-    styles: {
-      root: {
-        minHeight: 40,
-        padding: '8px 20px',
-        background: 'rgba(76, 110, 245, 0.1)',
-      },
-    },
-  };
-
   return (
     <>
       <Header>
@@ -200,7 +187,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} {...editButtonProps}>Edit</Button>
+              <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit</Button>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'release-narrative']}>
@@ -224,7 +211,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                     </Box>
                   )}
                   <Group mt='sm'>
-                    <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} {...editButtonProps}>Edit</Button>
+                    <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary'>Edit</Button>
                   </Group>
                 </Stack>
               </Accordion.Panel>
@@ -344,7 +331,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                     <Button
                       onClick={onReleaseNarrativeButtonClick}
                       loading={saveReleaseNarrativeMutation.isPending}
-                      {...editButtonProps}
+                      variant='secondary'
                     >
                       Edit
                     </Button>
