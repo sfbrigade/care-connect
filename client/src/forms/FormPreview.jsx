@@ -5,11 +5,13 @@ import { Alert, Center, Loader } from '@mantine/core';
 
 import FormContainer from '../../../server/lib/forms/FormContainer.jsx';
 import CertificateOfReleaseForm from 'care-connect-server/lib/forms/CertificateOfReleaseForm.jsx';
+import Form849B from 'care-connect-server/lib/forms/Form849B.jsx';
 
 // Registry mapping form IDs (from the URL) to their React components.
 // Add new form entries here as they are created.
 const FORM_REGISTRY = {
   cert: CertificateOfReleaseForm,
+  '849b': Form849B,
 };
 
 async function fetchFormData (formId, deflectionId) {
