@@ -85,6 +85,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
                   </Box>
                   {group.deflections.map((deflection) => (
                     <Hold
+                      incident={incident}
                       key={deflection.id}
                       deflection={deflection}
                       onDetailsClick={() => {

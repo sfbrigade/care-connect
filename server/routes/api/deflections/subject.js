@@ -44,10 +44,14 @@ export default async function (fastify, opts) {
       const subjectData = { ...data };
       delete subjectData.narcoticsSubstance;
       delete subjectData.narcoticsParaphernalia;
+      delete subjectData.drugUseEvidence;
+      delete subjectData.drugType;
 
       const deflectionData = {
         narcoticsSubstance: data.narcoticsSubstance ?? null,
         narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
+        drugUseEvidence: data.drugUseEvidence ?? null,
+        drugType: data.drugUseEvidence === true ? data.drugType ?? null : null,
       };
 
       await fastify.prisma.$transaction(async (tx) => {

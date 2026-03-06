@@ -47,12 +47,6 @@ function Holds () {
     refetchOnMount: 'always',
   });
 
-  const { data: incidentDeflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'all'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id }).then(response => response.data),
-    enabled: !!incident,
-  });
-
   const {
     data: inactiveDeflections,
     isFetching: isFetchingInactiveDeflections,
@@ -179,9 +173,6 @@ function Holds () {
         queryClient.removeQueries({
           queryKey: ['deflections', incident?.id, 'active'],
         }),
-        queryClient.removeQueries({
-          queryKey: ['deflections', incident?.id, 'all'],
-        }),
         queryClient.invalidateQueries({
           queryKey: ['deflections', facility.id, 'inactive'],
         }),
@@ -205,8 +196,8 @@ function Holds () {
 
   const isLastActiveHoldSelected = !!selectedDeflection && (deflections?.length ?? 0) === 1;
 
-  const incidentContainsOnlyEmptyHolds = incidentDeflections
-    ? incidentDeflections.every(deflection => !deflection.subjectId)
+  const incidentContainsOnlyEmptyHolds = deflections
+    ? deflections.every(deflection => !deflection.subjectId)
     : false; // Default false to avoid triggering auto-cancel in a loading/error state
 
   const shouldCancelIncidentWithHold =
