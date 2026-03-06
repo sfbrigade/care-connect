@@ -9,19 +9,11 @@ export function composeBehavior (generatedNarrative, behaviorAdditions) {
   return generated || additions || '';
 }
 
-export function extractBehaviorAdditions (fullBehavior, generatedNarrative) {
-  const normalizedFull = (fullBehavior ?? '').trim();
-  const normalizedGenerated = (generatedNarrative ?? '').trim();
-  if (!normalizedGenerated || !normalizedFull.startsWith(normalizedGenerated)) {
-    return normalizedFull;
-  }
-
-  return normalizedFull.slice(normalizedGenerated.length).replace(/^\s+/, '');
-}
-
 export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAdditions, deflectionDetails }) {
+  const normalizedBehaviorAdditions = (behaviorAdditions || '').trim();
   return {
-    behavior: composeBehavior(generatedNarrative, behaviorAdditions),
+    behavior: composeBehavior(generatedNarrative, normalizedBehaviorAdditions),
+    behaviorAdditions: normalizedBehaviorAdditions || null,
     deflectionDetails: [...(deflectionDetails ?? [])]
       .map((detailId) => detailId)
       .sort((a, b) => String(a).localeCompare(String(b))),

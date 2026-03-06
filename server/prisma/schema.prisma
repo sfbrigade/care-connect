@@ -475,6 +475,7 @@ model Deflection {
   drugUseEvidence              Boolean?
   drugType                     DrugTypeEnum?
   behavior                     String?
+  behaviorAdditions            String?
   property                     PropertyEnum?
   propertyDetails              String?
   createdAt                    DateTime                @default(now())

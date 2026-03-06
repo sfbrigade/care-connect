@@ -93,6 +93,7 @@ test('/api/deflections', async (t) => {
     await t.test('updates deflection details', async () => {
       const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
+        behaviorAdditions: 'Additional details from officer.',
         deflectionDetails: ['unable_to_stand', 'confused'],
       }).headers(userHeaders);
 
@@ -100,6 +101,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(data.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(data.deflectionDetails.length, 2);
 
       // Verify in database
@@ -110,6 +112,7 @@ test('/api/deflections', async (t) => {
         },
       });
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(deflection.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
     });
 

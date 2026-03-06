@@ -11,7 +11,7 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
-import { buildDeflectionUpdatePayload, extractBehaviorAdditions } from '@/utils/deflectionBehavior';
+import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
 
 const initialValues = {
   behaviorAdditions: '',
@@ -28,7 +28,7 @@ function DeflectionForm () {
   const [isInitialized, setInitialized] = useState(false);
   const autoSaveTimerRef = useRef(null);
   const lastDetailSelectionKeyRef = useRef('');
-  const isAdditionsSeededRef = useRef(false);
+  const generatedNarrativeRef = useRef('');
   const [generatedNarrative, setGeneratedNarrative] = useState('');
 
   const { data: incident } = useQuery({
@@ -69,7 +69,7 @@ function DeflectionForm () {
     if (!isLoading && !isInitialized) {
       if (deflection) {
         const normalized = normalizeFormValues({
-          behaviorAdditions: deflection.behavior,
+          behaviorAdditions: deflection.behaviorAdditions,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
         });
         form.setInitialValues(normalized);
@@ -100,30 +100,16 @@ function DeflectionForm () {
         observedBehaviorNames: selectedDetails.map(detail => detail?.name),
       });
     }
+    generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
   }, [isInitialized, incident, selectedDetails]);
-
-  useEffect(() => {
-    if (!isInitialized || isAdditionsSeededRef.current) {
-      return;
-    }
-    if (selectedDetails.length > 0 && !generatedNarrative) {
-      return;
-    }
-    const currentBehavior = form.getValues().behaviorAdditions ?? '';
-    const extractedAdditions = extractBehaviorAdditions(currentBehavior, generatedNarrative);
-    if (currentBehavior !== extractedAdditions) {
-      form.setFieldValue('behaviorAdditions', extractedAdditions);
-    }
-    isAdditionsSeededRef.current = true;
-  }, [isInitialized, generatedNarrative, selectedDetails]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = null;
       if (isInitialized) {
-        autoSaveMutation.mutate(buildUpdatePayload(form.getValues()));
+        autoSaveMutation.mutate(buildUpdatePayload(form.getValues(), generatedNarrativeRef.current));
       }
     }
   }, [isInitialized]);
@@ -158,9 +144,9 @@ function DeflectionForm () {
     };
   }
 
-  function buildUpdatePayload (values) {
+  function buildUpdatePayload (values, generatedNarrativeValue = generatedNarrative) {
     return buildDeflectionUpdatePayload({
-      generatedNarrative,
+      generatedNarrative: generatedNarrativeValue,
       behaviorAdditions: values.behaviorAdditions ?? '',
       deflectionDetails: values.deflectionDetails,
     });
@@ -172,6 +158,7 @@ function DeflectionForm () {
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
+      autoSaveTimerRef.current = null;
       autoSaveMutation.mutate(normalized);
     }, 700);
   }

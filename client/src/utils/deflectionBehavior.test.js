@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDeflectionUpdatePayload, composeBehavior, extractBehaviorAdditions } from './deflectionBehavior';
+import { buildDeflectionUpdatePayload, composeBehavior } from './deflectionBehavior';
 
 describe('deflectionBehavior', () => {
   it('combines generated narrative and additions in order', () => {
@@ -24,6 +24,7 @@ describe('deflectionBehavior', () => {
     });
 
     expect(payload.behavior).toBe('Additional context only.');
+    expect(payload.behaviorAdditions).toBe('Additional context only.');
   });
 
   it('regenerates base narrative and keeps additions appended', () => {
@@ -50,23 +51,22 @@ describe('deflectionBehavior', () => {
 
     expect(payload).toEqual({
       behavior: ['Generated text', '', 'Manual additions'].join('\n'),
+      behaviorAdditions: 'Manual additions',
       deflectionDetails: ['1', '10', '2'],
     });
   });
 
-  it('extracts additions when persisted behavior starts with generated narrative', () => {
-    const additions = extractBehaviorAdditions(
-      ['Officer encountered subject.', '', 'Additional context line.'].join('\n'),
-      'Officer encountered subject.'
-    );
+  it('stores manual additions as null when textarea is empty', () => {
+    const payload = buildDeflectionUpdatePayload({
+      generatedNarrative: 'Generated text',
+      behaviorAdditions: '   ',
+      deflectionDetails: ['a'],
+    });
 
-    expect(additions).toBe('Additional context line.');
-  });
-
-  it('keeps full persisted behavior as additions when it does not match generated prefix', () => {
-    const fullBehavior = 'Legacy narrative from earlier workflow.';
-    const additions = extractBehaviorAdditions(fullBehavior, 'Officer encountered subject at [DETAILS MISSING].');
-
-    expect(additions).toBe(fullBehavior);
+    expect(payload).toEqual({
+      behavior: 'Generated text',
+      behaviorAdditions: null,
+      deflectionDetails: ['a'],
+    });
   });
 });
