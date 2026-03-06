@@ -67,10 +67,16 @@ const tableCSS = `
    * with position:absolute. Override both here so this form can grow beyond
    * one page without clipping content, and so the footer flows inline after
    * the last row rather than overlapping it.
+   *
+   * !important on height: the pdf-forms.css rule uses CSS nesting which may
+   * not be processed before this style block, so we force the override.
+   * The padding is re-declared here so it isn't lost if the nested @media
+   * screen rule in pdf-forms.css doesn't win the cascade.
+   *
    * Specificity: .form-container .page.form-849b [0,3,0] > .form-container .page [0,2,0]
    */
   .form-container .page.form-849b {
-    height: auto;
+    height: auto !important;
     min-height: calc(11in - var(--page-margin-top) - var(--page-margin-bottom));
   }
   .form-container .page.form-849b footer {
@@ -78,6 +84,9 @@ const tableCSS = `
     margin-top: 1.5em;
   }
   @media screen {
+    .form-container .page.form-849b {
+      padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+    }
     .form-container .page.form-849b footer {
       bottom: auto;
       left: auto;
