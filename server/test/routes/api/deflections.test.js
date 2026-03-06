@@ -95,6 +95,7 @@ test('/api/deflections', async (t) => {
         behavior: 'This is the narrative text.',
         behaviorAdditions: 'Additional details from officer.',
         deflectionDetails: ['unable_to_stand', 'confused'],
+        volunteeredToReset: true,
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -103,6 +104,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
       assert.deepStrictEqual(data.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(data.deflectionDetails.length, 2);
+      assert.deepStrictEqual(data.volunteeredToReset, true);
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
@@ -114,6 +116,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
       assert.deepStrictEqual(deflection.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
+      assert.deepStrictEqual(deflection.volunteeredToReset, true);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {

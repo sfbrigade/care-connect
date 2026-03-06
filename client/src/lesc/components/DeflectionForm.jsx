@@ -16,6 +16,7 @@ import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
 const initialValues = {
   behaviorAdditions: '',
   deflectionDetails: [],
+  volunteeredToReset: null,
 };
 
 function DeflectionForm () {
@@ -71,6 +72,7 @@ function DeflectionForm () {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
+          volunteeredToReset: deflection.volunteeredToReset !== null ? JSON.stringify(deflection.volunteeredToReset) : null,
         });
         form.setInitialValues(normalized);
         form.reset();
@@ -141,6 +143,7 @@ function DeflectionForm () {
       deflectionDetails: [...(values.deflectionDetails ?? [])]
         .map((detailId) => detailId)
         .sort((a, b) => String(a).localeCompare(String(b))),
+      volunteeredToReset: values.volunteeredToReset ?? null,
     };
   }
 
@@ -270,6 +273,17 @@ function DeflectionForm () {
                 <Text style={{ whiteSpace: 'pre-wrap' }}>
                   {generatedNarrative || 'Select observations to generate narrative text.'}
                 </Text>
+              </Input.Wrapper>
+              <Input.Wrapper label='Person volunteered to be taken to RESET'>
+                <Chip.Group
+                  key={form.key('volunteeredToReset')}
+                  {...form.getInputProps('volunteeredToReset')}
+                >
+                  <Group gap='sm' mt='md'>
+                    <Chip value='true'>Yes</Chip>
+                    <Chip value='false'>No</Chip>
+                  </Group>
+                </Chip.Group>
               </Input.Wrapper>
               <Textarea
                 label='Add to narrative (optional)'
