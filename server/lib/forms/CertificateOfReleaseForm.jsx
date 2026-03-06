@@ -1,5 +1,4 @@
 import React from 'react';
-import css from './pdf-forms.css';
 
 const FORM_TIMEZONE = 'America/Los_Angeles';
 
@@ -41,26 +40,6 @@ function Header () {
   );
 }
 
-// TODO: inject the css in FormContainer so it's shared across forms
-
-// set the margins here so we can pass them into the pageCSS template and share them with the --page-margin- variables,
-// since you can use vars with @page rules.
-const pageMarginX = '.75in';
-const pageMarginY = '.5in';
-const pageCSS = `
-  @page {
-    size: letter;
-    margin: ${pageMarginY} ${pageMarginX};
-  }
-  
-  .form-container {
-    --page-margin-top: ${pageMarginY};
-    --page-margin-right: ${pageMarginX};
-    --page-margin-bottom: ${pageMarginY};
-    --page-margin-left: ${pageMarginX};
-  }
-`;
-
 export default function CertificateOfReleaseForm ({ data = {} }) {
   const {
     subjectName = '',
@@ -77,10 +56,6 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
 
   return (
     <>
-      {/* eslint-disable-next-line react/no-danger */}
-      <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
-      {/* eslint-disable-next-line react/no-danger */}
-      <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className='page'>
         <Header />
 
