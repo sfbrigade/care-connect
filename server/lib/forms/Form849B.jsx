@@ -122,6 +122,7 @@ const tableCSS = `
   }
   .form-849b .narrative-section {
     margin-top: 1em;
+    page-break-inside: avoid;
   }
   .form-849b .narrative-label {
     font-weight: bold;
@@ -168,7 +169,13 @@ export default function Form849B ({ data = {} }) {
       <div className='page form-849b'>
         <Header />
 
-        <h1 className='title'>SFSD PC 849(b) Report</h1>
+        <h1 className='title'>
+          San Francisco Sheriff’s Office
+          &mdash;
+          Sheriff’s Patrol Unit
+          <br />
+          849(b) Report
+        </h1>
 
         <table className='form-table'>
           <tbody>
