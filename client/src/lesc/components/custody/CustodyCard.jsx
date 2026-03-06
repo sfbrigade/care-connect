@@ -18,7 +18,7 @@ function CustodyCard ({ deflection, highlighted }) {
   const { showToast } = useToast();
 
   const displayId = String(deflection.id).padStart(6, '0');
-  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown subject';
+  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
 
   const subjectDetails = [];
   if (deflection?.subject?.dateOfBirth) {
@@ -33,7 +33,7 @@ function CustodyCard ({ deflection, highlighted }) {
     onSuccess: () => {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      showToast('Safety check completed', 'success', 4000, 'Subject is ready for medical intake.');
+      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
     onError: () => {
       showToast('Safety check not saved. Please try again.', 'error');

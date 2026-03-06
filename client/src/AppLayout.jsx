@@ -13,7 +13,7 @@ import { useFacilityContext } from './FacilityContext';
 function AppLayout () {
   const [opened, { close, toggle }] = useDisclosure();
   const navigate = useNavigate();
-  const { facility } = useFacilityContext();
+  const { facility, setFacility } = useFacilityContext();
   const queryClient = useQueryClient();
 
   async function logout (event) {
@@ -22,6 +22,10 @@ function AppLayout () {
     queryClient.setQueryData(['users', 'me'], null);
     close();
     navigate('/');
+    if (import.meta.env.DEV) {
+      setFacility(null);
+      window?.location.reload();
+    }
   }
 
   const location = useLocation();
