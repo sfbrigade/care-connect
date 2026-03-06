@@ -1,8 +1,9 @@
 import React from 'react';
+import pdfCSS from './pdf-forms.css';
 
 // Reset styles scoped to the container class so embedded mode doesn't leak into the parent app.
 // In standalone mode the container IS the <body>, so the scoped selector still works.
-const embeddedCss = `
+const embeddedCSS = `
   .form-container * {
     box-sizing: border-box;
     margin: 0;
@@ -18,11 +19,29 @@ const embeddedCss = `
 //  }
 
 // In standalone mode we can use the global selector freely since nothing else is on the page.
-const standaloneCss = `
+const standaloneCSS = `
   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+  }
+`;
+
+// set the margins here so we can pass them into the pageCSS template and share them with the --page-margin- variables,
+// since you can use vars with @page rules.
+const pageMarginX = '.75in';
+const pageMarginY = '.5in';
+const pageCSS = `
+  @page {
+    size: letter;
+    margin: ${pageMarginY} ${pageMarginX};
+  }
+  
+  .form-container {
+    --page-margin-top: ${pageMarginY};
+    --page-margin-right: ${pageMarginX};
+    --page-margin-bottom: ${pageMarginY};
+    --page-margin-left: ${pageMarginX};
   }
 `;
 
@@ -40,6 +59,12 @@ const standaloneCss = `
  *   - Render their content as plain JSX (no <html>/<head>/<body> wrapper).
  */
 export default function FormContainer ({ children, standalone = true, title = 'CareConnect Form' }) {
+//  const css = [
+//    standalone ? standaloneCSS : embeddedCSS,
+//    pageCSS,
+//    pdfCSS
+//  ].join('\n');
+
   if (standalone) {
     return (
       <html lang='en'>
@@ -48,7 +73,10 @@ export default function FormContainer ({ children, standalone = true, title = 'C
           <title>{title}</title>
           <link rel='preconnect' href='https://fonts.googleapis.com' />
           <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin />
-          <style dangerouslySetInnerHTML={{ __html: standaloneCss }} />
+          {/*<style dangerouslySetInnerHTML={{ __html: css }} />*/}
+          <style dangerouslySetInnerHTML={{ __html: standaloneCSS }} />
+          <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
+          <style dangerouslySetInnerHTML={{ __html: pdfCSS }} />
         </head>
         <body className='form-container'>
           {children}
@@ -59,7 +87,10 @@ export default function FormContainer ({ children, standalone = true, title = 'C
 
   return (
     <div className='form-container'>
-      <style dangerouslySetInnerHTML={{ __html: embeddedCss }} />
+      {/*<style dangerouslySetInnerHTML={{ __html: css }} />*/}
+      <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
+      <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
+      <style dangerouslySetInnerHTML={{ __html: pdfCSS }} />
       {children}
     </div>
   );

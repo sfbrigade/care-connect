@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-const RENDER_TIMEOUT_MS = 15000;
+const RENDER_TIMEOUT_MS = 20000;
 
 const deflectionInclude = {
   subject: true,
