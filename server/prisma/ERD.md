@@ -372,6 +372,7 @@ EXITED EXITED
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
+    Boolean volunteeredToReset "❓"
     Boolean drugUseEvidence "❓"
     DrugTypeEnum drugType "❓"
     String behavior "❓"

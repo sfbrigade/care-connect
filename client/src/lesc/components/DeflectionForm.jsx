@@ -14,6 +14,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 const initialValues = {
   behavior: '',
   deflectionDetails: [],
+  volunteeredToReset: null,
 };
 
 function DeflectionForm () {
@@ -62,6 +63,7 @@ function DeflectionForm () {
         const normalized = normalizeValues({
           behavior: deflection.behavior,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
+          volunteeredToReset: deflection.volunteeredToReset !== null ? JSON.stringify(deflection.volunteeredToReset) : null,
         });
         form.setInitialValues(normalized);
         form.reset();
@@ -97,16 +99,25 @@ function DeflectionForm () {
       deflectionDetails: [...(values.deflectionDetails ?? [])]
         .map(detailId => detailId)
         .sort((a, b) => String(a).localeCompare(String(b))),
+      volunteeredToReset: values.volunteeredToReset ?? null,
+    };
+  }
+
+  function buildPayload (values) {
+    const normalized = normalizeValues(values);
+    return {
+      ...normalized,
+      volunteeredToReset: normalized.volunteeredToReset !== null ? normalized.volunteeredToReset === 'true' : null,
     };
   }
 
   function scheduleAutoSave (values) {
-    const normalized = normalizeValues(values);
+    const payload = buildPayload(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
-      autoSaveMutation.mutate(normalized);
+      autoSaveMutation.mutate(payload);
     }, 700);
   }
 
@@ -167,7 +178,7 @@ function DeflectionForm () {
         </Group>
         <Title order={2} mb='xs'>Arrest details</Title>
         <Text c='dimmed' size='md' mb='xl'>Select what you observed. These details will be included in the legal forms.</Text>
-        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit((values) => onSubmitMutation.mutateAsync(buildPayload(values)))}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
               <Chip.Group
@@ -204,6 +215,17 @@ function DeflectionForm () {
                   <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
                 </Input.Wrapper>
               )}
+              <Input.Wrapper label='Person volunteered to be taken to RESET'>
+                <Chip.Group
+                  key={form.key('volunteeredToReset')}
+                  {...form.getInputProps('volunteeredToReset')}
+                >
+                  <Group gap='sm' mt='md'>
+                    <Chip value='true'>Yes</Chip>
+                    <Chip value='false'>No</Chip>
+                  </Group>
+                </Chip.Group>
+              </Input.Wrapper>
               <Textarea
                 label={<>Narrative (arrestable behavior)<span>*</span><br /><Text size='md' mb='xs' c='dimmed'>Describe what you observed in your own words. Be specific and concise.</Text></>}
                 key={form.key('behavior')}
