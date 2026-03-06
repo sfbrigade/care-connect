@@ -86,7 +86,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Return form data for an 849B Certificate of Release as JSON',
+        description: 'Return form data for a Certificate of Release as JSON',
         params: paramsSchema,
         response: {
           [StatusCodes.OK]: dataSchema,
@@ -103,7 +103,7 @@ export default async function (fastify, opts) {
       }
       if (result.error === 'not_released') {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          error: 'This deflection has not been released yet. The 849B Certificate of Release can only be generated after the subject has been released.',
+          error: 'This deflection has not been released yet. The Certificate of Release can only be generated after the subject has been released.',
         });
       }
 
@@ -116,7 +116,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Generate an 849B Certificate of Release PDF for a deflection',
+        description: 'Generate an Certificate of Release PDF for a deflection',
         params: paramsSchema,
         response: {
           [StatusCodes.OK]: z.any().describe('PDF file'),
@@ -133,7 +133,7 @@ export default async function (fastify, opts) {
       }
       if (result.error === 'not_released') {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          error: 'This deflection has not been released yet. The 849B Certificate of Release can only be generated after the subject has been released.',
+          error: 'This deflection has not been released yet. The Certificate of Release can only be generated after the subject has been released.',
         });
       }
 
@@ -143,7 +143,7 @@ export default async function (fastify, opts) {
         import(`../../../lib/forms/dist/CertificateOfReleaseForm.js${cacheBust}`),
       ]);
 
-      const title = '849(b) Certificate of Release';
+      const title = 'Certificate of Release';
       const html = await renderFormToHtml(CertificateOfReleaseForm, result.data, { title });
 
       const pdfBuffer = await Promise.race([
