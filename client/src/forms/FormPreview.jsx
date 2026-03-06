@@ -9,7 +9,7 @@ import CertificateOfReleaseForm from 'care-connect-server/lib/forms/CertificateO
 // Registry mapping form IDs (from the URL) to their React components.
 // Add new form entries here as they are created.
 const FORM_REGISTRY = {
-  '849b': CertificateOfReleaseForm,
+  cert: CertificateOfReleaseForm,
 };
 
 async function fetchFormData (formId, deflectionId) {

@@ -1,12 +1,12 @@
 import { useParams } from 'react-router';
 import { Alert } from '@mantine/core';
 
-import Form849BPreview from './Form849BPreview';
+import FormCertPreview from './FormCertPreview';
 
 // Registry mapping form IDs (from the URL) to their page components.
 // Add new form entries here as they are created.
 const FORM_REGISTRY = {
-  '849b': Form849BPreview,
+  cert: FormCertPreview,
 };
 
 export default function FormPage () {
