@@ -27,7 +27,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       await Api.deflections.transfer(deflectionId);
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
       onSuccess?.();
-      showToast('Subject received', 'success', 3000, 'Transfer code confirmed.');
+      showToast('Person received', 'success', 3000, 'Transfer code confirmed.');
     } catch (err) {
       showToast(getTransferErrorMessage(err), 'error');
       throw err;
@@ -54,7 +54,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       }
       onSuccess?.();
       showToast(
-        codes.length === 1 ? 'Subject received' : `${codes.length} subjects received`,
+        codes.length === 1 ? 'Person received' : `${codes.length} persons received`,
         'success',
         3000,
         codes.length === 1 ? 'Transfer code confirmed.' : 'Transfer codes confirmed.'
@@ -71,14 +71,14 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       onClose={onClose}
       onScan={handleScan}
       onManualSubmitCodes={handleManualSubmitCodes}
-      prompt={`Scan the subject's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
+      prompt={`Scan the person's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
       manualEntryTitle='Enter Transfer Code'
       manualEntryLabel='Enter transfer code'
       manualEntryDescription='If the QR code doesn’t work, ask the officer for the 6-digit transfer code.'
       manualEntryInputPlaceholder='Enter a 6-digit code'
       manualEntryAddButtonLabel='+ Transfer code'
       manualEntryAllowMultiple
-      loadingText='Transferring subject into custody...'
+      loadingText='Transferring person into custody...'
       _debugScanPhase={_debugScanPhase}
     />
   );

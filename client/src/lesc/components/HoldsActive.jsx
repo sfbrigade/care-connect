@@ -5,6 +5,7 @@ import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
+import { isInitialLoading, shouldShowIncidentInActive } from './holdsViewModel';
 
 function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
   const navigate = useNavigate();
@@ -26,15 +27,19 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
     extendAllHoldsMutation.mutate();
   }
 
+  const hasDeflections = (deflections?.length ?? 0) > 0;
+  const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
+  const showIncident = shouldShowIncidentInActive(incident, deflections);
+
   return (
     <>
-      {incident && (
+      {showIncident && (
         <Incident incident={incident} editLink='/incident' />
       )}
-      {isFetchingDeflections && (
+      {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {!isFetchingDeflections && (!deflections || deflections.length === 0) && (
+      {!showInitialLoading && !hasDeflections && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
@@ -43,7 +48,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
           </Box>
         </>
       )}
-      {!isFetchingDeflections && deflections && deflections.length > 0 && (
+      {hasDeflections && (
         <>
           <Stack gap='md'>
             {deflections?.map((deflection) => (
