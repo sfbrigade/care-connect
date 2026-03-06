@@ -268,12 +268,6 @@ function DeflectionForm () {
                   <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
                 </Input.Wrapper>
               )}
-              <Input.Wrapper label='647(f) narrative'>
-                <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
-                <Text style={{ whiteSpace: 'pre-wrap' }}>
-                  {generatedNarrative || 'Select observations to generate narrative text.'}
-                </Text>
-              </Input.Wrapper>
               <Input.Wrapper label='Person volunteered to be taken to RESET'>
                 <Chip.Group
                   key={form.key('volunteeredToReset')}
@@ -284,6 +278,12 @@ function DeflectionForm () {
                     <Chip value='false'>No</Chip>
                   </Group>
                 </Chip.Group>
+              </Input.Wrapper>
+              <Input.Wrapper label='647(f) narrative'>
+                <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
+                <Text style={{ whiteSpace: 'pre-wrap' }}>
+                  {generatedNarrative || 'Select observations to generate narrative text.'}
+                </Text>
               </Input.Wrapper>
               <Textarea
                 label='Add to narrative (optional)'
