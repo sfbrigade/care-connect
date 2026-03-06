@@ -82,7 +82,7 @@ const dataSchema = z.object({
 
 export default async function (fastify, opts) {
   fastify.get(
-    '/849b/data/:deflectionId',
+    '/cert/data/:deflectionId',
     {
       onRequest: fastify.requireUser,
       schema: {
@@ -112,7 +112,7 @@ export default async function (fastify, opts) {
   );
 
   fastify.get(
-    '/849b/pdf/:deflectionId',
+    '/cert/pdf/:deflectionId',
     {
       onRequest: fastify.requireUser,
       schema: {
@@ -153,7 +153,7 @@ export default async function (fastify, opts) {
         ),
       ]);
 
-      const filename = `849B-Certificate-of-Release-${deflectionId}.pdf`;
+      const filename = `cert-Certificate-of-Release-${deflectionId}.pdf`;
       return reply
         .code(StatusCodes.OK)
         .header('Content-Type', 'application/pdf')

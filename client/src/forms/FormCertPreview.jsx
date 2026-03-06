@@ -8,7 +8,7 @@ import Api from '@/Api';
 
 const isReleased = (deflection) => !!deflection?.releasedAt;
 
-export default function Form849BPreview () {
+export default function FormCertPreview () {
   const { deflectionId } = useParams();
   const navigate = useNavigate();
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -33,7 +33,7 @@ export default function Form849BPreview () {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(`/api/forms/849b/pdf/${deflectionId}`, {
+      const response = await fetch(`/api/forms/cert/pdf/${deflectionId}`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -65,7 +65,7 @@ export default function Form849BPreview () {
     if (pdfUrl) {
       const link = document.createElement('a');
       link.href = pdfUrl;
-      link.download = `849B-Certificate-of-Release-${deflectionId}.pdf`;
+      link.download = `cert-Certificate-of-Release-${deflectionId}.pdf`;
       link.click();
     }
   };
@@ -87,7 +87,7 @@ export default function Form849BPreview () {
           <ActionIcon variant='subtle' onClick={() => navigate(-1)} size='lg'>
             <IconArrowLeft />
           </ActionIcon>
-          <Title order={2}>849B Certificate of Release</Title>
+          <Title order={2}>Certificate of Release</Title>
         </Group>
         <Alert color='red' title='Error loading deflection'>
           Could not load deflection #{deflectionId}. It may not exist or you may not have access.
@@ -103,7 +103,7 @@ export default function Form849BPreview () {
           <IconArrowLeft />
         </ActionIcon>
         <div>
-          <Title order={2}>849(b) Certificate of Release</Title>
+          <Title order={2}>Certificate of Release</Title>
           <Text c='dimmed' size='sm'>
             Deflection #{deflectionId} — {subjectName}
           </Text>
@@ -113,7 +113,7 @@ export default function Form849BPreview () {
       <Stack gap='md'>
         {!isReleased(deflection) && (
           <Alert icon={<IconInfoCircle size={16} />} color='yellow' title='Subject not yet released'>
-            The 849(b) Certificate of Release can only be generated after the subject has been released.
+            The Certificate of Release can only be generated after the subject has been released.
             The current status is: {deflection?.subjectStatus || 'unknown'}.
           </Alert>
         )}
@@ -125,7 +125,7 @@ export default function Form849BPreview () {
               <div>
                 <Text fw={500}>Generate Certificate of Release</Text>
                 <Text size='sm' c='dimmed'>
-                  SF Sheriff&apos;s Dept Form 849(b) for {subjectName}
+                  SF Sheriff&apos;s Dept Certificate of Release for {subjectName}
                 </Text>
               </div>
             </Group>
@@ -161,7 +161,7 @@ export default function Form849BPreview () {
           {!pdfUrl && !pdfLoading && (
             <Text c='dimmed' ta='center' py='xl'>
               {isReleased(deflection)
-                ? 'Click "Generate PDF" to preview the 849(b) form'
+                ? 'Click "Generate PDF" to preview the form'
                 : 'The form will be available once the subject has been released'}
             </Text>
           )}
@@ -174,7 +174,7 @@ export default function Form849BPreview () {
           {pdfUrl && !pdfLoading && (
             <iframe
               src={pdfUrl}
-              title='849B Certificate of Release'
+              title='Certificate of Release'
               style={{ width: '100%', height: '800px', border: 'none', display: 'block' }}
             />
           )}
