@@ -26,6 +26,7 @@ const DeflectionAttributesSchema = z.object({
   property: z.enum(Object.values(PropertyEnum)).catch(null).nullable(),
   propertyDetails: z.string().nullable(),
   deflectionDetails: z.array(z.string()),
+  releaseNarrative: z.string().nullable(),
 });
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({

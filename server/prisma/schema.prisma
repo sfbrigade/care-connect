@@ -513,6 +513,7 @@ model Deflection {
   releasedById                 String?                 @db.Uuid
   releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
   releaseReasonId              String?
+  releaseNarrative             String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitedAt                     DateTime?

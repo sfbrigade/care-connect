@@ -402,6 +402,7 @@ EXITED EXITED
     DateTime releasedAt "❓"
     String releasedById "❓"
     String releaseReasonId "❓"
+    String releaseNarrative "❓"
     String refusalReasonId "❓"
     DateTime exitedAt "❓"
     String exitedById "❓"
