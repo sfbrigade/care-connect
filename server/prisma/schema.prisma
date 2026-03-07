@@ -84,6 +84,13 @@ enum PropertyEnum {
   LARGE
 }
 
+enum DrugTypeEnum {
+  INTOXICATING_LIQUOR
+  DRUG
+  TOLUENE
+  COMBINATION
+}
+
 enum EncounteredViaEnum {
   ON_VIEW
   DISPATCHED
@@ -465,7 +472,11 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
+  volunteeredToReset           Boolean?
+  drugUseEvidence              Boolean?
+  drugType                     DrugTypeEnum?
   behavior                     String?
+  behaviorAdditions            String?
   property                     PropertyEnum?
   propertyDetails              String?
   createdAt                    DateTime                @default(now())
@@ -502,6 +513,7 @@ model Deflection {
   releasedById                 String?                 @db.Uuid
   releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
   releaseReasonId              String?
+  releaseNarrative             String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitedAt                     DateTime?

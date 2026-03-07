@@ -3,6 +3,12 @@
     "CHAIR": "Chair",
     "BED": "Bed"
   },
+  "drugType": {
+    "INTOXICATING_LIQUOR": "Intoxicating liquor",
+    "DRUG": "Drug",
+    "TOLUENE": "Toluene",
+    "COMBINATION": "Combination"
+  },
   "facility": {
     "status": {
       "OPEN_ACCEPTING": "Open - accepting",

@@ -1,4 +1,4 @@
-import { Prisma, SexEnum, RaceEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, SexEnum, RaceEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -19,6 +19,8 @@ const SubjectAttributesSchema = z.object({
   localId: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable().optional(),
   narcoticsParaphernalia: z.boolean().nullable().optional(),
+  drugUseEvidence: z.boolean().nullable().optional(),
+  drugType: z.enum(Object.values(DrugTypeEnum)).catch(null).nullable().optional(),
 });
 
 const SubjectCreateSchema = SubjectAttributesSchema;
