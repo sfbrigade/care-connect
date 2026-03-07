@@ -38,6 +38,15 @@ export default function FormPreview () {
   const [scale, setScale] = useState(1);
   const [pageHeight, setPageHeight] = useState(0);
 
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['form-data', formId, deflectionId],
+    queryFn: () => fetchFormData(formId, deflectionId),
+    enabled: !!FormComponent && !!deflectionId,
+  });
+
+  // Re-run when `data` changes: the page divs don't exist until after the loading
+  // guard returns, so the refs are null on first mount. Adding `data` to the dep
+  // array ensures the observers are attached once the form is actually rendered.
   useEffect(() => {
     const wrapper = wrapperRef.current;
     const page = pageRef.current;
@@ -53,13 +62,7 @@ export default function FormPreview () {
     wrapperRO.observe(wrapper);
     pageRO.observe(page);
     return () => { wrapperRO.disconnect(); pageRO.disconnect(); };
-  }, []);
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['form-data', formId, deflectionId],
-    queryFn: () => fetchFormData(formId, deflectionId),
-    enabled: !!FormComponent && !!deflectionId,
-  });
+  }, [data]);
 
   if (!FormComponent) {
     return (
