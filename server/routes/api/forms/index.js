@@ -49,7 +49,9 @@ const FORMS = {
       subjectName: z.string(),
       detentionDate: z.string().nullable(),
       releaseDate: z.string(),
-      deputyRankNameStar: z.string(),
+      deputyTitle: z.string(),
+      deputyName: z.string(),
+      deputyBadge: z.string(),
       unitIdentifier: z.string(),
     }),
 
@@ -63,10 +65,6 @@ const FORMS = {
       const deputyTitle = deputy?.title?.name || '';
       const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
       const deputyBadge = deputy?.badgeNumber || '';
-      const deputyRankNameStar = [deputyTitle, deputyName, deputyBadge ? `#${deputyBadge}` : '']
-        .filter(Boolean)
-        .join(' ');
-
       const unitIdentifier = deflection.incident?.createdByUnit?.name ||
         deputy?.unit?.name ||
         '';
@@ -75,7 +73,9 @@ const FORMS = {
         subjectName,
         detentionDate: deflection.createdAt?.toISOString() || null,
         releaseDate: deflection.releasedAt.toISOString(),
-        deputyRankNameStar,
+        deputyTitle,
+        deputyName,
+        deputyBadge,
         unitIdentifier,
       };
     },

@@ -22,11 +22,13 @@ function formatTime (dateStr) {
 }
 
 /** Underlined inline field with an optional sub-label. */
-function Field ({ value, width, label }) {
+function Field ({ value, width, label, style = {} }) {
   const valueStyle = width ? { minWidth: width } : { flex: '1' };
+
+  // include a non-breaking space if the value is empty so that the value line takes up vertical space
   return (
-    <span className='field'>
-      <span className='value' style={valueStyle}>{value || ''}</span>
+    <span className='field' style={style}>
+      <span className='value' style={valueStyle}>{value || <>&nbsp;</>}</span>
       {label && <span className='label'>{label}</span>}
     </span>
   );
@@ -45,7 +47,9 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
     subjectName = '',
     detentionDate = null,
     releaseDate = null,
-    deputyRankNameStar = '',
+    deputyTitle = '',
+    deputyName = '',
+    deputyBadge = '',
     unitIdentifier = '',
   } = data;
 
@@ -95,16 +99,18 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
         {/* ── Signature section ── */}
         <div className='sig-section'>
           <div className='sig-row'>
-            <span className='label'>Deputy’s Rank, Name &amp; Star#</span>
-            <span className='line'>{deputyRankNameStar}</span>
-            <span className='unit-label'>Unit Identifier:</span>
-            <span className='unit-line'>{unitIdentifier}</span>
-          </div>
-          <div className='print-label'>Print</div>
-
-          <div className='sig-row'>
-            <span className='label'>Deputy’s Signature &amp; Star#</span>
-            <span className='line' />
+            <div>Deputy:</div>
+            <div className='fields'>
+              <div>
+                <Field value={deputyTitle} label='Title' width='8ch' />
+                <Field value={deputyName} label='Name' width='15ch' />
+                <Field value={deputyBadge} label='Star#' width='8ch' />
+                <Field value={unitIdentifier} label='Unit' width='10ch' />
+              </div>
+              <div className='signature'>
+                {deputyName}
+              </div>
+            </div>
           </div>
         </div>
 
