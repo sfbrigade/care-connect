@@ -16,9 +16,9 @@ const FORM_REGISTRY = {
     downloadFilename: (deflectionId) => `cert-Certificate-of-Release-${deflectionId}.pdf`,
   },
   '849b': {
-    title: 'PC 849(b) Report',
-    generateLabel: 'Generate PC 849(b) Report',
-    description: (name) => `SFSD PC 849(b) Report for ${name}`,
+    title: 'SFSO 849(b) Report',
+    generateLabel: 'Generate SFSO 849(b) Report',
+    description: (name) => `SFSO 849(b) Report for ${name}`,
     downloadFilename: (deflectionId) => `849b-report-${deflectionId}.pdf`,
   },
 };
