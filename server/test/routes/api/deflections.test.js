@@ -161,14 +161,18 @@ test('/api/deflections', async (t) => {
     await t.test('updates deflection details', async () => {
       const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
+        behaviorAdditions: 'Additional details from officer.',
         deflectionDetails: ['unable_to_stand', 'confused'],
+        volunteeredToReset: true,
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(data.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(data.deflectionDetails.length, 2);
+      assert.deepStrictEqual(data.volunteeredToReset, true);
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
@@ -178,7 +182,9 @@ test('/api/deflections', async (t) => {
         },
       });
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
+      assert.deepStrictEqual(deflection.behaviorAdditions, 'Additional details from officer.');
       assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
+      assert.deepStrictEqual(deflection.volunteeredToReset, true);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
@@ -243,6 +249,8 @@ test('/api/deflections', async (t) => {
         localId: '1234',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: true,
+        drugType: 'TOLUENE',
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -259,6 +267,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '1234');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, true);
+      assert.deepStrictEqual(data.drugType, 'TOLUENE');
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -280,6 +290,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, true);
+      assert.deepStrictEqual(deflection.drugType, 'TOLUENE');
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -296,6 +308,8 @@ test('/api/deflections', async (t) => {
         localId: '9876',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
+        drugUseEvidence: false,
+        drugType: 'DRUG',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -313,6 +327,8 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, '9876');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, false);
+      assert.deepStrictEqual(data.drugType, null);
 
       // Verify in database
       const subject = await prisma.subject.findUnique({
@@ -334,6 +350,8 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, false);
+      assert.deepStrictEqual(deflection.drugType, null);
     });
   });
 
