@@ -8,4 +8,5 @@ This folder contains a set of CloudFormation templates and scripts to set up a p
 3. Run the `ses.sh` script to set up the SES sending domain and credentials for sending emails from Care Connect.
 4. Run the `rds.sh` script to set up the RDS Postgres DB instance for Care Connect.
 5. Run the `s3.sh` script to set up the S3 bucket for storing user uploaded files.
-6. Run the `ecs.sh` script to set up the ECS on Fargate cluster
+6. Run the `geo.sh` script to set up the AWS Location Service for geocoding.
+7. Run the `ecs.sh` script to set up the ECS on Fargate cluster
