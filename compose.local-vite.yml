@@ -1,16 +1,16 @@
-# Windows development override
+# local-vite development override
 #
 # Runs infrastructure services + the Fastify backend inside Docker, while
-# the Vite client runs natively on Windows for fast, OS-level HMR.
+# the Vite client runs natively on the host for fast, OS-level HMR.
 #
 # This file is self-contained (does not need compose.override.yml) so that
 # Docker does not bind ports 3333/6006, leaving them free for the native
 # Vite and Storybook processes on the host.
 #
 # Usage:
-#   docker compose -f compose.yml -f compose.windows.yml up
+#   docker compose -f compose.yml -f compose.local-vite.yml up
 #
-# Then in a separate terminal (native Windows/WSL2 shell):
+# Then in a separate terminal (native shell):
 #   npm run dev:client
 
 services:
