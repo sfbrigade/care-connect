@@ -73,7 +73,7 @@ export default function FormContainer ({ children, standalone = true, title = 'C
           <title>{title}</title>
           <link rel='preconnect' href='https://fonts.googleapis.com' />
           <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin />
-          {/*<style dangerouslySetInnerHTML={{ __html: css }} />*/}
+          {/* <style dangerouslySetInnerHTML={{ __html: css }} /> */}
           <style dangerouslySetInnerHTML={{ __html: standaloneCSS }} />
           <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
           <style dangerouslySetInnerHTML={{ __html: pdfCSS }} />
@@ -87,7 +87,7 @@ export default function FormContainer ({ children, standalone = true, title = 'C
 
   return (
     <div className='form-container'>
-      {/*<style dangerouslySetInnerHTML={{ __html: css }} />*/}
+      {/* <style dangerouslySetInnerHTML={{ __html: css }} /> */}
       <style dangerouslySetInnerHTML={{ __html: embeddedCSS }} />
       <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
       <style dangerouslySetInnerHTML={{ __html: pdfCSS }} />

@@ -98,7 +98,8 @@ export default function FormPreview () {
       minHeight: outerMinHeight,
       backgroundColor: '#e0e0e0',
       padding: '24px',
-    }}>
+    }}
+    >
       {/* Wrapper: constrains available width and reserves space for the scaled page */}
       <div
         ref={wrapperRef}

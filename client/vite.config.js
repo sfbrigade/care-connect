@@ -8,11 +8,11 @@ import path from 'path';
 // https://vite.dev/config/
 
 // Custom plugin to load CSS files as text strings (matching esbuild --loader:.css=text)
-function cssAsText() {
+function cssAsText () {
   return {
     name: 'css-as-text',
     enforce: 'pre', // Run before Vite's built-in CSS handling
-    resolveId(source, importer) {
+    resolveId (source, importer) {
       // If importing a CSS file from server/lib/forms, mark it with a special query
       if (importer && source.endsWith('.css')) {
         const normalizedImporter = importer.replace(/\\/g, '/');
@@ -24,7 +24,7 @@ function cssAsText() {
         }
       }
     },
-    load(id) {
+    load (id) {
       // Handle CSS files marked with ?raw-text query
       if (id.includes('?raw-text')) {
         const filePath = id.split('?')[0];
