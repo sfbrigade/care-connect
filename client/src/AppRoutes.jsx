@@ -33,7 +33,13 @@ function AppRoutes () {
           <AppRedirects>
             <Routes>
               <Route path='/login' element={<Login />} />
-              <Route path='/units' element={<UnitSelector />} />
+              <Route
+                path='/units' element={
+                  <Container>
+                    <UnitSelector />
+                  </Container>
+                }
+              />
               <Route path='/passwords/*' element={<PasswordsRoutes />} />
               <Route path='/invites/*' element={<InvitesRoutes />} />
               {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
