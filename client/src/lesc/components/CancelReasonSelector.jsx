@@ -5,7 +5,7 @@ import Api from '@/Api';
 
 function CancelReasonSelector ({ value, onChange, enabled = true, stacked = false, label = 'Select a reason for canceling the hold(s)' }) {
   const { data: cancelReasons } = useQuery({
-    queryKey: ['deflectionCancelReasons'],
+    queryKey: ['deflection-cancel-reasons'],
     queryFn: () => Api.deflections.cancelReasons.index().then(response => response.data),
     enabled,
   });

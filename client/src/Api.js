@@ -327,6 +327,9 @@ const Api = {
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },
+    reopen (id) {
+      return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
+    },
     cancelReasons: {
       index () {
         return instance.get('/api/deflections/cancel-reasons');
@@ -371,6 +374,12 @@ const Api = {
     },
   },
   geocode: {
+    search (text, { signal } = {}) {
+      return instance.get('/api/geocode/search', {
+        params: { text },
+        signal,
+      });
+    },
     reverse (latitude, longitude) {
       return instance.get('/api/geocode/reverse', {
         params: { latitude, longitude }

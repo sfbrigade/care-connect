@@ -1,13 +1,30 @@
 import { useState } from 'react';
-import { ActionIcon, Box, Button, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
+import { ActionIcon, Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
 
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
 import QRScanner from '@/components/QRScanner';
+import { sanitizeManualCodeInput } from './scanCodeModalUtils';
 
-function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loadingText, _debugScanPhase }) {
+function ScanCodeModal ({
+  opened,
+  onClose,
+  onScan,
+  onManualSubmitCodes,
+  prompt,
+  manualEntryTitle,
+  manualEntryLabel,
+  manualEntryDescription,
+  manualEntryInputPlaceholder,
+  manualEntryAddButtonLabel,
+  manualEntryAllowMultiple = false,
+  loadingText,
+  _debugScanPhase
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
-  const [code, setCode] = useState('');
+  const [codes, setCodes] = useState(['']);
 
   async function handleScan (text) {
     await onScan(text);
@@ -23,17 +40,46 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
     }
   }
 
-  function handleManualSubmit (e) {
+  async function handleManualSubmit (e) {
     e.preventDefault();
-    handleManualScan(code);
+    const trimmedCodes = codes.map((code) => code.trim()).filter(Boolean);
+    if (trimmedCodes.length === 0) return;
+
+    if (manualEntryAllowMultiple && onManualSubmitCodes) {
+      setIsLoading(true);
+      try {
+        await onManualSubmitCodes(trimmedCodes);
+        handleClose();
+      } catch {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    await handleManualScan(trimmedCodes[0]);
   }
 
   function handleClose () {
     setIsLoading(false);
     setManualEntry(false);
-    setCode('');
+    setCodes(['']);
     onClose();
   }
+
+  function handleCodeChange (index, value) {
+    const sanitizedValue = sanitizeManualCodeInput(value);
+    setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? sanitizedValue : code)));
+  }
+
+  function handleAddCodeField () {
+    setCodes((prev) => [...prev, '']);
+  }
+
+  const trimmedCodes = codes.map((code) => code.trim());
+  const hasAtLeastOneCode = trimmedCodes.some(Boolean);
+  const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
+  const canSubmit = hasAtLeastOneCode && !hasAnyEmptyCodeField;
+  const canAddAnotherCode = manualEntryAllowMultiple && canSubmit;
 
   return (
     <Modal
@@ -42,6 +88,11 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
       fullScreen
       withCloseButton={false}
       padding={0}
+      styles={{
+        content: {
+          background: 'var(--mantine-color-gray-0)',
+        }
+      }}
     >
       {isLoading && (
         <Stack align='center' justify='center' h='100dvh'>
@@ -51,34 +102,66 @@ function ScanCodeModal ({ opened, onClose, onScan, prompt, manualEntryTitle, loa
       )}
 
       {!isLoading && manualEntry && (
-        <Stack p='lg' gap='lg' h='100dvh' maw={500} mx='auto' w='100%'>
-          <Group justify='space-between' align='center'>
-            <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>
-            <ActionIcon variant='subtle' color='gray' size='lg' onClick={handleClose}>
-              <IconX size={24} />
-            </ActionIcon>
-          </Group>
+        <>
+          <Header>
+            <Group w='100%' justify='space-between'>
+              <IconButtonLink icon={IconArrowLeft} onClick={() => setManualEntry(false)} />
+              <IconButtonLink icon={IconX} onClick={handleClose} />
+            </Group>
+          </Header>
+          <Container pt='80px'>
+            <form onSubmit={handleManualSubmit}>
+              <Stack gap='xl'>
+                {manualEntryAllowMultiple
+                  ? (
+                    <Box>
+                      <Text size='xl' c='dimmed'>
+                        {manualEntryLabel || 'Enter transfer code'}
+                      </Text>
+                      <Title order={3}>
+                        {manualEntryDescription || 'If the QR code does not work, ask the officer for the 6-digit transfer code.'}
+                      </Title>
+                    </Box>
+                    )
+                  : <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>}
 
-          <form onSubmit={handleManualSubmit}>
-            <Stack gap='md'>
-              <TextInput
-                label='Code'
-                placeholder='e.g. 123456'
-                value={code}
-                onChange={(e) => setCode(e.currentTarget.value)}
-                size='lg'
-                autoFocus
-              />
-              <Button type='submit' fullWidth size='lg' disabled={!code.trim()}>
-                Submit
-              </Button>
-            </Stack>
-          </form>
+                <Stack gap='sm'>
+                  {codes.map((code, index) => (
+                    <TextInput
+                      key={index}
+                      placeholder={manualEntryInputPlaceholder || 'Enter a 6-digit code'}
+                      value={code}
+                      onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
+                      inputMode='numeric'
+                      pattern='[0-9]*'
+                      maxLength={6}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </Stack>
 
-          <Button variant='outline' fullWidth size='lg' onClick={() => setManualEntry(false)}>
-            Scan QR code instead
-          </Button>
-        </Stack>
+                <Group gap='sm'>
+                  {manualEntryAllowMultiple && (
+                    <Button
+                      variant='secondary'
+                      onClick={handleAddCodeField}
+                      disabled={!canAddAnotherCode}
+                    >
+                      {manualEntryAddButtonLabel || '+ Transfer code'}
+                    </Button>
+                  )}
+                  <Button
+                    type='submit'
+                    variant='primary'
+                    disabled={!canSubmit}
+                  >
+                    Submit
+                  </Button>
+                </Group>
+              </Stack>
+            </form>
+          </Container>
+        </>
       )}
 
       {!isLoading && !manualEntry && (
