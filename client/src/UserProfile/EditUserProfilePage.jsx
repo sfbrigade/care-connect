@@ -30,14 +30,14 @@ function EditUserProfilePage () {
     }
   });
 
-  const { data: response, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['users', userId],
-    queryFn: () => Api.users.get(userId),
+    queryFn: () => Api.users.get(userId).then(response => response.data),
   });
 
   const { data: units } = useQuery({
     queryKey: ['organizations', form.getValues().organizationId, 'units'],
-    queryFn: () => Api.organizations.units.index(form.getValues().organizationId).then(response => response.data),
+    queryFn: () => Api.organizations.units.index(form.getValues().organizationId, 1, 1000).then(response => response.data),
     enabled: !!form.getValues().organizationId,
   });
 
@@ -48,21 +48,18 @@ function EditUserProfilePage () {
   });
 
   useEffect(() => {
-    if (response) {
-      const values = {
-        ...response.data,
+    if (data) {
+      form.initialize({
+        ...data,
         password: '',
-      };
-      form.setInitialValues(values);
-      form.setValues(values);
-      form.resetDirty(values);
+      });
     }
-  }, [response]);
+  }, [data]);
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.users.update(userId, values),
     onSuccess: (response) => {
-      queryClient.setQueryData(['users', userId], response);
+      queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
         queryClient.setQueryData(['users', 'me'], response.data);
       }

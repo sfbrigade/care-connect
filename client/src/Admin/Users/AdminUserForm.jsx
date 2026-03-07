@@ -71,7 +71,6 @@ function AdminUserForm () {
         ...data,
         password: '',
       });
-      form.reset();
     }
   }, [data]);
 
