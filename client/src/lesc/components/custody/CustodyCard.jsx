@@ -41,7 +41,7 @@ function CustodyCard ({ deflection, highlighted }) {
   });
 
   return (
-    <Card bg='white' p={{ base: 'md', sm: 'xl' }} withBorder id={`custody-card-${deflection.id}`} style={highlighted ? { animation: 'cardHighlight 3s ease-out' } : undefined}>
+    <Card bg='white' p='xl' withBorder id={`custody-card-${deflection.id}`} style={highlighted ? { animation: 'cardHighlight 3s ease-out' } : undefined}>
       <Stack gap='sm'>
         <Text size='md' c='gray.6'>Hold {displayId}</Text>
         <Box>
@@ -58,9 +58,10 @@ function CustodyCard ({ deflection, highlighted }) {
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}
-        <Group wrap='nowrap' justify='flex-end'>
+        <Group wrap='nowrap' gap='xs' grow mt='xl'>
           <Button
             size='md'
+            px='md'
             variant='light'
             onClick={() => {
               window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
@@ -71,7 +72,7 @@ function CustodyCard ({ deflection, highlighted }) {
             View details
           </Button>
           {deflection.subjectStatus === 'AWAITING_INTAKE' && (
-            <Button size='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
+            <Button size='md' px='md' onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>Mark complete</Button>
           )}
         </Group>
       </Stack>

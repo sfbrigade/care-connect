@@ -78,9 +78,6 @@ function Deflection () {
       await queryClient.removeQueries({
         queryKey: ['deflections', incident?.id, 'active'],
       });
-      await queryClient.removeQueries({
-        queryKey: ['deflections', incident?.id, 'all'],
-      });
       await queryClient.invalidateQueries({
         queryKey: ['deflections', facility.id, 'inactive'],
       });
@@ -190,7 +187,7 @@ function Deflection () {
               <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
             </Group>
           </Stack>
-          <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='narcotics'>
               <Accordion.Control>
@@ -216,6 +213,30 @@ function Deflection () {
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
+            <Accordion.Item value='drug-use'>
+              <Accordion.Control>
+                <Title order={3}>Drug use</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined && (
+                    <Box>
+                      <Text c='dimmed'>Evidence of drug use</Text>
+                      <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                    </Box>
+                  )}
+                  {deflection?.drugUseEvidence === true && !!deflection?.drugType && (
+                    <Box>
+                      <Text c='dimmed'>Drug type</Text>
+                      <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                    </Box>
+                  )}
+                </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)} variant='secondary'>Edit drug use</Button>
+                </Group>
+              </Accordion.Panel>
+            </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
                 <Title order={3}>Arrest details</Title>
@@ -226,6 +247,12 @@ function Deflection () {
                     <Box>
                       <Text c='dimmed'>Selected observations</Text>
                       <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                    </Box>
+                  )}
+                  {deflection?.volunteeredToReset !== null && deflection?.volunteeredToReset !== undefined && (
+                    <Box>
+                      <Text c='dimmed'>Person volunteered to be taken to RESET</Text>
+                      <Text c={deflection.volunteeredToReset ? 'teal.6' : 'red.6'}>{deflection.volunteeredToReset ? 'Yes' : 'No'}</Text>
                     </Box>
                   )}
                   {!!deflection?.behavior && (
