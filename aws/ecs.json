@@ -159,6 +159,37 @@
             },
             "Environment": [
               {
+                "Name": "AWS_LOCATION_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-location-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-location-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
                 "Name": "AWS_S3_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
