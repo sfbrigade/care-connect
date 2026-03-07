@@ -239,6 +239,11 @@ function createSlug (name) {
 }
 
 function Home () {
+  // when not in DEV, hardcode redirect to RESET facility for now
+  if (!import.meta.env.DEV) {
+    window.location.href = `${window.location.protocol}//reset.${window.location.hostname}${window.location.port ? `:${window.location.port}` : ''}`;
+    return <></>;
+  }
   const geolocationRequestRef = useRef(false);
   const permissionStatusRef = useRef(null);
   const { data: facilities = [], isLoading, isError } = useQuery({
