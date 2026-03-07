@@ -210,7 +210,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (
             <>
-              <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'release-narrative']}>
+              <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property', 'incident', 'release-narrative']}>
                 <Divider />
                 <Accordion.Item value='narcotics'>
                   <Accordion.Control>
