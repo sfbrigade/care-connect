@@ -365,7 +365,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   onClick={() => releaseMutation.mutate()}
                   loading={releaseMutation.isPending}
                 >
-                  Mark as legally released
+                  Start legal release
                 </Button>
               )}
             </>
