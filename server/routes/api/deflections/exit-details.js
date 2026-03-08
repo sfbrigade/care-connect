@@ -89,7 +89,6 @@ export default async function (fastify, opts) {
             exitHousingStatusId,
             exitConnectedToCare,
             exitSFResident: toTernary(exitSFResident),
-            updatedById: request.user.id,
             updatedAt: now,
           },
           include: {
