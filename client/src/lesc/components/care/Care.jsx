@@ -113,7 +113,6 @@ function Care () {
               { label: 'Not in custody', value: 'not-in-custody' },
             ]}
           />
-          <Divider />
 
           {tab === 'in-custody' && (
             <Stack gap='lg'>
