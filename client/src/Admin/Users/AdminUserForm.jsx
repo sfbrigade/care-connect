@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useEffect } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
 import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,14 +7,16 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
-// import PhotoInput from '@/components/PhotoInput';
+import { useToast } from '@/components/ToastContext';
 
-function UserForm () {
+function AdminUserForm () {
   const { user } = useAuthContext();
   const location = useLocation();
   const queryClient = useQueryClient();
   const params = useParams();
   const userId = params.userId ?? user?.id;
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -40,9 +42,9 @@ function UserForm () {
     },
   });
 
-  const { data: response, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['users', userId],
-    queryFn: () => Api.users.get(userId),
+    queryFn: () => Api.users.get(userId).then(response => response.data),
   });
 
   const { data: organization } = useQuery({
@@ -59,32 +61,32 @@ function UserForm () {
 
   const { data: units } = useQuery({
     queryKey: ['organizations', form.getValues().organizationId, 'units'],
-    queryFn: () => Api.organizations.units.index(form.getValues().organizationId).then(response => response.data),
+    queryFn: () => Api.organizations.units.index(form.getValues().organizationId, 1, 1000).then(response => response.data),
     enabled: !!form.getValues().organizationId,
   });
 
   useEffect(() => {
-    if (response) {
+    if (data) {
       form.initialize({
-        ...response.data,
+        ...data,
         password: '',
       });
     }
-  }, [response]);
+  }, [data]);
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.users.update(userId, values),
-    onMutate: () => setSuccess(false),
     onSuccess: (response) => {
+      showToast('The user\'s profile has been updated', 'success');
+      queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
         queryClient.setQueryData(['users', 'me'], response.data);
       }
-      setSuccess(true);
+      navigate('/admin/users');
     },
     onError: (errors) => form.setErrors(errors),
     onSettled: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
   });
-  const [success, setSuccess] = useState(false);
 
   return (
     <>
@@ -98,12 +100,6 @@ function UserForm () {
             <Stack>
               {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
               {form.errors?._form && <Alert color='red'>{form.errors._form}</Alert>}
-              {success && <Alert>Your account has been updated!</Alert>}
-              {/* <PhotoInput
-                {...form.getInputProps('picture')}
-                label='Picture'
-                valueUrl={form.getValues().pictureUrl}
-              /> */}
               <TextInput
                 {...form.getInputProps('firstName')}
                 key={form.key('firstName')}
@@ -158,7 +154,7 @@ function UserForm () {
               {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
                 <Select
                   {...form.getInputProps('unitId')}
-                  key='unitId'
+                  key={form.key('unitId')}
                   label='Unit'
                   data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
                 />
@@ -188,4 +184,4 @@ function UserForm () {
   );
 }
 
-export default UserForm;
+export default AdminUserForm;

@@ -16,14 +16,15 @@ export default {
 
 export const NoneInCustody = {
   args: {
-    title: 'No persons in custody',
+    title: 'No persons In Custody',
     description: "When you receive a person from SFPD, they'll appear here.",
   },
 };
 
 export const NoneReleased = {
   args: {
-    title: 'No persons in released',
+    title: 'No persons in Released',
     description: "Released persons appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records.",
+    updatedAt: Date.now(),
   },
 };

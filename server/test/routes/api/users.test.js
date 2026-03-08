@@ -197,6 +197,30 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data.titleId, 'sheriff');
     });
 
+    await t.test('updates prop115Certified field', async (t) => {
+      let response = await app.inject().patch('/api/users/49acdf99-536f-49ac-8138-1c77e5087697').payload({
+        prop115Certified: true
+      }).headers(sfsoUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      let data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.prop115Certified, true);
+
+      data = await prisma.user.findUnique({ where: { id: '49acdf99-536f-49ac-8138-1c77e5087697' } });
+      assert.deepStrictEqual(data.prop115Certified, true);
+
+      response = await app.inject().patch('/api/users/49acdf99-536f-49ac-8138-1c77e5087697').payload({
+        prop115Certified: false
+      }).headers(sfsoUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.prop115Certified, false);
+
+      data = await prisma.user.findUnique({ where: { id: '49acdf99-536f-49ac-8138-1c77e5087697' } });
+      assert.deepStrictEqual(data.prop115Certified, false);
+    });
+
     await t.test('converts empty strings to null for badgeNumber and title', async (t) => {
       // First set values
       await prisma.user.update({
