@@ -14,7 +14,6 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
-import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
@@ -195,19 +194,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    const holdData = {
-      id: String(deflection.id),
-      client: deflection.subject,
-      incident: {
-        dateTimeArrested: incident?.arrestedAt ?? null,
-      },
-      createdAt: deflection?.createdAt,
-      transferredAt: deflection?.releasedAt ?? null,
-      createdBy: deflection?.createdBy ?? null,
-    };
-    const doc = generateCertificateOfReleasePDF(holdData);
-    const blobUrl = doc.output('bloburl');
-    window.open(blobUrl, '_blank');
+    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
   }
 
   function onReleaseNarrativeButtonClick () {
