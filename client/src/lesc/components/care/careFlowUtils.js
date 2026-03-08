@@ -14,10 +14,6 @@ export function groupCareNotInCustodySections (deflections = []) {
   };
 }
 
-export function isCareSectionCaretDisabled (items = []) {
-  return items.length === 0;
-}
-
 export function getCareExitBackTo ({ fromDetail, id, savedTab }) {
   if (fromDetail) return `/care/${id}`;
   return savedTab === 'not-in-custody' ? '/care?tab=not-in-custody' : '/care';
