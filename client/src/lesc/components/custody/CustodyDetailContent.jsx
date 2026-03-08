@@ -198,19 +198,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    const holdData = {
-      id: String(deflection.id),
-      client: deflection.subject,
-      incident: {
-        dateTimeArrested: incident?.arrestedAt ?? null,
-      },
-      createdAt: deflection?.createdAt,
-      transferredAt: deflection?.releasedAt ?? null,
-      createdBy: deflection?.createdBy ?? null,
-    };
-    const doc = generateCertificateOfReleasePDF(holdData);
-    const blobUrl = doc.output('bloburl');
-    window.open(blobUrl, '_blank');
+    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
   }
 
   function onReleaseNarrativeButtonClick () {
