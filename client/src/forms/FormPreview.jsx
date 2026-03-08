@@ -4,17 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert, Center, Loader } from '@mantine/core';
 
 import FormContainer from '../../../server/lib/forms/FormContainer.jsx';
-import FormCoR from 'care-connect-server/lib/forms/FormCoR.jsx';
-import Form849B from 'care-connect-server/lib/forms/Form849B.jsx';
-import Form647F from 'care-connect-server/lib/forms/Form647F.jsx';
-
-// Registry mapping form IDs (from the URL) to their React components.
-// Add new form entries here as they are created.
-const FORM_REGISTRY = {
-  cert: FormCoR,
-  '849b': Form849B,
-  '647f': Form647F,
-};
+import FORM_REGISTRY from './formRegistry';
 
 async function fetchFormData (formId, deflectionId) {
   const response = await fetch(`/api/forms/${formId}/data/${deflectionId}`);
@@ -30,7 +20,8 @@ const PAGE_WIDTH = 816;
 
 export default function FormPreview () {
   const { formId, deflectionId } = useParams();
-  const FormComponent = FORM_REGISTRY[formId];
+  const formInfo = FORM_REGISTRY[formId];
+  const FormComponent = formInfo?.component;
 
   // wrapperRef measures available width; pageRef tracks the page's natural height.
   // Both are needed because CSS transform doesn't affect layout flow, so we must
@@ -66,7 +57,7 @@ export default function FormPreview () {
     return () => { wrapperRO.disconnect(); pageRO.disconnect(); };
   }, [data]);
 
-  if (!FormComponent) {
+  if (!formInfo) {
     return (
       <Alert color='red' title='Unknown form' m='md'>
         No form found for ID &quot;{formId}&quot;.
