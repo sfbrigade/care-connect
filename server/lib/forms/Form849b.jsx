@@ -142,7 +142,7 @@ export const metadata = {
   },
 };
 
-export default function Form849B ({ data = {} }) {
+export default function Form849b ({ data = {} }) {
   const {
     incidentId = '',
     cadNumber = '',

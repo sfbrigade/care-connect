@@ -133,7 +133,7 @@ export const metadata = {
   },
 };
 
-export default function Form647F ({ data = {} }) {
+export default function Form647f ({ data = {} }) {
   const {
     subjectLastName = '',
     subjectFirstName = '',
