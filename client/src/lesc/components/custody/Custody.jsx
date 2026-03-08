@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
-import EmptyState from './EmptyState';
-import StatusAccordion from './StatusAccordion';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconQrcode } from '@tabler/icons-react';
@@ -12,6 +10,11 @@ import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import { formatTime } from '@/utils/format';
+
+import EmptyState from '../EmptyState';
+import StatusAccordion from '../StatusAccordion';
+import CustodyCard from './CustodyCard';
+
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
@@ -62,7 +65,7 @@ function Custody () {
     refetchOnMount: 'always',
   });
 
-  const { data: releasedDeflections } = useQuery({
+  const { data: releasedDeflections, dataUpdatedAt: releasedDataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
@@ -136,10 +139,6 @@ function Custody () {
   const releasedGrouped = groupByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
 
-  const defaultOpenSections = IN_CUSTODY_SECTIONS
-    .filter(s => (inCustodyGrouped[s.status]?.length ?? 0) > 0)
-    .map(s => s.status);
-
   return (
     <>
       <Head>
@@ -163,12 +162,12 @@ function Custody () {
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
                     groupedDeflections={inCustodyGrouped}
-                    defaultOpen={defaultOpenSections}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} />}
                   />
                   )
                 : (
                   <EmptyState
-                    title='No persons in custody'
+                    title='No persons In Custody'
                     description="When you receive a person from SFPD, they'll appear here."
                   />
                   )}
@@ -181,13 +180,14 @@ function Custody () {
                   <StatusAccordion
                     sections={RELEASED_SECTIONS}
                     groupedDeflections={releasedGrouped}
-                    defaultOpen={['RELEASED', 'EXITED']}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} />}
                   />
                   )
                 : (
                   <EmptyState
-                    title='No persons in released'
+                    title='No persons in Released'
                     description="Released persons appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
+                    updatedAt={releasedDataUpdatedAt}
                   />
                   )}
             </Stack>

@@ -383,6 +383,12 @@ const Api = {
     },
   },
   geocode: {
+    search (text, { signal } = {}) {
+      return instance.get('/api/geocode/search', {
+        params: { text },
+        signal,
+      });
+    },
     reverse (latitude, longitude) {
       return instance.get('/api/geocode/reverse', {
         params: { latitude, longitude }
