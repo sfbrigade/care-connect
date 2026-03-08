@@ -29,8 +29,6 @@ const pageCSS = `
 `;
 
 export const metadata = {
-  title: '647(f) Transfer Form',
-  downloadFilename: (id) => `647f-transfer-form-${id}.pdf`,
   requiresRelease: false,
 
   deflectionInclude: {

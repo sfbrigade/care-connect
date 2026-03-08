@@ -48,9 +48,6 @@ const pageCSS = `
 `;
 
 export const metadata = {
-  title: 'SFSO 849(b) Report',
-  downloadFilename: (id) => `849b-report-${id}.pdf`,
-
   deflectionInclude: {
     subject: true,
     incident: {

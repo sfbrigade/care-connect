@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import { FORM_REGISTRY as sharedForms } from '@care-connect/shared/forms';
 
 const RENDER_TIMEOUT_MS = 20000;
 
@@ -11,7 +12,8 @@ const errorResponses = {
 };
 
 // ---------------------------------------------------------------------------
-// Form registry — add new forms here (metadata lives in each form file)
+// Form registry — add new forms here; metadata lives in each form file and
+// in the shared @care-connect/shared/forms registry.
 // ---------------------------------------------------------------------------
 
 const FORM_FILES = {
@@ -52,11 +54,14 @@ function sendError (reply, result, formTitle) {
 // ---------------------------------------------------------------------------
 
 export default async function (fastify, _opts) {
-  // Load each form's metadata from its compiled file at startup
+  // Load each form's metadata from its compiled file at startup.
+  // Shared metadata (title, downloadFilename) is merged first; form-file
+  // metadata (deflectionInclude, dataSchema, transformData, etc.) is merged
+  // on top and can override shared values if needed.
   const forms = {};
   for (const [formId, componentFile] of Object.entries(FORM_FILES)) {
     const { metadata } = await import(`#lib/forms/dist/${componentFile}.js`);
-    forms[formId] = { componentFile, ...metadata };
+    forms[formId] = { componentFile, ...sharedForms[formId], ...metadata };
   }
 
   for (const [formId, form] of Object.entries(forms)) {
@@ -104,7 +109,9 @@ export default async function (fastify, _opts) {
 
         if (result.error) return sendError(reply, result, form.title);
 
-        const cacheBust = `?t=${Date.now()}`;
+        // Cache-bust in development so edited form components are picked up
+        // without a server restart. In production the module cache is used.
+        const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
         const [{ renderFormToHtml, renderToPdf }, { default: FormComponent }] = await Promise.all([
           import('#lib/pdf.js'),
           import(`../../../lib/forms/dist/${form.componentFile}.js${cacheBust}`),
