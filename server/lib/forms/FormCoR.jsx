@@ -4,9 +4,6 @@ import { FORM_TIMEZONE, formatDateParts, formatTime } from './formUtils.js';
 import { Header, Field } from './formComponents.jsx';
 
 export const metadata = {
-  title: 'Certificate of Release',
-  downloadFilename: (id) => `cert-Certificate-of-Release-${id}.pdf`,
-
   deflectionInclude: {
     subject: true,
     incident: {
