@@ -1,4 +1,5 @@
 import React from 'react';
+import { z } from 'zod';
 
 const FORM_TIMEZONE = 'America/Los_Angeles';
 
@@ -41,6 +42,71 @@ function Header () {
     </header>
   );
 }
+
+export const metadata = {
+  title: 'Certificate of Release',
+  downloadFilename: (id) => `cert-Certificate-of-Release-${id}.pdf`,
+
+  deflectionInclude: {
+    subject: true,
+    incident: {
+      include: {
+        createdByOrganization: true,
+        createdByUnit: true,
+        createdByTitle: true,
+      },
+    },
+    createdBy: {
+      include: {
+        organization: true,
+        unit: true,
+        title: true,
+      },
+    },
+    releasedBy: {
+      include: {
+        organization: true,
+        unit: true,
+        title: true,
+      },
+    },
+  },
+
+  dataSchema: z.object({
+    subjectName: z.string(),
+    detentionDate: z.string().nullable(),
+    releaseDate: z.string(),
+    deputyTitle: z.string(),
+    deputyName: z.string(),
+    deputyBadge: z.string(),
+    unitIdentifier: z.string(),
+  }),
+
+  transformData (deflection) {
+    const subject = deflection.subject;
+    const subjectName = subject
+      ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
+      : '';
+
+    const deputy = deflection.releasedBy || deflection.createdBy;
+    const deputyTitle = deputy?.title?.name || '';
+    const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
+    const deputyBadge = deputy?.badgeNumber || '';
+    const unitIdentifier = deflection.incident?.createdByUnit?.name ||
+      deputy?.unit?.name ||
+      '';
+
+    return {
+      subjectName,
+      detentionDate: deflection.createdAt?.toISOString() || null,
+      releaseDate: deflection.releasedAt.toISOString(),
+      deputyTitle,
+      deputyName,
+      deputyBadge,
+      unitIdentifier,
+    };
+  },
+};
 
 export default function CertificateOfReleaseForm ({ data = {} }) {
   const {

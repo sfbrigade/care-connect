@@ -21,6 +21,12 @@ const FORM_REGISTRY = {
     description: (name) => `SFSO 849(b) Report for ${name}`,
     downloadFilename: (deflectionId) => `849b-report-${deflectionId}.pdf`,
   },
+  '647f': {
+    title: 'SFSO 647(f) Report',
+    generateLabel: 'Generate SFSO 647(f) Report',
+    description: (name) => `SFSO 647(f) Report for ${name}`,
+    downloadFilename: (deflectionId) => `647f-report-${deflectionId}.pdf`,
+  }
 };
 
 const isReleased = (deflection) => !!deflection?.releasedAt;
