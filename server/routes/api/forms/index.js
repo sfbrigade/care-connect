@@ -11,185 +11,27 @@ const errorResponses = {
 };
 
 // ---------------------------------------------------------------------------
-// Form registry — add new forms here
+// Form registry — add new forms here (metadata lives in each form file)
 // ---------------------------------------------------------------------------
 
-const FORMS = {
-  cert: {
-    title: 'Certificate of Release',
-    componentFile: 'CertificateOfReleaseForm',
-    downloadFilename: (id) => `cert-Certificate-of-Release-${id}.pdf`,
-
-    deflectionInclude: {
-      subject: true,
-      incident: {
-        include: {
-          createdByOrganization: true,
-          createdByUnit: true,
-          createdByTitle: true,
-        },
-      },
-      createdBy: {
-        include: {
-          organization: true,
-          unit: true,
-          title: true,
-        },
-      },
-      releasedBy: {
-        include: {
-          organization: true,
-          unit: true,
-          title: true,
-        },
-      },
-    },
-
-    dataSchema: z.object({
-      subjectName: z.string(),
-      detentionDate: z.string().nullable(),
-      releaseDate: z.string(),
-      deputyTitle: z.string(),
-      deputyName: z.string(),
-      deputyBadge: z.string(),
-      unitIdentifier: z.string(),
-    }),
-
-    transformData (deflection) {
-      const subject = deflection.subject;
-      const subjectName = subject
-        ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
-        : '';
-
-      const deputy = deflection.releasedBy || deflection.createdBy;
-      const deputyTitle = deputy?.title?.name || '';
-      const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
-      const deputyBadge = deputy?.badgeNumber || '';
-      const unitIdentifier = deflection.incident?.createdByUnit?.name ||
-        deputy?.unit?.name ||
-        '';
-
-      return {
-        subjectName,
-        detentionDate: deflection.createdAt?.toISOString() || null,
-        releaseDate: deflection.releasedAt.toISOString(),
-        deputyTitle,
-        deputyName,
-        deputyBadge,
-        unitIdentifier,
-      };
-    },
-  },
-
-  '849b': {
-    title: 'SFSO 849(b) Report',
-    componentFile: 'Form849B',
-    downloadFilename: (id) => `849b-report-${id}.pdf`,
-
-    deflectionInclude: {
-      subject: true,
-      incident: {
-        include: {
-          createdBy: {
-            include: {
-              organization: true,
-              unit: true,
-              title: true,
-            },
-          },
-        },
-      },
-      releaseReason: true,
-    },
-
-    dataSchema: z.object({
-      incidentId: z.union([z.number(), z.string()]),
-      cadNumber: z.string(),
-      arrestedAt: z.string().nullable(),
-      arrestLocation: z.string(),
-      officerName: z.string(),
-      officerBadge: z.string(),
-      subjectName: z.string(),
-      subjectFullName: z.string(),
-      subjectRace: z.string(),
-      subjectSex: z.string(),
-      subjectDOB: z.string().nullable(),
-      subjectAddress: z.string(),
-      subjectZip: z.string(),
-      subjectDL: z.string(),
-      subjectLocalId: z.string(),
-      arrivedAtReset: z.string().nullable(),
-      transferredAt: z.string().nullable(),
-      releasedAt: z.string(),
-      releaseReason: z.string(),
-    }),
-
-    transformData (deflection) {
-      const incident = deflection.incident;
-      const subject = deflection.subject;
-
-      let subjectName = '';
-      let subjectFullName = '';
-      if (subject) {
-        subjectName = [subject.lastName, subject.firstName, subject.middleInitial]
-          .filter(Boolean)
-          .join(', ');
-        subjectFullName = [subject.firstName, subject.middleInitial, subject.lastName]
-          .filter(Boolean)
-          .join(' ');
-      }
-
-      const incidentCreator = incident?.createdBy;
-      const officerName = incidentCreator
-        ? `${incidentCreator.firstName} ${incidentCreator.lastName}`
-        : '';
-      const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
-
-      const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
-        .filter(Boolean)
-        .join(', ');
-
-      const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
-        .filter(Boolean)
-        .join(', ');
-
-      return {
-        incidentId: incident?.id ?? '',
-        cadNumber: incident?.cadNumber || '',
-        arrestedAt: incident?.arrestedAt?.toISOString() || null,
-        arrestLocation,
-        officerName,
-        officerBadge,
-        subjectName,
-        subjectFullName,
-        subjectRace: subject?.race || '',
-        subjectSex: subject?.sex || '',
-        subjectDOB: subject?.dateOfBirth?.toISOString() || null,
-        subjectAddress,
-        subjectZip: subject?.postalCode || '',
-        subjectDL: subject?.driverLicense || '',
-        subjectLocalId: subject?.localId || '',
-        arrivedAtReset: incident?.arrivedAt?.toISOString() || null,
-        transferredAt: deflection.transferredAt?.toISOString() || null,
-        releasedAt: deflection.releasedAt.toISOString(),
-        releaseReason: deflection.releaseReason?.name || '',
-      };
-    },
-  },
+const FORM_FILES = {
+  cert: 'CertificateOfReleaseForm',
+  '647f': 'Form647F',
+  '849b': 'Form849B',
 };
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-async function fetchDeflection (fastify, deflectionId, deflectionInclude) {
+async function fetchDeflection (fastify, deflectionId, deflectionInclude, { requiresRelease = true } = {}) {
   const deflection = await fastify.prisma.deflection.findUnique({
     where: { id: deflectionId },
     include: deflectionInclude,
   });
 
   if (!deflection) return { error: 'not_found' };
-  if (!deflection.releasedAt) return { error: 'not_released' };
+  if (requiresRelease && !deflection.releasedAt) return { error: 'not_released' };
 
   return { deflection };
 }
@@ -210,7 +52,14 @@ function sendError (reply, result, formTitle) {
 // ---------------------------------------------------------------------------
 
 export default async function (fastify, _opts) {
-  for (const [formId, form] of Object.entries(FORMS)) {
+  // Load each form's metadata from its compiled file at startup
+  const forms = {};
+  for (const [formId, componentFile] of Object.entries(FORM_FILES)) {
+    const { metadata } = await import(`#lib/forms/dist/${componentFile}.js`);
+    forms[formId] = { componentFile, ...metadata };
+  }
+
+  for (const [formId, form] of Object.entries(forms)) {
     // --- JSON data endpoint ---
     fastify.get(
       `/${formId}/data/:deflectionId`,
@@ -227,7 +76,7 @@ export default async function (fastify, _opts) {
       },
       async function (request, reply) {
         const { deflectionId } = request.params;
-        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude);
+        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude, { requiresRelease: form.requiresRelease ?? true });
 
         if (result.error) return sendError(reply, result, form.title);
 
@@ -251,7 +100,7 @@ export default async function (fastify, _opts) {
       },
       async function (request, reply) {
         const { deflectionId } = request.params;
-        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude);
+        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude, { requiresRelease: form.requiresRelease ?? true });
 
         if (result.error) return sendError(reply, result, form.title);
 
