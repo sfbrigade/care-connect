@@ -1,9 +1,10 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { calculateAge } from '@/utils/format';
 
-function CareCard ({ deflection, highlighted, onViewDetails }) {
+function CareCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
 
   const displayId = String(deflection.id).padStart(6, '0');
@@ -45,7 +46,7 @@ function CareCard ({ deflection, highlighted, onViewDetails }) {
         </Box>
 
         <Group wrap='nowrap' justify='flex-start'>
-          <Button size='md' variant='light' color='indigo' onClick={onViewDetails}>View details</Button>
+          <Button component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
           {isInMedicalIntake && (
             <Button size='md' color='indigo'>Complete intake</Button>
           )}

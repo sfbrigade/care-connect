@@ -117,6 +117,7 @@ function Care () {
                 <StatusAccordion
                   sections={IN_CUSTODY_SECTIONS}
                   groupedDeflections={groupedInCustody}
+                  highlightedId={highlightedId}
                   Card={CareCard}
                 />
                 )
@@ -131,6 +132,7 @@ function Care () {
             <StatusAccordion
               sections={NOT_IN_CUSTODY_SECTIONS}
               groupedDeflections={groupedNotInCustody}
+              highlightedId={highlightedId}
               Card={CareCard}
             />
           )}

@@ -1,6 +1,6 @@
 import { Accordion, Stack, Text, Title } from '@mantine/core';
 
-function StatusAccordion ({ sections, groupedDeflections, defaultOpen, Card }) {
+function StatusAccordion ({ sections, groupedDeflections, defaultOpen, highlightedId, Card }) {
   const defaultValue = defaultOpen ?? sections
     .filter(s => (groupedDeflections[s.status]?.length ?? 0) > 0)
     .map(s => s.status);
@@ -18,7 +18,7 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, Card }) {
             <Accordion.Panel>
               <Stack gap='md'>
                 {items.map(d => (
-                  <Card key={d.id} deflection={d} />
+                  <Card key={d.id} deflection={d} highlighted={highlightedId === d.id} />
                 ))}
                 {items.length === 0 && (
                   <Text c='dimmed' size='sm'>None</Text>
