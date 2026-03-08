@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
-import EmptyState from './EmptyState';
-import StatusAccordion from './StatusAccordion';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconQrcode } from '@tabler/icons-react';
@@ -11,6 +9,11 @@ import { IconQrcode } from '@tabler/icons-react';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatTime } from '@/utils/format';
+
+import EmptyState from '../EmptyState';
+import StatusAccordion from '../StatusAccordion';
+import CustodyCard from './CustodyCard';
+
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
@@ -133,6 +136,7 @@ function Custody () {
                     sections={IN_CUSTODY_SECTIONS}
                     groupedDeflections={inCustodyGrouped}
                     defaultOpen={defaultOpenSections}
+                    Card={CustodyCard}
                   />
                   )
                 : (
@@ -151,6 +155,7 @@ function Custody () {
                     sections={RELEASED_SECTIONS}
                     groupedDeflections={releasedGrouped}
                     defaultOpen={['RELEASED', 'EXITED']}
+                    Card={CustodyCard}
                   />
                   )
                 : (
