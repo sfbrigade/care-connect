@@ -1,61 +1,13 @@
 import React from 'react';
 import { z } from 'zod';
+import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase } from './formUtils.js';
+import { Header, Row, SectionHeader } from './formComponents.jsx';
 
-const FORM_TIMEZONE = 'America/Los_Angeles';
-
-function formatDateTime24 (dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  const date = d.toLocaleString('en-US', { timeZone: FORM_TIMEZONE, month: '2-digit', day: '2-digit', year: 'numeric' });
-  const time = d.toLocaleString('en-US', { timeZone: FORM_TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false }).replace('24:', '00:');
-  return `${date} ${time}`;
-}
-
-function formatDate (dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  // Use UTC to avoid timezone shifting a date-only value
-  return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: '2-digit', day: '2-digit', year: 'numeric' });
-}
-
-function titleCase (str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-function Row ({ label, value, required = false }) {
-  return (
-    <tr>
-      <td className='field-label'>{label}{required && <span className='required'>*</span>}</td>
-      <td className='field-value'>{value || ''}</td>
-    </tr>
-  );
-}
-
-function SectionHeader ({ title }) {
-  return (
-    <tr className='section-header-row'>
-      <td colSpan={2} className='section-header'>{title}</td>
-    </tr>
-  );
-}
-
-function Header () {
-  return (
-    <header>
-      Care<span style={{ color: '#888' }}>Connect</span>{' '}
-      <span style={{ fontWeight: 'bold', color: '#bbb' }}>RESET</span>
-    </header>
-  );
-}
-
-const tableCSS = `
-  /*
-   * Override pdf-forms.css page constraints so this form can grow beyond
-   * one page without clipping content, and so the footer flows inline.
-   */
+/*
+ * Override pdf-forms.css page constraints so this form can grow beyond
+ * one page without clipping content, and so the footer flows inline.
+ */
+const pageCSS = `
   .form-container .page.form-647f {
     height: auto !important;
     min-height: calc(11in - var(--page-margin-top) - var(--page-margin-bottom));
@@ -73,59 +25,6 @@ const tableCSS = `
       left: auto;
       right: auto;
     }
-  }
-
-  .form-647f .form-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1em;
-    font-size: 9pt;
-    line-height: 1.4;
-  }
-  .form-647f .form-table td {
-    padding: 2.5pt 5pt;
-    border: 0.5pt solid #bbb;
-    vertical-align: top;
-  }
-  .form-647f .form-table .field-label {
-    font-weight: bold;
-    width: 185pt;
-    color: #333;
-    background: #f5f5f5;
-  }
-  .form-647f .form-table .required {
-    color: #c00;
-    margin-left: 2pt;
-  }
-  .form-647f .form-table .section-header {
-    font-weight: bold;
-    font-size: 7.5pt;
-    background: #ddd;
-    padding: 2pt 5pt;
-    letter-spacing: 0.4pt;
-    text-transform: uppercase;
-  }
-  .form-647f .narrative-section {
-    margin-top: 1em;
-    page-break-inside: avoid;
-  }
-  .form-647f .narrative-label {
-    font-weight: bold;
-    font-size: 9pt;
-    margin-bottom: 3pt;
-  }
-  .form-647f .narrative-text {
-    border: 0.5pt solid #bbb;
-    padding: 6pt;
-    min-height: 65pt;
-    font-size: 9pt;
-    line-height: 1.6;
-    white-space: pre-wrap;
-  }
-  .form-647f .footer-note {
-    font-size: 7.5pt;
-    color: #666;
-    margin-top: 0.5em;
   }
 `;
 
@@ -270,7 +169,7 @@ export default function Form647F ({ data = {} }) {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: tableCSS }} />
+      <style dangerouslySetInnerHTML={{ __html: pageCSS }} />
       <div className='page form-647f'>
         <Header />
 
@@ -284,7 +183,7 @@ export default function Form647F ({ data = {} }) {
             <Row label='Subject Middle Initial' value={subjectMiddleInitial} />
             <Row label='Race' value={titleCase(subjectRace)} required />
             <Row label='Sex' value={titleCase(subjectSex)} required />
-            <Row label='Date of Birth (DOB)' value={formatDate(subjectDOB)} required />
+            <Row label='Date of Birth (DOB)' value={formatDateOnly(subjectDOB)} required />
             <Row label='Address' value={subjectAddress} />
             <Row label="Driver's License" value={subjectDL} />
             <Row label='Local ID / SF #' value={subjectLocalId} />

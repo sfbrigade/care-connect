@@ -77,6 +77,67 @@
 			}
 		}
 
+		.form-table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 1em;
+			font-size: 9pt;
+			line-height: 1.4;
+
+			td {
+				padding: 2.5pt 5pt;
+				border: 0.5pt solid #bbb;
+				vertical-align: top;
+			}
+
+			.field-label {
+				font-weight: bold;
+				width: 185pt;
+				color: #333;
+				background: #f5f5f5;
+			}
+
+			.required {
+				color: #c00;
+				margin-left: 2pt;
+			}
+
+			.section-header {
+				font-weight: bold;
+				font-size: 7.5pt;
+				background: #ddd;
+				padding: 2pt 5pt;
+				letter-spacing: 0.4pt;
+				text-transform: uppercase;
+			}
+		}
+
+		.narrative-section {
+			margin-top: 1em;
+			page-break-inside: avoid;
+
+			.narrative-label {
+				font-weight: bold;
+				font-size: 9pt;
+				margin-bottom: 3pt;
+			}
+
+			.narrative-text {
+				border: 0.5pt solid #bbb;
+				padding: 6pt;
+				min-height: 65pt;
+				font-size: 9pt;
+				line-height: 1.6;
+				white-space: pre-wrap;
+			}
+		}
+
+		.footer-note {
+			font-size: 7.5pt;
+			color: #666;
+			margin-top: 0.5em;
+		}
+
 		/* Signature rows */
 		.sig-section {
 			margin-top: 3em;

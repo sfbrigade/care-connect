@@ -1,47 +1,7 @@
 import React from 'react';
 import { z } from 'zod';
-
-const FORM_TIMEZONE = 'America/Los_Angeles';
-
-function formatDate (dateStr) {
-  if (!dateStr) return { month: '', date: '', year: '' };
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return { month: '', date: '', year: '' };
-  const opts = { timeZone: FORM_TIMEZONE };
-  return {
-    month: d.toLocaleString('en-US', { ...opts, month: '2-digit' }),
-    date: d.toLocaleString('en-US', { ...opts, day: '2-digit' }),
-    year: d.toLocaleString('en-US', { ...opts, year: 'numeric' }),
-  };
-}
-
-function formatTime (dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', { timeZone: FORM_TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-/** Underlined inline field with an optional sub-label. */
-function Field ({ value, width, label, style = {} }) {
-  const valueStyle = width ? { minWidth: width } : { flex: '1' };
-
-  // include a non-breaking space if the value is empty so that the value line takes up vertical space
-  return (
-    <span className='field' style={style}>
-      <span className='value' style={valueStyle}>{value || <>&nbsp;</>}</span>
-      {label && <span className='label'>{label}</span>}
-    </span>
-  );
-}
-
-function Header () {
-  return (
-    <header>
-      Care<span style={{ color: '#888' }}>Connect</span> <span style={{ fontWeight: 'bold', color: '#bbb' }}>RESET</span>
-    </header>
-  );
-}
+import { FORM_TIMEZONE, formatDateParts, formatTime } from './formUtils.js';
+import { Header, Field } from './formComponents.jsx';
 
 export const metadata = {
   title: 'Certificate of Release',
@@ -108,7 +68,7 @@ export const metadata = {
   },
 };
 
-export default function CertificateOfReleaseForm ({ data = {} }) {
+export default function FormCoR ({ data = {} }) {
   const {
     subjectName = '',
     detentionDate = null,
@@ -119,9 +79,9 @@ export default function CertificateOfReleaseForm ({ data = {} }) {
     unitIdentifier = '',
   } = data;
 
-  const detention = formatDate(detentionDate);
+  const detention = formatDateParts(detentionDate);
   const detentionTime = formatTime(detentionDate);
-  const release = formatDate(releaseDate);
+  const release = formatDateParts(releaseDate);
   const releaseTime = formatTime(releaseDate);
 
   return (
