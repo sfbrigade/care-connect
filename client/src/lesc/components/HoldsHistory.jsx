@@ -1,47 +1,28 @@
 import { useNavigate } from 'react-router';
 import { Box, Stack, Title, Text, Loader } from '@mantine/core';
-import { useQuery, useQueries } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
+import { useQueries } from '@tanstack/react-query';
 
-import Api from '@/Api';
 import Hold from './Hold';
-import { formatAddress } from '@/utils/format';
+import Incident from './Incident';
+import Api from '@/Api';
+import { buildIncidentSubtitle, getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
 
-function HoldsHistory ({ incident, facility }) {
+function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false }) {
   const navigate = useNavigate();
-
-  const { data: deflections, isFetching: isFetchingDeflections } = useQuery({
-    queryKey: ['deflections', facility?.id, 'inactive'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: false }).then(response => response.data),
-    enabled: !!facility,
-  });
+  const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
+  const hasDeflections = (deflections?.length ?? 0) > 0;
 
   // Coerce once at the top
   const safeDeflections = deflections ?? [];
-
-  // Single-pass partition: collect cancelled IDs, group cancelled, and separate non-cancelled
-  const { cancelledIncidentIds, cancelledByIncident, nonCancelledDeflections } =
-        safeDeflections.reduce(
-          (acc, deflection) => {
-            if (deflection.status === 'CANCELLED') {
-              acc.cancelledIncidentIds.add(deflection.incidentId);
-
-              if (!acc.cancelledByIncident[deflection.incidentId]) {
-                acc.cancelledByIncident[deflection.incidentId] = [];
-              }
-              acc.cancelledByIncident[deflection.incidentId].push(deflection);
-            } else {
-              acc.nonCancelledDeflections.push(deflection);
-            }
-            return acc;
-          },
-          { cancelledIncidentIds: new Set(), cancelledByIncident: {}, nonCancelledDeflections: [] }
-        );
-
-  const cancelledIncidentIdList = [...cancelledIncidentIds];
+  const { shouldShowCurrentIncidentGroup, currentIncidentDeflections, remainingDeflections } = splitCurrentIncidentDeflections(
+    safeDeflections,
+    incident,
+    hasActiveHolds
+  );
+  const incidentIdList = [...new Set(remainingDeflections.map((deflection) => String(deflection.incidentId)))];
 
   const incidentQueries = useQueries({
-    queries: cancelledIncidentIdList.map((incidentId) => ({
+    queries: incidentIdList.map((incidentId) => ({
       queryKey: ['incidents', incidentId],
       queryFn: () => Api.incidents.get(incidentId).then((response) => response.data),
       enabled: !!incidentId,
@@ -58,24 +39,14 @@ function HoldsHistory ({ incident, facility }) {
     return acc;
   }, {});
 
-  const cancelledGroups = Object.entries(cancelledByIncident)
-    .map(([incidentId, incidentDeflections]) => ({
-      incidentId,
-      incident: incidentsById[incidentId],
-      deflections: incidentDeflections,
-      latestCancelledAtMs: incidentDeflections
-        .map((deflection) =>
-          deflection.cancelledAt ? DateTime.fromISO(deflection.cancelledAt).toMillis() : 0
-        )
-        .sort((a, b) => b - a)[0] ?? 0,
-    }))
-    .sort((a, b) => b.latestCancelledAtMs - a.latestCancelledAtMs);
+  const groupedByIncident = groupDeflectionsByIncident(remainingDeflections, incidentsById);
+
   return (
     <>
-      {isFetchingDeflections && (
+      {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {!isFetchingDeflections && (!deflections || deflections.length === 0) && (
+      {!showInitialLoading && !hasDeflections && (
         <>
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
@@ -84,25 +55,33 @@ function HoldsHistory ({ incident, facility }) {
           </Box>
         </>
       )}
-      {!isFetchingDeflections && deflections && deflections.length > 0 && (
+      {hasDeflections && (
         <>
           <Stack gap='md'>
-            {cancelledGroups.map((group) => {
-              const address = group.incident ? formatAddress(group.incident) : '';
+            {shouldShowCurrentIncidentGroup && currentIncidentDeflections.length > 0 && (
+              <Stack gap='xs'>
+                <Incident incident={incident} editLink='/incident' />
+                {[...currentIncidentDeflections]
+                  .sort((a, b) => getDeflectionActivityMs(b) - getDeflectionActivityMs(a))
+                  .map((deflection) => (
+                    <Hold
+                      key={deflection.id}
+                      deflection={deflection}
+                      onDetailsClick={() => {
+                        navigate(`/holds/${deflection.id}`);
+                      }}
+                    />
+                  ))}
+              </Stack>
+            )}
+            {groupedByIncident.map((group) => {
+              const subtitle = buildIncidentSubtitle(group.incident);
 
               return (
                 <Stack key={`incident-${group.incidentId}`} gap='xs'>
                   <Box>
-                    <Text size='lg'>Incident {String(group.incidentId).padStart(6, '0')}</Text>
-                    {(address || group.incident?.arrestedAt) && (
-                      <Text size='md' c='dimmed'>
-                        {address}
-                        {address && group.incident?.arrestedAt ? ' • ' : ''}
-                        {group.incident?.arrestedAt
-                          ? DateTime.fromISO(group.incident.arrestedAt).toLocaleString(DateTime.TIME_SIMPLE)
-                          : ''}
-                      </Text>
-                    )}
+                    <Text size='md'>Incident {String(group.incidentId).padStart(6, '0')}</Text>
+                    <Text size='md' c='dimmed'>{subtitle}</Text>
                   </Box>
                   {group.deflections.map((deflection) => (
                     <Hold
@@ -117,16 +96,6 @@ function HoldsHistory ({ incident, facility }) {
                 </Stack>
               );
             })}
-            {nonCancelledDeflections.map((deflection) => (
-              <Hold
-                incident={incident}
-                key={deflection.id}
-                deflection={deflection}
-                onDetailsClick={() => {
-                  navigate(`/holds/${deflection.id}`);
-                }}
-              />
-            ))}
           </Stack>
         </>
       )}

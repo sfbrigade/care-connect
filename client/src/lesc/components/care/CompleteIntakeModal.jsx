@@ -1,3 +1,4 @@
+import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 

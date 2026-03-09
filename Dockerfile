@@ -27,7 +27,7 @@ ADD . $APP_HOME
 WORKDIR $APP_HOME
 
 # Install dependencies, build client app, generate server prisma client
-RUN npm install --include=dev && \
+RUN npm install && \
     npm run build -w client && \
     npm run prisma:generate -w server
 

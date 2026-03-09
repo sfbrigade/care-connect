@@ -79,6 +79,15 @@ LARGE LARGE
     
 
 
+        DrugTypeEnum {
+            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
+DRUG DRUG
+TOLUENE TOLUENE
+COMBINATION COMBINATION
+        }
+    
+
+
         EncounteredViaEnum {
             ON_VIEW ON_VIEW
 DISPATCHED DISPATCHED
@@ -365,7 +374,11 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
+    Boolean volunteeredToReset "❓"
+    Boolean drugUseEvidence "❓"
+    DrugTypeEnum drugType "❓"
     String behavior "❓"
+    String behaviorAdditions "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     DateTime createdAt 
@@ -393,6 +406,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String releaseReasonId "❓"
     String otherReleaseReason "❓"
     String otherReleaseDestination "❓"
+    String releaseNarrative "❓"
     String refusalReasonId "❓"
     DateTime exitedAt "❓"
     String exitedById "❓"
@@ -654,6 +668,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
+    "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"

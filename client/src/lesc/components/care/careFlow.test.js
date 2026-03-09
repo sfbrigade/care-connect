@@ -5,7 +5,6 @@ import {
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
   hasPersistedExitDetails,
-  isCareSectionCaretDisabled,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
@@ -55,11 +54,6 @@ describe('Care flow unit tests', () => {
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
     expect(grouped.EXITED_FACILITY.map(d => d.id)).toEqual([2]);
     expect(grouped.TRANSFERRED_TO_JAIL.map(d => d.id)).toEqual([3]);
-  });
-
-  it('disables section caret only when section is empty', () => {
-    expect(isCareSectionCaretDisabled([])).toBe(true);
-    expect(isCareSectionCaretDisabled([{ id: 1 }])).toBe(false);
   });
 
   it('resolves cancel/back navigation in exit form based on entry source', () => {

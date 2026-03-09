@@ -1,3 +1,4 @@
+import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
@@ -16,20 +17,11 @@ function ExitToJailModal ({
       centered
       lockScroll
       withCloseButton={false}
-      radius='lg'
-      styles={{
-        content: {
-          backgroundColor: 'var(--mantine-color-gray-1)',
-        },
-        body: {
-          padding: 20,
-        },
-      }}
     >
       <Stack gap='xl'>
         <Stack gap='sm'>
-          <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <Title order={4} fw={400} fz={20} lh='24px'>Exit this person to jail?</Title>
+          <Group justify='space-between' align='center' wrap='nowrap'>
+            <Title order={4}>Exit this person to jail?</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -57,25 +49,13 @@ function ExitToJailModal ({
 
         <Group gap='sm' justify='flex-start' wrap='wrap'>
           <Button
-            variant='light'
-            color='red'
-            radius='xl'
-            size='lg'
+            variant='destructive'
             onClick={onClose}
             disabled={loading}
-            styles={{
-              root: {
-                '&:focus': { outline: 'none', boxShadow: 'none' },
-                '&:focus-visible': { outline: 'none', boxShadow: 'none' },
-              },
-            }}
           >
             No, cancel
           </Button>
           <Button
-            color='indigo'
-            radius='xl'
-            size='lg'
             onClick={onConfirm}
             loading={loading}
           >

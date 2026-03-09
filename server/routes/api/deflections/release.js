@@ -13,22 +13,6 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
-const ReleaseReasonEnum = z.enum([
-  'SOBERED',
-  'MEDICAL_ISSUE',
-  'OTHER',
-]);
-
-const ExitDestinationEnum = z.enum([
-  'HOSPITAL',
-  'OTHER',
-]);
-
-const EXIT_DESTINATION_DEFS = {
-  HOSPITAL: { id: 'hospital', name: 'Hospital' },
-  OTHER: { id: 'other', name: 'Other' },
-};
-
 export default async function (fastify, opts) {
   fastify.post('/:id/release',
     {
@@ -39,11 +23,11 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          releaseReason: ReleaseReasonEnum.optional(),
-          exitDestination: ExitDestinationEnum.optional(),
+          releaseReasonId: z.string(),
+          exitDestinationId: z.string().nullable().optional(),
           otherReleaseReason: z.string().trim().min(1).optional(),
           otherReleaseDestination: z.string().trim().min(1).optional(),
-        }).optional(),
+        }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -54,18 +38,18 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const releaseReason = request.body?.releaseReason || 'SOBERED';
-      const exitDestination = request.body?.exitDestination || null;
+      const releaseReasonId = request.body?.releaseReasonId || 'sobered';
+      const exitDestinationId = request.body?.exitDestinationId || null;
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
-      const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
-      const isOtherRelease = releaseReason === 'OTHER';
+      const isMedicalRelease = releaseReasonId === 'medical_issue';
+      const isOtherRelease = releaseReasonId === 'other';
       const isExitRelease = isMedicalRelease || isOtherRelease;
 
-      if (isMedicalRelease && !exitDestination) {
+      if (isMedicalRelease && !exitDestinationId) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
-            path: 'exitDestination',
+            path: 'exitDestinationId',
             message: 'Exit destination is required for medical release.',
           }],
         });
@@ -105,11 +89,6 @@ export default async function (fastify, opts) {
         // re-fetch deflection after lock
         deflection = await tx.deflection.findUnique({
           where: { id },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
         });
 
         if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
@@ -121,38 +100,20 @@ export default async function (fastify, opts) {
           data: {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.RELEASED,
+            releaseReasonId,
+            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
             updatedById: request.user.id,
             updatedAt: now,
           },
         });
 
         if (isExitRelease) {
-          const destinationDef = isMedicalRelease
-            ? EXIT_DESTINATION_DEFS[exitDestination]
-            : EXIT_DESTINATION_DEFS.OTHER;
-
-          await tx.deflectionExitDestination.upsert({
-            where: { id: destinationDef.id },
-            create: {
-              id: destinationDef.id,
-              name: destinationDef.name,
-              createdById: request.user.id,
-              updatedById: request.user.id,
-            },
-            update: {
-              name: destinationDef.name,
-              updatedById: request.user.id,
-              updatedAt: now,
-            },
-          });
-
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
               subjectStatus: Deflection.SubjectStatus.EXITED,
-              exitDestinationId: destinationDef.id,
-              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
-              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+              exitDestinationId,
               updatedById: request.user.id,
               updatedAt: now,
             },
@@ -167,15 +128,14 @@ export default async function (fastify, opts) {
               : Deflection.SubjectStatus.RELEASED,
             releasedAt: now,
             releasedById: request.user.id,
+            releaseReasonId,
             otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
             otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
             ...(isExitRelease
               ? {
                   exitedAt: now,
                   exitedById: request.user.id,
-                  exitDestinationId: isMedicalRelease
-                    ? EXIT_DESTINATION_DEFS[exitDestination].id
-                    : EXIT_DESTINATION_DEFS.OTHER.id,
+                  exitDestinationId,
                 }
               : {}),
             updatedAt: now,
@@ -188,28 +148,30 @@ export default async function (fastify, opts) {
           },
         });
 
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
-        });
+        if (isExitRelease) {
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied: occupied - 1,
+            holds,
+            available: available + 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
+          await tx.bedType.update({
+            where: { id: bedTypeId },
+            data: updatedData,
+          });
+        }
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
