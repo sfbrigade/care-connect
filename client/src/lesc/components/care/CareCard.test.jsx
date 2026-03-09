@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { MantineProvider } from '@mantine/core';
+import { BrowserRouter } from 'react-router';
 
 import CareCard from './CareCard';
 
@@ -29,24 +30,23 @@ function buildDeflection (overrides = {}) {
 function renderCard ({
   deflection,
   hasExitDraft = false,
-  onViewDetails = vi.fn(),
   onCompleteIntake = vi.fn(),
   onExitDetails = vi.fn(),
 } = {}) {
   return {
     ...render(
-      <MantineProvider>
-        <CareCard
-          deflection={deflection}
-          highlighted={false}
-          hasExitDraft={hasExitDraft}
-          onViewDetails={onViewDetails}
-          onCompleteIntake={onCompleteIntake}
-          onExitDetails={onExitDetails}
-        />
-      </MantineProvider>
+      <BrowserRouter>
+        <MantineProvider>
+          <CareCard
+            deflection={deflection}
+            highlighted={false}
+            hasExitDraft={hasExitDraft}
+            onCompleteIntake={onCompleteIntake}
+            onExitDetails={onExitDetails}
+          />
+        </MantineProvider>
+      </BrowserRouter>
     ),
-    onViewDetails,
     onCompleteIntake,
     onExitDetails,
   };
@@ -104,15 +104,6 @@ describe('CareCard', () => {
   it('shows no buttons for EXITED', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'EXITED' }) });
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
-  });
-
-  it('calls onViewDetails when View details is clicked', () => {
-    const { onViewDetails } = renderCard({
-      deflection: buildDeflection({ subjectStatus: 'IN_CHAIR' }),
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'View details' }));
-    expect(onViewDetails).toHaveBeenCalledTimes(1);
   });
 
   it('calls onCompleteIntake when Complete intake is clicked', () => {

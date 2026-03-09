@@ -50,7 +50,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
 
         <Group wrap='nowrap' justify='flex-end'>
           {showViewDetails && (
-            <Button component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
+            <Button role='button' component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
           )}
           {isInMedicalIntake && (
             <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
