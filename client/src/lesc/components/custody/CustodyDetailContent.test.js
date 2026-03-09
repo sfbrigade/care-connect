@@ -80,7 +80,10 @@ vi.mock('@/components/LockedQRCode', () => ({
 
 vi.mock('@tabler/icons-react', () => ({
   IconArrowLeft: () => null,
+  IconDoorExit: () => null,
   IconExternalLink: () => null,
+  IconFileAlert: () => null,
+  IconFileCheck: () => null,
 }));
 
 vi.mock('@mantine/core', async () => {
@@ -112,6 +115,11 @@ vi.mock('@mantine/core', async () => {
 
   const passthrough = (tag) => ({ children, ...props }) => createElement(tag, props, children);
 
+  const Menu = passthrough('div');
+  Menu.Target = passthrough('div');
+  Menu.Dropdown = passthrough('div');
+  Menu.Item = passthrough('a');
+
   return {
     Accordion,
     Box: passthrough('div'),
@@ -121,6 +129,7 @@ vi.mock('@mantine/core', async () => {
     Divider: () => createElement('hr'),
     Group: passthrough('div'),
     Image: (props) => createElement('img', props),
+    Menu,
     Stack: passthrough('div'),
     Text: ({ children, ...props }) => createElement('p', props, children),
     Textarea: ({ value, ...props }) => createElement('textarea', { value, ...props }),
