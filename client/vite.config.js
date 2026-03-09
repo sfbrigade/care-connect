@@ -55,6 +55,9 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
     },
     test: {
       globals: true,
+      pool: 'threads',
+      maxWorkers: 2,
+      minWorkers: 1,
       environment: 'node',
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

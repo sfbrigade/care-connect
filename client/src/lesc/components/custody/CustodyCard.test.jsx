@@ -162,5 +162,11 @@ describe('CustodyCard', () => {
     await waitFor(() => {
       expect(mockSafetyCheck).toHaveBeenCalledWith(123);
     });
+
+    await waitFor(() => {
+      expect(window.sessionStorage.getItem('custodyHighlightTarget')).toBe('123');
+      expect(window.sessionStorage.getItem('custodyInCustodySectionTarget')).toBe('READY_FOR_INTAKE');
+      expect(window.sessionStorage.getItem('custodyTab')).toBe('in-custody');
+    });
   });
 });
