@@ -84,6 +84,12 @@ enum PropertyEnum {
   LARGE
 }
 
+enum PropertyNotReturnedReasonEnum{
+  ABANDONED
+  DESTROYED
+  OTHER
+}
+
 enum DrugTypeEnum {
   INTOXICATING_LIQUOR
   DRUG
@@ -128,6 +134,8 @@ enum SubjectStatusEnum {
   IN_CHAIR
   RELEASED
   EXITED
+  DEATH_IN_FACILITY
+  DEATH_IN_CUSTODY
 }
 
 model Organization {
@@ -228,6 +236,7 @@ model User {
   deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
   deflectionsRejected          Deflection[]            @relation("RejectedBy")
   deflectionsReleased          Deflection[]            @relation("ReleasedBy")
+  deflectionsPropertyReturned  Deflection[]            @relation("PropertyReturnedBy")
   deflectionsExited            Deflection[]            @relation("ExitedBy")
   deflectionUpdatesCreated     DeflectionUpdate[]
   facilitiesCreated            Facility[]              @relation("CreatedBy")
@@ -479,6 +488,12 @@ model Deflection {
   behaviorAdditions            String?
   property                     PropertyEnum?
   propertyDetails              String?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
+  propertyReturned             Boolean?
+  propertyReturnedAt           DateTime?
+  propertyReturnedBy           User?                   @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
+  propertyReturnedById         String?                 @db.Uuid
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                  String                  @db.Uuid
@@ -576,6 +591,9 @@ model DeflectionUpdate {
   releaseReasonId              String?
   otherReleaseReason           String?
   otherReleaseDestination      String?
+  propertyReturned             Boolean?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])

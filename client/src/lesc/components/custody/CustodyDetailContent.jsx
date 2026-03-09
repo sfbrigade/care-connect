@@ -12,27 +12,83 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
-import { getCareDetailFooterState } from './careDetailFooterUtils';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+import CompleteIntakeModal from '../care/CompleteIntakeModal';
+import DeflectionStatusChip from '../DeflectionStatusChip';
+
+import { getCareDetailFooterState } from './careDetailFooterUtils';
+import { getCareStatusChip } from './careStatusChipUtils';
+import { getCustodyStatusChip } from './custodyStatusChipUtils';
+import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
+import ExitToJailModal from './ExitToJailModal';
+import RecordDeathModal from './RecordDeathModal';
+
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
+  const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
+  const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
+  const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const { isCustody } = useUserRole();
   const isCareView = viewerMode === 'care';
   const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
+  const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
+  const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
+  const isExited = deflection?.subjectStatus === 'EXITED';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
-  const showStartLegalReleasePrimary = !isAwaitingSafetyCheck && !isReadyForIntake;
-  const showOverflowStartLegalRelease = isAwaitingSafetyCheck;
+  const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
+  const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
+  const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
+    viewerMode,
+    isCustody,
+    deflection,
+  });
+  const showRecordPropertyReturnAction = showAwaitingPropertyReturnChip;
+  const propertySectionId = `custody-property-section-${deflection?.id ?? 'unknown'}`;
+  const custodyStatusChip = getCustodyStatusChip(deflection);
+  const careStatusChip = getCareStatusChip({ deflection, careFooterState });
+  const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+
+  useEffect(() => {
+    if (isCareView || !deflection?.id) return;
+
+    const raw = window.sessionStorage.getItem(PROPERTY_RETURN_TOAST_KEY);
+    if (!raw) return;
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+      return;
+    }
+
+    if (parsed?.deflectionId !== String(deflection.id)) return;
+
+    window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+    showToast('Property return update recorded', 'success', 4000, 'Saved to this person\'s exit record');
+    setCustodyAccordionValues(prev => (prev.includes('property') ? prev : [...prev, 'property']));
+    window.setTimeout(() => {
+      document.getElementById(propertySectionId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }, [deflection?.id, isCareView, propertySectionId, showToast]);
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -44,6 +100,67 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
     onError: () => {
       showToast('Safety check not saved. Please try again.', 'error');
+    },
+  });
+
+  const recordDeathMutation = useMutation({
+    mutationFn: () => Api.deflections.recordDeath(deflection.id),
+    onSuccess: () => {
+      setRecordDeathModalOpened(false);
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Death recorded', 'success', 4000, 'Death recorded. All associated holds or chairs have been released.');
+      navigate('/custody');
+    },
+    onError: () => {
+      showToast('Couldn\'t record death', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const exitToJailMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToJail(deflection.id),
+    onSuccess: () => {
+      setExitToJailModalOpened(false);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      navigate('/custody?tab=released');
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const completeIntakeMutation = useMutation({
+    mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      setCompleteIntakeModalOpened(false);
+
+      if (variables.completed) {
+        showToast(
+          'Intake completed',
+          'success',
+          4000,
+          "Person moved to 'In-chair' for Sheriff's review."
+        );
+      } else {
+        showToast(
+          'Intake not completed',
+          'warning',
+          4000,
+          'Person moved back. Please review their status before release or exit.'
+        );
+      }
+    },
+    onError: () => {
+      showToast('Intake update not saved. Please try again.', 'error');
     },
   });
 
@@ -108,16 +225,26 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Group gap='xs'>
-            {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
-            {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
-            <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-          </Group>
+          <Stack gap='sm' align='center'>
+            <Group gap='xs'>
+              {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
+              {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
+              <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+            </Group>
+            {!isCareView && (
+              <Stack gap='xs' align='center'>
+                <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {showAwaitingPropertyReturnChip && (
+                  <DeflectionStatusChip label='Awaiting property return' tone='info' />
+                )}
+              </Stack>
+            )}
+            {isCareView && (
+              <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+            )}
+          </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Stack gap='sm' align='center'>
-              {isReadyForIntake && (
-                <Text c='teal.6' size='md' w='100%'>Safety check completed</Text>
-              )}
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
@@ -195,7 +322,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (
             <>
-              <Accordion variant='section' defaultValue={['narcotics', 'release-narrative']}>
+              <Accordion
+                variant='section'
+                multiple
+                value={custodyAccordionValues}
+                onChange={setCustodyAccordionValues}
+              >
                 <Divider />
                 <Accordion.Item value='narcotics'>
                   <Accordion.Control>
@@ -242,7 +374,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item value='property'>
+                <Accordion.Item value='property' id={propertySectionId}>
                   <Accordion.Control>
                     <Title order={3}>Property details</Title>
                   </Accordion.Control>
@@ -272,6 +404,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text c='dimmed'>Description</Text>
                           <Text>{deflection?.propertyDetails}</Text>
                         </Box>
+                      )}
+                      {!!propertyReturnStatusText && (
+                        <Text c={deflection?.propertyReturned ? 'teal.6' : 'yellow.8'}>{propertyReturnStatusText}</Text>
                       )}
                     </Stack>
                   </Accordion.Panel>
@@ -350,35 +485,32 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       </Container>
       {careFooterState.showFooter && (
         <Box
+          className='action-footer-gradient'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          bg='gray.0'
           pt='md'
           pb='xl'
           style={{ zIndex: 10 }}
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              <ActionIcon
-                variant='outline'
-                color='indigo'
-                radius='50%'
-                size={48}
-                disabled={careFooterState.overflowDisabled}
-                aria-label='More actions'
-                style={{ minWidth: 48, flex: '0 0 48px' }}
-              >
-                <IconDots size={24} />
-              </ActionIcon>
               <Button
                 color='indigo'
                 radius='xl'
                 size='lg'
-                onClick={() => navigate(careFooterState.startExitPath)}
+                onClick={() => {
+                  if (careFooterState.primaryAction === 'complete-intake') {
+                    setCompleteIntakeModalOpened(true);
+                    return;
+                  }
+                  if (careFooterState.primaryAction === 'start-exit') {
+                    navigate(careFooterState.startExitPath);
+                  }
+                }}
               >
-                Start exit
+                {careFooterState.primaryLabel}
               </Button>
             </Group>
           </Container>
@@ -386,18 +518,18 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       )}
       {showCustodyActionFooter && (
         <Box
+          className='action-footer-gradient'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          bg='gray.0'
-          pt='md'
+          pt={showRecordPropertyReturnAction ? 'xl' : 'md'}
           pb='xl'
           style={{ zIndex: 10 }}
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>
-              {isReadyForIntake
+              {showMoreActionsPrimaryOnly
                 ? (
                   <Menu
                     position='top-start'
@@ -408,9 +540,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   >
                     <Menu.Target>
                       <Button
+                        variant='outline'
                         color='indigo'
                         radius='xl'
                         size='lg'
+                        leftSection={<IconDots size={22} />}
                       >
                         More actions
                       </Button>
@@ -424,13 +558,13 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
+                        onClick={() => setExitToJailModalOpened(true)}
                       >
                         Record exit to jail
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => showToast('Record death flow is not yet available.', 'warning')}
+                        onClick={() => setRecordDeathModalOpened(true)}
                       >
                         Record death
                       </Menu.Item>
@@ -438,71 +572,114 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Menu>
                   )
                 : (
-                  <>
-                    <Menu
-                      position='top-start'
-                      shadow='sm'
-                      radius='lg'
-                      width={260}
-                      withinPortal
-                    >
-                      <Menu.Target>
-                        <ActionIcon
+                  <Stack gap='sm' w='100%' align='center'>
+                    {showRecordPropertyReturnAction && (
+                      <Group justify='center' gap='sm' wrap='nowrap'>
+                        {!isExited && <Box w={48} h={48} style={{ visibility: 'hidden' }} />}
+                        <Button
                           variant='outline'
                           color='indigo'
-                          radius='50%'
-                          size={48}
-                          aria-label='More actions'
-                          style={{ minWidth: 48, flex: '0 0 48px' }}
+                          radius='xl'
+                          size='lg'
+                          onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
                         >
-                          <IconDots size={24} />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        {showOverflowStartLegalRelease && (
-                          <Menu.Item
-                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                          >
-                            Start legal release
-                          </Menu.Item>
-                        )}
-                        <Menu.Item
-                          leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => showToast('Record exit to jail flow is not yet available.', 'warning')}
+                          Record property return
+                        </Button>
+                      </Group>
+                    )}
+                    <Group justify='center' gap='sm' wrap='nowrap'>
+                      {!isExited && (
+                        <Menu
+                          position='top-start'
+                          shadow='sm'
+                          radius='lg'
+                          width={260}
+                          withinPortal
                         >
-                          Record exit to jail
-                        </Menu.Item>
-                        <Menu.Item
-                          leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => showToast('Record death flow is not yet available.', 'warning')}
-                        >
-                          Record death
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                    <Button
-                      color='indigo'
-                      radius='xl'
-                      size='lg'
-                      onClick={() => {
-                        if (isAwaitingSafetyCheck) {
-                          safetyCheckMutation.mutate();
-                          return;
-                        }
-                        navigate(`/custody/${deflection.id}/legal-release?from=detail`);
-                      }}
-                      loading={safetyCheckMutation.isPending}
-                    >
-                      {showStartLegalReleasePrimary ? 'Start legal release' : 'Complete safety check'}
-                    </Button>
-                  </>
+                          <Menu.Target>
+                            <ActionIcon
+                              variant='outline'
+                              color='indigo'
+                              radius='50%'
+                              size={48}
+                              aria-label='More actions'
+                              style={{ minWidth: 48, flex: '0 0 48px' }}
+                            >
+                              <IconDots size={24} />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            {isAwaitingSafetyCheck && (
+                              <Menu.Item
+                                leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                              >
+                                Start legal release
+                              </Menu.Item>
+                            )}
+                            <Menu.Item
+                              leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setExitToJailModalOpened(true)}
+                            >
+                              Record exit to jail
+                            </Menu.Item>
+                            <Menu.Item
+                              leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setRecordDeathModalOpened(true)}
+                            >
+                              Record death
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      )}
+                      <Button
+                        color='indigo'
+                        radius='xl'
+                        size='lg'
+                        onClick={() => {
+                          if (isAwaitingSafetyCheck) {
+                            safetyCheckMutation.mutate();
+                            return;
+                          }
+                          if (showPrimaryStartLegalRelease) {
+                            navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                          }
+                        }}
+                        loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
+                      >
+                        {isAwaitingSafetyCheck
+                          ? 'Complete safety check'
+                          : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      </Button>
+                    </Group>
+                  </Stack>
                   )}
             </Group>
           </Container>
         </Box>
       )}
-      {(careFooterState.showFooter || showCustodyActionFooter) && <Box h='104px' />}
+      {(careFooterState.showFooter || showCustodyActionFooter) && (
+        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '164px' : '104px'} />
+      )}
+      <RecordDeathModal
+        opened={recordDeathModalOpened}
+        onClose={() => setRecordDeathModalOpened(false)}
+        onConfirm={() => recordDeathMutation.mutate()}
+        loading={recordDeathMutation.isPending}
+      />
+      <ExitToJailModal
+        opened={exitToJailModalOpened}
+        onClose={() => setExitToJailModalOpened(false)}
+        onConfirm={() => exitToJailMutation.mutate()}
+        loading={exitToJailMutation.isPending}
+      />
+      <CompleteIntakeModal
+        opened={completeIntakeModalOpened}
+        onClose={() => setCompleteIntakeModalOpened(false)}
+        loading={completeIntakeMutation.isPending}
+        onConfirmCompleted={() => completeIntakeMutation.mutate({ completed: true })}
+        onConfirmNotCompleted={() => completeIntakeMutation.mutate({ completed: false })}
+      />
     </>
   );
 }

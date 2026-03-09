@@ -16,6 +16,9 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
+import { isValidDeflection } from '@/utils/validators';
+import DeflectionStatusChip from './DeflectionStatusChip';
+import { getSfpdDeflectionStatusChip } from './deflectionStatusChipUtils';
 
 function Deflection () {
   const { id } = useParams();
@@ -44,6 +47,22 @@ function Deflection () {
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
+  const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const isCustodyTransferred = [
+    'AWAITING_INTAKE',
+    'READY_FOR_INTAKE',
+    'FAILED_INTAKE',
+    'ADMITTED',
+    'IN_CHAIR',
+    'RELEASED',
+    'EXITED',
+    'DEATH_IN_FACILITY',
+    'DEATH_IN_CUSTODY',
+  ].includes(deflection?.subjectStatus);
+  const showFinishDetailsFooter = !!deflection && !detailsComplete && !isCustodyTransferred;
+  const showCancelOnlyFooter = !!deflection && detailsComplete && !isCustodyTransferred;
+  const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
+  const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -139,11 +158,14 @@ function Deflection () {
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Group gap='xs'>
-            <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
-            <Text c='gray.5' size='md'>•</Text>
-            <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-          </Group>
+          <Stack gap='sm' align='center'>
+            <Group gap='xs'>
+              <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+              <Text c='gray.5' size='md'>•</Text>
+              <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+            </Group>
+            <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
+          </Stack>
           {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
             <>
               <Group>
@@ -339,11 +361,41 @@ function Deflection () {
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
-          <Group mb='xl'>
-            <Button onClick={() => setShowCancelModal(true)} variant='destructive' disabled={isFetchingActiveDeflections}>Cancel hold</Button>
-          </Group>
         </Stack>
       </Container>
+      {showActionFooter && (
+        <Box
+          className='action-footer-gradient'
+          pos='fixed'
+          left={0}
+          right={0}
+          bottom={0}
+          pt='md'
+          pb='xl'
+          style={{ zIndex: 10 }}
+        >
+          <Container>
+            <Group justify='center' gap='sm' wrap='nowrap'>
+              <Button
+                onClick={() => setShowCancelModal(true)}
+                variant='destructive'
+                disabled={isFetchingActiveDeflections}
+              >
+                Cancel hold
+              </Button>
+              {showFinishDetailsFooter && (
+                <Button
+                  onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+                  color='indigo'
+                >
+                  Finish details
+                </Button>
+              )}
+            </Group>
+          </Container>
+        </Box>
+      )}
+      {showActionFooter && <Box h='104px' />}
       {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
         <CancelHoldModal
           deflection={deflection}

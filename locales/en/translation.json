@@ -22,6 +22,11 @@
     "MEDIUM": "Medium (1-2 standard bags)",
     "LARGE": "Large (more than 2 bags)"
   },
+  "propertyNotReturnedReason": {
+    "ABANDONED": "Abandoned",
+    "DESTROYED": "Destroyed",
+    "OTHER": "Other (please specify)"
+  },
   "race": {
     "WHITE": "White",
     "BLACK": "Black",

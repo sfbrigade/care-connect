@@ -333,6 +333,15 @@ const Api = {
     release (id, data = {}) {
       return instance.post(`/api/deflections/${id}/release`, data);
     },
+    exitToJail (id) {
+      return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
+    },
+    recordDeath (id) {
+      return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);
+    },
+    recordPropertyReturn (id, data) {
+      return instance.post(`/api/deflections/${id}/property-return`, data).catch(handleError);
+    },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
     },

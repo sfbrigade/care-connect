@@ -28,6 +28,18 @@ export default async function main (prisma) {
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
+    {
+      id: 'death_in_facility',
+      name: 'Death in facility',
+      createdById: adminUser.id,
+      updatedById: adminUser.id,
+    },
+    {
+      id: 'death_in_custody',
+      name: 'Death in custody',
+      createdById: adminUser.id,
+      updatedById: adminUser.id,
+    },
   ];
 
   for (const reason of deflectionReleaseReasons) {

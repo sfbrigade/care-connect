@@ -24,12 +24,17 @@ function toTernary (value) {
   return value;
 }
 
+const EXIT_DETAIL_EDITABLE_STATUSES = [
+  Deflection.SubjectStatus.IN_CHAIR,
+  Deflection.SubjectStatus.RELEASED,
+];
+
 export default async function (fastify, opts) {
   fastify.post('/:id/exit-details',
     {
       onRequest: fastify.requireCare,
       schema: {
-        description: 'Save exit details while person remains IN_CHAIR.',
+        description: 'Save exit details while person remains onsite (IN_CHAIR or RELEASED).',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -63,7 +68,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.IN_CHAIR) {
+      if (!EXIT_DETAIL_EDITABLE_STATUSES.includes(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
