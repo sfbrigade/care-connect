@@ -1,7 +1,8 @@
 import StatusAccordion from './StatusAccordion';
+import CustodyCard from './custody/CustodyCard';
 
 export default {
-  title: 'LESC/Custody/StatusAccordion',
+  title: 'LESC/StatusAccordion',
   component: StatusAccordion,
   parameters: { layout: 'fullscreen' },
   tags: ['autodocs'],
@@ -41,7 +42,7 @@ const releasedSections = [
   { status: 'EXITED', label: 'Exited facility' },
 ];
 
-export const InCustodyWithItems = {
+export const SfsoInCustodyWithItems = {
   args: {
     sections: inCustodySections,
     groupedDeflections: {
@@ -50,10 +51,11 @@ export const InCustodyWithItems = {
       ADMITTED: [],
       IN_CHAIR: [],
     },
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };
 
-export const ReleasedWithItems = {
+export const SfsoNotInCustodyWithItems = {
   args: {
     sections: releasedSections,
     defaultOpen: ['RELEASED', 'EXITED'],
@@ -61,12 +63,14 @@ export const ReleasedWithItems = {
       RELEASED: [makeDeflection(4, 'RELEASED')],
       EXITED: [makeDeflection(5, 'EXITED'), makeDeflection(6, 'EXITED')],
     },
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };
 
-export const AllEmpty = {
+export const SfsoAllEmpty = {
   args: {
     sections: inCustodySections,
     groupedDeflections: {},
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };

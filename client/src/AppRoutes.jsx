@@ -11,7 +11,6 @@ import UnitSelector from './UnitSelector';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
 import InvitesRoutes from './Invites/InvitesRoutes';
 import Register from './Register';
-import UsersRoutes from './Users/UsersRoutes';
 import FeedbackViewer from './Feedback/FeedbackViewer';
 import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
@@ -37,7 +36,6 @@ function AppRoutes () {
               <Route path='/passwords/*' element={<PasswordsRoutes />} />
               <Route path='/invites/*' element={<InvitesRoutes />} />
               {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
-              <Route path='/account/*' element={<UsersRoutes />} />
               <Route path='/feedback' element={<FeedbackViewer />} />
               <Route path='/feedback/list' element={<FeedbackList />} />
               <Route path='/profile/*' element={<UserProfileRoutes />} />

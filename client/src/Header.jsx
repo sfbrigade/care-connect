@@ -1,5 +1,5 @@
-import { Link, NavLink } from 'react-router';
-import { Anchor, Avatar, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
+import { Link } from 'react-router';
+import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
   IconBug,
   IconHome,
@@ -16,7 +16,7 @@ function Header ({ opened, close, toggle, logout }) {
   const { user } = useAuthContext();
 
   return (
-    <Container h='100%' size='xl'>
+    <Container h='100%'>
       <Group h='100%' align='center' justify='space-between' wrap='nowrap'>
         <Link to='/' onClick={close} style={{ minWidth: 0 }}>
           <Box>
@@ -24,48 +24,7 @@ function Header ({ opened, close, toggle, logout }) {
             {user?.unit && <Text size='sm' color='dimmed' truncate>{user.unit.name}</Text>}
           </Box>
         </Link>
-        <Group visibleFrom='sm' gap='xl'>
-          <Anchor component={NavLink} aria-current='page' to='/' onClick={close}>
-            Home
-          </Anchor>
-          {user?.isAdmin && (
-            <Menu trigger='hover' transitionProps={{ exitDuration: 0 }} withinPortal>
-              <Menu.Target>
-                <Anchor component={NavLink} to='/admin'>Admin</Anchor>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item><Anchor component={NavLink} to='/admin/enums'>Enums</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/facilities'>Facilities</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/invites'>Invites</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/organizations'>Organizations</Anchor></Menu.Item>
-                <Menu.Item><Anchor component={NavLink} to='/admin/users'>Users</Anchor></Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          )}
-          {user && (
-            <>
-              <Group gap='xs'>
-                <span>
-                  Hello,{' '}
-                  <Anchor component={NavLink} to='/account' onClick={close}>
-                    {user.firstName}!
-                  </Anchor>
-                </span>
-                {user.pictureUrl && <Avatar src={user.pictureUrl} />}
-              </Group>
-              <Anchor href='/logout' onClick={logout}>
-                Log out
-              </Anchor>
-            </>
-          )}
-          {!user && (
-            <Anchor component={NavLink} to='/login' onClick={close}>
-              Log in
-            </Anchor>
-          )}
-          <IconButtonLink icon={IconMessages} to='/feedback' />
-        </Group>
-        <Group hiddenFrom='sm' size='sm' wrap='nowrap' style={{ flexShrink: 0 }}>
+        <Group wrap='nowrap' style={{ flexShrink: 0 }}>
           <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
             <Menu position='bottom-end' width={280} onDismiss={close}>
@@ -94,11 +53,23 @@ function Header ({ opened, close, toggle, logout }) {
                 <Menu.Item
                   leftSection={<IconBug size={20} color='var(--mantine-color-gray-5)' />}
                   component={Link}
-                  to='#'
+                  to='/feedback'
                   onClick={close}
                 >
                   Report a bug
                 </Menu.Item>
+                {user?.isAdmin && (
+                  <>
+                    <Menu.Divider />
+                    <Menu.Label>Admin</Menu.Label>
+                    <Menu.Item component={Link} to='/admin/enums' onClick={close}>Enums</Menu.Item>
+                    <Menu.Item component={Link} to='/admin/facilities' onClick={close}>Facilities</Menu.Item>
+                    <Menu.Item component={Link} to='/admin/invites' onClick={close}>Invites</Menu.Item>
+                    <Menu.Item component={Link} to='/admin/organizations' onClick={close}>Organizations</Menu.Item>
+                    <Menu.Item component={Link} to='/admin/users' onClick={close}>Users</Menu.Item>
+                    <Menu.Divider />
+                  </>
+                )}
                 <Menu.Item
                   color='red'
                   leftSection={<IconLogout size={20} />}
