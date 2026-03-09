@@ -362,6 +362,40 @@ const Api = {
         return instance.delete(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
       },
     },
+    exitDestinations: {
+      index () {
+        return instance.get('/api/deflections/exit-destinations');
+      },
+      get (id) {
+        return instance.get(`/api/deflections/exit-destinations/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/deflections/exit-destinations', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/deflections/exit-destinations/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/deflections/exit-destinations/${id}`).catch(handleError);
+      },
+    },
+    exitHousingStatuses: {
+      index () {
+        return instance.get('/api/deflections/exit-housing-statuses');
+      },
+      get (id) {
+        return instance.get(`/api/deflections/exit-housing-statuses/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/deflections/exit-housing-statuses', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/deflections/exit-housing-statuses/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/deflections/exit-housing-statuses/${id}`).catch(handleError);
+      },
+    },
     detailCategories: {
       index ({ include } = {}) {
         const params = {};
@@ -389,6 +423,12 @@ const Api = {
     },
   },
   geocode: {
+    search (text, { signal } = {}) {
+      return instance.get('/api/geocode/search', {
+        params: { text },
+        signal,
+      });
+    },
     reverse (latitude, longitude) {
       return instance.get('/api/geocode/reverse', {
         params: { latitude, longitude }

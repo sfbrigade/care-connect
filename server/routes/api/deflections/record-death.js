@@ -18,15 +18,9 @@ const ELIGIBLE_STATUSES = [
   Deflection.SubjectStatus.RELEASED,
 ];
 
-const DEATH_RELEASE_REASON_DEFS = {
-  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: {
-    id: 'death-in-facility',
-    name: 'Death in facility',
-  },
-  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: {
-    id: 'death-in-custody',
-    name: 'Death in custody',
-  },
+const DEATH_RELEASE_REASON_IDS = {
+  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: 'death_in_facility',
+  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: 'death_in_custody',
 };
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -108,28 +102,13 @@ export default async function (fastify, opts) {
           ? Deflection.SubjectStatus.DEATH_IN_FACILITY
           : Deflection.SubjectStatus.DEATH_IN_CUSTODY;
 
-        const releaseReasonDef = DEATH_RELEASE_REASON_DEFS[nextSubjectStatus];
-
-        await tx.deflectionReleaseReason.upsert({
-          where: { id: releaseReasonDef.id },
-          create: {
-            id: releaseReasonDef.id,
-            name: releaseReasonDef.name,
-            createdById: request.user.id,
-            updatedById: request.user.id,
-          },
-          update: {
-            name: releaseReasonDef.name,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
+        const releaseReasonId = DEATH_RELEASE_REASON_IDS[nextSubjectStatus];
 
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
             subjectStatus: nextSubjectStatus,
-            releaseReasonId: releaseReasonDef.id,
+            releaseReasonId,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -139,7 +118,7 @@ export default async function (fastify, opts) {
           where: { id },
           data: {
             subjectStatus: nextSubjectStatus,
-            releaseReasonId: releaseReasonDef.id,
+            releaseReasonId,
             updatedAt: now,
           },
           include: {
@@ -173,6 +152,7 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });
 }
