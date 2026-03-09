@@ -12,6 +12,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
@@ -21,20 +22,24 @@ import DeflectionStatusChip from '../DeflectionStatusChip';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
 import { getCareStatusChip } from './careStatusChipUtils';
 import { getCustodyStatusChip } from './custodyStatusChipUtils';
+import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const { isCustody } = useUserRole();
   const isCareView = viewerMode === 'care';
   const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
 
@@ -50,8 +55,40 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
+    viewerMode,
+    isCustody,
+    deflection,
+  });
+  const showRecordPropertyReturnAction = showAwaitingPropertyReturnChip;
+  const propertySectionId = `custody-property-section-${deflection?.id ?? 'unknown'}`;
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
+  const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+
+  useEffect(() => {
+    if (isCareView || !deflection?.id) return;
+
+    const raw = window.sessionStorage.getItem(PROPERTY_RETURN_TOAST_KEY);
+    if (!raw) return;
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+      return;
+    }
+
+    if (parsed?.deflectionId !== String(deflection.id)) return;
+
+    window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+    showToast('Property return update recorded', 'success', 4000, 'Saved to this person\'s exit record');
+    setCustodyAccordionValues(prev => (prev.includes('property') ? prev : [...prev, 'property']));
+    window.setTimeout(() => {
+      document.getElementById(propertySectionId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }, [deflection?.id, isCareView, propertySectionId, showToast]);
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -195,7 +232,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
             </Group>
             {!isCareView && (
-              <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+              <Stack gap='xs' align='center'>
+                <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {showAwaitingPropertyReturnChip && (
+                  <DeflectionStatusChip label='Awaiting property return' tone='info' />
+                )}
+              </Stack>
             )}
             {isCareView && (
               <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
@@ -280,7 +322,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (
             <>
-              <Accordion variant='section' defaultValue={['narcotics', 'release-narrative']}>
+              <Accordion
+                variant='section'
+                multiple
+                value={custodyAccordionValues}
+                onChange={setCustodyAccordionValues}
+              >
                 <Divider />
                 <Accordion.Item value='narcotics'>
                   <Accordion.Control>
@@ -327,7 +374,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item value='property'>
+                <Accordion.Item value='property' id={propertySectionId}>
                   <Accordion.Control>
                     <Title order={3}>Property details</Title>
                   </Accordion.Control>
@@ -357,6 +404,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text c='dimmed'>Description</Text>
                           <Text>{deflection?.propertyDetails}</Text>
                         </Box>
+                      )}
+                      {!!propertyReturnStatusText && (
+                        <Text c={deflection?.propertyReturned ? 'teal.6' : 'yellow.8'}>{propertyReturnStatusText}</Text>
                       )}
                     </Stack>
                   </Accordion.Panel>
@@ -473,7 +523,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           left={0}
           right={0}
           bottom={0}
-          pt='md'
+          pt={showRecordPropertyReturnAction ? 'xl' : 'md'}
           pb='xl'
           style={{ zIndex: 10 }}
         >
@@ -522,77 +572,95 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Menu>
                   )
                 : (
-                  <>
-                    {!isExited && (
-                      <Menu
-                        position='top-start'
-                        shadow='sm'
-                        radius='lg'
-                        width={260}
-                        withinPortal
-                      >
-                        <Menu.Target>
-                          <ActionIcon
-                            variant='outline'
-                            color='indigo'
-                            radius='50%'
-                            size={48}
-                            aria-label='More actions'
-                            style={{ minWidth: 48, flex: '0 0 48px' }}
-                          >
-                            <IconDots size={24} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          {(isAwaitingSafetyCheck || isFailedIntake) && (
-                            <Menu.Item
-                              leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                              onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                            >
-                              Start legal release
-                            </Menu.Item>
-                          )}
-                          <Menu.Item
-                            leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => setExitToJailModalOpened(true)}
-                          >
-                            Record exit to jail
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => setRecordDeathModalOpened(true)}
-                          >
-                            Record death
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
+                  <Stack gap='sm' w='100%' align='center'>
+                    {showRecordPropertyReturnAction && (
+                      <Group justify='center' gap='sm' wrap='nowrap'>
+                        {!isExited && <Box w={48} h={48} style={{ visibility: 'hidden' }} />}
+                        <Button
+                          variant='outline'
+                          color='indigo'
+                          radius='xl'
+                          size='lg'
+                          onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
+                        >
+                          Record property return
+                        </Button>
+                      </Group>
                     )}
-                    <Button
-                      color='indigo'
-                      radius='xl'
-                      size='lg'
-                      onClick={() => {
-                        if (isAwaitingSafetyCheck) {
-                          safetyCheckMutation.mutate();
-                          return;
-                        }
-                        if (showPrimaryStartLegalRelease) {
-                          navigate(`/custody/${deflection.id}/legal-release?from=detail`);
-                        }
-                      }}
-                      loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
-                    >
-                      {isAwaitingSafetyCheck
-                        ? 'Complete safety check'
-                        : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
-                    </Button>
-                  </>
+                    <Group justify='center' gap='sm' wrap='nowrap'>
+                      {!isExited && (
+                        <Menu
+                          position='top-start'
+                          shadow='sm'
+                          radius='lg'
+                          width={260}
+                          withinPortal
+                        >
+                          <Menu.Target>
+                            <ActionIcon
+                              variant='outline'
+                              color='indigo'
+                              radius='50%'
+                              size={48}
+                              aria-label='More actions'
+                              style={{ minWidth: 48, flex: '0 0 48px' }}
+                            >
+                              <IconDots size={24} />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            {isAwaitingSafetyCheck && (
+                              <Menu.Item
+                                leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                              >
+                                Start legal release
+                              </Menu.Item>
+                            )}
+                            <Menu.Item
+                              leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setExitToJailModalOpened(true)}
+                            >
+                              Record exit to jail
+                            </Menu.Item>
+                            <Menu.Item
+                              leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setRecordDeathModalOpened(true)}
+                            >
+                              Record death
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      )}
+                      <Button
+                        color='indigo'
+                        radius='xl'
+                        size='lg'
+                        onClick={() => {
+                          if (isAwaitingSafetyCheck) {
+                            safetyCheckMutation.mutate();
+                            return;
+                          }
+                          if (showPrimaryStartLegalRelease) {
+                            navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                          }
+                        }}
+                        loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
+                      >
+                        {isAwaitingSafetyCheck
+                          ? 'Complete safety check'
+                          : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      </Button>
+                    </Group>
+                  </Stack>
                   )}
             </Group>
           </Container>
         </Box>
       )}
-      {(careFooterState.showFooter || showCustodyActionFooter) && <Box h='104px' />}
+      {(careFooterState.showFooter || showCustodyActionFooter) && (
+        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '164px' : '104px'} />
+      )}
       <RecordDeathModal
         opened={recordDeathModalOpened}
         onClose={() => setRecordDeathModalOpened(false)}
