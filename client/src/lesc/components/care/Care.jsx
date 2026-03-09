@@ -1,22 +1,37 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Accordion, Box, Button, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconQrcode } from '@tabler/icons-react';
+import { IconScan } from '@tabler/icons-react';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { useToast } from '@/components/ToastContext';
 import { formatTime } from '@/utils/format';
+
+import EmptyState from '../EmptyState';
+import StatusAccordion from '../StatusAccordion';
+
 import CareCard from './CareCard';
+import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
+import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
 
-const CARE_STATUSES = 'ADMITTED,IN_CHAIR';
+const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
+const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
-const SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake' },
+const IN_CUSTODY_SECTIONS = [
+  { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
   { status: 'IN_CHAIR', label: 'In-chair' },
 ];
+const NOT_IN_CUSTODY_SECTIONS = [
+  { status: 'STILL_ONSITE', label: 'Still onsite' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+];
+const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
 function groupByStatus (deflections) {
   const grouped = {};
@@ -27,27 +42,53 @@ function groupByStatus (deflections) {
   return grouped;
 }
 
+function hasSavedExitDraft (deflectionId) {
+  if (typeof window === 'undefined') return false;
+  try {
+    const draftMap = JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
+    return Boolean(draftMap?.[String(deflectionId)]?.exitDetailsSaved);
+  } catch {
+    return false;
+  }
+}
+
+function hasSavedOrPersistedExitDetails (deflection) {
+  return hasSavedExitDraft(deflection.id) || hasPersistedExitDetails(deflection);
+}
+
 function Care () {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'not-in-custody' ? 'not-in-custody' : 'in-custody';
+  const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
   const [scanModalOpened, setScanModalOpened] = useState(false);
+  const [scanModalInstance, setScanModalInstance] = useState(0);
+  const [intakeModalDeflection, setIntakeModalDeflection] = useState(null);
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
-  const { data: deflections, dataUpdatedAt } = useQuery({
+  const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: CARE_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: IN_CUSTODY_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
   });
 
-  function handleScanSuccess () {
-    queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-  }
+  const { data: notInCustodyDeflections = [] } = useQuery({
+    queryKey: ['deflections', facility.id, 'care-not-in-custody'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
 
   useEffect(() => {
-    if (!deflections) return;
+    if (!inCustodyDeflections.length && !notInCustodyDeflections.length) return;
     const targetId = window.sessionStorage.getItem('careHighlightTarget');
     if (!targetId) return;
     window.sessionStorage.removeItem('careHighlightTarget');
@@ -58,7 +99,7 @@ function Care () {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-  }, [deflections]);
+  }, [inCustodyDeflections, notInCustodyDeflections]);
 
   useEffect(() => {
     if (!highlightedId) return;
@@ -66,93 +107,158 @@ function Care () {
     return () => clearTimeout(timer);
   }, [highlightedId]);
 
-  const grouped = groupByStatus(deflections);
-  const hasDeflections = (deflections?.length ?? 0) > 0;
+  const hasInCustody = inCustodyDeflections.length > 0;
+  const groupedInCustody = useMemo(() => groupByStatus(inCustodyDeflections), [inCustodyDeflections]);
+  const groupedNotInCustody = useMemo(
+    () => groupCareNotInCustodySections(notInCustodyDeflections),
+    [notInCustodyDeflections]
+  );
 
-  const defaultOpenSections = SECTIONS
-    .filter(s => (grouped[s.status]?.length ?? 0) > 0)
-    .map(s => s.status);
+  function handleScanSuccess () {
+    queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+  }
+
+  const completeIntakeMutation = useMutation({
+    mutationFn: ({ deflectionId, completed }) => Api.deflections.completeIntake(deflectionId, { completed }),
+    onSuccess: (_, variables) => {
+      if (variables.completed) {
+        window.sessionStorage.setItem('careHighlightTarget', String(variables.deflectionId));
+        showToast(
+          'Intake completed',
+          'success',
+          4000,
+          "Person moved to 'In-chair' for Sheriff's review."
+        );
+      } else {
+        window.sessionStorage.setItem('custodyHighlightTarget', String(variables.deflectionId));
+        showToast(
+          'Intake not completed',
+          'warning',
+          4000,
+          'Person moved back. Please review their status before release or exit.'
+        );
+      }
+      setIntakeModalDeflection(null);
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+    },
+    onError: () => {
+      showToast('Intake update not saved. Please try again.', 'error');
+    },
+  });
 
   return (
     <>
       <Head>
         <title>Care</title>
       </Head>
-      <Container pt='md'>
-        <Stack gap='xl'>
-          <Stack gap='md'>
-            {hasDeflections
+      <Container pt='md' pb='xl'>
+        <Stack gap='lg'>
+          <SegmentedControl
+            fullWidth
+            value={tab}
+            onChange={setTab}
+            data={[
+              { label: 'In custody', value: 'in-custody' },
+              { label: 'Not in custody', value: 'not-in-custody' },
+            ]}
+          />
+
+          {tab === 'in-custody' && (
+            hasInCustody
               ? (
-                <Accordion variant='section' multiple defaultValue={defaultOpenSections}>
-                  <Divider />
-                  {SECTIONS.map(({ status, label }) => {
-                    const items = grouped[status] ?? [];
-                    return (
-                      <Accordion.Item key={status} value={status}>
-                        <Accordion.Control>
-                          <Title order={3}>{label}: {items.length}</Title>
-                        </Accordion.Control>
-                        <Accordion.Panel>
-                          <Stack gap='md'>
-                            {items.map(d => (
-                              <CareCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
-                            ))}
-                            {items.length === 0 && (
-                              <Text c='dimmed' size='sm'>None</Text>
-                            )}
-                          </Stack>
-                        </Accordion.Panel>
-                      </Accordion.Item>
-                    );
-                  })}
-                </Accordion>
+                <StatusAccordion
+                  sections={IN_CUSTODY_SECTIONS}
+                  groupedDeflections={groupedInCustody}
+                  renderCard={(d) =>
+                    <CareCard
+                      key={d.id}
+                      deflection={d}
+                      highlighted={String(d.id) === highlightedId}
+                      onCompleteIntake={() => setIntakeModalDeflection(d)}
+                      hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                      onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
+                    />}
+                />
                 )
               : (
-                <Stack align='center' gap='md' py='xl'>
-                  <Box
-                    w={160}
-                    h={160}
-                    style={{ borderRadius: '50%', backgroundColor: 'var(--mantine-color-gray-2)' }}
-                  />
-                  <Title order={3}>No admitted subjects</Title>
-                  <Text c='dimmed' ta='center'>When you admit a subject, they&apos;ll appear here.</Text>
-                </Stack>
-                )}
-          </Stack>
+                <EmptyState
+                  title='No persons waiting for intake'
+                  description='When persons are ready for full intake, they’ll appear here.'
+                />
+                )
+          )}
+          {tab === 'not-in-custody' && (
+            <StatusAccordion
+              sections={NOT_IN_CUSTODY_SECTIONS}
+              groupedDeflections={groupedNotInCustody}
+              renderCard={(d) =>
+                <CareCard
+                  key={d.id}
+                  deflection={d}
+                  highlighted={String(d.id) === highlightedId}
+                  onCompleteIntake={() => setIntakeModalDeflection(d)}
+                  hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                  onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
+                />}
+            />
+          )}
+          {dataUpdatedAt > 0 && (
+            <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
+          )}
         </Stack>
       </Container>
+
       <Box
-        pos='sticky'
+        className='action-footer-gradient'
+        pos='fixed'
+        left={0}
+        right={0}
         bottom={0}
-        bg='gray.0'
         pt='md'
         pb='xl'
         style={{ zIndex: 10 }}
       >
         <Container>
-          <Stack gap='xs'>
-            <Button
-              variant='light'
-              fullWidth
-              size='lg'
-              leftSection={<IconQrcode size={20} />}
-              onClick={() => setScanModalOpened(true)}
-            >
-              Scan an admit code
-            </Button>
-            {dataUpdatedAt > 0 && (
-              <Group justify='center'>
-                <Text size='sm' c='dimmed'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
-              </Group>
-            )}
-          </Stack>
+          <Button
+            variant='outline'
+            fullWidth
+            size='lg'
+            radius='xl'
+            leftSection={<IconScan size={20} />}
+            onClick={() => {
+              setScanModalInstance((prev) => prev + 1);
+              setScanModalOpened(true);
+            }}
+          >
+            Scan transfer code
+          </Button>
         </Container>
       </Box>
-      <ScanAdmitCodeModal
-        opened={scanModalOpened}
-        onClose={() => setScanModalOpened(false)}
-        onSuccess={handleScanSuccess}
+
+      {scanModalOpened && (
+        <ScanAdmitCodeModal
+          key={scanModalInstance}
+          opened={scanModalOpened}
+          onClose={() => setScanModalOpened(false)}
+          onSuccess={handleScanSuccess}
+        />
+      )}
+
+      <CompleteIntakeModal
+        opened={!!intakeModalDeflection}
+        onClose={() => setIntakeModalDeflection(null)}
+        loading={completeIntakeMutation.isPending}
+        onConfirmCompleted={() => {
+          if (!intakeModalDeflection) return;
+          completeIntakeMutation.mutate({ deflectionId: intakeModalDeflection.id, completed: true });
+        }}
+        onConfirmNotCompleted={() => {
+          if (!intakeModalDeflection) return;
+          completeIntakeMutation.mutate({ deflectionId: intakeModalDeflection.id, completed: false });
+        }}
       />
+
+      <Box h='104px' />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActionIcon, Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 
@@ -25,6 +25,13 @@ function ScanCodeModal ({
   const [isLoading, setIsLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
   const [codes, setCodes] = useState(['']);
+
+  useEffect(() => {
+    if (!opened) return;
+    setIsLoading(false);
+    setManualEntry(false);
+    setCodes(['']);
+  }, [opened]);
 
   async function handleScan (text) {
     await onScan(text);
@@ -66,6 +73,10 @@ function ScanCodeModal ({
     onClose();
   }
 
+  if (!opened) {
+    return null;
+  }
+
   function handleCodeChange (index, value) {
     const sanitizedValue = sanitizeManualCodeInput(value);
     setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? sanitizedValue : code)));
@@ -88,6 +99,7 @@ function ScanCodeModal ({
       fullScreen
       withCloseButton={false}
       padding={0}
+      closeOnClickOutside={false}
       styles={{
         content: {
           background: 'var(--mantine-color-gray-0)',

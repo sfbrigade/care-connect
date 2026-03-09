@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { redactDeflectionsForUser } from '#lib/deflectionVisibility.js';
 
 export default async function (fastify) {
   fastify.get('/',
@@ -94,6 +95,8 @@ export default async function (fastify) {
         include: {
           subject: true,
           cancelReason: true,
+          releaseReason: true,
+          refusalReason: true,
           deflectionDetails: true,
           propertyPhotos: true,
         },
@@ -103,6 +106,6 @@ export default async function (fastify) {
       records.forEach(record => {
         record.propertyPhotos = record.propertyPhotos.map(photo => new PropertyPhoto(photo));
       });
-      return reply.setPaginationHeaders(page, perPage, total).send(records);
+      return reply.setPaginationHeaders(page, perPage, total).send(redactDeflectionsForUser(records, request.user));
     });
 }
