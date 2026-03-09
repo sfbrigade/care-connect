@@ -2,9 +2,10 @@ import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { calculateAge } from '@/utils/format';
+import { calculateAge } from '../../../utils/format';
+import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
-function CareCard ({ deflection, highlighted, onCompleteIntake }) {
+function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
   const { t } = useTranslation();
 
   const displayId = String(deflection.id).padStart(6, '0');
@@ -19,7 +20,8 @@ function CareCard ({ deflection, highlighted, onCompleteIntake }) {
   }
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
-  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
+  const isReleased = deflection.subjectStatus === 'RELEASED';
+  const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
     <Card
@@ -27,7 +29,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake }) {
       p='xl'
       id={`care-card-${deflection.id}`}
       style={{
-        border: highlighted || isInChair
+        border: highlighted
           ? '1px solid var(--mantine-color-indigo-6)'
           : '1px solid var(--mantine-color-gray-3)',
         borderRadius: '16px',
@@ -46,10 +48,15 @@ function CareCard ({ deflection, highlighted, onCompleteIntake }) {
           )}
         </Box>
 
-        <Group wrap='nowrap' justify='flex-start'>
-          <Button component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
+        <Group wrap='nowrap' justify='flex-end'>
+          {showViewDetails && (
+            <Button role='button' component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
+          )}
           {isInMedicalIntake && (
             <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
+          )}
+          {isReleased && (
+            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
           )}
         </Group>
       </Stack>

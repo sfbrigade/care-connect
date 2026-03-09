@@ -5,6 +5,11 @@
 .label {
   --chip-bg: var(--mantine-color-gray-6);
   --chip-hover: var(--mantine-color-gray-7);
+  color: var(--mantine-color-text);
+  font-family: var(--mantine-font-family);
+  font-size: var(--mantine-font-size-md);
+  font-style: normal;
+  font-weight: 400;
   white-space: normal;
   height: auto;
   padding: 0 16px;
