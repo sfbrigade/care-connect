@@ -450,8 +450,8 @@ test('/api/deflections', async (t) => {
       property = 'SMALL',
       propertyDetails = 'Black backpack',
       propertyReturned = null,
-      propertyReturnReason = null,
-      propertyReturnOtherReason = null,
+      propertyNotReturnedReason = null,
+      propertyNotReturnedOtherReason = null,
     } = {}) {
       return prisma.deflection.create({
         data: {
@@ -462,8 +462,8 @@ test('/api/deflections', async (t) => {
           property,
           propertyDetails,
           propertyReturned,
-          propertyReturnReason,
-          propertyReturnOtherReason,
+          propertyNotReturnedReason,
+          propertyNotReturnedOtherReason,
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
           releasedAt: subjectStatus === 'RELEASED' ? new Date() : null,
           releasedById: subjectStatus === 'RELEASED' ? '49acdf99-536f-49ac-8138-1c77e5087697' : null,
@@ -476,14 +476,14 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: true })
+        .payload({ propertyReturned: true })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.propertyReturned, true);
-      assert.strictEqual(data.propertyReturnReason, null);
-      assert.strictEqual(data.propertyReturnOtherReason, null);
+      assert.strictEqual(data.propertyNotReturnedReason, null);
+      assert.strictEqual(data.propertyNotReturnedOtherReason, null);
       assert.ok(data.propertyReturnedAt);
       assert.ok(data.propertyReturnedById);
     });
@@ -493,14 +493,14 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: false, reason: 'OTHER', otherReason: 'Evidence hold' })
+        .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Evidence hold' })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.propertyReturned, false);
-      assert.deepStrictEqual(data.propertyReturnReason, 'OTHER');
-      assert.deepStrictEqual(data.propertyReturnOtherReason, 'Evidence hold');
+      assert.deepStrictEqual(data.propertyNotReturnedReason, 'OTHER');
+      assert.deepStrictEqual(data.propertyNotReturnedOtherReason, 'Evidence hold');
       assert.ok(data.propertyReturnedAt);
       assert.ok(data.propertyReturnedById);
     });
@@ -512,7 +512,7 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: true })
+        .payload({ propertyReturned: true })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
@@ -525,7 +525,7 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: false })
+        .payload({ propertyReturned: false })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
@@ -536,7 +536,7 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: false, reason: 'OTHER' })
+        .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER' })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
@@ -549,7 +549,7 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: true })
+        .payload({ propertyReturned: true })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
@@ -565,7 +565,7 @@ test('/api/deflections', async (t) => {
 
       const response = await app.inject()
         .post(`/api/deflections/${deflection.id}/property-return`)
-        .payload({ returned: true })
+        .payload({ propertyReturned: true })
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);

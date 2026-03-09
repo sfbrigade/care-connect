@@ -84,6 +84,12 @@ enum PropertyEnum {
   LARGE
 }
 
+enum PropertyNotReturnedReasonEnum{
+  ABANDONED
+  DESTROYED
+  OTHER
+}
+
 enum DrugTypeEnum {
   INTOXICATING_LIQUOR
   DRUG
@@ -482,9 +488,9 @@ model Deflection {
   behaviorAdditions            String?
   property                     PropertyEnum?
   propertyDetails              String?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
   propertyReturned             Boolean?
-  propertyReturnReason         String?
-  propertyReturnOtherReason    String?
   propertyReturnedAt           DateTime?
   propertyReturnedBy           User?                   @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
   propertyReturnedById         String?                 @db.Uuid
@@ -586,8 +592,8 @@ model DeflectionUpdate {
   otherReleaseReason           String?
   otherReleaseDestination      String?
   propertyReturned             Boolean?
-  propertyReturnReason         String?
-  propertyReturnOtherReason    String?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
   exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])

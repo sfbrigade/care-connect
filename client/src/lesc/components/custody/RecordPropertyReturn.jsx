@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Box, Button, Chip, Container, Group, Image, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Box, Button, Chip, Container, Group, Image, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -14,11 +14,7 @@ import { canConfirmPropertyReturn, getPropertyReturnErrorToast } from './propert
 
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
-const REASON_OPTIONS = [
-  { value: 'ABANDONED', label: 'Abandoned' },
-  { value: 'DESTROYED', label: 'Destroyed' },
-  { value: 'OTHER', label: 'Other (please specify)' },
-];
+const REASON_OPTIONS = ['ABANDONED', 'DESTROYED', 'OTHER'];
 
 function RecordPropertyReturn () {
   const { id } = useParams();
@@ -27,9 +23,9 @@ function RecordPropertyReturn () {
   const { showToast } = useToast();
   const { t } = useTranslation();
 
-  const [returnedSelection, setReturnedSelection] = useState(null);
-  const [reason, setReason] = useState(null);
-  const [otherReason, setOtherReason] = useState('');
+  const [propertyReturnedSelection, setPropertyReturnedSelection] = useState(null);
+  const [propertyNotReturnedReason, setPropertyNotReturnedReason] = useState(null);
+  const [propertyNotReturnedOtherReason, setPropertyNotReturnedOtherReason] = useState('');
 
   const backTo = `/custody/${id}`;
 
@@ -38,15 +34,15 @@ function RecordPropertyReturn () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const requiresReason = returnedSelection === 'no';
-  const requiresOtherReason = requiresReason && reason === 'OTHER';
-  const canConfirm = canConfirmPropertyReturn({ returnedSelection, reason, otherReason });
+  const requiresReason = propertyReturnedSelection === 'no';
+  const requiresOtherReason = requiresReason && propertyNotReturnedReason === 'OTHER';
+  const canConfirm = canConfirmPropertyReturn({ propertyReturnedSelection, propertyNotReturnedReason, propertyNotReturnedOtherReason });
 
   const recordPropertyReturnMutation = useMutation({
     mutationFn: () => Api.deflections.recordPropertyReturn(id, {
-      returned: returnedSelection === 'yes',
-      ...(returnedSelection === 'no' ? { reason } : {}),
-      ...(requiresOtherReason ? { otherReason: otherReason.trim() } : {}),
+      propertyReturned: propertyReturnedSelection === 'yes',
+      ...(propertyReturnedSelection === 'no' ? { propertyNotReturnedReason } : {}),
+      ...(requiresOtherReason ? { propertyNotReturnedOtherReason: propertyNotReturnedOtherReason.trim() } : {}),
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
@@ -71,8 +67,8 @@ function RecordPropertyReturn () {
       <Container>
         <Stack gap='xl'>
           <Stack gap={0}>
-            <Text size='xl' fz='xl' c='dimmed'>Confirm property return</Text>
-            <Title order={2} fz={24} lh='32px' fw={400}>Review this property record and confirm whether these items were returned to the subject before they exited RESET.</Title>
+            <Text size='xl' c='dimmed'>Confirm property return</Text>
+            <Title order={3}>Review this property record and confirm whether these items were returned to the subject before they exited RESET.</Title>
           </Stack>
 
           <Stack gap='sm'>
@@ -99,18 +95,17 @@ function RecordPropertyReturn () {
             )}
           </Stack>
 
-          <Stack gap='sm'>
-            <Box px={4}>
-              <Text fw={600} size='lg'>Was this property returned to the person?</Text>
-              <Text c='dimmed'>This will be recorded on the exit record.</Text>
-            </Box>
+          <Input.Wrapper
+            label='Was this property returned to the person?'
+            description='This will be recorded on the exit record.'
+          >
             <Chip.Group
-              value={returnedSelection}
+              value={propertyReturnedSelection}
               onChange={(value) => {
-                setReturnedSelection(value);
+                setPropertyReturnedSelection(value);
                 if (value !== 'no') {
-                  setReason(null);
-                  setOtherReason('');
+                  setPropertyNotReturnedReason(null);
+                  setPropertyNotReturnedOtherReason('');
                 }
               }}
             >
@@ -119,51 +114,50 @@ function RecordPropertyReturn () {
                 <Chip value='no'>No</Chip>
               </Group>
             </Chip.Group>
-          </Stack>
+          </Input.Wrapper>
 
           {requiresReason && (
             <>
-              <Stack gap='sm'>
-                <Box px={4}>
-                  <Text fw={600} size='lg'>Reason<Text span c='red.6'>*</Text></Text>
-                </Box>
-                <Chip.Group value={reason} onChange={setReason}>
+              <Input.Wrapper
+                label='Reason'
+                required
+              >
+                <Chip.Group
+                  value={propertyNotReturnedReason}
+                  onChange={setPropertyNotReturnedReason}
+                >
                   <Group gap='sm'>
                     {REASON_OPTIONS.map((option) => (
-                      <Chip key={option.value} value={option.value}>{option.label}</Chip>
+                      <Chip key={option} value={option}>{t(`propertyNotReturnedReason.${option}`)}</Chip>
                     ))}
                   </Group>
                 </Chip.Group>
-              </Stack>
+              </Input.Wrapper>
 
               {requiresOtherReason && (
-                <Stack gap={4}>
-                  <Text fw={600} size='lg'>Other reason</Text>
-                  <TextInput
-                    value={otherReason}
-                    onChange={(event) => setOtherReason(event.currentTarget.value)}
+                <Input.Wrapper
+                  label='Other reason'
+                  required
+                >
+                  <Textarea
+                    value={propertyNotReturnedOtherReason}
+                    onChange={(event) => setPropertyNotReturnedOtherReason(event.currentTarget.value)}
                     placeholder='For example: Evidence, held by SFPD'
                   />
-                </Stack>
+                </Input.Wrapper>
               )}
             </>
           )}
 
           <Group gap='sm'>
             <Button
-              variant='light'
-              color='red'
-              radius='xl'
-              size='lg'
+              variant='destructive'
               onClick={() => navigate(backTo)}
               disabled={recordPropertyReturnMutation.isPending}
             >
               Cancel
             </Button>
             <Button
-              color='indigo'
-              radius='xl'
-              size='lg'
               onClick={() => recordPropertyReturnMutation.mutate()}
               disabled={!canConfirm}
               loading={recordPropertyReturnMutation.isPending}

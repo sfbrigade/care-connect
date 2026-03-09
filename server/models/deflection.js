@@ -1,4 +1,4 @@
-import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -46,8 +46,8 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   propertyReturned: z.boolean().nullable().optional(),
-  propertyReturnReason: z.string().nullable().optional(),
-  propertyReturnOtherReason: z.string().nullable().optional(),
+  propertyNotReturnedReason: z.string().nullable().optional(),
+  propertyNotReturnedOtherReason: z.string().nullable().optional(),
   propertyReturnedAt: z.coerce.date().nullable().optional(),
   propertyReturnedById: z.string().uuid().nullable().optional(),
   createdAt: z.coerce.date(),
@@ -107,6 +107,7 @@ export class Deflection extends Base {
   static HoldStatus = HoldStatusEnum;
   static SubjectStatus = SubjectStatusEnum;
   static Ternary = TernaryEnum;
+  static PropertyNotReturnedReason = PropertyNotReturnedReasonEnum;
 
   constructor (data) {
     super(Prisma.DeflectionScalarFieldEnum, data);
