@@ -311,11 +311,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_CUSTODY');
-      assert.deepStrictEqual(data.releaseReasonId, 'death-in-custody');
+      assert.deepStrictEqual(data.releaseReasonId, 'death_in_custody');
 
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_CUSTODY');
-      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death-in-custody');
+      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death_in_custody');
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -350,11 +350,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_FACILITY');
-      assert.deepStrictEqual(data.releaseReasonId, 'death-in-facility');
+      assert.deepStrictEqual(data.releaseReasonId, 'death_in_facility');
 
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_FACILITY');
-      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death-in-facility');
+      assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death_in_facility');
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
