@@ -16,6 +16,7 @@ import StatusAccordion from '../StatusAccordion';
 import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
+import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
@@ -29,7 +30,8 @@ const IN_CUSTODY_SECTIONS = [
 
 const RELEASED_SECTIONS = [
   { status: 'RELEASED', label: 'Still onsite' },
-  { status: 'EXITED', label: 'Exited facility' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
 ];
 
 function groupByStatus (deflections) {
@@ -44,6 +46,26 @@ function groupByStatus (deflections) {
   return grouped;
 }
 
+function groupReleasedByStatus (deflections) {
+  function isTransferredToJailWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'jail' &&
+      !deflection?.releasedAt
+    );
+  }
+
+  return {
+    RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
+    EXITED_FACILITY: (deflections ?? []).filter(
+      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
+    ),
+    TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
+      d => isTransferredToJailWithoutLegalRelease(d)
+    ),
+  };
+}
+
 function Custody () {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'in-custody';
@@ -55,6 +77,7 @@ function Custody () {
   const { showToast } = useToast();
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
+  const sectionScrolledRef = useRef(false);
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -97,6 +120,10 @@ function Custody () {
     if (!targetId) return;
     window.sessionStorage.removeItem('custodyHighlightTarget');
     setHighlightedId(targetId);
+    if (sectionScrolledRef.current) {
+      sectionScrolledRef.current = false;
+      return;
+    }
     window.requestAnimationFrame(() => {
       const el = document.getElementById(`custody-card-${targetId}`);
       if (el) {
@@ -106,10 +133,36 @@ function Custody () {
   }, [inCustodyDeflections, releasedDeflections]);
 
   useEffect(() => {
+    if (!releasedDeflections) return;
+    const sectionTarget = window.sessionStorage.getItem('custodyReleasedSectionTarget');
+    if (!sectionTarget) return;
+    window.sessionStorage.removeItem('custodyReleasedSectionTarget');
+    sectionScrolledRef.current = true;
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-section-${sectionTarget}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }, [releasedDeflections]);
+
+  useEffect(() => {
     if (!highlightedId) return;
     const timer = setTimeout(() => setHighlightedId(null), 3000);
     return () => clearTimeout(timer);
   }, [highlightedId]);
+
+  useEffect(() => {
+    const payload = window.sessionStorage.getItem(RELEASE_TOAST_KEY);
+    if (!payload) return;
+    window.sessionStorage.removeItem(RELEASE_TOAST_KEY);
+    try {
+      const parsed = JSON.parse(payload);
+      showToast(parsed.title, parsed.variant, 4000, parsed.body);
+    } catch {
+      showToast('Couldn\'t save release', 'warning', 4000, 'Please check your connection and try again.');
+    }
+  }, [showToast]);
 
   useEffect(() => {
     if (!Array.isArray(inCustodyDeflections)) return;
@@ -136,8 +189,24 @@ function Custody () {
   }, [inCustodyDeflections, showToast]);
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
-  const releasedGrouped = groupByStatus(releasedDeflections);
+  const releasedGrouped = groupReleasedByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
+
+  useEffect(() => {
+    if (!inCustodyDeflections) return;
+
+    const sectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
+    if (!sectionTarget) return;
+    window.sessionStorage.removeItem('custodyInCustodySectionTarget');
+
+    sectionScrolledRef.current = true;
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-section-${sectionTarget}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }, [inCustodyDeflections]);
 
   return (
     <>
@@ -152,7 +221,7 @@ function Custody () {
             onChange={setTab}
             data={[
               { label: 'In Custody', value: 'in-custody' },
-              { label: 'Released', value: 'released' },
+              { label: 'Not in custody', value: 'released' },
             ]}
           />
           {tab === 'in-custody' && (
@@ -162,7 +231,7 @@ function Custody () {
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
                     groupedDeflections={inCustodyGrouped}
-                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} />}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
                 : (
@@ -180,7 +249,7 @@ function Custody () {
                   <StatusAccordion
                     sections={RELEASED_SECTIONS}
                     groupedDeflections={releasedGrouped}
-                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} />}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
                 : (
@@ -196,9 +265,9 @@ function Custody () {
       </Container>
       {tab === 'in-custody' && (
         <Box
+          className='action-footer-gradient'
           pos='sticky'
           bottom={0}
-          bg='gray.0'
           pt='md'
           pb='xl'
           style={{ zIndex: 10 }}

@@ -2,11 +2,10 @@ import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
-function CompleteIntakeModal ({
+function ExitToJailModal ({
   opened,
   onClose,
-  onConfirmCompleted,
-  onConfirmNotCompleted,
+  onConfirm,
   loading = false,
 }) {
   return (
@@ -18,12 +17,11 @@ function CompleteIntakeModal ({
       centered
       lockScroll
       withCloseButton={false}
-      padding='md'
     >
       <Stack gap='xl'>
         <Stack gap='sm'>
-          <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <Title order={4}>Confirm medical intake</Title>
+          <Group justify='space-between' align='center' wrap='nowrap'>
+            <Title order={4}>Exit this person to jail?</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -39,34 +37,34 @@ function CompleteIntakeModal ({
             </ActionIcon>
           </Group>
           <Text size='sm' c='dimmed'>
-            Were you able to complete the full medical intake for this person? If not, the person will return to Sheriff&apos;s review for release or exit.
+            This step can&apos;t be undone. After you confirm:
+            <br />
+            &bull; This person will move to &quot;Transferred to jail&quot; for 24 hours.
+            <br />
+            &bull; They will be removed from in-custody lists and only appear under Not in custody.
+            <br />
+            &bull; Their property record will be marked as returned.
           </Text>
         </Stack>
 
-        <Stack gap='sm'>
+        <Group gap='sm' justify='flex-start' wrap='wrap'>
           <Button
-            variant='outline'
-            color='red'
-            size='lg'
-            radius='xl'
-            onClick={onConfirmNotCompleted}
-            loading={loading}
+            variant='destructive'
+            onClick={onClose}
+            disabled={loading}
           >
-            No, intake not completed
+            No, cancel
           </Button>
           <Button
-            color='indigo'
-            size='lg'
-            radius='xl'
-            onClick={onConfirmCompleted}
+            onClick={onConfirm}
             loading={loading}
           >
-            Yes, intake completed
+            Yes, exit to jail
           </Button>
-        </Stack>
+        </Group>
       </Stack>
     </Modal>
   );
 }
 
-export default CompleteIntakeModal;
+export default ExitToJailModal;

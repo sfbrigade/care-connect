@@ -2,7 +2,7 @@ import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
-import { calculateAge } from '@/utils/format';
+import { calculateAge } from '../../../utils/format';
 import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
@@ -20,7 +20,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
   }
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
-  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
+  const isReleased = deflection.subjectStatus === 'RELEASED';
   const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
@@ -50,13 +50,13 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
 
         <Group wrap='nowrap' justify='flex-end'>
           {showViewDetails && (
-            <Button component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
+            <Button role='button' component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
           )}
           {isInMedicalIntake && (
             <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
           )}
-          {isInChair && (
-            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Complete exit' : 'Start exit'}</Button>
+          {isReleased && (
+            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
           )}
         </Group>
       </Stack>
