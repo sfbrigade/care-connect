@@ -609,7 +609,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             </ActionIcon>
                           </Menu.Target>
                           <Menu.Dropdown>
-                            {(isAwaitingSafetyCheck || isFailedIntake) && (
+                            {isAwaitingSafetyCheck && (
                               <Menu.Item
                                 leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
                                 onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
