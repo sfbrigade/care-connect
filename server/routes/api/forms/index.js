@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import { FORM_REGISTRY as sharedForms } from '@care-connect/shared/forms';
 
-const RENDER_TIMEOUT_MS = 20000;
+const RENDER_TIMEOUT_MS = 20_000;
 
 const paramsSchema = z.object({ deflectionId: z.coerce.number() });
 
