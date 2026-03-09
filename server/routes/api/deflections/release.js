@@ -7,6 +7,7 @@ import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
 const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
+  Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.ADMITTED,
   Deflection.SubjectStatus.IN_CHAIR,
@@ -21,6 +22,12 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.coerce.number(),
         }),
+        body: z.object({
+          releaseReasonId: z.string(),
+          exitDestinationId: z.string().nullable().optional(),
+          otherReleaseReason: z.string().trim().min(1).optional(),
+          otherReleaseDestination: z.string().trim().min(1).optional(),
+        }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -31,6 +38,38 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
+      const releaseReasonId = request.body?.releaseReasonId || 'sobered';
+      const exitDestinationId = request.body?.exitDestinationId || null;
+      const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
+      const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
+      const isMedicalRelease = releaseReasonId === 'medical_issue';
+      const isOtherRelease = releaseReasonId === 'other';
+      const isExitRelease = isMedicalRelease || isOtherRelease;
+
+      if (isMedicalRelease && !exitDestinationId) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'exitDestinationId',
+            message: 'Exit destination is required for medical release.',
+          }],
+        });
+      }
+      if (isOtherRelease && !otherReleaseReason) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'otherReleaseReason',
+            message: 'Other release reason is required.',
+          }],
+        });
+      }
+      if (isOtherRelease && !otherReleaseDestination) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{
+            path: 'otherReleaseDestination',
+            message: 'Other release destination is required.',
+          }],
+        });
+      }
 
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -50,11 +89,6 @@ export default async function (fastify, opts) {
         // re-fetch deflection after lock
         deflection = await tx.deflection.findUnique({
           where: { id },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
         });
 
         if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
@@ -66,48 +100,78 @@ export default async function (fastify, opts) {
           data: {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.RELEASED,
+            releaseReasonId,
+            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
             updatedById: request.user.id,
             updatedAt: now,
           },
         });
 
+        if (isExitRelease) {
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              exitDestinationId,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+        }
+
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
+            subjectStatus: isExitRelease
+              ? Deflection.SubjectStatus.EXITED
+              : Deflection.SubjectStatus.RELEASED,
             releasedAt: now,
             releasedById: request.user.id,
+            releaseReasonId,
+            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+            ...(isExitRelease
+              ? {
+                  exitedAt: now,
+                  exitedById: request.user.id,
+                  exitDestinationId,
+                }
+              : {}),
             updatedAt: now,
           },
           include: {
             subject: true,
             deflectionDetails: true,
             propertyPhotos: true,
+            exitDestination: true,
           },
         });
 
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
-        });
+        if (isExitRelease) {
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied: occupied - 1,
+            holds,
+            available: available + 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
+          await tx.bedType.update({
+            where: { id: bedTypeId },
+            data: updatedData,
+          });
+        }
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

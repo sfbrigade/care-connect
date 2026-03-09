@@ -25,3 +25,27 @@ a {
     opacity: 1;
   }
 }
+
+.action-footer-gradient {
+  position: relative;
+  isolation: isolate;
+}
+
+.action-footer-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0) 0%, rgba(248, 249, 250, 0.92) 100%);
+}
+
+.action-footer-gradient > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure footer overflow/action icons stay opaque on top of the translucent gradient */
+.action-footer-gradient .mantine-ActionIcon-root[data-variant='outline'] {
+  background-color: var(--mantine-color-white);
+}

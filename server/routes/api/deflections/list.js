@@ -95,6 +95,8 @@ export default async function (fastify) {
         include: {
           subject: true,
           cancelReason: true,
+          releaseReason: true,
+          refusalReason: true,
           deflectionDetails: true,
           propertyPhotos: true,
         },

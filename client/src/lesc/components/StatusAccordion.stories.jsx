@@ -51,7 +51,7 @@ export const SfsoInCustodyWithItems = {
       ADMITTED: [],
       IN_CHAIR: [],
     },
-    Card: CustodyCard,
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };
 
@@ -63,7 +63,7 @@ export const SfsoNotInCustodyWithItems = {
       RELEASED: [makeDeflection(4, 'RELEASED')],
       EXITED: [makeDeflection(5, 'EXITED'), makeDeflection(6, 'EXITED')],
     },
-    Card: CustodyCard,
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };
 
@@ -71,6 +71,6 @@ export const SfsoAllEmpty = {
   args: {
     sections: inCustodySections,
     groupedDeflections: {},
-    Card: CustodyCard,
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };
