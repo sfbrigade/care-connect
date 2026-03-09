@@ -158,12 +158,14 @@ function Deflection () {
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Group gap='xs'>
-            <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
-            <Text c='gray.5' size='md'>•</Text>
-            <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-          </Group>
-          <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
+          <Stack gap='sm' align='center'>
+            <Group gap='xs'>
+              <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+              <Text c='gray.5' size='md'>•</Text>
+              <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+            </Group>
+            <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
+          </Stack>
           {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
             <>
               <Group>

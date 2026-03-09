@@ -188,22 +188,21 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Group gap='xs'>
-            {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
-            {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
-            <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-          </Group>
-          {!isCareView && (
-            <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
-          )}
-          {isCareView && (
-            <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
-          )}
+          <Stack gap='sm' align='center'>
+            <Group gap='xs'>
+              {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
+              {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
+              <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+            </Group>
+            {!isCareView && (
+              <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+            )}
+            {isCareView && (
+              <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+            )}
+          </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Stack gap='sm' align='center'>
-              {isReadyForIntake && (
-                <Text c='teal.6' size='md' w='100%'>Safety check completed</Text>
-              )}
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
