@@ -37,15 +37,15 @@ function LegalReleaseQuestions () {
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReason, setReleaseReason] = useState(null);
+  const [releaseReasonId, setReleaseReasonId] = useState(null);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [medicalExitDestination, setMedicalExitDestination] = useState(null);
+  const [exitDestinationId, setExitDestinationId] = useState(null);
 
-  const isMedicalRelease = releaseReason === 'medical_issue';
-  const isOtherRelease = releaseReason === 'other';
+  const isMedicalRelease = releaseReasonId === 'medical_issue';
+  const isOtherRelease = releaseReasonId === 'other';
   const isExitRelease = isMedicalRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
@@ -74,19 +74,15 @@ function LegalReleaseQuestions () {
   const releaseMutation = useMutation({
     mutationFn: () => {
       const payload = {
-        releaseReason: releaseReason === 'medical_issue'
-          ? 'MEDICAL_ISSUE'
-          : (releaseReason === 'other' ? 'OTHER' : 'SOBERED'),
+        releaseReasonId,
       };
-
       if (isMedicalRelease) {
-        payload.exitDestination = medicalExitDestination === 'hospital' ? 'HOSPITAL' : 'OTHER';
+        payload.exitDestinationId = exitDestinationId;
       }
       if (isOtherRelease) {
         payload.otherReleaseReason = otherReason.trim();
         payload.otherReleaseDestination = otherDestination.trim();
       }
-
       return Api.deflections.release(id, payload);
     },
     onSuccess: () => {
@@ -173,7 +169,7 @@ function LegalReleaseQuestions () {
 
           <Stack gap='xl'>
             <Input.Wrapper label='Release reason' required>
-              <Chip.Group value={releaseReason} onChange={setReleaseReason}>
+              <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                 <Group gap='sm'>
                   <Chip value='sobered'>Sobered</Chip>
                   <Chip value='medical_issue'>Medical issue</Chip>
@@ -187,7 +183,7 @@ function LegalReleaseQuestions () {
                   This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
                 </Text>
                 <Input.Wrapper label='Exit destination' required>
-                  <Chip.Group value={medicalExitDestination} onChange={setMedicalExitDestination}>
+                  <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
                     <Group gap='sm'>
                       <Chip value='hospital'>Hospital</Chip>
                       <Chip value='other'>Other</Chip>
@@ -237,10 +233,10 @@ function LegalReleaseQuestions () {
               }}
               loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
               disabled={
-                !releaseReason ||
-                (releaseReason === 'medical_issue' && !medicalExitDestination) ||
-                (releaseReason === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                (releaseReason !== 'sobered' && releaseReason !== 'medical_issue' && releaseReason !== 'other')
+                !releaseReasonId ||
+                (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
+                (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
+                (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
               }
             >
               {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}

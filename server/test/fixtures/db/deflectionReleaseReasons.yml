@@ -1,0 +1,18 @@
+entity: deflectionReleaseReason
+connectedFields: ['createdBy', 'updatedBy']
+items:
+  sobered:
+    id: 'sobered'
+    name: 'Sobered'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  medical_issue:
+    id: 'medical_issue'
+    name: 'Medical issue'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  other:
+    id: 'other'
+    name: 'Other (please specify)'
+    createdBy: '@user1'
+    updatedBy: '@user1'

@@ -13,6 +13,7 @@ import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
 import seedDeflectionExitDestinations from './seeds/deflectionExitDestinations.js';
 import seedDeflectionExitHousingStatuses from './seeds/deflectionExitHousingStatuses.js';
+import seedDeflectionReleaseReasons from './seeds/deflectionReleaseReasons.js';
 import seedTestDeflections from './seeds/testDeflections.js';
 
 try {
@@ -29,6 +30,7 @@ try {
   await seedDeflectionDetails(prisma);
   await seedDeflectionExitDestinations(prisma);
   await seedDeflectionExitHousingStatuses(prisma);
+  await seedDeflectionReleaseReasons(prisma);
   await seedTestDeflections(prisma);
 } catch (error) {
   console.error('Error seeding:', error);
