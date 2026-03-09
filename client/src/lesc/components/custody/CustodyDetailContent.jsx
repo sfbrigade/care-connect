@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
 import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
@@ -12,8 +12,8 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
-import { formatAddress } from '@/utils/format';
-import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
+import { formatAddress, formatDateTime } from '@/utils/format';
+import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 import { getCareDetailFooterState } from './careDetailFooterUtils';
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import ExitToJailModal from './ExitToJailModal';
@@ -123,18 +123,55 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
+  const [releaseNarrative, setReleaseNarrative] = useState('');
+  const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
 
-  function open647fPdf () {
+  const { data: incident } = useQuery({
+    queryKey: ['incidents', deflection?.incidentId],
+    queryFn: () => Api.incidents.get(deflection.incidentId).then(response => response.data),
+    enabled: !!deflection?.incidentId,
+  });
+  const incidentAddress = formatAddress(incident ?? {});
+
+  useEffect(() => {
+    setReleaseNarrative(deflection?.releaseNarrative ?? '');
+    setIsEditingReleaseNarrative(false);
+  }, [deflection?.releaseNarrative]);
+
+  const saveReleaseNarrativeMutation = useMutation({
+    mutationFn: () => Api.deflections.update(deflection.id, { releaseNarrative: releaseNarrative.trim() || null }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['deflections', String(deflection.id)], response.data);
+      setIsEditingReleaseNarrative(false);
+      showToast('849(b) narrative saved', 'success');
+    },
+    onError: () => {
+      showToast('Narrative not saved. Please try again.', 'error');
+    },
+  });
+
+  function open849bPdf () {
     const holdData = {
       id: String(deflection.id),
       client: deflection.subject,
-      incident: {},
-      createdBy: null,
-      notes: deflection.behavior,
+      incident: {
+        dateTimeArrested: incident?.arrestedAt ?? null,
+      },
+      createdAt: deflection?.createdAt,
+      transferredAt: deflection?.releasedAt ?? null,
+      createdBy: deflection?.createdBy ?? null,
     };
-    const doc = generate647fTransferFormPDF(holdData);
+    const doc = generateCertificateOfReleasePDF(holdData);
     const blobUrl = doc.output('bloburl');
     window.open(blobUrl, '_blank');
+  }
+
+  function onReleaseNarrativeButtonClick () {
+    if (!isEditingReleaseNarrative) {
+      setIsEditingReleaseNarrative(true);
+      return;
+    }
+    saveReleaseNarrativeMutation.mutate();
   }
 
   return (
@@ -150,24 +187,32 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
           </Group>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
-            <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
-              <Stack gap='md' align='center'>
-                <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
-                <Text fw={500}>Transfer code: {isReadyForIntake ? String(deflection.id).padStart(6, '0') : '******'}</Text>
-                {isAwaitingSafetyCheck && (
-                  <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
-                )}
-              </Stack>
-            </Card>
+            <Stack gap='sm' align='center'>
+              {isReadyForIntake && (
+                <Text c='teal.6' size='md' w='100%'>Safety check completed</Text>
+              )}
+              <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
+                <Stack gap='md' align='center'>
+                  <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
+                  <Text fw={500}>Transfer code: {isReadyForIntake ? String(deflection.id).padStart(6, '0') : '******'}</Text>
+                  {isAwaitingSafetyCheck && (
+                    <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
+                  )}
+                </Stack>
+              </Card>
+              {isReadyForIntake && (
+                <Text size='xs' c='gray.5' ta='center'>Intake staff can scan this code to start full intake.</Text>
+              )}
+            </Stack>
           )}
           {!isCareView && (
             <Stack gap='xs' align='flex-start'>
               <Button
-                onClick={open647fPdf}
+                onClick={open849bPdf}
                 variant='outline'
                 rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
               >
-                647(f).pdf
+                849(b).pdf
               </Button>
             </Stack>
           )}
@@ -223,7 +268,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (
             <>
-              <Accordion variant='section' defaultValue={['narcotics', 'deflection', 'property']}>
+              <Accordion variant='section' defaultValue={['narcotics', 'release-narrative']}>
                 <Divider />
                 <Accordion.Item value='narcotics'>
                   <Accordion.Control>
@@ -301,6 +346,73 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{deflection?.propertyDetails}</Text>
                         </Box>
                       )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='incident'>
+                  <Accordion.Control>
+                    <Title order={3}>Incident details</Title>
+                    <Text c='gray.5' size='sm'>These details apply to all holds in this incident</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {incidentAddress && (
+                        <Box>
+                          <Text c='dimmed'>Address</Text>
+                          <Text>{incidentAddress}</Text>
+                        </Box>
+                      )}
+                      {incident?.arrestedAt && (
+                        <Box>
+                          <Text c='dimmed'>Date and time</Text>
+                          <Text>{formatDateTime(incident.arrestedAt)}</Text>
+                        </Box>
+                      )}
+                      {incident?.cadNumber && (
+                        <Box>
+                          <Text c='dimmed'>CAD #</Text>
+                          <Text>{incident.cadNumber}</Text>
+                        </Box>
+                      )}
+                      {incident?.supervisorBadgeNumber && (
+                        <Box>
+                          <Text c='dimmed'>SFSO supervisor star #</Text>
+                          <Text>{incident.supervisorBadgeNumber}</Text>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='release-narrative'>
+                  <Accordion.Control>
+                    <Title order={3}>849(b) release narrative</Title>
+                    <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      <Box>
+                        <Text c='dimmed'>Narrative</Text>
+                        {isEditingReleaseNarrative
+                          ? (
+                            <Textarea
+                              value={releaseNarrative}
+                              onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
+                              autosize
+                              minRows={4}
+                              mt='xs'
+                            />
+                            )
+                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
+                      </Box>
+                      <Group>
+                        <Button
+                          onClick={onReleaseNarrativeButtonClick}
+                          loading={saveReleaseNarrativeMutation.isPending}
+                          variant='secondary'
+                        >
+                          Edit
+                        </Button>
+                      </Group>
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>

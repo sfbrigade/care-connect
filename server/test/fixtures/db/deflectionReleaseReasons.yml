@@ -1,0 +1,28 @@
+entity: deflectionReleaseReason
+connectedFields: ['createdBy', 'updatedBy']
+items:
+  deflection_release_reason_sobered:
+    id: 'sobered'
+    name: 'Sobered'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  deflection_release_reason_medical_issue:
+    id: 'medical_issue'
+    name: 'Medical issue'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  deflection_release_reason_other:
+    id: 'other'
+    name: 'Other (please specify)'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  deflection_release_reason_death_in_facility:
+    id: 'death_in_facility'
+    name: 'Death in facility'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  deflection_release_reason_death_in_custody:
+    id: 'death_in_custody'
+    name: 'Death in custody'
+    createdBy: '@user1'
+    updatedBy: '@user1'
