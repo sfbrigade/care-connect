@@ -1,4 +1,4 @@
-import { useAuthContext } from '@/AuthContext';
+import { useAuthContext } from '../AuthContext';
 
 export const UserRole = Object.freeze({
   FIELD: 'FIELD',

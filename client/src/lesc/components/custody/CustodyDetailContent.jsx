@@ -12,7 +12,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
@@ -33,7 +33,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
-  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property']);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
