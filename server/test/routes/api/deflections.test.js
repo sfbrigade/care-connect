@@ -287,6 +287,138 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/exit-to-jail', async (t) => {
+    await t.test('records direct jail exit from awaiting-intake and releases hold', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'AWAITING_INTAKE',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-jail`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records direct jail exit from ready-for-intake and releases hold', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'READY_FOR_INTAKE',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-jail`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+      assert.strictEqual(data.releasedAt, null);
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.ok(updatedDeflection.exitedAt);
+      assert.ok(updatedDeflection.exitedById);
+      assert.strictEqual(updatedDeflection.releasedAt, null);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records direct jail exit from failed intake and releases occupied chair', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 1, holds: 3, available: 4 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'FAILED_INTAKE',
+          admittedAt: new Date(),
+          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          rejectedAt: new Date(),
+          rejectedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-jail`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.available, 5);
+    });
+
+    await t.test('returns conflict when deflection status is not eligible for exit-to-jail', async () => {
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: { subjectStatus: 'DETAINED' },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/4/exit-to-jail')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+    });
+  });
+
   await t.test('POST /:id/record-death', async (t) => {
     await t.test('records death in custody and releases a hold for pre-intake statuses', async () => {
       await prisma.bedType.update({
@@ -383,6 +515,136 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+    });
+  });
+
+  await t.test('POST /:id/property-return', async (t) => {
+    async function createReleasedDeflection ({
+      subjectStatus = 'RELEASED',
+      property = 'SMALL',
+      propertyDetails = 'Black backpack',
+      propertyReturned = null,
+      propertyNotReturnedReason = null,
+      propertyNotReturnedOtherReason = null,
+    } = {}) {
+      return prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus,
+          property,
+          propertyDetails,
+          propertyReturned,
+          propertyNotReturnedReason,
+          propertyNotReturnedOtherReason,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          releasedAt: subjectStatus === 'RELEASED' ? new Date() : null,
+          releasedById: subjectStatus === 'RELEASED' ? '49acdf99-536f-49ac-8138-1c77e5087697' : null,
+        },
+      });
+    }
+
+    await t.test('records property returned as yes for a legally released person with property', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.propertyReturned, true);
+      assert.strictEqual(data.propertyNotReturnedReason, null);
+      assert.strictEqual(data.propertyNotReturnedOtherReason, null);
+      assert.ok(data.propertyReturnedAt);
+      assert.ok(data.propertyReturnedById);
+    });
+
+    await t.test('records property not returned with reason and otherReason', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Evidence hold' })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.propertyReturned, false);
+      assert.deepStrictEqual(data.propertyNotReturnedReason, 'OTHER');
+      assert.deepStrictEqual(data.propertyNotReturnedOtherReason, 'Evidence hold');
+      assert.ok(data.propertyReturnedAt);
+      assert.ok(data.propertyReturnedById);
+    });
+
+    await t.test('returns conflict with ALREADY_RECORDED when property return was already recorded', async () => {
+      const deflection = await createReleasedDeflection({
+        propertyReturned: true,
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'ALREADY_RECORDED');
+    });
+
+    await t.test('returns 422 when returned=false and reason is missing', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: false })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when reason is OTHER and otherReason is missing', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER' })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns conflict when deflection is not legally released', async () => {
+      const deflection = await createReleasedDeflection({
+        subjectStatus: 'IN_CHAIR',
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'NOT_LEGALLY_RELEASED');
+    });
+
+    await t.test('returns conflict when no property is associated', async () => {
+      const deflection = await createReleasedDeflection({
+        property: null,
+        propertyDetails: null,
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${deflection.id}/property-return`)
+        .payload({ propertyReturned: true })
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.code, 'NO_ASSOCIATED_PROPERTY');
     });
   });
 

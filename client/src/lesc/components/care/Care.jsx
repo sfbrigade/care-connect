@@ -17,7 +17,7 @@ import StatusAccordion from '../StatusAccordion';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
-import { groupCareNotInCustodySections } from './careFlowUtils';
+import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
@@ -28,8 +28,8 @@ const IN_CUSTODY_SECTIONS = [
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'STILL_ONSITE', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -50,6 +50,10 @@ function hasSavedExitDraft (deflectionId) {
   } catch {
     return false;
   }
+}
+
+function hasSavedOrPersistedExitDetails (deflection) {
+  return hasSavedExitDraft(deflection.id) || hasPersistedExitDetails(deflection);
 }
 
 function Care () {
@@ -171,8 +175,8 @@ function Care () {
                       deflection={d}
                       highlighted={String(d.id) === highlightedId}
                       onCompleteIntake={() => setIntakeModalDeflection(d)}
-                      hasExitDraft={hasSavedExitDraft(d.id)}
-                      onExitDetails={() => navigate(`/care/${d.id}/exit`)}
+                      hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                      onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                     />}
                 />
                 )
@@ -193,8 +197,8 @@ function Care () {
                   deflection={d}
                   highlighted={String(d.id) === highlightedId}
                   onCompleteIntake={() => setIntakeModalDeflection(d)}
-                  hasExitDraft={hasSavedExitDraft(d.id)}
-                  onExitDetails={() => navigate(`/care/${d.id}/exit`)}
+                  hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                  onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                 />}
             />
           )}
@@ -205,11 +209,11 @@ function Care () {
       </Container>
 
       <Box
+        className='action-footer-gradient'
         pos='fixed'
         left={0}
         right={0}
         bottom={0}
-        bg='gray.0'
         pt='md'
         pb='xl'
         style={{ zIndex: 10 }}

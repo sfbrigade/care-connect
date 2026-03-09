@@ -24,12 +24,17 @@ function toTernary (value) {
   return value;
 }
 
+const EXITABLE_STATUSES = [
+  Deflection.SubjectStatus.IN_CHAIR,
+  Deflection.SubjectStatus.RELEASED,
+];
+
 export default async function (fastify, opts) {
   fastify.post('/:id/exit',
     {
       onRequest: fastify.requireCare,
       schema: {
-        description: 'Record exit details and transition a person from IN_CHAIR to EXITED.',
+        description: 'Record exit details and transition a person from IN_CHAIR/RELEASED to EXITED.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -63,19 +68,21 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.IN_CHAIR) {
+      if (!EXITABLE_STATUSES.includes(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
       await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        const shouldReleaseBed = deflection.subjectStatus === Deflection.SubjectStatus.IN_CHAIR;
+        const bedType = shouldReleaseBed
+          ? await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId)
+          : null;
 
         deflection = await tx.deflection.findUnique({
           where: { id },
         });
 
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.IN_CHAIR) {
+        if (!EXITABLE_STATUSES.includes(deflection.subjectStatus)) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
@@ -112,31 +119,32 @@ export default async function (fastify, opts) {
           },
         });
 
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-          updatedAt: now,
-        };
+        if (shouldReleaseBed) {
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied: occupied - 1,
+            holds,
+            available: available + 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
 
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId: deflection.bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
 
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedData,
-        });
+          await tx.bedType.update({
+            where: { id: deflection.bedTypeId },
+            data: updatedData,
+          });
+        }
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

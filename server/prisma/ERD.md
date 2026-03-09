@@ -79,6 +79,14 @@ LARGE LARGE
     
 
 
+        PropertyNotReturnedReasonEnum {
+            ABANDONED ABANDONED
+DESTROYED DESTROYED
+OTHER OTHER
+        }
+    
+
+
         DrugTypeEnum {
             INTOXICATING_LIQUOR INTOXICATING_LIQUOR
 DRUG DRUG
@@ -381,6 +389,11 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String behaviorAdditions "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
+    PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
+    String propertyNotReturnedOtherReason "❓"
+    Boolean propertyReturned "❓"
+    DateTime propertyReturnedAt "❓"
+    String propertyReturnedById "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
@@ -450,6 +463,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String releaseReasonId "❓"
     String otherReleaseReason "❓"
     String otherReleaseDestination "❓"
+    Boolean propertyReturned "❓"
+    PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
+    String propertyNotReturnedOtherReason "❓"
     String refusalReasonId "❓"
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
@@ -605,6 +621,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
@@ -670,6 +687,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
     "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
+    "Deflection" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
+    "Deflection" o|--|o "User" : "propertyReturnedBy"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
@@ -702,6 +721,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"
     "DeflectionUpdate" o|--|o "SubjectStatusEnum" : "enum:subjectStatus"
     "DeflectionUpdate" o|--|o "DeflectionReleaseReason" : "releaseReason"
+    "DeflectionUpdate" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "DeflectionUpdate" o|--|o "DeflectionRefusalReason" : "refusalReason"
     "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
