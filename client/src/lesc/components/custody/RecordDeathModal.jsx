@@ -1,3 +1,4 @@
+import React from 'react';
 import { Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 

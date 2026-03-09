@@ -1,12 +1,12 @@
 import { Routes, Route } from 'react-router';
 
 import AdminUsersList from './AdminUsersList';
-import UserForm from '../../Users/UserForm';
+import AdminUserForm from './AdminUserForm';
 
 function AdminUsersRoutes () {
   return (
     <Routes>
-      <Route path=':userId' element={<UserForm />} />
+      <Route path=':userId' element={<AdminUserForm />} />
       <Route path='' element={<AdminUsersList />} />
     </Routes>
   );
