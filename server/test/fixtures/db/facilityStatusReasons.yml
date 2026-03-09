@@ -11,7 +11,7 @@ items:
     description: Safety Lock-down
     createdBy: '@user1'
     updatedBy: '@user1'
-  other:
+  facility_status_reason_other:
     id: other
     description: Other
     createdBy: '@user1'
