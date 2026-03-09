@@ -29,7 +29,9 @@ const pageCSS = `
 `;
 
 export const metadata = {
-  requiresRelease: false,
+  canGenerate () {
+    return true; // No preconditions — can be generated at any point in the deflection lifecycle
+  },
 
   deflectionInclude: {
     subject: true,
