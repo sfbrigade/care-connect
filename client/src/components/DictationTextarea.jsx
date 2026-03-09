@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActionIcon, Anchor, Box, Image, Modal, Stack, Text, Textarea } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconMicrophone, IconPlayerStop } from '@tabler/icons-react';
@@ -58,42 +58,53 @@ function AndroidDictation ({ form, field, ...textareaProps }) {
   const { value, onChange: formOnChange, defaultValue, ...safeProps } = textareaProps;
 
   const [localValue, setLocalValue] = useState(() => form.getValues()[field] ?? '');
+  const localValueRef = useRef(localValue);
 
   const handleError = useCallback((message) => {
     showToast(message, 'error');
   }, [showToast]);
 
-  const { isListening, isSupported, transcript, resetTranscript, start, stop } = useSpeechRecognition({
+  // Called by the hook after each utterance (on recognition end / auto-restart).
+  // Only updates local state — NOT form state. Calling form.setFieldValue here
+  // would change the Mantine key prop (uncontrolled mode), unmounting this
+  // component and killing the recognition session.
+  const handleTranscript = useCallback((text) => {
+    const current = localValueRef.current;
+    const separator = current && !current.endsWith(' ') ? ' ' : '';
+    const committed = current + separator + text;
+    localValueRef.current = committed;
+    setLocalValue(committed);
+  }, []);
+
+  const { isListening, isSupported, liveText, start, stop } = useSpeechRecognition({
     onError: handleError,
+    onTranscript: handleTranscript,
   });
 
-  // When recognition ends and there's a transcript, commit it to local value
-  // and form state, then clear the hook's transcript. Running in useEffect
-  // (after render) avoids the "cannot update component while rendering" error.
-  useEffect(() => {
-    if (!isListening && transcript) {
-      const current = localValue;
-      const separator = current && !current.endsWith(' ') ? ' ' : '';
-      const committed = current + separator + transcript;
-      setLocalValue(committed);
-      form.setFieldValue(field, committed);
-      resetTranscript();
-    }
-  }, [isListening, transcript, localValue, form, field, resetTranscript]);
+  // Commit accumulated text to form state only when dictation stops.
+  // This avoids the Mantine key-change remount during active dictation.
+  const wasListeningRef = useRef(false);
+  if (isListening && !wasListeningRef.current) {
+    wasListeningRef.current = true;
+  }
+  if (!isListening && wasListeningRef.current) {
+    wasListeningRef.current = false;
+    form.setFieldValue(field, localValueRef.current);
+  }
 
   if (!isSupported) {
     return <Textarea {...textareaProps} />;
   }
 
-  // Always include transcript in display — this avoids any flash when
-  // recognition ends, since transcript is preserved until we consume it.
-  const displayValue = transcript
-    ? localValue + (localValue && !localValue.endsWith(' ') ? ' ' : '') + transcript
+  // Show committed text + live in-progress text while listening
+  const displayValue = liveText
+    ? localValue + (localValue && !localValue.endsWith(' ') ? ' ' : '') + liveText
     : localValue;
 
   function handleChange (e) {
     if (!isListening) {
       const val = e.currentTarget.value;
+      localValueRef.current = val;
       setLocalValue(val);
       form.setFieldValue(field, val);
     }
