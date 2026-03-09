@@ -12,40 +12,23 @@ const errorResponses = {
 };
 
 // ---------------------------------------------------------------------------
-// Form registry — add new forms here; metadata lives in each form file and
-// in the shared @care-connect/shared/forms registry.
-// ---------------------------------------------------------------------------
-
-const FORM_FILES = {
-  cert: 'FormCoR',
-  '647f': 'Form647f',
-  '849b': 'Form849b',
-};
-
-// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-async function fetchDeflection (fastify, deflectionId, deflectionInclude, { requiresRelease = true } = {}) {
+async function fetchDeflection (fastify, deflectionId, deflectionInclude) {
   const deflection = await fastify.prisma.deflection.findUnique({
     where: { id: deflectionId },
     include: deflectionInclude,
   });
 
   if (!deflection) return { error: 'not_found' };
-  if (requiresRelease && !deflection.releasedAt) return { error: 'not_released' };
 
   return { deflection };
 }
 
-function sendError (reply, result, formTitle) {
+function sendError (reply, result) {
   if (result.error === 'not_found') {
     return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection not found' });
-  }
-  if (result.error === 'not_released') {
-    return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-      error: `This deflection has not been released yet. The ${formTitle} can only be generated after the subject has been released.`,
-    });
   }
 }
 
@@ -58,10 +41,11 @@ export default async function (fastify, _opts) {
   // Shared metadata (title, downloadFilename) is merged first; form-file
   // metadata (deflectionInclude, dataSchema, transformData, etc.) is merged
   // on top and can override shared values if needed.
+  // Note: every form file must export canGenerate(deflection) in its metadata.
   const forms = {};
-  for (const [formId, componentFile] of Object.entries(FORM_FILES)) {
-    const { metadata } = await import(`#lib/forms/dist/${componentFile}.js`);
-    forms[formId] = { componentFile, ...sharedForms[formId], ...metadata };
+  for (const [formId, { componentName, ...sharedMeta }] of Object.entries(sharedForms)) {
+    const { metadata } = await import(`#lib/forms/dist/${componentName}.js`);
+    forms[formId] = { componentName, ...sharedMeta, ...metadata };
   }
 
   for (const [formId, form] of Object.entries(forms)) {
@@ -81,9 +65,14 @@ export default async function (fastify, _opts) {
       },
       async function (request, reply) {
         const { deflectionId } = request.params;
-        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude, { requiresRelease: form.requiresRelease ?? true });
+        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude);
 
-        if (result.error) return sendError(reply, result, form.title);
+        if (result.error) return sendError(reply, result);
+
+        const check = form.canGenerate(result.deflection);
+        if (check !== true) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
+        }
 
         return form.transformData(result.deflection);
       }
@@ -105,16 +94,21 @@ export default async function (fastify, _opts) {
       },
       async function (request, reply) {
         const { deflectionId } = request.params;
-        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude, { requiresRelease: form.requiresRelease ?? true });
+        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude);
 
-        if (result.error) return sendError(reply, result, form.title);
+        if (result.error) return sendError(reply, result);
+
+        const check = form.canGenerate(result.deflection);
+        if (check !== true) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
+        }
 
         // Cache-bust in development so edited form components are picked up
         // without a server restart. In production the module cache is used.
         const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
         const [{ renderFormToHtml, renderToPdf }, { default: FormComponent }] = await Promise.all([
           import('#lib/pdf.js'),
-          import(`../../../lib/forms/dist/${form.componentFile}.js${cacheBust}`),
+          import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`),
         ]);
 
         const data = form.transformData(result.deflection);

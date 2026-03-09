@@ -48,6 +48,12 @@ const pageCSS = `
 `;
 
 export const metadata = {
+  canGenerate (deflection) {
+    return deflection.releasedAt
+      ? true
+      : { message: 'The SFSO 849(b) Report can only be generated after the subject has been released.' };
+  },
+
   deflectionInclude: {
     subject: true,
     incident: {

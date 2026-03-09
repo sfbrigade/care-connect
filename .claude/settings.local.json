@@ -20,7 +20,8 @@
       "Bash(docker exec care-connect-server-1 bash -lc \"cd /app && npm run build:forms 2>&1\")",
       "Bash(docker exec care-connect-server-1 bash -lc \"pwd && ls /\")",
       "Bash(docker exec care-connect-server-1 bash -lc \"cd /opt/node/app && npm run build:forms 2>&1\")",
-      "Bash(docker exec care-connect-server-1 bash -lc \"cd /opt/node/app && ls && ls server/\")"
+      "Bash(docker exec care-connect-server-1 bash -lc \"cd /opt/node/app && ls && ls server/\")",
+      "Bash(npm install --ignore-scripts)"
     ]
   }
 }

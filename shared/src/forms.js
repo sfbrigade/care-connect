@@ -8,18 +8,21 @@
  */
 export const FORM_REGISTRY = {
   cert: {
+    componentName: 'FormCoR',
     title: 'Certificate of Release',
     generateLabel: 'Generate Certificate of Release',
     description: (name) => `SF Sheriff's Dept Certificate of Release for ${name}`,
     downloadFilename: (id) => `cert-Certificate-of-Release-${id}.pdf`,
   },
   '849b': {
+    componentName: 'Form849b',
     title: 'SFSO 849(b) Report',
     generateLabel: 'Generate SFSO 849(b) Report',
     description: (name) => `SFSO 849(b) Report for ${name}`,
     downloadFilename: (id) => `849b-report-${id}.pdf`,
   },
   '647f': {
+    componentName: 'Form647f',
     title: '647(f) Transfer Form',
     generateLabel: 'Generate 647(f) Transfer Form',
     description: (name) => `647(f) Transfer Form for ${name}`,

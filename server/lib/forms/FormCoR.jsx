@@ -4,6 +4,12 @@ import { FORM_TIMEZONE, formatDateParts, formatTime } from './formUtils.js';
 import { Header, Field } from './formComponents.jsx';
 
 export const metadata = {
+  canGenerate (deflection) {
+    return deflection.releasedAt
+      ? true
+      : { message: 'The Certificate of Release can only be generated after the subject has been released.' };
+  },
+
   deflectionInclude: {
     subject: true,
     incident: {
