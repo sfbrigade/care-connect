@@ -5,12 +5,18 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
+  Deflection.SubjectStatus.AWAITING_INTAKE,
+  Deflection.SubjectStatus.READY_FOR_INTAKE,
+  Deflection.SubjectStatus.FAILED_INTAKE,
+]);
+
 export default async function (fastify, opts) {
   fastify.post('/:id/exit-to-jail',
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from READY_FOR_INTAKE without legal release.',
+        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, or FAILED_INTAKE without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -29,7 +35,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
+      if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
@@ -41,11 +47,13 @@ export default async function (fastify, opts) {
           where: { id },
         });
 
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
+        if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
         const now = new Date();
+
+        const previousSubjectStatus = deflection.subjectStatus;
 
         await tx.deflectionUpdate.create({
           data: {
@@ -74,13 +82,17 @@ export default async function (fastify, opts) {
           },
         });
 
+        const isHoldOnlyStatus = [
+          Deflection.SubjectStatus.AWAITING_INTAKE,
+          Deflection.SubjectStatus.READY_FOR_INTAKE,
+        ].includes(previousSubjectStatus);
         const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
         const updatedBedTypeData = {
           capacity,
           unavailableUnoccupied,
           unavailableOccupied,
-          occupied,
-          holds: Math.max(0, holds - 1),
+          occupied: isHoldOnlyStatus ? occupied : Math.max(0, occupied - 1),
+          holds: isHoldOnlyStatus ? Math.max(0, holds - 1) : holds,
           available: available + 1,
           updateMethod: 'API',
           updatedById: request.user.id,
