@@ -4,6 +4,7 @@ import {
   getCareExitBackTo,
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
+  hasPersistedExitDetails,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
@@ -11,7 +12,7 @@ import {
 } from '../custody/careDetailFooterUtils';
 
 describe('Care flow unit tests', () => {
-  it('hides View details for EXITED records transferred to jail', () => {
+  it('hides View details for all EXITED records', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
@@ -24,14 +25,30 @@ describe('Care flow unit tests', () => {
         subjectStatus: 'EXITED',
         exitDestinationId: 'hospital',
       })
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('detects persisted exit details only when all required fields exist', () => {
+    expect(hasPersistedExitDetails({
+      exitDestinationId: 'hospital',
+      exitHousingStatusId: 'temporary',
+      exitConnectedToCare: 'YES',
+      exitSFResident: 'YES',
+    })).toBe(true);
+
+    expect(hasPersistedExitDetails({
+      exitDestinationId: 'hospital',
+      exitHousingStatusId: null,
+      exitConnectedToCare: 'YES',
+      exitSFResident: 'YES',
+    })).toBe(false);
   });
 
   it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
       { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital' },
-      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail' },
+      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: null },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
@@ -45,20 +62,35 @@ describe('Care flow unit tests', () => {
     expect(getCareExitBackTo({ fromDetail: false, id: '123', savedTab: 'in-custody' })).toBe('/care');
   });
 
-  it('builds care detail footer state for Start exit + overflow disabled rules', () => {
-    const careState = getCareDetailFooterState({
+  it('builds care detail footer state by status/action mode', () => {
+    const admittedState = getCareDetailFooterState({
       viewerMode: 'care',
-      deflection: { id: 55, subjectStatus: 'IN_CHAIR' },
+      deflection: { id: 55, subjectStatus: 'ADMITTED' },
     });
-    expect(careState).toEqual({
+    expect(admittedState).toEqual({
       showFooter: true,
-      overflowDisabled: true,
+      primaryLabel: 'Complete intake',
+      primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
 
+    const releasedState = getCareDetailFooterState({
+      viewerMode: 'care',
+      deflection: { id: 99, subjectStatus: 'RELEASED' },
+    });
+    expect(releasedState.showFooter).toBe(true);
+    expect(releasedState.primaryAction).toBe('start-exit');
+    expect(releasedState.startExitPath).toBe('/care/99/exit?from=detail');
+
+    const inChairState = getCareDetailFooterState({
+      viewerMode: 'care',
+      deflection: { id: 56, subjectStatus: 'IN_CHAIR' },
+    });
+    expect(inChairState.showFooter).toBe(false);
+
     const nonCareState = getCareDetailFooterState({
       viewerMode: 'custody',
-      deflection: { id: 55, subjectStatus: 'IN_CHAIR' },
+      deflection: { id: 55, subjectStatus: 'ADMITTED' },
     });
     expect(nonCareState.showFooter).toBe(false);
   });
