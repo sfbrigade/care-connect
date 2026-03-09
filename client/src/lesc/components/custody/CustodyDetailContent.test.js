@@ -85,6 +85,7 @@ vi.mock('@tabler/icons-react', () => ({
   IconExternalLink: () => null,
   IconFileAlert: () => null,
   IconFileCheck: () => null,
+  IconX: () => null,
 }));
 
 vi.mock('@mantine/core', async () => {
@@ -123,6 +124,7 @@ vi.mock('@mantine/core', async () => {
 
   return {
     Accordion,
+    ActionIcon: passthrough('div'),
     Box: passthrough('div'),
     Button: ({ children, ...props }) => createElement('button', props, children),
     Card: passthrough('div'),
