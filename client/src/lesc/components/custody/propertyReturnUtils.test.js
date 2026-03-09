@@ -33,18 +33,18 @@ describe('propertyReturnUtils', () => {
 
   it('builds property return status text for yes/no outcomes', () => {
     expect(getPropertyReturnStatusText({ propertyReturned: true })).toBe('Property returned to the person');
-    expect(getPropertyReturnStatusText({ propertyReturned: false, propertyReturnReason: 'ABANDONED' })).toBe('Property not returned (Abandoned)');
-    expect(getPropertyReturnStatusText({ propertyReturned: false, propertyReturnReason: 'OTHER', propertyReturnOtherReason: 'Evidence' })).toBe('Property not returned (Evidence)');
+    expect(getPropertyReturnStatusText({ propertyReturned: false, propertyNotReturnedReason: 'ABANDONED' })).toBe('Property not returned (Abandoned)');
+    expect(getPropertyReturnStatusText({ propertyReturned: false, propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Evidence' })).toBe('Property not returned (Evidence)');
     expect(getPropertyReturnStatusText({ propertyReturned: null })).toBe(null);
   });
 
   it('enables confirm only when selections/reason requirements are satisfied', () => {
-    expect(canConfirmPropertyReturn({ returnedSelection: null, reason: null, otherReason: '' })).toBe(false);
-    expect(canConfirmPropertyReturn({ returnedSelection: 'yes', reason: null, otherReason: '' })).toBe(true);
-    expect(canConfirmPropertyReturn({ returnedSelection: 'no', reason: null, otherReason: '' })).toBe(false);
-    expect(canConfirmPropertyReturn({ returnedSelection: 'no', reason: 'ABANDONED', otherReason: '' })).toBe(true);
-    expect(canConfirmPropertyReturn({ returnedSelection: 'no', reason: 'OTHER', otherReason: '' })).toBe(false);
-    expect(canConfirmPropertyReturn({ returnedSelection: 'no', reason: 'OTHER', otherReason: 'Held by SFPD' })).toBe(true);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: null, propertyNotReturnedReason: null, propertyNotReturnedOtherReason: '' })).toBe(false);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: 'yes', propertyNotReturnedReason: null, propertyNotReturnedOtherReason: '' })).toBe(true);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: 'no', propertyNotReturnedReason: null, propertyNotReturnedOtherReason: '' })).toBe(false);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: 'no', propertyNotReturnedReason: 'ABANDONED', propertyNotReturnedOtherReason: '' })).toBe(true);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: 'no', propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: '' })).toBe(false);
+    expect(canConfirmPropertyReturn({ propertyReturnedSelection: 'no', propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Held by SFPD' })).toBe(true);
   });
 
   it('maps API errors to requested toast copy', () => {
