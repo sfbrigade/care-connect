@@ -26,21 +26,21 @@ export function getPropertyReturnStatusText (deflection) {
   }
 
   if (deflection?.propertyReturned === false) {
-    const reason = deflection?.propertyReturnReason === 'OTHER'
-      ? (deflection?.propertyReturnOtherReason || 'Other')
-      : (PROPERTY_RETURN_REASON_LABELS[deflection?.propertyReturnReason] || 'Not specified');
+    const reason = deflection?.propertyNotReturnedReason === 'OTHER'
+      ? (deflection?.propertyNotReturnedOtherReason || 'Other')
+      : (PROPERTY_RETURN_REASON_LABELS[deflection?.propertyNotReturnedReason] || 'Not specified');
     return `Property not returned (${reason})`;
   }
 
   return null;
 }
 
-export function canConfirmPropertyReturn ({ returnedSelection, reason, otherReason }) {
-  const requiresReason = returnedSelection === 'no';
-  const requiresOtherReason = requiresReason && reason === 'OTHER';
+export function canConfirmPropertyReturn ({ propertyReturnedSelection, propertyNotReturnedReason, propertyNotReturnedOtherReason }) {
+  const requiresReason = propertyReturnedSelection === 'no';
+  const requiresOtherReason = requiresReason && propertyNotReturnedReason === 'OTHER';
 
-  return returnedSelection === 'yes' ||
-    (requiresReason && !!reason && (!requiresOtherReason || !!otherReason.trim()));
+  return propertyReturnedSelection === 'yes' ||
+    (requiresReason && !!propertyNotReturnedReason && (!requiresOtherReason || !!propertyNotReturnedOtherReason.trim()));
 }
 
 export function getPropertyReturnErrorToast (error) {

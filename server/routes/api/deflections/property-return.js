@@ -5,8 +5,6 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
-const PROPERTY_RETURN_REASONS = ['ABANDONED', 'DESTROYED', 'OTHER'];
-
 function hasAssociatedProperty (deflection) {
   const hasPropertyVolume = deflection?.property && deflection.property !== 'NONE';
   const hasPropertyDescription = Boolean(deflection?.propertyDetails?.trim());
@@ -24,9 +22,9 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          returned: z.boolean(),
-          reason: z.enum(PROPERTY_RETURN_REASONS).optional(),
-          otherReason: z.string().trim().min(1).optional(),
+          propertyReturned: z.boolean(),
+          propertyNotReturnedReason: z.enum(Object.values(Deflection.PropertyNotReturnedReason)).nullable().optional(),
+          propertyNotReturnedOtherReason: z.string().trim().min(1).nullable().optional(),
         }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
@@ -45,23 +43,23 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const returned = request.body.returned;
-      const reason = request.body.reason ?? null;
-      const otherReason = request.body.otherReason?.trim() ?? null;
+      const propertyReturned = request.body.propertyReturned;
+      const propertyNotReturnedReason = request.body.propertyNotReturnedReason ?? null;
+      const propertyNotReturnedOtherReason = request.body.propertyNotReturnedOtherReason?.trim() ?? null;
 
-      if (!returned && !reason) {
+      if (!propertyReturned && !propertyNotReturnedReason) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
-            path: 'reason',
+            path: 'propertyNotReturnedReason',
             message: 'Reason is required when property was not returned.',
           }],
         });
       }
 
-      if (!returned && reason === 'OTHER' && !otherReason) {
+      if (!propertyReturned && propertyNotReturnedReason === 'OTHER' && !propertyNotReturnedOtherReason) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
-            path: 'otherReason',
+            path: 'propertyNotReturnedOtherReason',
             message: 'Other reason is required when reason is Other.',
           }],
         });
@@ -95,33 +93,16 @@ export default async function (fastify, opts) {
       const now = new Date();
 
       await fastify.prisma.$transaction(async (tx) => {
-        const locked = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
-        });
-
-        if (!locked || locked.subjectStatus !== Deflection.SubjectStatus.RELEASED) {
-          return reply.code(StatusCodes.CONFLICT).send({ code: 'NOT_LEGALLY_RELEASED' });
-        }
-
-        if (!hasAssociatedProperty(locked)) {
-          return reply.code(StatusCodes.CONFLICT).send({ code: 'NO_ASSOCIATED_PROPERTY' });
-        }
-
-        if (locked.propertyReturned !== null) {
-          return reply.code(StatusCodes.CONFLICT).send({ code: 'ALREADY_RECORDED' });
-        }
+        const data = {
+          propertyReturned,
+          propertyNotReturnedReason: propertyReturned ? null : propertyNotReturnedReason,
+          propertyNotReturnedOtherReason: propertyReturned ? null : (propertyNotReturnedReason === 'OTHER' ? propertyNotReturnedOtherReason : null),
+        };
 
         await tx.deflectionUpdate.create({
           data: {
+            ...data,
             deflectionId: id,
-            propertyReturned: returned,
-            propertyReturnReason: returned ? null : reason,
-            propertyReturnOtherReason: returned ? null : (reason === 'OTHER' ? otherReason : null),
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -130,9 +111,7 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            propertyReturned: returned,
-            propertyReturnReason: returned ? null : reason,
-            propertyReturnOtherReason: returned ? null : (reason === 'OTHER' ? otherReason : null),
+            ...data,
             propertyReturnedAt: now,
             propertyReturnedById: request.user.id,
             updatedAt: now,
@@ -146,6 +125,7 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
       return reply.send(redactDeflectionForUser(deflection, request.user));
     }
   );

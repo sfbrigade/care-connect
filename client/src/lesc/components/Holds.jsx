@@ -13,6 +13,7 @@ import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
+import { SFPD_ACTIVE_SUBJECT_STATUSES, SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES, mergeHistoryDeflections } from './holdsViewModel';
 
 function Holds () {
   const navigate = useNavigate();
@@ -38,12 +39,45 @@ function Holds () {
 
   const { data: deflections, isFetching: isFetchingDeflections, dataUpdatedAt: deflectionsUpdatedAt } = useQuery({
     queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
+    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true, subjectStatus: SFPD_ACTIVE_SUBJECT_STATUSES }).then(response => response.data),
     enabled: !!incident,
+    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
   });
+
+  const {
+    data: inactiveDeflections,
+    isFetching: isFetchingInactiveDeflections,
+  } = useQuery({
+    queryKey: ['deflections', facility?.id, 'inactive'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: false }).then(response => response.data),
+    enabled: !!facility,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const {
+    data: postTransferActiveDeflections,
+    isFetching: isFetchingPostTransferActiveDeflections,
+  } = useQuery({
+    queryKey: ['deflections', facility?.id, 'post-transfer-active'],
+    queryFn: () => Api.deflections.list({
+      facilityId: facility.id,
+      active: true,
+      subjectStatus: SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+    }).then(response => response.data),
+    enabled: !!facility,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
 
   const [tab, setTab] = useState('active');
 
@@ -225,7 +259,12 @@ function Holds () {
             <HoldsActive incident={incident} deflections={deflections} isFetchingDeflections={isFetchingDeflections} onCancelHoldClick={onCancelHoldClick} />
           )}
           {tab === 'history' && (
-            <HoldsHistory facility={facility} incident={incident} />
+            <HoldsHistory
+              deflections={historyDeflections}
+              isFetchingDeflections={isFetchingInactiveDeflections || isFetchingPostTransferActiveDeflections}
+              incident={incident}
+              hasActiveHolds={(deflections?.length ?? 0) > 0}
+            />
           )}
           <Text size='xs' c='gray.5' align='center'>
             Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}

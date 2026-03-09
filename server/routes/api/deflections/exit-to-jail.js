@@ -5,7 +5,6 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
-const JAIL_DESTINATION = { id: 'jail', name: 'Jail' };
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
@@ -46,12 +45,6 @@ export default async function (fastify, opts) {
 
         deflection = await tx.deflection.findUnique({
           where: { id },
-          include: {
-            subject: true,
-            exitDestination: true,
-            deflectionDetails: true,
-            propertyPhotos: true,
-          },
         });
 
         if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
@@ -60,28 +53,13 @@ export default async function (fastify, opts) {
 
         const now = new Date();
 
-        await tx.deflectionExitDestination.upsert({
-          where: { id: JAIL_DESTINATION.id },
-          create: {
-            id: JAIL_DESTINATION.id,
-            name: JAIL_DESTINATION.name,
-            createdById: request.user.id,
-            updatedById: request.user.id,
-          },
-          update: {
-            name: JAIL_DESTINATION.name,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
         const previousSubjectStatus = deflection.subjectStatus;
 
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
-            exitDestinationId: JAIL_DESTINATION.id,
+            exitDestinationId: 'jail',
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -93,7 +71,7 @@ export default async function (fastify, opts) {
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitedAt: now,
             exitedById: request.user.id,
-            exitDestinationId: JAIL_DESTINATION.id,
+            exitDestinationId: 'jail',
             updatedAt: now,
           },
           include: {
@@ -135,6 +113,7 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });
 }

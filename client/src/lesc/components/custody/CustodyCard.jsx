@@ -89,8 +89,7 @@ function CustodyCard ({ deflection, highlighted }) {
         <Group wrap='nowrap' justify='flex-end'>
           {showViewDetails && (
             <Button
-              size='md'
-              variant='light'
+              variant='secondary'
               onClick={() => {
                 window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
                 window.sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');

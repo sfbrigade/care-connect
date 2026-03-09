@@ -2,7 +2,7 @@
   &[data-variant='secondary'] {
     background-color: rgb(from var(--mantine-color-indigo-6) R G B / 0.1);
     .label {
-      color: black;
+      color: var(--mantine-color-indigo-6);
     }
     &:hover {
       background-color: rgb(from var(--mantine-color-indigo-6) R G B / 0.2);
