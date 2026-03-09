@@ -45,10 +45,10 @@ export default function FormPreview () {
     const page = pageRef.current;
     if (!wrapper || !page) return;
 
-    const wrapperRO = new ResizeObserver(([entry]) => {
+    const wrapperRO = new globalThis.ResizeObserver(([entry]) => {
       setScale(Math.min(1, entry.contentRect.width / PAGE_WIDTH));
     });
-    const pageRO = new ResizeObserver(([entry]) => {
+    const pageRO = new globalThis.ResizeObserver(([entry]) => {
       setPageHeight(entry.contentRect.height);
     });
 
