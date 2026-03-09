@@ -17,7 +17,12 @@ function FacilitySelector ({ children }) {
     setFacility(null);
   }
 
-  if (!!facility && !facility.subdomain) {
+  const hasSelectedFacility = !!facility?.subdomain;
+  const isSelectedFacilityMissing = hasSelectedFacility &&
+    Array.isArray(facilities) &&
+    !facilities.some((f) => f.id === facility.id);
+
+  if (!!facility && (!facility.subdomain || isSelectedFacilityMissing)) {
     return (
       <>
         <Head>
@@ -28,6 +33,11 @@ function FacilitySelector ({ children }) {
             <Stack align='center' gap='md'>
               <Title order={1} size='2.5rem' ta='center'>CareConnectSF</Title>
               <Text size='lg' c='dimmed' ta='center'>Select Facility</Text>
+              {isSelectedFacilityMissing && (
+                <Text size='sm' c='red.7' ta='center'>
+                  Your previous facility selection is no longer available. Please choose again.
+                </Text>
+              )}
             </Stack>
             <Stack gap='md' align='center' style={{ width: '100%', maxWidth: '400px' }}>
               <Button
