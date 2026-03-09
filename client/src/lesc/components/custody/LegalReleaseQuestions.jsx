@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { Box, Button, Chip, Container, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -133,8 +133,8 @@ function LegalReleaseQuestions () {
       <Container>
         <Stack gap='xl'>
           <Stack gap={0}>
-            <Text size='xl' fz='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={2} fz={24} lh='32px'>Review the 849(b) and choose a release reason. After you confirm, it&apos;s sent to SFSO supervisors and can&apos;t be changed.</Title>
+            <Text size='xl' c='dimmed'>Confirm legal release</Text>
+            <Title order={3}>Review the 849(b) and choose a release reason. After you confirm, it&apos;s sent to SFSO supervisors and can&apos;t be changed.</Title>
           </Stack>
 
           <Stack gap='xs'>
@@ -149,19 +149,9 @@ function LegalReleaseQuestions () {
               />
             )}
             {!isEditingNarrative && (
-              <Button
-                variant='transparent'
-                color='indigo'
-                size='md'
-                fz='md'
-                p={0}
-                h='auto'
-                w='fit-content'
-                style={{ lineHeight: '24px', alignSelf: 'flex-start' }}
-                onClick={() => setIsEditingNarrative(true)}
-              >
+              <Anchor onClick={() => setIsEditingNarrative(true)}>
                 Edit narrative
-              </Button>
+              </Anchor>
             )}
             {isEditingNarrative && (
               <Group>
@@ -181,51 +171,49 @@ function LegalReleaseQuestions () {
             )}
           </Stack>
 
-          <Stack gap='sm'>
-            <Text fw={600} size='lg'>Release reason<Text span c='red.6'>*</Text></Text>
-            <Chip.Group value={releaseReason} onChange={setReleaseReason}>
-              <Stack gap='sm' align='flex-start'>
-                <Chip value='sobered'>Sobered</Chip>
-                <Chip value='medical_issue'>Medical issue</Chip>
-                <Chip value='other'>Other (please specify)</Chip>
-              </Stack>
-            </Chip.Group>
+          <Stack gap='xl'>
+            <Input.Wrapper label='Release reason' required>
+              <Chip.Group value={releaseReason} onChange={setReleaseReason}>
+                <Group gap='sm'>
+                  <Chip value='sobered'>Sobered</Chip>
+                  <Chip value='medical_issue'>Medical issue</Chip>
+                  <Chip value='other'>Other (please specify)</Chip>
+                </Group>
+              </Chip.Group>
+            </Input.Wrapper>
             {isMedicalRelease && (
               <>
-                <Text size='lg' fz={24} lh='32px'>
+                <Text size='md' c='dimmed'>
                   This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
                 </Text>
-                <Stack gap='sm'>
-                  <Text fw={600} size='lg'>Exit destination<Text span c='red.6'>*</Text></Text>
+                <Input.Wrapper label='Exit destination' required>
                   <Chip.Group value={medicalExitDestination} onChange={setMedicalExitDestination}>
                     <Group gap='sm'>
                       <Chip value='hospital'>Hospital</Chip>
                       <Chip value='other'>Other</Chip>
                     </Group>
                   </Chip.Group>
-                </Stack>
+                </Input.Wrapper>
               </>
             )}
             {isOtherRelease && (
               <>
-                <Stack gap={4} w='100%'>
-                  <Text fw={600} size='lg'>Other release reason</Text>
-                  <Textarea
-                    value={otherReason}
-                    onChange={(event) => setOtherReason(event.currentTarget.value)}
-                    minRows={1}
-                    placeholder='For example: Facility emergency'
-                  />
-                </Stack>
-                <Stack gap={4} w='100%'>
-                  <Text fw={600} size='lg'>Other release destination</Text>
-                  <Textarea
-                    value={otherDestination}
-                    onChange={(event) => setOtherDestination(event.currentTarget.value)}
-                    minRows={1}
-                    placeholder='For example: Alternate care site'
-                  />
-                </Stack>
+                <Textarea
+                  label='Other release reason'
+                  required
+                  value={otherReason}
+                  onChange={(event) => setOtherReason(event.currentTarget.value)}
+                  minRows={1}
+                  placeholder='For example: Facility emergency'
+                />
+                <Textarea
+                  label='Other release destination'
+                  required
+                  value={otherDestination}
+                  onChange={(event) => setOtherDestination(event.currentTarget.value)}
+                  minRows={1}
+                  placeholder='For example: Alternate care site'
+                />
                 <Text size='md' c='dimmed'>
                   For &ldquo;Other&rdquo;, add a reason and destination. This release will also mark the person as exited from RESET.
                 </Text>
@@ -234,7 +222,7 @@ function LegalReleaseQuestions () {
           </Stack>
 
           <Group>
-            <Button color='red' variant='light' onClick={() => navigate(backTo)}>
+            <Button variant='destructive' onClick={() => navigate(backTo)}>
               Cancel
             </Button>
             <Button
