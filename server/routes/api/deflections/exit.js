@@ -73,6 +73,11 @@ export default async function (fastify, opts) {
       }
 
       await fastify.prisma.$transaction(async (tx) => {
+        const shouldReleaseBed = deflection.subjectStatus === Deflection.SubjectStatus.IN_CHAIR;
+        const bedType = shouldReleaseBed
+          ? await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId)
+          : null;
+
         deflection = await tx.deflection.findUnique({
           where: { id },
         });
@@ -81,10 +86,6 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
-        const shouldReleaseBed = deflection.subjectStatus === Deflection.SubjectStatus.IN_CHAIR;
-        const bedType = shouldReleaseBed
-          ? await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId)
-          : null;
         const now = new Date();
         await tx.deflectionUpdate.create({
           data: {
