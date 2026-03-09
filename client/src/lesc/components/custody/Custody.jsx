@@ -47,13 +47,21 @@ function groupByStatus (deflections) {
 }
 
 function groupReleasedByStatus (deflections) {
+  function isTransferredToJailWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'jail' &&
+      !deflection?.releasedAt
+    );
+  }
+
   return {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId !== 'jail'
+      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && d.exitDestinationId === 'jail'
+      d => isTransferredToJailWithoutLegalRelease(d)
     ),
   };
 }
@@ -184,6 +192,22 @@ function Custody () {
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
 
+  useEffect(() => {
+    if (!inCustodyDeflections) return;
+
+    const sectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
+    if (!sectionTarget) return;
+    window.sessionStorage.removeItem('custodyInCustodySectionTarget');
+
+    sectionScrolledRef.current = true;
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById(`custody-section-${sectionTarget}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }, [inCustodyDeflections]);
+
   return (
     <>
       <Head>
@@ -197,7 +221,7 @@ function Custody () {
             onChange={setTab}
             data={[
               { label: 'In Custody', value: 'in-custody' },
-              { label: 'Released', value: 'released' },
+              { label: 'Not in custody', value: 'released' },
             ]}
           />
           {tab === 'in-custody' && (

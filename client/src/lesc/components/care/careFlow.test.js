@@ -4,6 +4,7 @@ import {
   getCareExitBackTo,
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
+  hasPersistedExitDetails,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
@@ -11,7 +12,7 @@ import {
 } from '../custody/careDetailFooterUtils';
 
 describe('Care flow unit tests', () => {
-  it('hides View details for EXITED records transferred to jail', () => {
+  it('hides View details for all EXITED records', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
@@ -24,14 +25,30 @@ describe('Care flow unit tests', () => {
         subjectStatus: 'EXITED',
         exitDestinationId: 'hospital',
       })
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('detects persisted exit details only when all required fields exist', () => {
+    expect(hasPersistedExitDetails({
+      exitDestinationId: 'hospital',
+      exitHousingStatusId: 'temporary',
+      exitConnectedToCare: 'YES',
+      exitSFResident: 'YES',
+    })).toBe(true);
+
+    expect(hasPersistedExitDetails({
+      exitDestinationId: 'hospital',
+      exitHousingStatusId: null,
+      exitConnectedToCare: 'YES',
+      exitSFResident: 'YES',
+    })).toBe(false);
   });
 
   it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
       { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital' },
-      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail' },
+      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: null },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
