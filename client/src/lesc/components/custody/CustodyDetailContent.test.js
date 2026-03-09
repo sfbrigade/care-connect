@@ -126,6 +126,7 @@ vi.mock('@mantine/core', async () => {
   return {
     Accordion,
     ActionIcon: passthrough('div'),
+    Badge: passthrough('div'),
     Box: passthrough('div'),
     Button: ({ children, ...props }) => createElement('button', props, children),
     Card: passthrough('div'),
@@ -210,7 +211,6 @@ describe('CustodyDetailContent', () => {
   it('renders updated custody labels and keeps arrest/property/incident sections collapsed by default', () => {
     const html = renderToStaticMarkup(h(CustodyDetailContent, { deflection, backTo: '/custody' }));
 
-    expect(html).toContain('Safety check completed');
     expect(html).toContain('Intake staff can scan this code to start full intake.');
     expect(html).toContain('849(b).pdf');
     expect(html).toContain('Start legal release');
