@@ -82,6 +82,7 @@ vi.mock('@tabler/icons-react', () => ({
   IconAlertCircle: () => null,
   IconArrowLeft: () => null,
   IconDoorExit: () => null,
+  IconDots: () => null,
   IconExternalLink: () => null,
   IconFileAlert: () => null,
   IconFileCheck: () => null,
