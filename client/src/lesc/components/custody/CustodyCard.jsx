@@ -1,6 +1,6 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -12,7 +12,6 @@ import { calculateAge } from '../../../utils/format';
 function CustodyCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
@@ -39,7 +38,6 @@ function CustodyCard ({ deflection, highlighted }) {
     onSuccess: () => {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       window.sessionStorage.setItem('custodyInCustodySectionTarget', 'READY_FOR_INTAKE');
-      window.sessionStorage.setItem('custodyTab', 'in-custody');
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
@@ -92,7 +90,6 @@ function CustodyCard ({ deflection, highlighted }) {
               variant='secondary'
               onClick={() => {
                 window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
-                window.sessionStorage.setItem('custodyTab', searchParams.get('tab') || 'in-custody');
                 navigate(`/custody/${deflection.id}`);
               }}
             >

@@ -8,6 +8,7 @@ import { Head } from '@unhead/react';
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import useSessionState from '@/hooks/useSessionState';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
@@ -79,7 +80,7 @@ function Holds () {
 
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
 
-  const [tab, setTab] = useState('active');
+  const [tab, setTab] = useSessionState('holds', 'active');
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 

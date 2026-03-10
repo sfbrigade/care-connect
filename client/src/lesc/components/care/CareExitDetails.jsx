@@ -68,9 +68,8 @@ function CareExitDetails () {
   const [physicalLeftFinal, setPhysicalLeftFinal] = useState(null);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
 
-  const savedTab = window.sessionStorage.getItem('careTab') || 'in-custody';
   const fromDetail = searchParams.get('from') === 'detail';
-  const backTo = getCareExitBackTo({ fromDetail, id, savedTab });
+  const backTo = getCareExitBackTo({ fromDetail, id });
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],

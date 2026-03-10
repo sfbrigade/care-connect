@@ -8,10 +8,7 @@ import CustodyDetailContent from './CustodyDetailContent';
 function CustodyDetail ({ viewerMode = 'custody' }) {
   const { id } = useParams();
   const isCareView = viewerMode === 'care';
-  const savedTab = window.sessionStorage.getItem(isCareView ? 'careTab' : 'custodyTab') || 'in-custody';
-  const backTo = isCareView
-    ? (savedTab === 'not-in-custody' ? '/care?tab=not-in-custody' : '/care')
-    : (savedTab === 'in-custody' ? '/custody' : '/custody?tab=released');
+  const backTo = isCareView ? '/care' : '/custody';
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
