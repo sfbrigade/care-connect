@@ -64,9 +64,6 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    validate: {
-      encounteredVia: value => (value ? null : 'Encountered via is required')
-    },
     transformValues: values => ({
       ...values,
       arrestedAt: DateTime.fromISO(values.arrestedAt, {
@@ -166,6 +163,9 @@ function IncidentForm () {
       );
       navigate('/holds');
     },
+    onError: () => {
+      showToast('We couldn’t create the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
   });
 
   const cancelIncidentMutation = useMutation({
@@ -241,7 +241,7 @@ function IncidentForm () {
         </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset
-            disabled={!isInitialized || !onSubmitMutation.isIdle}
+            disabled={!isInitialized || onSubmitMutation.isPending}
             variant='unstyled'
           >
             <Stack gap='xl'>
@@ -331,7 +331,6 @@ function IncidentForm () {
                   key={form.key('encounteredVia')}
                   {...form.getInputProps('encounteredVia')}
                 >
-                  {form.errors.encounteredVia && <Text c='red' size='sm'>{form.errors.encounteredVia}</Text>}
                   <Group gap='sm' mt='md'>
                     <Chip value='ON_VIEW'>On view</Chip>
                     <Chip value='DISPATCHED'>Dispatched</Chip>
