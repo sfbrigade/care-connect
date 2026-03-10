@@ -551,7 +551,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Decimal latitude "❓"
     Decimal longitude "❓"
     DateTime arrestedAt "❓"
-    EncounteredViaEnum encounteredVia 
+    EncounteredViaEnum encounteredVia "❓"
     String cadNumber "❓"
     String supervisorBadgeNumber "❓"
     String createdById 
@@ -742,7 +742,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
-    "Incident" o|--|| "EncounteredViaEnum" : "enum:encounteredVia"
+    "Incident" o|--|o "EncounteredViaEnum" : "enum:encounteredVia"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"
     "Incident" o|--|o "Title" : "createdByTitle"
