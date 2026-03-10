@@ -31,9 +31,9 @@ export function groupCareNotInCustodySections (deflections = []) {
   };
 }
 
-export function getCareExitBackTo ({ fromDetail, id, savedTab }) {
+export function getCareExitBackTo ({ fromDetail, id }) {
   if (fromDetail) return `/care/${id}`;
-  return savedTab === 'not-in-custody' ? '/care?tab=not-in-custody' : '/care';
+  return '/care';
 }
 
 export function getCareExitSuccessPayload (deflectionId) {

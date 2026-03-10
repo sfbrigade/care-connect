@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router';
 import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
@@ -9,6 +8,7 @@ import { IconQrcode } from '@tabler/icons-react';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
+import useTabState from '@/hooks/useTabState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
@@ -67,9 +67,7 @@ function groupReleasedByStatus (deflections) {
 }
 
 function Custody () {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') || 'in-custody';
-  const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
+  const [tab, setTab] = useTabState('custody', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();

@@ -4,11 +4,12 @@ import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconScan } from '@tabler/icons-react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
+import useTabState from '@/hooks/useTabState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
@@ -57,9 +58,7 @@ function hasSavedOrPersistedExitDetails (deflection) {
 }
 
 function Care () {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') === 'not-in-custody' ? 'not-in-custody' : 'in-custody';
-  const setTab = (value) => setSearchParams(value === 'in-custody' ? {} : { tab: value }, { replace: true });
+  const [tab, setTab] = useTabState('care', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
   const [intakeModalDeflection, setIntakeModalDeflection] = useState(null);

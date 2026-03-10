@@ -57,9 +57,8 @@ describe('Care flow unit tests', () => {
   });
 
   it('resolves cancel/back navigation in exit form based on entry source', () => {
-    expect(getCareExitBackTo({ fromDetail: true, id: '123', savedTab: 'in-custody' })).toBe('/care/123');
-    expect(getCareExitBackTo({ fromDetail: false, id: '123', savedTab: 'not-in-custody' })).toBe('/care?tab=not-in-custody');
-    expect(getCareExitBackTo({ fromDetail: false, id: '123', savedTab: 'in-custody' })).toBe('/care');
+    expect(getCareExitBackTo({ fromDetail: true, id: '123' })).toBe('/care/123');
+    expect(getCareExitBackTo({ fromDetail: false })).toBe('/care');
   });
 
   it('builds care detail footer state by status/action mode', () => {

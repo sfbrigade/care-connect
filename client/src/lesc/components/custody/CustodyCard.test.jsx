@@ -143,7 +143,6 @@ describe('CustodyCard', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123');
     expect(window.sessionStorage.getItem('custodyScrollTarget')).toBe('123');
-    expect(window.sessionStorage.getItem('custodyTab')).toBe('in-custody');
   });
 
   it('navigates to legal release when Legal release is clicked', () => {
@@ -166,7 +165,6 @@ describe('CustodyCard', () => {
     await waitFor(() => {
       expect(window.sessionStorage.getItem('custodyHighlightTarget')).toBe('123');
       expect(window.sessionStorage.getItem('custodyInCustodySectionTarget')).toBe('READY_FOR_INTAKE');
-      expect(window.sessionStorage.getItem('custodyTab')).toBe('in-custody');
     });
   });
 });
