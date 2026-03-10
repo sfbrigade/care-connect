@@ -64,33 +64,21 @@ function AndroidDictation ({ form, field, ...textareaProps }) {
     showToast(message, 'error');
   }, [showToast]);
 
-  // Called by the hook after each utterance (on recognition end / auto-restart).
-  // Only updates local state — NOT form state. Calling form.setFieldValue here
-  // would change the Mantine key prop (uncontrolled mode), unmounting this
-  // component and killing the recognition session.
+  // Called when a segment ends. Append transcript and commit to form immediately
+  // (safe because recognition is already stopped — no remount risk).
   const handleTranscript = useCallback((text) => {
     const current = localValueRef.current;
     const separator = current && !current.endsWith(' ') ? ' ' : '';
     const committed = current + separator + text;
     localValueRef.current = committed;
     setLocalValue(committed);
-  }, []);
+    form.setFieldValue(field, committed);
+  }, [form, field]);
 
   const { isListening, isSupported, liveText, start, stop } = useSpeechRecognition({
     onError: handleError,
     onTranscript: handleTranscript,
   });
-
-  // Commit accumulated text to form state only when dictation stops.
-  // This avoids the Mantine key-change remount during active dictation.
-  const wasListeningRef = useRef(false);
-  if (isListening && !wasListeningRef.current) {
-    wasListeningRef.current = true;
-  }
-  if (!isListening && wasListeningRef.current) {
-    wasListeningRef.current = false;
-    form.setFieldValue(field, localValueRef.current);
-  }
 
   if (!isSupported) {
     return <Textarea {...textareaProps} />;
