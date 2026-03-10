@@ -8,7 +8,7 @@ import { IconQrcode } from '@tabler/icons-react';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
-import useTabState from '@/hooks/useTabState';
+import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
@@ -67,7 +67,7 @@ function groupReleasedByStatus (deflections) {
 }
 
 function Custody () {
-  const [tab, setTab] = useTabState('custody', 'in-custody');
+  const [tab, setTab] = useSessionState('custody', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();

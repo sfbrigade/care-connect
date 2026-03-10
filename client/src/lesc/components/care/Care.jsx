@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
-import useTabState from '@/hooks/useTabState';
+import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
@@ -58,7 +58,7 @@ function hasSavedOrPersistedExitDetails (deflection) {
 }
 
 function Care () {
-  const [tab, setTab] = useTabState('care', 'in-custody');
+  const [tab, setTab] = useSessionState('care', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
   const [intakeModalDeflection, setIntakeModalDeflection] = useState(null);
