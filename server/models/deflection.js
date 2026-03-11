@@ -80,6 +80,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   releasedById: z.string().uuid().nullable(),
   releasedBy: User.ResponseSchema.nullable().optional(),
   releaseReasonId: z.string().nullable(),
+  sfsoIncidentNumber: z.string().nullable().optional(),
   releaseReason: DeflectionReleaseReason.ResponseSchema.nullable().optional(),
   otherReleaseReason: z.string().nullable().optional(),
   otherReleaseDestination: z.string().nullable().optional(),

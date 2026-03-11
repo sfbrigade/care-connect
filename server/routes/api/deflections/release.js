@@ -24,6 +24,7 @@ export default async function (fastify, opts) {
         }),
         body: z.object({
           releaseReasonId: z.string(),
+          sfsoIncidentNumber: z.string().trim().min(3, 'SFSO incident number must be at least 3 characters.'),
           exitDestinationId: z.string().nullable().optional(),
           otherReleaseReason: z.string().trim().min(1).optional(),
           otherReleaseDestination: z.string().trim().min(1).optional(),
@@ -39,6 +40,7 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const releaseReasonId = request.body?.releaseReasonId || 'sobered';
+      const sfsoIncidentNumber = request.body?.sfsoIncidentNumber?.trim() || null;
       const exitDestinationId = request.body?.exitDestinationId || null;
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
@@ -70,7 +72,6 @@ export default async function (fastify, opts) {
           }],
         });
       }
-
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
       });
@@ -101,6 +102,7 @@ export default async function (fastify, opts) {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.RELEASED,
             releaseReasonId,
+            sfsoIncidentNumber,
             otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
             otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
             updatedById: request.user.id,
@@ -129,6 +131,7 @@ export default async function (fastify, opts) {
             releasedAt: now,
             releasedById: request.user.id,
             releaseReasonId,
+            sfsoIncidentNumber,
             otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
             otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
             ...(isExitRelease

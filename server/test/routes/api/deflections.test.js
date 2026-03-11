@@ -1093,6 +1093,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'sobered',
+          sfsoIncidentNumber: 'SF-1001',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
@@ -1100,6 +1101,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'RELEASED');
       assert.strictEqual(data.releaseReasonId, 'sobered');
+      assert.strictEqual(data.sfsoIncidentNumber, 'SF-1001');
       assert.ok(data.releasedAt);
       assert.ok(data.releasedById);
 
@@ -1107,6 +1109,7 @@ test('/api/deflections', async (t) => {
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
       assert.strictEqual(dbDeflection.releaseReasonId, 'sobered');
+      assert.strictEqual(dbDeflection.sfsoIncidentNumber, 'SF-1001');
       assert.ok(dbDeflection.releasedAt);
 
       // Verify deflection update history
@@ -1127,6 +1130,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'medical_issue',
+          sfsoIncidentNumber: 'SF-2002',
           exitDestinationId: 'hospital',
         });
 
@@ -1135,6 +1139,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.releaseReasonId, 'medical_issue');
+      assert.strictEqual(data.sfsoIncidentNumber, 'SF-2002');
       assert.strictEqual(data.exitDestinationId, 'hospital');
       assert.ok(data.releasedAt);
       assert.ok(data.exitedAt);
@@ -1157,6 +1162,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'other',
+          sfsoIncidentNumber: 'SF-3003',
           otherReleaseReason: 'Friend picked them up',
           otherReleaseDestination: 'Home address',
         });
@@ -1166,6 +1172,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.releaseReasonId, 'other');
+      assert.strictEqual(data.sfsoIncidentNumber, 'SF-3003');
       assert.strictEqual(data.otherReleaseReason, 'Friend picked them up');
       assert.strictEqual(data.otherReleaseDestination, 'Home address');
     });
@@ -1176,6 +1183,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'medical_issue',
+          sfsoIncidentNumber: 'SF-2002',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
@@ -1187,10 +1195,30 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'other',
+          sfsoIncidentNumber: 'SF-3003',
           otherReleaseReason: 'Missing destination',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 if SFSO incident number is missing or too short', async () => {
+      const missingResponse = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'sobered',
+        });
+      assert.strictEqual(missingResponse.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const shortResponse = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'sobered',
+          sfsoIncidentNumber: 'ab',
+        });
+      assert.strictEqual(shortResponse.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
     await t.test('returns 409 if status is not releasable', async () => {
@@ -1204,6 +1232,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'sobered',
+          sfsoIncidentNumber: 'SF-1001',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.CONFLICT);
@@ -1215,6 +1244,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'sobered',
+          sfsoIncidentNumber: 'SF-1001',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.NOT_FOUND);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { Anchor, Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Box, Button, Chip, Container, Group, Input, Stack, Text, TextInput, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -43,6 +43,7 @@ function LegalReleaseQuestions () {
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
   const [exitDestinationId, setExitDestinationId] = useState(null);
+  const [sfsoIncidentNumber, setSfsoIncidentNumber] = useState('');
 
   const isMedicalRelease = releaseReasonId === 'medical_issue';
   const isOtherRelease = releaseReasonId === 'other';
@@ -75,6 +76,7 @@ function LegalReleaseQuestions () {
     mutationFn: () => {
       const payload = {
         releaseReasonId,
+        sfsoIncidentNumber: sfsoIncidentNumber.trim(),
       };
       if (isMedicalRelease) {
         payload.exitDestinationId = exitDestinationId;
@@ -215,6 +217,16 @@ function LegalReleaseQuestions () {
                 </Text>
               </>
             )}
+            <Stack gap={2}>
+              <Title order={4}>SFSO incident number</Title>
+              <Text size='sm' c='dimmed'>Before completing the 849(b), contact SFSO dispatch to obtain an incident number. Enter that number here.</Text>
+              <TextInput
+                required
+                value={sfsoIncidentNumber}
+                onChange={(event) => setSfsoIncidentNumber(event.currentTarget.value)}
+                placeholder='Enter SFSO incident number'
+              />
+            </Stack>
           </Stack>
 
           <Group>
@@ -236,6 +248,7 @@ function LegalReleaseQuestions () {
                 !releaseReasonId ||
                 (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
                 (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
+                sfsoIncidentNumber.trim().length < 3 ||
                 (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
               }
             >
