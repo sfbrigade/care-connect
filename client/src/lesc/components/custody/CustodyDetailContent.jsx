@@ -57,16 +57,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
-
+  console.log(deflection)
   function open647fPdf () {
-    const holdData = {
-      id: String(deflection.id),
-      client: deflection.subject,
-      incident: {},
-      createdBy: null,
-      notes: deflection.behavior,
-    };
-    const doc = generate647fTransferFormPDF(holdData);
+    // const holdData = {
+    //   id: String(deflection.id),
+    //   client: deflection.subject,
+    //   incident: {},
+    //   createdBy: null,
+    //   notes: deflection.behavior,
+    // };
+    const doc = generate647fTransferFormPDF(deflection, facility);
     const blobUrl = doc.output('bloburl');
     window.open(blobUrl, '_blank');
   }

@@ -17,6 +17,8 @@ const DeflectionDetailCategoryUpdateSchema = DeflectionDetailCategoryAttributesS
 
 const DeflectionDetailCategoryResponseSchema = DeflectionDetailCategoryCreateSchema.extend({
   deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
+  deletedAt:z.coerce.date().optional(),
+  deletedById: z.string().uuid().optional(),
   createdAt: z.coerce.date(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
