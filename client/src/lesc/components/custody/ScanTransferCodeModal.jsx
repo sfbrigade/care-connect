@@ -74,7 +74,7 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       prompt={`Scan the person's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
       manualEntryTitle='Enter Transfer Code'
       manualEntryLabel='Enter transfer code'
-      manualEntryDescription=’If the QR code doesn’t work, ask the officer for the transfer code.’
+      manualEntryDescription="If the QR code doesn’t work, ask the officer for the transfer code."
       manualEntryInputPlaceholder=’Enter transfer code’
       manualEntryAddButtonLabel='+ Transfer code'
       manualEntryAllowMultiple
