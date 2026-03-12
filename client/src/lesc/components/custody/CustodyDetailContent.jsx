@@ -554,13 +554,13 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
                         onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
                       >
-                        Start legal release
+                        Legal release
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                         onClick={() => setExitToJailModalOpened(true)}
                       >
-                        Record exit to jail
+                        Exit to jail
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
@@ -614,7 +614,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                                 leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
                                 onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
                               >
-                                Start legal release
+                                Legal release
                               </Menu.Item>
                             )}
                             <Menu.Item
