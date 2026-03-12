@@ -10,7 +10,7 @@ const ResidencyEnum = z.enum([
   'YES',
   'NO',
   'UNKNOWN',
-  'DECLINED_CONSENT',
+  'DID_NOT_SHARE',
 ]);
 
 const ConnectionToCareEnum = z.enum([
@@ -20,7 +20,7 @@ const ConnectionToCareEnum = z.enum([
 ]);
 
 function toTernary (value) {
-  if (value === 'DECLINED_CONSENT') return TernaryEnum.UNKNOWN;
+  if (value === 'DID_NOT_SHARE') return TernaryEnum.UNKNOWN;
   return value;
 }
 

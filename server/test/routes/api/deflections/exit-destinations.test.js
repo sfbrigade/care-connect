@@ -28,7 +28,7 @@ test('/api/deflections/exit-destinations', async (t) => {
       assert.ok(ids.includes('street'));
       assert.ok(ids.includes('home'));
       assert.ok(ids.includes('services_non_hospital'));
-      assert.ok(ids.includes('declined_consent'));
+      assert.ok(ids.includes('did_not_share'));
       assert.ok(ids.includes('other'));
 
       // Check sorting by name
