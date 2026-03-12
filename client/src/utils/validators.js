@@ -8,7 +8,7 @@ const IncidentSchema = z.object({
   arrestedAt: z.iso.datetime(),
   encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']),
   cadNumber: z.string().check(z.minLength(2)),
-  supervisorBadgeNumber: z.string().check(z.length(4)),
+  supervisorBadgeNumber: z.string().check(z.minLength(1), z.maxLength(4)),
 });
 
 const DeflectionSchema = z.object({
