@@ -16,7 +16,7 @@ function CustodyCard ({ deflection, highlighted }) {
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
 
-  const displayId = String(deflection.id).padStart(6, '0');
+  const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
 
   const subjectDetails = [];

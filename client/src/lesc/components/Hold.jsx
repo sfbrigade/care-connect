@@ -11,7 +11,7 @@ import Api from '@/Api';
 
 function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
-  const displayId = String(deflection.id).padStart(6, '0');
+  const displayId = String(deflection.id);
   const displayName =
     [
       deflection?.subject?.firstName,
