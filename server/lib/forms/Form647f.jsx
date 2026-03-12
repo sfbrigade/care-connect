@@ -164,8 +164,9 @@ export default function Form647f ({ data = {} }) {
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
 
-  const narrativeParts = [justification, narcoticsStatement].filter(Boolean);
-  const narrative = narrativeParts.join('\n\n');
+  const narrative = [justification, narcoticsStatement]
+    .filter(Boolean)
+    .join('\n\n');
 
   return (
     <>
