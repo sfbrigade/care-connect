@@ -35,8 +35,8 @@ export default async function main (prisma) {
       updatedById: adminUser.id,
     },
     {
-      id: 'declined_consent',
-      name: 'Declined consent',
+      id: 'did_not_share',
+      name: 'Did not share',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },

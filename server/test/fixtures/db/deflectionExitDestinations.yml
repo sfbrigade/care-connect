@@ -27,8 +27,8 @@ items:
     createdBy: '@user1'
     updatedBy: '@user1'
   item5:
-    id: 'declined_consent'
-    name: 'Declined consent'
+    id: 'did_not_share'
+    name: 'Did not share'
     createdBy: '@user1'
     updatedBy: '@user1'
   item6:
