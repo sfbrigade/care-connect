@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlarm } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
-import { formatAddress, formatDateTime } from '@/utils/format';
+import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
@@ -63,6 +63,26 @@ function Deflection () {
   const showCancelOnlyFooter = !!deflection && detailsComplete && !isCustodyTransferred;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
+
+  const isActive = deflection?.status === 'ACTIVE';
+  const isExpiredStatus = deflection?.status === 'EXPIRED';
+  const expiresAt = deflection?.expiresAt;
+
+  const [now, setNow] = useState(DateTime.now());
+
+  useEffect(() => {
+    if (!expiresAt || (!isActive && !isExpiredStatus) || isCustodyTransferred) return undefined;
+    setNow(DateTime.now());
+    const intervalId = window.setInterval(() => setNow(DateTime.now()), 3000);
+    return () => window.clearInterval(intervalId);
+  }, [expiresAt, isActive, isExpiredStatus, isCustodyTransferred]);
+
+  const minutesUntilExpiration = expiresAt
+    ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
+    : null;
+  const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
+  const isExpiringSoon = isActive && !isExpired && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
+  const showTimer = !!expiresAt && (isActive || isExpiredStatus) && !isCustodyTransferred;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -159,6 +179,16 @@ function Deflection () {
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
+            <Group>
+              <IconAlarm size={24} color={isExpiringSoon ? 'red' : 'gray'} />
+              {showTimer && (
+                isExpired
+                  ? <Text size='md' c='red.6' fw={600}>Hold expired</Text>
+                  : isExpiringSoon
+                    ? <Text size='md' c='red.6' fw={600}>Expires in {formatTimeRemaining(expiresAt)}</Text>
+                    : <Text size='md'>Expires in {formatTimeRemaining(expiresAt)}</Text>
+              )}
+            </Group>
             <Group gap='xs'>
               <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
               <Text c='gray.5' size='md'>•</Text>
