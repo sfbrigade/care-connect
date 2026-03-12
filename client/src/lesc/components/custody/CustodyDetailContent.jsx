@@ -227,9 +227,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
             <Group gap='xs'>
-              {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
+              {deflection?.incidentId && <Text size='md'>Incident {deflection.incidentId}</Text>}
               {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
-              <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+              <Text size='md' c='gray.6'>Hold {deflection ? deflection.id : ''}</Text>
             </Group>
             {!isCareView && (
               <Stack gap='xs' align='center'>
@@ -248,7 +248,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
-                  <Text fw={500}>Transfer code: {isReadyForIntake ? String(deflection.id).padStart(6, '0') : '******'}</Text>
+                  <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
                   {isAwaitingSafetyCheck && (
                     <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
                   )}

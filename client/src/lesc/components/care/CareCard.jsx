@@ -8,7 +8,7 @@ import { shouldShowCareCardViewDetails } from './careFlowUtils';
 function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
   const { t } = useTranslation();
 
-  const displayId = String(deflection.id).padStart(6, '0');
+  const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
 
   const subjectDetails = [];
