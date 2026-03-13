@@ -166,7 +166,7 @@ CareConnect tooling lives inside this repository. After bringing up the Docker s
 
 1. **Geocode clinics**
 
-   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`. Enter the server container and run the geocode command:
+   Ensure `AWS_LOCATION_ACCESS_KEY_ID` and `AWS_LOCATION_SECRET_ACCESS_KEY` are defined in `server/.env`. Enter the server container and run the geocode command:
 
    ```
    cd server
