@@ -376,7 +376,7 @@ function SubjectForm () {
                             <BooleanInput
                               {...form.getInputProps('drugUseEvidence')}
                               key={form.key('drugUseEvidence')}
-                              label={<>Evidence of drug use<span>*</span></>}
+                              label='Evidence of drug use'
                             />
                             {showDrugTypeQuestion && (
                               <Input.Wrapper label='Drug type'>
