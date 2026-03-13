@@ -51,7 +51,7 @@ function PropertyForm () {
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeValues({
           property: deflection.property,
@@ -60,7 +60,7 @@ function PropertyForm () {
         form.initialize(normalized);
       }
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {

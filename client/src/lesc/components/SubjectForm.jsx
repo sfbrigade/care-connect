@@ -47,7 +47,6 @@ function SubjectForm () {
   const isCustodyContext = location.pathname.startsWith('/custody');
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [dobInput, setDobInput] = useState('');
   const [showFile647fModal, setShowFile647fModal] = useState(false);
@@ -66,13 +65,9 @@ function SubjectForm () {
     }),
     onValuesChange: (values) => {
       setShowDrugTypeQuestion(values.drugUseEvidence);
-      if (!isInitialized) {
-        return;
+      if (form.initialized && !isCustodyContext) {
+        scheduleAutoSave(values, dobInput);
       }
-      if (isCustodyContext) {
-        return;
-      }
-      scheduleAutoSave(values, dobInput);
     }
   });
 
@@ -89,8 +84,7 @@ function SubjectForm () {
   const isNew = isNewParam || (!!deflection && !deflection.subjectId);
 
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
-      setInitialized(true);
+    if (!isLoading && !form.initialized) {
       if (deflection?.subject) {
         const normalized = normalizeValues({
           ...initialValues,
@@ -102,13 +96,12 @@ function SubjectForm () {
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         setDobInput(normalized.dateOfBirth ?? '');
-        setShowDrugTypeQuestion(normalized.drugUseEvidence);
         form.initialize(normalized);
       } else {
-        setShowDrugTypeQuestion(false);
+        form.initialize(initialValues);
       }
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
@@ -195,14 +188,14 @@ function SubjectForm () {
   const scrollToSection = searchParams.get('section');
 
   useEffect(() => {
-    if (!scrollToSection || !isInitialized) {
+    if (!scrollToSection || !form.initialized) {
       return;
     }
     const el = document.querySelector(`[data-section="${scrollToSection}"]`);
     if (el) {
       setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [scrollToSection, isInitialized]);
+  }, [scrollToSection, form.initialized]);
 
   function handleCustodySubmit (data) {
     setPendingFormData(data);
@@ -238,7 +231,7 @@ function SubjectForm () {
         <Title order={2} mb='xs'>Person details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
                 key={form.key('firstName')}

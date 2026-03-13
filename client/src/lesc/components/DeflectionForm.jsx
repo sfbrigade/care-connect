@@ -67,7 +67,7 @@ function DeflectionForm () {
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
@@ -77,7 +77,7 @@ function DeflectionForm () {
         form.initialize(normalized);
       }
     }
-  }, [isLoading, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => {
     if (!deflectionDetailCategories) {
