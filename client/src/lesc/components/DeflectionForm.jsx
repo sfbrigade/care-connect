@@ -6,8 +6,9 @@ import { Accordion, Anchor, Button, Chip, Container, Fieldset, Group, Input, Sta
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import { useFacilityContext } from '@/FacilityContext';
+import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
@@ -72,10 +73,9 @@ function DeflectionForm () {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
-          volunteeredToReset: deflection.volunteeredToReset !== null ? JSON.stringify(deflection.volunteeredToReset) : null,
+          volunteeredToReset: deflection.volunteeredToReset,
         });
-        form.setInitialValues(normalized);
-        form.reset();
+        form.initialize(normalized);
         lastDetailSelectionKeyRef.current = getDetailSelectionKey(normalized.deflectionDetails);
         countValues(normalized);
       }
@@ -152,6 +152,7 @@ function DeflectionForm () {
       generatedNarrative: generatedNarrativeValue,
       behaviorAdditions: values.behaviorAdditions ?? '',
       deflectionDetails: values.deflectionDetails,
+      volunteeredToReset: values.volunteeredToReset,
     });
   }
 
@@ -268,17 +269,11 @@ function DeflectionForm () {
                   <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
                 </Input.Wrapper>
               )}
-              <Input.Wrapper label='Person volunteered to be taken to RESET'>
-                <Chip.Group
-                  key={form.key('volunteeredToReset')}
-                  {...form.getInputProps('volunteeredToReset')}
-                >
-                  <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+              <BooleanInput
+                {...form.getInputProps('volunteeredToReset')}
+                key={form.key('volunteeredToReset')}
+                label='Person volunteered to be taken to RESET'
+              />
               <Input.Wrapper label='647(f) narrative'>
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
                 <Text style={{ whiteSpace: 'pre-wrap' }}>
