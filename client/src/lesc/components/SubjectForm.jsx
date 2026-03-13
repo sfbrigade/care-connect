@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 import { formatInputDob } from '@/utils/format';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -237,9 +238,9 @@ function SubjectForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
-          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
 
         <Title order={2} mb='xs'>Person details</Title>
@@ -333,11 +334,11 @@ function SubjectForm () {
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='xl'>
-                      <TextInput
+                      <AddressAutocomplete
+                        form={form}
+                        field='addressLine1'
                         key={form.key('addressLine1')}
                         label='Street address'
-                        placeholder='Enter street address'
-                        {...form.getInputProps('addressLine1')}
                       />
                       <TextInput
                         key={form.key('addressLine2')}
