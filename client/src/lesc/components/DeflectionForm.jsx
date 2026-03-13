@@ -27,11 +27,11 @@ function DeflectionForm () {
   const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const autoSaveTimerRef = useRef(null);
   const lastDetailSelectionKeyRef = useRef('');
   const generatedNarrativeRef = useRef('');
   const [generatedNarrative, setGeneratedNarrative] = useState('');
+  const [category, setCategory] = useState(null);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -55,20 +55,19 @@ function DeflectionForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
-      if (!isInitialized) {
-        return;
-      }
       const nextDetailSelectionKey = getDetailSelectionKey(values.deflectionDetails);
       if (nextDetailSelectionKey !== lastDetailSelectionKeyRef.current) {
         lastDetailSelectionKeyRef.current = nextDetailSelectionKey;
         countValues(values);
       }
-      scheduleAutoSave(values);
+      if (form.initialized) {
+        scheduleAutoSave(values);
+      }
     }
   });
 
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading) {
       if (deflection) {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
@@ -76,25 +75,18 @@ function DeflectionForm () {
           volunteeredToReset: deflection.volunteeredToReset,
         });
         form.initialize(normalized);
-        lastDetailSelectionKeyRef.current = getDetailSelectionKey(normalized.deflectionDetails);
-        countValues(normalized);
       }
-      setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection]);
 
   useEffect(() => {
-    if (!isInitialized || !deflectionDetailCategories) {
+    if (!deflectionDetailCategories) {
       return;
     }
     countValues(form.getValues());
-  }, [isInitialized, deflectionDetailCategories]);
+  }, [deflectionDetailCategories]);
 
   useEffect(() => {
-    if (!isInitialized) {
-      return;
-    }
-
     let nextGeneratedNarrative = '';
     if (selectedDetails.length > 0) {
       nextGeneratedNarrative = buildDeflectionNarrative({
@@ -104,17 +96,7 @@ function DeflectionForm () {
     }
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [isInitialized, incident, selectedDetails]);
-
-  useEffect(() => () => {
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = null;
-      if (isInitialized) {
-        autoSaveMutation.mutate(buildUpdatePayload(form.getValues(), generatedNarrativeRef.current));
-      }
-    }
-  }, [isInitialized]);
+  }, [incident, selectedDetails]);
 
   function countValues (values) {
     const newSelectedDetails = [];
@@ -191,7 +173,6 @@ function DeflectionForm () {
       navigate(isNew ? `/holds/${id}/property?isNew=true` : `/holds/${id}`);
     },
   });
-  const behaviorAdditionsInputProps = form.getInputProps('behaviorAdditions');
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -233,14 +214,14 @@ function DeflectionForm () {
           return onSubmitMutation.mutateAsync(buildUpdatePayload(values));
         })}
         >
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <Chip.Group
                 key={form.key('deflectionDetails')}
                 {...form.getInputProps('deflectionDetails')}
                 multiple
               >
-                <Accordion defaultValue=''>
+                <Accordion value={category} onChange={setCategory}>
                   {deflectionDetailCategories?.map(category => (
                     <Accordion.Item key={category.id} value={category.id}>
                       <Accordion.Control><Text size='lg' fw={detailCategoryCounts[category.id] > 0 ? '600' : 'normal'}>{category.name}{detailCategoryCounts[category.id] > 0 && ` (${detailCategoryCounts[category.id]})`}</Text></Accordion.Control>
@@ -284,7 +265,7 @@ function DeflectionForm () {
                 label='Add to narrative (optional)'
                 key={form.key('behaviorAdditions')}
                 autosize
-                {...behaviorAdditionsInputProps}
+                {...form.getInputProps('behaviorAdditions')}
                 placeholder='E.g. “Person was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>
