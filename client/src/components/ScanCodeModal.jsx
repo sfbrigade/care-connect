@@ -131,7 +131,7 @@ function ScanCodeModal ({
                         {manualEntryLabel || 'Enter transfer code'}
                       </Text>
                       <Title order={3}>
-                        {manualEntryDescription || 'If the QR code does not work, ask the officer for the 6-digit transfer code.'}
+                        {manualEntryDescription || 'If the QR code does not work, ask the officer for the transfer code.'}
                       </Title>
                     </Box>
                     )
@@ -141,7 +141,7 @@ function ScanCodeModal ({
                   {codes.map((code, index) => (
                     <TextInput
                       key={index}
-                      placeholder={manualEntryInputPlaceholder || 'Enter a 6-digit code'}
+                      placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
                       value={code}
                       onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
                       inputMode='numeric'
