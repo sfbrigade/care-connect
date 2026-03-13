@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Button, Container, Fieldset, Group, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
+import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
@@ -26,10 +27,6 @@ function NarcoticsForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: (values) => ({
-      narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
-      narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
-    }),
   });
 
   const { data: incident } = useQuery({
@@ -44,13 +41,10 @@ function NarcoticsForm () {
 
   useEffect(() => {
     if (!isLoading) {
-      if (deflection.subject) {
-        form.setInitialValues({
-          narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
-          narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
-        });
-        form.reset();
-      }
+      form.initialize({
+        narcoticsSubstance: deflection.narcoticsSubstance,
+        narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+      });
       setInitialized(true);
     }
   }, [isLoading, deflection]);
@@ -91,32 +85,16 @@ function NarcoticsForm () {
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
-              <Input.Wrapper
-                label={<>Possesses a controlled substance<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('narcoticsSubstance')}
-                  {...form.getInputProps('narcoticsSubstance')}
-                >
-                  <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
-              <Input.Wrapper
-                label={<>Possesses narcotics paraphernalia<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('narcoticsParaphernalia')}
-                  {...form.getInputProps('narcoticsParaphernalia')}
-                >
-                  <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+              <BooleanInput
+                {...form.getInputProps('narcoticsSubstance')}
+                key={form.key('narcoticsSubstance')}
+                label='Possesses a controlled substance'
+              />
+              <BooleanInput
+                {...form.getInputProps('narcoticsParaphernalia')}
+                key={form.key('narcoticsParaphernalia')}
+                label='Possesses narcotics paraphernalia'
+              />
               <Button type='submit'>
                 Save narcotics details
               </Button>
