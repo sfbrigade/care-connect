@@ -5,16 +5,13 @@ import { DateTime } from 'luxon';
 import LockedQRCode from '@/components/LockedQRCode';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
-import { useToast } from '@/components/ToastContext';
 
 function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
-  const displayId = String(deflection.id).padStart(6, '0');
+  const displayId = String(deflection.id);
   const displayName =
     [
       deflection?.subject?.firstName,
@@ -24,6 +21,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
       .filter(Boolean)
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
+  const isCompleted = deflection.status === 'COMPLETED';
   const [now, setNow] = useState(DateTime.now());
 
   let subjectAge;
@@ -48,6 +46,9 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isValid = isValidDeflection(deflection);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
+  const completedAt = deflection?.completedAt ?? deflection?.transferredAt;
+  const showFooter = isActive;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -55,19 +56,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
     queryFn: () => Api.deflections.cancelReasons.get(deflection.cancelReasonId).then(response => response.data),
     enabled: !!deflection.cancelReasonId,
   });
-
-  const reopenHoldMutation = useMutation({
-    mutationFn: () => Api.deflections.reopen(deflection.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'active']);
-      queryClient.invalidateQueries(['deflections', deflection.incidentId, 'inactive']);
-      showToast('Hold reopened', 'success', 4000, `Hold for ${displayName} was reopened.`);
-    },
-  });
-
-  const reopenHold = () => {
-    reopenHoldMutation.mutate(deflection.id);
-  };
+  const cancelReasonLabel = cancelReason?.name;
 
   useEffect(() => {
     if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
@@ -80,34 +69,34 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
     return () => window.clearInterval(intervalId);
   }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
 
-  function cancelReasonMessage () {
-    if (deflection.cancelReasonId != null) {
-      return `Cancelled at ${formatTime(deflection?.cancelledAt) || 'Unknown'} (${cancelReason?.name || 'unknown reason'})`;
-    }
-  }
-
   return (
     <Card bg='white' p='xl' withBorder>
-      <Stack gap='xl'>
+      <Stack gap='2xl'>
         <Stack gap='sm'>
           <Group gap='xs'>
             <Text size='md' c='gray.6'>Hold {displayId}</Text>
-            {!isNew && !isValid && !isCancelled && !isExpired && (
+            {hasIncompleteDetails && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='red.6'>Details incomplete</Text>
               </>
             )}
             {isCancelled && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
-                <Text size='md' c='yellow.7'>{cancelReasonMessage()}</Text>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='yellow.7'>Canceled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
               </>
             )}
             {isExpired && (
               <>
-                <Text size='md' c='gray.6'>•</Text>
+                <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='yellow.7'>Expired at {formatTime(deflection?.expiresAt)}</Text>
+              </>
+            )}
+            {isCompleted && completedAt && (
+              <>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='teal.5'>Completed at {formatTime(completedAt)}</Text>
               </>
             )}
           </Group>
@@ -124,7 +113,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}
-        {!(isNew && (isCancelled || isExpired)) && (
+        {showFooter && (
           <Group justify='space-between' wrap='nowrap'>
             {isActive && !isExpired && !isArrived
               ? (
@@ -141,19 +130,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
             {!isNew && (isValid || isCancelled || isExpired) && (
-              <Group gap='sm' wrap='nowrap'>
-                <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
-                {(isCancelled || isExpired) && (deflection?.incidentId === incident?.id)
-                  ? (
-                    <Button
-                      size='md'
-                      onClick={reopenHold}
-                    >
-                      Reopen Hold
-                    </Button>
-                    )
-                  : ''}
-              </Group>
+              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
             )}
           </Group>
         )}

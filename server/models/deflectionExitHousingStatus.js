@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import User from './user.js';
 
 const DeflectionExitHousingStatusAttributesSchema = z.object({
   name: z.string(),
@@ -13,7 +14,14 @@ const DeflectionExitHousingStatusCreateSchema = DeflectionExitHousingStatusAttri
 
 const DeflectionExitHousingStatusUpdateSchema = DeflectionExitHousingStatusAttributesSchema.partial();
 
-const DeflectionExitHousingStatusResponseSchema = DeflectionExitHousingStatusCreateSchema;
+const DeflectionExitHousingStatusResponseSchema = DeflectionExitHousingStatusCreateSchema.extend({
+  createdAt: z.coerce.date(),
+  createdById: z.string().uuid(),
+  createdBy: User.ResponseSchema.optional(),
+  updatedAt: z.coerce.date(),
+  updatedById: z.string().uuid(),
+  updatedBy: User.ResponseSchema.optional(),
+});
 
 export class DeflectionExitHousingStatus extends Base {
   static CreateSchema = DeflectionExitHousingStatusCreateSchema;

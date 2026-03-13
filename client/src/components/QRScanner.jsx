@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useId } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button, Alert, Loader, Stack, Text } from '@mantine/core';
 import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
@@ -82,6 +82,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
   const [scanPhase, setScanPhase] = useState('idle');
   const displayPhase = _debugScanPhase || scanPhase;
   const scannerRef = useRef(null);
+  const scannerId = useId().replace(/:/g, '-');
   const html5QrCodeRef = useRef(null);
   const hasStartedRef = useRef(false);
   const pendingRef = useRef(false);
@@ -90,12 +91,17 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
   const stopScanning = useCallback(async () => {
     if (html5QrCodeRef.current && isScanning) {
+      const scanner = html5QrCodeRef.current;
       try {
-        await html5QrCodeRef.current.stop();
-        html5QrCodeRef.current.clear();
+        await scanner.stop();
       } catch (err) {
         // Ignore errors when stopping (e.g., "scanner is not running")
         console.log('Error stopping scanner (ignored):', err.message);
+      }
+      try {
+        await scanner.clear();
+      } catch (err) {
+        console.log('Error clearing scanner (ignored):', err.message);
       }
       html5QrCodeRef.current = null;
     }
@@ -124,7 +130,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
       setIsScanning(true);
 
-      const html5QrCode = new Html5Qrcode(scannerRef.current.id);
+      const html5QrCode = new Html5Qrcode(scannerId);
       html5QrCodeRef.current = html5QrCode;
 
       const config = {
@@ -269,16 +275,19 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       onScanError?.(errorMsg);
       console.error('QR Scanner error:', err);
     }
-  }, [onScanSuccess, onScanError, stopScanning, isIOSDevice, fullScreen]);
+  }, [onScanSuccess, onScanError, stopScanning, isIOSDevice, fullScreen, scannerId]);
 
   // Unconditional cleanup on unmount — ensures camera is released
   // regardless of isScanning state at unmount time
   useEffect(() => {
     return () => {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop()
-          .then(() => html5QrCodeRef.current?.clear())
-          .catch(() => {});
+        const scanner = html5QrCodeRef.current;
+        scanner.stop()
+          .catch(() => {})
+          .finally(() => {
+            scanner.clear().catch(() => {});
+          });
         html5QrCodeRef.current = null;
       }
     };
@@ -311,7 +320,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
     return (
       <>
         <div
-          id='qr-reader'
+          id={scannerId}
           ref={scannerRef}
           className={classes.fullScreen}
         />
@@ -332,7 +341,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
   return (
     <div className={className}>
-      <div id='qr-reader' ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
+      <div id={scannerId} ref={scannerRef} style={{ width: '100%', minHeight: '300px' }} />
 
       {error && (
         <Alert icon={<IconAlertCircle size={16} />} title='Camera Error' color='red' mt='md'>

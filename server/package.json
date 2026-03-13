@@ -11,7 +11,7 @@
     "dev": "prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
-    "pretest": "eslint",
+    "pretest": "npm run prisma:generate && eslint",
     "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",

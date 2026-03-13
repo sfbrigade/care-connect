@@ -319,10 +319,28 @@ const Api = {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },
     admit (id) {
-      return instance.post(`/api/deflections/${id}/admit`).catch(handleError);
+      return instance.post(`/api/deflections/${id}/admit`);
     },
-    release (id) {
-      return instance.post(`/api/deflections/${id}/release`).catch(handleError);
+    completeIntake (id, { completed }) {
+      return instance.post(`/api/deflections/${id}/intake-complete`, { completed }).catch(handleError);
+    },
+    saveExitDetails (id, data) {
+      return instance.post(`/api/deflections/${id}/exit-details`, data).catch(handleError);
+    },
+    exit (id, data) {
+      return instance.post(`/api/deflections/${id}/exit`, data).catch(handleError);
+    },
+    release (id, data = {}) {
+      return instance.post(`/api/deflections/${id}/release`, data);
+    },
+    exitToJail (id) {
+      return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
+    },
+    recordDeath (id) {
+      return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);
+    },
+    recordPropertyReturn (id, data) {
+      return instance.post(`/api/deflections/${id}/property-return`, data).catch(handleError);
     },
     cancel (id, { cancelReasonId } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
@@ -345,6 +363,40 @@ const Api = {
       },
       delete (id) {
         return instance.delete(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
+      },
+    },
+    exitDestinations: {
+      index () {
+        return instance.get('/api/deflections/exit-destinations');
+      },
+      get (id) {
+        return instance.get(`/api/deflections/exit-destinations/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/deflections/exit-destinations', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/deflections/exit-destinations/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/deflections/exit-destinations/${id}`).catch(handleError);
+      },
+    },
+    exitHousingStatuses: {
+      index () {
+        return instance.get('/api/deflections/exit-housing-statuses');
+      },
+      get (id) {
+        return instance.get(`/api/deflections/exit-housing-statuses/${id}`);
+      },
+      create (data) {
+        return instance.post('/api/deflections/exit-housing-statuses', data).catch(handleError);
+      },
+      update (id, data) {
+        return instance.patch(`/api/deflections/exit-housing-statuses/${id}`, data).catch(handleError);
+      },
+      delete (id) {
+        return instance.delete(`/api/deflections/exit-housing-statuses/${id}`).catch(handleError);
       },
     },
     detailCategories: {

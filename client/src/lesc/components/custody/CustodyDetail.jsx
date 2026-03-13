@@ -5,10 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import Api from '@/Api';
 import CustodyDetailContent from './CustodyDetailContent';
 
-function CustodyDetail () {
+function CustodyDetail ({ viewerMode = 'custody' }) {
   const { id } = useParams();
-  const savedTab = window.sessionStorage.getItem('custodyTab') || 'in-custody';
-  const backTo = savedTab === 'in-custody' ? '/custody' : '/custody?tab=released';
+  const isCareView = viewerMode === 'care';
+  const backTo = isCareView ? '/care' : '/custody';
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -18,9 +18,9 @@ function CustodyDetail () {
   return (
     <>
       <Head>
-        <title>Custody Details</title>
+        <title>{isCareView ? 'Care Details' : 'Custody Details'}</title>
       </Head>
-      <CustodyDetailContent deflection={deflection} backTo={backTo} />
+      <CustodyDetailContent deflection={deflection} backTo={backTo} viewerMode={viewerMode} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Accordion, Box, Button, Card, Container, Divider, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconExternalLink } from '@tabler/icons-react';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
+import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -12,21 +12,83 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
-const RELEASABLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+import CompleteIntakeModal from '../care/CompleteIntakeModal';
+import DeflectionStatusChip from '../DeflectionStatusChip';
 
-function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
+import { getCareDetailFooterState } from './careDetailFooterUtils';
+import { getCareStatusChip } from './careStatusChipUtils';
+import { getCustodyStatusChip } from './custodyStatusChipUtils';
+import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
+import ExitToJailModal from './ExitToJailModal';
+import RecordDeathModal from './RecordDeathModal';
+
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
+
+function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
+  const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
+  const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
+  const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const { isCustody } = useUserRole();
+  const isCareView = viewerMode === 'care';
+  const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
+  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
+  const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
+  const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
+  const isExited = deflection?.subjectStatus === 'EXITED';
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
+  const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
+  const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
+  const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
+  const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
+    viewerMode,
+    isCustody,
+    deflection,
+  });
+  const showRecordPropertyReturnAction = showAwaitingPropertyReturnChip;
+  const propertySectionId = `custody-property-section-${deflection?.id ?? 'unknown'}`;
+  const custodyStatusChip = getCustodyStatusChip(deflection);
+  const careStatusChip = getCareStatusChip({ deflection, careFooterState });
+  const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+
+  useEffect(() => {
+    if (isCareView || !deflection?.id) return;
+
+    const raw = window.sessionStorage.getItem(PROPERTY_RETURN_TOAST_KEY);
+    if (!raw) return;
+
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+      return;
+    }
+
+    if (parsed?.deflectionId !== String(deflection.id)) return;
+
+    window.sessionStorage.removeItem(PROPERTY_RETURN_TOAST_KEY);
+    showToast('Property return update recorded', 'success', 4000, 'Saved to this person\'s exit record');
+    setCustodyAccordionValues(prev => (prev.includes('property') ? prev : [...prev, 'property']));
+    window.setTimeout(() => {
+      document.getElementById(propertySectionId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }, [deflection?.id, isCareView, propertySectionId, showToast]);
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -41,22 +103,69 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
     },
   });
 
-  const releaseMutation = useMutation({
-    mutationFn: () => Api.deflections.release(deflection.id),
+  const recordDeathMutation = useMutation({
+    mutationFn: () => Api.deflections.recordDeath(deflection.id),
     onSuccess: () => {
+      setRecordDeathModalOpened(false);
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Person legally released', 'success');
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Death recorded', 'success', 4000, 'Death recorded. All associated holds or chairs have been released.');
       navigate('/custody');
     },
     onError: () => {
-      showToast('Release not saved. Please try again.', 'error');
+      showToast('Couldn\'t record death', 'error', 4000, 'Please check your connection and try again.');
     },
   });
 
-  const isReleasable = RELEASABLE_STATUSES.includes(deflection?.subjectStatus);
+  const exitToJailMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToJail(deflection.id),
+    onSuccess: () => {
+      setExitToJailModalOpened(false);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      navigate('/custody?tab=released');
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const completeIntakeMutation = useMutation({
+    mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      setCompleteIntakeModalOpened(false);
+
+      if (variables.completed) {
+        showToast(
+          'Intake completed',
+          'success',
+          4000,
+          "Person moved to 'In-chair' for Sheriff's review."
+        );
+      } else {
+        showToast(
+          'Intake not completed',
+          'warning',
+          4000,
+          'Person moved back. Please review their status before release or exit.'
+        );
+      }
+    },
+    onError: () => {
+      showToast('Intake update not saved. Please try again.', 'error');
+    },
+  });
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
+  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
@@ -116,20 +225,30 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
       </Header>
       <Container>
         <Stack gap='xl'>
-          <Group gap='xs'>
-            {deflection?.incidentId && <Text size='md'>Incident {String(deflection.incidentId).padStart(6, '0')}</Text>}
-            {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
-            <Text size='md' c='gray.6'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-          </Group>
-          {(isAwaitingSafetyCheck || isReadyForIntake) && (
+          <Stack gap='sm' align='center'>
+            <Group gap='xs'>
+              {deflection?.incidentId && <Text size='md'>Incident {deflection.incidentId}</Text>}
+              {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
+              <Text size='md' c='gray.6'>Hold {deflection ? deflection.id : ''}</Text>
+            </Group>
+            {!isCareView && (
+              <Stack gap='xs' align='center'>
+                <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {showAwaitingPropertyReturnChip && (
+                  <DeflectionStatusChip label='Awaiting property return' tone='info' />
+                )}
+              </Stack>
+            )}
+            {isCareView && (
+              <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+            )}
+          </Stack>
+          {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Stack gap='sm' align='center'>
-              {isReadyForIntake && (
-                <Text c='teal.6' size='md' w='100%'>Safety check completed</Text>
-              )}
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
-                  <Text fw={500}>Transfer code: {isReadyForIntake ? String(deflection.id).padStart(6, '0') : '******'}</Text>
+                  <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
                   {isAwaitingSafetyCheck && (
                     <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
                   )}
@@ -140,22 +259,31 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
               )}
             </Stack>
           )}
-          <Stack gap='xs' align='flex-start'>
-            {isAwaitingSafetyCheck && (
-              <Button onClick={() => safetyCheckMutation.mutate()} loading={safetyCheckMutation.isPending}>
-                Mark safety check complete
+          {!isCareView && (
+            <Stack gap='xs' align='flex-start'>
+              <Button
+                onClick={open849bPdf}
+                variant='outline'
+                rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
+              >
+                849(b).pdf
               </Button>
-            )}
-            <Button
-              onClick={open849bPdf}
-              variant='outline'
-              rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
-            >
-              849(b).pdf
-            </Button>
-          </Stack>
+            </Stack>
+          )}
           <Stack gap='sm'>
-            <Title order={2}>{name}</Title>
+            <Title order={2}>{isCareView ? careDisplayName : name}</Title>
+            {isCareView && (
+              <>
+                <Box>
+                  <Text c='dimmed'>First name</Text>
+                  <Text>{deflection?.subject?.firstName || 'Unknown'}</Text>
+                </Box>
+                <Box>
+                  <Text c='dimmed'>Last name</Text>
+                  <Text>{deflection?.subject?.lastName || 'Unknown'}</Text>
+                </Box>
+              </>
+            )}
             {deflection?.subject?.dateOfBirth && (
               <Box>
                 <Text c='dimmed'>Date of birth</Text>
@@ -164,7 +292,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
             )}
             {deflection?.subject?.sex && (
               <Box>
-                <Text c='dimmed'>Sex</Text>
+                <Text c='dimmed'>{isCareView ? 'Gender' : 'Sex'}</Text>
                 <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
               </Box>
             )}
@@ -174,183 +302,384 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
                 <Text>{t(`race.${deflection.subject.race}`)}</Text>
               </Box>
             )}
-            {deflection?.subject?.driverLicense && (
+            {!isCareView && deflection?.subject?.driverLicense && (
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
                 <Text>{deflection.subject.driverLicense}</Text>
               </Box>
             )}
-            {address && (
+            {!isCareView && address && (
               <Box>
                 <Text c='dimmed'>Address</Text>
                 <Text>{address}</Text>
               </Box>
             )}
-            <Group mt='md'>
-              <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit</Button>
-            </Group>
+            {!isCareView && (
+              <Group mt='md'>
+                <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+              </Group>
+            )}
           </Stack>
-          <Accordion variant='section' defaultValue={['narcotics', 'release-narrative']}>
-            <Divider />
-            <Accordion.Item value='narcotics'>
-              <Accordion.Control>
-                <Title order={3}>Narcotics</Title>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Controlled substance</Text>
-                      <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Paraphernalia</Text>
-                      <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  <Group mt='sm'>
-                    <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary'>Edit</Button>
-                  </Group>
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='deflection'>
-              <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {!!deflection?.deflectionDetails?.length && (
-                    <Box>
-                      <Text c='dimmed'>Selected observations</Text>
-                      <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                    </Box>
-                  )}
-                  {!!deflection?.behavior && (
-                    <Box>
-                      <Text c='dimmed'>Narrative (arrestable behavior)</Text>
-                      <Text>{deflection?.behavior}</Text>
-                    </Box>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='property'>
-              <Accordion.Control>
-                <Title order={3}>Property details</Title>
-                <Text c='gray.5' size='sm'>Linked to Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {!!deflection?.propertyPhotos?.length && (
-                    <Group gap='sm'>
-                      {deflection?.propertyPhotos?.map(photo => (
-                        <Image
-                          key={photo.id}
-                          src={photo.fileUrl}
-                          w={160}
-                          h='auto'
-                          fit='contain'
-                        />
-                      ))}
-                    </Group>
-                  )}
-                  {!!deflection?.property && (
-                    <Box>
-                      <Text c='dimmed'>Volume of property</Text>
-                      <Text>{t(`property.${deflection?.property}`)}</Text>
-                    </Box>
-                  )}
-                  {!!deflection?.propertyDetails && (
-                    <Box>
-                      <Text c='dimmed'>Description</Text>
-                      <Text>{deflection?.propertyDetails}</Text>
-                    </Box>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='incident'>
-              <Accordion.Control>
-                <Title order={3}>Incident details</Title>
-                <Text c='gray.5' size='sm'>These details apply to all holds in this incident</Text>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {incidentAddress && (
-                    <Box>
-                      <Text c='dimmed'>Address</Text>
-                      <Text>{incidentAddress}</Text>
-                    </Box>
-                  )}
-                  {incident?.arrestedAt && (
-                    <Box>
-                      <Text c='dimmed'>Date and time</Text>
-                      <Text>{formatDateTime(incident.arrestedAt)}</Text>
-                    </Box>
-                  )}
-                  {incident?.cadNumber && (
-                    <Box>
-                      <Text c='dimmed'>CAD #</Text>
-                      <Text>{incident.cadNumber}</Text>
-                    </Box>
-                  )}
-                  {incident?.supervisorBadgeNumber && (
-                    <Box>
-                      <Text c='dimmed'>SFSO supervisor star #</Text>
-                      <Text>{incident.supervisorBadgeNumber}</Text>
-                    </Box>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value='release-narrative'>
-              <Accordion.Control>
-                <Title order={3}>849(b) release narrative</Title>
-                <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  <Box>
-                    <Text c='dimmed'>Narrative</Text>
-                    {isEditingReleaseNarrative
-                      ? (
-                        <Textarea
-                          value={releaseNarrative}
-                          onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
-                          autosize
-                          minRows={4}
-                          mt='xs'
-                        />
-                        )
-                      : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
-                  </Box>
-                  <Group>
-                    <Button
-                      onClick={onReleaseNarrativeButtonClick}
-                      loading={saveReleaseNarrativeMutation.isPending}
-                      variant='secondary'
-                    >
-                      Edit
-                    </Button>
-                  </Group>
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-          {isReleasable && (
-            <Button
-              size='lg'
-              onClick={() => releaseMutation.mutate()}
-              loading={releaseMutation.isPending}
-            >
-              Start legal release
-            </Button>
+          {!isCareView && (
+            <>
+              <Accordion
+                variant='section'
+                multiple
+                value={custodyAccordionValues}
+                onChange={setCustodyAccordionValues}
+              >
+                <Divider />
+                <Accordion.Item value='narcotics'>
+                  <Accordion.Control>
+                    <Title order={3}>Narcotics</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
+                        <Box>
+                          <Text c='dimmed'>Controlled substance</Text>
+                          <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
+                        <Box>
+                          <Text c='dimmed'>Paraphernalia</Text>
+                          <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      <Group mt='sm'>
+                        <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                      </Group>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='deflection'>
+                  <Accordion.Control>
+                    <Title order={3}>Arrest details</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {!!deflection?.deflectionDetails?.length && (
+                        <Box>
+                          <Text c='dimmed'>Selected observations</Text>
+                          <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                        </Box>
+                      )}
+                      {!!deflection?.behavior && (
+                        <Box>
+                          <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                          <Text>{deflection?.behavior}</Text>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='property' id={propertySectionId}>
+                  <Accordion.Control>
+                    <Title order={3}>Property details</Title>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {!!deflection?.propertyPhotos?.length && (
+                        <Group gap='sm'>
+                          {deflection?.propertyPhotos?.map(photo => (
+                            <Image
+                              key={photo.id}
+                              src={photo.fileUrl}
+                              w={160}
+                              h='auto'
+                              fit='contain'
+                            />
+                          ))}
+                        </Group>
+                      )}
+                      {!!deflection?.property && (
+                        <Box>
+                          <Text c='dimmed'>Volume of property</Text>
+                          <Text>{t(`property.${deflection?.property}`)}</Text>
+                        </Box>
+                      )}
+                      {!!deflection?.propertyDetails && (
+                        <Box>
+                          <Text c='dimmed'>Description</Text>
+                          <Text>{deflection?.propertyDetails}</Text>
+                        </Box>
+                      )}
+                      {!!propertyReturnStatusText && (
+                        <Text c={deflection?.propertyReturned ? 'teal.6' : 'yellow.8'}>{propertyReturnStatusText}</Text>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='incident'>
+                  <Accordion.Control>
+                    <Title order={3}>Incident details</Title>
+                    <Text c='gray.5' size='sm'>These details apply to all holds in this incident</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {incidentAddress && (
+                        <Box>
+                          <Text c='dimmed'>Address</Text>
+                          <Text>{incidentAddress}</Text>
+                        </Box>
+                      )}
+                      {incident?.arrestedAt && (
+                        <Box>
+                          <Text c='dimmed'>Date and time</Text>
+                          <Text>{formatDateTime(incident.arrestedAt)}</Text>
+                        </Box>
+                      )}
+                      {incident?.cadNumber && (
+                        <Box>
+                          <Text c='dimmed'>CAD #</Text>
+                          <Text>{incident.cadNumber}</Text>
+                        </Box>
+                      )}
+                      {incident?.supervisorBadgeNumber && (
+                        <Box>
+                          <Text c='dimmed'>SFSO supervisor star #</Text>
+                          <Text>{incident.supervisorBadgeNumber}</Text>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value='release-narrative'>
+                  <Accordion.Control>
+                    <Title order={3}>849(b) release narrative</Title>
+                    <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      <Box>
+                        <Text c='dimmed'>Narrative</Text>
+                        {isEditingReleaseNarrative
+                          ? (
+                            <Textarea
+                              value={releaseNarrative}
+                              onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
+                              autosize
+                              minRows={4}
+                              mt='xs'
+                            />
+                            )
+                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
+                      </Box>
+                      <Group>
+                        <Button
+                          onClick={onReleaseNarrativeButtonClick}
+                          loading={saveReleaseNarrativeMutation.isPending}
+                          variant='secondary'
+                        >
+                          Edit
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </>
           )}
         </Stack>
       </Container>
+      {careFooterState.showFooter && (
+        <Box
+          className='action-footer-gradient'
+          pos='fixed'
+          left={0}
+          right={0}
+          bottom={0}
+          pt='md'
+          pb='xl'
+          style={{ zIndex: 10 }}
+        >
+          <Container>
+            <Group justify='center' gap='sm' wrap='nowrap'>
+              <Button
+                color='indigo'
+                radius='xl'
+                size='lg'
+                onClick={() => {
+                  if (careFooterState.primaryAction === 'complete-intake') {
+                    setCompleteIntakeModalOpened(true);
+                    return;
+                  }
+                  if (careFooterState.primaryAction === 'start-exit') {
+                    navigate(careFooterState.startExitPath);
+                  }
+                }}
+              >
+                {careFooterState.primaryLabel}
+              </Button>
+            </Group>
+          </Container>
+        </Box>
+      )}
+      {showCustodyActionFooter && (
+        <Box
+          className='action-footer-gradient'
+          pos='fixed'
+          left={0}
+          right={0}
+          bottom={0}
+          pt={showRecordPropertyReturnAction ? 'xl' : 'md'}
+          pb='xl'
+          style={{ zIndex: 10 }}
+        >
+          <Container>
+            <Group justify='center' gap='sm' wrap='nowrap'>
+              {showMoreActionsPrimaryOnly
+                ? (
+                  <Menu
+                    position='top-start'
+                    shadow='sm'
+                    radius='lg'
+                    width={260}
+                    withinPortal
+                  >
+                    <Menu.Target>
+                      <Button
+                        variant='outline'
+                        color='indigo'
+                        radius='xl'
+                        size='lg'
+                        leftSection={<IconDots size={22} />}
+                      >
+                        More actions
+                      </Button>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                        onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                      >
+                        Start legal release
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                        onClick={() => setExitToJailModalOpened(true)}
+                      >
+                        Record exit to jail
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                        onClick={() => setRecordDeathModalOpened(true)}
+                      >
+                        Record death
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                  )
+                : (
+                  <Stack gap='sm' w='100%' align='center'>
+                    {showRecordPropertyReturnAction && (
+                      <Group justify='center' gap='sm' wrap='nowrap'>
+                        {!isExited && <Box w={48} h={48} style={{ visibility: 'hidden' }} />}
+                        <Button
+                          variant='outline'
+                          color='indigo'
+                          radius='xl'
+                          size='lg'
+                          onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
+                        >
+                          Record property return
+                        </Button>
+                      </Group>
+                    )}
+                    <Group justify='center' gap='sm' wrap='nowrap'>
+                      {!isExited && (
+                        <Menu
+                          position='top-start'
+                          shadow='sm'
+                          radius='lg'
+                          width={260}
+                          withinPortal
+                        >
+                          <Menu.Target>
+                            <ActionIcon
+                              variant='outline'
+                              color='indigo'
+                              radius='50%'
+                              size={48}
+                              aria-label='More actions'
+                              style={{ minWidth: 48, flex: '0 0 48px' }}
+                            >
+                              <IconDots size={24} />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            {isAwaitingSafetyCheck && (
+                              <Menu.Item
+                                leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                              >
+                                Start legal release
+                              </Menu.Item>
+                            )}
+                            <Menu.Item
+                              leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setExitToJailModalOpened(true)}
+                            >
+                              Record exit to jail
+                            </Menu.Item>
+                            <Menu.Item
+                              leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                              onClick={() => setRecordDeathModalOpened(true)}
+                            >
+                              Record death
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      )}
+                      <Button
+                        color='indigo'
+                        radius='xl'
+                        size='lg'
+                        onClick={() => {
+                          if (isAwaitingSafetyCheck) {
+                            safetyCheckMutation.mutate();
+                            return;
+                          }
+                          if (showPrimaryStartLegalRelease) {
+                            navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                          }
+                        }}
+                        loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
+                      >
+                        {isAwaitingSafetyCheck
+                          ? 'Complete safety check'
+                          : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                  )}
+            </Group>
+          </Container>
+        </Box>
+      )}
+      {(careFooterState.showFooter || showCustodyActionFooter) && (
+        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '164px' : '104px'} />
+      )}
+      <RecordDeathModal
+        opened={recordDeathModalOpened}
+        onClose={() => setRecordDeathModalOpened(false)}
+        onConfirm={() => recordDeathMutation.mutate()}
+        loading={recordDeathMutation.isPending}
+      />
+      <ExitToJailModal
+        opened={exitToJailModalOpened}
+        onClose={() => setExitToJailModalOpened(false)}
+        onConfirm={() => exitToJailMutation.mutate()}
+        loading={exitToJailMutation.isPending}
+      />
+      <CompleteIntakeModal
+        opened={completeIntakeModalOpened}
+        onClose={() => setCompleteIntakeModalOpened(false)}
+        loading={completeIntakeMutation.isPending}
+        onConfirmCompleted={() => completeIntakeMutation.mutate({ completed: true })}
+        onConfirmNotCompleted={() => completeIntakeMutation.mutate({ completed: false })}
+      />
     </>
   );
 }

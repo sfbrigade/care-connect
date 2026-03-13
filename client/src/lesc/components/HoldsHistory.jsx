@@ -80,7 +80,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
               return (
                 <Stack key={`incident-${group.incidentId}`} gap='xs'>
                   <Box>
-                    <Text size='md'>Incident {String(group.incidentId).padStart(6, '0')}</Text>
+                    <Text size='md'>Incident {group.incidentId}</Text>
                     <Text size='md' c='dimmed'>{subtitle}</Text>
                   </Box>
                   {group.deflections.map((deflection) => (
