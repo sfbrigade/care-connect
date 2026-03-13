@@ -23,7 +23,6 @@ function DrugUseForm () {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const { t } = useTranslation();
 
@@ -52,14 +51,12 @@ function DrugUseForm () {
   useEffect(() => {
     if (!isLoading) {
       if (deflection) {
-        form.setInitialValues({
+        form.initialize({
           drugUseEvidence: deflection.drugUseEvidence,
           drugType: deflection.drugType ?? null,
         });
         setShowDrugTypeQuestion(deflection.drugUseEvidence);
-        form.reset();
       }
-      setInitialized(true);
     }
   }, [isLoading, deflection]);
 
@@ -97,7 +94,7 @@ function DrugUseForm () {
         </Group>
         <Title order={2} mb='xs'>Drug use details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <BooleanInput
                 {...form.getInputProps('drugUseEvidence')}

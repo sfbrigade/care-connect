@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -22,7 +22,6 @@ function NarcoticsForm () {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -45,7 +44,6 @@ function NarcoticsForm () {
         narcoticsSubstance: deflection.narcoticsSubstance,
         narcoticsParaphernalia: deflection.narcoticsParaphernalia,
       });
-      setInitialized(true);
     }
   }, [isLoading, deflection]);
 
@@ -83,7 +81,7 @@ function NarcoticsForm () {
         </Group>
         <Title order={2} mb='xs'>Narcotics details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <BooleanInput
                 {...form.getInputProps('narcoticsSubstance')}
