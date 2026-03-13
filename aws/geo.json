@@ -13,8 +13,10 @@
       "Value": {
         "Ref": "LocationUserAccessKey"
       },
-      "Export" : {
-        "Name" : {"Fn::Sub": "${BaseName}-location-user-access-key-id" }
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-location-user-access-key-id"
+        }
       }
     },
     "LocationUserSecretAccessKeyARN": {
@@ -22,8 +24,10 @@
       "Value": {
         "Ref": "LocationUserSecretAccessKey"
       },
-      "Export" : {
-        "Name" : {"Fn::Sub": "${BaseName}-location-user-secret-access-key-arn" }
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-location-user-secret-access-key-arn"
+        }
       }
     }
   },
@@ -42,7 +46,11 @@
                 {
                   "Sid": "VisualEditor0",
                   "Effect": "Allow",
-                  "Action": ["geo-places:Suggest"],
+                  "Action": [
+                    "geo-places:Suggest",
+                    "geo-places:ReverseGeocode",
+                    "geo-places:Geocode"
+                  ],
                   "Resource": "*"
                 }
               ]
@@ -64,13 +72,16 @@
       }
     },
     "LocationUserSecretAccessKey": {
-      "Type" : "AWS::SecretsManager::Secret",
-      "Properties" : {
-        "Name" :  {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
           "Fn::Sub": "/iam/user/${BaseName}-location-user/secret-access-key"
         },
-        "SecretString" : {
-          "Fn::GetAtt": ["LocationUserAccessKey", "SecretAccessKey"]
+        "SecretString": {
+          "Fn::GetAtt": [
+            "LocationUserAccessKey",
+            "SecretAccessKey"
+          ]
         }
       }
     }
