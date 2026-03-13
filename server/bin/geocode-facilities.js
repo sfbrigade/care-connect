@@ -10,18 +10,13 @@ import { PrismaClient } from '@prisma/client';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
+import location from '../lib/location.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-const API_KEY = process.env.OPENROUTESERVICE_API_KEY;
-if (!API_KEY) {
-  console.error('Missing OPENROUTESERVICE_API_KEY environment variable.');
-  process.exit(1);
-}
-
-const BASE_URL = process.env.OPENROUTESERVICE_BASE_URL ?? 'https://api.openrouteservice.org/geocode/search';
 const RATE_LIMIT_DELAY_MS = Number.parseInt(process.env.GEOCODE_RATE_LIMIT_MS ?? '1100', 10);
 const NST_DISTRICTS_GEOJSON_PATH = path.resolve(__dirname, '..', 'static-data', 'street_team_coverage.geojson');
 
@@ -71,7 +66,7 @@ async function main () {
 
     try {
       if (latitude == null || longitude == null || force) {
-        const coordinates = await geocodeAddress(address);
+        const coordinates = await location.geocode(address);
         if (!coordinates) {
           console.warn(`No geocode result for ${facility.name} (${address})`);
           failureCount += 1;
@@ -152,41 +147,6 @@ function buildAddressString (facility) {
   const { addressLine1, city, state, postalCode } = facility;
   const parts = [addressLine1, city, state, postalCode].filter(Boolean);
   return parts.join(', ');
-}
-
-async function geocodeAddress (query) {
-  const url = new URL(BASE_URL);
-  url.searchParams.set('text', query);
-  url.searchParams.set('size', '1');
-  if (BASE_URL.includes('openrouteservice.org')) {
-    url.searchParams.set('api_key', API_KEY);
-  }
-
-  const headers = {
-    Accept: 'application/json',
-  };
-  if (!BASE_URL.includes('openrouteservice.org')) {
-    headers.Authorization = API_KEY;
-  }
-
-  const response = await fetch(url, {
-    headers,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Geocode request failed (${response.status}): ${text}`);
-  }
-
-  const data = await response.json();
-  const feature = data?.features?.[0];
-  const [lng, lat] = feature?.geometry?.coordinates ?? [];
-
-  if (typeof lat !== 'number' || typeof lng !== 'number') {
-    return null;
-  }
-
-  return { lat, lng };
 }
 
 function resolveNSTDistrict (latitude, longitude) {
