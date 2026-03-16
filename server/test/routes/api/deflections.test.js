@@ -366,6 +366,54 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 4);
     });
 
+    await t.test('records direct jail exit from admitted without requiring rejection and releases occupied chair', async () => {
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 1, holds: 3, available: 4 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'ADMITTED',
+          admittedAt: new Date(),
+          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          rejectedAt: null,
+          rejectedById: null,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-jail`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+      assert.strictEqual(data.rejectedAt, null);
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.ok(updatedDeflection.exitedAt);
+      assert.ok(updatedDeflection.exitedById);
+      assert.strictEqual(updatedDeflection.rejectedAt, null);
+      assert.strictEqual(updatedDeflection.rejectedById, null);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.available, 5);
+    });
+
     await t.test('records direct jail exit from failed intake and releases occupied chair', async () => {
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
