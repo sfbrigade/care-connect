@@ -24,17 +24,19 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const isCompleted = deflection.status === 'COMPLETED';
   const [now, setNow] = useState(DateTime.now());
 
-  let subjectAge;
-  if (deflection?.subject?.dateOfBirth) {
-    subjectAge = calculateAge(deflection?.subject?.dateOfBirth);
-  }
+  const subjectAge = deflection?.subject?.dateOfBirth
+    ? calculateAge(deflection?.subject?.dateOfBirth)
+    : null;
   const subjectDetails = [];
-  if (subjectAge) {
+  if (subjectAge !== null) {
     subjectDetails.push(`${subjectAge} y.o.`);
   }
   if (deflection?.subject?.sex) {
     subjectDetails.push(t(`sex.${deflection?.subject?.sex}`));
   }
+  const subjectDetailsText = subjectDetails.length > 0
+    ? subjectDetails.join(', ')
+    : 'Age and gender missing';
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
@@ -102,9 +104,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
           </Group>
           <Box>
             <Title order={3}>{displayName}</Title>
-            {subjectDetails.length > 0 && (
-              <Text size='md'>{subjectDetails.join(', ')}</Text>
-            )}
+            <Text size='md'>{subjectDetailsText}</Text>
           </Box>
         </Stack>
         {isActive && isArrived && (
