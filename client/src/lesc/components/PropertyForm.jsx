@@ -13,6 +13,8 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
 
+const HOLDS_TOAST_KEY = 'holdsToast';
+
 const initialValues = {
   property: '',
   propertyDetails: '',
@@ -31,6 +33,16 @@ function getMissingChipStyles (isMissing) {
       borderColor: 'transparent',
     },
   };
+}
+
+function getSubjectDisplayName (subject) {
+  const name = [
+    subject?.firstName,
+    subject?.middleInitial,
+    subject?.lastName,
+  ].filter(Boolean).join(' ');
+
+  return name || 'this person';
 }
 
 function PropertyForm () {
@@ -152,6 +164,13 @@ function PropertyForm () {
         } else {
           window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
         }
+      }
+      if (isNew) {
+        window.sessionStorage.setItem(HOLDS_TOAST_KEY, JSON.stringify({
+          title: 'Person details saved',
+          variant: 'success',
+          body: `Details for ${getSubjectDisplayName(response.data.subject)} have been saved for Hold ${response.data.id}.`,
+        }));
       }
       navigate(isNew ? '/holds' : `/holds/${id}`);
     },

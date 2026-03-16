@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -15,6 +15,8 @@ import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import { SFPD_ACTIVE_SUBJECT_STATUSES, SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES, mergeHistoryDeflections } from './holdsViewModel';
+
+const HOLDS_TOAST_KEY = 'holdsToast';
 
 function Holds () {
   const navigate = useNavigate();
@@ -81,6 +83,20 @@ function Holds () {
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
 
   const [tab, setTab] = useSessionState('holds', 'active');
+
+  useEffect(() => {
+    const raw = window.sessionStorage.getItem(HOLDS_TOAST_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      showToast(parsed.title, parsed.variant, 4000, parsed.body);
+    } catch {
+      showToast('Person details saved', 'success');
+    } finally {
+      window.sessionStorage.removeItem(HOLDS_TOAST_KEY);
+    }
+  }, [showToast]);
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 
