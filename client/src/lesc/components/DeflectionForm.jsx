@@ -19,6 +19,10 @@ const initialValues = {
   volunteeredToReset: null,
 };
 
+function getDeflectionHintsStorageKey (deflectionId) {
+  return `_session-deflection-details-hints-${deflectionId}`;
+}
+
 function DeflectionForm () {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -31,6 +35,9 @@ function DeflectionForm () {
   const lastDetailSelectionKeyRef = useRef('');
   const generatedNarrativeRef = useRef('');
   const [generatedNarrative, setGeneratedNarrative] = useState('');
+  const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(false);
+  const selectedDetailsRef = useRef([]);
+  const hintsStorageKeyRef = useRef(null);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -49,6 +56,17 @@ function DeflectionForm () {
 
   const [selectedDetails, setSelectedDetails] = useState([]);
   const [detailCategoryCounts, setDetailCategoryCounts] = useState({});
+
+  useEffect(() => {
+    if (!id) return;
+    const hintsStorageKey = getDeflectionHintsStorageKey(id);
+    hintsStorageKeyRef.current = hintsStorageKey;
+    setShouldShowIncompleteHints(window.sessionStorage.getItem(hintsStorageKey) === 'true');
+  }, [id]);
+
+  useEffect(() => {
+    selectedDetailsRef.current = selectedDetails;
+  }, [selectedDetails]);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -114,6 +132,14 @@ function DeflectionForm () {
         autoSaveMutation.mutate(buildUpdatePayload(form.getValues(), generatedNarrativeRef.current));
       }
     }
+    if (!hintsStorageKeyRef.current) return;
+
+    if (selectedDetailsRef.current.length === 0) {
+      window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
+      return;
+    }
+
+    window.sessionStorage.removeItem(hintsStorageKeyRef.current);
   }, [isInitialized]);
 
   function countValues (values) {
@@ -191,6 +217,7 @@ function DeflectionForm () {
     },
   });
   const behaviorAdditionsInputProps = form.getInputProps('behaviorAdditions');
+  const missingNarrativeSelection = shouldShowIncompleteHints && selectedDetails.length === 0;
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -279,9 +306,15 @@ function DeflectionForm () {
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
-              <Input.Wrapper label='647(f) narrative'>
+              <Input.Wrapper
+                label={
+                  <>
+                    647(f) narrative<span style={{ color: 'var(--mantine-color-red-6)' }}>*</span>
+                  </>
+                }
+              >
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
-                <Text style={{ whiteSpace: 'pre-wrap' }}>
+                <Text c={missingNarrativeSelection ? 'red.6' : undefined} style={{ whiteSpace: 'pre-wrap' }}>
                   {generatedNarrative || 'Select observations to generate narrative text.'}
                 </Text>
               </Input.Wrapper>

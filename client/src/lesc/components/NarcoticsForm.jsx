@@ -11,10 +11,23 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
 
+const requiredChipError = 'Select one';
+
 const initialValues = {
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
 };
+
+function getMissingChipStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    label: {
+      backgroundColor: 'var(--mantine-color-red-0)',
+      borderColor: 'transparent',
+    },
+  };
+}
 
 function NarcoticsForm () {
   const navigate = useNavigate();
@@ -22,6 +35,10 @@ function NarcoticsForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const [isInitialized, setInitialized] = useState(false);
+  const [missingRequiredFields, setMissingRequiredFields] = useState({
+    narcoticsSubstance: true,
+    narcoticsParaphernalia: true,
+  });
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -30,6 +47,12 @@ function NarcoticsForm () {
       narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
       narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
     }),
+    onValuesChange: (values) => {
+      setMissingRequiredFields({
+        narcoticsSubstance: values.narcoticsSubstance === null,
+        narcoticsParaphernalia: values.narcoticsParaphernalia === null,
+      });
+    },
   });
 
   const { data: incident } = useQuery({
@@ -45,11 +68,16 @@ function NarcoticsForm () {
   useEffect(() => {
     if (!isLoading) {
       if (deflection.subject) {
-        form.setInitialValues({
+        const normalized = {
           narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
           narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
-        });
+        };
+        form.setInitialValues(normalized);
         form.reset();
+        setMissingRequiredFields({
+          narcoticsSubstance: normalized.narcoticsSubstance === null,
+          narcoticsParaphernalia: normalized.narcoticsParaphernalia === null,
+        });
       }
       setInitialized(true);
     }
@@ -93,27 +121,29 @@ function NarcoticsForm () {
             <Stack gap='xl'>
               <Input.Wrapper
                 label={<>Possesses a controlled substance<span>*</span></>}
+                error={missingRequiredFields.narcoticsSubstance ? requiredChipError : undefined}
               >
                 <Chip.Group
                   key={form.key('narcoticsSubstance')}
                   {...form.getInputProps('narcoticsSubstance')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
+                    <Chip value='true' styles={getMissingChipStyles(missingRequiredFields.narcoticsSubstance)}>Yes</Chip>
+                    <Chip value='false' styles={getMissingChipStyles(missingRequiredFields.narcoticsSubstance)}>No</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
               <Input.Wrapper
                 label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                error={missingRequiredFields.narcoticsParaphernalia ? requiredChipError : undefined}
               >
                 <Chip.Group
                   key={form.key('narcoticsParaphernalia')}
                   {...form.getInputProps('narcoticsParaphernalia')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
+                    <Chip value='true' styles={getMissingChipStyles(missingRequiredFields.narcoticsParaphernalia)}>Yes</Chip>
+                    <Chip value='false' styles={getMissingChipStyles(missingRequiredFields.narcoticsParaphernalia)}>No</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>

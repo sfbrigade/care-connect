@@ -30,6 +30,10 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
 
+const requiredFieldError = 'This field is required';
+const requiredChipError = 'Select one';
+const INCIDENT_DRAFT_HINTS_KEY = '_session-incident-details-hints-draft';
+
 const initialValues = {
   cadNumber: '',
   encounteredVia: '',
@@ -50,6 +54,56 @@ function normalizeCadNumber (value) {
     .slice(0, 10);
 }
 
+function isBlank (value) {
+  return !String(value ?? '').trim();
+}
+
+function getMissingChipStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    label: {
+      backgroundColor: 'var(--mantine-color-red-0)',
+      borderColor: 'transparent',
+    },
+  };
+}
+
+function getRequiredTextInputStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    input: {
+      borderColor: 'var(--mantine-color-red-6)',
+      '&::placeholder': {
+        color: 'var(--mantine-color-red-6)',
+      },
+    },
+    error: {
+      color: 'var(--mantine-color-red-6)',
+    },
+  };
+}
+
+function getMissingRequiredFields (values) {
+  return {
+    arrestLocation: isBlank(values.addressLine1) || isBlank(values.city) || isBlank(values.state),
+    addressLine1: isBlank(values.addressLine1),
+    city: isBlank(values.city),
+    state: isBlank(values.state),
+    arrestedAt: isBlank(values.arrestedAt),
+    encounteredVia: isBlank(values.encounteredVia),
+    cadNumber: isBlank(values.cadNumber),
+    supervisorBadgeNumber: isBlank(values.supervisorBadgeNumber),
+  };
+}
+
+function getIncidentHintsStorageKey (incidentId) {
+  return incidentId
+    ? `_session-incident-details-hints-${incidentId}`
+    : INCIDENT_DRAFT_HINTS_KEY;
+}
+
 function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -59,7 +113,15 @@ function IncidentForm () {
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [missingRequiredFields, setMissingRequiredFields] = useState(
+    getMissingRequiredFields(initialValues)
+  );
+  const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(
+    window.sessionStorage.getItem(INCIDENT_DRAFT_HINTS_KEY) === 'true'
+  );
   const addressRef = useRef();
+  const missingRequiredFieldsRef = useRef(missingRequiredFields);
+  const hintsStorageKeyRef = useRef(INCIDENT_DRAFT_HINTS_KEY);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -70,6 +132,9 @@ function IncidentForm () {
         zone: 'local',
       }).toISO(),
     }),
+    onValuesChange: (values) => {
+      setMissingRequiredFields(getMissingRequiredFields(values));
+    },
   });
 
   const { data, isLoading } = useQuery({
@@ -88,6 +153,11 @@ function IncidentForm () {
 
   useEffect(() => {
     if (!isLoading) {
+      const hintsStorageKey = getIncidentHintsStorageKey(data?.id);
+      hintsStorageKeyRef.current = hintsStorageKey;
+      setShouldShowIncompleteHints(
+        !!data?.id || window.sessionStorage.getItem(hintsStorageKey) === 'true'
+      );
       if (data) {
         let { arrestedAt } = data;
         arrestedAt = DateTime.fromISO(arrestedAt).toISO({
@@ -99,6 +169,10 @@ function IncidentForm () {
           arrestedAt,
         });
         form.reset();
+        setMissingRequiredFields(getMissingRequiredFields({
+          ...data,
+          arrestedAt,
+        }));
         setInitialized(true);
       } else {
         const now = DateTime.now().toISO({
@@ -113,6 +187,12 @@ function IncidentForm () {
               facilityId: facility.id,
               arrestedAt: now,
             });
+            setMissingRequiredFields(getMissingRequiredFields({
+              ...initialValues,
+              ...address,
+              facilityId: facility.id,
+              arrestedAt: now,
+            }));
           })
           .catch(() => {
             form.setInitialValues({
@@ -120,6 +200,11 @@ function IncidentForm () {
               facilityId: facility.id,
               arrestedAt: now,
             });
+            setMissingRequiredFields(getMissingRequiredFields({
+              ...initialValues,
+              facilityId: facility.id,
+              arrestedAt: now,
+            }));
           })
           .finally(() => {
             form.reset();
@@ -128,6 +213,23 @@ function IncidentForm () {
       }
     }
   }, [isLoading, data]);
+
+  useEffect(() => {
+    missingRequiredFieldsRef.current = missingRequiredFields;
+  }, [missingRequiredFields]);
+
+  useEffect(() => () => {
+    const hasMissingRequiredFields = Object.values(missingRequiredFieldsRef.current).some(Boolean);
+    if (hasMissingRequiredFields) {
+      window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
+      return;
+    }
+
+    window.sessionStorage.removeItem(hintsStorageKeyRef.current);
+    if (hintsStorageKeyRef.current !== INCIDENT_DRAFT_HINTS_KEY) {
+      window.sessionStorage.removeItem(INCIDENT_DRAFT_HINTS_KEY);
+    }
+  }, []);
 
   function LocationButton () {
     return (
@@ -143,6 +245,10 @@ function IncidentForm () {
       form.setValues({
         ...address,
       });
+      setMissingRequiredFields(getMissingRequiredFields({
+        ...form.getValues(),
+        ...address,
+      }));
     });
   };
 
@@ -154,6 +260,8 @@ function IncidentForm () {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
     onSuccess: async (response) => {
+      hintsStorageKeyRef.current = getIncidentHintsStorageKey(response.data.id);
+      window.sessionStorage.removeItem(INCIDENT_DRAFT_HINTS_KEY);
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
@@ -211,6 +319,15 @@ function IncidentForm () {
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
+  function getRequiredTextInputProps (field, missingPlaceholder, defaultPlaceholder = missingPlaceholder) {
+    const isMissing = shouldShowIncompleteHints && missingRequiredFields[field];
+    return {
+      placeholder: isMissing ? missingPlaceholder : defaultPlaceholder,
+      error: isMissing ? requiredFieldError : undefined,
+      styles: getRequiredTextInputStyles(isMissing),
+    };
+  }
+
   return (
     <>
       <Head>
@@ -252,6 +369,7 @@ function IncidentForm () {
                       Arrest location<span>*</span>
                     </>
                   }
+                  {...getRequiredTextInputProps('arrestLocation', 'Enter arrest location')}
                   rightSection={
                     !isInitialized ? <Loader size={24} /> : <LocationButton />
                   }
@@ -270,6 +388,7 @@ function IncidentForm () {
                     form={form}
                     field='addressLine1'
                     key={form.key('addressLine1')}
+                    {...getRequiredTextInputProps('addressLine1', 'Enter arrest address')}
                     label={
                       <>
                         Arrest address line 1<span>*</span>
@@ -287,6 +406,7 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('city')}
                     {...form.getInputProps('city')}
+                    {...getRequiredTextInputProps('city', 'Enter arrest city')}
                     label={
                       <>
                         Arrest city<span>*</span>
@@ -297,6 +417,7 @@ function IncidentForm () {
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
+                      {...getRequiredTextInputProps('state', 'Enter arrest state')}
                       label={
                         <>
                           Arrest state<span>*</span>
@@ -316,6 +437,7 @@ function IncidentForm () {
               <TextInput
                 key={form.key('arrestedAt')}
                 {...form.getInputProps('arrestedAt')}
+                {...getRequiredTextInputProps('arrestedAt', 'Enter arrest date and time')}
                 label={
                   <>
                     Arrest date & time<span>*</span>
@@ -326,14 +448,15 @@ function IncidentForm () {
               />
               <Input.Wrapper
                 label={<>Encountered via<span>*</span></>}
+                error={shouldShowIncompleteHints && missingRequiredFields.encounteredVia ? requiredChipError : undefined}
               >
                 <Chip.Group
                   key={form.key('encounteredVia')}
                   {...form.getInputProps('encounteredVia')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='ON_VIEW'>On view</Chip>
-                    <Chip value='DISPATCHED'>Dispatched</Chip>
+                    <Chip value='ON_VIEW' styles={getMissingChipStyles(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>On view</Chip>
+                    <Chip value='DISPATCHED' styles={getMissingChipStyles(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>Dispatched</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
@@ -341,6 +464,7 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('cadNumber')}
                   {...cadNumberInputProps}
+                  {...getRequiredTextInputProps('cadNumber', 'Enter CAD number')}
                   label={
                     <>
                       CAD number<span>*</span>
@@ -369,6 +493,7 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
+                  {...getRequiredTextInputProps('supervisorBadgeNumber', 'Enter supervising sergeant star number')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
                   maxLength={4}
                   inputMode='numeric'

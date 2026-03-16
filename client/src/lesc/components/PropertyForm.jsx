@@ -18,6 +18,21 @@ const initialValues = {
   propertyDetails: '',
 };
 
+function getPropertyHintsStorageKey (deflectionId) {
+  return `_session-property-details-hints-${deflectionId}`;
+}
+
+function getMissingChipStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    label: {
+      backgroundColor: 'var(--mantine-color-red-0)',
+      borderColor: 'transparent',
+    },
+  };
+}
+
 function PropertyForm () {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -28,7 +43,10 @@ function PropertyForm () {
   const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
+  const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(false);
   const autoSaveTimerRef = useRef(null);
+  const hintsStorageKeyRef = useRef(null);
+  const propertyValueRef = useRef('');
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -40,10 +58,18 @@ function PropertyForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
+  useEffect(() => {
+    if (!id) return;
+    const hintsStorageKey = getPropertyHintsStorageKey(id);
+    hintsStorageKeyRef.current = hintsStorageKey;
+    setShouldShowIncompleteHints(window.sessionStorage.getItem(hintsStorageKey) === 'true');
+  }, [id]);
+
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
+      propertyValueRef.current = values.property ?? '';
       if (!isInitialized) {
         return;
       }
@@ -62,12 +88,20 @@ function PropertyForm () {
         form.setInitialValues(normalized);
         form.reset();
         setIsLarge(normalized.property === 'LARGE');
+        propertyValueRef.current = normalized.property ?? '';
       }
       setInitialized(true);
     }
   }, [isLoading, isInitialized, deflection]);
 
   useEffect(() => () => {
+    if (hintsStorageKeyRef.current) {
+      if (!propertyValueRef.current) {
+        window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
+      } else {
+        window.sessionStorage.removeItem(hintsStorageKeyRef.current);
+      }
+    }
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
@@ -111,6 +145,14 @@ function PropertyForm () {
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
+      propertyValueRef.current = response.data.property ?? '';
+      if (hintsStorageKeyRef.current) {
+        if (response.data.property) {
+          window.sessionStorage.removeItem(hintsStorageKeyRef.current);
+        } else {
+          window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
+        }
+      }
       navigate(isNew ? '/holds' : `/holds/${id}`);
     },
   });
@@ -193,22 +235,28 @@ function PropertyForm () {
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
             <Stack gap='xl'>
-              <Chip.Group
-                key={form.key('property')}
-                {...form.getInputProps('property')}
-              >
-                <Group gap='sm'>
-                  {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
-                    <Chip
-                      key={value}
-                      value={value}
-                      size='lg'
-                    >
-                      {t(`property.${value}`)}
-                    </Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
+              <Stack gap='xs'>
+                <Chip.Group
+                  key={form.key('property')}
+                  {...form.getInputProps('property')}
+                >
+                  <Group gap='sm'>
+                    {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
+                      <Chip
+                        key={value}
+                        value={value}
+                        size='lg'
+                        styles={getMissingChipStyles(shouldShowIncompleteHints && !form.getValues().property)}
+                      >
+                        {t(`property.${value}`)}
+                      </Chip>
+                    ))}
+                  </Group>
+                </Chip.Group>
+                {shouldShowIncompleteHints && !form.getValues().property && (
+                  <Text size='sm' c='red.6'>Select one</Text>
+                )}
+              </Stack>
               {isLarge && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>

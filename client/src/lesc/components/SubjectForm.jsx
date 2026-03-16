@@ -16,6 +16,9 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import File647fModal from './custody/File647fModal';
 
+const requiredFieldError = 'This field is required';
+const requiredChipError = 'Select one';
+
 const initialValues = {
   firstName: '',
   lastName: '',
@@ -36,6 +39,58 @@ const initialValues = {
   drugType: null,
 };
 
+function isBlank (value) {
+  return !String(value ?? '').trim();
+}
+
+function isMissingDob (dobInput) {
+  const parsedDob = DateTime.fromFormat((dobInput ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+  return !parsedDob.isValid;
+}
+
+function getMissingRequiredFields (values, dobInput, { includeNarcotics }) {
+  return {
+    firstName: isBlank(values.firstName),
+    lastName: isBlank(values.lastName),
+    dateOfBirth: isMissingDob(dobInput),
+    sex: !values.sex,
+    race: !values.race,
+    narcoticsSubstance: includeNarcotics ? values.narcoticsSubstance === null : false,
+    narcoticsParaphernalia: includeNarcotics ? values.narcoticsParaphernalia === null : false,
+  };
+}
+
+function getRequiredTextInputStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    input: {
+      borderColor: 'var(--mantine-color-red-6)',
+      '&::placeholder': {
+        color: 'var(--mantine-color-red-6)',
+      },
+    },
+    error: {
+      color: 'var(--mantine-color-red-6)',
+    },
+  };
+}
+
+function getMissingChipStyles (isMissing) {
+  if (!isMissing) return undefined;
+
+  return {
+    label: {
+      backgroundColor: 'var(--mantine-color-red-0)',
+      borderColor: 'transparent',
+    },
+  };
+}
+
+function getSubjectHintsStorageKey (deflectionId) {
+  return `_session-subject-details-hints-${deflectionId}`;
+}
+
 function SubjectForm () {
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,8 +106,14 @@ function SubjectForm () {
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
+  const [missingRequiredFields, setMissingRequiredFields] = useState(() =>
+    getMissingRequiredFields(initialValues, '', { includeNarcotics: isNewParam || isCustodyContext })
+  );
+  const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(isCustodyContext);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
+  const missingRequiredFieldsRef = useRef(missingRequiredFields);
+  const hintsStorageKeyRef = useRef(null);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -67,6 +128,9 @@ function SubjectForm () {
     }),
     onValuesChange: (values) => {
       setShowDrugTypeQuestion(values.drugUseEvidence === 'true');
+      setMissingRequiredFields(getMissingRequiredFields(values, dobInput, {
+        includeNarcotics: shouldHighlightNarcoticsRequiredFields
+      }));
       if (!isInitialized) {
         return;
       }
@@ -88,6 +152,32 @@ function SubjectForm () {
   });
 
   const isNew = isNewParam || (!!deflection && !deflection.subjectId);
+  const shouldHighlightNarcoticsRequiredFields = isNew || isCustodyContext;
+
+  useEffect(() => {
+    if (!id) return;
+    const hintsStorageKey = getSubjectHintsStorageKey(id);
+    hintsStorageKeyRef.current = hintsStorageKey;
+    setShouldShowIncompleteHints(
+      isCustodyContext || !isNew || window.sessionStorage.getItem(hintsStorageKey) === 'true'
+    );
+  }, [id, isCustodyContext, isNew]);
+
+  useEffect(() => {
+    missingRequiredFieldsRef.current = missingRequiredFields;
+  }, [missingRequiredFields]);
+
+  useEffect(() => () => {
+    if (!hintsStorageKeyRef.current) return;
+
+    const hasMissingRequiredFields = Object.values(missingRequiredFieldsRef.current).some(Boolean);
+    if (hasMissingRequiredFields) {
+      window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
+      return;
+    }
+
+    window.sessionStorage.removeItem(hintsStorageKeyRef.current);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !isInitialized) {
@@ -105,12 +195,18 @@ function SubjectForm () {
         setShowDrugTypeQuestion(normalized.drugUseEvidence === 'true');
         form.setInitialValues(normalized);
         form.reset();
+        setMissingRequiredFields(getMissingRequiredFields(normalized, normalized.dateOfBirth ?? '', {
+          includeNarcotics: shouldHighlightNarcoticsRequiredFields
+        }));
       } else {
         setShowDrugTypeQuestion(false);
+        setMissingRequiredFields(getMissingRequiredFields(initialValues, '', {
+          includeNarcotics: shouldHighlightNarcoticsRequiredFields
+        }));
       }
       setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, isInitialized, deflection, shouldHighlightNarcoticsRequiredFields]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
@@ -221,6 +317,23 @@ function SubjectForm () {
     onSubmitMutation.mutateAsync(pendingFormData);
   }
 
+  function getRequiredTextInputProps (field, missingPlaceholder, defaultPlaceholder = missingPlaceholder) {
+    const isMissing = shouldShowIncompleteHints && missingRequiredFields[field];
+    return {
+      placeholder: isMissing ? missingPlaceholder : defaultPlaceholder,
+      error: isMissing ? requiredFieldError : undefined,
+      styles: getRequiredTextInputStyles(isMissing),
+    };
+  }
+
+  function getRequiredChipGroupProps (field) {
+    const isMissing = shouldShowIncompleteHints && missingRequiredFields[field];
+    return {
+      error: isMissing ? requiredChipError : undefined,
+      chipStyles: getMissingChipStyles(isMissing),
+    };
+  }
+
   return (
     <>
       <Head>
@@ -251,14 +364,14 @@ function SubjectForm () {
               <TextInput
                 key={form.key('firstName')}
                 label={<>First name<span>*</span></>}
-                placeholder='Enter first name'
                 {...form.getInputProps('firstName')}
+                {...getRequiredTextInputProps('firstName', 'Enter first name')}
               />
               <TextInput
                 key={form.key('lastName')}
                 label={<>Last name<span>*</span></>}
-                placeholder='Enter last name'
                 {...form.getInputProps('lastName')}
+                {...getRequiredTextInputProps('lastName', 'Enter last name')}
               />
               <TextInput
                 key={form.key('middleInitial')}
@@ -271,13 +384,18 @@ function SubjectForm () {
                 type='text'
                 inputMode='numeric'
                 maxLength={10}
-                placeholder='MM/DD/YYYY'
                 {...form.getInputProps('dateOfBirth')}
+                {...getRequiredTextInputProps('dateOfBirth', 'Enter date of birth', 'MM/DD/YYYY')}
                 value={dobInput}
                 onChange={(event) => {
                   const formatted = formatInputDob(event.currentTarget.value);
                   setDobInput(formatted);
                   form.setFieldValue('dateOfBirth', formatted);
+                  setMissingRequiredFields(getMissingRequiredFields(
+                    { ...form.getValues(), dateOfBirth: formatted },
+                    formatted,
+                    { includeNarcotics: shouldHighlightNarcoticsRequiredFields }
+                  ));
                   if (!isCustodyContext) {
                     scheduleAutoSave(form.getValues(), formatted);
                   }
@@ -285,30 +403,30 @@ function SubjectForm () {
               />
               <Input.Wrapper
                 label={<>Sex<span>*</span></>}
+                error={getRequiredChipGroupProps('sex').error}
               >
                 <Chip.Group
                   key={form.key('sex')}
                   {...form.getInputProps('sex')}
                 >
-                  {form.errors.sex && <Text color='red' size='sm'>{form.errors.sex}</Text>}
                   <Group gap='sm' mt='md'>
                     {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
-                      <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
+                      <Chip key={sex} value={sex} styles={getRequiredChipGroupProps('sex').chipStyles}>{t(`sex.${sex}`)}</Chip>
                     ))}
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
               <Input.Wrapper
                 label={<>Race<span>*</span></>}
+                error={getRequiredChipGroupProps('race').error}
               >
                 <Chip.Group
                   key={form.key('race')}
                   {...form.getInputProps('race')}
                 >
-                  {form.errors.race && <Text color='red' size='sm'>{form.errors.race}</Text>}
                   <Group gap='sm' mt='md'>
                     {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
-                      <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
+                      <Chip key={race} value={race} styles={getRequiredChipGroupProps('race').chipStyles}>{t(`race.${race}`)}</Chip>
                     ))}
                   </Group>
                 </Chip.Group>
@@ -376,27 +494,29 @@ function SubjectForm () {
                       <Stack gap='xl'>
                         <Input.Wrapper
                           label={<>Possesses a controlled substance<span>*</span></>}
+                          error={getRequiredChipGroupProps('narcoticsSubstance').error}
                         >
                           <Chip.Group
                             key={form.key('narcoticsSubstance')}
                             {...form.getInputProps('narcoticsSubstance')}
                           >
                             <Group gap='sm' mt='md'>
-                              <Chip value='true'>Yes</Chip>
-                              <Chip value='false'>No</Chip>
+                              <Chip value='true' styles={getRequiredChipGroupProps('narcoticsSubstance').chipStyles}>Yes</Chip>
+                              <Chip value='false' styles={getRequiredChipGroupProps('narcoticsSubstance').chipStyles}>No</Chip>
                             </Group>
                           </Chip.Group>
                         </Input.Wrapper>
                         <Input.Wrapper
                           label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                          error={getRequiredChipGroupProps('narcoticsParaphernalia').error}
                         >
                           <Chip.Group
                             key={form.key('narcoticsParaphernalia')}
                             {...form.getInputProps('narcoticsParaphernalia')}
                           >
                             <Group gap='sm' mt='md'>
-                              <Chip value='true'>Yes</Chip>
-                              <Chip value='false'>No</Chip>
+                              <Chip value='true' styles={getRequiredChipGroupProps('narcoticsParaphernalia').chipStyles}>Yes</Chip>
+                              <Chip value='false' styles={getRequiredChipGroupProps('narcoticsParaphernalia').chipStyles}>No</Chip>
                             </Group>
                           </Chip.Group>
                         </Input.Wrapper>
