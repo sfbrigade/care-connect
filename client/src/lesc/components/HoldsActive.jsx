@@ -37,10 +37,10 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
   );
 }
 
-function ExtendAllHoldsAction ({ disabled, loading, onClick, inset = false }) {
-  const button = (
+function ExtendAllHoldsAction ({ loading, onClick }) {
+  return (
     <Button
-      disabled={disabled || loading}
+      disabled={loading}
       variant='secondary'
       fullWidth
       h={64}
@@ -49,26 +49,6 @@ function ExtendAllHoldsAction ({ disabled, loading, onClick, inset = false }) {
     >
       {loading ? <Loader size='sm' /> : 'Extend all holds'}
     </Button>
-  );
-
-  if (!inset) {
-    return button;
-  }
-
-  return (
-    <Box
-      mx='auto'
-      w='100%'
-      maw={380}
-      p={16}
-      bg='white'
-      style={{
-        borderRadius: '999px',
-        boxShadow: '0 4px 12px rgba(18, 32, 59, 0.08)',
-      }}
-    >
-      {button}
-    </Box>
   );
 }
 
@@ -97,7 +77,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
   const showIncident = shouldShowIncidentInActive(incident, deflections);
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
   const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
-  const showExtendAllButton = hasDeflections || showTransferredHoldsPrompt;
+  const showExtendAllButton = hasDeflections;
 
   return (
     <>
@@ -135,9 +115,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
           </Stack>
           {showExtendAllButton && (
             <ExtendAllHoldsAction
-              disabled={showTransferredHoldsPrompt}
               loading={extendAllHoldsMutation.isPending}
-              inset={showTransferredHoldsPrompt}
               onClick={onExtendAllClick}
             />
           )}
