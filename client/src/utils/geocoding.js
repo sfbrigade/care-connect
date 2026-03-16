@@ -1,4 +1,4 @@
-import Api from '@/Api';
+import Api from '../Api';
 
 /**
  * Get current location using browser Geolocation API

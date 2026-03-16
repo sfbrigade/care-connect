@@ -4,7 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 
 import Hold from './Hold';
 import Incident from './Incident';
-import Api from '@/Api';
+import Api from '../../Api';
 import { buildIncidentSubtitle, getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
 
 function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false }) {

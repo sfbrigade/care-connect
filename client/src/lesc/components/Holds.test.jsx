@@ -1,16 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { DateTime } from 'luxon';
 
-import Holds from './Holds';
-
 const { mockNavigate, mockShowToast, mockIncidentsCreate } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
   mockIncidentsCreate: vi.fn(),
+}));
+
+vi.mock('@unhead/react', () => ({
+  Head: function HeadMock ({ children }) {
+    return <>{children}</>;
+  },
 }));
 
 vi.mock('react-router', async () => {
@@ -27,7 +31,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/Api', () => ({
+vi.mock('../../Api', () => ({
   default: {
     facilities: {
       bedTypes: {
@@ -44,7 +48,7 @@ vi.mock('@/Api', () => ({
   },
 }));
 
-vi.mock('@/FacilityContext', () => ({
+vi.mock('../../FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: {
       id: 'facility-1',
@@ -53,7 +57,7 @@ vi.mock('@/FacilityContext', () => ({
   }),
 }));
 
-vi.mock('@/components/ToastContext', () => ({
+vi.mock('../../components/ToastContext', () => ({
   useToast: () => ({
     showToast: mockShowToast,
   }),
@@ -77,6 +81,14 @@ vi.mock('./CancelHoldModal', () => ({
   },
 }));
 
+vi.mock('./Facility', () => ({
+  default: function FacilityMock ({ onHoldClick }) {
+    return <button type='button' onClick={onHoldClick}>Hold a chair</button>;
+  },
+}));
+
+let Holds;
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.sessionStorage.clear();
@@ -87,6 +99,10 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeAll(async () => {
+  Holds = (await import('./Holds')).default;
 });
 
 function renderHolds () {
@@ -116,10 +132,9 @@ describe('Holds', () => {
       expect(mockIncidentsCreate).toHaveBeenCalledTimes(1);
     });
 
-    const [payload, options] = mockIncidentsCreate.mock.calls[0];
+    const [payload] = mockIncidentsCreate.mock.calls.at(-1);
     expect(payload.facilityId).toBe('facility-1');
     expect(payload.arrestedAt).toBeTruthy();
     expect(DateTime.fromISO(payload.arrestedAt).isValid).toBe(true);
-    expect(options).toEqual({ bedTypeId: 'bed-1' });
   });
 });

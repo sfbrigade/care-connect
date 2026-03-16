@@ -5,10 +5,10 @@ import { useNavigate } from 'react-router';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
-import Api from '@/Api';
-import { useToast } from '@/components/ToastContext';
-import { useFacilityContext } from '@/FacilityContext';
-import useSessionState from '@/hooks/useSessionState';
+import Api from '../../Api';
+import { useToast } from '../../components/ToastContext';
+import { useFacilityContext } from '../../FacilityContext';
+import useSessionState from '../../hooks/useSessionState';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';

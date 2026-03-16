@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router';
 import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Api from '@/Api';
+import Api from '../../Api';
 import Incident from './Incident';
 import Hold from './Hold';
-import { useToast } from '@/components/ToastContext';
+import { useToast } from '../../components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive } from './holdsViewModel';
 
 function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {

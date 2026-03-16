@@ -1,10 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-
-import IncidentForm from './IncidentForm';
 
 const { mockNavigate, mockShowToast, mockActiveIncident, routeState } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -12,6 +10,12 @@ const { mockNavigate, mockShowToast, mockActiveIncident, routeState } = vi.hoist
   mockActiveIncident: vi.fn(),
   routeState: {
     search: 'isNew=true',
+  },
+}));
+
+vi.mock('@unhead/react', () => ({
+  Head: function HeadMock ({ children }) {
+    return <>{children}</>;
   },
 }));
 
@@ -24,7 +28,7 @@ vi.mock('react-router', async () => {
   };
 });
 
-vi.mock('@/Api', () => ({
+vi.mock('../../Api', () => ({
   default: {
     facilities: {
       activeIncident: mockActiveIncident,
@@ -40,19 +44,19 @@ vi.mock('@/Api', () => ({
   },
 }));
 
-vi.mock('@/FacilityContext', () => ({
+vi.mock('../../FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: { id: 'facility-1' },
   }),
 }));
 
-vi.mock('@/components/ToastContext', () => ({
+vi.mock('../../components/ToastContext', () => ({
   useToast: () => ({
     showToast: mockShowToast,
   }),
 }));
 
-vi.mock('@/components/AddressAutocomplete', () => ({
+vi.mock('../../components/AddressAutocomplete', () => ({
   default: function AddressAutocompleteMock () {
     return <div data-testid='address-autocomplete' />;
   },
@@ -64,21 +68,27 @@ vi.mock('./CancelIncidentModal', () => ({
   },
 }));
 
-vi.mock('@/components/Header', () => ({
+vi.mock('../../components/Header', () => ({
   default: function HeaderMock ({ children }) {
     return <div>{children}</div>;
   },
 }));
 
-vi.mock('@/components/IconButtonLink', () => ({
+vi.mock('../../components/IconButtonLink', () => ({
   default: function IconButtonLinkMock () {
     return <button type='button'>Back</button>;
   },
 }));
 
-vi.mock('@/utils/geocoding', () => ({
+vi.mock('../../utils/geocoding', () => ({
   getCurrentLocationAddress: () => Promise.resolve({}),
 }));
+
+vi.mock('../../utils/format', () => ({
+  formatAddress: () => '',
+}));
+
+let IncidentForm;
 
 function renderIncidentForm () {
   const queryClient = new QueryClient({
@@ -105,6 +115,10 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeAll(async () => {
+  IncidentForm = (await import('./IncidentForm')).default;
 });
 
 describe('IncidentForm', () => {

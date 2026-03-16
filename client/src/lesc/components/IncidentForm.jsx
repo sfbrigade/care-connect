@@ -20,15 +20,15 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import Api from '@/Api';
-import AddressAutocomplete from '@/components/AddressAutocomplete';
+import Api from '../../Api';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
 import CancelIncidentModal from './CancelIncidentModal';
-import Header from '@/components/Header';
-import IconButtonLink from '@/components/IconButtonLink';
-import { useToast } from '@/components/ToastContext';
-import { useFacilityContext } from '@/FacilityContext';
-import { formatAddress } from '@/utils/format';
-import { getCurrentLocationAddress } from '@/utils/geocoding';
+import Header from '../../components/Header';
+import IconButtonLink from '../../components/IconButtonLink';
+import { useToast } from '../../components/ToastContext';
+import { useFacilityContext } from '../../FacilityContext';
+import { formatAddress } from '../../utils/format';
+import { getCurrentLocationAddress } from '../../utils/geocoding';
 
 const requiredFieldError = 'This field is required';
 const requiredChipError = 'Select one';

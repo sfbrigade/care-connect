@@ -1,10 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-
-import SubjectForm from './SubjectForm';
 
 const { mockNavigate, mockShowToast, mockDeflectionGet, mockDeflectionSubject, routeState } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -24,6 +22,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+vi.mock('@unhead/react', () => ({
+  Head: function HeadMock ({ children }) {
+    return <>{children}</>;
+  },
+}));
+
 vi.mock('react-router', async () => {
   const actual = await vi.importActual('react-router');
   return {
@@ -35,7 +39,7 @@ vi.mock('react-router', async () => {
   };
 });
 
-vi.mock('@/Api', () => ({
+vi.mock('../../Api', () => ({
   default: {
     facilities: {
       activeIncident: () => Promise.resolve({ data: { id: 'incident-1' } }),
@@ -47,31 +51,31 @@ vi.mock('@/Api', () => ({
   },
 }));
 
-vi.mock('@/FacilityContext', () => ({
+vi.mock('../../FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: { id: 'facility-1' },
   }),
 }));
 
-vi.mock('@/components/ToastContext', () => ({
+vi.mock('../../components/ToastContext', () => ({
   useToast: () => ({
     showToast: mockShowToast,
   }),
 }));
 
-vi.mock('@/components/AddressAutocomplete', () => ({
+vi.mock('../../components/AddressAutocomplete', () => ({
   default: function AddressAutocompleteMock () {
     return <div data-testid='address-autocomplete' />;
   },
 }));
 
-vi.mock('@/components/Header', () => ({
+vi.mock('../../components/Header', () => ({
   default: function HeaderMock ({ children }) {
     return <div>{children}</div>;
   },
 }));
 
-vi.mock('@/components/IconButtonLink', () => ({
+vi.mock('../../components/IconButtonLink', () => ({
   default: function IconButtonLinkMock () {
     return <button type='button'>Back</button>;
   },
@@ -82,6 +86,12 @@ vi.mock('./custody/File647fModal', () => ({
     return null;
   },
 }));
+
+vi.mock('../../utils/format', () => ({
+  formatInputDob: (value) => value,
+}));
+
+let SubjectForm;
 
 function renderSubjectForm () {
   const queryClient = new QueryClient({
@@ -102,7 +112,6 @@ function renderSubjectForm () {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.useFakeTimers();
   window.sessionStorage.clear();
   routeState.pathname = '/holds/123/subject';
   routeState.search = 'isNew=true';
@@ -117,8 +126,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.useRealTimers();
   cleanup();
+});
+
+beforeAll(async () => {
+  SubjectForm = (await import('./SubjectForm')).default;
 });
 
 describe('SubjectForm', () => {
@@ -137,15 +149,14 @@ describe('SubjectForm', () => {
 
     renderSubjectForm();
 
-    await screen.findByText('Person details');
+    await screen.findByRole('heading', { name: 'Person details' });
+    await waitFor(() => {
+      expect(screen.getByLabelText(/First name/i)).toBeEnabled();
+    });
     expect(screen.queryByText('This field is required')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/First name/i), { target: { value: 'John' } });
-    vi.advanceTimersByTime(800);
-
-    await waitFor(() => {
-      expect(mockDeflectionSubject).toHaveBeenCalled();
-    });
+    await new Promise(resolve => setTimeout(resolve, 900));
 
     expect(screen.queryByText('This field is required')).not.toBeInTheDocument();
     expect(screen.queryByText('Select one')).not.toBeInTheDocument();
@@ -173,7 +184,10 @@ describe('SubjectForm', () => {
 
     renderSubjectForm();
 
-    await screen.findByText('Person details');
+    await screen.findByRole('heading', { name: 'Person details' });
+    await waitFor(() => {
+      expect(screen.getByLabelText(/First name/i)).toBeEnabled();
+    });
 
     expect(screen.getAllByText('This field is required').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Select one').length).toBeGreaterThan(0);

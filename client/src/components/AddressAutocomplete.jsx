@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Autocomplete, Loader } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 
-import Api from '@/Api';
+import Api from '../Api';
 
 const AddressAutocomplete = forwardRef(function AddressAutocomplete ({ form, field, rightSection, ...props }, ref) {
   const [value, setValue] = useState(form.getValues()[field] ?? '');

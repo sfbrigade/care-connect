@@ -1,10 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-
-import Hold from './Hold';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -21,6 +19,14 @@ vi.mock('../../Api', () => ({
     },
   },
 }));
+
+vi.mock('../../components/LockedQRCode', () => ({
+  default: function LockedQRCodeMock () {
+    return <div data-testid='locked-qr-code' />;
+  },
+}));
+
+let Hold;
 
 function buildDeflection (overrides = {}) {
   return {
@@ -69,6 +75,10 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeAll(async () => {
+  Hold = (await import('./Hold')).default;
 });
 
 describe('Hold', () => {
