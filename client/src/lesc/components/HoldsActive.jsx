@@ -9,7 +9,7 @@ import Hold from './Hold';
 import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
-function CheckerboardEmptyState ({ title, updatedAtMs = 0, showUpdatedAt = false }) {
+function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
     <Stack align='center' gap='lg' p='24px' w='100%'>
       <Box
@@ -19,16 +19,15 @@ function CheckerboardEmptyState ({ title, updatedAtMs = 0, showUpdatedAt = false
         alt=''
         w={160}
         h={160}
-        style={{
-          aspectRatio: '1 / 1',
-          borderRadius: '4px',
-          display: 'block',
-          objectFit: 'cover',
-        }}
       />
-      <Text c='var(--mantine-color-text)' ta='center' style={{ fontSize: '20px', fontWeight: 400, lineHeight: '24px', alignSelf: 'stretch' }}>
+      <Text c='var(--mantine-color-text)' ta='center' size='xl' lh='md' w='100%'>
         {title}
       </Text>
+      {subtitle && (
+        <Text c='var(--mantine-color-text)' ta='center' size='xl' lh='md' w='100%'>
+          {subtitle}
+        </Text>
+      )}
       {showUpdatedAt && updatedAtMs > 0 && (
         <Text size='xs' c='gray.5' ta='center'>
           Last updated: {formatTime(new Date(updatedAtMs))}
@@ -47,12 +46,6 @@ function ExtendAllHoldsAction ({ disabled, loading, onClick, inset = false }) {
       h={64}
       radius='xl'
       onClick={onClick}
-      styles={{
-        root: {
-          fontSize: '1.25rem',
-          fontWeight: 400,
-        },
-      }}
     >
       {loading ? <Loader size='sm' /> : 'Extend all holds'}
     </Button>
@@ -68,8 +61,8 @@ function ExtendAllHoldsAction ({ disabled, loading, onClick, inset = false }) {
       w='100%'
       maw={380}
       p={16}
+      bg='white'
       style={{
-        backgroundColor: 'var(--mantine-color-white)',
         borderRadius: '999px',
         boxShadow: '0 4px 12px rgba(18, 32, 59, 0.08)',
       }}
@@ -116,13 +109,8 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
       )}
       {!showInitialLoading && !hasDeflections && showTransferredHoldsPrompt && (
         <CheckerboardEmptyState
-          title={(
-            <>
-              All holds transferred.
-              <br />
-              When you leave RESET, make sure to tap &quot;I&apos;ve left&quot;.
-            </>
-          )}
+          title='All holds transferred.'
+          subtitle={'When you leave RESET, make sure to tap "I\'ve left".'}
           updatedAtMs={updatedAtMs}
           showUpdatedAt
         />
