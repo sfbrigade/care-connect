@@ -1,13 +1,21 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
+import { Box, Button, Stack, Text, Loader } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import Incident from './Incident';
 import Hold from './Hold';
+import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive } from './holdsViewModel';
 
-function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
+function HoldsActive ({
+  incident,
+  deflections,
+  isFetchingDeflections,
+  onCancelHoldClick,
+  autoCancelledNotice,
+  onDismissAutoCancelledNotice,
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -30,23 +38,74 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
   const showIncident = shouldShowIncidentInActive(incident, deflections);
+  const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
+  const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
 
   return (
     <>
+      {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
+        <HoldsAutoCancelledNotice
+          count={autoCancelledNotice.count}
+          onClose={onDismissAutoCancelledNotice}
+        />
+      )}
       {showIncident && (
         <Incident incident={incident} editLink='/incident' />
       )}
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {!showInitialLoading && !hasDeflections && (
-        <>
-          <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
-          <Box align='center'>
-            <Title order={4}>You don't have any active holds</Title>
-            <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
-          </Box>
-        </>
+      {!showInitialLoading && !hasDeflections && !showAllExpiredState && (
+        <Box pt='xl'>
+          <Stack align='center' gap='xl' p='lg'>
+            <Box
+              h='160px'
+              w='160px'
+              style={{
+                borderRadius: '4px',
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                backgroundImage: `
+                  linear-gradient(45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
+                  linear-gradient(-45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, var(--mantine-color-gray-1) 75%),
+                  linear-gradient(-45deg, transparent 75%, var(--mantine-color-gray-1) 75%)
+                `,
+                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+                backgroundSize: '16px 16px',
+              }}
+            />
+            <Box align='center'>
+              <Text c='dark.8' fz='20px' fw={400} lh='24px' ta='center'>
+                No active holds.
+              </Text>
+            </Box>
+          </Stack>
+        </Box>
+      )}
+      {showAllExpiredState && (
+        <Box pt='xl'>
+          <Stack align='center' gap='xl' p='lg'>
+            <Box
+              h='160px'
+              w='160px'
+              style={{
+                borderRadius: '4px',
+                backgroundColor: 'var(--mantine-color-gray-0)',
+                backgroundImage: `
+                  linear-gradient(45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
+                  linear-gradient(-45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, var(--mantine-color-gray-1) 75%),
+                  linear-gradient(-45deg, transparent 75%, var(--mantine-color-gray-1) 75%)
+                `,
+                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
+                backgroundSize: '16px 16px',
+              }}
+            />
+            <Text c='dark.8' fz='20px' fw={400} lh='24px' maw='320px' ta='center'>
+              All holds were auto-canceled after they expired. Check History for details.
+            </Text>
+          </Stack>
+        </Box>
       )}
       {hasDeflections && (
         <>
@@ -65,7 +124,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
           </Stack>
           {!incident?.arrivedAt && (
             <Button disabled={extendAllHoldsMutation.isPending} variant='secondary' fullWidth onClick={onExtendAllClick}>
-              {extendAllHoldsMutation.isPending ? <Loader size='sm' /> : 'Extend all holds'}
+              {extendAllHoldsMutation.isPending ? <Loader size='sm' /> : hasExpiredAutoCancelledHolds ? 'Extend active holds' : 'Extend all holds'}
             </Button>
           )}
         </>

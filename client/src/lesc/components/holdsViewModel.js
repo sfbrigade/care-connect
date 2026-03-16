@@ -22,6 +22,49 @@ export function isInitialLoading (isFetching, data) {
   return !!isFetching && data === undefined;
 }
 
+export function getExpiredDeflectionsForIncident (deflections = [], incidentId) {
+  if (!incidentId) return [];
+
+  return deflections.filter((deflection) => (
+    deflection.incidentId === incidentId &&
+    deflection.status === 'EXPIRED'
+  ));
+}
+
+export function buildAutoCancelledHoldsMessage (count) {
+  if (count === 1) {
+    return '1 hold was auto-canceled because it expired.';
+  }
+
+  return `${count} holds were auto-canceled because they expired.`;
+}
+
+export function detectAutoCancelledExpiredHolds ({
+  previousIncidentId,
+  previousDeflectionIds = [],
+  currentDeflections = [],
+  historyDeflections = [],
+}) {
+  const incidentId = previousIncidentId ?? currentDeflections[0]?.incidentId;
+  if (!incidentId || previousDeflectionIds.length === 0) return null;
+
+  const currentDeflectionIds = new Set(currentDeflections.map((deflection) => deflection.id));
+  const removedDeflectionIds = previousDeflectionIds.filter((id) => !currentDeflectionIds.has(id));
+  if (removedDeflectionIds.length === 0) return null;
+
+  const removedDeflectionIdSet = new Set(removedDeflectionIds);
+  const expiredDeflections = getExpiredDeflectionsForIncident(historyDeflections, incidentId)
+    .filter((deflection) => removedDeflectionIdSet.has(deflection.id));
+
+  if (expiredDeflections.length === 0) return null;
+
+  return {
+    incidentId,
+    count: expiredDeflections.length,
+    allExpired: currentDeflectionIds.size === 0,
+  };
+}
+
 function toMillis (value) {
   if (!value) return 0;
   const asDate = new Date(value);
