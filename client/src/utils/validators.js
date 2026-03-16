@@ -1,11 +1,24 @@
 import * as z from 'zod/mini';
+import { DateTime } from 'luxon';
+
+const isValidDateTimeValue = (value) => {
+  if (typeof value === 'string') {
+    return DateTime.fromISO(value).isValid;
+  }
+
+  if (value instanceof Date) {
+    return DateTime.fromJSDate(value).isValid;
+  }
+
+  return false;
+};
 
 const IncidentSchema = z.object({
   addressLine1: z.string().check(z.minLength(2)),
   addressLine2: z.optional(z.nullable(z.string())),
   city: z.string().check(z.minLength(2)),
   state: z.string().check(z.minLength(2)),
-  arrestedAt: z.iso.datetime(),
+  arrestedAt: z.custom(isValidDateTimeValue),
   encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']),
   cadNumber: z.string().check(z.minLength(2)),
   supervisorBadgeNumber: z.string().check(z.minLength(1), z.maxLength(4)),

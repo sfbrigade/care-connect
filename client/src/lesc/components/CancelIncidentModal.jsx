@@ -86,11 +86,12 @@ function CancelIncidentModal ({
             stacked
           />
         </Stack>
-        <Group grow>
+        <Group wrap='nowrap'>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
             disabled={confirmDisabled}
+            style={{ flex: 1 }}
           >
             Yes, cancel
           </Button>
@@ -100,6 +101,7 @@ function CancelIncidentModal ({
             data-autofocus
             onClick={onClose}
             disabled={loading}
+            style={{ flex: '0 0 auto' }}
           >
             {keepLabel}
           </Button>

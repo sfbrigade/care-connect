@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
-import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Badge, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -16,9 +16,20 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
-import { isValidDeflection } from '@/utils/validators';
+import { isValidDeflection, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip } from './deflectionStatusChipUtils';
+
+function DetailItem ({ label, value, incomplete = false, valueColor }) {
+  return (
+    <Box>
+      <Text c='dimmed'>{label}</Text>
+      {incomplete
+        ? <Text c='red.6'>Incomplete</Text>
+        : <Text c={valueColor}>{value}</Text>}
+    </Box>
+  );
+}
 
 function Deflection () {
   const { id } = useParams();
@@ -63,6 +74,11 @@ function Deflection () {
   const showCancelOnlyFooter = !!deflection && detailsComplete && !isCustodyTransferred;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
+  const personSectionIncomplete = !deflection?.subject?.firstName || !deflection?.subject?.lastName || !deflection?.subject?.dateOfBirth || !deflection?.subject?.sex || !deflection?.subject?.race;
+  const narcoticsSectionIncomplete = deflection?.narcoticsSubstance === null || deflection?.narcoticsSubstance === undefined || deflection?.narcoticsParaphernalia === null || deflection?.narcoticsParaphernalia === undefined;
+  const deflectionSectionIncomplete = !deflection?.deflectionDetails?.length || !deflection?.behavior;
+  const propertySectionIncomplete = !deflection?.property;
+  const incidentSectionIncomplete = incident ? !isValidIncident(incident) : false;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -164,7 +180,31 @@ function Deflection () {
               <Text c='gray.5' size='md'>•</Text>
               <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
             </Group>
-            <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
+            {statusChip?.label === 'Details incomplete'
+              ? (
+                <Badge
+                  radius='xl'
+                  size='lg'
+                  px='md'
+                  py={4}
+                  styles={{
+                    root: {
+                      background: 'var(--mantine-color-red-0)',
+                      borderRadius: '24px',
+                    },
+                    label: {
+                      color: 'var(--mantine-color-red-6)',
+                      textTransform: 'none',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      lineHeight: '20px',
+                    },
+                  }}
+                >
+                  {statusChip.label}
+                </Badge>
+                )
+              : <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />}
           </Stack>
           {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
             <>
@@ -175,24 +215,21 @@ function Deflection () {
           )}
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>
-            {deflection?.subject?.dateOfBirth && (
-              <Box>
-                <Text c='dimmed'>Date of birth</Text>
-                <Text>{DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toLocaleString(DateTime.DATE_SHORT)}</Text>
-              </Box>
-            )}
-            {deflection?.subject?.sex && (
-              <Box>
-                <Text c='dimmed'>Sex</Text>
-                <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
-              </Box>
-            )}
-            {deflection?.subject?.race && (
-              <Box>
-                <Text c='dimmed'>Race</Text>
-                <Text>{t(`race.${deflection.subject.race}`)}</Text>
-              </Box>
-            )}
+            <DetailItem
+              label='Date of birth'
+              value={deflection?.subject?.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toLocaleString(DateTime.DATE_SHORT) : null}
+              incomplete={!deflection?.subject?.dateOfBirth}
+            />
+            <DetailItem
+              label='Sex'
+              value={deflection?.subject?.sex ? t(`sex.${deflection.subject.sex}`) : null}
+              incomplete={!deflection?.subject?.sex}
+            />
+            <DetailItem
+              label='Race'
+              value={deflection?.subject?.race ? t(`race.${deflection.subject.race}`) : null}
+              incomplete={!deflection?.subject?.race}
+            />
             {deflection?.subject?.driverLicense && (
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
@@ -206,7 +243,7 @@ function Deflection () {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>{personSectionIncomplete ? 'Finish details' : 'Edit details'}</Button>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
@@ -217,21 +254,21 @@ function Deflection () {
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Controlled substance</Text>
-                      <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Paraphernalia</Text>
-                      <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
+                  <DetailItem
+                    label='Controlled substance'
+                    value={deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined ? (deflection.narcoticsSubstance ? 'Yes' : 'No') : null}
+                    incomplete={deflection?.narcoticsSubstance === null || deflection?.narcoticsSubstance === undefined}
+                    valueColor={deflection?.narcoticsSubstance ? 'red.6' : 'teal.6'}
+                  />
+                  <DetailItem
+                    label='Paraphernalia'
+                    value={deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined ? (deflection.narcoticsParaphernalia ? 'Yes' : 'No') : null}
+                    incomplete={deflection?.narcoticsParaphernalia === null || deflection?.narcoticsParaphernalia === undefined}
+                    valueColor={deflection?.narcoticsParaphernalia ? 'red.6' : 'teal.6'}
+                  />
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>Edit narcotics</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>{narcoticsSectionIncomplete ? 'Finish details' : 'Edit narcotics'}</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -265,27 +302,25 @@ function Deflection () {
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  {!!deflection?.deflectionDetails?.length && (
-                    <Box>
-                      <Text c='dimmed'>Selected observations</Text>
-                      <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                    </Box>
-                  )}
+                  <DetailItem
+                    label='Selected observations'
+                    value={deflection?.deflectionDetails?.length ? deflection?.deflectionDetails?.map(detail => detail.name).join('; ') : null}
+                    incomplete={!deflection?.deflectionDetails?.length}
+                  />
                   {deflection?.volunteeredToReset !== null && deflection?.volunteeredToReset !== undefined && (
                     <Box>
                       <Text c='dimmed'>Person volunteered to be taken to RESET</Text>
                       <Text c={deflection.volunteeredToReset ? 'teal.6' : 'red.6'}>{deflection.volunteeredToReset ? 'Yes' : 'No'}</Text>
                     </Box>
                   )}
-                  {!!deflection?.behavior && (
-                    <Box>
-                      <Text c='dimmed'>Narrative (arrestable behavior)</Text>
-                      <Text>{deflection?.behavior}</Text>
-                    </Box>
-                  )}
+                  <DetailItem
+                    label='Narrative (arrestable behavior)'
+                    value={deflection?.behavior || null}
+                    incomplete={!deflection?.behavior}
+                  />
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit arrest</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>{deflectionSectionIncomplete ? 'Finish details' : 'Edit arrest'}</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -322,42 +357,43 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>Edit property</Button>
+                  <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>{propertySectionIncomplete ? 'Finish details' : 'Edit property'}</Button>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='incident'>
               <Accordion.Control>
-                <Title order={3}>Incident details</Title>
-                <Text c='gray.5' size='sm'>These details apply to all holds in this incident.</Text>
+                <Box>
+                  <Title order={3}>Incident details</Title>
+                  <Text c='gray.5' size='sm'>These details apply to all holds in this incident.</Text>
+                </Box>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  {incidentAddress && (
-                    <Box>
-                      <Text c='dimmed'>Arrest location</Text>
-                      <Text>{incidentAddress}</Text>
-                    </Box>
-                  )}
-                  {incident?.arrestedAt && (
-                    <Box>
-                      <Text c='dimmed'>Arrest date & time</Text>
-                      <Text>{formatDateTime(incident.arrestedAt)}</Text>
-                    </Box>
-                  )}
-                  {incident?.cadNumber && (
-                    <Box>
-                      <Text c='dimmed'>CAD number</Text>
-                      <Text>{incident?.cadNumber}</Text>
-                    </Box>
-                  )}
-                  {incident?.supervisorBadgeNumber && (
-                    <Box>
-                      <Text c='dimmed'>Supervising Sergeant's Star Number</Text>
-                      <Text>{incident?.supervisorBadgeNumber}</Text>
-                    </Box>
-                  )}
+                  <DetailItem
+                    label='Arrest location'
+                    value={incidentAddress || null}
+                    incomplete={!incidentAddress}
+                  />
+                  <DetailItem
+                    label='Arrest date & time'
+                    value={incident?.arrestedAt ? formatDateTime(incident.arrestedAt) : null}
+                    incomplete={!incident?.arrestedAt}
+                  />
+                  <DetailItem
+                    label='CAD number'
+                    value={incident?.cadNumber || null}
+                    incomplete={!incident?.cadNumber}
+                  />
+                  <DetailItem
+                    label="Supervising Sergeant's Star Number"
+                    value={incident?.supervisorBadgeNumber || null}
+                    incomplete={!incident?.supervisorBadgeNumber}
+                  />
                 </Stack>
+                <Group mt='md'>
+                  <Button onClick={() => navigate('/incident')} variant='secondary'>{incidentSectionIncomplete ? 'Finish details' : 'Edit incident'}</Button>
+                </Group>
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

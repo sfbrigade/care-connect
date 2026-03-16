@@ -91,11 +91,21 @@ function getMissingRequiredFields (values) {
     addressLine1: isBlank(values.addressLine1),
     city: isBlank(values.city),
     state: isBlank(values.state),
-    arrestedAt: isBlank(values.arrestedAt),
     encounteredVia: isBlank(values.encounteredVia),
     cadNumber: isBlank(values.cadNumber),
     supervisorBadgeNumber: isBlank(values.supervisorBadgeNumber),
   };
+}
+
+function hasAnyEnteredIncidentRequiredField (values) {
+  return !(
+    isBlank(values.addressLine1) &&
+    isBlank(values.city) &&
+    isBlank(values.state) &&
+    isBlank(values.encounteredVia) &&
+    isBlank(values.cadNumber) &&
+    isBlank(values.supervisorBadgeNumber)
+  );
 }
 
 function getIncidentHintsStorageKey (incidentId) {
@@ -107,6 +117,7 @@ function getIncidentHintsStorageKey (incidentId) {
 function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isNewParam = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
@@ -155,8 +166,21 @@ function IncidentForm () {
     if (!isLoading) {
       const hintsStorageKey = getIncidentHintsStorageKey(data?.id);
       hintsStorageKeyRef.current = hintsStorageKey;
+      const normalizedArrestedAt = data?.arrestedAt
+        ? DateTime.fromISO(data.arrestedAt).toISO({
+          includeOffset: false,
+          precision: 'seconds',
+        })
+        : '';
+      const existingIncidentShouldShowHints = !!data &&
+        hasAnyEnteredIncidentRequiredField(data) &&
+        Object.values(getMissingRequiredFields({
+          ...initialValues,
+          ...data,
+          arrestedAt: normalizedArrestedAt,
+        })).some(Boolean);
       setShouldShowIncompleteHints(
-        !!data?.id || window.sessionStorage.getItem(hintsStorageKey) === 'true'
+        !isNewParam && (window.sessionStorage.getItem(hintsStorageKey) === 'true' || existingIncidentShouldShowHints)
       );
       if (data) {
         let { arrestedAt } = data;
@@ -212,7 +236,7 @@ function IncidentForm () {
           });
       }
     }
-  }, [isLoading, data]);
+  }, [isLoading, data, isNewParam]);
 
   useEffect(() => {
     missingRequiredFieldsRef.current = missingRequiredFields;
@@ -413,7 +437,7 @@ function IncidentForm () {
                       </>
                     }
                   />
-                  <Group wrap='nowrap'>
+                  <Group wrap='nowrap' align='flex-start'>
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
@@ -437,13 +461,55 @@ function IncidentForm () {
               <TextInput
                 key={form.key('arrestedAt')}
                 {...form.getInputProps('arrestedAt')}
-                {...getRequiredTextInputProps('arrestedAt', 'Enter arrest date and time')}
                 label={
                   <>
                     Arrest date & time<span>*</span>
                   </>
                 }
                 type='datetime-local'
+                styles={{
+                  input: {
+                    color: 'var(--mantine-color-black)',
+                    WebkitTextFillColor: 'var(--mantine-color-black)',
+                    opacity: 1,
+                    '&::-webkit-datetime-edit': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-fields-wrapper': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-text': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-month-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-day-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-year-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-hour-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-minute-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                    '&::-webkit-datetime-edit-ampm-field': {
+                      color: 'var(--mantine-color-black)',
+                      WebkitTextFillColor: 'var(--mantine-color-black)',
+                    },
+                  },
+                }}
                 onFocus={() => setShowAddressForm(false)}
               />
               <Input.Wrapper

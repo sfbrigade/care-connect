@@ -138,6 +138,34 @@ function Holds () {
     },
   });
 
+  const createIncidentMutation = useMutation({
+    mutationFn: ({ bedTypeId }) => Api.incidents.create({
+      facilityId: facility.id,
+      encounteredVia: '',
+      cadNumber: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      latitude: '',
+      longitude: '',
+      arrestedAt: DateTime.now().toISO(),
+      supervisorBadgeNumber: '',
+    }, { bedTypeId }),
+    onSuccess: async (response) => {
+      await queryClient.setQueryData(
+        ['facilities', facility.id, 'active-incident'],
+        response.data
+      );
+      await queryClient.invalidateQueries({
+        queryKey: ['deflections', response.data.id, 'active'],
+      });
+      await queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+      navigate('/incident?isNew=true');
+    },
+  });
+
   function onHoldClick () {
     let bedTypeId;
     if (bedTypes?.length === 1) {
@@ -146,7 +174,7 @@ function Holds () {
       // TODO
     }
     if (!incident) {
-      navigate(`/incident${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`);
+      createIncidentMutation.mutate({ bedTypeId });
     } else {
       createDeflectionMutation.mutate({
         facilityId: facility.id,
@@ -261,7 +289,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             onHoldClick={onHoldClick}
-            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
+            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending || createIncidentMutation.isPending}
           />
           <SegmentedControl
             fullWidth

@@ -87,6 +87,17 @@ function getMissingChipStyles (isMissing) {
   };
 }
 
+function hasAnyEnteredSubjectRequiredField (values, dobInput, { includeNarcotics }) {
+  return !(
+    isBlank(values.firstName) &&
+    isBlank(values.lastName) &&
+    isBlank(dobInput) &&
+    !values.sex &&
+    !values.race &&
+    (!includeNarcotics || (values.narcoticsSubstance === null && values.narcoticsParaphernalia === null))
+  );
+}
+
 function getSubjectHintsStorageKey (deflectionId) {
   return `_session-subject-details-hints-${deflectionId}`;
 }
@@ -114,6 +125,7 @@ function SubjectForm () {
   const autoSaveTimerRef = useRef(null);
   const missingRequiredFieldsRef = useRef(missingRequiredFields);
   const hintsStorageKeyRef = useRef(null);
+  const hasInitializedHintVisibilityRef = useRef(false);
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -155,29 +167,59 @@ function SubjectForm () {
   const shouldHighlightNarcoticsRequiredFields = isNew || isCustodyContext;
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || isLoading || hasInitializedHintVisibilityRef.current) return;
     const hintsStorageKey = getSubjectHintsStorageKey(id);
     hintsStorageKeyRef.current = hintsStorageKey;
+    const normalized = deflection?.subject
+      ? normalizeValues({
+        ...initialValues,
+        ...deflection.subject,
+        narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
+        narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
+        drugUseEvidence: deflection.drugUseEvidence !== null ? JSON.stringify(deflection.drugUseEvidence) : null,
+        drugType: deflection.drugType ?? null,
+        dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
+      })
+      : initialValues;
+    const existingSubjectShouldShowHints = !!deflection?.subject &&
+      hasAnyEnteredSubjectRequiredField(normalized, normalized.dateOfBirth ?? '', {
+        includeNarcotics: shouldHighlightNarcoticsRequiredFields
+      }) &&
+      Object.values(getMissingRequiredFields(normalized, normalized.dateOfBirth ?? '', {
+        includeNarcotics: shouldHighlightNarcoticsRequiredFields
+      })).some(Boolean);
     setShouldShowIncompleteHints(
-      isCustodyContext || !isNew || window.sessionStorage.getItem(hintsStorageKey) === 'true'
+      isCustodyContext || (
+        window.sessionStorage.getItem(hintsStorageKey) === 'true' &&
+        existingSubjectShouldShowHints
+      )
     );
-  }, [id, isCustodyContext, isNew]);
+    hasInitializedHintVisibilityRef.current = true;
+  }, [id, isCustodyContext, deflection, isLoading, shouldHighlightNarcoticsRequiredFields]);
 
   useEffect(() => {
     missingRequiredFieldsRef.current = missingRequiredFields;
   }, [missingRequiredFields]);
 
   useEffect(() => () => {
-    if (!hintsStorageKeyRef.current) return;
+    if (!hintsStorageKeyRef.current || isCustodyContext) return;
 
-    const hasMissingRequiredFields = Object.values(missingRequiredFieldsRef.current).some(Boolean);
-    if (hasMissingRequiredFields) {
+    const currentValues = form.getValues();
+    const currentDobInput = dobInput;
+    const hasAnyEnteredData = hasAnyEnteredSubjectRequiredField(currentValues, currentDobInput, {
+      includeNarcotics: shouldHighlightNarcoticsRequiredFields
+    });
+    const hasMissingRequiredFields = Object.values(getMissingRequiredFields(currentValues, currentDobInput, {
+      includeNarcotics: shouldHighlightNarcoticsRequiredFields
+    })).some(Boolean);
+
+    if (hasAnyEnteredData && hasMissingRequiredFields) {
       window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
       return;
     }
 
     window.sessionStorage.removeItem(hintsStorageKeyRef.current);
-  }, []);
+  }, [dobInput, form, isCustodyContext, shouldHighlightNarcoticsRequiredFields]);
 
   useEffect(() => {
     if (!isLoading && !isInitialized) {
