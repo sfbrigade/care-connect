@@ -26,7 +26,7 @@ test('/api/deflections/exit-housing-statuses', async (t) => {
       assert.ok(ids.includes('sheltered'));
       assert.ok(ids.includes('temporary'));
       assert.ok(ids.includes('unknown'));
-      assert.ok(ids.includes('did_not_share'));
+      assert.ok(ids.includes('declined_consent'));
 
       // Check sorting by name
       const names = statuses.map(r => r.name);

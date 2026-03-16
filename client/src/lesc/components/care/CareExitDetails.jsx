@@ -18,7 +18,7 @@ const SF_RESIDENCY_OPTIONS = [
   { value: 'YES', label: 'Yes' },
   { value: 'NO', label: 'No' },
   { value: 'UNKNOWN', label: 'Unknown' },
-  { value: 'DID_NOT_SHARE', label: 'Did not share' },
+  { value: 'DECLINED_CONSENT', label: 'Did not share' },
 ];
 
 const CONNECTION_TO_CARE_OPTIONS = [
