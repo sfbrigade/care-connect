@@ -15,6 +15,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
+import SectionEditButton from '../../../components/SectionEditButton';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
@@ -316,7 +317,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {!isCareView && (
               <Group mt='md'>
-                <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+                <SectionEditButton onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</SectionEditButton>
               </Group>
             )}
           </Stack>
@@ -348,7 +349,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </Box>
                       )}
                       <Group mt='sm'>
-                        <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                        <SectionEditButton onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</SectionEditButton>
                       </Group>
                     </Stack>
                   </Accordion.Panel>
@@ -467,13 +468,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
                       </Box>
                       <Group>
-                        <Button
+                        <SectionEditButton
                           onClick={onReleaseNarrativeButtonClick}
                           loading={saveReleaseNarrativeMutation.isPending}
-                          variant='secondary'
                         >
                           Edit
-                        </Button>
+                        </SectionEditButton>
                       </Group>
                     </Stack>
                   </Accordion.Panel>

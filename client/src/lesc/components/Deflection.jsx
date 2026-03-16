@@ -11,6 +11,7 @@ import Api from '@/Api';
 import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
+import SectionEditButton from '@/components/SectionEditButton';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
@@ -206,7 +207,7 @@ function Deflection () {
               </Box>
             )}
             <Group mt='md'>
-              <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+              <SectionEditButton onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>Edit details</SectionEditButton>
             </Group>
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
@@ -231,7 +232,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>Edit narcotics</Button>
+                  <SectionEditButton onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>Edit narcotics</SectionEditButton>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -255,7 +256,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)} variant='secondary'>Edit drug use</Button>
+                  <SectionEditButton onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</SectionEditButton>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -285,7 +286,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit arrest</Button>
+                  <SectionEditButton onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>Edit arrest</SectionEditButton>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
@@ -322,7 +323,7 @@ function Deflection () {
                   )}
                 </Stack>
                 <Group mt='md'>
-                  <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>Edit property</Button>
+                  <SectionEditButton onClick={() => navigate(`/holds/${deflection?.id}/property`)}>Edit property</SectionEditButton>
                 </Group>
               </Accordion.Panel>
             </Accordion.Item>
