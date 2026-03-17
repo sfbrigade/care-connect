@@ -6,7 +6,7 @@ import classNames from 'classnames';
 import DropzoneUploader from './DropzoneUploader';
 import classes from './PhotoInput.module.css';
 
-function PhotoInput ({ children, description, error, id, label, name, onChange, defaultValue, value, valueUrl }) {
+function PhotoInput ({ children, description, error, id, label, name, onChange, defaultValue, value, valueUrl, canAddPhoto }) {
   const [_value, handleChange] = useUncontrolled({
     value,
     defaultValue,
@@ -54,14 +54,14 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
                       <Loader className={classes.spinner} />
                     </Box>
                   ))}
-                  {statuses.length === 0 && !!_value && (
+                  {/* {statuses.length === 0 && !!_value && (
                     <Box className={classes.preview}>
                       <Image src={valueUrl} alt='' />
                       <CloseButton className={classes.remove} onClick={onRemoved} />
-                      <Button onClick={onRemoved} variant='secondary' size='md' mt='md'>Change photo</Button>
+                      <Button onClick={onRemoved} variant='secondary' size='md' mt='md'>Delete photo</Button>
                     </Box>
-                  )}
-                  {statuses.length === 0 && !_value && (
+                  )} */}
+                  {statuses.length === 0 && !_value && canAddPhoto && (
                     children || <Text className='clickable' inherit={false} fz='sm' my='sm'>Drag-and-drop a photo file here, or click here to browse and select a file.</Text>
                   )}
                 </Box>
