@@ -1,16 +1,3 @@
-.incompleteBadgeRoot {
-  background: var(--mantine-color-red-0);
-  border-radius: 24px;
-}
-
-.incompleteBadgeLabel {
-  color: var(--mantine-color-red-6);
-  text-transform: none;
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 20px;
-}
-
 .stickyFooter {
   z-index: 10;
 }

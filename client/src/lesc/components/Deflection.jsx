@@ -184,11 +184,12 @@ function Deflection () {
             {statusChip?.label === 'Details incomplete'
               ? (
                 <Badge
+                  color='red'
+                  variant='light'
                   radius='xl'
                   size='lg'
                   px='md'
                   py={4}
-                  classNames={{ root: classes.incompleteBadgeRoot, label: classes.incompleteBadgeLabel }}
                 >
                   {statusChip.label}
                 </Badge>
