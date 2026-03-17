@@ -233,7 +233,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('849(b) release narrative');
     expect(html).toContain('This text will appear in the narrative block on the 849(b) form');
-    expect((html.match(/styles="\[object Object\]">Edit</g) || [])).toHaveLength(3);
+    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
     expect(html).not.toContain('<textarea');
   });
 });
