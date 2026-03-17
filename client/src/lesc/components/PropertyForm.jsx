@@ -12,8 +12,8 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
-
-const HOLDS_TOAST_KEY = 'holdsToast';
+import { getMissingChipClassNames } from '@/utils/formStyles';
+import { HOLDS_TOAST_KEY } from '@/utils/constants';
 
 const initialValues = {
   property: '',
@@ -22,17 +22,6 @@ const initialValues = {
 
 function getPropertyHintsStorageKey (deflectionId) {
   return `_session-property-details-hints-${deflectionId}`;
-}
-
-function getMissingChipStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    label: {
-      backgroundColor: 'var(--mantine-color-red-0)',
-      borderColor: 'transparent',
-    },
-  };
 }
 
 function getSubjectDisplayName (subject) {
@@ -265,14 +254,14 @@ function PropertyForm () {
                         key={value}
                         value={value}
                         size='lg'
-                        styles={getMissingChipStyles(shouldShowIncompleteHints && !form.getValues().property)}
+                        classNames={getMissingChipClassNames(shouldShowIncompleteHints && !propertyValueRef.current)}
                       >
                         {t(`property.${value}`)}
                       </Chip>
                     ))}
                   </Group>
                 </Chip.Group>
-                {shouldShowIncompleteHints && !form.getValues().property && (
+                {shouldShowIncompleteHints && !propertyValueRef.current && (
                   <Text size='sm' c='red.6'>Select one</Text>
                 )}
               </Stack>

@@ -66,6 +66,12 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       projects: [
         {
           // Unit tests (Node.js environment)
+          resolve: {
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url)),
+              components: fileURLToPath(new URL('./src/components', import.meta.url))
+            }
+          },
           test: {
             name: 'unit',
             include: ['**/*.test.js'],
@@ -74,6 +80,12 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
         },
         {
           // Component tests (JSDOM environment)
+          resolve: {
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url)),
+              components: fileURLToPath(new URL('./src/components', import.meta.url))
+            }
+          },
           test: {
             name: 'component',
             environment: 'jsdom',

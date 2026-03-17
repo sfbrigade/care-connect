@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Badge, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ import { formatAddress, formatDateTime } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
+import classes from './Deflection.module.css';
 import { getSfpdDeflectionStatusChip } from './deflectionStatusChipUtils';
 
 function DetailItem ({ label, value, incomplete = false, valueColor }) {
@@ -25,7 +26,7 @@ function DetailItem ({ label, value, incomplete = false, valueColor }) {
     <Box>
       <Text c='dimmed'>{label}</Text>
       {incomplete
-        ? <Text c='red.6'>Incomplete</Text>
+        ? <Group gap={4}><IconAlertTriangle size={14} color='var(--mantine-color-red-6)' /><Text c='red.6'>Incomplete</Text></Group>
         : <Text c={valueColor}>{value}</Text>}
     </Box>
   );
@@ -187,19 +188,7 @@ function Deflection () {
                   size='lg'
                   px='md'
                   py={4}
-                  styles={{
-                    root: {
-                      background: 'var(--mantine-color-red-0)',
-                      borderRadius: '24px',
-                    },
-                    label: {
-                      color: 'var(--mantine-color-red-6)',
-                      textTransform: 'none',
-                      fontWeight: 400,
-                      fontSize: '14px',
-                      lineHeight: '20px',
-                    },
-                  }}
+                  classNames={{ root: classes.incompleteBadgeRoot, label: classes.incompleteBadgeLabel }}
                 >
                   {statusChip.label}
                 </Badge>
@@ -401,14 +390,13 @@ function Deflection () {
       </Container>
       {showActionFooter && (
         <Box
-          className='action-footer-gradient'
+          className={`action-footer-gradient ${classes.stickyFooter}`}
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
           pt='md'
           pb='xl'
-          style={{ zIndex: 10 }}
         >
           <Container>
             <Group justify='center' gap='sm' wrap='nowrap'>

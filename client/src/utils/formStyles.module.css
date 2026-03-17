@@ -1,0 +1,16 @@
+:global(.mantine-Chip-root) .missingChipLabel {
+  background-color: var(--mantine-color-red-0);
+  border-color: transparent;
+}
+
+:global(.mantine-Input-wrapper) .requiredInput {
+  border-color: var(--mantine-color-red-6);
+}
+
+:global(.mantine-Input-wrapper) .requiredInput::placeholder {
+  color: var(--mantine-color-red-6);
+}
+
+.requiredInputError {
+  color: var(--mantine-color-red-6);
+}

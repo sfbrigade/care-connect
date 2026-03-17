@@ -10,6 +10,7 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
+import { getMissingChipClassNames } from '@/utils/formStyles';
 
 const requiredChipError = 'Select one';
 
@@ -17,17 +18,6 @@ const initialValues = {
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
 };
-
-function getMissingChipStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    label: {
-      backgroundColor: 'var(--mantine-color-red-0)',
-      borderColor: 'transparent',
-    },
-  };
-}
 
 function NarcoticsForm () {
   const navigate = useNavigate();
@@ -128,8 +118,8 @@ function NarcoticsForm () {
                   {...form.getInputProps('narcoticsSubstance')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='true' styles={getMissingChipStyles(missingRequiredFields.narcoticsSubstance)}>Yes</Chip>
-                    <Chip value='false' styles={getMissingChipStyles(missingRequiredFields.narcoticsSubstance)}>No</Chip>
+                    <Chip value='true' classNames={getMissingChipClassNames(missingRequiredFields.narcoticsSubstance)}>Yes</Chip>
+                    <Chip value='false' classNames={getMissingChipClassNames(missingRequiredFields.narcoticsSubstance)}>No</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
@@ -142,8 +132,8 @@ function NarcoticsForm () {
                   {...form.getInputProps('narcoticsParaphernalia')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='true' styles={getMissingChipStyles(missingRequiredFields.narcoticsParaphernalia)}>Yes</Chip>
-                    <Chip value='false' styles={getMissingChipStyles(missingRequiredFields.narcoticsParaphernalia)}>No</Chip>
+                    <Chip value='true' classNames={getMissingChipClassNames(missingRequiredFields.narcoticsParaphernalia)}>Yes</Chip>
+                    <Chip value='false' classNames={getMissingChipClassNames(missingRequiredFields.narcoticsParaphernalia)}>No</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>

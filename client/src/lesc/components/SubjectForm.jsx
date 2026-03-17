@@ -7,13 +7,14 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-import { formatInputDob } from '../../utils/format';
-import AddressAutocomplete from '../../components/AddressAutocomplete';
-import Api from '../../Api';
-import Header from '../../components/Header';
-import IconButtonLink from '../../components/IconButtonLink';
-import { useToast } from '../../components/ToastContext';
-import { useFacilityContext } from '../../FacilityContext';
+import { formatInputDob } from '@/utils/format';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
+import Api from '@/Api';
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
+import { isBlank, getMissingChipClassNames, getRequiredTextInputClassNames } from '@/utils/formStyles';
 import File647fModal from './custody/File647fModal';
 
 const requiredFieldError = 'This field is required';
@@ -39,10 +40,6 @@ const initialValues = {
   drugType: null,
 };
 
-function isBlank (value) {
-  return !String(value ?? '').trim();
-}
-
 function isMissingDob (dobInput) {
   const parsedDob = DateTime.fromFormat((dobInput ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
   return !parsedDob.isValid;
@@ -57,33 +54,6 @@ function getMissingRequiredFields (values, dobInput, { includeNarcotics }) {
     race: !values.race,
     narcoticsSubstance: includeNarcotics ? values.narcoticsSubstance === null : false,
     narcoticsParaphernalia: includeNarcotics ? values.narcoticsParaphernalia === null : false,
-  };
-}
-
-function getRequiredTextInputStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    input: {
-      borderColor: 'var(--mantine-color-red-6)',
-      '&::placeholder': {
-        color: 'var(--mantine-color-red-6)',
-      },
-    },
-    error: {
-      color: 'var(--mantine-color-red-6)',
-    },
-  };
-}
-
-function getMissingChipStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    label: {
-      backgroundColor: 'var(--mantine-color-red-0)',
-      borderColor: 'transparent',
-    },
   };
 }
 
@@ -364,7 +334,7 @@ function SubjectForm () {
     return {
       placeholder: isMissing ? missingPlaceholder : defaultPlaceholder,
       error: isMissing ? requiredFieldError : undefined,
-      styles: getRequiredTextInputStyles(isMissing),
+      classNames: getRequiredTextInputClassNames(isMissing),
     };
   }
 
@@ -372,7 +342,7 @@ function SubjectForm () {
     const isMissing = shouldShowIncompleteHints && missingRequiredFields[field];
     return {
       error: isMissing ? requiredChipError : undefined,
-      chipStyles: getMissingChipStyles(isMissing),
+      chipClassNames: getMissingChipClassNames(isMissing),
     };
   }
 
@@ -443,36 +413,46 @@ function SubjectForm () {
                   }
                 }}
               />
-              <Input.Wrapper
-                label={<>Sex<span>*</span></>}
-                error={getRequiredChipGroupProps('sex').error}
-              >
-                <Chip.Group
-                  key={form.key('sex')}
-                  {...form.getInputProps('sex')}
-                >
-                  <Group gap='sm' mt='md'>
-                    {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
-                      <Chip key={sex} value={sex} styles={getRequiredChipGroupProps('sex').chipStyles}>{t(`sex.${sex}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
-              <Input.Wrapper
-                label={<>Race<span>*</span></>}
-                error={getRequiredChipGroupProps('race').error}
-              >
-                <Chip.Group
-                  key={form.key('race')}
-                  {...form.getInputProps('race')}
-                >
-                  <Group gap='sm' mt='md'>
-                    {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
-                      <Chip key={race} value={race} styles={getRequiredChipGroupProps('race').chipStyles}>{t(`race.${race}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+              {(() => {
+                const sexProps = getRequiredChipGroupProps('sex');
+                return (
+                  <Input.Wrapper
+                    label={<>Sex<span>*</span></>}
+                    error={sexProps.error}
+                  >
+                    <Chip.Group
+                      key={form.key('sex')}
+                      {...form.getInputProps('sex')}
+                    >
+                      <Group gap='sm' mt='md'>
+                        {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
+                          <Chip key={sex} value={sex} classNames={sexProps.chipClassNames}>{t(`sex.${sex}`)}</Chip>
+                        ))}
+                      </Group>
+                    </Chip.Group>
+                  </Input.Wrapper>
+                );
+              })()}
+              {(() => {
+                const raceProps = getRequiredChipGroupProps('race');
+                return (
+                  <Input.Wrapper
+                    label={<>Race<span>*</span></>}
+                    error={raceProps.error}
+                  >
+                    <Chip.Group
+                      key={form.key('race')}
+                      {...form.getInputProps('race')}
+                    >
+                      <Group gap='sm' mt='md'>
+                        {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
+                          <Chip key={race} value={race} classNames={raceProps.chipClassNames}>{t(`race.${race}`)}</Chip>
+                        ))}
+                      </Group>
+                    </Chip.Group>
+                  </Input.Wrapper>
+                );
+              })()}
               <TextInput
                 key={form.key('driverLicense')}
                 label="Driver's license number"
@@ -543,8 +523,8 @@ function SubjectForm () {
                             {...form.getInputProps('narcoticsSubstance')}
                           >
                             <Group gap='sm' mt='md'>
-                              <Chip value='true' styles={getRequiredChipGroupProps('narcoticsSubstance').chipStyles}>Yes</Chip>
-                              <Chip value='false' styles={getRequiredChipGroupProps('narcoticsSubstance').chipStyles}>No</Chip>
+                              <Chip value='true' classNames={getRequiredChipGroupProps('narcoticsSubstance').chipClassNames}>Yes</Chip>
+                              <Chip value='false' classNames={getRequiredChipGroupProps('narcoticsSubstance').chipClassNames}>No</Chip>
                             </Group>
                           </Chip.Group>
                         </Input.Wrapper>
@@ -557,8 +537,8 @@ function SubjectForm () {
                             {...form.getInputProps('narcoticsParaphernalia')}
                           >
                             <Group gap='sm' mt='md'>
-                              <Chip value='true' styles={getRequiredChipGroupProps('narcoticsParaphernalia').chipStyles}>Yes</Chip>
-                              <Chip value='false' styles={getRequiredChipGroupProps('narcoticsParaphernalia').chipStyles}>No</Chip>
+                              <Chip value='true' classNames={getRequiredChipGroupProps('narcoticsParaphernalia').chipClassNames}>Yes</Chip>
+                              <Chip value='false' classNames={getRequiredChipGroupProps('narcoticsParaphernalia').chipClassNames}>No</Chip>
                             </Group>
                           </Chip.Group>
                         </Input.Wrapper>

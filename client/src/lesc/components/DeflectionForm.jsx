@@ -12,6 +12,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
+import classes from './DeflectionForm.module.css';
 
 const initialValues = {
   behaviorAdditions: '',
@@ -309,12 +310,12 @@ function DeflectionForm () {
               <Input.Wrapper
                 label={
                   <>
-                    647(f) narrative<span style={{ color: 'var(--mantine-color-red-6)' }}>*</span>
+                    647(f) narrative<Text span c='red.6'>*</Text>
                   </>
                 }
               >
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
-                <Text c={missingNarrativeSelection ? 'red.6' : undefined} style={{ whiteSpace: 'pre-wrap' }}>
+                <Text c={missingNarrativeSelection ? 'red.6' : undefined} className={classes.preWrap}>
                   {generatedNarrative || 'Select observations to generate narrative text.'}
                 </Text>
               </Input.Wrapper>

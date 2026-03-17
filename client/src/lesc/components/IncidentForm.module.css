@@ -1,0 +1,22 @@
+.datetimeInput {
+  color: var(--mantine-color-black);
+  -webkit-text-fill-color: var(--mantine-color-black);
+  opacity: 1;
+}
+
+.datetimeInput::-webkit-datetime-edit,
+.datetimeInput::-webkit-datetime-edit-fields-wrapper,
+.datetimeInput::-webkit-datetime-edit-text,
+.datetimeInput::-webkit-datetime-edit-month-field,
+.datetimeInput::-webkit-datetime-edit-day-field,
+.datetimeInput::-webkit-datetime-edit-year-field,
+.datetimeInput::-webkit-datetime-edit-hour-field,
+.datetimeInput::-webkit-datetime-edit-minute-field,
+.datetimeInput::-webkit-datetime-edit-ampm-field {
+  color: var(--mantine-color-black);
+  -webkit-text-fill-color: var(--mantine-color-black);
+}
+
+.selfStart {
+  align-self: flex-start;
+}

@@ -5,18 +5,17 @@ import { useNavigate } from 'react-router';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
-import Api from '../../Api';
-import { useToast } from '../../components/ToastContext';
-import { useFacilityContext } from '../../FacilityContext';
-import useSessionState from '../../hooks/useSessionState';
+import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
+import useSessionState from '@/hooks/useSessionState';
+import { HOLDS_TOAST_KEY } from '@/utils/constants';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import { SFPD_ACTIVE_SUBJECT_STATUSES, SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES, mergeHistoryDeflections } from './holdsViewModel';
-
-const HOLDS_TOAST_KEY = 'holdsToast';
 
 function Holds () {
   const navigate = useNavigate();

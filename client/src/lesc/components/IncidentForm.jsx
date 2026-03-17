@@ -20,15 +20,17 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import Api from '../../Api';
-import AddressAutocomplete from '../../components/AddressAutocomplete';
+import Api from '@/Api';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import CancelIncidentModal from './CancelIncidentModal';
-import Header from '../../components/Header';
-import IconButtonLink from '../../components/IconButtonLink';
-import { useToast } from '../../components/ToastContext';
-import { useFacilityContext } from '../../FacilityContext';
-import { formatAddress } from '../../utils/format';
-import { getCurrentLocationAddress } from '../../utils/geocoding';
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
+import { useToast } from '@/components/ToastContext';
+import { useFacilityContext } from '@/FacilityContext';
+import { formatAddress } from '@/utils/format';
+import { getCurrentLocationAddress } from '@/utils/geocoding';
+import { isBlank, getMissingChipClassNames, getRequiredTextInputClassNames } from '@/utils/formStyles';
+import classes from './IncidentForm.module.css';
 
 const requiredFieldError = 'This field is required';
 const requiredChipError = 'Select one';
@@ -52,37 +54,6 @@ function normalizeCadNumber (value) {
   return String(value ?? '')
     .replace(/[^0-9a-z]/gi, '')
     .slice(0, 10);
-}
-
-function isBlank (value) {
-  return !String(value ?? '').trim();
-}
-
-function getMissingChipStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    label: {
-      backgroundColor: 'var(--mantine-color-red-0)',
-      borderColor: 'transparent',
-    },
-  };
-}
-
-function getRequiredTextInputStyles (isMissing) {
-  if (!isMissing) return undefined;
-
-  return {
-    input: {
-      borderColor: 'var(--mantine-color-red-6)',
-      '&::placeholder': {
-        color: 'var(--mantine-color-red-6)',
-      },
-    },
-    error: {
-      color: 'var(--mantine-color-red-6)',
-    },
-  };
 }
 
 function getMissingRequiredFields (values) {
@@ -258,7 +229,7 @@ function IncidentForm () {
   function LocationButton () {
     return (
       <ActionIcon onClick={getLocation} variant='transparent'>
-        <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
+        <IconCurrentLocationFilled size={24} color='gray' />
       </ActionIcon>
     );
   }
@@ -348,7 +319,7 @@ function IncidentForm () {
     return {
       placeholder: isMissing ? missingPlaceholder : defaultPlaceholder,
       error: isMissing ? requiredFieldError : undefined,
-      styles: getRequiredTextInputStyles(isMissing),
+      classNames: getRequiredTextInputClassNames(isMissing),
     };
   }
 
@@ -467,49 +438,7 @@ function IncidentForm () {
                   </>
                 }
                 type='datetime-local'
-                styles={{
-                  input: {
-                    color: 'var(--mantine-color-black)',
-                    WebkitTextFillColor: 'var(--mantine-color-black)',
-                    opacity: 1,
-                    '&::-webkit-datetime-edit': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-fields-wrapper': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-text': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-month-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-day-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-year-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-hour-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-minute-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                    '&::-webkit-datetime-edit-ampm-field': {
-                      color: 'var(--mantine-color-black)',
-                      WebkitTextFillColor: 'var(--mantine-color-black)',
-                    },
-                  },
-                }}
+                classNames={{ input: classes.datetimeInput }}
                 onFocus={() => setShowAddressForm(false)}
               />
               <Input.Wrapper
@@ -521,8 +450,8 @@ function IncidentForm () {
                   {...form.getInputProps('encounteredVia')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='ON_VIEW' styles={getMissingChipStyles(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>On view</Chip>
-                    <Chip value='DISPATCHED' styles={getMissingChipStyles(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>Dispatched</Chip>
+                    <Chip value='ON_VIEW' classNames={getMissingChipClassNames(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>On view</Chip>
+                    <Chip value='DISPATCHED' classNames={getMissingChipClassNames(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>Dispatched</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>
@@ -576,14 +505,14 @@ function IncidentForm () {
                 </Text>
               </Stack>
               <Stack gap='sm'>
-                <Button type='submit' style={{ alignSelf: 'flex-start' }}>
+                <Button type='submit' className={classes.selfStart}>
                   {data?.id ? 'Save incident details' : 'Create incident & hold'}
                 </Button>
                 {canCancelIncident && (
                   <Button
                     type='button'
                     variant='destructive'
-                    style={{ alignSelf: 'flex-start' }}
+                    className={classes.selfStart}
                     onClick={() => setShowCancelModal(true)}
                     disabled={cancelIncidentMutation.isPending}
                   >

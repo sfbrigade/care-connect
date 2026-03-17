@@ -39,7 +39,7 @@ vi.mock('react-router', async () => {
   };
 });
 
-vi.mock('../../Api', () => ({
+vi.mock('@/Api', () => ({
   default: {
     facilities: {
       activeIncident: () => Promise.resolve({ data: { id: 'incident-1' } }),
@@ -51,31 +51,31 @@ vi.mock('../../Api', () => ({
   },
 }));
 
-vi.mock('../../FacilityContext', () => ({
+vi.mock('@/FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: { id: 'facility-1' },
   }),
 }));
 
-vi.mock('../../components/ToastContext', () => ({
+vi.mock('@/components/ToastContext', () => ({
   useToast: () => ({
     showToast: mockShowToast,
   }),
 }));
 
-vi.mock('../../components/AddressAutocomplete', () => ({
+vi.mock('@/components/AddressAutocomplete', () => ({
   default: function AddressAutocompleteMock () {
     return <div data-testid='address-autocomplete' />;
   },
 }));
 
-vi.mock('../../components/Header', () => ({
+vi.mock('@/components/Header', () => ({
   default: function HeaderMock ({ children }) {
     return <div>{children}</div>;
   },
 }));
 
-vi.mock('../../components/IconButtonLink', () => ({
+vi.mock('@/components/IconButtonLink', () => ({
   default: function IconButtonLinkMock () {
     return <button type='button'>Back</button>;
   },
@@ -87,7 +87,7 @@ vi.mock('./custody/File647fModal', () => ({
   },
 }));
 
-vi.mock('../../utils/format', () => ({
+vi.mock('@/utils/format', () => ({
   formatInputDob: (value) => value,
 }));
 
@@ -134,6 +134,14 @@ beforeAll(async () => {
 });
 
 describe('SubjectForm', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('does not show incomplete hints during first visit after autosave', async () => {
     mockDeflectionGet.mockResolvedValue({
       data: {
@@ -156,7 +164,7 @@ describe('SubjectForm', () => {
     expect(screen.queryByText('This field is required')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/First name/i), { target: { value: 'John' } });
-    await new Promise(resolve => setTimeout(resolve, 900));
+    await vi.advanceTimersByTimeAsync(900);
 
     expect(screen.queryByText('This field is required')).not.toBeInTheDocument();
     expect(screen.queryByText('Select one')).not.toBeInTheDocument();

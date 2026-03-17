@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 import { useQuery } from '@tanstack/react-query';
-import LockedQRCode from '../../components/LockedQRCode';
-import { calculateAge, formatTime, formatTimeRemaining } from '../../utils/format';
-import { isValidDeflection } from '../../utils/validators';
+import LockedQRCode from '@/components/LockedQRCode';
+import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
+import { isValidDeflection } from '@/utils/validators';
 
-import Api from '../../Api';
+import Api from '@/Api';
 
 function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();

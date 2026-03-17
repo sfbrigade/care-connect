@@ -42,7 +42,7 @@ function CancelIncidentModal ({
       <Stack gap='xl'>
         <Stack gap='sm'>
           <Group justify='space-between' align='center' wrap='nowrap'>
-            <Title order={4} style={{ flex: 1 }}>{title}</Title>
+            <Title order={4} flex={1}>{title}</Title>
             <ActionIcon onClick={onClose} bg='rgba(134, 142, 150, 0.1)' c='black' radius='xl' className={classes.closeIcon} w={40} h={40}>
               <IconX size={20} />
             </ActionIcon>
@@ -91,7 +91,7 @@ function CancelIncidentModal ({
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
             disabled={confirmDisabled}
-            style={{ flex: 1 }}
+            flex={1}
           >
             Yes, cancel
           </Button>
@@ -101,7 +101,7 @@ function CancelIncidentModal ({
             data-autofocus
             onClick={onClose}
             disabled={loading}
-            style={{ flex: '0 0 auto' }}
+            flex='0 0 auto'
           >
             {keepLabel}
           </Button>
