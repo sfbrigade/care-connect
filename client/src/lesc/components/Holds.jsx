@@ -11,6 +11,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
 
 import CancelHoldModal from './CancelHoldModal';
+import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
@@ -93,9 +94,18 @@ function Holds () {
   });
 
   function onArrivedClick () {
+    setShowArrivalConfirmationModal(true);
+  }
+
+  function onConfirmArrival () {
+    setShowArrivalConfirmationModal(false);
     if (incident?.id) {
       markArrivedMutation.mutate(incident.id);
     }
+  }
+
+  function onCloseArrivalConfirmationModal () {
+    setShowArrivalConfirmationModal(false);
   }
 
   const markLeftMutation = useMutation({
@@ -142,6 +152,7 @@ function Holds () {
 
   const [selectedDeflection, setSelectedDeflection] = useState();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showArrivalConfirmationModal, setShowArrivalConfirmationModal] = useState(false);
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
@@ -282,6 +293,13 @@ function Holds () {
           loading={cancelDeflectionMutation.isPending || cancelIncidentMutation.isPending}
         />
       )}
+      <ArrivalConfirmationModal
+        facilityName={facility?.name}
+        opened={showArrivalConfirmationModal}
+        onClose={onCloseArrivalConfirmationModal}
+        onConfirm={onConfirmArrival}
+        loading={markArrivedMutation.isPending}
+      />
     </>
   );
 }
