@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getCareExitBackTo,
+  getCareExitPrimaryActionState,
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
   hasPersistedExitDetails,
@@ -101,6 +102,41 @@ describe('Care flow unit tests', () => {
       navigateTo: '/care?tab=not-in-custody',
       toastTitle: 'Exit recorded',
       toastBody: 'Person now appears in Exited facility under Not in custody (last 24 hours).',
+    });
+  });
+
+  it('requires deputy property confirmation before enabling final exit confirmation', () => {
+    expect(getCareExitPrimaryActionState({
+      isSectionTwoComplete: true,
+      physicalLeftFinal: 'YES',
+      propertyReturnHandledConfirmed: false,
+      isSaving: false,
+    })).toEqual({
+      label: 'Confirm exit',
+      disabled: true,
+      requiresPropertyReturnConfirmation: true,
+    });
+
+    expect(getCareExitPrimaryActionState({
+      isSectionTwoComplete: true,
+      physicalLeftFinal: 'YES',
+      propertyReturnHandledConfirmed: true,
+      isSaving: false,
+    })).toEqual({
+      label: 'Confirm exit',
+      disabled: false,
+      requiresPropertyReturnConfirmation: true,
+    });
+
+    expect(getCareExitPrimaryActionState({
+      isSectionTwoComplete: true,
+      physicalLeftFinal: 'NO',
+      propertyReturnHandledConfirmed: false,
+      isSaving: false,
+    })).toEqual({
+      label: 'Save exit details',
+      disabled: false,
+      requiresPropertyReturnConfirmation: false,
     });
   });
 });

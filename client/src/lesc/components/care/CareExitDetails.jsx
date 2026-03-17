@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Button, Checkbox, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
@@ -10,7 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
-import { getCareExitBackTo, getCareExitSuccessPayload } from './careFlowUtils';
+import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload } from './careFlowUtils';
 
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -66,6 +66,7 @@ function CareExitDetails () {
   const [exitHousingStatusId, setExitHousingStatusId] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
   const [physicalLeftFinal, setPhysicalLeftFinal] = useState(null);
+  const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(false);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
 
   const fromDetail = searchParams.get('from') === 'detail';
@@ -96,6 +97,7 @@ function CareExitDetails () {
       setExitHousingStatusId(savedDraft.exitHousingStatusId ?? null);
       setExitConnectedToCare(savedDraft.exitConnectedToCare ?? null);
       setPhysicalLeftFinal(savedDraft.physicalLeftFinal ?? null);
+      setPropertyReturnHandledConfirmed(savedDraft.propertyReturnHandledConfirmed ?? false);
       setInitialized(true);
       return;
     }
@@ -106,6 +108,12 @@ function CareExitDetails () {
     setExitConnectedToCare(deflection.exitConnectedToCare ?? null);
     setInitialized(true);
   }, [deflection, initialized]);
+
+  useEffect(() => {
+    if (physicalLeftFinal !== 'YES' && propertyReturnHandledConfirmed) {
+      setPropertyReturnHandledConfirmed(false);
+    }
+  }, [physicalLeftFinal, propertyReturnHandledConfirmed]);
 
   const saveExitDetailsMutation = useMutation({
     mutationFn: () => Api.deflections.saveExitDetails(id, {
@@ -121,6 +129,7 @@ function CareExitDetails () {
         exitHousingStatusId,
         exitConnectedToCare,
         physicalLeftFinal,
+        propertyReturnHandledConfirmed,
         exitDetailsSaved: true,
       });
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
@@ -166,10 +175,16 @@ function CareExitDetails () {
     [exitDestinationId, exitSFResident, exitHousingStatusId, exitConnectedToCare]
   );
 
-  const saveButtonLabel = physicalLeftFinal === 'YES'
-    ? 'Confirm exit'
-    : (physicalLeftFinal === 'NO' ? 'Save exit details' : 'Save and continue');
-  const saveButtonDisabled = !isSectionTwoComplete || !physicalLeftFinal || saveExitDetailsMutation.isPending || completeExitMutation.isPending;
+  const {
+    label: saveButtonLabel,
+    disabled: saveButtonDisabled,
+    requiresPropertyReturnConfirmation,
+  } = getCareExitPrimaryActionState({
+    isSectionTwoComplete,
+    physicalLeftFinal,
+    propertyReturnHandledConfirmed,
+    isSaving: saveExitDetailsMutation.isPending || completeExitMutation.isPending,
+  });
 
   return (
     <>
@@ -251,7 +266,15 @@ function CareExitDetails () {
 
           <Input.Wrapper label='Person has physically left RESET?' required>
             <Text size='md' c='dimmed'>Select “Yes” when the person has left the building or is in transit.</Text>
-            <Chip.Group value={physicalLeftFinal} onChange={setPhysicalLeftFinal}>
+            <Chip.Group
+              value={physicalLeftFinal}
+              onChange={(value) => {
+                setPhysicalLeftFinal(value);
+                if (value !== 'YES') {
+                  setPropertyReturnHandledConfirmed(false);
+                }
+              }}
+            >
               <Group gap='xs'>
                 {PHYSICAL_EXIT_FINAL_OPTIONS.map((option) => (
                   <Chip
@@ -266,6 +289,19 @@ function CareExitDetails () {
               </Group>
             </Chip.Group>
           </Input.Wrapper>
+
+          <Divider />
+
+          <Checkbox
+            checked={propertyReturnHandledConfirmed}
+            disabled={!requiresPropertyReturnConfirmation}
+            label={(
+              <Text c={requiresPropertyReturnConfirmation ? undefined : 'dimmed'}>
+                I&apos;ve confirmed with an SFSO Deputy that property return has been handled.
+              </Text>
+            )}
+            onChange={(event) => setPropertyReturnHandledConfirmed(event.currentTarget.checked)}
+          />
 
           <Group gap='sm'>
             <Button

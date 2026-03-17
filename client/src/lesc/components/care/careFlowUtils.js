@@ -44,3 +44,23 @@ export function getCareExitSuccessPayload (deflectionId) {
     toastBody: 'Person now appears in Exited facility under Not in custody (last 24 hours).',
   };
 }
+
+export function getCareExitPrimaryActionState ({
+  isSectionTwoComplete,
+  physicalLeftFinal,
+  propertyReturnHandledConfirmed,
+  isSaving,
+}) {
+  const requiresPropertyReturnConfirmation = physicalLeftFinal === 'YES';
+
+  return {
+    label: physicalLeftFinal === 'YES'
+      ? 'Confirm exit'
+      : (physicalLeftFinal === 'NO' ? 'Save exit details' : 'Save and continue'),
+    disabled: !isSectionTwoComplete ||
+      !physicalLeftFinal ||
+      (requiresPropertyReturnConfirmation && !propertyReturnHandledConfirmed) ||
+      isSaving,
+    requiresPropertyReturnConfirmation,
+  };
+}
