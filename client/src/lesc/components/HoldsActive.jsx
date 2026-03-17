@@ -7,6 +7,7 @@ import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive } from './holdsViewModel';
+import classes from './HoldsActive.module.css';
 
 function HoldsActive ({
   incident,
@@ -27,7 +28,7 @@ function HoldsActive ({
       showToast('All active holds have been reset to 60 minutes.', 'success');
     },
     onError: () => {
-      showToast('Couldn’t extend holds. Please try again.', 'error');
+      showToast('Couldn\u2019t extend holds. Please try again.', 'error');
     },
   });
 
@@ -58,50 +59,18 @@ function HoldsActive ({
       {!showInitialLoading && !hasDeflections && !showAllExpiredState && (
         <Box pt='xl'>
           <Stack align='center' gap='xl' p='lg'>
-            <Box
-              h='160px'
-              w='160px'
-              style={{
-                borderRadius: '4px',
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                backgroundImage: `
-                  linear-gradient(45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
-                  linear-gradient(-45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
-                  linear-gradient(45deg, transparent 75%, var(--mantine-color-gray-1) 75%),
-                  linear-gradient(-45deg, transparent 75%, var(--mantine-color-gray-1) 75%)
-                `,
-                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
-                backgroundSize: '16px 16px',
-              }}
-            />
-            <Box align='center'>
-              <Text c='dark.8' fz='20px' fw={400} lh='24px' ta='center'>
-                No active holds.
-              </Text>
-            </Box>
+            <Box h='160px' w='160px' className={classes.placeholder} />
+            <Text c='dark.8' fz='xl' fw={400} lh='md' ta='center'>
+              No active holds.
+            </Text>
           </Stack>
         </Box>
       )}
       {showAllExpiredState && (
         <Box pt='xl'>
           <Stack align='center' gap='xl' p='lg'>
-            <Box
-              h='160px'
-              w='160px'
-              style={{
-                borderRadius: '4px',
-                backgroundColor: 'var(--mantine-color-gray-0)',
-                backgroundImage: `
-                  linear-gradient(45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
-                  linear-gradient(-45deg, var(--mantine-color-gray-1) 25%, transparent 25%),
-                  linear-gradient(45deg, transparent 75%, var(--mantine-color-gray-1) 75%),
-                  linear-gradient(-45deg, transparent 75%, var(--mantine-color-gray-1) 75%)
-                `,
-                backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
-                backgroundSize: '16px 16px',
-              }}
-            />
-            <Text c='dark.8' fz='20px' fw={400} lh='24px' maw='320px' ta='center'>
+            <Box h='160px' w='160px' className={classes.placeholder} />
+            <Text c='dark.8' fz='xl' fw={400} lh='md' maw='320px' ta='center'>
               All holds were auto-canceled after they expired. Check History for details.
             </Text>
           </Stack>

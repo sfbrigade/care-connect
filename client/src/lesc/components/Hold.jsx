@@ -120,7 +120,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
         {showFooter && (
           <Group justify='space-between' wrap='nowrap'>
             {isExpired
-              ? <Text c='red.6' fz='20px' fw={400} lh='24px'>Expired</Text>
+              ? <Text c='red.6' fz='xl' fw={400} lh='md'>Expired</Text>
               : isActive && !isArrived && !isCustodyTransferred
                 ? (
                   <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
