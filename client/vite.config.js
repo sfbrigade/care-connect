@@ -79,7 +79,11 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
             environment: 'jsdom',
             setupFiles: ['./src/test/setupTests.js'],
             include: ['**/*.test.jsx'],
-            exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**']
+            exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**'],
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url)),
+              components: fileURLToPath(new URL('./src/components', import.meta.url))
+            },
           }
         }
       ]

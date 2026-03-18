@@ -9,6 +9,7 @@ import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
+import { formatTime } from '@/utils/format';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
@@ -100,7 +101,10 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      const leftAt = response?.data?.leftAt;
+      const facilityName = facility?.name ?? 'RESET';
+      showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
     }
   });
@@ -257,7 +261,13 @@ function Holds () {
             ]}
           />
           {tab === 'active' && (
-            <HoldsActive incident={incident} deflections={deflections} isFetchingDeflections={isFetchingDeflections} onCancelHoldClick={onCancelHoldClick} />
+            <HoldsActive
+              incident={incident}
+              deflections={deflections}
+              isFetchingDeflections={isFetchingDeflections}
+              onCancelHoldClick={onCancelHoldClick}
+              updatedAtMs={lastSyncedAtMs}
+            />
           )}
           {tab === 'history' && (
             <HoldsHistory
@@ -267,9 +277,11 @@ function Holds () {
               hasActiveHolds={(deflections?.length ?? 0) > 0}
             />
           )}
-          <Text size='xs' c='gray.5' align='center'>
-            Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
-          </Text>
+          {!(tab === 'active' && incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0) && (
+            <Text size='xs' c='gray.5' align='center'>
+              Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+            </Text>
+          )}
         </Stack>
       </Container>
       {selectedDeflection && (
