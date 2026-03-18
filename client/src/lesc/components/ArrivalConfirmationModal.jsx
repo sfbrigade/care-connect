@@ -3,7 +3,7 @@ import { IconX } from '@tabler/icons-react';
 
 import classes from './CancelModal.module.css';
 
-function ArrivalConfirmationModal({
+function ArrivalConfirmationModal ({
   facilityName,
   opened,
   onClose,
