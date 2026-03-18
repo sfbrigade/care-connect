@@ -40,5 +40,10 @@
     "FEMALE": "Female",
     "OTHER": "Other",
     "UNKNOWN": "Unknown"
+  },
+  "ternary": {
+    "YES": "Yes",
+    "NO": "No",
+    "UNKNOWN": "Unknown"
   }
 }

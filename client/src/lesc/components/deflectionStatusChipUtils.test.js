@@ -85,6 +85,6 @@ describe('getSfpdDeflectionStatusChip', () => {
       incident: buildIncident(),
       now: DateTime.fromISO('2026-03-04T11:00:00.000Z'),
     });
-    expect(chip).toEqual({ label: 'Expired', tone: 'danger' });
+    expect(chip).toEqual({ label: 'Cancelled after expiry', tone: 'danger' });
   });
 });

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Stack, Text, Loader } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -56,17 +57,25 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const [holdsHighlighted, setHoldsHighlighted] = useState(false);
 
   const extendAllHoldsMutation = useMutation({
     mutationFn: () => Api.incidents.extend(incident.id),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
       showToast('All active holds have been reset to 60 minutes.', 'success');
+      setHoldsHighlighted(true);
     },
     onError: () => {
-      showToast('Couldn’t extend holds. Please try again.', 'error');
+      showToast('Couldn\u2019t extend holds. Please try again.', 'error');
     },
   });
+
+  useEffect(() => {
+    if (!holdsHighlighted) return undefined;
+    const timerId = window.setTimeout(() => setHoldsHighlighted(false), 3000);
+    return () => window.clearTimeout(timerId);
+  }, [holdsHighlighted]);
 
   function onExtendAllClick () {
     extendAllHoldsMutation.mutate();
@@ -106,6 +115,7 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
                 key={deflection.id}
                 incident={incident}
                 deflection={deflection}
+                highlighted={holdsHighlighted}
                 onCancelClick={() => onCancelHoldClick(deflection)}
                 onDetailsClick={() => {
                   navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
