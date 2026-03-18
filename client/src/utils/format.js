@@ -20,15 +20,14 @@ function dateTime (date) {
 /**
  * Format time remaining until expiration
  * @param {string|Date} expiresAt - Expiration date/time
- * @returns {string} - Formatted string like "0:45", "2:30", or "Expired"
+ * @returns {string} - Formatted string like "45:00", "60:00", or "Expired"
  */
-export function formatTimeRemaining (expiresAt) {
+export function formatTimeRemaining (expiresAt, now = DateTime.now()) {
   const expires = dateTime(expiresAt);
-  const now = DateTime.now();
 
   if (expires < now) return 'Expired';
 
-  return expires.diff(now, ['hours', 'minutes']).toFormat('h:mm');
+  return expires.diff(now, ['minutes', 'seconds']).toFormat('m:ss');
 }
 
 /**

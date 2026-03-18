@@ -15,6 +15,12 @@ a {
   100% { box-shadow: 0 0 0 3px transparent; }
 }
 
+@keyframes textHighlight {
+  0% { color: #4C6EF5; }
+  70% { color: #4C6EF5; }
+  100% { color: var(--mantine-color-dark-9); }
+}
+
 @keyframes slideDown {
   from {
     transform: translateY(-12px);
