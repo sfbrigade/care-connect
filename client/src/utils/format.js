@@ -27,7 +27,7 @@ export function formatTimeRemaining (expiresAt, now = DateTime.now()) {
 
   if (expires < now) return 'Expired';
 
-  return expires.diff(now, ['minutes', 'seconds']).toFormat('mm:ss');
+  return expires.diff(now, ['minutes', 'seconds']).toFormat('m:ss');
 }
 
 /**

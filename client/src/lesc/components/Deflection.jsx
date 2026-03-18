@@ -175,13 +175,13 @@ function Deflection () {
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
             <Group gap='xs'>
-              <IconAlarm size={24} color={isExpiringSoon ? 'red' : 'gray'} />
+              <IconAlarm size={20} color={isExpired || isExpiringSoon ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-5)'} />
               {showTimer && (
                 isExpired
-                  ? <Text size='md' c='red.6' fw={600}>Hold expired</Text>
+                  ? <Text size='lg' c='red.6'>Hold expired</Text>
                   : isExpiringSoon
-                    ? <Text size='md' c='red.6' fw={600}>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
-                    : <Text size='md'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
+                    ? <Text size='lg' c='red.6'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
+                    : <Text size='lg'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
               )}
             </Group>
             <Group gap='xs'>
