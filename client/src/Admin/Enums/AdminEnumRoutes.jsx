@@ -6,6 +6,7 @@ import AdminFacilityStatusReasonsRoutes from './FacilityStatusReasons/AdminFacil
 import AdminDeflectionCancelReasonsRoutes from './DeflectionCancelReasons/AdminDeflectionCancelReasonsRoutes';
 import AdminDeflectionDetailCategoriesRoutes
     from "./DeflectionDetailCategories/AdminDeflectionDetailCategoriesRoutes";
+import AdminDeflectionDetailsRoutes from "./DeflectionDetails/AdminDeflectionDetailsRoutes";
 
 function AdminEnumsRoutes() {
     return (
@@ -18,12 +19,15 @@ function AdminEnumsRoutes() {
                                     label='Facility Status Reasons' rightSection={<IconChevronRight/>}/>
                     <MantineNavLink component = {NavLink} to = '/admin/enums/deflection-details-categories'
                                     label = 'Detail Categories' rightSection={<IconChevronRight/>}/>
+                    <MantineNavLink component = {NavLink} to = '/admin/enums/deflection-details'
+                                    label = 'Deflection Details' rightSection={<IconChevronRight/>}/>
                 </Grid.Col>
                 <Grid.Col span={8}>
                     <Routes>
                         <Route path='facility-status-reasons/*' element={<AdminFacilityStatusReasonsRoutes/>}/>
                         <Route path='deflection-cancel-reasons/*' element={<AdminDeflectionCancelReasonsRoutes/>}/>
                         <Route path='deflection-details-categories/*' element={<AdminDeflectionDetailCategoriesRoutes/>}/>
+                        <Route path='deflection-details/*' element = {<AdminDeflectionDetailsRoutes/>}/>
                     </Routes>
                 </Grid.Col>
             </Grid>

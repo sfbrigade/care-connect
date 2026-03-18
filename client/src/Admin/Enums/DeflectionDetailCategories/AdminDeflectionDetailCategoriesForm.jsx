@@ -13,7 +13,6 @@ function AdminDeflectionDetailCategoriesForm () {
     const navigate = useNavigate();
     const categoryId = params.reasonId;
     const isNew = !categoryId;
-
     const form = useForm({
         mode: 'uncontrolled',
         initialValues: {
@@ -27,11 +26,11 @@ function AdminDeflectionDetailCategoriesForm () {
     });
 
     const { data: response, isLoading } = useQuery({
-        queryKey: ['deflection', 'detailCategories'],
+        queryKey: ['deflection', 'detailCategories',categoryId],
         queryFn: () => Api.deflections.detailCategories.get(categoryId),
         enabled: !!categoryId,
-    });
 
+    });
     useEffect(() => {
         if (response) {
             form.initialize(response.data);
@@ -41,6 +40,7 @@ function AdminDeflectionDetailCategoriesForm () {
     const onSubmitMutation = useMutation({
         mutationFn: (values) => {
             if (isNew) {
+                console.log(values)
                 return Api.deflections.detailCategories.create(values);
             } else {
                 return Api.deflections.detailCategories.update(categoryId, values);
@@ -50,7 +50,7 @@ function AdminDeflectionDetailCategoriesForm () {
         onSuccess: () => {
             setSuccess(true);
             if (isNew) {
-                navigate('/admin/enums/deflection-cancel-reasons');
+                navigate('/admin/enums/deflection-details-categories');
             }
         },
         onError: (errors) => form.setErrors(errors),

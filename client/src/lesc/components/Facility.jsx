@@ -31,7 +31,6 @@ function Facility ({
     facility.postalCode,
     facility.country,
   ].some(Boolean);
-
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
       <Stack gap='lg'>

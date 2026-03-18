@@ -17,7 +17,6 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const data = request.body;
       const { id: userId } = request.user;
-
       const record = await fastify.prisma.deflectionDetailCategory.create({
         data: {
           ...data,

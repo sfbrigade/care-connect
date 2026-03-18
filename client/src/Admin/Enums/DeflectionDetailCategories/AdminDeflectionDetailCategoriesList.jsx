@@ -13,7 +13,6 @@ function AdminDeflectionDetailCategoriesList () {
             return response.data;
         }
     });
-console.log(detailCategories);
     return (
         <>
             <Head>

@@ -396,6 +396,8 @@ EXITED EXITED
   "DeflectionDetailCategory" {
     String id "🗝️"
     String name 
+    DateTime deletedAt "❓"
+    String deletedById "❓"
     String createdById 
     DateTime createdAt 
     String updatedById "❓"

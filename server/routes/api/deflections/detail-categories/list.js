@@ -21,6 +21,9 @@ export default async function (fastify, opts) {
       const include = request.query.include?.split(',');
 
       const records = await fastify.prisma.deflectionDetailCategory.findMany({
+        where:{
+            deletedAt: null,
+        },
         orderBy: { name: 'asc' },
         include: {
           deflectionDetails: !!include?.includes('deflectionDetails'),

@@ -359,7 +359,23 @@ const Api = {
             delete(id) {
                 return instance.delete(`/api/deflections/detail-categories/${id}`).catch(handleError);
             },
-        },
+        }, details: {
+            index() {
+                return instance.get('/api/deflections/details');
+            },
+            get(id) {
+                return instance.get(`/api/deflections/details/${id}`);
+            },
+            create(data) {
+                return instance.post('/api/deflections/details', data).catch(handleError);
+            },
+            update(id, data) {
+                return instance.patch(`/api/deflections/details/${id}`, data).catch(handleError);
+            },
+            delete(id) {
+                return instance.delete(`/api/deflections/details/${id}`).catch(handleError);
+            }
+        }
     },
     serviceTypes: {
         list() {
