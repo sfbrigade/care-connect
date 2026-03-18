@@ -31,7 +31,7 @@ export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateT
   }
 
   if (isExpiredBeforeTransfer(deflection, now)) {
-    return { label: 'Expired', tone: 'danger' };
+    return { label: 'Cancelled after expiry', tone: 'danger' };
   }
 
   if (CUSTODY_TRANSFERRED_SUBJECT_STATUSES.has(deflection.subjectStatus)) {

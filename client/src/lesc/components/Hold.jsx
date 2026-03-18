@@ -1,15 +1,15 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 import LockedQRCode from '@/components/LockedQRCode';
+import useNow from '@/hooks/useNow';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 
-function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
+function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
@@ -22,7 +22,6 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
   const isCompleted = deflection.status === 'COMPLETED';
-  const [now, setNow] = useState(DateTime.now());
 
   let subjectAge;
   if (deflection?.subject?.dateOfBirth) {
@@ -39,13 +38,17 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
   const isExpiredStatus = deflection.status === 'EXPIRED';
-  const minutesUntilExpiration = deflection?.expiresAt
-    ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
+  const expiresAt = deflection?.expiresAt;
+  const isValid = isValidDeflection(deflection);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+
+  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isArrived;
+  const now = useNow(1000, timerEnabled);
+  const minutesUntilExpiration = expiresAt
+    ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
     : null;
   const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
-  const isValid = isValidDeflection(deflection);
-  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
   const completedAt = deflection?.completedAt ?? deflection?.transferredAt;
   const showFooter = isActive;
@@ -57,17 +60,6 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
     enabled: !!deflection.cancelReasonId,
   });
   const cancelReasonLabel = cancelReason?.name;
-
-  useEffect(() => {
-    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived) return undefined;
-
-    setNow(DateTime.now());
-    const intervalId = window.setInterval(() => {
-      setNow(DateTime.now());
-    }, 30000);
-
-    return () => window.clearInterval(intervalId);
-  }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived]);
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -90,7 +82,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
             {isExpired && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='yellow.7'>Expired at {formatTime(deflection?.expiresAt)}</Text>
+                <Text size='md' c='yellow.7'>Expired at {formatTime(expiresAt)}</Text>
               </>
             )}
             {isCompleted && completedAt && (
@@ -117,7 +109,7 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
           <Group justify='space-between' wrap='nowrap'>
             {isActive && !isExpired && !isArrived
               ? (
-                <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
+                <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'} style={{ animation: highlighted ? 'textHighlight 3s ease-out' : undefined }}>{formatTimeRemaining(expiresAt, now) ?? ''}</Title>
                 )
               : <Box />}
             {isNew && !isExpired && !isCancelled && (

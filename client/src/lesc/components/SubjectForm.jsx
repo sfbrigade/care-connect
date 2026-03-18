@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
 import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
@@ -319,11 +320,11 @@ function SubjectForm () {
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='xl'>
-                      <TextInput
+                      <AddressAutocomplete
+                        form={form}
+                        field='addressLine1'
                         key={form.key('addressLine1')}
                         label='Street address'
-                        placeholder='Enter street address'
-                        {...form.getInputProps('addressLine1')}
                       />
                       <TextInput
                         key={form.key('addressLine2')}
