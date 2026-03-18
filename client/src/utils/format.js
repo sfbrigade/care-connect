@@ -22,9 +22,8 @@ function dateTime (date) {
  * @param {string|Date} expiresAt - Expiration date/time
  * @returns {string} - Formatted string like "45:00", "60:00", or "Expired"
  */
-export function formatTimeRemaining (expiresAt) {
+export function formatTimeRemaining (expiresAt, now = DateTime.now()) {
   const expires = dateTime(expiresAt);
-  const now = DateTime.now();
 
   if (expires < now) return 'Expired';
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
@@ -8,6 +8,7 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
@@ -68,14 +69,8 @@ function Deflection () {
   const isExpiredStatus = deflection?.status === 'EXPIRED';
   const expiresAt = deflection?.expiresAt;
 
-  const [now, setNow] = useState(DateTime.now());
-
-  useEffect(() => {
-    if (!expiresAt || (!isActive && !isExpiredStatus) || isCustodyTransferred) return undefined;
-    setNow(DateTime.now());
-    const intervalId = window.setInterval(() => setNow(DateTime.now()), 3000);
-    return () => window.clearInterval(intervalId);
-  }, [expiresAt, isActive, isExpiredStatus, isCustodyTransferred]);
+  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isCustodyTransferred;
+  const now = useNow(1000, timerEnabled);
 
   const minutesUntilExpiration = expiresAt
     ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
@@ -185,8 +180,8 @@ function Deflection () {
                 isExpired
                   ? <Text size='md' c='red.6' fw={600}>Hold expired</Text>
                   : isExpiringSoon
-                    ? <Text size='md' c='red.6' fw={600}>Expires in {formatTimeRemaining(expiresAt)}</Text>
-                    : <Text size='md'>Expires in {formatTimeRemaining(expiresAt)}</Text>
+                    ? <Text size='md' c='red.6' fw={600}>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
+                    : <Text size='md'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
               )}
             </Group>
             <Group gap='xs'>
