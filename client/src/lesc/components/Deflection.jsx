@@ -174,7 +174,7 @@ function Deflection () {
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
-            <Group>
+            <Group gap='xs'>
               <IconAlarm size={24} color={isExpiringSoon ? 'red' : 'gray'} />
               {showTimer && (
                 isExpired
