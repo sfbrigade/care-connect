@@ -15,7 +15,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
-import SectionEditButton from '../../../components/SectionEditButton';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
@@ -317,7 +316,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {!isCareView && (
               <Group mt='md'>
-                <SectionEditButton onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</SectionEditButton>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
             )}
           </Stack>
@@ -349,7 +348,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </Box>
                       )}
                       <Group mt='sm'>
-                        <SectionEditButton onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</SectionEditButton>
+                        <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
                       </Group>
                     </Stack>
                   </Accordion.Panel>
@@ -468,12 +467,14 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
                       </Box>
                       <Group>
-                        <SectionEditButton
+                        <Button
+                          variant='secondary'
+                          size='md'
                           onClick={onReleaseNarrativeButtonClick}
                           loading={saveReleaseNarrativeMutation.isPending}
                         >
                           Edit
-                        </SectionEditButton>
+                        </Button>
                       </Group>
                     </Stack>
                   </Accordion.Panel>
