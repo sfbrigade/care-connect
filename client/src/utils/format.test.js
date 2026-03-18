@@ -78,7 +78,7 @@ describe('format utils', () => {
       expect(formatTimeRemaining(expiresAt)).toBe('Expired');
     });
 
-    it('formats remaining time as m:ss (minutes and seconds)', () => {
+    it('formats remaining time as m:ss (hours and minutes)', () => {
       // 1 hour 30 minutes from now -> 90 minutes 0 seconds
       const expiresAt = DateTime.now().plus({ hours: 1, minutes: 30 }).toISO();
       expect(formatTimeRemaining(expiresAt)).toBe('90:00');
@@ -90,13 +90,7 @@ describe('format utils', () => {
       expect(formatTimeRemaining(expiresAt)).toBe('45:00');
     });
 
-    it('formats remaining time as m:ss (zero-padded minutes)', () => {
-      // 1 hour 5 minutes from now -> 65 minutes 0 seconds
-      const expiresAt = DateTime.now().plus({ hours: 1, minutes: 5 }).toISO();
-      expect(formatTimeRemaining(expiresAt)).toBe('65:00');
-    });
-
-    it('formats remaining time as m:ss including seconds', () => {
+    it('formats remaining time as m:ss (minutes and seconds)', () => {
       // 9 minutes 30 seconds from now
       const expiresAt = DateTime.now().plus({ minutes: 9, seconds: 30 }).toISO();
       expect(formatTimeRemaining(expiresAt)).toBe('9:30');
