@@ -16,8 +16,5 @@
     "@mermaid-js/mermaid-cli": "^11.12.0",
     "foreman": "^3.0.1",
     "prisma-erd-generator": "^2.3.0"
-  },
-  "dependencies": {
-    "pg-boss": "^12.14.0"
   }
 }
