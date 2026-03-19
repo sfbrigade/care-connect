@@ -57,7 +57,7 @@ export function getCareExitPrimaryActionState ({
       : 'Save exit details',
     disabled: !isSectionTwoComplete ||
       (physicalLeftFinal === null || physicalLeftFinal === undefined) ||
-      (propertyReturnHandledConfirmed === null || propertyReturnHandledConfirmed === undefined) ||
+      (!!physicalLeftFinal && !propertyReturnHandledConfirmed) ||
       isSaving,
   };
 }
