@@ -66,6 +66,8 @@ export const isValidDeflectionDetails = (obj) => {
   return !!DeflectionDetailsSchema.safeParse(obj)?.success;
 };
 
+export const validateProperty = zod4Resolver(PropertySchema);
+
 export const isValidProperty = (obj) => {
   return !!PropertySchema.safeParse(obj)?.success;
 };
