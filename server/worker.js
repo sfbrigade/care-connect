@@ -14,25 +14,34 @@ boss.on('error', (error) => {
 
 await boss.start();
 
+// Create queues with dead letter routing for failure alerting
+await boss.createQueue('invite-email-dead-letter', { retryLimit: 0 });
+await boss.createQueue('invite-email', {
+  retryLimit: 3,
+  retryBackoff: true,
+  deadLetter: 'invite-email-dead-letter',
+});
+
 await boss.work('invite-email', async (job) => {
   await inviteEmail(job.data);
 });
 
-await boss.onComplete('invite-email', async (job) => {
-  if (job.data.failed) {
-    console.error(JSON.stringify({
-      event: 'job/permanently-failed',
-      queue: 'invite-email',
-      jobId: job.data.request.id,
-      error: job.data.response,
-      inviteId: job.data.request.data?.inviteId,
-    }));
-  }
+// Log jobs that exhausted all retries
+await boss.work('invite-email-dead-letter', async (job) => {
+  console.error(JSON.stringify({
+    event: 'job/permanently-failed',
+    queue: 'invite-email',
+    inviteId: job.data?.inviteId,
+  }));
 });
 
 async function shutdown () {
   console.log('Worker shutting down...');
-  await boss.stop();
+  try {
+    await boss.stop();
+  } catch (err) {
+    console.error('Error stopping boss:', err);
+  }
   process.exit(0);
 }
 

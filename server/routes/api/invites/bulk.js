@@ -84,7 +84,7 @@ export default async function (fastify, opts) {
           await fastify.jobs.send('invite-email', {
             inviteId: data.id,
             facilityId: request.facility?.id ?? null,
-          }, { retryLimit: 3, retryBackoff: true });
+          });
           invitedCount += 1;
         } catch (error) {
           errors.push({

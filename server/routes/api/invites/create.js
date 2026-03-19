@@ -31,7 +31,7 @@ export default async function (fastify, opts) {
       await fastify.jobs.send('invite-email', {
         inviteId: data.id,
         facilityId: request.facility?.id ?? null,
-      }, { retryLimit: 3, retryBackoff: true });
+      });
       return reply.code(StatusCodes.CREATED).send(data);
     });
 }

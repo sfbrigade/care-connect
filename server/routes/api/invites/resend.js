@@ -34,7 +34,7 @@ export default async function (fastify, opts) {
       await fastify.jobs.send('invite-email', {
         inviteId: id,
         facilityId: request.facility?.id ?? null,
-      }, { retryLimit: 3, retryBackoff: true });
+      });
       data = await fastify.prisma.invite.update({
         where: { id },
         data: { updatedAt: new Date() },
