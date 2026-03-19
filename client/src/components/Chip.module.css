@@ -31,3 +31,10 @@
     padding: .25rem 1.25rem;
   }
 }
+
+.root[data-error='true'] .label {
+  background-color: var(--mantine-color-red-1);
+  &:hover {
+    background-color: var(--mantine-color-red-2);
+  }
+}

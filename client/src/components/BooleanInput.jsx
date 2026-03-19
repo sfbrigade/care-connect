@@ -20,8 +20,8 @@ function BooleanInput ({ label, value, defaultValue, onChange, error, ...props }
         onChange={setValue}
       >
         <Group gap='sm' mt='md'>
-          <Chip value='true'>{t('ternary.YES')}</Chip>
-          <Chip value='false'>{t('ternary.NO')}</Chip>
+          <Chip value='true' wrapperProps={{ 'data-error': !!error }}>{t('ternary.YES')}</Chip>
+          <Chip value='false' wrapperProps={{ 'data-error': !!error }}>{t('ternary.NO')}</Chip>
         </Group>
       </Chip.Group>
     </Input.Wrapper>
