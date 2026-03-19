@@ -63,6 +63,7 @@
     "fastify-cli": "^7.4.0",
     "neostandard": "^0.12.2",
     "nodemailer-mock": "^2.0.9",
+    "pg-boss-admin-dashboard": "^1.1.1",
     "prisma": "^6.16.2",
     "testcontainers": "^11.6.0",
     "yaml": "^2.8.1"
