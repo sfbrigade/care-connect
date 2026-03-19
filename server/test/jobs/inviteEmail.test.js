@@ -31,6 +31,7 @@ test('inviteEmail job handler', async (t) => {
           email: 'jane@test.com',
           message: 'Welcome!',
         }),
+        update: async () => ({}),
       },
       facility: {
         findUniqueOrThrow: async () => ({
@@ -58,6 +59,7 @@ test('inviteEmail job handler', async (t) => {
           email: 'jane@test.com',
           message: null,
         }),
+        update: async () => ({}),
       },
     };
 
