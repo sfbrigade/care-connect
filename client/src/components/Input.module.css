@@ -12,3 +12,7 @@
     --input-bd: var(--mantine-color-indigo-6);
   }
 }
+
+[disabled] .label {
+  color: var(--mantine-color-dimmed);
+}

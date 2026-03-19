@@ -31,3 +31,7 @@
     padding: .25rem 1.25rem;
   }
 }
+
+[disabled] .label {
+  color: var(--mantine-color-dimmed);
+}
