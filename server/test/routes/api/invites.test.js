@@ -48,10 +48,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, null);
       assert.deepStrictEqual(data.prop115Certified, false);
 
-      assert.deepStrictEqual(app.jobs._sent.length, 1);
-      assert.deepStrictEqual(app.jobs._sent[0].name, 'invite-email');
-      assert.deepStrictEqual(app.jobs._sent[0].data.inviteId, data.id);
-      assert.deepStrictEqual(app.jobs._sent[0].data.facilityId, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('creates a new Invite with some fields', async (t) => {
@@ -82,10 +82,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, null);
       assert.deepStrictEqual(data.prop115Certified, false);
 
-      assert.deepStrictEqual(app.jobs._sent.length, 1);
-      assert.deepStrictEqual(app.jobs._sent[0].name, 'invite-email');
-      assert.deepStrictEqual(app.jobs._sent[0].data.inviteId, data.id);
-      assert.deepStrictEqual(app.jobs._sent[0].data.facilityId, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('creates a new Invite with all fields', async (t) => {
@@ -118,10 +118,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, 'sheriff');
       assert.deepStrictEqual(data.prop115Certified, true);
 
-      assert.deepStrictEqual(app.jobs._sent.length, 1);
-      assert.deepStrictEqual(app.jobs._sent[0].name, 'invite-email');
-      assert.deepStrictEqual(app.jobs._sent[0].data.inviteId, data.id);
-      assert.deepStrictEqual(app.jobs._sent[0].data.facilityId, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
   });
 
@@ -160,10 +160,10 @@ test('/api/invites', async (t) => {
       });
       assert.ok(createdInvite);
 
-      assert.deepStrictEqual(app.jobs._sent.length, 1);
-      assert.deepStrictEqual(app.jobs._sent[0].name, 'invite-email');
-      assert.deepStrictEqual(app.jobs._sent[0].data.inviteId, createdInvite.id);
-      assert.deepStrictEqual(app.jobs._sent[0].data.facilityId, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, createdInvite.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
   });
 
@@ -194,10 +194,10 @@ test('/api/invites', async (t) => {
       const response = await app.inject().patch('/api/invites/7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de/resend').headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
-      assert.deepStrictEqual(app.jobs._sent.length, 1);
-      assert.deepStrictEqual(app.jobs._sent[0].name, 'invite-email');
-      assert.deepStrictEqual(app.jobs._sent[0].data.inviteId, '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de');
-      assert.deepStrictEqual(app.jobs._sent[0].data.facilityId, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('returns gone for accepted/revoked invite', async (t) => {
