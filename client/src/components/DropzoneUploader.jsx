@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 
 import Api from '../Api';
 
-function DropzoneUploader ({ className, children, disabled, id, maxPhotos, photoCount, onAllUploaded, onRemoved, onUploaded, onUploading }) {
+function DropzoneUploader ({ className, children, id, maxPhotos, photoCount, onAllUploaded, onRemoved, onUploading }) {
   const [files, setFiles] = useState([]);
   const [rejectedFiles, setRejectedFiles] = useState([]);
   const [statuses, setStatuses] = useState([]);
@@ -43,17 +43,12 @@ function DropzoneUploader ({ className, children, disabled, id, maxPhotos, photo
           })
           .then(() => {
             status.status = 'uploaded';
-            if (onUploaded) {
-              return Promise.resolve(onUploaded(status));
-            }
-          })
-          .then(() => {
             setStatuses([...statuses]);
           });
         break;
       }
     }
-  }, [onUploaded, onUploading, statuses]);
+  }, [onUploading, statuses]);
 
   useEffect(() => {
     if (!onAllUploaded || !batchId || statuses.length === 0) {
@@ -64,7 +59,7 @@ function DropzoneUploader ({ className, children, disabled, id, maxPhotos, photo
     if (allUploaded && completedBatchRef.current !== batchId) {
       completedBatchRef.current = batchId;
       const filenames = statuses.map((status) => status.filename).filter(Boolean);
-      onAllUploaded(filenames, statuses);
+      onAllUploaded(filenames);
     }
   }, [batchId, onAllUploaded, statuses]);
 
@@ -109,7 +104,6 @@ function DropzoneUploader ({ className, children, disabled, id, maxPhotos, photo
     maxFiles: maxPhotos - photoCount,
     onDropAccepted,
     onDropRejected,
-    disabled: disabled || files.length > 0,
   });
 
   return (

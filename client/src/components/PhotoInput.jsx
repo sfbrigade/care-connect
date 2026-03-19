@@ -4,9 +4,9 @@ import classNames from 'classnames';
 import DropzoneUploader from './DropzoneUploader';
 import classes from './PhotoInput.module.css';
 
-function PhotoInput ({ children, description, error, id, label, maxPhotos, onAllUploaded, onChange, photoCount }) {
-  function onUploaded (status) {
-    onChange?.(status.filename);
+function PhotoInput ({ children, description, error, id, label, maxPhotos, onChange, photoCount }) {
+  function onAllUploaded (filenames) {
+    onChange?.(filenames);
   }
 
   return (
@@ -21,7 +21,6 @@ function PhotoInput ({ children, description, error, id, label, maxPhotos, onAll
               maxPhotos={maxPhotos}
               photoCount={photoCount}
               onAllUploaded={onAllUploaded}
-              onUploaded={onUploaded}
             >
               {({ statuses, onRemove }) => (
                 <Box>

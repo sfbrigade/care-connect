@@ -145,17 +145,18 @@ function PropertyForm () {
     },
   });
 
-  function onChangePhoto (photoId, file) {
-    if (!photoId && file) {
-      const photoCount = deflection?.propertyPhotos?.length ?? 0;
-      if (photoCount >= maxPropertyPhotos) {
-        return;
-      }
+  function onUploadPhotos (files) {
+    const photoCount = deflection?.propertyPhotos?.length ?? 0;
+    if (photoCount >= maxPropertyPhotos) {
+      return;
+    }
+    for (const file of files) {
       uploadPhotoMutation.mutate(file);
     }
-    if (photoId && !file) {
-      deletePhotoMutation.mutate(photoId);
-    }
+  }
+
+  function onRemovePhoto (photoId) {
+    deletePhotoMutation.mutate(photoId);
   }
 
   const propertyPhotos = deflection?.propertyPhotos ?? [];
@@ -223,7 +224,7 @@ function PropertyForm () {
                 key={`property-photo-uploader-${propertyPhotos.length}`}
                 label='Photos'
                 id='file'
-                onChange={(file) => onChangePhoto(null, file)}
+                onChange={(files) => onUploadPhotos(files)}
                 maxPhotos={maxPropertyPhotos}
                 photoCount={propertyPhotos.length}
               >
@@ -245,7 +246,7 @@ function PropertyForm () {
                           bg='gray.0'
                           c='red.7'
                           style={{ zIndex: 1 }}
-                          onClick={() => onChangePhoto(photo.id, null)}
+                          onClick={() => onRemovePhoto(photo.id)}
                           disabled={deletePhotoMutation.isPending}
                         />
                       </Box>
