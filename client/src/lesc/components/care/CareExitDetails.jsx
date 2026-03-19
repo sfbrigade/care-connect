@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Checkbox, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Button, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
@@ -40,7 +40,7 @@ function CareExitDetails () {
   const [exitHousingStatusId, setExitHousingStatusId] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
   const [physicalLeftFinal, setPhysicalLeftFinal] = useState(null);
-  const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(false);
+  const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(null);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
 
   const fromDetail = searchParams.get('from') === 'detail';
@@ -70,12 +70,6 @@ function CareExitDetails () {
     setExitConnectedToCare(deflection.exitConnectedToCare ?? null);
     setInitialized(true);
   }, [deflection, initialized]);
-
-  useEffect(() => {
-    if (physicalLeftFinal && propertyReturnHandledConfirmed) {
-      setPropertyReturnHandledConfirmed(false);
-    }
-  }, [physicalLeftFinal, propertyReturnHandledConfirmed]);
 
   const saveExitDetailsMutation = useMutation({
     mutationFn: () => Api.deflections.saveExitDetails(id, {
@@ -130,7 +124,6 @@ function CareExitDetails () {
   const {
     label: saveButtonLabel,
     disabled: saveButtonDisabled,
-    requiresPropertyReturnConfirmation,
   } = getCareExitPrimaryActionState({
     isSectionTwoComplete,
     physicalLeftFinal,
@@ -215,33 +208,22 @@ function CareExitDetails () {
           </Input.Wrapper>
 
           <Divider />
-
           <BooleanInput
             label='Person has physically left RESET?'
+            description='Select “Yes” when the person has left the building or is in transit.'
             required
             disabled={!isSectionTwoComplete}
             value={physicalLeftFinal}
-            onChange={(value) => {
-              setPhysicalLeftFinal(value);
-              if (value) {
-                setPropertyReturnHandledConfirmed(false);
-              }
-            }}
-          >
-            <Text size='md' c='dimmed'>Select “Yes” when the person has left the building or is in transit.</Text>
-          </BooleanInput>
+            onChange={setPhysicalLeftFinal}
+          />
 
           <Divider />
-
-          <Checkbox
-            checked={propertyReturnHandledConfirmed}
-            disabled={!requiresPropertyReturnConfirmation}
-            label={(
-              <Text c={requiresPropertyReturnConfirmation ? undefined : 'dimmed'}>
-                I&apos;ve confirmed with an SFSO Deputy that property return has been handled.
-              </Text>
-            )}
-            onChange={(event) => setPropertyReturnHandledConfirmed(event.currentTarget.checked)}
+          <BooleanInput
+            label='I&apos;ve confirmed with an SFSO Deputy that property return has been handled.'
+            required={physicalLeftFinal}
+            disabled={!physicalLeftFinal}
+            value={propertyReturnHandledConfirmed}
+            onChange={setPropertyReturnHandledConfirmed}
           />
 
           <Group gap='sm'>
