@@ -152,9 +152,9 @@ This project includes components with helpful developer tools, such as the follo
    **Adding a new job:**
    1. Create a handler in `server/jobs/yourJob.js` that exports a default async function accepting `(data)`.
    2. In `server/worker.js`, import the handler, create a queue with `boss.createQueue('your-job', { ... })`, and register it with `boss.work('your-job', handler)`. Add a dead letter queue if you want failure logging.
-   3. Enqueue from any route handler with `fastify.jobs.send('your-job', { ...payload })`.
+   3. Enqueue from any route handler with `fastify.backgroundJobs.send('your-job', { ...payload })`.
 
-   **Testing:** The pg-boss plugin is disabled during tests (`PGBOSS_ENABLED=false` in the test helper), so the Fastify server won't attempt to connect to PostgreSQL for job queuing. Instead, the test helper spies on `app.jobs.send()` calls, which are captured in `app.jobs._sent` for assertions. Job handler functions (like `inviteEmail.js`) can be tested directly by passing a mock Prisma client.
+   **Testing:** The pg-boss plugin is disabled during tests (`PGBOSS_ENABLED=false` in the test helper), so the Fastify server won't attempt to connect to PostgreSQL for job queuing. Instead, the test helper spies on `app.backgroundJobs.send()` calls, which are captured in `app.backgroundJobs._sent` for assertions. Job handler functions (like `inviteEmail.js`) can be tested directly by passing a mock Prisma client.
 
 6. pg-boss Admin Dashboard
 
