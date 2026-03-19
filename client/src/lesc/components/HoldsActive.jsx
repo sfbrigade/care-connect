@@ -11,7 +11,6 @@ import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
-import classes from './HoldsActive.module.css';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
@@ -115,16 +114,6 @@ function HoldsActive ({
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {showAllExpiredState && (
-        <Box pt='xl'>
-          <Stack align='center' gap='xl' p='lg'>
-            <Box h='160px' w='160px' className={classes.placeholder} />
-            <Text c='dark.8' fz='xl' fw={400} lh='md' maw='320px' ta='center'>
-              All holds were auto-canceled after they expired. Check History for details.
-            </Text>
-          </Stack>
-        </Box>
-      )}
       {!showInitialLoading && !hasDeflections && showTransferredHoldsPrompt && (
         <CheckerboardEmptyState
           title='All holds transferred.'
@@ -133,7 +122,12 @@ function HoldsActive ({
           showUpdatedAt
         />
       )}
-      {showNoActiveHoldsState && (
+      {showAllExpiredState && (
+        <CheckerboardEmptyState
+          title='All holds were auto-canceled after they expired. Check History for details.'
+        />
+      )}
+      {!showAllExpiredState && showNoActiveHoldsState && (
         <CheckerboardEmptyState title='No active holds.' />
       )}
       {hasDeflections && (
