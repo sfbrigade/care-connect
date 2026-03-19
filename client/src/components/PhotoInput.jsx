@@ -1,31 +1,12 @@
-import { useEffect } from 'react';
-import { Box, Button, CloseButton, Image, Input, Loader, Text } from '@mantine/core';
-import { useUncontrolled } from '@mantine/hooks';
+import { Box, CloseButton, Image, Input, Loader, Text } from '@mantine/core';
 import classNames from 'classnames';
 
 import DropzoneUploader from './DropzoneUploader';
 import classes from './PhotoInput.module.css';
 
-function PhotoInput ({ children, description, error, id, label, name, onChange, defaultValue, value, valueUrl, canAddPhoto }) {
-  const [_value, handleChange] = useUncontrolled({
-    value,
-    defaultValue,
-    finalValue: '',
-    onChange,
-  });
-
-  useEffect(() => {
-    if (!_value) {
-      handleChange(defaultValue);
-    }
-  }, [defaultValue]);
-
-  function onRemoved () {
-    handleChange('');
-  }
-
+function PhotoInput ({ children, description, error, id, label, maxPhotos, onAllUploaded, onChange, photoCount }) {
   function onUploaded (status) {
-    handleChange(status.filename);
+    onChange?.(status.filename);
   }
 
   return (
@@ -37,9 +18,9 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
           <Box {...props}>
             <DropzoneUploader
               id={id}
-              multiple={false}
-              disabled={!!_value && _value !== ''}
-              onRemoved={onRemoved}
+              maxPhotos={maxPhotos}
+              photoCount={photoCount}
+              onAllUploaded={onAllUploaded}
               onUploaded={onUploaded}
             >
               {({ statuses, onRemove }) => (
@@ -56,14 +37,7 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
                       <Loader className={classes.spinner} />
                     </Box>
                   ))}
-                  {/* {statuses.length === 0 && !!_value && (
-                    <Box className={classes.preview}>
-                      <Image src={valueUrl} alt='' />
-                      <CloseButton className={classes.remove} onClick={onRemoved} />
-                      <Button onClick={onRemoved} variant='secondary' size='md' mt='md'>Delete photo</Button>
-                    </Box>
-                  )} */}
-                  {statuses.length === 0 && !_value && canAddPhoto && (
+                  {statuses.length === 0 && photoCount < maxPhotos && (
                     children || <Text className='clickable' inherit={false} fz='sm' my='sm'>Drag-and-drop a photo file here, or click here to browse and select a file.</Text>
                   )}
                 </Box>

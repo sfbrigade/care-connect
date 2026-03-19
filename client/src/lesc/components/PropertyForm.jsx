@@ -159,7 +159,6 @@ function PropertyForm () {
   }
 
   const propertyPhotos = deflection?.propertyPhotos ?? [];
-  const canAddPhoto = propertyPhotos.length < maxPropertyPhotos;
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -224,9 +223,9 @@ function PropertyForm () {
                 key={`property-photo-uploader-${propertyPhotos.length}`}
                 label='Photos'
                 id='file'
-                name='file'
                 onChange={(file) => onChangePhoto(null, file)}
-                canAddPhoto={canAddPhoto}
+                maxPhotos={maxPropertyPhotos}
+                photoCount={propertyPhotos.length}
               >
                 <Button variant='secondary' size='md' mt='md' loading={uploadPhotoMutation.isPending}>Take or upload photo</Button>
               </PhotoInput>
@@ -234,7 +233,6 @@ function PropertyForm () {
                 <Group gap='md' align='flex-start'>
                   {propertyPhotos.map((photo, index) => (
                     <Stack key={photo.id} gap='xs'>
-                      {/* <Text size='sm'>Photo {index + 1}</Text> */}
                       <Box pos='relative' w={180} h={180}>
                         <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
                         <CloseButton
