@@ -4,11 +4,15 @@ import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
   buildIncidentSubtitle,
+  buildAutoCancelledHoldsMessage,
+  detectAutoCancelledExpiredHolds,
+  getExpiredDeflectionsForIncident,
   getDeflectionActivityMs,
   groupDeflectionsByIncident,
   isInitialLoading,
   mergeHistoryDeflections,
   shouldShowIncidentInActive,
+  shouldShowTransferredHoldsPrompt,
   splitCurrentIncidentDeflections,
 } from './holdsViewModel';
 
@@ -50,10 +54,66 @@ describe('holdsViewModel', () => {
     expect(shouldShowIncidentInActive({ id: 1 }, [deflection()])).toBe(true);
   });
 
+  it('shows the transferred-holds prompt only after arrival when no active holds remain', () => {
+    expect(shouldShowTransferredHoldsPrompt(null, [])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1 }, [])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [deflection()])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [])).toBe(true);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z', leftAt: '2026-02-27T10:00:00.000Z' }, [])).toBe(false);
+  });
+
   it('detects initial loading without treating background refetch as initial', () => {
     expect(isInitialLoading(true, undefined)).toBe(true);
     expect(isInitialLoading(true, [])).toBe(false);
     expect(isInitialLoading(false, undefined)).toBe(false);
+  });
+
+  it('returns expired deflections for the current incident only', () => {
+    const expired = getExpiredDeflectionsForIncident([
+      deflection({ id: 1, incidentId: 100, status: 'EXPIRED' }),
+      deflection({ id: 2, incidentId: 100, status: 'CANCELLED' }),
+      deflection({ id: 3, incidentId: 200, status: 'EXPIRED' }),
+    ], 100);
+
+    expect(expired.map((d) => d.id)).toEqual([1]);
+  });
+
+  it('builds singular and plural auto-cancel copy', () => {
+    expect(buildAutoCancelledHoldsMessage(1)).toBe('1 hold was auto-canceled because it expired.');
+    expect(buildAutoCancelledHoldsMessage(3)).toBe('3 holds were auto-canceled because they expired.');
+  });
+
+  it('detects expired holds removed from the active incident while some holds remain active', () => {
+    const notice = detectAutoCancelledExpiredHolds({
+      previousIncidentId: 100,
+      previousDeflectionIds: [1, 2],
+      currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
+      historyDeflections: [deflection({ id: 2, incidentId: 100, status: 'EXPIRED' })],
+    });
+
+    expect(notice).toEqual({
+      incidentId: 100,
+      count: 1,
+      allExpired: false,
+    });
+  });
+
+  it('detects when all holds in the active incident were auto-canceled after expiry', () => {
+    const notice = detectAutoCancelledExpiredHolds({
+      previousIncidentId: 100,
+      previousDeflectionIds: [1, 2],
+      currentDeflections: [],
+      historyDeflections: [
+        deflection({ id: 1, incidentId: 100, status: 'EXPIRED' }),
+        deflection({ id: 2, incidentId: 100, status: 'EXPIRED' }),
+      ],
+    });
+
+    expect(notice).toEqual({
+      incidentId: 100,
+      count: 2,
+      allExpired: true,
+    });
   });
 
   it('splits out current incident deflections when there are no active holds', () => {

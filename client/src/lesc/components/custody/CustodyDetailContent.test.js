@@ -222,7 +222,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('Intake staff can scan this code to start full intake.');
     expect(html).toContain('849(b).pdf');
-    expect(html).toContain('Start legal release');
+    expect(html).toContain('Legal release');
     expect(html).toContain('Arrest details');
     expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
@@ -233,7 +233,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('849(b) release narrative');
     expect(html).toContain('This text will appear in the narrative block on the 849(b) form');
-    expect(html).toContain('>Edit<');
+    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
     expect(html).not.toContain('<textarea');
   });
 });

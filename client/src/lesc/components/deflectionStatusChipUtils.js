@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 
 import { isValidDeflection, isValidIncident } from '../../utils/validators';
 
-const CUSTODY_TRANSFERRED_SUBJECT_STATUSES = new Set([
+export const CUSTODY_TRANSFERRED_SUBJECT_STATUSES = new Set([
   'AWAITING_INTAKE',
   'READY_FOR_INTAKE',
   'FAILED_INTAKE',
@@ -14,8 +14,12 @@ const CUSTODY_TRANSFERRED_SUBJECT_STATUSES = new Set([
   'DEATH_IN_CUSTODY',
 ]);
 
-function isExpiredBeforeTransfer (deflection, now) {
-  if (!deflection || CUSTODY_TRANSFERRED_SUBJECT_STATUSES.has(deflection.subjectStatus)) return false;
+export function isCustodyTransferredStatus (subjectStatus) {
+  return CUSTODY_TRANSFERRED_SUBJECT_STATUSES.has(subjectStatus);
+}
+
+export function isExpiredBeforeTransfer (deflection, now) {
+  if (!deflection || isCustodyTransferredStatus(deflection.subjectStatus)) return false;
   if (deflection.status === 'EXPIRED') return true;
   if (deflection.status !== 'ACTIVE' || !deflection.expiresAt) return false;
 
@@ -31,10 +35,10 @@ export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateT
   }
 
   if (isExpiredBeforeTransfer(deflection, now)) {
-    return { label: 'Expired', tone: 'danger' };
+    return { label: 'Canceled after expiry', tone: 'danger' };
   }
 
-  if (CUSTODY_TRANSFERRED_SUBJECT_STATUSES.has(deflection.subjectStatus)) {
+  if (isCustodyTransferredStatus(deflection.subjectStatus)) {
     return { label: 'Custody transferred', tone: 'info' };
   }
 
