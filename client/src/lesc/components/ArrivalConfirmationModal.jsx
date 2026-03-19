@@ -1,7 +1,7 @@
-import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
-import classes from './CancelModal.module.css';
+import IconButtonLink from '@/components/IconButtonLink';
 
 function ArrivalConfirmationModal ({
   facilityName,
@@ -24,25 +24,15 @@ function ArrivalConfirmationModal ({
         <Stack gap='sm'>
           <Group justify='space-between' align='center' wrap='nowrap'>
             <Title order={4}>Have you arrived at {facilityName}?</Title>
-            <ActionIcon
+            <IconButtonLink
+              icon={IconX}
               onClick={onClose}
-              bg='rgba(134, 142, 150, 0.1)'
-              c='black'
-              radius='xl'
-              className={classes.closeIcon}
-              w={40}
-              h={40}
-              miw={40}
-              maw={40}
-            >
-              <IconX size={20} />
-            </ActionIcon>
+            />
           </Group>
-          <Text style={{ color: '#212529' }}>Confirm that you've arrived at {facilityName} and can start custody transfer.</Text>
+          <Text>Confirm that you've arrived at {facilityName} and can start custody transfer.</Text>
         </Stack>
-        <Group>
+        <Group spacing='sm'>
           <Button
-            flex={1}
             variant='destructive'
             onClick={onClose}
             disabled={loading}
@@ -50,7 +40,6 @@ function ArrivalConfirmationModal ({
             Not yet
           </Button>
           <Button
-            flex='0 0 auto'
             onClick={() => onConfirm()}
             disabled={loading}
           >
