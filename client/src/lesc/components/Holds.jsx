@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -10,12 +10,28 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
 import { HOLDS_TOAST_KEY } from '@/utils/constants';
+import { formatTime } from '@/utils/format';
 
 import CancelHoldModal from './CancelHoldModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
-import { SFPD_ACTIVE_SUBJECT_STATUSES, SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES, mergeHistoryDeflections } from './holdsViewModel';
+import {
+  SFPD_ACTIVE_SUBJECT_STATUSES,
+  SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+  detectAutoCancelledExpiredHolds,
+  mergeHistoryDeflections,
+} from './holdsViewModel';
+
+function parseAutoCancelledNoticeState (value) {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
 
 function Holds () {
   const navigate = useNavigate();
@@ -82,6 +98,11 @@ function Holds () {
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
 
   const [tab, setTab] = useSessionState('holds', 'active');
+  const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
+  const autoCancelledNotice = parseAutoCancelledNoticeState(autoCancelledNoticeState);
+  const previousActiveIncidentIdRef = useRef(null);
+  const previousActiveDeflectionIdsRef = useRef([]);
+  const pendingAutoCancelledCheckRef = useRef(null);
 
   useEffect(() => {
     const raw = window.sessionStorage.getItem(HOLDS_TOAST_KEY);
@@ -99,6 +120,60 @@ function Holds () {
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
 
+  useEffect(() => {
+    const currentDeflectionIds = (deflections ?? []).map((deflection) => deflection.id);
+    const removedDeflectionIds = previousActiveDeflectionIdsRef.current
+      .filter((id) => !currentDeflectionIds.includes(id));
+
+    if (removedDeflectionIds.length > 0 && previousActiveIncidentIdRef.current) {
+      pendingAutoCancelledCheckRef.current = {
+        incidentId: previousActiveIncidentIdRef.current,
+        deflectionIds: removedDeflectionIds,
+      };
+    }
+
+    const pendingCheck = pendingAutoCancelledCheckRef.current;
+    const detectedNotice = detectAutoCancelledExpiredHolds({
+      previousIncidentId: pendingCheck?.incidentId,
+      previousDeflectionIds: pendingCheck?.deflectionIds ?? [],
+      currentDeflections: deflections ?? [],
+      historyDeflections,
+    });
+
+    if (detectedNotice) {
+      setAutoCancelledNoticeState(JSON.stringify(detectedNotice));
+      pendingAutoCancelledCheckRef.current = null;
+    } else if (autoCancelledNotice && incident?.id && autoCancelledNotice.incidentId !== incident.id) {
+      setAutoCancelledNoticeState('');
+    } else if (pendingCheck) {
+      const matchedHistoryDeflectionCount = historyDeflections
+        .filter((deflection) => (
+          deflection.incidentId === pendingCheck.incidentId &&
+          pendingCheck.deflectionIds.includes(deflection.id)
+        ))
+        .length;
+
+      if (matchedHistoryDeflectionCount === pendingCheck.deflectionIds.length || (incident?.id && incident.id !== pendingCheck.incidentId)) {
+        pendingAutoCancelledCheckRef.current = null;
+      }
+    }
+
+    if (incident?.id) {
+      previousActiveIncidentIdRef.current = incident.id;
+    }
+    previousActiveDeflectionIdsRef.current = currentDeflectionIds;
+  }, [
+    autoCancelledNotice,
+    deflections,
+    historyDeflections,
+    incident?.id,
+    setAutoCancelledNoticeState,
+  ]);
+
+  function onDismissAutoCancelledNotice () {
+    setAutoCancelledNoticeState('');
+  }
+
   const markArrivedMutation = useMutation({
     mutationFn: (id) => Api.incidents.arrived(id),
     onSuccess: (response) => {
@@ -115,7 +190,10 @@ function Holds () {
 
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      const leftAt = response?.data?.leftAt;
+      const facilityName = facility?.name ?? 'RESET';
+      showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
     }
   });
@@ -300,7 +378,15 @@ function Holds () {
             ]}
           />
           {tab === 'active' && (
-            <HoldsActive incident={incident} deflections={deflections} isFetchingDeflections={isFetchingDeflections} onCancelHoldClick={onCancelHoldClick} />
+            <HoldsActive
+              incident={incident}
+              deflections={deflections}
+              isFetchingDeflections={isFetchingDeflections}
+              onCancelHoldClick={onCancelHoldClick}
+              autoCancelledNotice={autoCancelledNotice}
+              onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
+              updatedAtMs={lastSyncedAtMs}
+            />
           )}
           {tab === 'history' && (
             <HoldsHistory
@@ -310,9 +396,11 @@ function Holds () {
               hasActiveHolds={(deflections?.length ?? 0) > 0}
             />
           )}
-          <Text size='xs' c='gray.5' align='center'>
-            Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
-          </Text>
+          {!(tab === 'active' && incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0) && (
+            <Text size='xs' c='gray.5' align='center'>
+              Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
+            </Text>
+          )}
         </Stack>
       </Container>
       {selectedDeflection && (

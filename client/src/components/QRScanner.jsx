@@ -87,6 +87,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
   const hasStartedRef = useRef(false);
   const pendingRef = useRef(false);
   const lastScannedRef = useRef(null);
+  const scannerRunningRef = useRef(false);
   const isIOSDevice = isIOS();
 
   const stopScanning = useCallback(async () => {
@@ -94,6 +95,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
       const scanner = html5QrCodeRef.current;
       try {
         await scanner.stop();
+        scannerRunningRef.current = false;
       } catch (err) {
         // Ignore errors when stopping (e.g., "scanner is not running")
         console.log('Error stopping scanner (ignored):', err.message);
@@ -218,6 +220,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
         } else {
           await html5QrCode.start({ facingMode: 'environment' }, config, onSuccess, onError);
         }
+        scannerRunningRef.current = true;
       } catch (cameraError) {
         // If back camera fails, try front camera
         if (cameraId) {
@@ -231,6 +234,7 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
             if (frontCamera && frontCamera.id !== cameraId) {
               console.log('Retrying with front camera:', frontCamera.id);
               await html5QrCode.start(frontCamera.id, config, onSuccess, onError);
+              scannerRunningRef.current = true;
             } else {
               throw cameraError;
             }
@@ -278,17 +282,30 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
   }, [onScanSuccess, onScanError, stopScanning, isIOSDevice, fullScreen, scannerId]);
 
   // Unconditional cleanup on unmount — ensures camera is released
-  // regardless of isScanning state at unmount time
+  // regardless of isScanning state at unmount time.
+  // Uses scannerRunningRef to avoid calling stop() on a scanner that
+  // hasn't finished starting (which throws synchronously on some browsers).
   useEffect(() => {
     return () => {
-      if (html5QrCodeRef.current) {
-        const scanner = html5QrCodeRef.current;
-        scanner.stop()
-          .catch(() => {})
-          .finally(() => {
-            scanner.clear().catch(() => {});
-          });
-        html5QrCodeRef.current = null;
+      const scanner = html5QrCodeRef.current;
+      if (!scanner) return;
+      html5QrCodeRef.current = null;
+
+      if (scannerRunningRef.current) {
+        scannerRunningRef.current = false;
+        try {
+          scanner.stop()
+            .catch(() => {})
+            .finally(() => {
+              scanner.clear().catch(() => {});
+            });
+        } catch {
+          // stop() threw synchronously (scanner not fully started)
+          try { scanner.clear(); } catch {}
+        }
+      } else {
+        // Scanner was never fully started; just clean up the DOM
+        try { scanner.clear(); } catch {}
       }
     };
   }, []);

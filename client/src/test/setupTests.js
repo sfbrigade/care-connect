@@ -3,6 +3,14 @@ import React from 'react';
 
 globalThis.React = React;
 
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe () {}
+    unobserve () {}
+    disconnect () {}
+  };
+}
+
 if (!window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,

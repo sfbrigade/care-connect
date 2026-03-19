@@ -41,7 +41,6 @@ function PropertyForm () {
   const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
   const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(false);
@@ -71,29 +70,24 @@ function PropertyForm () {
     initialValues,
     onValuesChange: (values) => {
       propertyValueRef.current = values.property ?? '';
-      if (!isInitialized) {
-        return;
-      }
       setIsLarge(values.property === 'LARGE');
-      scheduleAutoSave(values);
+      if (form.initialized) {
+        scheduleAutoSave(values);
+      }
     },
   });
 
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeValues({
           property: deflection.property,
           propertyDetails: deflection.propertyDetails,
         });
-        form.setInitialValues(normalized);
-        form.reset();
-        setIsLarge(normalized.property === 'LARGE');
-        propertyValueRef.current = normalized.property ?? '';
+        form.initialize(normalized);
       }
-      setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (hintsStorageKeyRef.current) {
@@ -241,7 +235,7 @@ function PropertyForm () {
         <Title order={2} mb='xs'>Personal property</Title>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <Stack gap='xs'>
                 <Chip.Group
