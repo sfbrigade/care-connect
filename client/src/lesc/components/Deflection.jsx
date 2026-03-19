@@ -241,7 +241,7 @@ function Deflection () {
             )}
             {canEditHoldDetails && (
               <Group mt='md'>
-                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>{isValidSubject(deflection) ? 'Edit details' : 'Finish details'}</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>{isValidSubject(deflection?.subject) ? 'Edit details' : 'Finish details'}</Button>
               </Group>
             )}
           </Stack>

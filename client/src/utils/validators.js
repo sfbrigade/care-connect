@@ -1,4 +1,8 @@
+import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
+
+const ERROR_REQUIRED = 'This field is required';
+const ERROR_SELECT_ONE = 'Select one';
 
 const IncidentSchema = z.object({
   addressLine1: z.string().check(z.minLength(2)),
@@ -12,13 +16,11 @@ const IncidentSchema = z.object({
 });
 
 const SubjectSchema = z.object({
-  subject: z.object({
-    firstName: z.string().check(z.minLength(1)),
-    lastName: z.string().check(z.minLength(1)),
-    dateOfBirth: z.iso.datetime(),
-    sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN']),
-    race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN']),
-  }),
+  firstName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
+  lastName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
+  dateOfBirth: z.iso.datetime(ERROR_REQUIRED),
+  sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
+  race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
 });
 
 const NarcoticsSchema = z.object({
@@ -36,7 +38,7 @@ const PropertySchema = z.object({
 });
 
 const DeflectionSchema = z.object({
-  ...SubjectSchema.shape,
+  subject: SubjectSchema,
   ...NarcoticsSchema.shape,
   ...DeflectionDetailsSchema.shape,
   ...PropertySchema.shape,
@@ -45,6 +47,8 @@ const DeflectionSchema = z.object({
 export const isValidIncident = (obj) => {
   return !!IncidentSchema.safeParse(obj)?.success;
 };
+
+export const validateSubject = zod4Resolver(SubjectSchema);
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
