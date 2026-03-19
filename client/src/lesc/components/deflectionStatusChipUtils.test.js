@@ -44,7 +44,7 @@ describe('getSfpdDeflectionStatusChip', () => {
       deflection: buildDeflection({ subject: { firstName: 'Only' } }),
       incident: buildIncident(),
     });
-    expect(chip).toEqual({ label: 'Details incomplete', tone: 'warning' });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
   });
 
   it('returns Awaiting arrival when details complete and not arrived', () => {
