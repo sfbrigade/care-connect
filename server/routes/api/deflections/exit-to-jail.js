@@ -8,6 +8,7 @@ import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
+  Deflection.SubjectStatus.ADMITTED,
   Deflection.SubjectStatus.FAILED_INTAKE,
 ]);
 
@@ -16,7 +17,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, or FAILED_INTAKE without legal release.',
+        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, or FAILED_INTAKE without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),
