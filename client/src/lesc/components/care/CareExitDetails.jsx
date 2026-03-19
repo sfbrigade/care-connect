@@ -5,6 +5,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import Api from '@/Api';
+import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
@@ -23,11 +24,6 @@ const CONNECTION_TO_CARE_OPTIONS = [
   { value: 'YES', label: 'Yes' },
   { value: 'NO', label: 'No' },
   { value: 'UNKNOWN', label: 'Unknown' },
-];
-
-const PHYSICAL_EXIT_FINAL_OPTIONS = [
-  { value: 'YES', label: 'Yes' },
-  { value: 'NO', label: 'No' },
 ];
 
 function CareExitDetails () {
@@ -76,7 +72,7 @@ function CareExitDetails () {
   }, [deflection, initialized]);
 
   useEffect(() => {
-    if (physicalLeftFinal !== 'YES' && propertyReturnHandledConfirmed) {
+    if (physicalLeftFinal && propertyReturnHandledConfirmed) {
       setPropertyReturnHandledConfirmed(false);
     }
   }, [physicalLeftFinal, propertyReturnHandledConfirmed]);
@@ -220,31 +216,20 @@ function CareExitDetails () {
 
           <Divider />
 
-          <Input.Wrapper label='Person has physically left RESET?' required>
+          <BooleanInput
+            label='Person has physically left RESET?'
+            required
+            disabled={!isSectionTwoComplete}
+            value={physicalLeftFinal}
+            onChange={(value) => {
+              setPhysicalLeftFinal(value);
+              if (value) {
+                setPropertyReturnHandledConfirmed(false);
+              }
+            }}
+          >
             <Text size='md' c='dimmed'>Select “Yes” when the person has left the building or is in transit.</Text>
-            <Chip.Group
-              value={physicalLeftFinal}
-              onChange={(value) => {
-                setPhysicalLeftFinal(value);
-                if (value !== 'YES') {
-                  setPropertyReturnHandledConfirmed(false);
-                }
-              }}
-            >
-              <Group gap='xs'>
-                {PHYSICAL_EXIT_FINAL_OPTIONS.map((option) => (
-                  <Chip
-                    key={option.value}
-                    value={option.value}
-                    size='md'
-                    disabled={!isSectionTwoComplete}
-                  >
-                    {option.label}
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
-          </Input.Wrapper>
+          </BooleanInput>
 
           <Divider />
 
@@ -270,13 +255,11 @@ function CareExitDetails () {
               disabled={saveButtonDisabled}
               loading={saveExitDetailsMutation.isPending || completeExitMutation.isPending}
               onClick={() => {
-                if (physicalLeftFinal === 'YES') {
+                if (physicalLeftFinal) {
                   setConfirmExitOpened(true);
                   return;
                 }
-                if (physicalLeftFinal === 'NO') {
-                  saveExitDetailsMutation.mutate();
-                }
+                saveExitDetailsMutation.mutate();
               }}
             >
               {saveButtonLabel}

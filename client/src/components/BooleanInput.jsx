@@ -2,7 +2,7 @@ import { Chip, Group, Input } from '@mantine/core';
 import { useUncontrolled } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 
-function BooleanInput ({ label, value, defaultValue, onChange, ...props }) {
+function BooleanInput ({ label, required, value, children, defaultValue, onChange, ...props }) {
   const { t } = useTranslation();
   const [_value, setValue] = useUncontrolled({
     value: (typeof value === 'boolean') ? (value ? 'true' : 'false') : value,
@@ -13,7 +13,8 @@ function BooleanInput ({ label, value, defaultValue, onChange, ...props }) {
   });
 
   return (
-    <Input.Wrapper label={label}>
+    <Input.Wrapper label={label} required={required}>
+      {children}
       <Chip.Group
         {...props}
         value={_value}

@@ -51,16 +51,14 @@ export function getCareExitPrimaryActionState ({
   propertyReturnHandledConfirmed,
   isSaving,
 }) {
-  const requiresPropertyReturnConfirmation = physicalLeftFinal === 'YES';
-
   return {
-    label: physicalLeftFinal === 'YES'
+    label: physicalLeftFinal
       ? 'Confirm exit'
-      : (physicalLeftFinal === 'NO' ? 'Save exit details' : 'Save and continue'),
+      : 'Save exit details',
     disabled: !isSectionTwoComplete ||
-      !physicalLeftFinal ||
-      (requiresPropertyReturnConfirmation && !propertyReturnHandledConfirmed) ||
+      (physicalLeftFinal === null || physicalLeftFinal === undefined) ||
+      (!!physicalLeftFinal && !propertyReturnHandledConfirmed) ||
       isSaving,
-    requiresPropertyReturnConfirmation,
+    requiresPropertyReturnConfirmation: !!physicalLeftFinal,
   };
 }
