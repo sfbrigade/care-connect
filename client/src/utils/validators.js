@@ -24,8 +24,8 @@ const SubjectSchema = z.object({
 });
 
 const NarcoticsSchema = z.object({
-  narcoticsSubstance: z.boolean(),
-  narcoticsParaphernalia: z.boolean(),
+  narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
+  narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
 });
 
 const DeflectionDetailsSchema = z.object({
@@ -53,6 +53,8 @@ export const validateSubject = zod4Resolver(SubjectSchema);
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
 };
+
+export const validateNarcotics = zod4Resolver(NarcoticsSchema);
 
 export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
