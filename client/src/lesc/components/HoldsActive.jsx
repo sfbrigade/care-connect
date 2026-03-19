@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Stack, Text, Loader } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import Api from '@/Api';
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 import Incident from './Incident';
 import Hold from './Hold';
+import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
@@ -53,7 +55,15 @@ function ExtendAllHoldsAction ({ loading, onClick }) {
   );
 }
 
-function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick, updatedAtMs = 0 }) {
+function HoldsActive ({
+  incident,
+  deflections,
+  isFetchingDeflections,
+  onCancelHoldClick,
+  autoCancelledNotice,
+  onDismissAutoCancelledNotice,
+  updatedAtMs = 0
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -84,12 +94,20 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
   const showIncident = shouldShowIncidentInActive(incident, deflections);
+  const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
+  const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
   const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
   const showExtendAllButton = hasDeflections;
 
   return (
     <>
+      {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
+        <HoldsAutoCancelledNotice
+          count={autoCancelledNotice.count}
+          onClose={onDismissAutoCancelledNotice}
+        />
+      )}
       {showIncident && (
         <Incident incident={incident} editLink='/incident' />
       )}
@@ -104,7 +122,12 @@ function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHo
           showUpdatedAt
         />
       )}
-      {showNoActiveHoldsState && (
+      {showAllExpiredState && (
+        <CheckerboardEmptyState
+          title='All holds were auto-canceled after they expired. Check History for details.'
+        />
+      )}
+      {!showAllExpiredState && showNoActiveHoldsState && (
         <CheckerboardEmptyState title='No active holds.' />
       )}
       {hasDeflections && (

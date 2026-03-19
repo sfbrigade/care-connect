@@ -19,7 +19,7 @@ import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/form
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
-import { getSfpdDeflectionStatusChip } from './deflectionStatusChipUtils';
+import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
 function Deflection () {
   const { id } = useParams();
@@ -60,8 +60,11 @@ function Deflection () {
     'DEATH_IN_FACILITY',
     'DEATH_IN_CUSTODY',
   ].includes(deflection?.subjectStatus);
-  const showFinishDetailsFooter = !!deflection && !detailsComplete && !isCustodyTransferred;
-  const showCancelOnlyFooter = !!deflection && detailsComplete && !isCustodyTransferred;
+  const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
+  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
+  const canEditHoldDetails = !isExpiredAutoCancelled;
+  const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
+  const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
@@ -174,6 +177,12 @@ function Deflection () {
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
+            {isExpiredAutoCancelled && (
+              <Group gap='xs'>
+                <IconAlarm size={20} color='var(--mantine-color-red-3)' />
+                <Text c='red.6' size='xl'>Hold expired</Text>
+              </Group>
+            )}
             <Group gap='xs'>
               <IconAlarm size={20} color={isExpired || isExpiringSoon ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-5)'} />
               {showTimer && (
@@ -230,9 +239,11 @@ function Deflection () {
                 <Text>{address}</Text>
               </Box>
             )}
-            <Group mt='md'>
-              <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>Edit details</Button>
-            </Group>
+            {canEditHoldDetails && (
+              <Group mt='md'>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>Edit details</Button>
+              </Group>
+            )}
           </Stack>
           <Accordion variant='section' defaultValue={['narcotics', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
@@ -255,9 +266,11 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                <Group mt='md'>
-                  <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>Edit narcotics</Button>
-                </Group>
+                {canEditHoldDetails && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>Edit narcotics</Button>
+                  </Group>
+                )}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='drug-use'>
@@ -279,9 +292,11 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                <Group mt='md'>
-                  <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</Button>
-                </Group>
+                {canEditHoldDetails && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</Button>
+                  </Group>
+                )}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='deflection'>
@@ -309,9 +324,11 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                <Group mt='md'>
-                  <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>Edit arrest</Button>
-                </Group>
+                {canEditHoldDetails && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>Edit arrest</Button>
+                  </Group>
+                )}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='property'>
@@ -346,9 +363,11 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                <Group mt='md'>
-                  <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>Edit property</Button>
-                </Group>
+                {canEditHoldDetails && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>Edit property</Button>
+                  </Group>
+                )}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='incident'>

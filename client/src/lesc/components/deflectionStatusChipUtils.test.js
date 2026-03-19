@@ -79,12 +79,12 @@ describe('getSfpdDeflectionStatusChip', () => {
     expect(chip).toEqual({ label: 'Canceled', tone: 'danger' });
   });
 
-  it('returns Expired when hold has expired before transfer', () => {
+  it('returns Canceled after expiry when hold has expired before transfer', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection({ expiresAt: '2026-03-04T10:00:00.000Z' }),
       incident: buildIncident(),
       now: DateTime.fromISO('2026-03-04T11:00:00.000Z'),
     });
-    expect(chip).toEqual({ label: 'Cancelled after expiry', tone: 'danger' });
+    expect(chip).toEqual({ label: 'Canceled after expiry', tone: 'danger' });
   });
 });
