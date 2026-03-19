@@ -44,6 +44,59 @@ export const Default = {
   },
 };
 
+export const WithName = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndDob = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndSex = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        sex: 'MALE',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
 export const WithSomeSubjectDetails = {
   args: {
     incident,
