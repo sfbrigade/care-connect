@@ -29,6 +29,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const AppPath = path.join(__dirname, '..', 'app.js');
 
+// Disable pg-boss in tests — the plugin will decorate a no-op stub
+process.env.PGBOSS_ENABLED = 'false';
+
 // Dependency mocks for testing
 configureMailer(nodemailerMock);
 
@@ -160,9 +163,19 @@ async function buildPostgres (t) {
   }
   await recreateDb();
 
+  // Replace no-op jobs stub with spy for test assertions
+  const sentJobs = [];
+  app.jobs.send = async function (name, data, options) {
+    sentJobs.push({ name, data, options });
+  };
+  app.jobs._sent = sentJobs;
+  app.jobs.reset = () => { sentJobs.length = 0; };
+
   t.afterEach(async () => {
     // clear sent mail
     nodemailerMock.mock.reset();
+    // clear sent jobs
+    app.jobs.reset();
     // clear test assets (only if MinIO is initialized)
     try {
       await s3.deleteObjects('_test/');
