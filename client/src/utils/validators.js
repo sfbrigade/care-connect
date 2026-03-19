@@ -29,12 +29,12 @@ const NarcoticsSchema = z.object({
 });
 
 const DeflectionDetailsSchema = z.object({
-  deflectionDetails: z.array(z.object({})).check(z.minLength(1)),
-  behavior: z.string().check(z.minLength(2)),
+  deflectionDetails: z.array(z.object({})).check(z.minLength(1, ERROR_SELECT_ONE)),
+  behavior: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
 });
 
 const PropertySchema = z.object({
-  property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE']),
+  property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE'], ERROR_SELECT_ONE),
 });
 
 const DeflectionSchema = z.object({
@@ -59,6 +59,8 @@ export const validateNarcotics = zod4Resolver(NarcoticsSchema);
 export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
+
+export const validateDeflectionDetails = zod4Resolver(DeflectionDetailsSchema);
 
 export const isValidDeflectionDetails = (obj) => {
   return !!DeflectionDetailsSchema.safeParse(obj)?.success;

@@ -329,7 +329,7 @@ function Deflection () {
                     <Text c='dimmed'>Narrative (arrestable behavior)</Text>
                     {deflection?.behavior
                       ? (
-                        <Text>{deflection?.behavior}</Text>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
