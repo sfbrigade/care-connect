@@ -195,12 +195,6 @@ function Deflection () {
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
-            {isExpiredAutoCancelled && (
-              <Group gap='xs'>
-                <IconAlarm size={20} color='var(--mantine-color-red-3)' />
-                <Text c='red.6' size='xl'>Hold expired</Text>
-              </Group>
-            )}
             <Group gap='xs'>
               <IconAlarm size={20} color={isExpired || isExpiringSoon ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-5)'} />
               {showTimer && (
