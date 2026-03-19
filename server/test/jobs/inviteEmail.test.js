@@ -1,17 +1,16 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import * as nodemailerMock from 'nodemailer-mock';
-
 import { configureMailer } from '#lib/mailer.js';
 
+// Configure mock mailer before importing job handler (mailer.js is a singleton)
 configureMailer(nodemailerMock);
+
+const { default: inviteEmail } = await import('../../jobs/inviteEmail.js');
 
 // Enable SMTP so mailer actually sends
 const originalSmtpEnabled = process.env.SMTP_ENABLED;
 process.env.SMTP_ENABLED = 'true';
-
-// Static import — must come after configureMailer so mailer is mocked
-import inviteEmail from '../../jobs/inviteEmail.js';
 
 test('inviteEmail job handler', async (t) => {
   t.after(() => {

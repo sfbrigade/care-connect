@@ -1,7 +1,7 @@
 import './config.js';
 
 import { createBoss } from '#lib/pgBoss.js';
-import inviteEmail from './jobs/inviteEmail.js';
+import queues from '#lib/queueHandlerConfig.js';
 
 const boss = createBoss();
 
@@ -14,26 +14,26 @@ boss.on('error', (error) => {
 
 await boss.start();
 
-// Create queues with dead letter routing for failure alerting
-await boss.createQueue('invite-email-dead-letter', { retryLimit: 0 });
-await boss.createQueue('invite-email', {
-  retryLimit: 3,
-  retryBackoff: true,
-  deadLetter: 'invite-email-dead-letter',
-});
+for (const queue of queues) {
+  const deadLetter = `${queue.name}-dead-letter`;
 
-await boss.work('invite-email', async (job) => {
-  await inviteEmail(job.data);
-});
+  await boss.createQueue(deadLetter, { retryLimit: 0 });
+  await boss.createQueue(queue.name, {
+    ...queue.options,
+    deadLetter,
+  });
 
-// Log jobs that exhausted all retries
-await boss.work('invite-email-dead-letter', async (job) => {
-  console.error(JSON.stringify({
-    event: 'job/permanently-failed',
-    queue: 'invite-email',
-    inviteId: job.data?.inviteId,
-  }));
-});
+  await boss.work(queue.name, queue.handler);
+
+  await boss.work(deadLetter, async (job) => {
+    const jobData = queue.deadLetterData ? queue.deadLetterData(job.data) : job.data;
+    console.error(JSON.stringify({
+      event: 'job/permanently-failed',
+      queue: queue.name,
+      jobData,
+    }));
+  });
+}
 
 async function shutdown () {
   console.log('Worker shutting down...');

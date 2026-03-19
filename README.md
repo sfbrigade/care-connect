@@ -135,6 +135,40 @@ This project includes components with helpful developer tools, such as the follo
 
    Username and password are: minioadmin/minioadmin
 
+5. pg-boss Admin Dashboard
+
+   A web-based monitoring dashboard for pg-boss job queues. Browse queue status, inspect failed jobs,
+   and view performance metrics at:
+
+   http://localhost:8671
+
+6. Background Jobs (pg-boss)
+
+   The server uses [pg-boss](https://github.com/timgit/pg-boss) for async background jobs, backed by the same PostgreSQL database. Jobs are enqueued from the Fastify server and processed by a separate worker process.
+
+   **How it works:**
+
+   - **Enqueuing:** Route handlers enqueue jobs via `fastify.jobs.send(queueName, data)`. For example, invite emails are enqueued as `'invite-email'` jobs when an invite is created, resent, or bulk-created.
+   - **Processing:** A standalone worker process (`server/worker.js`) picks up jobs and runs the corresponding handler. In development, the worker is started automatically via `Procfile.dev` with `--watch` for auto-reload.
+   - **Failure handling:** Queues are configured with retry limits and dead letter queues. Jobs that exhaust all retries are routed to a dead letter queue (e.g. `invite-email-dead-letter`) and logged with structured JSON for alerting.
+
+   **Key files:**
+
+   | File | Purpose |
+   |------|---------|
+   | `server/lib/pgBoss.js` | Shared factory for creating pg-boss instances |
+   | `server/plugins/pgBoss.js` | Fastify plugin — decorates `fastify.jobs` with a `send()` method |
+   | `server/worker.js` | Standalone worker process — creates queues and registers job handlers |
+   | `server/jobs/inviteEmail.js` | Job handler for sending invite emails |
+
+   **Adding a new job:**
+
+   1. Create a handler in `server/jobs/yourJob.js` that exports a default async function accepting `(data)`.
+   2. In `server/worker.js`, import the handler, create a queue with `boss.createQueue('your-job', { ... })`, and register it with `boss.work('your-job', handler)`. Add a dead letter queue if you want failure logging.
+   3. Enqueue from any route handler with `fastify.jobs.send('your-job', { ...payload })`.
+
+   **Testing:** The pg-boss plugin is disabled during tests (`PGBOSS_ENABLED=false` in the test helper), so the Fastify server won't attempt to connect to PostgreSQL for job queuing. Instead, the test helper spies on `app.jobs.send()` calls, which are captured in `app.jobs._sent` for assertions. Job handler functions (like `inviteEmail.js`) can be tested directly by passing a mock Prisma client.
+
 ## Mobile Testing with ngrok
 
 Some features (like QR code scanning) require camera access, which browsers only allow over HTTPS. To test on a mobile device, you can use [ngrok](https://ngrok.com/) to create a public HTTPS tunnel to your local dev server.

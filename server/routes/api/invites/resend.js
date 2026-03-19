@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Invite from '#models/invite.js';
+import { QUEUE_INVITE_EMAIL } from '#lib/queueNames.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/resend',
@@ -31,7 +32,7 @@ export default async function (fastify, opts) {
       if (!invite.isValid) {
         return reply.code(StatusCodes.GONE).send();
       }
-      await fastify.jobs.send('invite-email', {
+      await fastify.jobs.send(QUEUE_INVITE_EMAIL, {
         inviteId: id,
         facilityId: request.facility?.id ?? null,
       });

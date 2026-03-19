@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Invite from '#models/invite.js';
+import { QUEUE_INVITE_EMAIL } from '#lib/queueNames.js';
 
 const BulkInviteItemSchema = Invite.AttibutesSchema.pick({
   firstName: true,
@@ -81,7 +82,7 @@ export default async function (fastify, opts) {
               createdById: request.user.id,
             },
           });
-          await fastify.jobs.send('invite-email', {
+          await fastify.jobs.send(QUEUE_INVITE_EMAIL, {
             inviteId: data.id,
             facilityId: request.facility?.id ?? null,
           });
