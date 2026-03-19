@@ -31,7 +31,7 @@ export default async function (fastify, opts) {
   fastify.post('/bulk',
     {
       schema: {
-        description: 'Creates multiple Invites and sends them via email.',
+        description: 'Creates multiple Invites and queues invite emails for sending.',
         body: BulkInviteRequestSchema,
         response: {
           [StatusCodes.OK]: BulkInviteResponseSchema,
@@ -81,8 +81,10 @@ export default async function (fastify, opts) {
               createdById: request.user.id,
             },
           });
-          const invite = new Invite(data);
-          await invite.sendInviteEmail(request.facility);
+          await fastify.jobs.send('invite-email', {
+            inviteId: data.id,
+            facilityId: request.facility?.id ?? null,
+          }, { retryLimit: 3, retryBackoff: true });
           invitedCount += 1;
         } catch (error) {
           errors.push({

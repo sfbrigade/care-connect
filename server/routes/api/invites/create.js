@@ -7,7 +7,7 @@ export default async function (fastify, opts) {
   fastify.post('/',
     {
       schema: {
-        description: 'Creates a new Invite and sends it via email.',
+        description: 'Creates a new Invite and queues an invite email for sending.',
         body: Invite.AttibutesSchema,
         response: {
           [StatusCodes.CREATED]: Invite.ResponseSchema,
@@ -28,8 +28,10 @@ export default async function (fastify, opts) {
         data.titleId = null;
       }
       data = await fastify.prisma.invite.create({ data });
-      const invite = new Invite(data);
-      await invite.sendInviteEmail(request.facility);
+      await fastify.jobs.send('invite-email', {
+        inviteId: data.id,
+        facilityId: request.facility?.id ?? null,
+      }, { retryLimit: 3, retryBackoff: true });
       return reply.code(StatusCodes.CREATED).send(data);
     });
 }

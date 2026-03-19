@@ -31,7 +31,10 @@ export default async function (fastify, opts) {
       if (!invite.isValid) {
         return reply.code(StatusCodes.GONE).send();
       }
-      await invite.sendInviteEmail(request.facility);
+      await fastify.jobs.send('invite-email', {
+        inviteId: id,
+        facilityId: request.facility?.id ?? null,
+      }, { retryLimit: 3, retryBackoff: true });
       data = await fastify.prisma.invite.update({
         where: { id },
         data: { updatedAt: new Date() },
