@@ -21,7 +21,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      let data = await fastify.prisma.invite.findUnique({
+      const data = await fastify.prisma.invite.findUnique({
         where: { id },
       });
       if (!data) {
