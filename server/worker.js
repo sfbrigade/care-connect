@@ -2,11 +2,12 @@ import './config.js';
 
 import { createBoss } from '#lib/jobQueue/pgBoss.js';
 import queues from '#lib/jobQueue/queueConfig.js';
+import { captureEvent, shutdown as shutdownPosthog } from '#lib/posthog.js';
 
 const boss = createBoss();
 
 boss.on('error', (error) => {
-  // TODO: send to Posthog for alerting
+  captureEvent('job/error', { error: error.message });
   console.error(JSON.stringify({
     event: 'job/error',
     error: error.message,
@@ -28,7 +29,7 @@ for (const queue of queues) {
 
   await boss.work(deadLetter, async (job) => {
     const jobData = queue.deadLetterData ? queue.deadLetterData(job.data) : job.data;
-    // TODO: send to Posthog for alerting
+    captureEvent('job/permanently-failed', { queue: queue.name, jobData });
     console.error(JSON.stringify({
       event: 'job/permanently-failed',
       queue: queue.name,
@@ -42,9 +43,10 @@ async function shutdown () {
   try {
     await boss.stop();
   } catch (err) {
-    // TODO: send to Posthog for alerting
+    captureEvent('job/shutdown-error', { error: err.message });
     console.error('Error stopping boss:', err);
   }
+  await shutdownPosthog();
   process.exit(0);
 }
 
