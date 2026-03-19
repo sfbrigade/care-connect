@@ -316,7 +316,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {!isCareView && (
               <Group mt='md'>
-                <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
             )}
           </Stack>
@@ -348,7 +348,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </Box>
                       )}
                       <Group mt='sm'>
-                        <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                        <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
                       </Group>
                     </Stack>
                   </Accordion.Panel>
@@ -468,9 +468,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       </Box>
                       <Group>
                         <Button
+                          variant='secondary'
+                          size='md'
                           onClick={onReleaseNarrativeButtonClick}
                           loading={saveReleaseNarrativeMutation.isPending}
-                          variant='secondary'
                         >
                           Edit
                         </Button>
