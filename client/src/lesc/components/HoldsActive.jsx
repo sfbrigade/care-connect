@@ -115,16 +115,6 @@ function HoldsActive ({
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {!showInitialLoading && !hasDeflections && !showAllExpiredState && (
-        <Box pt='xl'>
-          <Stack align='center' gap='xl' p='lg'>
-            <Box h='160px' w='160px' className={classes.placeholder} />
-            <Text c='dark.8' fz='xl' fw={400} lh='md' ta='center'>
-              No active holds.
-            </Text>
-          </Stack>
-        </Box>
-      )}
       {showAllExpiredState && (
         <Box pt='xl'>
           <Stack align='center' gap='xl' p='lg'>
