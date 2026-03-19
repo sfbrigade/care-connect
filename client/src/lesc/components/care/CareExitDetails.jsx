@@ -12,8 +12,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
 import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload } from './careFlowUtils';
 
-const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
-
 const SF_RESIDENCY_OPTIONS = [
   { value: 'YES', label: 'Yes' },
   { value: 'NO', label: 'No' },
@@ -31,26 +29,6 @@ const PHYSICAL_EXIT_FINAL_OPTIONS = [
   { value: 'YES', label: 'Yes' },
   { value: 'NO', label: 'No' },
 ];
-
-function readExitDraftMap () {
-  try {
-    return JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function writeExitDraft (id, data) {
-  const next = readExitDraftMap();
-  next[String(id)] = data;
-  window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify(next));
-}
-
-function removeExitDraft (id) {
-  const next = readExitDraftMap();
-  delete next[String(id)];
-  window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify(next));
-}
 
 function CareExitDetails () {
   const { id } = useParams();
@@ -90,18 +68,6 @@ function CareExitDetails () {
   useEffect(() => {
     if (!deflection || initialized) return;
 
-    const savedDraft = readExitDraftMap()[String(deflection.id)];
-    if (savedDraft) {
-      setExitDestinationId(savedDraft.exitDestinationId ?? null);
-      setExitSFResident(savedDraft.exitSFResident ?? null);
-      setExitHousingStatusId(savedDraft.exitHousingStatusId ?? null);
-      setExitConnectedToCare(savedDraft.exitConnectedToCare ?? null);
-      setPhysicalLeftFinal(savedDraft.physicalLeftFinal ?? null);
-      setPropertyReturnHandledConfirmed(savedDraft.propertyReturnHandledConfirmed ?? false);
-      setInitialized(true);
-      return;
-    }
-
     setExitDestinationId(deflection.exitDestinationId ?? null);
     setExitSFResident(deflection.exitSFResident ?? null);
     setExitHousingStatusId(deflection.exitHousingStatusId ?? null);
@@ -123,15 +89,6 @@ function CareExitDetails () {
       exitConnectedToCare,
     }),
     onSuccess: () => {
-      writeExitDraft(id, {
-        exitDestinationId,
-        exitSFResident,
-        exitHousingStatusId,
-        exitConnectedToCare,
-        physicalLeftFinal,
-        propertyReturnHandledConfirmed,
-        exitDetailsSaved: true,
-      });
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       showToast('Exit details saved', 'success', 4000, 'Person is still in RESET - mark them as exited once they leave.');
@@ -152,7 +109,6 @@ function CareExitDetails () {
     onSuccess: () => {
       const successPayload = getCareExitSuccessPayload(id);
       setConfirmExitOpened(false);
-      removeExitDraft(id);
       window.sessionStorage.setItem('careHighlightTarget', successPayload.highlightTarget);
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
