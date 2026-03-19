@@ -5,14 +5,14 @@ const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 
 const IncidentSchema = z.object({
-  addressLine1: z.string().check(z.minLength(2)),
+  addressLine1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
   addressLine2: z.optional(z.nullable(z.string())),
-  city: z.string().check(z.minLength(2)),
-  state: z.string().check(z.minLength(2)),
-  arrestedAt: z.iso.datetime(),
-  encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']),
-  cadNumber: z.string().check(z.minLength(2)),
-  supervisorBadgeNumber: z.string().check(z.minLength(1), z.maxLength(4)),
+  city: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  state: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  arrestedAt: z.iso.datetime(ERROR_REQUIRED),
+  encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED'], ERROR_SELECT_ONE),
+  cadNumber: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  supervisorBadgeNumber: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED), z.maxLength(4, ERROR_REQUIRED)),
 });
 
 const SubjectSchema = z.object({
@@ -43,6 +43,8 @@ const DeflectionSchema = z.object({
   ...DeflectionDetailsSchema.shape,
   ...PropertySchema.shape,
 });
+
+export const validateIncident = zod4Resolver(IncidentSchema);
 
 export const isValidIncident = (obj) => {
   return !!IncidentSchema.safeParse(obj)?.success;
