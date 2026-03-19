@@ -316,7 +316,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {!isCareView && (
               <Group mt='md'>
-                <Button onClick={() => navigate(`/custody/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
             )}
           </Stack>
@@ -348,7 +348,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </Box>
                       )}
                       <Group mt='sm'>
-                        <Button onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)} variant='secondary' size='sm'>Edit</Button>
+                        <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
                       </Group>
                     </Stack>
                   </Accordion.Panel>
@@ -468,9 +468,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       </Box>
                       <Group>
                         <Button
+                          variant='secondary'
+                          size='md'
                           onClick={onReleaseNarrativeButtonClick}
                           loading={saveReleaseNarrativeMutation.isPending}
-                          variant='secondary'
                         >
                           Edit
                         </Button>
@@ -554,13 +555,13 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
                         onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
                       >
-                        Start legal release
+                        Legal release
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                         onClick={() => setExitToJailModalOpened(true)}
                       >
-                        Record exit to jail
+                        Exit to jail
                       </Menu.Item>
                       <Menu.Item
                         leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
@@ -614,7 +615,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                                 leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
                                 onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
                               >
-                                Start legal release
+                                Legal release
                               </Menu.Item>
                             )}
                             <Menu.Item

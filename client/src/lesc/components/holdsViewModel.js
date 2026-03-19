@@ -18,6 +18,10 @@ export function shouldShowIncidentInActive (incident, deflections) {
   return !!incident && (deflections?.length ?? 0) > 0;
 }
 
+export function shouldShowTransferredHoldsPrompt (incident, deflections) {
+  return !!incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0;
+}
+
 export function isInitialLoading (isFetching, data) {
   return !!isFetching && data === undefined;
 }

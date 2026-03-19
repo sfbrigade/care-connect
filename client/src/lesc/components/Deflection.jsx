@@ -2,19 +2,20 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconAlarm, IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlarm } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
-import { formatAddress, formatDateTime } from '@/utils/format';
+import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
 import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
@@ -66,6 +67,20 @@ function Deflection () {
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
+
+  const isActive = deflection?.status === 'ACTIVE';
+  const isExpiredStatus = deflection?.status === 'EXPIRED';
+  const expiresAt = deflection?.expiresAt;
+
+  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isCustodyTransferred;
+  const now = useNow(1000, timerEnabled);
+
+  const minutesUntilExpiration = expiresAt
+    ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
+    : null;
+  const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
+  const isExpiringSoon = isActive && !isExpired && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
+  const showTimer = !!expiresAt && (isActive || isExpiredStatus) && !isCustodyTransferred;
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
@@ -169,6 +184,16 @@ function Deflection () {
               </Group>
             )}
             <Group gap='xs'>
+              <IconAlarm size={20} color={isExpired || isExpiringSoon ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-5)'} />
+              {showTimer && (
+                isExpired
+                  ? <Text size='lg' c='red.6'>Hold expired</Text>
+                  : isExpiringSoon
+                    ? <Text size='lg' c='red.6'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
+                    : <Text size='lg'>Expires in {formatTimeRemaining(expiresAt, now)}</Text>
+              )}
+            </Group>
+            <Group gap='xs'>
               <Text size='md'>Incident {incident ? incident.id : ''}</Text>
               <Text c='gray.5' size='md'>•</Text>
               <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
@@ -216,7 +241,7 @@ function Deflection () {
             )}
             {canEditHoldDetails && (
               <Group mt='md'>
-                <Button onClick={() => navigate(`/holds/${deflection?.id}/subject`)} variant='secondary'>Edit details</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>Edit details</Button>
               </Group>
             )}
           </Stack>
@@ -243,7 +268,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)} variant='secondary'>Edit narcotics</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>Edit narcotics</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -269,7 +294,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)} variant='secondary'>Edit drug use</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -301,7 +326,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button onClick={() => navigate(`/holds/${deflection?.id}/deflection`)} variant='secondary'>Edit arrest</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>Edit arrest</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -340,7 +365,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button onClick={() => navigate(`/holds/${deflection?.id}/property`)} variant='secondary'>Edit property</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>Edit property</Button>
                   </Group>
                 )}
               </Accordion.Panel>

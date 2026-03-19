@@ -1,8 +1,8 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 import LockedQRCode from '@/components/LockedQRCode';
+import useNow from '@/hooks/useNow';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import Api from '@/Api';
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
-function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
+function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
@@ -22,7 +22,6 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
       .filter(Boolean)
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
-  const [now, setNow] = useState(DateTime.now());
 
   let subjectAge;
   if (deflection?.subject?.dateOfBirth) {
@@ -39,13 +38,17 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
   const isExpiredStatus = deflection.status === 'EXPIRED';
-  const minutesUntilExpiration = deflection?.expiresAt
-    ? DateTime.fromISO(deflection.expiresAt).diff(now, 'minutes').minutes
+  const expiresAt = deflection?.expiresAt;
+  const isValid = isValidDeflection(deflection);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+
+  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isArrived;
+  const now = useNow(1000, timerEnabled);
+  const minutesUntilExpiration = expiresAt
+    ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
     : null;
   const isExpired = isExpiredBeforeTransfer(deflection, now);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
-  const isValid = isValidDeflection(deflection);
-  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
   const transferredAt = deflection?.transferredAt;
@@ -61,17 +64,6 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
     enabled: !!deflection.cancelReasonId,
   });
   const cancelReasonLabel = cancelReason?.name;
-
-  useEffect(() => {
-    if (!deflection?.expiresAt || (!isActive && !isExpiredStatus) || isArrived || isCustodyTransferred) return undefined;
-
-    setNow(DateTime.now());
-    const intervalId = window.setInterval(() => {
-      setNow(DateTime.now());
-    }, 30000);
-
-    return () => window.clearInterval(intervalId);
-  }, [isActive, isExpiredStatus, deflection?.expiresAt, isArrived, isCustodyTransferred]);
 
   return (
     <Card bg='white' p='xl' withBorder>
@@ -120,10 +112,10 @@ function Hold ({ incident, deflection, onCancelClick, onDetailsClick }) {
         {showFooter && (
           <Group justify='space-between' wrap='nowrap'>
             {isExpired
-              ? <Text c='red.6' fz='xl' fw={400} lh='md'>Expired</Text>
+              ? <Title order={4}>Expired</Title>
               : isActive && !isArrived && !isCustodyTransferred
                 ? (
-                  <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(deflection?.expiresAt) ?? ''}</Title>
+                  <Title order={4} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(expiresAt, now) ?? ''}</Title>
                   )
                 : <Box />}
             {canAddDetails && (

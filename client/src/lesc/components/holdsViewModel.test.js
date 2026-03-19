@@ -12,6 +12,7 @@ import {
   isInitialLoading,
   mergeHistoryDeflections,
   shouldShowIncidentInActive,
+  shouldShowTransferredHoldsPrompt,
   splitCurrentIncidentDeflections,
 } from './holdsViewModel';
 
@@ -51,6 +52,14 @@ describe('holdsViewModel', () => {
     expect(shouldShowIncidentInActive(null, [deflection()])).toBe(false);
     expect(shouldShowIncidentInActive({ id: 1 }, [])).toBe(false);
     expect(shouldShowIncidentInActive({ id: 1 }, [deflection()])).toBe(true);
+  });
+
+  it('shows the transferred-holds prompt only after arrival when no active holds remain', () => {
+    expect(shouldShowTransferredHoldsPrompt(null, [])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1 }, [])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [deflection()])).toBe(false);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [])).toBe(true);
+    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z', leftAt: '2026-02-27T10:00:00.000Z' }, [])).toBe(false);
   });
 
   it('detects initial loading without treating background refetch as initial', () => {
