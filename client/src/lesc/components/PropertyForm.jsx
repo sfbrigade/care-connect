@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Button, Chip, Container, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Box, Button, Chip, CloseButton, Container, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -235,17 +235,22 @@ function PropertyForm () {
                   {propertyPhotos.map((photo, index) => (
                     <Stack key={photo.id} gap='xs'>
                       {/* <Text size='sm'>Photo {index + 1}</Text> */}
-                      <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
-                      <Button
-                        variant='secondary'
-                        size='md'
-                        mt='xs'
-                        color='red'
-                        onClick={() => onChangePhoto(photo.id, null)}
-                        loading={deletePhotoMutation.isPending}
-                      >
-                        Remove photo
-                      </Button>
+                      <Box pos='relative' w={180} h={180}>
+                        <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
+                        <CloseButton
+                          aria-label={`Remove property photo ${index + 1}`}
+                          variant='filled'
+                          size='md'
+                          pos='absolute'
+                          top={8}
+                          right={8}
+                          bg='gray.0'
+                          c='red.7'
+                          style={{ zIndex: 1 }}
+                          onClick={() => onChangePhoto(photo.id, null)}
+                          disabled={deletePhotoMutation.isPending}
+                        />
+                      </Box>
                     </Stack>
                   ))}
                 </Group>

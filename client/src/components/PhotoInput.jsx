@@ -31,8 +31,10 @@ function PhotoInput ({ children, description, error, id, label, name, onChange, 
   return (
     <Input.Wrapper label={label} description={description} error={error}>
       <Input
-        variant='unstyled' renderRoot={(props) => (
-          <Box h='auto' {...props}>
+        variant='unstyled'
+        classNames={{ input: classes.compactInput }}
+        renderRoot={(props) => (
+          <Box {...props}>
             <DropzoneUploader
               id={id}
               multiple={false}
