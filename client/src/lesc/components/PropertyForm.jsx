@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -12,17 +12,12 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
-import { getMissingChipClassNames } from '@/utils/formStyles';
 import { HOLDS_TOAST_KEY } from '@/utils/constants';
 
 const initialValues = {
   property: '',
   propertyDetails: '',
 };
-
-function getPropertyHintsStorageKey (deflectionId) {
-  return `_session-property-details-hints-${deflectionId}`;
-}
 
 function getSubjectDisplayName (subject) {
   const name = [
@@ -43,10 +38,7 @@ function PropertyForm () {
   const { facility } = useFacilityContext();
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
-  const [shouldShowIncompleteHints, setShouldShowIncompleteHints] = useState(false);
   const autoSaveTimerRef = useRef(null);
-  const hintsStorageKeyRef = useRef(null);
-  const propertyValueRef = useRef('');
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -58,18 +50,10 @@ function PropertyForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  useEffect(() => {
-    if (!id) return;
-    const hintsStorageKey = getPropertyHintsStorageKey(id);
-    hintsStorageKeyRef.current = hintsStorageKey;
-    setShouldShowIncompleteHints(window.sessionStorage.getItem(hintsStorageKey) === 'true');
-  }, [id]);
-
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
-      propertyValueRef.current = values.property ?? '';
       setIsLarge(values.property === 'LARGE');
       if (form.initialized) {
         scheduleAutoSave(values);
@@ -90,13 +74,6 @@ function PropertyForm () {
   }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
-    if (hintsStorageKeyRef.current) {
-      if (!propertyValueRef.current) {
-        window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
-      } else {
-        window.sessionStorage.removeItem(hintsStorageKeyRef.current);
-      }
-    }
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
@@ -140,14 +117,6 @@ function PropertyForm () {
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      propertyValueRef.current = response.data.property ?? '';
-      if (hintsStorageKeyRef.current) {
-        if (response.data.property) {
-          window.sessionStorage.removeItem(hintsStorageKeyRef.current);
-        } else {
-          window.sessionStorage.setItem(hintsStorageKeyRef.current, 'true');
-        }
-      }
       if (isNew) {
         window.sessionStorage.setItem(HOLDS_TOAST_KEY, JSON.stringify({
           title: 'Person details saved',
@@ -237,36 +206,33 @@ function PropertyForm () {
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Stack gap='xs'>
+              <Input.Wrapper error={!isNew && !form.getValues().property && 'Select one'}>
                 <Chip.Group
                   key={form.key('property')}
                   {...form.getInputProps('property')}
                 >
-                  <Group gap='sm'>
+                  <Group gap='sm' mb='md'>
                     {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
                       <Chip
                         key={value}
                         value={value}
                         size='lg'
-                        classNames={getMissingChipClassNames(shouldShowIncompleteHints && !propertyValueRef.current)}
+                        wrapperProps={{ 'data-error': !isNew && !form.getValues().property }}
                       >
                         {t(`property.${value}`)}
                       </Chip>
                     ))}
                   </Group>
                 </Chip.Group>
-                {shouldShowIncompleteHints && !propertyValueRef.current && (
-                  <Text size='sm' c='red.6'>Select one</Text>
+                {isLarge && (
+                  <Group gap='xs'>
+                    <Text size='sm' c='red'>
+                      This may exceed {facility?.name} property limits (~10 gallons). Please confirm with {facility?.name} staff.
+                    </Text>
+                    <Anchor href={`tel:${facility?.phone}`}>Call {facility?.name}</Anchor>
+                  </Group>
                 )}
-              </Stack>
-              {isLarge && (
-                <Group gap='xs'>
-                  <Text size='sm' c='red'>
-                    This may exceed {facility?.name} property limits (~10 gallons). Please confirm with {facility?.name} staff.
-                  </Text>
-                  <Anchor href={`tel:${facility?.phone}`}>Call {facility?.name}</Anchor>
-                </Group>
-              )}
+              </Input.Wrapper>
               {!!deflection?.propertyPhotos?.length && (
                 <Group gap='xs'>
                   {deflection.propertyPhotos.map(photo => (

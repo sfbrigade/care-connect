@@ -12,3 +12,7 @@
     --input-bd: var(--mantine-color-indigo-6);
   }
 }
+
+.error {
+  font-size: var(--mantine-font-size-sm);
+}
