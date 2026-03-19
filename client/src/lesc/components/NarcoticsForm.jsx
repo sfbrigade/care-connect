@@ -11,6 +11,7 @@ import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
+import { validateNarcotics } from '@/utils/validators';
 
 const initialValues = {
   narcoticsSubstance: null,
@@ -40,10 +41,12 @@ function NarcoticsForm () {
 
   useEffect(() => {
     if (!isLoading) {
-      form.initialize({
+      const data = {
         narcoticsSubstance: deflection.narcoticsSubstance,
         narcoticsParaphernalia: deflection.narcoticsParaphernalia,
-      });
+      };
+      form.initialize(data);
+      form.setErrors(validateNarcotics(data));
     }
   }, [isLoading, deflection]);
 

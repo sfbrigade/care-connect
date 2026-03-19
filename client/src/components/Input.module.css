@@ -13,6 +13,10 @@
   }
 }
 
+.error {
+  margin-top: var(--mantine-spacing-xs);
+}
+
 [disabled] .label {
   color: var(--mantine-color-dimmed);
 }

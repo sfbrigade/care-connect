@@ -32,6 +32,13 @@
   }
 }
 
-[disabled] .label {
+.root[disabled] .label {
   color: var(--mantine-color-dimmed);
+}
+
+.root[data-error='true'] .label {
+  background-color: var(--mantine-color-red-1);
+  &:hover {
+    background-color: var(--mantine-color-red-2);
+  }
 }

@@ -34,6 +34,9 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   if (deflection?.subject?.sex) {
     subjectDetails.push(t(`sex.${deflection?.subject?.sex}`));
   }
+  if (subjectDetails.length === 0) {
+    subjectDetails.push('Age and sex missing');
+  }
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
