@@ -156,6 +156,13 @@ This project includes components with helpful developer tools, such as the follo
 
    **Testing:** The pg-boss plugin is disabled during tests (`PGBOSS_ENABLED=false` in the test helper), so the Fastify server won't attempt to connect to PostgreSQL for job queuing. Instead, the test helper spies on `app.backgroundJobs.send()` calls, which are captured in `app.backgroundJobs._sent` for assertions. Job handler functions (like `inviteEmail.js`) can be tested directly by passing a mock Prisma client.
 
+6. pg-boss Admin Dashboard
+
+   A web-based monitoring dashboard for pg-boss job queues. Browse queue status, inspect failed jobs,
+   and view performance metrics at:
+
+   http://localhost:8671
+
 ## Mobile Testing with ngrok
 
 Some features (like QR code scanning) require camera access, which browsers only allow over HTTPS. To test on a mobile device, you can use [ngrok](https://ngrok.com/) to create a public HTTPS tunnel to your local dev server.
