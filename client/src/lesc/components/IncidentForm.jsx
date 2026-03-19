@@ -29,7 +29,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
-import { isBlank, getMissingChipClassNames, getRequiredTextInputClassNames } from '@/utils/formStyles';
+import { isBlank, getRequiredTextInputClassNames } from '@/utils/formStyles';
 import classes from './IncidentForm.module.css';
 
 const requiredFieldError = 'This field is required';
@@ -450,8 +450,8 @@ function IncidentForm () {
                   {...form.getInputProps('encounteredVia')}
                 >
                   <Group gap='sm' mt='md'>
-                    <Chip value='ON_VIEW' classNames={getMissingChipClassNames(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>On view</Chip>
-                    <Chip value='DISPATCHED' classNames={getMissingChipClassNames(shouldShowIncompleteHints && missingRequiredFields.encounteredVia)}>Dispatched</Chip>
+                    <Chip value='ON_VIEW' wrapperProps={{ 'data-error': shouldShowIncompleteHints && missingRequiredFields.encounteredVia }}>On view</Chip>
+                    <Chip value='DISPATCHED' wrapperProps={{ 'data-error': shouldShowIncompleteHints && missingRequiredFields.encounteredVia }}>Dispatched</Chip>
                   </Group>
                 </Chip.Group>
               </Input.Wrapper>

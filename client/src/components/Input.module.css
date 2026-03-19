@@ -15,4 +15,5 @@
 
 .error {
   font-size: var(--mantine-font-size-sm);
+  margin-top: var(--mantine-spacing-xs);
 }
