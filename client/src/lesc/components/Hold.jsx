@@ -115,7 +115,13 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
               ? <Title order={4}>Expired</Title>
               : isActive && !isArrived && !isCustodyTransferred
                 ? (
-                  <Title order={4} c={isExpiringSoon ? 'red.6' : 'black'}>{formatTimeRemaining(expiresAt, now) ?? ''}</Title>
+                  <Title
+                    order={4}
+                    c={isExpiringSoon ? 'red.6' : (highlighted ? undefined : 'black')}
+                    style={isExpiringSoon ? undefined : highlighted ? { animation: 'textHighlight 3s ease-out' } : undefined}
+                  >
+                    {formatTimeRemaining(expiresAt, now) ?? ''}
+                  </Title>
                   )
                 : <Box />}
             {canAddDetails && (
