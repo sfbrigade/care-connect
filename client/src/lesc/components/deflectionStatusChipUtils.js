@@ -44,7 +44,7 @@ export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateT
 
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(incident);
   if (!detailsComplete) {
-    return { label: 'Details incomplete', tone: 'warning' };
+    return { label: 'Details incomplete', tone: 'danger' };
   }
 
   if (deflection.subjectStatus === 'ONSITE_AWAITING_TRANSFER') {
