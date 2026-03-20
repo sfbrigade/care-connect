@@ -1,4 +1,4 @@
-import inviteEmail from '../jobs/inviteEmail.js';
+import inviteEmail from '../../jobs/inviteEmail.js';
 import { QUEUE_INVITE_EMAIL } from './queueNames.js';
 
 const queues = [
