@@ -11,11 +11,13 @@ import { useTranslation } from 'react-i18next';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
 import BooleanInput from '@/components/BooleanInput';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
+import { validateSubject } from '@/utils/validators';
 
 import File647fModal from './custody/File647fModal';
 
@@ -44,7 +46,7 @@ function SubjectForm () {
   const location = useLocation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const isNewParam = searchParams.get('isNew') === 'true';
+  const isNew = searchParams.get('isNew') === 'true';
   const isCustodyContext = location.pathname.startsWith('/custody');
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
@@ -82,8 +84,6 @@ function SubjectForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const isNew = isNewParam || (!!deflection && !deflection.subjectId);
-
   useEffect(() => {
     if (!isLoading && !form.initialized) {
       if (deflection?.subject) {
@@ -98,6 +98,13 @@ function SubjectForm () {
         });
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
+        if (!isNew) {
+          const errors = validateSubject({
+            ...normalized,
+            dateOfBirth: deflection.subject.dateOfBirth,
+          });
+          form.setErrors(errors);
+        }
       } else {
         form.initialize(initialValues);
       }
@@ -269,36 +276,24 @@ function SubjectForm () {
                   }
                 }}
               />
-              <Input.Wrapper
+              <ChipInput
                 label={<>Sex<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('sex')}
-                  {...form.getInputProps('sex')}
-                >
-                  {form.errors.sex && <Text color='red' size='sm'>{form.errors.sex}</Text>}
-                  <Group gap='sm' mt='md'>
-                    {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
-                      <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
-              <Input.Wrapper
+                options={['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => ({
+                  value: sex,
+                  label: t(`sex.${sex}`),
+                }))}
+                {...form.getInputProps('sex')}
+                key={form.key('sex')}
+              />
+              <ChipInput
                 label={<>Race<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('race')}
-                  {...form.getInputProps('race')}
-                >
-                  {form.errors.race && <Text color='red' size='sm'>{form.errors.race}</Text>}
-                  <Group gap='sm' mt='md'>
-                    {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
-                      <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+                options={['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => ({
+                  value: race,
+                  label: t(`race.${race}`),
+                }))}
+                {...form.getInputProps('race')}
+                key={form.key('race')}
+              />
               <TextInput
                 key={form.key('driverLicense')}
                 label="Driver's license number"

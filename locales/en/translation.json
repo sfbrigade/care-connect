@@ -9,6 +9,10 @@
     "TOLUENE": "Toluene",
     "COMBINATION": "Combination"
   },
+  "encounteredVia": {
+    "ON_VIEW": "On View",
+    "DISPATCHED": "Dispatched"
+  },
   "facility": {
     "status": {
       "OPEN_ACCEPTING": "Open - accepting",

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Anchor, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -247,7 +247,7 @@ function DeflectionForm () {
                   <Text>
                     {selectedDetails.map(detail => detail.name).join('; ')}
                   </Text>
-                  <Anchor onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Anchor>
+                  <Button variant='destructive' size='md' mt='md' onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Button>
                 </Input.Wrapper>
               )}
               <BooleanInput
@@ -257,7 +257,7 @@ function DeflectionForm () {
               />
               <Input.Wrapper label='647(f) narrative'>
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
-                <Text style={{ whiteSpace: 'pre-wrap' }}>
+                <Text c={(isNew || !!generatedNarrative) ? undefined : 'red.6'} style={{ whiteSpace: 'pre-wrap' }}>
                   {generatedNarrative || 'Select observations to generate narrative text.'}
                 </Text>
               </Input.Wrapper>

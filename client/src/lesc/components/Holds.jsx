@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
@@ -12,10 +12,26 @@ import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import CancelHoldModal from './CancelHoldModal';
+import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
-import { SFPD_ACTIVE_SUBJECT_STATUSES, SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES, mergeHistoryDeflections } from './holdsViewModel';
+import {
+  SFPD_ACTIVE_SUBJECT_STATUSES,
+  SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+  detectAutoCancelledExpiredHolds,
+  mergeHistoryDeflections,
+} from './holdsViewModel';
+
+function parseAutoCancelledNoticeState (value) {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
 
 function Holds () {
   const navigate = useNavigate();
@@ -82,8 +98,67 @@ function Holds () {
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
 
   const [tab, setTab] = useSessionState('holds', 'active');
+  const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
+  const autoCancelledNotice = parseAutoCancelledNoticeState(autoCancelledNoticeState);
+  const previousActiveIncidentIdRef = useRef(null);
+  const previousActiveDeflectionIdsRef = useRef([]);
+  const pendingAutoCancelledCheckRef = useRef(null);
 
   const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
+
+  useEffect(() => {
+    const currentDeflectionIds = (deflections ?? []).map((deflection) => deflection.id);
+    const removedDeflectionIds = previousActiveDeflectionIdsRef.current
+      .filter((id) => !currentDeflectionIds.includes(id));
+
+    if (removedDeflectionIds.length > 0 && previousActiveIncidentIdRef.current) {
+      pendingAutoCancelledCheckRef.current = {
+        incidentId: previousActiveIncidentIdRef.current,
+        deflectionIds: removedDeflectionIds,
+      };
+    }
+
+    const pendingCheck = pendingAutoCancelledCheckRef.current;
+    const detectedNotice = detectAutoCancelledExpiredHolds({
+      previousIncidentId: pendingCheck?.incidentId,
+      previousDeflectionIds: pendingCheck?.deflectionIds ?? [],
+      currentDeflections: deflections ?? [],
+      historyDeflections,
+    });
+
+    if (detectedNotice) {
+      setAutoCancelledNoticeState(JSON.stringify(detectedNotice));
+      pendingAutoCancelledCheckRef.current = null;
+    } else if (autoCancelledNotice && incident?.id && autoCancelledNotice.incidentId !== incident.id) {
+      setAutoCancelledNoticeState('');
+    } else if (pendingCheck) {
+      const matchedHistoryDeflectionCount = historyDeflections
+        .filter((deflection) => (
+          deflection.incidentId === pendingCheck.incidentId &&
+          pendingCheck.deflectionIds.includes(deflection.id)
+        ))
+        .length;
+
+      if (matchedHistoryDeflectionCount === pendingCheck.deflectionIds.length || (incident?.id && incident.id !== pendingCheck.incidentId)) {
+        pendingAutoCancelledCheckRef.current = null;
+      }
+    }
+
+    if (incident?.id) {
+      previousActiveIncidentIdRef.current = incident.id;
+    }
+    previousActiveDeflectionIdsRef.current = currentDeflectionIds;
+  }, [
+    autoCancelledNotice,
+    deflections,
+    historyDeflections,
+    incident?.id,
+    setAutoCancelledNoticeState,
+  ]);
+
+  function onDismissAutoCancelledNotice () {
+    setAutoCancelledNoticeState('');
+  }
 
   const markArrivedMutation = useMutation({
     mutationFn: (id) => Api.incidents.arrived(id),
@@ -94,9 +169,18 @@ function Holds () {
   });
 
   function onArrivedClick () {
+    setShowArrivalConfirmationModal(true);
+  }
+
+  function onConfirmArrival () {
+    setShowArrivalConfirmationModal(false);
     if (incident?.id) {
       markArrivedMutation.mutate(incident.id);
     }
+  }
+
+  function onCloseArrivalConfirmationModal () {
+    setShowArrivalConfirmationModal(false);
   }
 
   const markLeftMutation = useMutation({
@@ -146,6 +230,7 @@ function Holds () {
 
   const [selectedDeflection, setSelectedDeflection] = useState();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showArrivalConfirmationModal, setShowArrivalConfirmationModal] = useState(false);
 
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
@@ -266,6 +351,8 @@ function Holds () {
               deflections={deflections}
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
+              autoCancelledNotice={autoCancelledNotice}
+              onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
               updatedAtMs={lastSyncedAtMs}
             />
           )}
@@ -294,6 +381,13 @@ function Holds () {
           loading={cancelDeflectionMutation.isPending || cancelIncidentMutation.isPending}
         />
       )}
+      <ArrivalConfirmationModal
+        facilityName={facility?.name}
+        opened={showArrivalConfirmationModal}
+        onClose={onCloseArrivalConfirmationModal}
+        onConfirm={onConfirmArrival}
+        loading={markArrivedMutation.isPending}
+      />
     </>
   );
 }

@@ -8,6 +8,7 @@ import { isValidDeflection } from '@/utils/validators';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
+import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
 function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick }) {
   const { t } = useTranslation();
@@ -21,7 +22,6 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
       .filter(Boolean)
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
-  const isCompleted = deflection.status === 'COMPLETED';
 
   let subjectAge;
   if (deflection?.subject?.dateOfBirth) {
@@ -33,6 +33,9 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   }
   if (deflection?.subject?.sex) {
     subjectDetails.push(t(`sex.${deflection?.subject?.sex}`));
+  }
+  if (subjectDetails.length === 0) {
+    subjectDetails.push('Age and sex missing');
   }
 
   const isNew = !deflection?.subjectId;
@@ -47,11 +50,15 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const minutesUntilExpiration = expiresAt
     ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
     : null;
-  const isExpired = isExpiredStatus || (isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 0);
+  const isExpired = isExpiredBeforeTransfer(deflection, now);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
+  const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const completedAt = deflection?.completedAt ?? deflection?.transferredAt;
-  const showFooter = isActive;
+  const transferredAt = deflection?.transferredAt;
+  const canViewDetails = !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
+  const canFinishDetails = isActive && !isNew && !isValid && !isExpired && !isCancelled;
+  const canAddDetails = isActive && isNew && !isExpired && !isCancelled;
+  const showFooter = isActive || canViewDetails;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -82,13 +89,13 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
             {isExpired && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='yellow.7'>Expired at {formatTime(expiresAt)}</Text>
+                <Text size='md' c='red.6'>Canceled after expiry</Text>
               </>
             )}
-            {isCompleted && completedAt && (
+            {isCustodyTransferred && transferredAt && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='teal.5'>Completed at {formatTime(completedAt)}</Text>
+                <Text size='md' c='teal.5'>Transferred at {formatTime(transferredAt)}</Text>
               </>
             )}
           </Group>
@@ -107,21 +114,29 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
         )}
         {showFooter && (
           <Group justify='space-between' wrap='nowrap'>
-            {isActive && !isExpired && !isArrived
-              ? (
-                <Title order={3} c={isExpiringSoon ? 'red.6' : 'black'} style={{ animation: highlighted ? 'textHighlight 3s ease-out' : undefined }}>{formatTimeRemaining(expiresAt, now) ?? ''}</Title>
-                )
-              : <Box />}
-            {isNew && !isExpired && !isCancelled && (
+            {isExpired
+              ? <Title order={4}>Expired</Title>
+              : isActive && !isArrived && !isCustodyTransferred
+                ? (
+                  <Title
+                    order={4}
+                    c={isExpiringSoon ? 'red.6' : (highlighted ? undefined : 'black')}
+                    style={isExpiringSoon ? undefined : highlighted ? { animation: 'textHighlight 3s ease-out' } : undefined}
+                  >
+                    {formatTimeRemaining(expiresAt, now) ?? ''}
+                  </Title>
+                  )
+                : <Box />}
+            {canAddDetails && (
               <Group gap='sm' wrap='nowrap'>
                 <Button size='md' variant='destructive' onClick={onCancelClick}>Cancel</Button>
                 <Button size='md' onClick={onDetailsClick}>Add Details</Button>
               </Group>
             )}
-            {!isNew && !isValid && !isExpired && !isCancelled && (
+            {canFinishDetails && (
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
-            {!isNew && (isValid || isCancelled || isExpired) && (
+            {canViewDetails && (
               <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
             )}
           </Group>

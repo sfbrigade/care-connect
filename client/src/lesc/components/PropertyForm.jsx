@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
+import { validateProperty } from '@/utils/validators';
 
 const initialValues = {
   property: '',
@@ -58,6 +60,9 @@ function PropertyForm () {
           propertyDetails: deflection.propertyDetails,
         });
         form.initialize(normalized);
+        if (!isNew) {
+          form.setErrors(validateProperty(normalized));
+        }
       }
     }
   }, [isLoading, deflection, form.initialized]);
@@ -188,22 +193,15 @@ function PropertyForm () {
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Chip.Group
-                key={form.key('property')}
+              <ChipInput
                 {...form.getInputProps('property')}
-              >
-                <Group gap='sm'>
-                  {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
-                    <Chip
-                      key={value}
-                      value={value}
-                      size='lg'
-                    >
-                      {t(`property.${value}`)}
-                    </Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
+                key={form.key('property')}
+                label={<>How much property is the person bringing?<span>*</span></>}
+                options={['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => ({
+                  value,
+                  label: t(`property.${value}`),
+                }))}
+              />
               {isLarge && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>
