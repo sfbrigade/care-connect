@@ -26,7 +26,7 @@ for (const queue of queues) {
 
   await boss.work(queue.name, queue.handler);
 
-  await boss.work(deadLetter, async (job) => {
+  await boss.work(deadLetter, async ([job]) => {
     const jobData = queue.deadLetterData ? queue.deadLetterData(job.data) : job.data;
     // TODO: send to Posthog for alerting
     console.error(JSON.stringify({
