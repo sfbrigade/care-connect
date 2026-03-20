@@ -249,11 +249,8 @@ function IncidentForm () {
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
-                  label={
-                    <>
-                      Arrest location<span>*</span>
-                    </>
-                  }
+                  label='Arrest location'
+                  required
                   rightSection={
                     !isInitialized ? <Loader size={24} /> : <LocationButton />
                   }
@@ -272,11 +269,8 @@ function IncidentForm () {
                     form={form}
                     field='addressLine1'
                     key={form.key('addressLine1')}
-                    label={
-                      <>
-                        Arrest address line 1<span>*</span>
-                      </>
-                    }
+                    label='Arrest address line 1'
+                    required
                     rightSection={
                       !isInitialized ? <Loader size={24} /> : <LocationButton />
                     }
@@ -289,21 +283,15 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('city')}
                     {...form.getInputProps('city')}
-                    label={
-                      <>
-                        Arrest city<span>*</span>
-                      </>
-                    }
+                    label='Arrest city'
+                    required
                   />
                   <Group wrap='nowrap'>
                     <TextInput
                       key={form.key('state')}
                       {...form.getInputProps('state')}
-                      label={
-                        <>
-                          Arrest state<span>*</span>
-                        </>
-                      }
+                      label='Arrest state'
+                      required
                     />
                     <TextInput
                       key={form.key('postalCode')}
@@ -318,18 +306,16 @@ function IncidentForm () {
               <TextInput
                 key={form.key('arrestedAt')}
                 {...form.getInputProps('arrestedAt')}
-                label={
-                  <>
-                    Arrest date & time<span>*</span>
-                  </>
-                }
+                label='Arrest date & time'
+                required
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
               <ChipInput
                 {...form.getInputProps('encounteredVia')}
                 key={form.key('encounteredVia')}
-                label={<>Encountered via<span>*</span></>}
+                label='Encountered via'
+                required
                 options={['ON_VIEW', 'DISPATCHED'].map(value => ({
                   value,
                   label: t(`encounteredVia.${value}`),
@@ -339,11 +325,8 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('cadNumber')}
                   {...cadNumberInputProps}
-                  label={
-                    <>
-                      CAD number<span>*</span>
-                    </>
-                  }
+                  label='CAD number'
+                  required
                   placeholder='Enter CAD number'
                   type='text'
                   inputMode='text'
@@ -368,7 +351,8 @@ function IncidentForm () {
                 <TextInput
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
-                  label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                  label="Supervising Sergeant's Star Number"
+                  required
                   placeholder='Enter star number'
                   maxLength={4}
                   inputMode='numeric'

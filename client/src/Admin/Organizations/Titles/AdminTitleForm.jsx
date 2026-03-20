@@ -100,6 +100,8 @@ function AdminTitleForm () {
                 {...form.getInputProps('id')}
                 key={form.key('id')}
                 label='ID'
+                required
+                withAsterisk={false}
                 placeholder='e.g. officer'
                 disabled={!isNew}
               />
@@ -107,6 +109,8 @@ function AdminTitleForm () {
                 {...form.getInputProps('name')}
                 key={form.key('name')}
                 label='Name'
+                required
+                withAsterisk={false}
                 placeholder='e.g. Officer'
               />
               <Group>

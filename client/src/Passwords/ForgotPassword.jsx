@@ -48,6 +48,7 @@ function ForgotPassword () {
                   <TextInput
                     {...form.getInputProps('email')}
                     key='email'
+                    required
                     placeholder='youremail@example.com'
                     type='email'
                   />

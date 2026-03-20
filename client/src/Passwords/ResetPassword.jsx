@@ -91,6 +91,7 @@ function ResetPassword () {
                       <PasswordInput
                         {...form.getInputProps('password')}
                         key='password'
+                        required
                         placeholder='Enter new password'
                       />
                       <PasswordStrength password={form.getValues().password} />

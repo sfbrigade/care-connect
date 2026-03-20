@@ -96,6 +96,8 @@ function AdminFacilityStatusReasonForm () {
                 {...form.getInputProps('id')}
                 key={form.key('id')}
                 label='ID (Slug)'
+                required
+                withAsterisk={false}
                 placeholder='e.g. no_beds_available'
                 disabled={!isNew}
               />
@@ -117,6 +119,8 @@ function AdminFacilityStatusReasonForm () {
                 {...form.getInputProps('description')}
                 key={form.key('description')}
                 label='Description'
+                required
+                withAsterisk={false}
                 placeholder='e.g. No beds available'
               />
 

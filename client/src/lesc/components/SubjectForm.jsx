@@ -243,13 +243,15 @@ function SubjectForm () {
             <Stack gap='xl'>
               <TextInput
                 key={form.key('firstName')}
-                label={<>First name<span>*</span></>}
+                label='First name'
+                required
                 placeholder='Enter first name'
                 {...form.getInputProps('firstName')}
               />
               <TextInput
                 key={form.key('lastName')}
-                label={<>Last name<span>*</span></>}
+                label='Last name'
+                required
                 placeholder='Enter last name'
                 {...form.getInputProps('lastName')}
               />
@@ -260,7 +262,8 @@ function SubjectForm () {
                 {...form.getInputProps('middleInitial')}
               />
               <TextInput
-                label={<>Date of birth<span>*</span></>}
+                label='Date of birth'
+                required
                 type='text'
                 inputMode='numeric'
                 maxLength={10}
@@ -277,7 +280,8 @@ function SubjectForm () {
                 }}
               />
               <ChipInput
-                label={<>Sex<span>*</span></>}
+                label='Sex'
+                required
                 options={['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => ({
                   value: sex,
                   label: t(`sex.${sex}`),
@@ -286,7 +290,8 @@ function SubjectForm () {
                 key={form.key('sex')}
               />
               <ChipInput
-                label={<>Race<span>*</span></>}
+                label='Race'
+                required
                 options={['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => ({
                   value: race,
                   label: t(`race.${race}`),
@@ -358,12 +363,14 @@ function SubjectForm () {
                         <BooleanInput
                           {...form.getInputProps('narcoticsSubstance')}
                           key={form.key('narcoticsSubstance')}
-                          label={<>Possesses a controlled substance<span>*</span></>}
+                          label='Possesses a controlled substance'
+                          required
                         />
                         <BooleanInput
                           {...form.getInputProps('narcoticsParaphernalia')}
                           key={form.key('narcoticsParaphernalia')}
-                          label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                          label='Possesses narcotics paraphernalia'
+                          required
                         />
                         <Divider />
                         <Stack gap='xl' data-section='drug-use'>

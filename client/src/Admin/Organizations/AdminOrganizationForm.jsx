@@ -79,6 +79,8 @@ function OrganizationForm () {
                 {...form.getInputProps('id')}
                 key={form.key('id')}
                 label='ID'
+                required
+                withAsterisk={false}
                 placeholder='e.g. sfpd'
                 disabled={!isNew}
               />
@@ -86,6 +88,8 @@ function OrganizationForm () {
                 {...form.getInputProps('name')}
                 key={form.key('name')}
                 label='Name'
+                required
+                withAsterisk={false}
                 placeholder='e.g. San Francisco Police Department'
               />
               <Group>

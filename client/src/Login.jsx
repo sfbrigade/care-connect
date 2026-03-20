@@ -96,6 +96,8 @@ function Login () {
                 key={form.key('email')}
                 {...form.getInputProps('email')}
                 label='Email'
+                required
+                withAsterisk={false}
                 placeholder='youremail@example.com'
                 leftSection={<IconMail size={20} color='var(--mantine-color-dark-1)' />}
               />
@@ -103,6 +105,8 @@ function Login () {
                 key={form.key('password')}
                 {...form.getInputProps('password')}
                 label='Password'
+                required
+                withAsterisk={false}
                 placeholder='Enter password'
                 leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
               />

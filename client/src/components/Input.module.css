@@ -2,8 +2,9 @@
   font-weight: 600;
   line-height: 1.5555em;
 
-  span {
+  :global(.mantine-InputWrapper-required) {
     color: var(--mantine-color-red-6);
+    margin-inline-start: -0.2em;
   }
 }
 

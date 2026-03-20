@@ -196,7 +196,8 @@ function PropertyForm () {
               <ChipInput
                 {...form.getInputProps('property')}
                 key={form.key('property')}
-                label={<>How much property is the person bringing?<span>*</span></>}
+                label='How much property is the person bringing?'
+                required
                 options={['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => ({
                   value,
                   label: t(`property.${value}`),

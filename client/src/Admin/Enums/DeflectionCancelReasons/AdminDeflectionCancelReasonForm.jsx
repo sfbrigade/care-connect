@@ -95,6 +95,8 @@ function AdminDeflectionCancelReasonForm () {
                 {...form.getInputProps('id')}
                 key={form.key('id')}
                 label='ID (Slug)'
+                required
+                withAsterisk={false}
                 placeholder='e.g. resident_left_before_treatment'
                 disabled={!isNew}
               />
@@ -103,6 +105,8 @@ function AdminDeflectionCancelReasonForm () {
                 {...form.getInputProps('name')}
                 key={form.key('name')}
                 label='Name'
+                required
+                withAsterisk={false}
                 placeholder='e.g. Resident left before treatment'
               />
 

@@ -58,12 +58,16 @@ function RegistrationForm ({ invite, onSubmitMutation }) {
                 {...form.getInputProps('firstName')}
                 key={form.key('firstName')}
                 label='First name'
+                required
+                withAsterisk={false}
                 placeholder='Enter first name'
               />
               <TextInput
                 {...form.getInputProps('lastName')}
                 key={form.key('lastName')}
                 label='Last name'
+                required
+                withAsterisk={false}
                 placeholder='Enter last name'
               />
             </>
@@ -73,6 +77,8 @@ function RegistrationForm ({ invite, onSubmitMutation }) {
             key={form.key('email')}
             type='email'
             label='Email'
+            required
+            withAsterisk={false}
             placeholder='youremail@example.com'
             disabled={!!invite}
             leftSection={<IconMail size={20} color='var(--mantine-color-dark-1)' />}
@@ -85,6 +91,8 @@ function RegistrationForm ({ invite, onSubmitMutation }) {
             }}
             key={form.key('password')}
             label='Password'
+            required
+            withAsterisk={false}
             placeholder='Enter password'
             leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
           />

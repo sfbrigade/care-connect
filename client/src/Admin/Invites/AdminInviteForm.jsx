@@ -60,16 +60,22 @@ function AdminInviteForm () {
                 {...form.getInputProps('firstName')}
                 key='firstName'
                 label='First name'
+                required
+                withAsterisk={false}
               />
               <TextInput
                 {...form.getInputProps('lastName')}
                 key='lastName'
                 label='Last name'
+                required
+                withAsterisk={false}
               />
               <TextInput
                 {...form.getInputProps('email')}
                 key='email'
                 label='Email'
+                required
+                withAsterisk={false}
                 type='email'
               />
               <Select

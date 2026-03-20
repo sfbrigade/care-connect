@@ -104,18 +104,24 @@ function AdminUserForm () {
                 {...form.getInputProps('firstName')}
                 key={form.key('firstName')}
                 label='First name'
+                required
+                withAsterisk={false}
                 disabled
               />
               <TextInput
                 {...form.getInputProps('lastName')}
                 key={form.key('lastName')}
                 label='Last name'
+                required
+                withAsterisk={false}
                 disabled
               />
               <TextInput
                 {...form.getInputProps('email')}
                 key={form.key('email')}
                 label='Email'
+                required
+                withAsterisk={false}
                 type='email'
                 disabled
               />

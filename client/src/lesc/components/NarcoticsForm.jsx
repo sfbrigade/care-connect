@@ -89,12 +89,14 @@ function NarcoticsForm () {
               <BooleanInput
                 {...form.getInputProps('narcoticsSubstance')}
                 key={form.key('narcoticsSubstance')}
-                label={<>Possesses a controlled substance<span>*</span></>}
+                label='Possesses a controlled substance'
+                required
               />
               <BooleanInput
                 {...form.getInputProps('narcoticsParaphernalia')}
                 key={form.key('narcoticsParaphernalia')}
-                label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                label='Possesses narcotics paraphernalia'
+                required
               />
               <Button type='submit'>
                 Save narcotics details
