@@ -88,11 +88,12 @@ function CancelIncidentModal ({
             stacked
           />
         </Stack>
-        <Group grow>
+        <Stack gap='sm'>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
             disabled={confirmDisabled}
+            fullWidth
           >
             Yes, cancel
           </Button>
@@ -102,10 +103,11 @@ function CancelIncidentModal ({
             data-autofocus
             onClick={onClose}
             disabled={loading}
+            fullWidth
           >
             {keepLabel}
           </Button>
-        </Group>
+        </Stack>
       </Stack>
     </Modal>
   );

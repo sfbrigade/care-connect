@@ -34,6 +34,7 @@ import CancelIncidentModal from './CancelIncidentModal';
 
 const initialValues = {
   cadNumber: '',
+  caseNumber: '',
   encounteredVia: '',
   addressLine1: '',
   addressLine2: '',
@@ -46,13 +47,13 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
-function normalizeCadNumber (value) {
+function normalizeCadNumber(value) {
   return String(value ?? '')
     .replace(/[^0-9a-z]/gi, '')
     .slice(0, 10);
 }
 
-function IncidentForm () {
+function IncidentForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -131,7 +132,7 @@ function IncidentForm () {
     }
   }, [isLoading, data]);
 
-  function LocationButton () {
+  function LocationButton() {
     return (
       <ActionIcon onClick={getLocation} variant='transparent'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
@@ -202,7 +203,7 @@ function IncidentForm () {
     },
   });
 
-  async function onCancelIncidentConfirmed (cancelReasonId) {
+  async function onCancelIncidentConfirmed(cancelReasonId) {
     if (data?.id) {
       await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
     }
@@ -238,7 +239,7 @@ function IncidentForm () {
           Start an incident
         </Text>
         <Title order={3} mb='xl'>
-          Enter these details once. We’ll reuse them for all holds in this
+          Enter these details once. They apply to all holds in this
           incident.
         </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
@@ -361,7 +362,25 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  CAD is provided by dispatch (MDT / radio).
+                  Obtain CAD number from dispatch.
+                </Text>
+              </Stack>
+              <Stack gap='xs'>
+                <TextInput
+                  key={form.key('caseNumber')}
+                  {...form.getInputProps('caseNumber')}
+                  label={
+                    <>
+                      Case number<span>*</span>
+                    </>
+                  }
+                  placeholder='Enter case number'
+                  type='text'
+                  inputMode='text'
+                  onFocus={() => setShowAddressForm(false)}
+                />
+                <Text size='md' c='gray.6'>
+                  Obtain case number from dispatch.
                 </Text>
               </Stack>
               <Stack gap='xs'>
@@ -380,8 +399,7 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  If you don't have the Star Number right now, you must come
-                  back and add it before custody transfer.
+                  Add Star Number before custody transfer.
                 </Text>
               </Stack>
               <Stack gap='sm'>

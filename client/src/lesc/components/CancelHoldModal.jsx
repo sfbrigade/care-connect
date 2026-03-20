@@ -55,11 +55,12 @@ function CancelHoldModal ({
             enabled={!!deflection.subjectId}
           />
         </Stack>
-        <Group grow>
+        <Stack gap='sm'>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
             disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
+            fullWidth
           >
             Yes, cancel
           </Button>
@@ -68,10 +69,11 @@ function CancelHoldModal ({
             color={lastHoldWillCancelIncident ? 'indigo.6' : undefined}
             onClick={onClose}
             disabled={loading}
+            fullWidth
           >
             Keep hold
           </Button>
-        </Group>
+        </Stack>
       </Stack>
     </Modal>
   );

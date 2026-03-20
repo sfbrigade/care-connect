@@ -707,6 +707,7 @@ model Incident {
   arrestedAt                   DateTime?
   encounteredVia               EncounteredViaEnum?
   cadNumber                    String?
+  caseNumber                   String?
   supervisorBadgeNumber        String?
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   createdById                  String                  @db.Uuid
@@ -724,6 +725,7 @@ model Incident {
 
   @@id([id, facilityId])
   @@index([cadNumber])
+  @@index([caseNumber])
 
   deflections                  Deflection[]
 }
