@@ -139,8 +139,7 @@ function Custody () {
         rect.top >= 0 &&
         rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
       );
-
-      // only scroll if it's not already in view
+      // prevent page 'jumping' if the card is already visible and only scroll if not visible
       if (!isVisible) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
