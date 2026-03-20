@@ -9,6 +9,10 @@
     "TOLUENE": "Toluene",
     "COMBINATION": "Combination"
   },
+  "encounteredVia": {
+    "ON_VIEW": "On View",
+    "DISPATCHED": "Dispatched"
+  },
   "facility": {
     "status": {
       "OPEN_ACCEPTING": "Open - accepting",
@@ -39,6 +43,11 @@
     "MALE": "Male",
     "FEMALE": "Female",
     "OTHER": "Other",
+    "UNKNOWN": "Unknown"
+  },
+  "ternary": {
+    "YES": "Yes",
+    "NO": "No",
     "UNKNOWN": "Unknown"
   }
 }

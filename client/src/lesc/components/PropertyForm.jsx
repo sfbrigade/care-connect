@@ -9,9 +9,11 @@ import { useTranslation } from 'react-i18next';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
+import { validateProperty } from '@/utils/validators';
 
 const initialValues = {
   property: '',
@@ -26,7 +28,6 @@ function PropertyForm () {
   const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
   const autoSaveTimerRef = useRef(null);
@@ -45,28 +46,27 @@ function PropertyForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
-      if (!isInitialized) {
-        return;
-      }
       setIsLarge(values.property === 'LARGE');
-      scheduleAutoSave(values);
+      if (form.initialized) {
+        scheduleAutoSave(values);
+      }
     },
   });
 
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeValues({
           property: deflection.property,
           propertyDetails: deflection.propertyDetails,
         });
-        form.setInitialValues(normalized);
-        form.reset();
-        setIsLarge(normalized.property === 'LARGE');
+        form.initialize(normalized);
+        if (!isNew) {
+          form.setErrors(validateProperty(normalized));
+        }
       }
-      setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
@@ -194,24 +194,17 @@ function PropertyForm () {
         <Title order={2} mb='xs'>Personal property</Title>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Chip.Group
-                key={form.key('property')}
+              <ChipInput
                 {...form.getInputProps('property')}
-              >
-                <Group gap='sm'>
-                  {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
-                    <Chip
-                      key={value}
-                      value={value}
-                      size='lg'
-                    >
-                      {t(`property.${value}`)}
-                    </Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
+                key={form.key('property')}
+                label={<>How much property is the person bringing?<span>*</span></>}
+                options={['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => ({
+                  value,
+                  label: t(`property.${value}`),
+                }))}
+              />
               {isLarge && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>

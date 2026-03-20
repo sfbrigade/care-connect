@@ -9,7 +9,7 @@ export function composeBehavior (generatedNarrative, behaviorAdditions) {
   return generated || additions || '';
 }
 
-export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAdditions, deflectionDetails }) {
+export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAdditions, deflectionDetails, volunteeredToReset }) {
   const normalizedBehaviorAdditions = (behaviorAdditions || '').trim();
   return {
     behavior: composeBehavior(generatedNarrative, normalizedBehaviorAdditions),
@@ -17,5 +17,6 @@ export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAddi
     deflectionDetails: [...(deflectionDetails ?? [])]
       .map((detailId) => detailId)
       .sort((a, b) => String(a).localeCompare(String(b))),
+    volunteeredToReset,
   };
 }

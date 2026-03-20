@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ActionIcon, Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
+import IconButtonLink from '@/components/IconButtonLink';
+
 import CancelReasonSelector from './CancelReasonSelector';
-import classes from './CancelModal.module.css';
 
 function CancelHoldModal ({
   deflection,
@@ -22,7 +23,6 @@ function CancelHoldModal ({
       opened={opened}
       onClose={onClose}
       title={null}
-      size='sm'
       centered
       lockScroll
       withCloseButton={false}
@@ -33,19 +33,10 @@ function CancelHoldModal ({
             {!name && !lastHoldWillCancelIncident && <Title order={4}>Cancel this hold?</Title>}
             {!name && lastHoldWillCancelIncident && <Title order={4}>Cancel the last hold of this incident?</Title>}
             {!!name && <Title order={4}>Cancel hold for {name}?</Title>}
-            <ActionIcon
+            <IconButtonLink
+              icon={IconX}
               onClick={onClose}
-              bg='rgba(134, 142, 150, 0.1)'
-              c='black'
-              radius='xl'
-              className={classes.closeIcon}
-              w={40}
-              h={40}
-              miw={40}
-              maw={40}
-            >
-              <IconX size={20} />
-            </ActionIcon>
+            />
           </Group>
           {!deflection.subjectId && !lastHoldWillCancelIncident && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
           {!deflection.subjectId && lastHoldWillCancelIncident && (
