@@ -1,28 +1,9 @@
+import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
 
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
-
-function zodResolver (schema) {
-  return (values) => {
-    const result = schema.safeParse(values);
-
-    if (result.success) {
-      return {};
-    }
-
-    return result.error.issues.reduce((errors, issue) => {
-      const key = issue.path[0];
-
-      if (typeof key === 'string' && !errors[key]) {
-        errors[key] = issue.message;
-      }
-
-      return errors;
-    }, {});
-  };
-}
 
 function hasMinimumAlphanumericChars (value, minimum) {
   const alphanumericCount = String(value ?? '').match(/[0-9a-z]/gi)?.length ?? 0;
@@ -70,31 +51,31 @@ const DeflectionSchema = z.object({
   ...PropertySchema.shape,
 });
 
-export const validateIncident = zodResolver(IncidentSchema);
+export const validateIncident = zod4Resolver(IncidentSchema);
 
 export const isValidIncident = (obj) => {
   return !!IncidentSchema.safeParse(obj)?.success;
 };
 
-export const validateSubject = zodResolver(SubjectSchema);
+export const validateSubject = zod4Resolver(SubjectSchema);
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
 };
 
-export const validateNarcotics = zodResolver(NarcoticsSchema);
+export const validateNarcotics = zod4Resolver(NarcoticsSchema);
 
 export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
 
-export const validateDeflectionDetails = zodResolver(DeflectionDetailsSchema);
+export const validateDeflectionDetails = zod4Resolver(DeflectionDetailsSchema);
 
 export const isValidDeflectionDetails = (obj) => {
   return !!DeflectionDetailsSchema.safeParse(obj)?.success;
 };
 
-export const validateProperty = zodResolver(PropertySchema);
+export const validateProperty = zod4Resolver(PropertySchema);
 
 export const isValidProperty = (obj) => {
   return !!PropertySchema.safeParse(obj)?.success;

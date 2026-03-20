@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconX } from '@tabler/icons-react';
 
 import IconButtonLink from '@/components/IconButtonLink';
@@ -15,6 +16,7 @@ function CancelHoldModal ({
   loading = false,
 }) {
   const [cancelReasonId, setCancelReasonId] = useState();
+  const isSmallScreen = useMediaQuery('(max-width: 25em)');
 
   const name = [deflection.subject?.firstName, deflection.subject?.middleInitial, deflection.subject?.lastName].filter(Boolean).join(' ');
 
@@ -55,25 +57,47 @@ function CancelHoldModal ({
             enabled={!!deflection.subjectId}
           />
         </Stack>
-        <Stack gap='sm'>
-          <Button
-            variant='destructive'
-            onClick={() => onConfirm(cancelReasonId)}
-            disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
-            fullWidth
-          >
-            Yes, cancel
-          </Button>
-          <Button
-            variant={lastHoldWillCancelIncident ? 'filled' : 'secondary'}
-            color={lastHoldWillCancelIncident ? 'indigo.6' : undefined}
-            onClick={onClose}
-            disabled={loading}
-            fullWidth
-          >
-            Keep hold
-          </Button>
-        </Stack>
+        {isSmallScreen
+          ? (
+            <Stack gap='sm'>
+              <Button
+                variant='destructive'
+                onClick={() => onConfirm(cancelReasonId)}
+                disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
+                fullWidth
+              >
+                Yes, cancel
+              </Button>
+              <Button
+                variant={lastHoldWillCancelIncident ? 'filled' : 'secondary'}
+                color={lastHoldWillCancelIncident ? 'indigo.6' : undefined}
+                onClick={onClose}
+                disabled={loading}
+                fullWidth
+              >
+                Keep hold
+              </Button>
+            </Stack>
+            )
+          : (
+            <Group grow gap='sm' wrap='nowrap'>
+              <Button
+                variant='destructive'
+                onClick={() => onConfirm(cancelReasonId)}
+                disabled={loading || (!cancelReasonId && !!deflection.subjectId)}
+              >
+                Yes, cancel
+              </Button>
+              <Button
+                variant={lastHoldWillCancelIncident ? 'filled' : 'secondary'}
+                color={lastHoldWillCancelIncident ? 'indigo.6' : undefined}
+                onClick={onClose}
+                disabled={loading}
+              >
+                Keep hold
+              </Button>
+            </Group>
+            )}
       </Stack>
     </Modal>
   );
