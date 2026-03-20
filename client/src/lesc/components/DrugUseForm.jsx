@@ -99,10 +99,10 @@ function DrugUseForm () {
               <BooleanInput
                 {...form.getInputProps('drugUseEvidence')}
                 key={form.key('drugUseEvidence')}
-                label='Evidence of drug use'
+                label='Evidence of drug use (optional)'
               />
               {showDrugTypeQuestion && (
-                <Input.Wrapper label='Drug type'>
+                <Input.Wrapper label='Drug type (optional)'>
                   <Chip.Group
                     key={form.key('drugType')}
                     {...form.getInputProps('drugType')}

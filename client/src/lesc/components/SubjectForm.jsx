@@ -255,7 +255,7 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('middleInitial')}
-                label='Middle initial'
+                label='Middle initial (optional)'
                 placeholder='Optional'
                 {...form.getInputProps('middleInitial')}
               />
@@ -296,13 +296,13 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('driverLicense')}
-                label="Driver's license number"
+                label="Driver's license number (optional)"
                 placeholder='Optional'
                 {...form.getInputProps('driverLicense')}
               />
               <TextInput
                 key={form.key('localId')}
-                label='SF Number (if available)'
+                label='SF Number (optional)'
                 placeholder='Optional'
                 {...form.getInputProps('localId')}
               />
@@ -319,29 +319,29 @@ function SubjectForm () {
                         form={form}
                         field='addressLine1'
                         key={form.key('addressLine1')}
-                        label='Street address'
+                        label='Street address (optional)'
                       />
                       <TextInput
                         key={form.key('addressLine2')}
-                        label='Street address (line 2)'
+                        label='Street address line 2 (optional)'
                         placeholder='Optional'
                         {...form.getInputProps('addressLine2')}
                       />
                       <TextInput
                         key={form.key('city')}
-                        label='City'
+                        label='City (optional)'
                         placeholder='Enter city'
                         {...form.getInputProps('city')}
                       />
                       <TextInput
                         key={form.key('state')}
-                        label='State'
+                        label='State (optional)'
                         placeholder='Optional'
                         {...form.getInputProps('state')}
                       />
                       <TextInput
                         key={form.key('postalCode')}
-                        label='ZIP code'
+                        label='ZIP code (optional)'
                         placeholder='Enter ZIP code'
                         {...form.getInputProps('postalCode')}
                       />
@@ -372,10 +372,10 @@ function SubjectForm () {
                             <BooleanInput
                               {...form.getInputProps('drugUseEvidence')}
                               key={form.key('drugUseEvidence')}
-                              label='Evidence of drug use'
+                              label='Evidence of drug use (optional)'
                             />
                             {showDrugTypeQuestion && (
-                              <Input.Wrapper label='Drug type'>
+                              <Input.Wrapper label='Drug type (optional)'>
                                 <Chip.Group
                                   key={form.key('drugType')}
                                   {...form.getInputProps('drugType')}

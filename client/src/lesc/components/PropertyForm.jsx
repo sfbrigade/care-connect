@@ -215,7 +215,7 @@ function PropertyForm () {
                   {deflection.propertyPhotos.map(photo => (
                     <PhotoInput
                       key={photo.id}
-                      label='Photo'
+                      label='Photo (optional)'
                       id='file'
                       name='file'
                       value={photo.file}
@@ -240,7 +240,7 @@ function PropertyForm () {
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}
-                label='Description'
+                label='Description (optional)'
                 placeholder='E.g., black backpack with clothing and toiletries.'
               />
               <Button type='submit' mb='xl'>

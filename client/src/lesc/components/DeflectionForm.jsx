@@ -253,7 +253,7 @@ function DeflectionForm () {
               <BooleanInput
                 {...form.getInputProps('volunteeredToReset')}
                 key={form.key('volunteeredToReset')}
-                label='Person volunteered to be taken to RESET'
+                label='Person volunteered to be taken to RESET (optional)'
               />
               <Input.Wrapper label='647(f) narrative'>
                 <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>

@@ -284,7 +284,7 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('addressLine2')}
                     {...form.getInputProps('addressLine2')}
-                    label='Arrest address line 2'
+                    label='Arrest address line 2 (optional)'
                   />
                   <TextInput
                     key={form.key('city')}
@@ -308,7 +308,7 @@ function IncidentForm () {
                     <TextInput
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
-                      label='Arrest ZIP code'
+                      label='Arrest ZIP code (optional)'
                       type='number'
                       inputMode='numeric'
                     />
