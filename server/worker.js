@@ -27,7 +27,7 @@ for (const queue of queues) {
 
   await boss.work(queue.name, queue.handler);
 
-  await boss.work(deadLetter, async (job) => {
+  await boss.work(deadLetter, async ([job]) => {
     const jobData = queue.deadLetterData ? queue.deadLetterData(job.data) : job.data;
     captureEvent('job/permanently-failed', { queue: queue.name, jobData });
     console.error(JSON.stringify({
