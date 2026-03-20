@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "npm run prisma:generate",
-    "dev": "prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
+    "dev": "DEBUG_MODE=true prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
     "pretest": "npm run prisma:generate && eslint",
@@ -17,7 +17,9 @@
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
     "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
-    "geocode:facilities": "node bin/geocode-facilities.js"
+    "geocode:facilities": "node bin/geocode-facilities.js",
+    "worker": "node worker.js",
+    "worker:dev": "npm run prisma:generate && node --watch worker.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {

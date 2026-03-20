@@ -2,5 +2,5 @@ server: npm run dev -w server -- --port 3000
 client: npm run dev -w client -- --host --port 3333
 prisma: npm run prisma:studio -w server
 storybook: npm run storybook -w client
-worker: node --watch server/worker.js
+worker: npm run worker:dev -w server
 pgboss-ui: PGBOSS_DATABASE_URL=$DATABASE_URL npx pg-boss-admin-dashboard --port 8671 --no-browser
