@@ -47,13 +47,13 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
-function normalizeCadNumber(value) {
+function normalizeCadNumber (value) {
   return String(value ?? '')
     .replace(/[^0-9a-z]/gi, '')
     .slice(0, 10);
 }
 
-function IncidentForm() {
+function IncidentForm () {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -132,7 +132,7 @@ function IncidentForm() {
     }
   }, [isLoading, data]);
 
-  function LocationButton() {
+  function LocationButton () {
     return (
       <ActionIcon onClick={getLocation} variant='transparent'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
@@ -203,7 +203,7 @@ function IncidentForm() {
     },
   });
 
-  async function onCancelIncidentConfirmed(cancelReasonId) {
+  async function onCancelIncidentConfirmed (cancelReasonId) {
     if (data?.id) {
       await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
     }
