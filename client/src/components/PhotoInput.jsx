@@ -4,11 +4,7 @@ import classNames from 'classnames';
 import DropzoneUploader from './DropzoneUploader';
 import classes from './PhotoInput.module.css';
 
-function PhotoInput ({ children, description, error, id, label, maxPhotos, onChange, photoCount }) {
-  function onAllUploaded (filenames) {
-    onChange?.(filenames);
-  }
-
+function PhotoInput ({ children, description, error, id, label, maxPhotos, onAllUploaded, photoCount }) {
   return (
     <Input.Wrapper label={label} description={description} error={error}>
       <Input

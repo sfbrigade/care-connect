@@ -145,7 +145,7 @@ function PropertyForm () {
     },
   });
 
-  function onUploadPhotos (files) {
+  function onAllUploaded (files) {
     const photoCount = deflection?.propertyPhotos?.length ?? 0;
     if (photoCount >= maxPropertyPhotos) {
       return;
@@ -224,7 +224,7 @@ function PropertyForm () {
                 key={`property-photo-uploader-${propertyPhotos.length}`}
                 label='Photos'
                 id='file'
-                onChange={(files) => onUploadPhotos(files)}
+                onAllUploaded={onAllUploaded}
                 maxPhotos={maxPropertyPhotos}
                 photoCount={propertyPhotos.length}
               >
