@@ -229,7 +229,7 @@ function PropertyForm () {
               )}
               {!deflection?.propertyPhotos?.length && (
                 <PhotoInput
-                  label='Photo'
+                  label='Photo (optional)'
                   id='file'
                   name='file'
                   onChange={(file) => onChangePhoto(null, file)}
