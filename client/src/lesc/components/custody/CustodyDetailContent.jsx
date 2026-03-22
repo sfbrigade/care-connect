@@ -14,6 +14,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
+import { releaseTiming } from '@/utils/releaseTiming';
 import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -64,6 +65,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const propertySectionId = `custody-property-section-${deflection?.id ?? 'unknown'}`;
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
+  const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
 
   useEffect(() => {
@@ -234,13 +236,21 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {!isCareView && (
               <Stack gap='xs' align='center'>
                 <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {releaseTimingChip && (
+                  <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
+                )}
                 {showAwaitingPropertyReturnChip && (
                   <DeflectionStatusChip label='Awaiting property return' tone='info' />
                 )}
               </Stack>
             )}
             {isCareView && (
-              <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+              <Stack gap='xs' align='center'>
+                <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+                {releaseTimingChip && (
+                  <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
+                )}
+              </Stack>
             )}
           </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
