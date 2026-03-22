@@ -103,23 +103,31 @@ export default async function (fastify, _opts) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
         }
 
-        // Cache-bust in development so edited form components are picked up
-        // without a server restart. In production the module cache is used.
-        const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
-        const [{ renderFormToHtml, renderToPdf }, { default: FormComponent }] = await Promise.all([
-          import('#lib/pdf.js'),
-          import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`),
-        ]);
-
         const data = form.transformData(result.deflection);
-        const html = await renderFormToHtml(FormComponent, data, { title: form.title });
+        let pdfBuffer;
 
-        const pdfBuffer = await Promise.race([
-          renderToPdf(html),
-          new Promise((_resolve, reject) =>
-            setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
-          ),
-        ]);
+        if (form.generatorType === 'pdf') {
+          // Cache-bust in development
+          const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
+          const { metadata } = await import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`);
+          pdfBuffer = await metadata.generatePdf(data, request.user);
+        } else {
+          // Default: jsx generator type (React + Chromium)
+          const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
+          const [{ renderFormToHtml, renderToPdf }, { default: FormComponent }] = await Promise.all([
+            import('#lib/pdf.js'),
+            import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`),
+          ]);
+
+          const html = await renderFormToHtml(FormComponent, data, { title: form.title });
+
+          pdfBuffer = await Promise.race([
+            renderToPdf(html),
+            new Promise((_resolve, reject) =>
+              setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
+            ),
+          ]);
+        }
 
         const filename = form.downloadFilename(deflectionId);
         return reply

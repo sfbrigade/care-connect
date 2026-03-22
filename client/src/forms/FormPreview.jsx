@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Center, Loader } from '@mantine/core';
 
-import FormContainer from '../../../server/lib/forms/FormContainer.jsx';
+import FormContainer from 'care-connect-server/lib/forms/jsx/FormContainer.jsx';
 import FORM_REGISTRY from './formRegistry';
 
 async function fetchFormData (formId, deflectionId) {

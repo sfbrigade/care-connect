@@ -12,7 +12,7 @@ export const FORM_REGISTRY = {
     title: 'Certificate of Release',
     generateLabel: 'Generate Certificate of Release',
     description: (name) => `SF Sheriff's Dept Certificate of Release for ${name}`,
-    downloadFilename: (id) => `cert-Certificate-of-Release-${id}.pdf`,
+    downloadFilename: (id) => `cert-${id}.pdf`,
   },
   '849b': {
     componentName: 'Form849b',
@@ -27,5 +27,12 @@ export const FORM_REGISTRY = {
     generateLabel: 'Generate 647(f) Transfer Form',
     description: (name) => `647(f) Transfer Form for ${name}`,
     downloadFilename: (id) => `647f-transfer-form-${id}.pdf`,
+  },
+  p10af: {
+    componentName: 'FormP10AF',
+    title: 'SFSO P10A/F Report',
+    generateLabel: 'Generate SFSO P10A/F Report',
+    description: (name) => `SFSO P10A/F Report for ${name}`,
+    downloadFilename: (id) => `p10af-report-${id}.pdf`,
   },
 };

@@ -8,8 +8,8 @@
   },
   "scripts": {
     "build": "npm run prisma:generate && npm run build:forms",
-    "build:forms": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external --loader:.css=text --bundle",
-    "build:forms:watch": "esbuild lib/forms/*.jsx --outdir=lib/forms/dist --format=esm --jsx=automatic --packages=external --loader:.css=text --bundle --watch=forever",
+    "build:forms": "node esbuild.forms.js",
+    "build:forms:watch": "node esbuild.forms.js --watch",
     "dev": "prisma db push --accept-data-loss && npm run build:forms && fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
@@ -51,6 +51,7 @@
     "luxon": "^3.7.2",
     "mime-types": "^3.0.1",
     "nodemailer": "^7.0.6",
+    "pdf-lib": "^1.17.1",
     "pm2": "^6.0.11",
     "puppeteer-core": "^24.0.0",
     "react": "^19.0.0",

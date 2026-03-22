@@ -1,6 +1,6 @@
 import React from 'react';
 import { z } from 'zod';
-import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase } from './formUtils.js';
+import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase } from '../formUtils.js';
 import { Header, Row, SectionHeader } from './formComponents.jsx';
 
 function buildNarrative ({ arrestedAt, officerName, subjectFullName, arrivedAtReset, transferredAt, releaseReason }) {
