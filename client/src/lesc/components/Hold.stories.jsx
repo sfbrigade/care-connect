@@ -29,6 +29,7 @@ const incident = {
 
 const deflection = {
   id: '012345',
+  incidentId: '000123',
   subjectId: null,
   subject: null,
   createdAt: new Date().toISOString(),
@@ -43,8 +44,62 @@ export const Default = {
   },
 };
 
+export const WithName = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndDob = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndSex = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        sex: 'MALE',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
 export const WithSomeSubjectDetails = {
   args: {
+    incident,
     deflection: {
       ...deflection,
       subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
@@ -92,6 +147,7 @@ export const WithAllDetails = {
 
 export const ExpiringSoon = {
   args: {
+    incident,
     deflection: {
       ...deflection,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
@@ -102,6 +158,7 @@ export const ExpiringSoon = {
 
 export const ArrivedIncomplete = {
   args: {
+    incident,
     deflection: {
       ...deflection,
       subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
@@ -125,17 +182,6 @@ export const ArrivedComplete = {
   }
 };
 
-export const CancelledEmpty = {
-  args: {
-    ...Default.args,
-    deflection: {
-      ...Default.args.deflection,
-      status: 'CANCELLED',
-      cancelledAt: new Date().toISOString(),
-    },
-  }
-};
-
 export const CancelledWithSomeDetails = {
   args: {
     ...WithSomeSubjectDetails.args,
@@ -143,33 +189,14 @@ export const CancelledWithSomeDetails = {
       ...WithSomeSubjectDetails.args.deflection,
       status: 'CANCELLED',
       cancelledAt: new Date().toISOString(),
+      cancelReasonId: 'facility_emergency',
     },
   }
 };
 
-export const ExpiredTimer = {
-  args: {
-    deflection: {
-      ...deflection,
-      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    },
-    onDetailsClick: fn(),
-  },
-};
-
-export const ExpiredStatus = {
-  args: {
-    deflection: {
-      ...deflection,
-      expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      status: 'EXPIRED',
-    },
-    onDetailsClick: fn(),
-  },
-};
-
 export const ExpiredTimerWithSomeDetails = {
   args: {
+    incident,
     deflection: {
       ...WithSomeSubjectDetails.args.deflection,
       expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
@@ -180,6 +207,7 @@ export const ExpiredTimerWithSomeDetails = {
 
 export const ExpiredStatusWithSomeDetails = {
   args: {
+    incident,
     deflection: {
       ...WithSomeSubjectDetails.args.deflection,
       expiresAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),

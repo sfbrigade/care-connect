@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import Subject from '#models/subject.js';
+import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
 export default async function (fastify, opts) {
   fastify.put('/:id/subject',
@@ -44,10 +45,14 @@ export default async function (fastify, opts) {
       const subjectData = { ...data };
       delete subjectData.narcoticsSubstance;
       delete subjectData.narcoticsParaphernalia;
+      delete subjectData.drugUseEvidence;
+      delete subjectData.drugType;
 
       const deflectionData = {
         narcoticsSubstance: data.narcoticsSubstance ?? null,
         narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
+        drugUseEvidence: data.drugUseEvidence ?? null,
+        drugType: data.drugUseEvidence === true ? data.drugType ?? null : null,
       };
 
       await fastify.prisma.$transaction(async (tx) => {
@@ -89,6 +94,6 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      return reply.send(deflection);
+      return reply.send(redactDeflectionForUser(deflection, request.user));
     });
 }

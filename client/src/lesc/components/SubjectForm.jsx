@@ -7,12 +7,18 @@ import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
-import { formatInputDob } from '@/utils/format';
+
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
+import BooleanInput from '@/components/BooleanInput';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { formatInputDob } from '@/utils/format';
+import { validateSubject } from '@/utils/validators';
+
 import File647fModal from './custody/File647fModal';
 
 const initialValues = {
@@ -31,6 +37,8 @@ const initialValues = {
   postalCode: '',
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
+  drugUseEvidence: null,
+  drugType: null,
 };
 
 function SubjectForm () {
@@ -38,15 +46,15 @@ function SubjectForm () {
   const location = useLocation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
-  const isNewParam = searchParams.get('isNew') === 'true';
+  const isNew = searchParams.get('isNew') === 'true';
   const isCustodyContext = location.pathname.startsWith('/custody');
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [dobInput, setDobInput] = useState('');
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
+  const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -55,18 +63,14 @@ function SubjectForm () {
     initialValues,
     transformValues: (values) => ({
       ...values,
-      narcoticsSubstance: values.narcoticsSubstance !== null ? values.narcoticsSubstance === 'true' : null,
-      narcoticsParaphernalia: values.narcoticsParaphernalia !== null ? values.narcoticsParaphernalia === 'true' : null,
+      drugType: values.drugUseEvidence ? values.drugType ?? null : null,
       dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
     }),
     onValuesChange: (values) => {
-      if (!isInitialized) {
-        return;
+      setShowDrugTypeQuestion(values.drugUseEvidence);
+      if (form.initialized && !isCustodyContext) {
+        scheduleAutoSave(values, dobInput);
       }
-      if (isCustodyContext) {
-        return;
-      }
-      scheduleAutoSave(values, dobInput);
     }
   });
 
@@ -80,25 +84,32 @@ function SubjectForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const isNew = isNewParam || (!!deflection && !deflection.subjectId);
-
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading && !form.initialized) {
       if (deflection?.subject) {
         const normalized = normalizeValues({
           ...initialValues,
           ...deflection.subject,
-          narcoticsSubstance: deflection.narcoticsSubstance !== null ? JSON.stringify(deflection.narcoticsSubstance) : null,
-          narcoticsParaphernalia: deflection.narcoticsParaphernalia !== null ? JSON.stringify(deflection.narcoticsParaphernalia) : null,
+          narcoticsSubstance: deflection.narcoticsSubstance,
+          narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+          drugUseEvidence: deflection.drugUseEvidence,
+          drugType: deflection.drugType ?? null,
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         setDobInput(normalized.dateOfBirth ?? '');
-        form.setInitialValues(normalized);
-        form.reset();
+        form.initialize(normalized);
+        if (!isNew) {
+          const errors = validateSubject({
+            ...normalized,
+            dateOfBirth: deflection.subject.dateOfBirth,
+          });
+          form.setErrors(errors);
+        }
+      } else {
+        form.initialize(initialValues);
       }
-      setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
@@ -110,8 +121,7 @@ function SubjectForm () {
     return {
       ...initialValues,
       ...values,
-      narcoticsSubstance: values.narcoticsSubstance ?? null,
-      narcoticsParaphernalia: values.narcoticsParaphernalia ?? null,
+      drugType: values.drugType ?? null,
       dateOfBirth: values.dateOfBirth ?? '',
     };
   }
@@ -121,8 +131,7 @@ function SubjectForm () {
     const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
     return {
       ...normalized,
-      narcoticsSubstance: normalized.narcoticsSubstance !== null ? normalized.narcoticsSubstance === 'true' : null,
-      narcoticsParaphernalia: normalized.narcoticsParaphernalia !== null ? normalized.narcoticsParaphernalia === 'true' : null,
+      drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
       dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
     };
   }
@@ -161,7 +170,7 @@ function SubjectForm () {
       await updateDeflectionCache(response.data);
       if (isCustodyContext) {
         setShowFile647fModal(false);
-        showToast('Changes saved.', 'success', 4000, 'A new 647(f) record was filed with SFPD.');
+        showToast('Changes saved.', 'success');
         navigate(`/custody/${id}`);
       } else {
         navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
@@ -187,13 +196,14 @@ function SubjectForm () {
   const scrollToSection = searchParams.get('section');
 
   useEffect(() => {
-    if (scrollToSection === 'narcotics' && isInitialized) {
-      const el = document.querySelector('[data-section="narcotics"]');
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
-      }
+    if (!scrollToSection || !form.initialized) {
+      return;
     }
-  }, [scrollToSection, isInitialized]);
+    const el = document.querySelector(`[data-section="${scrollToSection}"]`);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  }, [scrollToSection, form.initialized]);
 
   function handleCustodySubmit (data) {
     setPendingFormData(data);
@@ -221,15 +231,15 @@ function SubjectForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
-          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
 
         <Title order={2} mb='xs'>Person details</Title>
         <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
                 key={form.key('firstName')}
@@ -266,36 +276,24 @@ function SubjectForm () {
                   }
                 }}
               />
-              <Input.Wrapper
+              <ChipInput
                 label={<>Sex<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('sex')}
-                  {...form.getInputProps('sex')}
-                >
-                  {form.errors.sex && <Text color='red' size='sm'>{form.errors.sex}</Text>}
-                  <Group gap='sm' mt='md'>
-                    {['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => (
-                      <Chip key={sex} value={sex}>{t(`sex.${sex}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
-              <Input.Wrapper
+                options={['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => ({
+                  value: sex,
+                  label: t(`sex.${sex}`),
+                }))}
+                {...form.getInputProps('sex')}
+                key={form.key('sex')}
+              />
+              <ChipInput
                 label={<>Race<span>*</span></>}
-              >
-                <Chip.Group
-                  key={form.key('race')}
-                  {...form.getInputProps('race')}
-                >
-                  {form.errors.race && <Text color='red' size='sm'>{form.errors.race}</Text>}
-                  <Group gap='sm' mt='md'>
-                    {['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => (
-                      <Chip key={race} value={race}>{t(`race.${race}`)}</Chip>
-                    ))}
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+                options={['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => ({
+                  value: race,
+                  label: t(`race.${race}`),
+                }))}
+                {...form.getInputProps('race')}
+                key={form.key('race')}
+              />
               <TextInput
                 key={form.key('driverLicense')}
                 label="Driver's license number"
@@ -317,11 +315,11 @@ function SubjectForm () {
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='xl'>
-                      <TextInput
+                      <AddressAutocomplete
+                        form={form}
+                        field='addressLine1'
                         key={form.key('addressLine1')}
                         label='Street address'
-                        placeholder='Enter street address'
-                        {...form.getInputProps('addressLine1')}
                       />
                       <TextInput
                         key={form.key('addressLine2')}
@@ -357,32 +355,42 @@ function SubjectForm () {
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap='xl'>
-                        <Input.Wrapper
+                        <BooleanInput
+                          {...form.getInputProps('narcoticsSubstance')}
+                          key={form.key('narcoticsSubstance')}
                           label={<>Possesses a controlled substance<span>*</span></>}
-                        >
-                          <Chip.Group
-                            key={form.key('narcoticsSubstance')}
-                            {...form.getInputProps('narcoticsSubstance')}
-                          >
-                            <Group gap='sm' mt='md'>
-                              <Chip value='true'>Yes</Chip>
-                              <Chip value='false'>No</Chip>
-                            </Group>
-                          </Chip.Group>
-                        </Input.Wrapper>
-                        <Input.Wrapper
+                        />
+                        <BooleanInput
+                          {...form.getInputProps('narcoticsParaphernalia')}
+                          key={form.key('narcoticsParaphernalia')}
                           label={<>Possesses narcotics paraphernalia<span>*</span></>}
-                        >
-                          <Chip.Group
-                            key={form.key('narcoticsParaphernalia')}
-                            {...form.getInputProps('narcoticsParaphernalia')}
-                          >
-                            <Group gap='sm' mt='md'>
-                              <Chip value='true'>Yes</Chip>
-                              <Chip value='false'>No</Chip>
-                            </Group>
-                          </Chip.Group>
-                        </Input.Wrapper>
+                        />
+                        <Divider />
+                        <Stack gap='xl' data-section='drug-use'>
+                          <Title order={3}>Drug use</Title>
+                          <Stack gap='xl'>
+                            <BooleanInput
+                              {...form.getInputProps('drugUseEvidence')}
+                              key={form.key('drugUseEvidence')}
+                              label='Evidence of drug use'
+                            />
+                            {showDrugTypeQuestion && (
+                              <Input.Wrapper label='Drug type'>
+                                <Chip.Group
+                                  key={form.key('drugType')}
+                                  {...form.getInputProps('drugType')}
+                                >
+                                  <Group gap='sm' mt='md'>
+                                    <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
+                                    <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
+                                    <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
+                                    <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                                  </Group>
+                                </Chip.Group>
+                              </Input.Wrapper>
+                            )}
+                          </Stack>
+                        </Stack>
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>

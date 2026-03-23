@@ -17,18 +17,24 @@ import {
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
-import CancelIncidentModal from './CancelIncidentModal';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
+import { validateIncident } from '@/utils/validators';
+
+import CancelIncidentModal from './CancelIncidentModal';
 
 const initialValues = {
   cadNumber: '',
+  encounteredVia: '',
   addressLine1: '',
   addressLine2: '',
   city: '',
@@ -52,6 +58,7 @@ function IncidentForm () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
+  const { t } = useTranslation();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -77,7 +84,7 @@ function IncidentForm () {
   });
 
   const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
-    queryKey: ['deflections', data?.id, 'all'],
+    queryKey: ['deflections', data?.id, 'active'],
     queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
     enabled: !!data?.id,
   });
@@ -90,11 +97,11 @@ function IncidentForm () {
           includeOffset: false,
           precision: 'seconds',
         });
-        form.setInitialValues({
+        form.initialize({
           ...data,
           arrestedAt,
         });
-        form.reset();
+        form.setErrors(validateIncident(data));
         setInitialized(true);
       } else {
         const now = DateTime.now().toISO({
@@ -103,7 +110,7 @@ function IncidentForm () {
         });
         getCurrentLocationAddress()
           .then((address) => {
-            form.setInitialValues({
+            form.initialize({
               ...initialValues,
               ...address,
               facilityId: facility.id,
@@ -111,14 +118,13 @@ function IncidentForm () {
             });
           })
           .catch(() => {
-            form.setInitialValues({
+            form.initialize({
               ...initialValues,
               facilityId: facility.id,
               arrestedAt: now,
             });
           })
           .finally(() => {
-            form.reset();
             setInitialized(true);
           });
       }
@@ -159,6 +165,9 @@ function IncidentForm () {
       );
       navigate('/holds');
     },
+    onError: () => {
+      showToast('We couldn’t create the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    },
   });
 
   const cancelIncidentMutation = useMutation({
@@ -173,9 +182,6 @@ function IncidentForm () {
       );
       await queryClient.removeQueries({
         queryKey: ['deflections', data?.id, 'active'],
-      });
-      await queryClient.removeQueries({
-        queryKey: ['deflections', data?.id, 'all'],
       });
       await queryClient.invalidateQueries({
         queryKey: ['deflections', facility.id, 'inactive'],
@@ -237,7 +243,7 @@ function IncidentForm () {
         </Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset
-            disabled={!isInitialized || !onSubmitMutation.isIdle}
+            disabled={!isInitialized || onSubmitMutation.isPending}
             variant='unstyled'
           >
             <Stack gap='xl'>
@@ -261,10 +267,11 @@ function IncidentForm () {
               )}
               {showAddressForm && (
                 <>
-                  <TextInput
+                  <AddressAutocomplete
                     ref={addressRef}
+                    form={form}
+                    field='addressLine1'
                     key={form.key('addressLine1')}
-                    {...form.getInputProps('addressLine1')}
                     label={
                       <>
                         Arrest address line 1<span>*</span>
@@ -319,6 +326,15 @@ function IncidentForm () {
                 type='datetime-local'
                 onFocus={() => setShowAddressForm(false)}
               />
+              <ChipInput
+                {...form.getInputProps('encounteredVia')}
+                key={form.key('encounteredVia')}
+                label={<>Encountered via<span>*</span></>}
+                options={['ON_VIEW', 'DISPATCHED'].map(value => ({
+                  value,
+                  label: t(`encounteredVia.${value}`),
+                }))}
+              />
               <Stack gap='xs'>
                 <TextInput
                   key={form.key('cadNumber')}
@@ -328,6 +344,7 @@ function IncidentForm () {
                       CAD number<span>*</span>
                     </>
                   }
+                  placeholder='Enter CAD number'
                   type='text'
                   inputMode='text'
                   maxLength={10}
@@ -352,6 +369,7 @@ function IncidentForm () {
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
+                  placeholder='Enter star number'
                   maxLength={4}
                   inputMode='numeric'
                   onKeyDown={(e) => {

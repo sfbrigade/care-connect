@@ -79,6 +79,30 @@ LARGE LARGE
     
 
 
+        PropertyNotReturnedReasonEnum {
+            ABANDONED ABANDONED
+DESTROYED DESTROYED
+OTHER OTHER
+        }
+    
+
+
+        DrugTypeEnum {
+            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
+DRUG DRUG
+TOLUENE TOLUENE
+COMBINATION COMBINATION
+        }
+    
+
+
+        EncounteredViaEnum {
+            ON_VIEW ON_VIEW
+DISPATCHED DISPATCHED
+        }
+    
+
+
         RaceEnum {
             WHITE WHITE
 BLACK BLACK
@@ -117,6 +141,8 @@ ADMITTED ADMITTED
 IN_CHAIR IN_CHAIR
 RELEASED RELEASED
 EXITED EXITED
+DEATH_IN_FACILITY DEATH_IN_FACILITY
+DEATH_IN_CUSTODY DEATH_IN_CUSTODY
         }
     
   "Organization" {
@@ -356,9 +382,18 @@ EXITED EXITED
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
+    Boolean volunteeredToReset "❓"
+    Boolean drugUseEvidence "❓"
+    DrugTypeEnum drugType "❓"
     String behavior "❓"
+    String behaviorAdditions "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
+    PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
+    String propertyNotReturnedOtherReason "❓"
+    Boolean propertyReturned "❓"
+    DateTime propertyReturnedAt "❓"
+    String propertyReturnedById "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
@@ -382,6 +417,9 @@ EXITED EXITED
     DateTime releasedAt "❓"
     String releasedById "❓"
     String releaseReasonId "❓"
+    String otherReleaseReason "❓"
+    String otherReleaseDestination "❓"
+    String releaseNarrative "❓"
     String refusalReasonId "❓"
     DateTime exitedAt "❓"
     String exitedById "❓"
@@ -425,6 +463,11 @@ EXITED EXITED
     String cancelReasonId "❓"
     SubjectStatusEnum subjectStatus "❓"
     String releaseReasonId "❓"
+    String otherReleaseReason "❓"
+    String otherReleaseDestination "❓"
+    Boolean propertyReturned "❓"
+    PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
+    String propertyNotReturnedOtherReason "❓"
     String refusalReasonId "❓"
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
@@ -510,6 +553,7 @@ EXITED EXITED
     Decimal latitude "❓"
     Decimal longitude "❓"
     DateTime arrestedAt "❓"
+    EncounteredViaEnum encounteredVia "❓"
     String cadNumber "❓"
     String supervisorBadgeNumber "❓"
     String createdById 
@@ -572,6 +616,7 @@ EXITED EXITED
     "User" o{--}o "DeflectionExitDestination" : ""
     "User" o{--}o "DeflectionExitHousingStatus" : ""
     "User" o{--}o "DeflectionExitHousingStatus" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
@@ -642,7 +687,10 @@ EXITED EXITED
     "Deflection" o|--|| "BedType" : "bedType"
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
+    "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
+    "Deflection" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
+    "Deflection" o|--|o "User" : "propertyReturnedBy"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
@@ -675,6 +723,7 @@ EXITED EXITED
     "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"
     "DeflectionUpdate" o|--|o "SubjectStatusEnum" : "enum:subjectStatus"
     "DeflectionUpdate" o|--|o "DeflectionReleaseReason" : "releaseReason"
+    "DeflectionUpdate" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "DeflectionUpdate" o|--|o "DeflectionRefusalReason" : "refusalReason"
     "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
@@ -695,6 +744,7 @@ EXITED EXITED
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
+    "Incident" o|--|o "EncounteredViaEnum" : "enum:encounteredVia"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"
     "Incident" o|--|o "Title" : "createdByTitle"

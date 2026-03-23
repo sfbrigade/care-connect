@@ -14,15 +14,15 @@ function Incident ({ incident, editLink }) {
       <Box>
         <Group gap='xs'>
           <Text size='md'>
-            Incident {incident ? String(incident.id).padStart(6, '0') : ''}
+            Incident {incident ? incident.id : ''}
           </Text>
           {isIncomplete && <Text c='gray.5' size='md'>•</Text>}
           {isIncomplete && <Text c='red.6' size='md'>Details incomplete</Text>}
         </Group>
         <Group gap='xs'>
-          {address && <Text c='gray.5' size='md'>{address}</Text>}
-          {address && incident?.arrestedAt && <Text c='gray.5' size='md'>•</Text>}
-          {incident?.arrestedAt && <Text c='gray.5' size='md'>{formatTime(incident.arrestedAt)}</Text>}
+          {address && <Text c='dimmed' size='md'>{address}</Text>}
+          {address && incident?.arrestedAt && <Text c='dimmed' size='md'>•</Text>}
+          {incident?.arrestedAt && <Text c='dimmed' size='md'>{formatTime(incident.arrestedAt)}</Text>}
         </Group>
       </Box>
       <Box>

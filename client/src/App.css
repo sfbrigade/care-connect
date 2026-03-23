@@ -15,6 +15,12 @@ a {
   100% { box-shadow: 0 0 0 3px transparent; }
 }
 
+@keyframes textHighlight {
+  0% { color: #4C6EF5; }
+  70% { color: #4C6EF5; }
+  100% { color: var(--mantine-color-dark-9); }
+}
+
 @keyframes slideDown {
   from {
     transform: translateY(-12px);
@@ -24,4 +30,28 @@ a {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.action-footer-gradient {
+  position: relative;
+  isolation: isolate;
+}
+
+.action-footer-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0) 0%, rgba(248, 249, 250, 0.92) 100%);
+}
+
+.action-footer-gradient > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure footer overflow/action icons stay opaque on top of the translucent gradient */
+.action-footer-gradient .mantine-ActionIcon-root[data-variant='outline'] {
+  background-color: var(--mantine-color-white);
 }

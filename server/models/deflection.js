@@ -1,4 +1,4 @@
-import { Prisma, HoldStatusEnum, PropertyEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -17,11 +17,16 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
+  behaviorAdditions: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
+  volunteeredToReset: z.boolean().nullable(),
+  drugUseEvidence: z.boolean().nullable(),
+  drugType: z.enum(Object.values(DrugTypeEnum)).catch(null).nullable(),
   property: z.enum(Object.values(PropertyEnum)).catch(null).nullable(),
   propertyDetails: z.string().nullable(),
   deflectionDetails: z.array(z.string()),
+  releaseNarrative: z.string().nullable(),
 });
 
 const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
@@ -40,6 +45,11 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
   deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
+  propertyReturned: z.boolean().nullable().optional(),
+  propertyNotReturnedReason: z.string().nullable().optional(),
+  propertyNotReturnedOtherReason: z.string().nullable().optional(),
+  propertyReturnedAt: z.coerce.date().nullable().optional(),
+  propertyReturnedById: z.string().uuid().nullable().optional(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
   completedAt: z.coerce.date().nullable(),
@@ -71,6 +81,8 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   releasedBy: User.ResponseSchema.nullable().optional(),
   releaseReasonId: z.string().nullable(),
   releaseReason: DeflectionReleaseReason.ResponseSchema.nullable().optional(),
+  otherReleaseReason: z.string().nullable().optional(),
+  otherReleaseDestination: z.string().nullable().optional(),
   refusalReasonId: z.string().nullable(),
   refusalReason: DeflectionRefusalReason.ResponseSchema.nullable().optional(),
   exitedAt: z.coerce.date().nullable(),
@@ -95,6 +107,7 @@ export class Deflection extends Base {
   static HoldStatus = HoldStatusEnum;
   static SubjectStatus = SubjectStatusEnum;
   static Ternary = TernaryEnum;
+  static PropertyNotReturnedReason = PropertyNotReturnedReasonEnum;
 
   constructor (data) {
     super(Prisma.DeflectionScalarFieldEnum, data);

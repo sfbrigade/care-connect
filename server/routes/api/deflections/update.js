@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -54,6 +55,6 @@ export default async function (fastify, opts) {
 
       updated.propertyPhotos = updated.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      return reply.send(updated);
+      return reply.send(redactDeflectionForUser(updated, request.user));
     });
 }

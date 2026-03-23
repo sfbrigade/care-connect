@@ -1,0 +1,38 @@
+entity: deflectionExitDestination
+connectedFields: ['createdBy', 'updatedBy']
+items:
+  item0:
+    id: 'jail'
+    name: 'Jail'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item1:
+    id: 'hospital'
+    name: 'Hospital'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item2:
+    id: 'street'
+    name: 'Street'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item3:
+    id: 'home'
+    name: 'Home'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item4:
+    id: 'services_non_hospital'
+    name: 'Services - non-hospital'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item5:
+    id: 'declined_consent'
+    name: 'Did not share'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  item6:
+    id: 'other'
+    name: 'Other'
+    createdBy: '@user1'
+    updatedBy: '@user1'

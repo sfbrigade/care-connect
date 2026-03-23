@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import { fileURLToPath, URL } from 'node:url';
 
 // https://vite.dev/config/
 
@@ -13,8 +14,8 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        '@': '/src',
-        components: '/src/components'
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        components: fileURLToPath(new URL('./src/components', import.meta.url))
       }
     },
     build: {
@@ -54,7 +55,14 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
     },
     test: {
       globals: true,
+      pool: 'threads',
+      maxWorkers: 2,
+      minWorkers: 1,
       environment: 'node',
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        components: fileURLToPath(new URL('./src/components', import.meta.url))
+      },
       projects: [
         {
           // Unit tests (Node.js environment)
@@ -62,6 +70,20 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
             name: 'unit',
             include: ['**/*.test.js'],
             exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**']
+          }
+        },
+        {
+          // Component tests (JSDOM environment)
+          test: {
+            name: 'component',
+            environment: 'jsdom',
+            setupFiles: ['./src/test/setupTests.js'],
+            include: ['**/*.test.jsx'],
+            exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**'],
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url)),
+              components: fileURLToPath(new URL('./src/components', import.meta.url))
+            },
           }
         }
       ]

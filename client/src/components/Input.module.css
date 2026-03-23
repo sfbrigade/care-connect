@@ -12,3 +12,11 @@
     --input-bd: var(--mantine-color-indigo-6);
   }
 }
+
+.error {
+  margin-top: var(--mantine-spacing-xs);
+}
+
+[disabled] .label {
+  color: var(--mantine-color-dimmed);
+}

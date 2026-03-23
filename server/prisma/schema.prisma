@@ -84,6 +84,24 @@ enum PropertyEnum {
   LARGE
 }
 
+enum PropertyNotReturnedReasonEnum{
+  ABANDONED
+  DESTROYED
+  OTHER
+}
+
+enum DrugTypeEnum {
+  INTOXICATING_LIQUOR
+  DRUG
+  TOLUENE
+  COMBINATION
+}
+
+enum EncounteredViaEnum {
+  ON_VIEW
+  DISPATCHED
+}
+
 enum RaceEnum {
   WHITE
   BLACK
@@ -116,6 +134,8 @@ enum SubjectStatusEnum {
   IN_CHAIR
   RELEASED
   EXITED
+  DEATH_IN_FACILITY
+  DEATH_IN_CUSTODY
 }
 
 model Organization {
@@ -210,29 +230,30 @@ model User {
   deflectionExitDestinationsUpdated    DeflectionExitDestination[]   @relation("UpdatedBy")
   deflectionExitHousingStatusesCreated DeflectionExitHousingStatus[] @relation("CreatedBy")
   deflectionExitHousingStatusesUpdated DeflectionExitHousingStatus[] @relation("UpdatedBy")
-  deflectionsCancelled                 Deflection[]                  @relation("CancelledBy")
-  deflectionsCreated                   Deflection[]                  @relation("CreatedBy")
-  deflectionsTransferred               Deflection[]                  @relation("TransferredBy")
-  deflectionsAdmitted                  Deflection[]                  @relation("AdmittedBy")
-  deflectionsRejected                  Deflection[]                  @relation("RejectedBy")
-  deflectionsReleased                  Deflection[]                  @relation("ReleasedBy")
-  deflectionsExited                    Deflection[]                  @relation("ExitedBy")
-  deflectionUpdatesCreated             DeflectionUpdate[]
-  facilitiesCreated                    Facility[]                    @relation("CreatedBy")
-  facilitiesUpdated                    Facility[]                    @relation("UpdatedBy")
-  facilityStatusReasonsCreated         FacilityStatusReason[]        @relation("CreatedBy")
-  facilityStatusReasonsUpdated         FacilityStatusReason[]        @relation("UpdatedBy")
-  facilityUpdatesCreated               FacilityUpdate[]
-  incidentsCreated                     Incident[]                    @relation("CreatedBy")
-  incidentsUpdated                     Incident[]                    @relation("UpdatedBy")
-  invitesCreated                       Invite[]                      @relation("CreatedBy")
-  invitesAccepted                      Invite[]                      @relation("AcceptedBy")
-  invitesRevoked                       Invite[]                      @relation("RevokedBy")
-  organizationsCreated                 Organization[]                @relation("CreatedBy")
-  propertyPhotosCreated                PropertyPhoto[]               @relation("CreatedBy")
-  propertyPhotosUpdated                PropertyPhoto[]               @relation("UpdatedBy")
-  titlesCreated                        Title[]                       @relation("CreatedBy")
-  unitsCreated                         Unit[]                        @relation("CreatedBy")
+  deflectionsCancelled         Deflection[]            @relation("CancelledBy")
+  deflectionsCreated           Deflection[]            @relation("CreatedBy")
+  deflectionsTransferred       Deflection[]            @relation("TransferredBy")
+  deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
+  deflectionsRejected          Deflection[]            @relation("RejectedBy")
+  deflectionsReleased          Deflection[]            @relation("ReleasedBy")
+  deflectionsPropertyReturned  Deflection[]            @relation("PropertyReturnedBy")
+  deflectionsExited            Deflection[]            @relation("ExitedBy")
+  deflectionUpdatesCreated     DeflectionUpdate[]
+  facilitiesCreated            Facility[]              @relation("CreatedBy")
+  facilitiesUpdated            Facility[]              @relation("UpdatedBy")
+  facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
+  facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
+  facilityUpdatesCreated       FacilityUpdate[]
+  incidentsCreated             Incident[]              @relation("CreatedBy")
+  incidentsUpdated             Incident[]              @relation("UpdatedBy")
+  invitesCreated               Invite[]                @relation("CreatedBy")
+  invitesAccepted              Invite[]                @relation("AcceptedBy")
+  invitesRevoked               Invite[]                @relation("RevokedBy")
+  organizationsCreated         Organization[]          @relation("CreatedBy")
+  propertyPhotosCreated        PropertyPhoto[]         @relation("CreatedBy")
+  propertyPhotosUpdated        PropertyPhoto[]         @relation("UpdatedBy")
+  titlesCreated                Title[]                 @relation("CreatedBy")
+  unitsCreated                 Unit[]                  @relation("CreatedBy") 
 }
 
 model Invite {
@@ -448,71 +469,84 @@ model Subject {
 }
 
 model Deflection {
-  id                            Int                          @id @default(autoincrement())
-  facility                      Facility                     @relation(fields: [facilityId], references: [id])
-  facilityId                    String                       @db.Uuid
-  incident                      Incident                     @relation(fields: [facilityId, incidentId], references: [facilityId, id])
-  incidentId                    Int
-  bedType                       BedType                      @relation(fields: [facilityId, bedTypeId], references: [facilityId, id])
-  bedTypeId                     String                       @db.Uuid
-  subject                       Subject?                     @relation(fields: [subjectId], references: [id])
-  subjectId                     String?                      @db.Uuid
-  subjectStatus                 SubjectStatusEnum            @default(DETAINED)
-  narcoticsSubstance            Boolean?
-  narcoticsParaphernalia        Boolean?
-  behavior                      String?
-  property                      PropertyEnum?
-  propertyDetails               String?
-  createdAt                     DateTime                     @default(now())
-  createdBy                     User                         @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                   String                       @db.Uuid
-  expiresAt                     DateTime                     @default(dbgenerated("(now() + '01:00:00'::interval)"))
-  completedAt                   DateTime?
-  status                        HoldStatusEnum               @default(ACTIVE)
-  extensionCount                Int                          @default(0)
-  cancelReason                  DeflectionCancelReason?      @relation(fields: [cancelReasonId], references: [id])
-  cancelReasonId                String?
-  cancelledAt                   DateTime?
-  cancelledBy                   User?                        @relation("CancelledBy", fields: [cancelledById], references: [id])
-  cancelledById                 String?                      @db.Uuid
-  transferredAt                 DateTime?
-  transferredBy                 User?                        @relation("TransferredBy", fields: [transferredById], references: [id])
-  transferredById               String?                      @db.Uuid
-  transferredByBadgeNumber      String?
+  id                           Int                     @id @default(autoincrement())
+  facility                     Facility                @relation(fields: [facilityId], references: [id])
+  facilityId                   String                  @db.Uuid
+  incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
+  incidentId                   Int
+  bedType                      BedType                 @relation(fields: [facilityId, bedTypeId], references: [facilityId, id])
+  bedTypeId                    String                  @db.Uuid 
+  subject                      Subject?                @relation(fields: [subjectId], references: [id])
+  subjectId                    String?                 @db.Uuid
+  subjectStatus                SubjectStatusEnum       @default(DETAINED)
+  narcoticsSubstance           Boolean?
+  narcoticsParaphernalia       Boolean?
+  volunteeredToReset           Boolean?
+  drugUseEvidence              Boolean?
+  drugType                     DrugTypeEnum?
+  behavior                     String?
+  behaviorAdditions            String?
+  property                     PropertyEnum?
+  propertyDetails              String?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
+  propertyReturned             Boolean?
+  propertyReturnedAt           DateTime?
+  propertyReturnedBy           User?                   @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
+  propertyReturnedById         String?                 @db.Uuid
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  expiresAt                    DateTime                @default(dbgenerated("(now() + '01:00:00'::interval)"))
+  completedAt                  DateTime?
+  status                       HoldStatusEnum          @default(ACTIVE)
+  extensionCount               Int                     @default(0)
+  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId               String?
+  cancelledAt                  DateTime?
+  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id])
+  cancelledById                String?                 @db.Uuid
+  transferredAt                DateTime?
+  transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id])
+  transferredById              String?                 @db.Uuid
+  transferredByBadgeNumber     String?
   transferredByProp115Certified Boolean?
-  transferredByOrganizationId   String?
-  transferredByOrganization     Organization?                @relation(fields: [transferredByOrganizationId], references: [id])
-  transferredByUnitId           String?
-  transferredByUnit             Unit?                        @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
-  transferredByTitleId          String?
-  transferredByTitle            Title?                       @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
-  admittedAt                    DateTime?
-  admittedBy                    User?                        @relation("AdmittedBy", fields: [admittedById], references: [id])
-  admittedById                  String?                      @db.Uuid
-  rejectedAt                    DateTime?
-  rejectedBy                    User?                        @relation("RejectedBy", fields: [rejectedById], references: [id])
-  rejectedById                  String?                      @db.Uuid
-  releasedAt                    DateTime?
-  releasedBy                    User?                        @relation("ReleasedBy", fields: [releasedById], references: [id])
-  releasedById                  String?                      @db.Uuid
-  releaseReason                 DeflectionReleaseReason?     @relation(fields: [releaseReasonId], references: [id])
-  releaseReasonId               String?
-  refusalReason                 DeflectionRefusalReason?     @relation(fields: [refusalReasonId], references: [id])
-  refusalReasonId               String?
-  exitedAt                      DateTime?
-  exitedBy                      User?                        @relation("ExitedBy", fields: [exitedById], references: [id])
-  exitedById                    String?                      @db.Uuid
-  exitDestination               DeflectionExitDestination?   @relation(fields: [exitDestinationId], references: [id])
-  exitDestinationId             String?
-  exitHousingStatus             DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
-  exitHousingStatusId           String?
-  exitConnectedToCare           TernaryEnum?
-  exitSFResident                TernaryEnum?
-  updatedAt                     DateTime                     @updatedAt
+  transferredByOrganizationId  String?
+  transferredByOrganization    Organization?           @relation(fields: [transferredByOrganizationId], references: [id])
+  transferredByUnitId          String?
+  transferredByUnit            Unit?                   @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
+  transferredByTitleId         String?
+  transferredByTitle           Title?                  @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
+  admittedAt                   DateTime?
+  admittedBy                   User?                   @relation("AdmittedBy", fields: [admittedById], references: [id])
+  admittedById                 String?                 @db.Uuid
+  rejectedAt                   DateTime?
+  rejectedBy                   User?                   @relation("RejectedBy", fields: [rejectedById], references: [id])
+  rejectedById                 String?                 @db.Uuid
+  releasedAt                   DateTime?
+  releasedBy                   User?                   @relation("ReleasedBy", fields: [releasedById], references: [id])
+  releasedById                 String?                 @db.Uuid
+  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId              String?
+  otherReleaseReason           String?
+  otherReleaseDestination      String?
+  releaseNarrative             String?
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitedAt                     DateTime?
+  exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
+  exitedById                   String?                 @db.Uuid
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               TernaryEnum?
+  updatedAt                    DateTime                @updatedAt
 
-  deflectionDetails DeflectionDetail[]
-  deflectionUpdates DeflectionUpdate[]
-  propertyPhotos    PropertyPhoto[]
+  deflectionDetails            DeflectionDetail[]
+  deflectionUpdates            DeflectionUpdate[]
+  propertyPhotos               PropertyPhoto[]
 }
 
 model DeflectionDetailCategory {
@@ -548,28 +582,33 @@ model DeflectionDetail {
 }
 
 model DeflectionUpdate {
-  id                  String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection          Deflection                   @relation(fields: [deflectionId], references: [id])
-  deflectionId        Int
-  status              HoldStatusEnum?
-  expiresAt           DateTime?
-  extensionCount      Int?
-  cancelReason        DeflectionCancelReason?      @relation(fields: [cancelReasonId], references: [id])
-  cancelReasonId      String?
-  subjectStatus       SubjectStatusEnum?
-  releaseReason       DeflectionReleaseReason?     @relation(fields: [releaseReasonId], references: [id])
-  releaseReasonId     String?
-  refusalReason       DeflectionRefusalReason?     @relation(fields: [refusalReasonId], references: [id])
-  refusalReasonId     String?
-  exitDestination     DeflectionExitDestination?   @relation(fields: [exitDestinationId], references: [id])
-  exitDestinationId   String?
-  exitHousingStatus   DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
-  exitHousingStatusId String?
-  exitConnectedToCare TernaryEnum?
-  exitSFResident      TernaryEnum?
-  updatedAt           DateTime                     @default(now())
-  updatedBy           User                         @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById         String                       @db.Uuid
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id])
+  deflectionId                 Int
+  status                       HoldStatusEnum?
+  expiresAt                    DateTime?
+  extensionCount               Int?
+  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId               String?
+  subjectStatus                SubjectStatusEnum?
+  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId              String?
+  otherReleaseReason           String?
+  otherReleaseDestination      String?
+  propertyReturned             Boolean?
+  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  propertyNotReturnedOtherReason String?
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               TernaryEnum?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 }
 
 model DeflectionCancelReason {
@@ -656,35 +695,36 @@ model PropertyPhoto {
 }
 
 model Incident {
-  id                      Int           @unique @default(autoincrement())
-  facilityId              String        @db.Uuid
-  facility                Facility      @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  arrivedAt               DateTime?
-  leftAt                  DateTime?
-  completedAt             DateTime?
-  addressLine1            String?
-  addressLine2            String?
-  city                    String?
-  state                   String?
-  postalCode              String?
-  latitude                Decimal?      @db.Decimal(9, 6)
-  longitude               Decimal?      @db.Decimal(9, 6)
-  arrestedAt              DateTime?
-  cadNumber               String?
-  supervisorBadgeNumber   String?
-  createdBy               User          @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdById             String        @db.Uuid
-  createdByOrganization   Organization? @relation(fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
-  createdByOrganizationId String?
-  createdByTitle          Title?        @relation(fields: [createdByOrganizationId, createdByTitleId], references: [organizationId, id], onDelete: Restrict)
-  createdByTitleId        String?
-  createdByUnit           Unit?         @relation(fields: [createdByOrganizationId, createdByUnitId], references: [organizationId, id], onDelete: Restrict)
-  createdByUnitId         String?
-  createdByBadgeNumber    String?
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-  updatedBy               User          @relation("UpdatedBy", fields: [updatedById], references: [id])
-  updatedById             String        @db.Uuid
+  id                           Int                     @unique @default(autoincrement())
+  facilityId                   String                  @db.Uuid
+  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  arrivedAt                    DateTime?
+  leftAt                       DateTime?
+  completedAt                  DateTime?
+  addressLine1                 String?
+  addressLine2                 String?
+  city                         String?
+  state                        String?
+  postalCode                   String?
+  latitude                     Decimal?                @db.Decimal(9, 6)
+  longitude                    Decimal?                @db.Decimal(9, 6)
+  arrestedAt                   DateTime?
+  encounteredVia               EncounteredViaEnum?
+  cadNumber                    String?
+  supervisorBadgeNumber        String?
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById                  String                  @db.Uuid
+  createdByOrganization        Organization?           @relation(fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
+  createdByOrganizationId      String?
+  createdByTitle               Title?                  @relation(fields: [createdByOrganizationId, createdByTitleId], references: [organizationId, id], onDelete: Restrict)
+  createdByTitleId             String?
+  createdByUnit                Unit?                   @relation(fields: [createdByOrganizationId, createdByUnitId], references: [organizationId, id], onDelete: Restrict)
+  createdByUnitId              String?
+  createdByBadgeNumber         String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id])
+  updatedById                  String                  @db.Uuid
 
   @@id([id, facilityId])
   @@index([cadNumber])

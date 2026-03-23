@@ -19,9 +19,10 @@ function Facility ({
   const { t } = useTranslation();
   const hasArrived = !!arrivedAt;
   const hasLeft = !!leftAt;
+  const primaryBedType = bedTypes?.[0];
   const isClosed = facility.status === 'CLOSED';
   const isFull = (bedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
-  const isHoldButtonDisabled = isPending || isClosed || isFull || (hasArrived && !hasLeft);
+  const isHoldButtonDisabled = isPending || isClosed || isFull || !primaryBedType || (hasArrived && !hasLeft);
   const isArrivedButtonDisabled = isPending || isClosed || !hasActiveHold;
   const hasAddressParts = [
     facility.addressLine1,
@@ -59,7 +60,9 @@ function Facility ({
         <Group gap='sm' grow wrap='nowrap'>
           {(!hasArrived || hasLeft) && <Button px='sm' variant='secondary' onClick={onArrivedClick} disabled={isArrivedButtonDisabled}>{isPending ? <Loader size='sm' /> : "I've arrived"}</Button>}
           {hasArrived && !hasLeft && <Button px='sm' onClick={onLeftClick} disabled={hasActiveHold}>I've left</Button>}
-          <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>Hold a {t(`bedType.${bedTypes?.[0].type}`).toLocaleLowerCase()}</Button>
+          <Button px='sm' onClick={onHoldClick} disabled={isHoldButtonDisabled}>
+            Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
+          </Button>
         </Group>
         {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
         {hasLeft && <Text align='center' size='md' c='gray.5'>Left at {DateTime.fromISO(leftAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}

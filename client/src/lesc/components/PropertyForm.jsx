@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Button, Chip, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import { useFacilityContext } from '@/FacilityContext';
 import Api from '@/Api';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
+import { validateProperty } from '@/utils/validators';
 
 const initialValues = {
   property: '',
@@ -25,7 +27,6 @@ function PropertyForm () {
   const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
   const autoSaveTimerRef = useRef(null);
@@ -44,28 +45,27 @@ function PropertyForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
-      if (!isInitialized) {
-        return;
-      }
       setIsLarge(values.property === 'LARGE');
-      scheduleAutoSave(values);
+      if (form.initialized) {
+        scheduleAutoSave(values);
+      }
     },
   });
 
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeValues({
           property: deflection.property,
           propertyDetails: deflection.propertyDetails,
         });
-        form.setInitialValues(normalized);
-        form.reset();
-        setIsLarge(normalized.property === 'LARGE');
+        form.initialize(normalized);
+        if (!isNew) {
+          form.setErrors(validateProperty(normalized));
+        }
       }
-      setInitialized(true);
     }
-  }, [isLoading, isInitialized, deflection]);
+  }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => () => {
     if (autoSaveTimerRef.current) {
@@ -184,31 +184,24 @@ function PropertyForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? String(incident.id).padStart(6, '0') : ''}</Text>
+          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
-          <Text size='md' c='dimmed'>Hold {deflection ? String(deflection.id).padStart(6, '0') : ''}</Text>
+          <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Personal property</Title>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Chip.Group
-                key={form.key('property')}
+              <ChipInput
                 {...form.getInputProps('property')}
-              >
-                <Group gap='sm'>
-                  {['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => (
-                    <Chip
-                      key={value}
-                      value={value}
-                      size='lg'
-                    >
-                      {t(`property.${value}`)}
-                    </Chip>
-                  ))}
-                </Group>
-              </Chip.Group>
+                key={form.key('property')}
+                label={<>How much property is the person bringing?<span>*</span></>}
+                options={['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => ({
+                  value,
+                  label: t(`property.${value}`),
+                }))}
+              />
               {isLarge && (
                 <Group gap='xs'>
                   <Text size='sm' c='red'>
