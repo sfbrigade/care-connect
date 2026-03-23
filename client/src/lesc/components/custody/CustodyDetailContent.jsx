@@ -57,7 +57,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody' }) {
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
-  console.log(deflection)
+  console.log(deflection);
   function open647fPdf () {
     // const holdData = {
     //   id: String(deflection.id),

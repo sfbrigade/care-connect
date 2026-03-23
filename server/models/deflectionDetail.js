@@ -19,6 +19,8 @@ const DeflectionDetailResponseSchema = DeflectionDetailCreateSchema.extend({
   createdAt: z.coerce.date(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
+  deletedAt: z.coerce.date().optional().nullable(),
+  deletedById: z.string().uuid().nullable(),
   updatedAt: z.coerce.date(),
   updatedById: z.string().uuid().nullable(),
   updatedBy: User.ResponseSchema.optional(),

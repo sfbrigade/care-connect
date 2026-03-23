@@ -534,6 +534,8 @@ model DeflectionDetail {
   id                         String                   @id
   deflectionDetailCategoryId String
   deflectionDetailCategory   DeflectionDetailCategory @relation(fields: [deflectionDetailCategoryId], references: [id])
+  deletedAt                  DateTime?
+  deletedById                String?                  @db.Uuid
   name                       String
   createdBy                  User                     @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                String                   @db.Uuid

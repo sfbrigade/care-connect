@@ -4,13 +4,13 @@ import AdminDeflectionDetailCategoriesForm from './AdminDeflectionDetailCategori
 import AdminDeflectionDetailCategoriesList from './AdminDeflectionDetailCategoriesList.jsx';
 
 function AdminDeflectionDetailCategories () {
-    return (
-        <Routes>
-            <Route path='new' element={<AdminDeflectionDetailCategoriesForm />} />
-            <Route path=':reasonId' element={<AdminDeflectionDetailCategoriesForm />} />
-            <Route path='' element={<AdminDeflectionDetailCategoriesList />} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route path='new' element={<AdminDeflectionDetailCategoriesForm />} />
+      <Route path=':reasonId' element={<AdminDeflectionDetailCategoriesForm />} />
+      <Route path='' element={<AdminDeflectionDetailCategoriesList />} />
+    </Routes>
+  );
 }
 
 export default AdminDeflectionDetailCategories;
