@@ -32,26 +32,44 @@ a {
   }
 }
 
-.action-footer-gradient {
-  position: relative;
-  isolation: isolate;
+.action-footer {
+  padding: 16px 20px 40px;
 }
 
-.action-footer-gradient::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(248, 249, 250, 0) 0%, rgba(248, 249, 250, 0.92) 100%);
-}
-
-.action-footer-gradient > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Ensure footer overflow/action icons stay opaque on top of the translucent gradient */
-.action-footer-gradient .mantine-ActionIcon-root[data-variant='outline'] {
+.action-footer-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: fit-content;
+  max-width: min(100%, 320px);
+  margin: 0 auto;
+  padding: 8px;
   background-color: var(--mantine-color-white);
+  border-radius: 32px;
+}
+
+.action-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.action-footer-row--stacked {
+  flex-direction: column;
+}
+
+.action-footer-row--stretch > * {
+  flex: 1 1 auto;
+}
+
+.action-footer-tray .mantine-ActionIcon-root[data-variant='outline'] {
+  background-color: var(--mantine-color-indigo-0);
+  border-color: transparent;
+  color: var(--mantine-color-indigo-6);
+}
+
+.action-footer-tray .mantine-ActionIcon-root[data-variant='outline']:hover {
+  background-color: var(--mantine-color-indigo-1);
 }

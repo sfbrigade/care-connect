@@ -42,16 +42,27 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
 
 function ExtendAllHoldsAction ({ loading, onClick }) {
   return (
-    <Button
-      disabled={loading}
-      variant='secondary'
-      fullWidth
-      h={64}
-      radius='xl'
-      onClick={onClick}
+    <Box
+      className='action-footer'
+      pos='sticky'
+      bottom={0}
+      style={{ zIndex: 10 }}
     >
-      {loading ? <Loader size='sm' /> : 'Extend all holds'}
-    </Button>
+      <Box className='action-footer-tray'>
+        <Box className='action-footer-row'>
+          <Button
+            disabled={loading}
+            variant='secondary'
+            fullWidth
+            size='lg'
+            radius='xl'
+            onClick={onClick}
+          >
+            {loading ? <Loader size='sm' /> : 'Extend active holds'}
+          </Button>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
@@ -99,6 +110,7 @@ function HoldsActive ({
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
   const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
   const showExtendAllButton = hasDeflections;
+  const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
     <>
@@ -146,6 +158,11 @@ function HoldsActive ({
               />
             ))}
           </Stack>
+          {showUpdatedAt && (
+            <Text size='xs' c='gray.5' ta='center'>
+              Last updated: {formatTime(new Date(updatedAtMs))}
+            </Text>
+          )}
           {showExtendAllButton && (
             <ExtendAllHoldsAction
               loading={extendAllHoldsMutation.isPending}

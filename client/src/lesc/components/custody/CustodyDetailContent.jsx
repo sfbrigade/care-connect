@@ -486,50 +486,48 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       </Container>
       {careFooterState.showFooter && (
         <Box
-          className='action-footer-gradient'
+          className='action-footer'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          pt='md'
-          pb='xl'
           style={{ zIndex: 10 }}
         >
           <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
-              <Button
-                color='indigo'
-                radius='xl'
-                size='lg'
-                onClick={() => {
-                  if (careFooterState.primaryAction === 'complete-intake') {
-                    setCompleteIntakeModalOpened(true);
-                    return;
-                  }
-                  if (careFooterState.primaryAction === 'start-exit') {
-                    navigate(careFooterState.startExitPath);
-                  }
-                }}
-              >
-                {careFooterState.primaryLabel}
-              </Button>
-            </Group>
+            <Box className='action-footer-tray'>
+              <Box className='action-footer-row'>
+                <Button
+                  variant='secondary'
+                  radius='xl'
+                  size='lg'
+                  onClick={() => {
+                    if (careFooterState.primaryAction === 'complete-intake') {
+                      setCompleteIntakeModalOpened(true);
+                      return;
+                    }
+                    if (careFooterState.primaryAction === 'start-exit') {
+                      navigate(careFooterState.startExitPath);
+                    }
+                  }}
+                >
+                  {careFooterState.primaryLabel}
+                </Button>
+              </Box>
+            </Box>
           </Container>
         </Box>
       )}
       {showCustodyActionFooter && (
         <Box
-          className='action-footer-gradient'
+          className='action-footer'
           pos='fixed'
           left={0}
           right={0}
           bottom={0}
-          pt={showRecordPropertyReturnAction ? 'xl' : 'md'}
-          pb='xl'
           style={{ zIndex: 10 }}
         >
           <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
+            <Box className='action-footer-tray'>
               {showMoreActionsPrimaryOnly
                 ? (
                   <Menu
@@ -541,11 +539,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   >
                     <Menu.Target>
                       <Button
-                        variant='outline'
+                        variant='secondary'
                         color='indigo'
                         radius='xl'
                         size='lg'
-                        leftSection={<IconDots size={22} />}
+                        leftSection={<IconDots size={22} color='var(--mantine-color-indigo-6)' />}
                       >
                         More actions
                       </Button>
@@ -573,22 +571,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Menu>
                   )
                 : (
-                  <Stack gap='sm' w='100%' align='center'>
+                  <Stack gap='sm' w='100%' align='stretch'>
                     {showRecordPropertyReturnAction && (
-                      <Group justify='center' gap='sm' wrap='nowrap'>
-                        {!isExited && <Box w={48} h={48} style={{ visibility: 'hidden' }} />}
+                      <Box className='action-footer-row'>
                         <Button
-                          variant='outline'
+                          variant='secondary'
                           color='indigo'
                           radius='xl'
                           size='lg'
+                          fullWidth
                           onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
                         >
                           Record property return
                         </Button>
-                      </Group>
+                      </Box>
                     )}
-                    <Group justify='center' gap='sm' wrap='nowrap'>
+                    <Group className='action-footer-row action-footer-row--stretch' gap='sm' wrap='nowrap'>
                       {!isExited && (
                         <Menu
                           position='top-start'
@@ -637,6 +635,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         color='indigo'
                         radius='xl'
                         size='lg'
+                        fullWidth
                         onClick={() => {
                           if (isAwaitingSafetyCheck) {
                             safetyCheckMutation.mutate();
@@ -655,12 +654,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Group>
                   </Stack>
                   )}
-            </Group>
+            </Box>
           </Container>
         </Box>
       )}
       {(careFooterState.showFooter || showCustodyActionFooter) && (
-        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '164px' : '104px'} />
+        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '184px' : '128px'} />
       )}
       <RecordDeathModal
         opened={recordDeathModalOpened}

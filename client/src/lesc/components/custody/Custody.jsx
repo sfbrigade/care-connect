@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconQrcode } from '@tabler/icons-react';
-
 import Api from '@/Api';
+import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
@@ -259,34 +258,32 @@ function Custody () {
                   )}
             </Stack>
           )}
+          {tab === 'in-custody' && dataUpdatedAt > 0 && (
+            <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
+          )}
         </Stack>
       </Container>
       {tab === 'in-custody' && (
         <Box
-          className='action-footer-gradient'
+          className='action-footer'
           pos='sticky'
           bottom={0}
-          pt='md'
-          pb='xl'
           style={{ zIndex: 10 }}
         >
           <Container>
-            <Stack gap='xs'>
-              <Button
-                variant='light'
-                fullWidth
-                size='lg'
-                leftSection={<IconQrcode size={20} />}
-                onClick={() => setScanModalOpened(true)}
-              >
-                Scan a custody transfer code
-              </Button>
-              {dataUpdatedAt > 0 && (
-                <Group justify='center'>
-                  <Text size='sm' c='dimmed'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
-                </Group>
-              )}
-            </Stack>
+            <Box className='action-footer-tray'>
+              <Box className='action-footer-row'>
+                <Button
+                  variant='secondary'
+                  fullWidth
+                  size='lg'
+                  leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+                  onClick={() => setScanModalOpened(true)}
+                >
+                  Scan transfer code
+                </Button>
+              </Box>
+            </Box>
           </Container>
         </Box>
       )}
