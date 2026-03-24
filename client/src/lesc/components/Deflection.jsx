@@ -307,7 +307,7 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
+                <Title order={3}>Behavioral observations</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -326,7 +326,7 @@ function Deflection () {
                     </Box>
                   )}
                   <Box>
-                    <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                    <Text c='dimmed'>647(f) narrative</Text>
                     {deflection?.behavior
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>

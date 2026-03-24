@@ -229,7 +229,7 @@ function PropertyForm () {
               )}
               {!deflection?.propertyPhotos?.length && (
                 <PhotoInput
-                  label='Photo'
+                  label='Photo (optional)'
                   id='file'
                   name='file'
                   onChange={(file) => onChangePhoto(null, file)}
@@ -240,8 +240,8 @@ function PropertyForm () {
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}
-                label='Description'
-                placeholder='E.g., black backpack with clothing and toiletries.'
+                label='Description (optional)'
+                placeholder='e.g., black backpack with clothing and toiletries.'
               />
               <Button type='submit' mb='xl'>
                 {isNew ? 'Save details' : 'Save property'}

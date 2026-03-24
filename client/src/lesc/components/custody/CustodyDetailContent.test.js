@@ -147,7 +147,7 @@ vi.mock('@mantine/core', async () => {
 
 const mockMutation = (options = {}) => ({
   isPending: false,
-  mutate: () => {},
+  mutate: () => { },
   mutateAsync: async () => {
     const result = await options.mutationFn?.();
     options.onSuccess?.(result);
@@ -223,7 +223,7 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Intake staff can scan this code to start full intake.');
     expect(html).toContain('849(b).pdf');
     expect(html).toContain('Legal release');
-    expect(html).toContain('Arrest details');
+    expect(html).toContain('Behavioral observations');
     expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
   });
