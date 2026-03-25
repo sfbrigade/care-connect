@@ -31,3 +31,12 @@
   position: relative;
   z-index: 1;
 }
+
+.root{
+  backGround: #3B3B3B;
+}
+
+.innerLabel{
+  color:#ffffff;
+}
+
