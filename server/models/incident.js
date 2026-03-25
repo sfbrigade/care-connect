@@ -11,6 +11,7 @@ import User from './user.js';
 
 const IncidentAttributesSchema = z.object({
   cadNumber: z.string().nullable(),
+  caseNumber: z.string().nullable(),
   addressLine1: z.string().nullable(),
   addressLine2: z.string().nullable(),
   city: z.string().nullable(),
