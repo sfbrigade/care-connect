@@ -328,6 +328,7 @@ function Holds () {
           <Facility
             facility={facility}
             bedTypes={bedTypes ?? facility.bedTypes}
+            showAddress
             arrivedAt={incident?.arrivedAt}
             leftAt={incident?.leftAt}
             hasActiveHold={(deflections?.length ?? 0) > 0}

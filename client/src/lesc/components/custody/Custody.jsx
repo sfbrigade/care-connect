@@ -13,7 +13,7 @@ import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
 import StatusAccordion from '../StatusAccordion';
-import CareFacilityCard from '../care/CareFacilityCard';
+import Facility from '../Facility';
 import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
@@ -223,7 +223,7 @@ function Custody () {
       </Head>
       <Container pt='md'>
         <Stack gap='xl'>
-          <CareFacilityCard facility={facility} bedTypes={bedTypes} />
+          <Facility facility={facility} bedTypes={bedTypes} showCounts />
           <SegmentedControl
             fullWidth
             value={tab}

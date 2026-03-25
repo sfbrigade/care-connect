@@ -16,7 +16,7 @@ import EmptyState from '../EmptyState';
 import StatusAccordion from '../StatusAccordion';
 
 import CareCard from './CareCard';
-import CareFacilityCard from './CareFacilityCard';
+import Facility from '../Facility';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
 import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
@@ -162,7 +162,7 @@ function Care () {
       </Head>
       <Container pt='md' pb='xl'>
         <Stack gap='lg'>
-          <CareFacilityCard facility={facility} bedTypes={bedTypes} />
+          <Facility facility={facility} bedTypes={bedTypes} showCounts />
           <SegmentedControl
             fullWidth
             value={tab}

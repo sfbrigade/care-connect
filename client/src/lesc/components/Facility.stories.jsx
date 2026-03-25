@@ -56,12 +56,43 @@ export const Default = {
       {
         type: 'CHAIR',
         available: 16,
+        holds: 2,
+        occupied: 4,
       },
     ],
+    showAddress: true,
     hasActiveHold: true,
     onArrivedClick: () => console.log('I\'ve arrived clicked'),
     onLeftClick: () => console.log('I\'ve left clicked'),
     onHoldClick: () => console.log('Hold a Bed clicked'),
+  },
+};
+
+export const CustodyView = {
+  args: {
+    facility: {
+      name: 'RESET',
+      status: 'OPEN_ACCEPTING',
+    },
+    bedTypes: [
+      {
+        type: 'CHAIR',
+        available: 12,
+        holds: 2,
+        occupied: 2,
+      },
+    ],
+    showCounts: true,
+  },
+};
+
+export const NotAccepting = {
+  args: {
+    ...CustodyView.args,
+    facility: {
+      ...CustodyView.args.facility,
+      status: 'OPEN_NOT_ACCEPTING',
+    },
   },
 };
 
@@ -72,6 +103,8 @@ export const NoHoldsAvailable = {
       {
         type: 'CHAIR',
         available: 0,
+        holds: 4,
+        occupied: 12,
       },
     ],
   },
