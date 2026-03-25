@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import { IconX } from '@tabler/icons-react';
 
 import IconButtonLink from '@/components/IconButtonLink';
@@ -16,7 +15,6 @@ function CancelIncidentModal ({
   loading = false,
 }) {
   const [cancelReasonId, setCancelReasonId] = useState();
-  const isSmallScreen = useMediaQuery('(max-width: 25em)');
 
   useEffect(() => {
     if (!opened) {
@@ -90,49 +88,24 @@ function CancelIncidentModal ({
             stacked
           />
         </Stack>
-        {isSmallScreen
-          ? (
-            <Stack gap='sm'>
-              <Button
-                variant='destructive'
-                onClick={() => onConfirm(cancelReasonId)}
-                disabled={confirmDisabled}
-                fullWidth
-              >
-                Yes, cancel
-              </Button>
-              <Button
-                variant='filled'
-                color='indigo.6'
-                data-autofocus
-                onClick={onClose}
-                disabled={loading}
-                fullWidth
-              >
-                {keepLabel}
-              </Button>
-            </Stack>
-            )
-          : (
-            <Group grow gap='sm' wrap='nowrap'>
-              <Button
-                variant='destructive'
-                onClick={() => onConfirm(cancelReasonId)}
-                disabled={confirmDisabled}
-              >
-                Yes, cancel
-              </Button>
-              <Button
-                variant='filled'
-                color='indigo.6'
-                data-autofocus
-                onClick={onClose}
-                disabled={loading}
-              >
-                {keepLabel}
-              </Button>
-            </Group>
-            )}
+        <Group grow preventGrowOverflow={false}>
+          <Button
+            variant='destructive'
+            onClick={() => onConfirm(cancelReasonId)}
+            disabled={confirmDisabled}
+          >
+            Yes, cancel
+          </Button>
+          <Button
+            variant='filled'
+            color='indigo.6'
+            data-autofocus
+            onClick={onClose}
+            disabled={loading}
+          >
+            {keepLabel}
+          </Button>
+        </Group>
       </Stack>
     </Modal>
   );
