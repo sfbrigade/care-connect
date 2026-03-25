@@ -16,6 +16,7 @@ import EmptyState from '../EmptyState';
 import StatusAccordion from '../StatusAccordion';
 
 import CareCard from './CareCard';
+import CareFacilityCard from './CareFacilityCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
 import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
@@ -67,6 +68,15 @@ function Care () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
 
   const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
@@ -152,6 +162,7 @@ function Care () {
       </Head>
       <Container pt='md' pb='xl'>
         <Stack gap='lg'>
+          <CareFacilityCard facility={facility} bedTypes={bedTypes} />
           <SegmentedControl
             fullWidth
             value={tab}
