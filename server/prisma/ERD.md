@@ -553,6 +553,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DateTime arrestedAt "❓"
     EncounteredViaEnum encounteredVia "❓"
     String cadNumber "❓"
+    String caseNumber "❓"
     String supervisorBadgeNumber "❓"
     String createdById 
     String createdByOrganizationId "❓"
