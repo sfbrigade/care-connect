@@ -12,6 +12,7 @@ import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
 import StatusAccordion from '../StatusAccordion';
 
@@ -22,6 +23,7 @@ import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFl
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
+const PRE_CUSTODY_TRANSFER_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
   { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
@@ -86,6 +88,23 @@ function Care () {
     refetchOnMount: 'always',
   });
 
+  const { data: preCustodyTransferDeflections = [] } = useQuery({
+    queryKey: ['deflections', facility.id, 'care-pre-custody-transfer'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: true, subjectStatus: PRE_CUSTODY_TRANSFER_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
   useEffect(() => {
     if (!inCustodyDeflections.length && !notInCustodyDeflections.length) return;
     const targetId = window.sessionStorage.getItem('careHighlightTarget');
@@ -112,6 +131,10 @@ function Care () {
     () => groupCareNotInCustodySections(notInCustodyDeflections),
     [notInCustodyDeflections]
   );
+  const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
+  const inTransitCount = preCustodyTransferDeflections.length;
+  const occupiedCount = inCustodyDeflections.filter((deflection) => deflection.subjectStatus === 'IN_CHAIR').length +
+    notInCustodyDeflections.filter((deflection) => deflection.subjectStatus === 'RELEASED').length;
 
   function handleScanSuccess () {
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
@@ -152,6 +175,13 @@ function Care () {
       </Head>
       <Container pt='md' pb='xl'>
         <Stack gap='lg'>
+          <ChairAvailabilityCard
+            availableChairs={availableChairs}
+            inTransitCount={inTransitCount}
+            occupiedCount={occupiedCount}
+            actionLabel='Manage capacity'
+            onActionClick={() => {}}
+          />
           <SegmentedControl
             fullWidth
             value={tab}

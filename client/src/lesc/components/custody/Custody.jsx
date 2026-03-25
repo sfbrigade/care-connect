@@ -4,13 +4,13 @@ import { Box, Button, Container, Group, SegmentedControl, Stack, Text } from '@m
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconQrcode } from '@tabler/icons-react';
-
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
 import StatusAccordion from '../StatusAccordion';
 import CustodyCard from './CustodyCard';
@@ -20,6 +20,7 @@ import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
+const PRE_CUSTODY_TRANSFER_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
   { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update person details as needed before completing the safety check.' },
@@ -86,10 +87,27 @@ function Custody () {
     refetchOnMount: 'always',
   });
 
+  const { data: preCustodyTransferDeflections } = useQuery({
+    queryKey: ['deflections', facility.id, 'pre-custody-transfer'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: true, subjectStatus: PRE_CUSTODY_TRANSFER_STATUSES }).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
   const { data: releasedDeflections, dataUpdatedAt: releasedDataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -189,6 +207,11 @@ function Custody () {
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
+  const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
+  const inTransitCount = preCustodyTransferDeflections?.length ?? 0;
+  const inChairCount = (inCustodyDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'IN_CHAIR').length;
+  const stillOnsiteCount = (releasedDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'RELEASED').length;
+  const occupiedCount = inChairCount + stillOnsiteCount;
 
   useEffect(() => {
     if (!inCustodyDeflections) return;
@@ -213,6 +236,11 @@ function Custody () {
       </Head>
       <Container pt='md'>
         <Stack gap='xl'>
+          <ChairAvailabilityCard
+            availableChairs={availableChairs}
+            inTransitCount={inTransitCount}
+            occupiedCount={occupiedCount}
+          />
           <SegmentedControl
             fullWidth
             value={tab}
