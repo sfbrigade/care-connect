@@ -24,6 +24,7 @@ const incident = {
   state: 'CA',
   arrestedAt: new Date().toISOString(),
   cadNumber: '123456789A',
+  caseNumber: 'CASE-42',
   supervisorBadgeNumber: '1234',
 };
 

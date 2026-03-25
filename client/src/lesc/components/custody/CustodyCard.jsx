@@ -8,6 +8,7 @@ import Api from '../../../Api';
 import { useFacilityContext } from '../../../FacilityContext';
 import { useToast } from '../../../components/ToastContext';
 import { calculateAge } from '../../../utils/format';
+import { releaseTiming } from '../../../utils/releaseTiming';
 
 function CustodyCard ({ deflection, highlighted }) {
   const { t } = useTranslation();
@@ -28,10 +29,13 @@ function CustodyCard ({ deflection, highlighted }) {
   }
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
+  const isInChair = deflection.subjectStatus === 'IN_CHAIR';
   const showViewDetails = deflection.subjectStatus !== 'EXITED';
   const showMarkComplete = deflection.subjectStatus === 'AWAITING_INTAKE';
   const showLegalRelease = deflection.subjectStatus === 'FAILED_INTAKE';
+  const showStartRelease = isInChair;
   const showQrCode = deflection.subjectStatus === 'READY_FOR_INTAKE';
+  const releaseTimingChip = releaseTiming(deflection);
 
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
@@ -67,6 +71,12 @@ function CustodyCard ({ deflection, highlighted }) {
             <>
               <Text size='md' c='gray.5'>&middot;</Text>
               <Text size='md' c='gray.6'>Pending safety check</Text>
+            </>
+          )}
+          {releaseTimingChip && (
+            <>
+              <Text size='md' c='gray.5'>&middot;</Text>
+              <Text size='md' c={releaseTimingChip.tone === 'danger' ? 'red.6' : 'yellow.6'}>{releaseTimingChip.label}</Text>
             </>
           )}
         </Group>
@@ -110,6 +120,13 @@ function CustodyCard ({ deflection, highlighted }) {
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Legal release
+            </Button>
+          )}
+          {showStartRelease && (
+            <Button
+              onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
+            >
+              Start release
             </Button>
           )}
         </Group>

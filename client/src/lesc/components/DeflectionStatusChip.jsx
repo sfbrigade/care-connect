@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from '@mantine/core';
 
 const CHIP_COLOR_BY_TONE = {
-  warning: 'orange',
+  warning: 'yellow',
   neutral: 'gray',
   info: 'blue',
   success: 'teal',

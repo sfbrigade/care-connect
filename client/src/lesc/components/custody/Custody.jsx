@@ -130,6 +130,22 @@ function Custody () {
   }, [inCustodyDeflections, releasedDeflections]);
 
   useEffect(() => {
+    if (tab !== 'released' || !highlightedId) return;
+    const el = document.getElementById(`custody-card-${highlightedId}`);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const isVisible = (
+        rect.top >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+      );
+      // prevent page 'jumping' if the card is already visible and only scroll if not visible
+      if (!isVisible) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [tab, highlightedId, releasedDeflections]);
+
+  useEffect(() => {
     if (!releasedDeflections) return;
     const sectionTarget = window.sessionStorage.getItem('custodyReleasedSectionTarget');
     if (!sectionTarget) return;
