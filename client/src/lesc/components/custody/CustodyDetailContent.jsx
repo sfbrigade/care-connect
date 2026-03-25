@@ -446,6 +446,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{incident.cadNumber}</Text>
                         </Box>
                       )}
+                      {incident?.caseNumber && (
+                        <Box>
+                          <Text c='dimmed'>Case #</Text>
+                          <Text>{incident.caseNumber}</Text>
+                        </Box>
+                      )}
                       {incident?.supervisorBadgeNumber && (
                         <Box>
                           <Text c='dimmed'>SFSO supervisor star #</Text>

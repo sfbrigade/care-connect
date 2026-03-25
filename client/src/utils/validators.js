@@ -3,6 +3,12 @@ import * as z from 'zod/mini';
 
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
+const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
+
+function hasMinimumAlphanumericChars (value, minimum) {
+  const alphanumericCount = String(value ?? '').match(/[0-9a-z]/gi)?.length ?? 0;
+  return alphanumericCount >= minimum;
+}
 
 const IncidentSchema = z.object({
   addressLine1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
@@ -11,7 +17,8 @@ const IncidentSchema = z.object({
   state: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
   arrestedAt: z.iso.datetime(ERROR_REQUIRED),
   encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED'], ERROR_SELECT_ONE),
-  cadNumber: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  cadNumber: z.string(ERROR_REQUIRED).check(z.refine((value) => hasMinimumAlphanumericChars(value, 2), ERROR_MIN_ALPHANUMERIC)),
+  caseNumber: z.string(ERROR_REQUIRED).check(z.refine((value) => hasMinimumAlphanumericChars(value, 2), ERROR_MIN_ALPHANUMERIC)),
   supervisorBadgeNumber: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED), z.maxLength(4, ERROR_REQUIRED)),
 });
 
