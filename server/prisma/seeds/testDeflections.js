@@ -7,7 +7,10 @@ const TEST_SUBJECTS = [
   { firstName: 'Pat', lastName: 'Brown', middleInitial: null, dateOfBirth: new Date('1988-12-05'), sex: 'MALE', race: 'WHITE' },
 ];
 
-const HOLD_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE'];
+// Holds = chair reserved, person not yet formally in a chair (DETAINED through FAILED_INTAKE)
+// Occupied = person formally placed in a chair (ADMITTED, IN_CHAIR, RELEASED)
+// The hold → occupied transition happens at admit (READY_FOR_INTAKE → ADMITTED)
+const HOLD_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'FAILED_INTAKE'];
 const OCCUPIED_STATUSES = ['ADMITTED', 'IN_CHAIR'];
 
 const TEST_STATUSES = [
