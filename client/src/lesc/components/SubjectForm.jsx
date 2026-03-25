@@ -381,10 +381,13 @@ function SubjectForm () {
                                   {...form.getInputProps('drugType')}
                                 >
                                   <Group gap='sm' mt='md'>
-                                    <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
-                                    <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
-                                    <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
-                                    <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                                    <Chip value='CNS_DEPRESSANTS'>{t('drugType.CNS_DEPRESSANTS')}</Chip>
+                                    <Chip value='CNS_STIMULANTS'>{t('drugType.CNS_STIMULANTS')}</Chip>
+                                    <Chip value='HALLUCINOGENS'>{t('drugType.HALLUCINOGENS')}</Chip>
+                                    <Chip value='DISSOCIATIVE_ANESTHETICS'>{t('drugType.DISSOCIATIVE_ANESTHETICS')}</Chip>
+                                    <Chip value='NARCOTIC_ANALGESICS'>{t('drugType.NARCOTIC_ANALGESICS')}</Chip>
+                                    <Chip value='INHALANTS'>{t('drugType.INHALANTS')}</Chip>
+                                    <Chip value='CANNABIS'>{t('drugType.CANNABIS')}</Chip>
                                   </Group>
                                 </Chip.Group>
                               </Input.Wrapper>
