@@ -24,26 +24,23 @@ const DEATH_RELEASE_REASON_IDS = {
 };
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
-  if (previousSubjectStatus === Deflection.SubjectStatus.RELEASED) {
-    return null;
-  }
-
   const isHoldRelease = [
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
   ].includes(previousSubjectStatus);
 
-  const isChairRelease = [
+  const isOccupiedRelease = [
     Deflection.SubjectStatus.ADMITTED,
     Deflection.SubjectStatus.IN_CHAIR,
+    Deflection.SubjectStatus.RELEASED,
   ].includes(previousSubjectStatus);
 
   return {
     capacity: bedType.capacity,
     unavailableUnoccupied: bedType.unavailableUnoccupied,
     unavailableOccupied: bedType.unavailableOccupied,
-    occupied: isChairRelease ? Math.max(0, bedType.occupied - 1) : bedType.occupied,
+    occupied: isOccupiedRelease ? Math.max(0, bedType.occupied - 1) : bedType.occupied,
     holds: isHoldRelease ? Math.max(0, bedType.holds - 1) : bedType.holds,
     available: bedType.available + 1,
     updateMethod: 'API',
