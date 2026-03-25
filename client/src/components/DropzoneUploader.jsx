@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone-esm';
 import { v4 as uuid } from 'uuid';
 
 import Api from '../Api';
 
-function DropzoneUploader ({ className, children, disabled, id, maxFiles, multiple, onRemoved, onUploaded, onUploading }) {
+function DropzoneUploader ({ className, children, id, maxPhotos, photoCount, onAllUploaded, onRemoved, onUploading }) {
   const [files, setFiles] = useState([]);
   const [rejectedFiles, setRejectedFiles] = useState([]);
   const [statuses, setStatuses] = useState([]);
+  const [batchId, setBatchId] = useState(null);
+  const completedBatchRef = useRef(null);
 
   useEffect(
     () => () => {
@@ -41,19 +43,29 @@ function DropzoneUploader ({ className, children, disabled, id, maxFiles, multip
           })
           .then(() => {
             status.status = 'uploaded';
-            if (onUploaded) {
-              return Promise.resolve(onUploaded(status));
-            }
-          })
-          .then(() => {
             setStatuses([...statuses]);
           });
         break;
       }
     }
-  }, [onUploaded, onUploading, statuses]);
+  }, [onUploading, statuses]);
+
+  useEffect(() => {
+    if (!onAllUploaded || !batchId || statuses.length === 0) {
+      return;
+    }
+
+    const allUploaded = statuses.every((status) => status.status === 'uploaded');
+    if (allUploaded && completedBatchRef.current !== batchId) {
+      completedBatchRef.current = batchId;
+      const filenames = statuses.map((status) => status.filename).filter(Boolean);
+      onAllUploaded(filenames);
+    }
+  }, [batchId, onAllUploaded, statuses]);
 
   function onDropAccepted (acceptedFiles) {
+    const nextBatchId = uuid();
+    setBatchId(nextBatchId);
     setFiles(
       acceptedFiles.map((file) =>
         Object.assign(file, {
@@ -65,6 +77,7 @@ function DropzoneUploader ({ className, children, disabled, id, maxFiles, multip
     for (const file of acceptedFiles) {
       const status = {
         id: uuid(),
+        batchId: nextBatchId,
         file,
         status: 'pending', // uploading, uploaded, error
         filename: null,
@@ -88,11 +101,9 @@ function DropzoneUploader ({ className, children, disabled, id, maxFiles, multip
 
   const { getRootProps, getInputProps } = useDropzone({
     id,
-    multiple,
-    maxFiles: maxFiles ?? 0,
+    maxFiles: maxPhotos - photoCount,
     onDropAccepted,
     onDropRejected,
-    disabled: disabled || files.length > 0,
   });
 
   return (
