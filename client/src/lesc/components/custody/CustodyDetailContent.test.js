@@ -60,6 +60,10 @@ vi.mock('@/utils/format', () => ({
   formatDateTime: () => 'formatted-date-time',
 }));
 
+vi.mock('@/utils/releaseTiming', () => ({
+  releaseTiming: () => null,
+}));
+
 vi.mock('@/utils/pdfGenerator', () => ({
   generateCertificateOfReleasePDF: () => ({
     output: () => 'blob:mock',
@@ -212,6 +216,7 @@ describe('CustodyDetailContent', () => {
       city: 'SF',
       arrestedAt: '2026-01-01T09:00:00.000Z',
       cadNumber: 'CAD-123',
+      caseNumber: 'CASE-456',
       supervisorBadgeNumber: 'SFSO-88',
     });
     vi.clearAllMocks();
@@ -226,6 +231,7 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
+    expect(html).toContain('CASE-456');
   });
 
   it('renders 849(b) narrative in read-only mode by default with edit button', () => {

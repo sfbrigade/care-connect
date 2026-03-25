@@ -422,6 +422,14 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
+                    <Text c='dimmed'>Case number</Text>
+                    {incident?.caseNumber
+                      ? (
+                        <Text>{incident?.caseNumber}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                  <Box>
                     <Text c='dimmed'>Supervising Sergeant's Star Number</Text>
                     {incident?.supervisorBadgeNumber
                       ? (

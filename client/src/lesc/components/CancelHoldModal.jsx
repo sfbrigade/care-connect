@@ -55,7 +55,7 @@ function CancelHoldModal ({
             enabled={!!deflection.subjectId}
           />
         </Stack>
-        <Group grow>
+        <Group grow preventGrowOverflow={false}>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
