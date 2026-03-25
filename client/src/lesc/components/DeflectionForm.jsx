@@ -186,7 +186,7 @@ function DeflectionForm () {
   return (
     <>
       <Head>
-        <title>Arrest details</title>
+        <title>Behavioral observations</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -204,8 +204,8 @@ function DeflectionForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Arrest details</Title>
-        <Text c='dimmed' size='md' mb='xl'>Select what you observed. This text will be inserted in the 647(f). Add to it using the form below.</Text>
+        <Title order={2} mb='xs'>Behavioral observations</Title>
+        <Text c='dimmed' size='md' mb='xl'>Select the behaviors you observed that support the arrest.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
@@ -254,22 +254,23 @@ function DeflectionForm () {
                 {...form.getInputProps('volunteeredToReset')}
                 key={form.key('volunteeredToReset')}
                 label='Person volunteered to be taken to RESET'
+                description={<Text c='gray.5' size='sm'>Optional</Text>}
               />
               <Input.Wrapper label='647(f) narrative'>
-                <Text size='md' mb='xs' c='dimmed'>This text will be inserted in the 647(f). Add to it using the form below.</Text>
+                <Text size='md' mb='xs' c='dimmed'>This text is auto-generated and will be inserted in the 647(f). Add to it using the form below.</Text>
                 <Text c={(isNew || !!generatedNarrative) ? undefined : 'red.6'} style={{ whiteSpace: 'pre-wrap' }}>
-                  {generatedNarrative || 'Select observations to generate narrative text.'}
+                  {generatedNarrative || 'Select from observations above to generate narrative text.'}
                 </Text>
               </Input.Wrapper>
               <Textarea
-                label='Add to narrative (optional)'
+                label='Add to 647(f) narrative (optional)'
                 key={form.key('behaviorAdditions')}
                 autosize
                 {...form.getInputProps('behaviorAdditions')}
-                placeholder='E.g. “Person was unable to stand without assistance and repeatedly stepped into traffic…”'
+                placeholder='e.g. “Person was unable to stand without assistance and repeatedly stepped into traffic…”'
               />
               <Button type='submit' mb='xl'>
-                {isNew ? 'Next: Personal property' : 'Save arrest details'}
+                {isNew ? 'Next: Personal property' : 'Save behavioral observations'}
               </Button>
             </Stack>
           </Fieldset>

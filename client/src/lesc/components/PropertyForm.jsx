@@ -215,7 +215,7 @@ function PropertyForm () {
               )}
               <PhotoInput
                 key={`property-photo-uploader-${propertyPhotos.length}`}
-                label='Photos'
+                label='Photos (optional)'
                 id='file'
                 onAllUploaded={onAllUploaded}
                 maxPhotos={maxPropertyPhotos}
@@ -253,8 +253,8 @@ function PropertyForm () {
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}
-                label='Description'
-                placeholder='E.g., black backpack with clothing and toiletries.'
+                label='Description (optional)'
+                placeholder='e.g., black backpack with clothing and toiletries.'
               />
               <Button type='submit' mb='xl'>
                 {isNew ? 'Save details' : 'Save property'}
