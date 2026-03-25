@@ -60,6 +60,10 @@ vi.mock('@/utils/format', () => ({
   formatDateTime: () => 'formatted-date-time',
 }));
 
+vi.mock('@/utils/releaseTiming', () => ({
+  releaseTiming: () => null,
+}));
+
 vi.mock('@/utils/pdfGenerator', () => ({
   generateCertificateOfReleasePDF: () => ({
     output: () => 'blob:mock',

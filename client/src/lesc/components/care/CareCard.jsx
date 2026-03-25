@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { calculateAge } from '../../../utils/format';
+import { releaseTiming } from '../../../utils/releaseTiming';
 import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
@@ -21,6 +22,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
   const isReleased = deflection.subjectStatus === 'RELEASED';
+  const releaseTimingChip = releaseTiming(deflection);
   const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
@@ -37,7 +39,15 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
       }}
     >
       <Stack gap='lg'>
-        <Text size='md' c='gray.6'>Hold {displayId}</Text>
+        <Text size='md' c='gray.6'>
+          Hold {displayId}
+          {releaseTimingChip && (
+            <>
+              {' · '}
+              <Text span c={releaseTimingChip.tone === 'danger' ? 'red.6' : 'yellow.6'}>{releaseTimingChip.label}</Text>
+            </>
+          )}
+        </Text>
 
         <Box>
           <Title order={3}>{displayName}</Title>
