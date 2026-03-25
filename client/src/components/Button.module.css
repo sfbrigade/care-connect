@@ -35,36 +35,3 @@
 .label {
   font-weight: normal;
 }
-
-/* Footer buttons sit inside a white tray and should keep the light-filled treatment */
-:global(.action-footer-tray) .root[data-variant='secondary'] {
-  background-color: var(--mantine-color-indigo-0);
-  &:hover {
-    background-color: var(--mantine-color-indigo-1);
-  }
-  &:disabled, &[data-disabled] {
-    background-color: var(--mantine-color-disabled);
-    .label {
-      color: inherit;
-    }
-  }
-}
-
-:global(.action-footer-tray) .root[data-variant='destructive'] {
-  background-color: var(--mantine-color-red-0);
-  &:hover {
-    background-color: var(--mantine-color-red-1);
-  }
-}
-
-:global(.action-footer-tray) .root[data-variant='light'] {
-  background-color: var(--mantine-color-indigo-0);
-  &:hover {
-    background-color: var(--mantine-color-indigo-1);
-  }
-}
-
-:global(.action-footer-tray) .root[data-variant='outline'] {
-  background-color: var(--mantine-color-indigo-0);
-  border-color: transparent;
-}
