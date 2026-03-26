@@ -25,6 +25,8 @@ const DEATH_RELEASE_REASON_IDS = {
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
   const isHoldRelease = [
+    Deflection.SubjectStatus.DETAINED,
+    Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,

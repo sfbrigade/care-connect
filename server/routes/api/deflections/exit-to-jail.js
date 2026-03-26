@@ -84,6 +84,8 @@ export default async function (fastify, opts) {
         });
 
         const isHoldStatus = [
+          Deflection.SubjectStatus.DETAINED,
+          Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
           Deflection.SubjectStatus.AWAITING_INTAKE,
           Deflection.SubjectStatus.READY_FOR_INTAKE,
           Deflection.SubjectStatus.ADMITTED,
