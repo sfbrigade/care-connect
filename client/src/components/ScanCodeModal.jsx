@@ -67,6 +67,7 @@ function ScanCodeModal ({
         handleClose();
       } catch (err) {
         setIsLoading(false);
+        setErrorMessage(err);
       }
       return;
     }
