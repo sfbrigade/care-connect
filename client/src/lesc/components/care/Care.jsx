@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconScan } from '@tabler/icons-react';
 import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
+import ActionFooter from '@/components/ActionFooter';
+import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
@@ -236,33 +237,18 @@ function Care () {
           )}
         </Stack>
       </Container>
-
-      <Box
-        className='action-footer-gradient'
-        pos='fixed'
-        left={0}
-        right={0}
-        bottom={0}
-        pt='md'
-        pb='xl'
-        style={{ zIndex: 10 }}
-      >
-        <Container>
-          <Button
-            variant='outline'
-            fullWidth
-            size='lg'
-            radius='xl'
-            leftSection={<IconScan size={20} />}
-            onClick={() => {
-              setScanModalInstance((prev) => prev + 1);
-              setScanModalOpened(true);
-            }}
-          >
-            Scan transfer code
-          </Button>
-        </Container>
-      </Box>
+      <ActionFooter>
+        <Button
+          variant='secondary'
+          leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+          onClick={() => {
+            setScanModalInstance((prev) => prev + 1);
+            setScanModalOpened(true);
+          }}
+        >
+          Scan transfer code
+        </Button>
+      </ActionFooter>
 
       {scanModalOpened && (
         <ScanAdmitCodeModal
@@ -287,7 +273,7 @@ function Care () {
         }}
       />
 
-      <Box h='104px' />
+      <Box h='120px' />
     </>
   );
 }

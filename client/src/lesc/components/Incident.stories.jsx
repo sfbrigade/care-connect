@@ -28,6 +28,7 @@ export const Default = {
   args: {
     incident: {
       cadNumber: '',
+      caseNumber: '',
       addressLine1: '',
       addressLine2: '',
       city: '',
@@ -48,6 +49,7 @@ export const WithCadNumber = {
     incident: {
       ...Default.args.incident,
       cadNumber: '12345',
+      caseNumber: 'CASE-12',
     },
     editLink: '/edit',
   },
@@ -82,6 +84,7 @@ export const WithCadNumberAddressDate = {
     incident: {
       ...Default.args.incident,
       cadNumber: '12345',
+      caseNumber: 'CASE-12',
       addressLine1: '123 Main St',
       addressLine2: 'Apt 1',
       city: 'Anytown',
@@ -98,6 +101,7 @@ export const Complete = {
     incident: {
       ...Default.args.incident,
       cadNumber: '12345',
+      caseNumber: 'CASE-12',
       addressLine1: '123 Main St',
       addressLine2: 'Apt 1',
       city: 'Anytown',

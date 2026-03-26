@@ -237,7 +237,7 @@ function SubjectForm () {
         </Group>
 
         <Title order={2} mb='xs'>Person details</Title>
-        <Text c='dimmed' size='md' mb='xl'>You can start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
+        <Text c='dimmed' size='md' mb='xl'>Start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
         <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
@@ -255,8 +255,8 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('middleInitial')}
-                label='Middle initial'
-                placeholder='Optional'
+                label='Middle initial (optional)'
+                placeholder='Enter middle initial'
                 {...form.getInputProps('middleInitial')}
               />
               <TextInput
@@ -296,17 +296,17 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('driverLicense')}
-                label="Driver's license number"
-                placeholder='Optional'
+                label="Driver's license number (optional)"
+                placeholder='Enter license number'
                 {...form.getInputProps('driverLicense')}
               />
               <TextInput
                 key={form.key('localId')}
-                label='SF Number (if available)'
-                placeholder='Optional'
+                label='SF Number (optional)'
+                placeholder='Enter SF number'
                 {...form.getInputProps('localId')}
               />
-              <Accordion variant='section' defaultValue={['address', 'narcotics']}>
+              <Accordion variant='section' defaultValue={['address', 'narcotics', 'drug-use']}>
                 <Divider />
                 <Accordion.Item value='address'>
                   <Accordion.Control>
@@ -319,29 +319,30 @@ function SubjectForm () {
                         form={form}
                         field='addressLine1'
                         key={form.key('addressLine1')}
-                        label='Street address'
+                        placeholder='Enter street address line 1'
+                        label='Street address (optional)'
                       />
                       <TextInput
                         key={form.key('addressLine2')}
-                        label='Street address (line 2)'
-                        placeholder='Optional'
+                        label='Street address (optional)'
+                        placeholder='Enter street address line 2'
                         {...form.getInputProps('addressLine2')}
                       />
                       <TextInput
                         key={form.key('city')}
-                        label='City'
+                        label='City (optional)'
                         placeholder='Enter city'
                         {...form.getInputProps('city')}
                       />
                       <TextInput
                         key={form.key('state')}
-                        label='State'
-                        placeholder='Optional'
+                        label='State (optional)'
+                        placeholder='Enter state'
                         {...form.getInputProps('state')}
                       />
                       <TextInput
                         key={form.key('postalCode')}
-                        label='ZIP code'
+                        label='ZIP code (optional)'
                         placeholder='Enter ZIP code'
                         {...form.getInputProps('postalCode')}
                       />
@@ -351,7 +352,7 @@ function SubjectForm () {
                 {(isNew || isCustodyContext) && (
                   <Accordion.Item value='narcotics' data-section='narcotics'>
                     <Accordion.Control>
-                      <Title order={3}>Narcotics</Title>
+                      <Title order={3}>Narcotics possession</Title>
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap='xl'>
@@ -365,32 +366,38 @@ function SubjectForm () {
                           key={form.key('narcoticsParaphernalia')}
                           label={<>Possesses narcotics paraphernalia<span>*</span></>}
                         />
-                        <Divider />
-                        <Stack gap='xl' data-section='drug-use'>
-                          <Title order={3}>Drug use</Title>
-                          <Stack gap='xl'>
-                            <BooleanInput
-                              {...form.getInputProps('drugUseEvidence')}
-                              key={form.key('drugUseEvidence')}
-                              label='Evidence of drug use'
-                            />
-                            {showDrugTypeQuestion && (
-                              <Input.Wrapper label='Drug type'>
-                                <Chip.Group
-                                  key={form.key('drugType')}
-                                  {...form.getInputProps('drugType')}
-                                >
-                                  <Group gap='sm' mt='md'>
-                                    <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
-                                    <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
-                                    <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
-                                    <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
-                                  </Group>
-                                </Chip.Group>
-                              </Input.Wrapper>
-                            )}
-                          </Stack>
-                        </Stack>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
+                {(isNew || isCustodyContext) && (
+                  <Accordion.Item value='drug-use' data-section='drug-use'>
+                    <Accordion.Control>
+                      <Title order={3}>Drug use</Title>
+                      <Text c='gray.5' size='sm'>Optional</Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='xl'>
+                        <BooleanInput
+                          {...form.getInputProps('drugUseEvidence')}
+                          key={form.key('drugUseEvidence')}
+                          label='Evidence of drug use (optional)'
+                        />
+                        {showDrugTypeQuestion && (
+                          <Input.Wrapper label='Drug type'>
+                            <Chip.Group
+                              key={form.key('drugType')}
+                              {...form.getInputProps('drugType')}
+                            >
+                              <Group gap='sm' mt='md'>
+                                <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
+                                <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
+                                <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
+                                <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                              </Group>
+                            </Chip.Group>
+                          </Input.Wrapper>
+                        )}
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -405,7 +412,7 @@ function SubjectForm () {
                   )
                 : (
                   <Button type='submit'>
-                    {isNew ? 'Next: arrest details' : 'Save person details'}
+                    {isNew ? 'Next: behavioral observations' : 'Save person details'}
                   </Button>
                   )}
             </Stack>

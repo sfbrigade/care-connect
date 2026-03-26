@@ -11,6 +11,7 @@ function buildIncident (overrides = {}) {
     arrestedAt: '2026-03-04T10:00:00.000Z',
     encounteredVia: 'ON_VIEW',
     cadNumber: 'CAD-1234',
+    caseNumber: 'CN-42',
     supervisorBadgeNumber: '1234',
     ...overrides,
   };
@@ -43,6 +44,14 @@ describe('getSfpdDeflectionStatusChip', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection({ subject: { firstName: 'Only' } }),
       incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when case number lacks 2 alphanumeric characters', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection(),
+      incident: buildIncident({ caseNumber: '-' }),
     });
     expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
   });
