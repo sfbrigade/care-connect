@@ -39,7 +39,7 @@ function KeyboardDictationHint ({ platform, ...textareaProps }) {
       <Anchor size='sm' mt={4} onClick={open}>
         Tip: Use your voice to type
       </Anchor>
-      <Modal opened={opened} onClose={close} title='Use voice dictation' centered>
+      {opened && <Modal opened onClose={close} title='Use voice dictation' centered>
         <Stack gap='md'>
           {platform === 'ios'
             ? (
@@ -77,7 +77,7 @@ function KeyboardDictationHint ({ platform, ...textareaProps }) {
               </>
               )}
         </Stack>
-      </Modal>
+      </Modal>}
     </>
   );
 }
