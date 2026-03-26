@@ -8,6 +8,7 @@ import seedResetCenter from './seeds/resetCenter.js';
 import seedOrganizations from './seeds/organizations.js';
 import seedTitles from './seeds/titles.js';
 import seedUnits from './seeds/units.js';
+import seedBedTypeUnavailableReasons from './seeds/bedTypeUnavailableReasons.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
@@ -25,6 +26,7 @@ try {
   await seedResetCenter(prisma);
   await seedTitles(prisma);
   await seedUnits(prisma);
+  await seedBedTypeUnavailableReasons(prisma);
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
   await seedDeflectionDetails(prisma);
