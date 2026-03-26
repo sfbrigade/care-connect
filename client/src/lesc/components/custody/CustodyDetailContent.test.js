@@ -74,6 +74,10 @@ vi.mock('@/components/Header', () => ({
   default: ({ children }) => h('div', null, children),
 }));
 
+vi.mock('@/components/ActionFooter', () => ({
+  default: ({ children }) => h('div', null, children),
+}));
+
 vi.mock('@/components/IconButtonLink', () => ({
   default: () => h('a', null, 'back'),
 }));
