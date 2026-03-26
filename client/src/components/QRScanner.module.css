@@ -12,19 +12,57 @@
   object-fit: cover !important;
 }
 
+/*
+ * Overlay: viewfinder row centered; copy column below. --qr-viewfinder-half = Viewfinder (240px) / 2.
+ */
 .prompt {
+  --qr-viewfinder-half: 120px;
+
   position: absolute;
   inset: 0;
   z-index: 10;
+  pointer-events: none;
+}
+
+.promptViewfinderCenter {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.promptBelowViewfinder {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% + var(--qr-viewfinder-half) + var(--mantine-spacing-md));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  width: 100%;
+  padding-inline: var(--mantine-spacing-xl);
+  box-sizing: border-box;
   pointer-events: none;
 }
 
 .viewfinder {
   border-radius: 20px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.scanStatusSlot {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 300px;
+  min-height: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .promptText {

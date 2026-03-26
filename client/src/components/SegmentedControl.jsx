@@ -32,7 +32,7 @@ export default function SegmentedControl ({ manualEntry, onClose, onManualEntryC
           onChange={(value) => onManualEntryChange(value === 'type')}
           data={SCAN_OR_TYPE_DATA}
           classNames={{
-            root: classes.segmentedRoot,
+            root: [classes.segmentedRoot, manualEntry && classes.segmentedRootTypeMode].filter(Boolean).join(' '),
             control: classes.segmentedControl,
             label: classes.segmentedLabel,
             indicator: classes.segmentedIndicator,

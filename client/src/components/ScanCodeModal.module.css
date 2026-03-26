@@ -70,12 +70,12 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 266px;
-  height: 44px;
+  min-height: 44px;
   padding: var(--mantine-spacing-3xs, 4px);
   margin-inline: auto;
   gap: 4px;
   border-radius: var(--mantine-radius-xl);
-  overflow: hidden;
+  overflow: visible;
   background: var(--dark-dark-5, #3b3b3b);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.45);
 }
@@ -98,6 +98,33 @@
 }
 
 .segmentedIndicator {
-  border-radius: 9999px;
+  border-radius: var(--mantine-radius-xl);
   background-color: #868e96;
+}
+
+/* Type mode: overrides .segmentedRoot track; white shadow indicator + inactive/selected label colors (.segmentedControl already transparent). */
+.segmentedRootTypeMode {
+  background: var(--mantine-color-gray-2, #e9ecef);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+.segmentedRootTypeMode .segmentedIndicator {
+  background-color: #fff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.06),
+    0 2px 8px rgb(0 0 0 / 0.1);
+}
+
+.segmentedRootTypeMode .segmentedLabel {
+  color: rgb(0 0 0 / 0.45);
+}
+
+.segmentedRootTypeMode .segmentedLabel:hover {
+  color: rgb(0 0 0 / 0.55);
+}
+
+.segmentedRootTypeMode .segmentedControl[data-active] .segmentedLabel,
+.segmentedRootTypeMode .segmentedControl[aria-pressed='true'] .segmentedLabel {
+  color: #000;
+  font-weight: 600;
 }

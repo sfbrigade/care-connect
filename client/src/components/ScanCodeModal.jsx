@@ -25,6 +25,7 @@ function ScanCodeModal ({
   const [manualEntry, setManualEntry] = useState(false);
   const [codes, setCodes] = useState(['']);
   const [scanAccepted, setScanAccepted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (!opened) return;
@@ -64,7 +65,7 @@ function ScanCodeModal ({
       try {
         await onManualSubmitCodes(trimmedCodes);
         handleClose();
-      } catch {
+      } catch (err) {
         setIsLoading(false);
       }
       return;
@@ -99,7 +100,6 @@ function ScanCodeModal ({
   const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
   const canSubmit = hasAtLeastOneCode && !hasAnyEmptyCodeField;
   const canAddAnotherCode = manualEntryAllowMultiple && canSubmit;
-
   return (
     <Modal
       opened={opened}
@@ -111,7 +111,11 @@ function ScanCodeModal ({
       styles={{
         content: {
           background: 'var(--mantine-color-gray-0)',
-        }
+          overflow: 'visible',
+        },
+        body: {
+          overflow: 'visible',
+        },
       }}
     >
       {isLoading && (
@@ -162,6 +166,7 @@ function ScanCodeModal ({
 
                       <Stack gap='sm'>
                         {codes.map((code, index) => (
+                          <>
                           <TextInput
                             key={index}
                             placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
@@ -172,6 +177,8 @@ function ScanCodeModal ({
                             maxLength={6}
                             autoFocus={index === 0}
                           />
+                          <Text size='sm' c='dimmed'>{errorMessage}</Text>
+                          </>
                         ))}
                       </Stack>
 
