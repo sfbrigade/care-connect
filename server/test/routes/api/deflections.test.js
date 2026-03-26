@@ -226,11 +226,12 @@ test('/api/deflections', async (t) => {
       assert.ok(deflection.admittedAt);
       assert.ok(deflection.admittedById);
 
+      // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses
       bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
-      assert.deepStrictEqual(bedType.occupied, 1);
-      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.available, 4);
     });
   });
@@ -366,10 +367,10 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 4);
     });
 
-    await t.test('records direct jail exit from admitted without requiring rejection and releases occupied chair', async () => {
+    await t.test('records direct jail exit from admitted and releases hold', async () => {
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 1, holds: 3, available: 4 },
+        data: { occupied: 0, holds: 4, available: 4 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -414,10 +415,10 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
     });
 
-    await t.test('records direct jail exit from failed intake and releases occupied chair', async () => {
+    await t.test('records direct jail exit from failed intake and releases hold', async () => {
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 1, holds: 3, available: 4 },
+        data: { occupied: 0, holds: 4, available: 4 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -505,10 +506,10 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 4);
     });
 
-    await t.test('records death in facility for legally released status and does not change bed counts', async () => {
+    await t.test('records death in facility for legally released status and releases occupied chair', async () => {
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 4, available: 4 },
+        data: { occupied: 1, holds: 3, available: 4 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -540,8 +541,8 @@ test('/api/deflections', async (t) => {
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
       assert.deepStrictEqual(bedType.occupied, 0);
-      assert.deepStrictEqual(bedType.holds, 4);
-      assert.deepStrictEqual(bedType.available, 4);
+      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.available, 5);
 
       const custodyListResponse = await app.inject()
         .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED')
