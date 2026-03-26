@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import Api from '@/Api';
+import ActionFooter from '@/components/ActionFooter';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -280,28 +281,15 @@ function Custody () {
         </Stack>
       </Container>
       {tab === 'in-custody' && (
-        <Box
-          className='action-footer'
-          pos='sticky'
-          bottom={0}
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Box className='action-footer-tray'>
-              <Box className='action-footer-row'>
-                <Button
-                  variant='secondary'
-                  fullWidth
-                  size='lg'
-                  leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
-                  onClick={() => setScanModalOpened(true)}
-                >
-                  Scan transfer code
-                </Button>
-              </Box>
-            </Box>
-          </Container>
-        </Box>
+        <ActionFooter>
+          <Button
+            variant='secondary'
+            leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+            onClick={() => setScanModalOpened(true)}
+          >
+            Scan transfer code
+          </Button>
+        </ActionFooter>
       )}
       {scanModalOpened && (
         <ScanTransferCodeModal

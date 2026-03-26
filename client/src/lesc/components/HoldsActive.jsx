@@ -6,10 +6,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
+import ActionFooter from '@/components/ActionFooter';
+import { useToast } from '@/components/ToastContext';
+
 import Incident from './Incident';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
-import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
@@ -42,27 +44,15 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
 
 function ExtendAllHoldsAction ({ loading, onClick }) {
   return (
-    <Box
-      className='action-footer'
-      pos='sticky'
-      bottom={0}
-      style={{ zIndex: 10 }}
-    >
-      <Box className='action-footer-tray'>
-        <Box className='action-footer-row'>
-          <Button
-            disabled={loading}
-            variant='secondary'
-            fullWidth
-            size='lg'
-            radius='xl'
-            onClick={onClick}
-          >
-            {loading ? <Loader size='sm' /> : 'Extend active holds'}
-          </Button>
-        </Box>
-      </Box>
-    </Box>
+    <ActionFooter>
+      <Button
+        disabled={loading}
+        variant='secondary'
+        onClick={onClick}
+      >
+        {loading ? <Loader size='sm' /> : 'Extend active holds'}
+      </Button>
+    </ActionFooter>
   );
 }
 

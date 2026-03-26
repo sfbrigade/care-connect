@@ -6,6 +6,7 @@ import { Head } from '@unhead/react';
 import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
+import ActionFooter from '@/components/ActionFooter';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -206,35 +207,18 @@ function Care () {
           )}
         </Stack>
       </Container>
-
-      <Box
-        className='action-footer'
-        pos='fixed'
-        left={0}
-        right={0}
-        bottom={0}
-        style={{ zIndex: 10 }}
-      >
-        <Container>
-          <Box className='action-footer-tray'>
-            <Box className='action-footer-row'>
-              <Button
-                variant='secondary'
-                fullWidth
-                size='lg'
-                radius='xl'
-                leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
-                onClick={() => {
-                  setScanModalInstance((prev) => prev + 1);
-                  setScanModalOpened(true);
-                }}
-              >
-                Scan transfer code
-              </Button>
-            </Box>
-          </Box>
-        </Container>
-      </Box>
+      <ActionFooter>
+        <Button
+          variant='secondary'
+          leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+          onClick={() => {
+            setScanModalInstance((prev) => prev + 1);
+            setScanModalOpened(true);
+          }}
+        >
+          Scan transfer code
+        </Button>
+      </ActionFooter>
 
       {scanModalOpened && (
         <ScanAdmitCodeModal

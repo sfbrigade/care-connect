@@ -13,6 +13,7 @@ import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
+import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
@@ -449,36 +450,22 @@ function Deflection () {
         </Stack>
       </Container>
       {showActionFooter && (
-        <Box
-          className='action-footer'
-          pos='fixed'
-          left={0}
-          right={0}
-          bottom={0}
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Box className='action-footer-tray'>
-              <Group className='action-footer-row action-footer-row--stretch' gap='sm' wrap='nowrap'>
-                <Button
-                  onClick={() => setShowCancelModal(true)}
-                  variant='destructive'
-                  disabled={isFetchingActiveDeflections}
-                >
-                  Cancel hold
-                </Button>
-                {showFinishDetailsFooter && (
-                  <Button
-                    onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
-                    color='indigo'
-                  >
-                    Finish details
-                  </Button>
-                )}
-              </Group>
-            </Box>
-          </Container>
-        </Box>
+        <ActionFooter>
+          <Button
+            onClick={() => setShowCancelModal(true)}
+            variant='destructive'
+            disabled={isFetchingActiveDeflections}
+          >
+            Cancel hold
+          </Button>
+          {showFinishDetailsFooter && (
+            <Button
+              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+            >
+              Finish details
+            </Button>
+          )}
+        </ActionFooter>
       )}
       {showActionFooter && <Box h='120px' />}
       {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
