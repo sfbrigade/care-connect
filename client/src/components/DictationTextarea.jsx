@@ -39,45 +39,47 @@ function KeyboardDictationHint ({ platform, ...textareaProps }) {
       <Anchor size='sm' mt={4} onClick={open}>
         Tip: Use your voice to type
       </Anchor>
-      {opened && <Modal opened onClose={close} title='Use voice dictation' centered>
-        <Stack gap='md'>
-          {platform === 'ios'
-            ? (
-              <>
-                <Text size='sm'>
-                  You can use your voice to fill out this field on your iOS device. To start, tap the microphone icon on your keyboard.
-                </Text>
-                <Image
-                  src={iosKeyboardHint}
-                  alt='iOS keyboard with microphone icon highlighted'
-                  maw={300}
-                  radius='md'
-                  mx='auto'
-                />
-                <Text size='sm' c='dimmed'>
-                  If you don&apos;t see the microphone icon, check Settings &gt; General &gt; Keyboard and make sure that &quot;Enable Dictation&quot; is turned on.
-                </Text>
-              </>
-              )
-            : (
-              <>
-                <Text size='sm'>
-                  You can use your voice to fill out this field. Tap the microphone icon on your Gboard keyboard to start voice typing.
-                </Text>
-                <Image
-                  src={androidKeyboardHint}
-                  alt='Android keyboard with microphone icon highlighted'
-                  maw={300}
-                  radius='md'
-                  mx='auto'
-                />
-                <Text size='sm' c='dimmed'>
-                  If you don&apos;t see the microphone icon, long-press the comma key or check your keyboard settings. Voice typing works best with Gboard (Google Keyboard).
-                </Text>
-              </>
-              )}
-        </Stack>
-      </Modal>}
+      {opened && (
+        <Modal opened onClose={close} title='Use voice dictation' centered>
+          <Stack gap='md'>
+            {platform === 'ios'
+              ? (
+                <>
+                  <Text size='sm'>
+                    You can use your voice to fill out this field on your iOS device. To start, tap the microphone icon on your keyboard.
+                  </Text>
+                  <Image
+                    src={iosKeyboardHint}
+                    alt='iOS keyboard with microphone icon highlighted'
+                    maw={300}
+                    radius='md'
+                    mx='auto'
+                  />
+                  <Text size='sm' c='dimmed'>
+                    If you don&apos;t see the microphone icon, check Settings &gt; General &gt; Keyboard and make sure that &quot;Enable Dictation&quot; is turned on.
+                  </Text>
+                </>
+                )
+              : (
+                <>
+                  <Text size='sm'>
+                    You can use your voice to fill out this field. Tap the microphone icon on your Gboard keyboard to start voice typing.
+                  </Text>
+                  <Image
+                    src={androidKeyboardHint}
+                    alt='Android keyboard with microphone icon highlighted'
+                    maw={300}
+                    radius='md'
+                    mx='auto'
+                  />
+                  <Text size='sm' c='dimmed'>
+                    If you don&apos;t see the microphone icon, long-press the comma key or check your keyboard settings. Voice typing works best with Gboard (Google Keyboard).
+                  </Text>
+                </>
+                )}
+          </Stack>
+        </Modal>
+      )}
     </>
   );
 }
