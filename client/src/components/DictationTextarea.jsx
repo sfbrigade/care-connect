@@ -4,6 +4,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useMobile } from '@/hooks/useMobile';
 import { isAndroid, isIOS } from '@/utils/platform';
 
+import androidKeyboardHint from '@/assets/images/android-keyboard-dictation-hint.webp';
 import iosKeyboardHint from '@/assets/images/ios-keyboard-dictation-hint.webp';
 
 /**
@@ -63,6 +64,13 @@ function KeyboardDictationHint ({ platform, ...textareaProps }) {
               <Text size='sm'>
                 You can use your voice to fill out this field. Tap the microphone icon on your Gboard keyboard to start voice typing.
               </Text>
+              <Image
+                src={androidKeyboardHint}
+                alt='Android keyboard with microphone icon highlighted'
+                maw={300}
+                radius='md'
+                mx='auto'
+              />
               <Text size='sm' c='dimmed'>
                 If you don&apos;t see the microphone icon, long-press the comma key or check your keyboard settings. Voice typing works best with Gboard (Google Keyboard).
               </Text>
