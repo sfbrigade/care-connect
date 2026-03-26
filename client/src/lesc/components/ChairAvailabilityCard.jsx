@@ -1,6 +1,6 @@
 import { Button, Card, Group, Stack, Text, Title } from '@mantine/core';
+import { IconTallymark1 } from '@tabler/icons-react';
 import { inflect } from 'inflection';
-import TallymarkSeparator from './TallymarkSeparator';
 
 function ChairAvailabilityCard ({
   availableChairs,
@@ -21,7 +21,7 @@ function ChairAvailabilityCard ({
             <Text size='md' c='gray.6' ta='center'>
               {inTransitCount} in transit
             </Text>
-            <TallymarkSeparator />
+            <IconTallymark1 color='var(--mantine-color-gray-3)' size={20} />
             <Text size='md' c='gray.6' ta='center'>
               {occupiedCount} occupied
             </Text>

@@ -1,10 +1,9 @@
 import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
-import { IconAlertTriangle } from '@tabler/icons-react';
+import { IconAlertTriangle, IconTallymark1 } from '@tabler/icons-react';
 import { inflect } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/FacilityAddressLinkFromParts';
-import TallymarkSeparator from './TallymarkSeparator';
 
 function Facility ({
   facility,
@@ -74,7 +73,7 @@ function Facility ({
                   style={contactLinkStyles}
                 />
               )}
-              {hasAddressParts && phoneNumber && <TallymarkSeparator />}
+              {hasAddressParts && phoneNumber && <IconTallymark1 color='var(--mantine-color-gray-3)' size={20} />}
               {phoneNumber && (
                 <Anchor href={`tel:${phoneNumber}`} style={contactLinkStyles}>
                   {phoneNumber}
