@@ -9,10 +9,17 @@ import { useFacilityContext } from '@/FacilityContext';
 import IconButtonLink from '@/components/IconButtonLink';
 
 import AdjustAvailability from './AdjustAvailability';
+import ChangeStatus from './ChangeStatus';
 
 function ManageCapacity () {
   const { facility } = useFacilityContext();
   const [selectedAction, setSelectedAction] = useState(null);
+
+  const { data: freshFacility } = useQuery({
+    queryKey: ['facilities', facility.id],
+    queryFn: () => Api.facilities.get(facility.id).then(response => response.data),
+    refetchOnMount: 'always',
+  });
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -20,6 +27,7 @@ function ManageCapacity () {
     refetchOnMount: 'always',
   });
 
+  const currentFacility = freshFacility || facility;
   const bedType = bedTypes?.[0];
 
   return (
@@ -56,7 +64,7 @@ function ManageCapacity () {
 
         {selectedAction === 'adjustAvailability' && bedType && (
           <AdjustAvailability
-            facility={facility}
+            facility={currentFacility}
             bedType={bedType}
             onCancel={() => setSelectedAction(null)}
           />
@@ -67,7 +75,10 @@ function ManageCapacity () {
         )}
 
         {selectedAction === 'changeStatus' && (
-          <Text c='dimmed'>Change status form coming in Step 6</Text>
+          <ChangeStatus
+            facility={currentFacility}
+            onCancel={() => setSelectedAction(null)}
+          />
         )}
       </Stack>
     </Container>
