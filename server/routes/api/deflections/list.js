@@ -30,6 +30,8 @@ export default async function (fastify) {
       const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
       const where = {};
 
+      await fastify.prisma.deflection.expire();
+
       if (active !== undefined) {
         if (active === 'true') {
           where.status = Deflection.HoldStatus.ACTIVE;
