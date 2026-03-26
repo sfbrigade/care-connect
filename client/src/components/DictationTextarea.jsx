@@ -14,11 +14,9 @@ import iosKeyboardHint from '@/assets/images/ios-keyboard-dictation-hint.webp';
  * - Android mobile: hint linking to modal with Gboard voice typing instructions
  * - Desktop: renders a plain Textarea
  *
- * @param {object} props - All standard Textarea props, plus:
- * @param {object} props.form - Mantine useForm instance (passed through, unused here)
- * @param {string} props.field - Form field name (passed through, unused here)
+ * @param {object} props - All standard Textarea props
  */
-export default function DictationTextarea ({ form, field, ...textareaProps }) {
+export default function DictationTextarea ({ ...textareaProps }) {
   const isMobile = useMobile();
 
   if (isMobile && isIOS()) {

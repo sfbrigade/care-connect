@@ -264,8 +264,6 @@ function DeflectionForm () {
                 </Text>
               </Input.Wrapper>
               <DictationTextarea
-                form={form}
-                field='behaviorAdditions'
                 label='Add to 647(f) narrative (optional)'
                 key={form.key('behaviorAdditions')}
                 autosize
