@@ -4,6 +4,7 @@ import { UserRole } from '@/hooks/useUserRole';
 
 export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
+  '/manage-capacity',
 ];
 export const AUTH_PROTECTED_PATHS = [
   '/profile/*',
