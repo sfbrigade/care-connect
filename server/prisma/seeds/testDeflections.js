@@ -151,8 +151,8 @@ export default async function main (prisma) {
     await prisma.bedType.update({
       where: { id: bedType.id },
       data: {
-        holds: bedType.holds + holdsCount,
-        occupied: bedType.occupied + occupiedCount,
+        holds: holdsCount,
+        occupied: occupiedCount,
         available: bedType.available - holdsCount - occupiedCount,
       },
     });
