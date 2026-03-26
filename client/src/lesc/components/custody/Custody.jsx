@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconQrcode } from '@tabler/icons-react';
+
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
