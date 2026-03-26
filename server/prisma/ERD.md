@@ -315,6 +315,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     DateTime createdAt 
     String createdById 
@@ -334,6 +335,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"

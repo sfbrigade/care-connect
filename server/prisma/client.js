@@ -95,6 +95,7 @@ const prisma = new PrismaClient({
               }
             }
 
+            // Auto-expired deflections are always DETAINED (in transit)
             const bedTypeUpdate = await tx.bedTypeUpdate.create({
               data: {
                 bedTypeId: bedType.id,
@@ -104,6 +105,7 @@ const prisma = new PrismaClient({
                 unavailableOccupied: bedType.unavailableOccupied,
                 occupied: bedType.occupied,
                 holds: bedType.holds - deflections.length,
+                inTransit: Math.max(0, bedType.inTransit - deflections.length),
                 available: bedType.available + deflections.length,
                 updateMethod: 'API',
                 updatedById: User.BATCH_USER_ID,
@@ -119,6 +121,7 @@ const prisma = new PrismaClient({
                 unavailableOccupied: bedTypeUpdate.unavailableOccupied,
                 occupied: bedTypeUpdate.occupied,
                 holds: bedTypeUpdate.holds,
+                inTransit: bedTypeUpdate.inTransit,
                 available: bedTypeUpdate.available,
                 updateMethod: bedTypeUpdate.updateMethod,
                 updatedById: bedTypeUpdate.updatedById,
