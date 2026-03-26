@@ -6,10 +6,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
+import ActionFooter from '@/components/ActionFooter';
+import { useToast } from '@/components/ToastContext';
+
 import Incident from './Incident';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
-import { useToast } from '@/components/ToastContext';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
@@ -42,16 +44,15 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
 
 function ExtendAllHoldsAction ({ loading, onClick }) {
   return (
-    <Button
-      disabled={loading}
-      variant='secondary'
-      fullWidth
-      h={64}
-      radius='xl'
-      onClick={onClick}
-    >
-      {loading ? <Loader size='sm' /> : 'Extend all holds'}
-    </Button>
+    <ActionFooter>
+      <Button
+        disabled={loading}
+        variant='secondary'
+        onClick={onClick}
+      >
+        {loading ? <Loader size='sm' /> : 'Extend active holds'}
+      </Button>
+    </ActionFooter>
   );
 }
 
@@ -99,6 +100,7 @@ function HoldsActive ({
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
   const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
   const showExtendAllButton = hasDeflections;
+  const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
     <>
@@ -146,6 +148,11 @@ function HoldsActive ({
               />
             ))}
           </Stack>
+          {showUpdatedAt && (
+            <Text size='xs' c='gray.5' ta='center'>
+              Last updated: {formatTime(new Date(updatedAtMs))}
+            </Text>
+          )}
           {showExtendAllButton && (
             <ExtendAllHoldsAction
               loading={extendAllHoldsMutation.isPending}
