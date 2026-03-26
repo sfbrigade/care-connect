@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActionIcon, Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconArrowLeft, IconX } from '@tabler/icons-react';
+import { Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
 
-import Header from '@/components/Header';
-import IconButtonLink from '@/components/IconButtonLink';
 import QRScanner from '@/components/QRScanner';
 import { sanitizeManualCodeInput } from './scanCodeModalUtils';
+import classes from './ScanCodeModal.module.css';
+import SegmentedControl from './SegmentedControl';
 
 function ScanCodeModal ({
   opened,
@@ -25,22 +24,30 @@ function ScanCodeModal ({
   const [isLoading, setIsLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
   const [codes, setCodes] = useState(['']);
+  const [scanAccepted, setScanAccepted] = useState(false);
 
   useEffect(() => {
     if (!opened) return;
     setIsLoading(false);
     setManualEntry(false);
     setCodes(['']);
+    setScanAccepted(false);
   }, [opened]);
 
-  async function handleScan (text) {
-    await onScan(text);
+  async function handleScan (text, forQrCamera = false) {
+    try {
+      await onScan(text);
+    } catch (err) {
+      if (forQrCamera) setScanAccepted(false);
+      throw err;
+    }
+    if (forQrCamera) setScanAccepted(true);
   }
 
   async function handleManualScan (text) {
     setIsLoading(true);
     try {
-      await onScan(text);
+      await handleScan(text);
       handleClose();
     } catch {
       setIsLoading(false);
@@ -70,6 +77,7 @@ function ScanCodeModal ({
     setIsLoading(false);
     setManualEntry(false);
     setCodes(['']);
+    setScanAccepted(false);
     onClose();
   }
 
@@ -113,117 +121,128 @@ function ScanCodeModal ({
         </Stack>
       )}
 
-      {!isLoading && manualEntry && (
-        <>
-          <Header>
-            <Group w='100%' justify='space-between'>
-              <IconButtonLink icon={IconArrowLeft} onClick={() => setManualEntry(false)} />
-              <IconButtonLink icon={IconX} onClick={handleClose} />
-            </Group>
-          </Header>
-          <Container pt='80px'>
-            <form onSubmit={handleManualSubmit}>
-              <Stack gap='xl'>
-                {manualEntryAllowMultiple
-                  ? (
-                    <Box>
-                      <Text size='xl' c='dimmed'>
-                        {manualEntryLabel || 'Enter transfer code'}
-                      </Text>
-                      <Title order={3}>
-                        {manualEntryDescription || 'If the QR code does not work, ask the officer for the transfer code.'}
-                      </Title>
-                    </Box>
-                    )
-                  : <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>}
+      {!isLoading && (
+        <Stack
+          gap={0}
+          h='100dvh'
+          miw={0}
+          pos='relative'
+          style={{
+            background: manualEntry ? 'var(--mantine-color-gray-0)' : '#000',
+          }}
+        >
+          {manualEntry && (
+            <Box style={{ flexShrink: 0, position: 'relative', zIndex: 20 }}>
+              <SegmentedControl
+                manualEntry={manualEntry}
+                onClose={handleClose}
+                onManualEntryChange={setManualEntry}
+              />
+            </Box>
+          )}
 
-                <Stack gap='sm'>
-                  {codes.map((code, index) => (
-                    <TextInput
-                      key={index}
-                      placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
-                      value={code}
-                      onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
-                      inputMode='numeric'
-                      pattern='[0-9]*'
-                      maxLength={6}
-                      autoFocus={index === 0}
+          {manualEntry
+            ? (
+              <Box className={classes.manualFormScroll}>
+                <Container pt='md' pb='xl'>
+                  <form onSubmit={handleManualSubmit}>
+                    <Stack gap='xl'>
+                      {manualEntryAllowMultiple
+                        ? (
+                          <Box>
+                            <Text size='xl' c='dimmed'>
+                              {manualEntryLabel || 'Enter transfer code'}
+                            </Text>
+                            <Title order={3}>
+                              {manualEntryDescription || 'If the QR code does not work, ask the officer for the transfer code.'}
+                            </Title>
+                          </Box>
+                          )
+                        : <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>}
+
+                      <Stack gap='sm'>
+                        {codes.map((code, index) => (
+                          <TextInput
+                            key={index}
+                            placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
+                            value={code}
+                            onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
+                            inputMode='numeric'
+                            pattern='[0-9]*'
+                            maxLength={6}
+                            autoFocus={index === 0}
+                          />
+                        ))}
+                      </Stack>
+
+                      <Group gap='sm'>
+                        {manualEntryAllowMultiple && (
+                          <Button
+                            variant='secondary'
+                            onClick={handleAddCodeField}
+                            disabled={!canAddAnotherCode}
+                          >
+                            {manualEntryAddButtonLabel || '+ Transfer code'}
+                          </Button>
+                        )}
+                        <Button
+                          type='submit'
+                          variant='primary'
+                          disabled={!canSubmit}
+                        >
+                          Submit
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </form>
+                </Container>
+              </Box>
+              )
+            : (
+              <>
+                <Box className={classes.scanRoot}>
+                  <Box className={classes.scanCameraRegion}>
+                    <QRScanner
+                      onScanSuccess={(text) => handleScan(text, true)}
+                      autoStart
+                      fullScreen
+                      prompt={prompt}
+                      _debugScanPhase={_debugScanPhase}
                     />
-                  ))}
-                </Stack>
+                  </Box>
 
-                <Group gap='sm'>
-                  {manualEntryAllowMultiple && (
-                    <Button
-                      variant='secondary'
-                      onClick={handleAddCodeField}
-                      disabled={!canAddAnotherCode}
-                    >
-                      {manualEntryAddButtonLabel || '+ Transfer code'}
-                    </Button>
-                  )}
-                  <Button
-                    type='submit'
-                    variant='primary'
-                    disabled={!canSubmit}
+                  <Stack
+                    className={classes.scanOverlay}
+                    gap={0}
+                    align='stretch'
+                    justify='flex-start'
                   >
-                    Submit
-                  </Button>
-                </Group>
-              </Stack>
-            </form>
-          </Container>
-        </>
-      )}
+                    <Box className={classes.scanSpacer} />
 
-      {!isLoading && !manualEntry && (
-        <Box pos='relative' h='100dvh' w='100%' bg='black'>
-          <QRScanner
-            onScanSuccess={(text) => handleScan(text)}
-            autoStart
-            fullScreen
-            prompt={prompt}
-            _debugScanPhase={_debugScanPhase}
-          />
-
-          <Stack
-            pos='absolute'
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            justify='space-between'
-            align='center'
-            p='xl'
-            style={{ zIndex: 10, pointerEvents: 'none' }}
-          >
-            <Group justify='flex-end' w='100%' style={{ pointerEvents: 'auto' }}>
-              <ActionIcon
-                variant='white'
-                color='dark'
-                size='xl'
-                radius='xl'
-                onClick={handleClose}
-              >
-                <IconX size={24} />
-              </ActionIcon>
-            </Group>
-
-            <div />
-
-            <Stack align='center' gap='lg' w='100%' maw={400} style={{ pointerEvents: 'auto' }}>
-              <Button
-                variant='outline'
-                color='white'
-                size='lg'
-                radius='xl'
-                onClick={() => setManualEntry(true)}
-              >
-                Enter code manually
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
+                    <Stack className={classes.scanFooter} align='center' gap='lg' w='100%'>
+                      <Button
+                        variant='outline'
+                        color={scanAccepted ? 'mantine-color-primary-5' : 'white'}
+                        size='lg'
+                        radius='xl'
+                        disabled={!scanAccepted}
+                        onClick={handleClose}
+                      >
+                        Done
+                      </Button>
+                    </Stack>
+                  </Stack>
+                </Box>
+                <Box className={classes.scanChromeOverlay}>
+                  <SegmentedControl
+                    manualEntry={manualEntry}
+                    onClose={handleClose}
+                    onManualEntryChange={setManualEntry}
+                  />
+                </Box>
+              </>
+              )}
+        </Stack>
       )}
     </Modal>
   );

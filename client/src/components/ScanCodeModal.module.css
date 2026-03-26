@@ -1,0 +1,103 @@
+/* Scan area below chrome — flex-grow only (no height:100%: breaks camera in modal) */
+.scanRoot {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.scanCameraRegion {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scanOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.scanSpacer {
+  flex: 1;
+  min-height: 0;
+}
+
+.scanFooter {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 400px;
+  margin-inline: auto;
+  padding-inline: var(--mantine-spacing-xl);
+  padding-bottom: calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
+  pointer-events: auto;
+}
+
+.manualFormScroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Floated over scanRoot in camera mode; overflow visible so camera/viewfinder can read as “under” this row */
+.scanChromeOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.scanChromeOverlay > * {
+  pointer-events: auto;
+}
+
+.segmentWrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) var(--mantine-spacing-md);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.segmentedRoot {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 266px;
+  height: 44px;
+  padding: var(--mantine-spacing-3xs, 4px);
+  margin-inline: auto;
+  gap: 4px;
+  border-radius: var(--mantine-radius-xl);
+  overflow: hidden;
+  background: var(--dark-dark-5, #3b3b3b);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.45);
+}
+
+.segmentedControl {
+  border: none;
+  background-color: transparent;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.segmentedLabel {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.78);
+  transition: color 120ms ease;
+}
+
+.segmentedLabel:hover {
+  color: var(--mantine-color-white);
+}
+
+.segmentedIndicator {
+  border-radius: 9999px;
+  background-color: #868e96;
+}
