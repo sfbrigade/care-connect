@@ -7,17 +7,11 @@ const TEST_SUBJECTS = [
   { firstName: 'Pat', lastName: 'Brown', middleInitial: null, dateOfBirth: new Date('1988-12-05'), sex: 'MALE', race: 'WHITE' },
 ];
 
-// Holds = chair reserved, person not yet formally in a chair (DETAINED through FAILED_INTAKE)
-// Occupied = person formally placed in a chair (ADMITTED, IN_CHAIR, RELEASED)
-// The hold → occupied transition happens at admit (READY_FOR_INTAKE → ADMITTED)
-const HOLD_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'FAILED_INTAKE'];
-const OCCUPIED_STATUSES = ['ADMITTED', 'IN_CHAIR'];
-
 const TEST_STATUSES = [
+  'AWAITING_INTAKE',
   'AWAITING_INTAKE',
   'READY_FOR_INTAKE',
   'ADMITTED',
-  'IN_CHAIR',
   'RELEASED',
   'EXITED',
 ];
@@ -72,8 +66,7 @@ export default async function main (prisma) {
 
   const detail = await prisma.deflectionDetail.findFirst();
 
-  let holdsCount = 0;
-  let occupiedCount = 0;
+  let holdsPlaced = 0;
   let incident;
   for (let i = 0; i < TEST_SUBJECTS.length; i++) {
     const subjectData = TEST_SUBJECTS[i];
@@ -124,7 +117,7 @@ export default async function main (prisma) {
         property: 'SMALL',
         transferredAt: now,
         transferredById: sfsoUser.id,
-        ...(OCCUPIED_STATUSES.includes(subjectStatus) || subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
+        ...(subjectStatus === 'ADMITTED' || subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
           ? { admittedAt: now, admittedById: sfsoUser.id }
           : {}),
         ...(subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
@@ -137,23 +130,20 @@ export default async function main (prisma) {
       },
     });
 
-    if (HOLD_STATUSES.includes(subjectStatus)) {
-      holdsCount++;
-    } else if (OCCUPIED_STATUSES.includes(subjectStatus)) {
-      occupiedCount++;
+    if (isActive) {
+      holdsPlaced++;
     }
 
     console.log(`  Created deflection #${deflection.id} (${subjectData.firstName} ${subjectData.lastName}) — ${subjectStatus}`);
   }
 
-  // Update bed type counts to reflect seeded deflections
-  if (holdsCount > 0 || occupiedCount > 0) {
+  // Update bed type counts for active holds
+  if (holdsPlaced > 0) {
     await prisma.bedType.update({
       where: { id: bedType.id },
       data: {
-        holds: bedType.holds + holdsCount,
-        occupied: bedType.occupied + occupiedCount,
-        available: bedType.available - holdsCount - occupiedCount,
+        occupied: bedType.occupied + holdsPlaced,
+        available: bedType.available - holdsPlaced,
       },
     });
   }
