@@ -10,6 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 
 import AdjustAvailability from './AdjustAvailability';
 import ChangeStatus from './ChangeStatus';
+import ManageHolds from './ManageHolds';
 
 function ManageCapacity () {
   const { facility } = useFacilityContext();
@@ -71,7 +72,7 @@ function ManageCapacity () {
         )}
 
         {selectedAction === 'manageHolds' && (
-          <Text c='dimmed'>Manage holds coming in Step 7</Text>
+          <ManageHolds facility={currentFacility} />
         )}
 
         {selectedAction === 'changeStatus' && (
