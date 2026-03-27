@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Text, ThemeIcon } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconX } from '@tabler/icons-react';
 
 import { buildAutoCancelledHoldsMessage } from './holdsViewModel';
 import classes from './HoldsAutoCancelledNotice.module.css';
@@ -16,9 +16,7 @@ function HoldsAutoCancelledNotice ({ count, message, onClose }) {
       py='md'
       wrap='nowrap'
     >
-      <ThemeIcon color='red.6' radius='xl' size={32}>
-        <IconX size={16} stroke={2.5} />
-      </ThemeIcon>
+      <IconAlertCircle size={32} color='var(--mantine-color-red-6)' />
       <Text c='dark.9' flex={1} fz='md' fw={400} lh='md' pr='sm'>
         {message || buildAutoCancelledHoldsMessage(count)}
       </Text>

@@ -269,13 +269,22 @@ describe('holdsViewModel', () => {
       })).toBe('All active holds were cancelled by RESET. Incident was moved to History.');
     });
 
-    it('builds multi-hold message without person name', () => {
+    it('builds single hold message without person name', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 1,
+        allCancelled: false,
+        personName: null,
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled hold for this person. Do not bring this person to RESET.');
+    });
+
+    it('builds multi-hold message', () => {
       expect(buildAdminCancelledHoldsMessage({
         count: 3,
         allCancelled: false,
         personName: null,
         facilityName: 'RESET',
-      })).toBe('RESET cancelled 3 holds.');
+      })).toBe('RESET cancelled 3 holds. Do not bring these persons to RESET.');
     });
   });
 

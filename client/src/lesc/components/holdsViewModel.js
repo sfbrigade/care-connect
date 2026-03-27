@@ -113,10 +113,11 @@ export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personNa
   if (allCancelled) {
     return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
   }
-  if (count === 1 && personName) {
-    return `${facilityName} cancelled hold for ${personName}. Do not bring this person to ${facilityName}.`;
+  if (count === 1) {
+    const name = personName || 'this person';
+    return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
   }
-  return `${facilityName} cancelled ${count} hold${count !== 1 ? 's' : ''}.`;
+  return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
 }
 
 function toMillis (value) {
