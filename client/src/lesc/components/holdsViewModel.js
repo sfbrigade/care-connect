@@ -69,6 +69,56 @@ export function detectAutoCancelledExpiredHolds ({
   };
 }
 
+export function detectAdminCancelledHolds ({
+  previousIncidentId,
+  previousDeflectionIds = [],
+  currentDeflections = [],
+  historyDeflections = [],
+  currentUserId,
+}) {
+  const incidentId = previousIncidentId ?? currentDeflections[0]?.incidentId;
+  if (!incidentId || previousDeflectionIds.length === 0 || !currentUserId) return null;
+
+  const currentDeflectionIds = new Set(currentDeflections.map((deflection) => deflection.id));
+  const removedDeflectionIds = previousDeflectionIds.filter((id) => !currentDeflectionIds.has(id));
+  if (removedDeflectionIds.length === 0) return null;
+
+  const removedDeflectionIdSet = new Set(removedDeflectionIds);
+  const adminCancelledDeflections = historyDeflections.filter((deflection) =>
+    deflection.incidentId === incidentId &&
+    removedDeflectionIdSet.has(deflection.id) &&
+    deflection.status === 'CANCELLED' &&
+    deflection.cancelledById &&
+    deflection.cancelledById !== currentUserId
+  );
+
+  if (adminCancelledDeflections.length === 0) return null;
+
+  const allCancelled = currentDeflectionIds.size === 0;
+  const firstCancelled = adminCancelledDeflections[0];
+  const personName = [
+    firstCancelled.subject?.firstName,
+    firstCancelled.subject?.lastName,
+  ].filter(Boolean).join(' ');
+
+  return {
+    incidentId,
+    count: adminCancelledDeflections.length,
+    allCancelled,
+    personName: personName || null,
+  };
+}
+
+export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personName, facilityName }) {
+  if (allCancelled) {
+    return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
+  }
+  if (count === 1 && personName) {
+    return `${facilityName} cancelled hold for ${personName}. Do not bring this person to ${facilityName}.`;
+  }
+  return `${facilityName} cancelled ${count} hold${count !== 1 ? 's' : ''}.`;
+}
+
 function toMillis (value) {
   if (!value) return 0;
   const asDate = new Date(value);

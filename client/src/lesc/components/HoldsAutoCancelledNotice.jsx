@@ -4,7 +4,7 @@ import { IconX } from '@tabler/icons-react';
 import { buildAutoCancelledHoldsMessage } from './holdsViewModel';
 import classes from './HoldsAutoCancelledNotice.module.css';
 
-function HoldsAutoCancelledNotice ({ count, onClose }) {
+function HoldsAutoCancelledNotice ({ count, message, onClose }) {
   return (
     <Group
       align='center'
@@ -20,7 +20,7 @@ function HoldsAutoCancelledNotice ({ count, onClose }) {
         <IconX size={16} stroke={2.5} />
       </ThemeIcon>
       <Text c='dark.9' flex={1} fz='md' fw={400} lh='md' pr='sm'>
-        {buildAutoCancelledHoldsMessage(count)}
+        {message || buildAutoCancelledHoldsMessage(count)}
       </Text>
       <ActionIcon
         aria-label='Dismiss auto-canceled holds notice'

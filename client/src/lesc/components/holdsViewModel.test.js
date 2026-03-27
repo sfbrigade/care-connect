@@ -3,8 +3,10 @@ import { describe, it, expect } from 'vitest';
 import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+  buildAdminCancelledHoldsMessage,
   buildIncidentSubtitle,
   buildAutoCancelledHoldsMessage,
+  detectAdminCancelledHolds,
   detectAutoCancelledExpiredHolds,
   getExpiredDeflectionsForIncident,
   getDeflectionActivityMs,
@@ -157,6 +159,124 @@ describe('holdsViewModel', () => {
       releasedAt: '2026-02-27T10:00:00.000Z',
     }));
     expect(result).toBe(new Date('2026-02-27T12:00:00.000Z').getTime());
+  });
+
+  describe('detectAdminCancelledHolds', () => {
+    it('returns null when no holds were removed', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1],
+        currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
+        historyDeflections: [],
+        currentUserId: 'user-1',
+      });
+      expect(notice).toBeNull();
+    });
+
+    it('returns null when holds were self-cancelled', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1, 2],
+        currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
+        historyDeflections: [deflection({ id: 2, incidentId: 100, status: 'CANCELLED', cancelledById: 'user-1' })],
+        currentUserId: 'user-1',
+      });
+      expect(notice).toBeNull();
+    });
+
+    it('returns null for expired holds', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1, 2],
+        currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
+        historyDeflections: [deflection({ id: 2, incidentId: 100, status: 'EXPIRED' })],
+        currentUserId: 'user-1',
+      });
+      expect(notice).toBeNull();
+    });
+
+    it('detects a single admin-cancelled hold', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1, 2],
+        currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
+        historyDeflections: [deflection({
+          id: 2,
+          incidentId: 100,
+          status: 'CANCELLED',
+          cancelledById: 'admin-1',
+          subject: { firstName: 'Jane', lastName: 'Doe' },
+        })],
+        currentUserId: 'user-1',
+      });
+
+      expect(notice).toEqual({
+        incidentId: 100,
+        count: 1,
+        allCancelled: false,
+        personName: 'Jane Doe',
+      });
+    });
+
+    it('detects all holds admin-cancelled', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1, 2],
+        currentDeflections: [],
+        historyDeflections: [
+          deflection({ id: 1, incidentId: 100, status: 'CANCELLED', cancelledById: 'admin-1', subject: { firstName: 'Jane', lastName: 'Doe' } }),
+          deflection({ id: 2, incidentId: 100, status: 'CANCELLED', cancelledById: 'admin-1', subject: { firstName: 'John', lastName: 'Smith' } }),
+        ],
+        currentUserId: 'user-1',
+      });
+
+      expect(notice).toEqual({
+        incidentId: 100,
+        count: 2,
+        allCancelled: true,
+        personName: 'Jane Doe',
+      });
+    });
+
+    it('returns null when no currentUserId provided', () => {
+      const notice = detectAdminCancelledHolds({
+        previousIncidentId: 100,
+        previousDeflectionIds: [1],
+        currentDeflections: [],
+        historyDeflections: [deflection({ id: 1, incidentId: 100, status: 'CANCELLED', cancelledById: 'admin-1' })],
+        currentUserId: undefined,
+      });
+      expect(notice).toBeNull();
+    });
+  });
+
+  describe('buildAdminCancelledHoldsMessage', () => {
+    it('builds single hold message with person name', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 1,
+        allCancelled: false,
+        personName: 'Jane Doe',
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled hold for Jane Doe. Do not bring this person to RESET.');
+    });
+
+    it('builds all-cancelled message', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 2,
+        allCancelled: true,
+        personName: 'Jane Doe',
+        facilityName: 'RESET',
+      })).toBe('All active holds were cancelled by RESET. Incident was moved to History.');
+    });
+
+    it('builds multi-hold message without person name', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 3,
+        allCancelled: false,
+        personName: null,
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled 3 holds.');
+    });
   });
 
   it('builds incident subtitle with address/time when present and fallback when missing', () => {
