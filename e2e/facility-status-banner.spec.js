@@ -6,11 +6,14 @@ const ADMIN_PASSWORD = 'abcd1234';
 async function loginAsAdmin (page) {
   await page.goto('/');
   const resetButton = page.getByRole('button', { name: 'RESET' });
-  if (await resetButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+  if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
     await resetButton.click();
+    // Wait for facility selection to take effect
+    await page.waitForURL(/\/login/);
+  } else {
+    await page.goto('/login');
   }
-  await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  await page.getByPlaceholder('youremail@example.com').waitFor({ state: 'visible' });
   await page.getByPlaceholder('youremail@example.com').fill(ADMIN_EMAIL);
   await page.getByPlaceholder('Enter password').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Login' }).click();

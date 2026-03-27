@@ -4,16 +4,23 @@ const ADMIN_EMAIL = 'admin@careconnectsf.org';
 const ADMIN_PASSWORD = 'abcd1234';
 const SFPD_EMAIL = 'sfpd@careconnectsf.org';
 const SFPD_PASSWORD = 'abcd1234';
+const CARE_EMAIL = 'care@careconnectsf.org';
+const CARE_PASSWORD = 'abcd1234';
+const SFSO_EMAIL = 'sfso@careconnectsf.org';
+const SFSO_PASSWORD = 'abcd1234';
 
 async function login (page, email, password) {
   await page.goto('/');
   // Select facility if facility selector is shown
   const resetButton = page.getByRole('button', { name: 'RESET' });
-  if (await resetButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+  if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
     await resetButton.click();
+    // Wait for facility selection to take effect
+    await page.waitForURL(/\/login/);
+  } else {
+    await page.goto('/login');
   }
-  await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  await page.getByPlaceholder('youremail@example.com').waitFor({ state: 'visible' });
   await page.getByPlaceholder('youremail@example.com').fill(email);
   await page.getByPlaceholder('Enter password').fill(password);
   await page.getByRole('button', { name: 'Login' }).click({ force: true });
@@ -70,16 +77,38 @@ test.describe('Manage Capacity Page', () => {
     await expect(page.getByText('Change facility status')).toBeVisible();
   });
 
-  test('auth guard — non-admin is redirected', async ({ browser }) => {
-    // Use a fresh context to avoid session carryover from admin login
+  test('auth guard — FIELD user is redirected', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginAsSfpd(page);
     await page.goto('/manage-capacity');
     await page.waitForLoadState('networkidle');
 
-    // Should be redirected away — not on manage-capacity
     await expect(page).not.toHaveURL(/manage-capacity/);
+    await context.close();
+  });
+
+  test('auth guard — CUSTODY user is redirected', async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, SFSO_EMAIL, SFSO_PASSWORD);
+    await page.goto('/manage-capacity');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page).not.toHaveURL(/manage-capacity/);
+    await context.close();
+  });
+
+  test.skip('auth guard — CARE user can access', async ({ browser }) => {
+    // TODO: enable after facility-administration branch merges (moves /manage-capacity to ROLE_PROTECTED_PATHS with CARE)
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, CARE_EMAIL, CARE_PASSWORD);
+    await page.goto('/manage-capacity');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText('Manage capacity')).toBeVisible();
+    await expect(page.getByText('Adjust chair availability')).toBeVisible();
     await context.close();
   });
 
@@ -106,6 +135,7 @@ test.describe('Manage Capacity Page', () => {
 
     // Should show toast and redirect home
     await expect(page.getByText('Capacity updated')).toBeVisible();
+    await expect(page.getByText(/chairs marked unavailable/)).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
   });
 
@@ -121,6 +151,7 @@ test.describe('Manage Capacity Page', () => {
 
     await page.getByRole('button', { name: 'Update availability' }).click({ force: true });
     await expect(page.getByText('Capacity updated')).toBeVisible();
+    await expect(page.getByText(/chairs are now available/)).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
   });
 
@@ -141,6 +172,7 @@ test.describe('Manage Capacity Page', () => {
     await expect(page.getByRole('button', { name: 'Confirm new status' })).toBeEnabled();
     await page.getByRole('button', { name: 'Confirm new status' }).click();
     await expect(page.getByText('Status updated')).toBeVisible();
+    await expect(page.getByText('New holds are paused.')).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
   });
 
@@ -163,6 +195,7 @@ test.describe('Manage Capacity Page', () => {
     await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
 
     await expect(page.getByText('Status updated')).toBeVisible();
+    await expect(page.getByText(/open and accepting/)).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
 
     // Banner should be gone
@@ -181,6 +214,7 @@ test.describe('Manage Capacity Page', () => {
     await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
 
     await expect(page.getByText('Status updated')).toBeVisible();
+    await expect(page.getByText(/temporarily closed/)).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
 
     // Red banner should appear
@@ -219,6 +253,7 @@ test.describe('Manage Holds', () => {
 
       // Toast
       await expect(page.getByText('Hold canceled')).toBeVisible();
+      await expect(page.getByText('Officer notified.')).toBeVisible();
 
       // Card should show cancelled state
       await expect(page.getByText(/Cancelled by/)).toBeVisible();
