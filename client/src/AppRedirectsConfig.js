@@ -4,7 +4,6 @@ import { UserRole } from '@/hooks/useUserRole';
 
 export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
-  '/manage-capacity',
 ];
 export const AUTH_PROTECTED_PATHS = [
   '/profile/*',
@@ -17,6 +16,7 @@ export const ROLE_PROTECTED_PATHS = [
   { pattern: '/custody/*', roles: [UserRole.CUSTODY] },
   { pattern: '/care', roles: [UserRole.CARE] },
   { pattern: '/care/*', roles: [UserRole.CARE] },
+  { pattern: '/manage-capacity', roles: [UserRole.CARE] },
 ];
 export const REDIRECTS = [
   ['/admin', '/admin/users'],
