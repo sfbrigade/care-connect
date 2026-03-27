@@ -59,13 +59,13 @@ function ChangeStatus ({ facility, onCancel }) {
       const messages = {
         OPEN_ACCEPTING: `${facility.name} is open and accepting new holds.`,
         OPEN_NOT_ACCEPTING: 'New holds are paused.',
-        CLOSED: 'Facility is temporarily closed.',
+        CLOSED: `${facility.name} is temporarily closed.`,
       };
       showToast('Status updated', 'success', 4000, messages[status] || label);
       navigate('/');
     },
     onError: () => {
-      showToast('Update failed', 'error', 4000, 'Please try again.');
+      showToast("Couldn't update status", 'error', 4000, 'Please try again.');
     },
   });
 

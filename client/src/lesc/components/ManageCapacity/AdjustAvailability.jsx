@@ -30,11 +30,16 @@ function AdjustAvailability ({ facility, bedType, onCancel }) {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       const count = response.data.unavailableUnoccupied;
-      showToast('Capacity updated', 'success', 4000, `${count} chair${count !== 1 ? 's' : ''} marked unavailable.`);
+      const previousCount = bedType.unavailableUnoccupied;
+      const freed = previousCount - count;
+      const message = freed > 0
+        ? `${freed} chair${freed !== 1 ? 's' : ''} are now available.`
+        : `${count} chair${count !== 1 ? 's' : ''} marked unavailable.`;
+      showToast('Capacity updated', 'success', 4000, message);
       navigate('/');
     },
     onError: () => {
-      showToast('Update failed', 'error', 4000, 'Please try again.');
+      showToast("Couldn't update capacity", 'error', 4000, 'Please try again.');
     },
   });
 
