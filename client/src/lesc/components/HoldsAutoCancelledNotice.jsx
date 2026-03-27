@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Text, ThemeIcon } from '@mantine/core';
+import { ActionIcon, Group, Text } from '@mantine/core';
 import { IconAlertCircle, IconX } from '@tabler/icons-react';
 
 import { buildAutoCancelledHoldsMessage } from './holdsViewModel';
