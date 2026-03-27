@@ -1,37 +1,24 @@
 import { test, expect } from '@playwright/test';
+import { login } from './helpers.js';
 
 const ADMIN_EMAIL = 'admin@careconnectsf.org';
 const ADMIN_PASSWORD = 'abcd1234';
 
 async function loginAsAdmin (page) {
-  await page.goto('/');
-  const resetButton = page.getByRole('button', { name: 'RESET' });
-  if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await resetButton.click();
-    // Wait for facility selection to take effect
-    await page.waitForURL(/\/login/);
-  } else {
-    await page.goto('/login');
-  }
-  await page.getByPlaceholder('youremail@example.com').waitFor({ state: 'visible' });
-  await page.getByPlaceholder('youremail@example.com').fill(ADMIN_EMAIL);
-  await page.getByPlaceholder('Enter password').fill(ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'Login' }).click();
-  await page.waitForURL(/\/(holds|custody|care)/);
+  await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
 }
 
-async function setFacilityStatus (page, statusLabel, reasonLabel) {
-  await page.goto('/manage-capacity');
-  await page.waitForLoadState('networkidle');
-  await page.getByText('Change facility status').click();
-  await page.locator('.mantine-Chip-label', { hasText: statusLabel }).waitFor({ state: 'visible' });
-  await page.locator('.mantine-Chip-label', { hasText: statusLabel }).click({ force: true });
-  if (reasonLabel) {
-    await page.locator('.mantine-Chip-label', { hasText: reasonLabel }).waitFor({ state: 'visible' });
-    await page.locator('.mantine-Chip-label', { hasText: reasonLabel }).click({ force: true });
-  }
-  await page.getByRole('button', { name: 'Confirm new status' }).click();
-  await page.waitForURL(/\/(holds|custody|care)/);
+const STATUS_REASONS = {
+  'Not accepting new holds': { status: 'OPEN_NOT_ACCEPTING', statusReasonId: 'safety_lockdown' },
+  Closed: { status: 'CLOSED', statusReasonId: 'safety_lockdown' },
+  Open: { status: 'OPEN_ACCEPTING' },
+};
+
+async function setFacilityStatus (page, statusLabel) {
+  const payload = STATUS_REASONS[statusLabel];
+  await page.request.post('http://localhost:3000/api/facilities/fdcb552e-27a6-4914-b3ef-cd84499ae006/status', {
+    data: payload,
+  });
 }
 
 test.describe('Facility Status Banner', () => {
@@ -40,7 +27,7 @@ test.describe('Facility Status Banner', () => {
 
   test('yellow banner on holds page when not accepting', async ({ page }) => {
     await loginAsAdmin(page);
-    await setFacilityStatus(page, 'Not accepting new holds', 'Safety Lock-down');
+    await setFacilityStatus(page, 'Not accepting new holds');
 
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
@@ -81,7 +68,7 @@ test.describe('Facility Status Banner', () => {
 
   test('red banner when closed', async ({ page }) => {
     await loginAsAdmin(page);
-    await setFacilityStatus(page, 'Closed', 'Safety Lock-down');
+    await setFacilityStatus(page, 'Closed');
 
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
@@ -91,7 +78,7 @@ test.describe('Facility Status Banner', () => {
   test('banner disappears when status returns to open', async ({ page }) => {
     await loginAsAdmin(page);
     // Ensure facility is not open first
-    await setFacilityStatus(page, 'Not accepting new holds', 'Safety Lock-down');
+    await setFacilityStatus(page, 'Not accepting new holds');
     await setFacilityStatus(page, 'Open');
 
     await page.goto('/holds');

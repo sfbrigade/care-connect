@@ -9,6 +9,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3333',
     headless: true,
+    screenshot: 'only-on-failure',
     launchOptions: {
       slowMo: parseInt(process.env.SLOW_MO || '0', 10),
     },

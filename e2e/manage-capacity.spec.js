@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { login, apiLogin } from './helpers.js';
 
 const ADMIN_EMAIL = 'admin@careconnectsf.org';
 const ADMIN_PASSWORD = 'abcd1234';
@@ -8,33 +9,6 @@ const CARE_EMAIL = 'care@careconnectsf.org';
 const CARE_PASSWORD = 'abcd1234';
 const SFSO_EMAIL = 'sfso@careconnectsf.org';
 const SFSO_PASSWORD = 'abcd1234';
-
-async function login (page, email, password) {
-  await page.goto('/');
-  // Select facility if facility selector is shown
-  const resetButton = page.getByRole('button', { name: 'RESET' });
-  if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await resetButton.click();
-    // Wait for facility selection to take effect
-    await page.waitForURL(/\/login/);
-  } else {
-    await page.goto('/login');
-  }
-  await page.getByPlaceholder('youremail@example.com').waitFor({ state: 'visible' });
-  await page.getByPlaceholder('youremail@example.com').fill(email);
-  await page.getByPlaceholder('Enter password').fill(password);
-  await page.getByRole('button', { name: 'Login' }).click({ force: true });
-
-  // Handle unit selector if it appears (SFPD users)
-  const unitInput = page.getByPlaceholder('Start typing a unit name');
-  if (await unitInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await unitInput.click();
-    await page.getByRole('option').first().click();
-    await page.getByRole('button', { name: 'Confirm unit' }).click({ force: true });
-  }
-
-  await page.waitForURL(/\/(holds|custody|care)/);
-}
 
 async function loginAsAdmin (page) {
   await login(page, ADMIN_EMAIL, ADMIN_PASSWORD);
@@ -53,7 +27,7 @@ async function ensureFacilityOpen (page) {
   if (await openChip.isChecked()) return;
 
   await openChip.click();
-  await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
+  await page.getByRole('button', { name: 'Confirm new status' }).evaluate(el => el.click());
   await page.waitForURL('/');
 }
 
@@ -80,7 +54,7 @@ test.describe('Manage Capacity Page', () => {
   test('auth guard — FIELD user is redirected', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await loginAsSfpd(page);
+    await apiLogin(page, SFPD_EMAIL, SFPD_PASSWORD);
     await page.goto('/manage-capacity');
     await page.waitForLoadState('networkidle');
 
@@ -91,7 +65,7 @@ test.describe('Manage Capacity Page', () => {
   test('auth guard — CUSTODY user is redirected', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await login(page, SFSO_EMAIL, SFSO_PASSWORD);
+    await apiLogin(page, SFSO_EMAIL, SFSO_PASSWORD);
     await page.goto('/manage-capacity');
     await page.waitForLoadState('networkidle');
 
@@ -99,8 +73,7 @@ test.describe('Manage Capacity Page', () => {
     await context.close();
   });
 
-  test.skip('auth guard — CARE user can access', async ({ browser }) => {
-    // TODO: enable after facility-administration branch merges (moves /manage-capacity to ROLE_PROTECTED_PATHS with CARE)
+  test('auth guard — CARE user can access', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await login(page, CARE_EMAIL, CARE_PASSWORD);
@@ -131,7 +104,7 @@ test.describe('Manage Capacity Page', () => {
     await expect(page.getByText(/will mark.*chair/)).toBeVisible();
 
     // Submit
-    await page.getByRole('button', { name: 'Update availability' }).click({ force: true });
+    await page.getByRole('button', { name: 'Update availability' }).evaluate(el => el.click());
 
     // Should show toast and redirect home
     await expect(page.getByText('Capacity updated')).toBeVisible();
@@ -149,7 +122,7 @@ test.describe('Manage Capacity Page', () => {
 
     await expect(page.getByText(/will make.*chair.*available/)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Update availability' }).click({ force: true });
+    await page.getByRole('button', { name: 'Update availability' }).evaluate(el => el.click());
     await expect(page.getByText('Capacity updated')).toBeVisible();
     await expect(page.getByText(/chairs are now available/)).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
@@ -162,17 +135,17 @@ test.describe('Manage Capacity Page', () => {
 
     await page.getByText('Change facility status').click();
     await page.locator('.mantine-Chip-label', { hasText: 'Not accepting new holds' }).waitFor({ state: 'visible' });
-    await page.locator('.mantine-Chip-label', { hasText: 'Not accepting new holds' }).click({ force: true });
+    await page.locator('.mantine-Chip-label', { hasText: 'Not accepting new holds' }).evaluate(el => el.click());
 
     // Reason should appear
     await expect(page.getByText('Reason')).toBeVisible();
-    await page.locator('.mantine-Chip-label', { hasText: 'Safety Lock-down' }).click({ force: true });
+    await page.locator('.mantine-Chip-label', { hasText: 'Safety Lock-down' }).evaluate(el => el.click());
 
     // Wait for button to be enabled
     await expect(page.getByRole('button', { name: 'Confirm new status' })).toBeEnabled();
     await page.getByRole('button', { name: 'Confirm new status' }).click();
     await expect(page.getByText('Status updated')).toBeVisible();
-    await expect(page.getByText('New holds are paused.')).toBeVisible();
+    await expect(page.getByText('New holds are paused.', { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
   });
 
@@ -191,8 +164,8 @@ test.describe('Manage Capacity Page', () => {
     await page.getByText('Change facility status').click();
 
     // Current status should be pre-selected as not-accepting
-    await page.locator('.mantine-Chip-label', { hasText: 'Open' }).click({ force: true });
-    await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
+    await page.locator('.mantine-Chip-label', { hasText: 'Open' }).evaluate(el => el.click());
+    await page.getByRole('button', { name: 'Confirm new status' }).evaluate(el => el.click());
 
     await expect(page.getByText('Status updated')).toBeVisible();
     await expect(page.getByText(/open and accepting/)).toBeVisible();
@@ -208,10 +181,10 @@ test.describe('Manage Capacity Page', () => {
     await page.waitForLoadState('networkidle');
 
     await page.getByText('Change facility status').click();
-    await page.locator('.mantine-Chip-label', { hasText: 'Closed' }).click({ force: true });
-    await page.locator('.mantine-Chip-label', { hasText: 'Safety Lock-down' }).click({ force: true });
+    await page.locator('.mantine-Chip-label', { hasText: 'Closed' }).evaluate(el => el.click());
+    await page.locator('.mantine-Chip-label', { hasText: 'Safety Lock-down' }).evaluate(el => el.click());
     await expect(page.getByRole('button', { name: 'Confirm new status' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
+    await page.getByRole('button', { name: 'Confirm new status' }).evaluate(el => el.click());
 
     await expect(page.getByText('Status updated')).toBeVisible();
     await expect(page.getByText(/temporarily closed/)).toBeVisible();
@@ -224,8 +197,8 @@ test.describe('Manage Capacity Page', () => {
     await page.goto('/manage-capacity');
     await page.waitForLoadState('networkidle');
     await page.getByText('Change facility status').click();
-    await page.locator('.mantine-Chip-label', { hasText: 'Open' }).click({ force: true });
-    await page.getByRole('button', { name: 'Confirm new status' }).click({ force: true });
+    await page.locator('.mantine-Chip-label', { hasText: 'Open' }).evaluate(el => el.click());
+    await page.getByRole('button', { name: 'Confirm new status' }).evaluate(el => el.click());
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
   });
 });
