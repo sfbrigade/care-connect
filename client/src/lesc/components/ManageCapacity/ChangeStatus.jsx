@@ -112,7 +112,7 @@ function ChangeStatus ({ facility, onCancel }) {
         )}
 
         <Group>
-          <Button variant='subtle' color='red' onClick={onCancel}>Cancel</Button>
+          <Button variant='destructive' onClick={onCancel}>Cancel</Button>
           <Button
             type='submit'
             disabled={!isValid}
