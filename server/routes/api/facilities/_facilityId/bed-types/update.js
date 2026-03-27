@@ -7,7 +7,7 @@ import Deflection from '#models/deflection.js';
 export default async function (fastify, opts) {
   fastify.patch('/:bedTypeId',
     {
-      onRequest: fastify.requireAdmin,
+      onRequest: fastify.requireCare,
       schema: {
         description: 'Update a bed type record.',
         params: z.object({
