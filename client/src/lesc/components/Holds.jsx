@@ -19,6 +19,8 @@ import HoldsHistory from './HoldsHistory';
 import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+  buildActiveHoldDisplayDeflections,
+  buildHistoryDisplayDeflections,
   detectAutoCancelledExpiredHolds,
   mergeHistoryDeflections,
 } from './holdsViewModel';
@@ -96,6 +98,8 @@ function Holds () {
   });
 
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? []);
+  const displayActiveDeflections = buildActiveHoldDisplayDeflections(deflections ?? [], historyDeflections, incident);
+  const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, incident, (deflections?.length ?? 0) > 0);
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
@@ -348,7 +352,7 @@ function Holds () {
           {tab === 'active' && (
             <HoldsActive
               incident={incident}
-              deflections={deflections}
+              deflections={displayActiveDeflections}
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
               autoCancelledNotice={autoCancelledNotice}
@@ -358,7 +362,7 @@ function Holds () {
           )}
           {tab === 'history' && (
             <HoldsHistory
-              deflections={historyDeflections}
+              deflections={displayHistoryDeflections}
               isFetchingDeflections={isFetchingInactiveDeflections || isFetchingPostTransferActiveDeflections}
               incident={incident}
               hasActiveHolds={(deflections?.length ?? 0) > 0}

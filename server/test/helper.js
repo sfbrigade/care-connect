@@ -50,10 +50,11 @@ async function buildPostgres (t) {
   // disable the ryuk cleanup container, cannot connect from the compose network
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
+  const testcontainersNetworkMode = process.env.TESTCONTAINERS_NETWORK_MODE;
   // extract current version of postgres image being used, start a new test container
   let dbContainer = new PostgreSqlContainer(compose.services.db.image);
-  if (!process.env.CI) {
-    dbContainer = dbContainer.withNetworkMode('care-connect');
+  if (testcontainersNetworkMode) {
+    dbContainer = dbContainer.withNetworkMode(testcontainersNetworkMode);
   }
   const startedDbContainer = await dbContainer.start();
   // set up the default template (template1) with the schema and fixtures
@@ -86,8 +87,8 @@ async function buildPostgres (t) {
   let storageContainer = new GenericContainer(compose.services.storage.image)
     .withEntrypoint(['minio', 'server', '/data'])
     .withExposedPorts(9000);
-  if (!process.env.CI) {
-    storageContainer = storageContainer.withNetworkMode('care-connect');
+  if (testcontainersNetworkMode) {
+    storageContainer = storageContainer.withNetworkMode(testcontainersNetworkMode);
   }
   const startedStorageContainer = await storageContainer.start();
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
