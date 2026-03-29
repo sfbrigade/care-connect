@@ -90,7 +90,7 @@ const BookingSchema = z.object({
 
 // ── Root schema ──────────────────────────────────────────────────────────────
 
-export const P10AFSchema = z.object({
+export const Form849bSchema = z.object({
 
   // ── Header ────────────────────────────────────────────────────────────────
   incidentNumber:    z.string().max(9).optional(),
@@ -194,4 +194,4 @@ export const P10AFSchema = z.object({
 
 }).strict();
 
-/** @typedef {z.infer<typeof P10AFSchema>} P10AData */
+/** @typedef {z.infer<typeof Form849bSchema>} Form849bData */

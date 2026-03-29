@@ -1,13 +1,13 @@
 /* eslint-disable @stylistic/key-spacing */
 /**
- * fillP10AF.mjs
+ * fill849b.js
  *
- * Clean interface for filling SFSO Form P10A (Incident Report Header + Narrative).
+ * Clean interface for filling SFSO 849(b) Report (Incident Report Header + Narrative).
  * Takes a plain JS object with camelCase keys and produces filled PDF bytes.
  *
  * Usage:
- *   import { fillP10AF } from './fillP10AF.mjs';
- *   const filledBytes = await fillP10AF(templatePdfBytes, data);
+ *   import { fill849b } from './fill849b.js';
+ *   const filledBytes = await fill849b(templatePdfBytes, data);
  */
 
 import { PDFDocument, PDFName, PDFBool } from 'pdf-lib';
@@ -246,13 +246,13 @@ function get (obj, path) {
 // ═══════════════════════════════════════════════════════════════════
 
 /**
- * Fill a P10AF PDF template with the given data.
+ * Fill a 849(b) PDF template with the given data.
  *
- * @param {Uint8Array|Buffer} pdfBytes  Raw bytes of FormP10AF.pdf template.
+ * @param {Uint8Array|Buffer} pdfBytes  Raw bytes of Form849b.pdf template.
  * @param {object}            data      Data object (see README / JSDoc below).
  * @returns {Promise<Uint8Array>}       Filled PDF bytes, ready to write.
  */
-export async function fillP10AF (pdfBytes, data) {
+export async function fill849b (pdfBytes, data) {
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const form = pdfDoc.getForm();
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { fillP10AF } from './fillP10AF.js';
+import { fill849b } from './fill849b.js';
 import { formatDateTime24 } from '../formUtils.js';
 
 function buildNarrative ({ arrestedAt, officerName, subjectFullName, arrivedAtReset, transferredAt, releaseReason }) {
@@ -21,7 +21,7 @@ export const metadata = {
   canGenerate (deflection) {
     return deflection.releasedAt
       ? true
-      : { message: 'The SFSO 10A/F Report can only be generated after the subject has been released.' };
+      : { message: 'The SFSO 849(b) Report can only be generated after the subject has been released.' };
   },
 
   deflectionInclude: {
@@ -115,14 +115,14 @@ export const metadata = {
   },
 
   async generatePdf (deflectionData, user) {
-    const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/FormP10AF.pdf');
+    const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/Form849b.pdf');
     const templateBytes = await readFile(templatePath);
 
     // Determine location sent to based on how incident was reported
     // If SFPD reported "on view" -> "Same/On View", otherwise -> "Other"
     const locationSentTo = 'Other'; // TODO: Determine from incident data if on view
 
-    // Map deflection data to P10AF form fields
+    // Map deflection data to 849b form fields
     const formData = {
       // Header fields
       incidentNumber: String(deflectionData.incidentId),
@@ -188,15 +188,15 @@ export const metadata = {
       narrative: buildNarrative(deflectionData),
     };
 
-    return fillP10AF(templateBytes, formData);
+    return fill849b(templateBytes, formData);
   },
 };
 
 // Default export for consistency with other forms, though not used for PDF generation
-export default function FormP10AF () {
+export default function Form849b () {
   return (
     <div style={{ textAlign: 'center', padding: '1rem', fontWeight: 'bold' }}>
-      No HTML preview available for form P10AF.
+      No HTML preview available for form 849(b).
     </div>
   );
 }

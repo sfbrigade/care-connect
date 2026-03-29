@@ -22,17 +22,4 @@ export const FORM_REGISTRY = {
     downloadFilename: (id) => `849b-report-${id}.pdf`,
   },
   '647f': {
-    componentName: 'Form647f',
-    title: '647(f) Transfer Form',
-    generateLabel: 'Generate 647(f) Transfer Form',
-    description: (name) => `647(f) Transfer Form for ${name}`,
-    downloadFilename: (id) => `647f-transfer-form-${id}.pdf`,
-  },
-  p10af: {
-    componentName: 'FormP10AF',
-    title: 'SFSO P10A/F Report',
-    generateLabel: 'Generate SFSO P10A/F Report',
-    description: (name) => `SFSO P10A/F Report for ${name}`,
-    downloadFilename: (id) => `p10af-report-${id}.pdf`,
-  },
 };
