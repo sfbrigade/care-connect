@@ -44,8 +44,6 @@ export default async function (fastify, opts) {
         });
       }
 
-      await fastify.prisma.deflection.expire();
-
       try {
         await fastify.prisma.$transaction(async (tx) => {
           const deflections = await tx.deflection.findMany({
