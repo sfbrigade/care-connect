@@ -32,8 +32,9 @@ function Login () {
   const [mfaToken, setMfaToken] = useState(null);
   const [maskedEmail, setMaskedEmail] = useState('');
   const [resendAvailableAt, setResendAvailableAt] = useState(null);
-  const now = useNow(1000, step === 'verify' && resendAvailableAt !== null);
-  const resendCooldown = resendAvailableAt ? Math.max(0, Math.ceil(DateTime.fromJSDate(resendAvailableAt).diff(now, 'seconds').seconds)) : 0;
+  const isCoolingDown = step === 'verify' && resendAvailableAt !== null && new Date() < resendAvailableAt;
+  const now = useNow(1000, isCoolingDown);
+  const resendCooldown = isCoolingDown ? Math.max(0, Math.ceil(DateTime.fromJSDate(resendAvailableAt).diff(now, 'seconds').seconds)) : 0;
 
   const form = useForm({
     mode: 'uncontrolled',
