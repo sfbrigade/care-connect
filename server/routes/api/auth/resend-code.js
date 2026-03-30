@@ -16,60 +16,46 @@ function maskEmail (email) {
 }
 
 export default async function (fastify, opts) {
-  fastify.post('/login',
+  fastify.post('/resend-code',
     {
       schema: {
-        description: 'Creates an authenticated session with email and password.',
+        description: 'Resend MFA verification code.',
         body: z.object({
-          email: z.string().email(),
-          password: z.string(),
+          token: z.string().uuid(),
         }),
         response: {
-          [StatusCodes.OK]: z.union([
-            User.ResponseSchema,
-            z.object({
-              mfaRequired: z.literal(true),
-              mfaToken: z.string().uuid(),
-              email: z.string(),
-            }),
-          ]),
-          [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
+          [StatusCodes.OK]: z.object({
+            mfaToken: z.string().uuid(),
+            email: z.string(),
+          }),
         },
       },
-      attachValidation: true,
     },
     async function (request, reply) {
-      const { email, password } = request.body;
-
-      // If user already has a valid session, skip MFA
-      if (request.user) {
-        return reply.send(request.user);
-      }
+      const { token } = request.body;
 
       const data = await fastify.prisma.user.findUnique({
-        where: { email },
-        include: {
-          organization: true,
-          title: true,
-          unit: true,
-        },
+        where: { mfaToken: token },
       });
-      if (!data) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-      const user = new User(data);
-      const result = await user.comparePassword(password);
-      if (!result) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send();
-      }
-      if (!user.isActive) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+
+      if (!data || !data.mfaCode) {
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Invalid verification token' });
       }
 
-      // Generate MFA code and token
+      const user = new User(data);
+
+      // Check resend cooldown (30 seconds, but first resend after login is immediate)
+      if (user.mfaLastSentAt) {
+        const secondsSinceLastSend = (Date.now() - new Date(user.mfaLastSentAt).getTime()) / 1000;
+        if (secondsSinceLastSend < 30) {
+          return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: 'Please wait before requesting a new code.' });
+        }
+      }
+
+      // Generate new code and token
       const mfaCode = generateMfaCode();
       const mfaToken = crypto.randomUUID();
-      const mfaExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const mfaExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       await fastify.prisma.user.update({
         where: { id: user.id },
@@ -78,7 +64,7 @@ export default async function (fastify, opts) {
           mfaToken,
           mfaExpiresAt,
           mfaAttempts: 0,
-          mfaLastSentAt: null,
+          mfaLastSentAt: new Date(),
         },
       });
 
@@ -95,7 +81,6 @@ export default async function (fastify, opts) {
       });
 
       return reply.send({
-        mfaRequired: true,
         mfaToken,
         email: maskEmail(user.email),
       });

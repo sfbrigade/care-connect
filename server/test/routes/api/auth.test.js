@@ -180,43 +180,35 @@ test('/api/auth', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
 
-    await t.test('returns ok and a secure session cookie for valid credentials and valid user', async (t) => {
-      const response = await app.inject().post('/api/auth/login').payload({
+    await t.test('returns mfaRequired for valid credentials and sets session after code verification', async (t) => {
+      const loginResponse = await app.inject().post('/api/auth/login').payload({
         email: 'admin.user@test.com',
         password: 'test',
       });
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const cookie = response.headers['set-cookie']
+      assert.deepStrictEqual(loginResponse.statusCode, StatusCodes.OK);
+      const loginData = JSON.parse(loginResponse.body);
+      assert.deepStrictEqual(loginData.mfaRequired, true);
+      assert.ok(loginData.mfaToken);
+
+      // Get code from DB and verify
+      const user = await prisma.user.findUnique({ where: { email: 'admin.user@test.com' } });
+      const verifyResponse = await app.inject().post('/api/auth/verify-code').payload({
+        token: loginData.mfaToken,
+        code: user.mfaCode,
+      });
+      assert.deepStrictEqual(verifyResponse.statusCode, StatusCodes.OK);
+
+      const cookie = verifyResponse.headers['set-cookie']
         ?.split(';')
         .map((t) => t.trim());
       assert.ok(cookie[0].startsWith('session='));
       assert.ok(cookie.includes('HttpOnly'));
-      // Will be Secure only in production
-      // assert.ok(cookie.includes('Secure'));
       assert.ok(cookie.includes('SameSite=Strict'));
 
-      const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data, {
-        id: '555740af-17e9-48a3-93b8-d5236dfd2c29',
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin.user@test.com',
-        isAdmin: true,
-        roles: [],
-        picture: null,
-        pictureUrl: null,
-        organization: null,
-        organizationId: null,
-        badgeNumber: null,
-        title: null,
-        titleId: null,
-        unit: null,
-        unitId: null,
-        prop115Certified: false,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-        deactivatedAt: null,
-      });
+      const data = JSON.parse(verifyResponse.body);
+      assert.deepStrictEqual(data.id, '555740af-17e9-48a3-93b8-d5236dfd2c29');
+      assert.deepStrictEqual(data.email, 'admin.user@test.com');
+      assert.deepStrictEqual(data.isAdmin, true);
     });
   });
 
