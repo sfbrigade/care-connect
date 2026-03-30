@@ -36,6 +36,10 @@ for (const queue of queues) {
       jobData,
     }));
   });
+
+  if (queue.cron) {
+    await boss.schedule(queue.name, queue.cron);
+  }
 }
 
 async function shutdown () {
