@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Button, Container, Fieldset, Group, PinInput, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
+import { Alert, Button, Container, Fieldset, PinInput, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -52,7 +52,6 @@ function Login () {
       code: '',
     },
   });
-
 
   const onLoginSuccess = useCallback((userData) => {
     queryClient.setQueryData(['users', 'me'], userData);
