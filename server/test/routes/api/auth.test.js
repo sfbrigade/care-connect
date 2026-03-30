@@ -203,12 +203,32 @@ test('/api/auth', async (t) => {
         .map((t) => t.trim());
       assert.ok(cookie[0].startsWith('session='));
       assert.ok(cookie.includes('HttpOnly'));
+      // Will be Secure only in production
+      // assert.ok(cookie.includes('Secure'));
       assert.ok(cookie.includes('SameSite=Strict'));
 
       const data = JSON.parse(verifyResponse.body);
-      assert.deepStrictEqual(data.id, '555740af-17e9-48a3-93b8-d5236dfd2c29');
-      assert.deepStrictEqual(data.email, 'admin.user@test.com');
-      assert.deepStrictEqual(data.isAdmin, true);
+      assert.deepStrictEqual(data, {
+        id: '555740af-17e9-48a3-93b8-d5236dfd2c29',
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin.user@test.com',
+        isAdmin: true,
+        roles: [],
+        picture: null,
+        pictureUrl: null,
+        organization: null,
+        organizationId: null,
+        badgeNumber: null,
+        title: null,
+        titleId: null,
+        unit: null,
+        unitId: null,
+        prop115Certified: false,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        deactivatedAt: null,
+      });
     });
   });
 
