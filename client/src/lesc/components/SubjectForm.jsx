@@ -19,6 +19,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
 import { validateSubject } from '@/utils/validators';
 
+import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
 
 const initialValues = {
@@ -381,13 +382,9 @@ function SubjectForm () {
                                   {...form.getInputProps('drugType')}
                                 >
                                   <Group gap='sm' mt='md'>
-                                    <Chip value='CNS_DEPRESSANTS'>{t('drugType.CNS_DEPRESSANTS')}</Chip>
-                                    <Chip value='CNS_STIMULANTS'>{t('drugType.CNS_STIMULANTS')}</Chip>
-                                    <Chip value='HALLUCINOGENS'>{t('drugType.HALLUCINOGENS')}</Chip>
-                                    <Chip value='DISSOCIATIVE_ANESTHETICS'>{t('drugType.DISSOCIATIVE_ANESTHETICS')}</Chip>
-                                    <Chip value='NARCOTIC_ANALGESICS'>{t('drugType.NARCOTIC_ANALGESICS')}</Chip>
-                                    <Chip value='INHALANTS'>{t('drugType.INHALANTS')}</Chip>
-                                    <Chip value='CANNABIS'>{t('drugType.CANNABIS')}</Chip>
+                                    {DRUG_TYPE_OPTIONS.map((drugType) => (
+                                      <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                                    ))}
                                   </Group>
                                 </Chip.Group>
                               </Input.Wrapper>
