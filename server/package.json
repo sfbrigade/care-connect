@@ -18,8 +18,10 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
-    "test": "node --test-concurrency 1 --test \"test/**/*.test.js\"",
-    "geocode:facilities": "node bin/geocode-facilities.js"
+    "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "geocode:facilities": "node bin/geocode-facilities.js",
+    "worker": "node worker.js",
+    "worker:dev": "npm run prisma:generate && node --watch worker.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
@@ -52,7 +54,9 @@
     "mime-types": "^3.0.1",
     "nodemailer": "^7.0.6",
     "pdf-lib": "^1.17.1",
+    "pg-boss": "^12.14.0",
     "pm2": "^6.0.11",
+    "posthog-node": "^5.21.2",
     "puppeteer-core": "^24.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -68,6 +72,7 @@
     "fastify-cli": "^7.4.0",
     "neostandard": "^0.12.2",
     "nodemailer-mock": "^2.0.9",
+    "pg-boss-admin-dashboard": "^1.1.1",
     "prisma": "^6.16.2",
     "testcontainers": "^11.6.0",
     "yaml": "^2.8.1"
