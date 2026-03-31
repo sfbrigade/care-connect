@@ -1,22 +1,15 @@
-import { describe, it, before } from 'node:test';
-import assert from 'node:assert';
+import { test } from 'node:test';
+import * as assert from 'node:assert';
 
 import { authenticate, build } from '#test/helper.js';
 
-describe('GET /api/organizations/:organizationId/members', () => {
-  let app;
-  let adminHeaders;
-  let orgAdminHeaders;
-  let userHeaders;
+test('GET /api/organizations/:organizationId/members', async (t) => {
+  const app = await build(t);
+  const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+  const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+  const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
-  before(async (t) => {
-    app = await build(t);
-    adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
-    orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
-    userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
-  });
-
-  it('returns 401 if not authenticated', async () => {
+  await t.test('returns 401 if not authenticated', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfso/members',
@@ -24,7 +17,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.strictEqual(response.statusCode, 401);
   });
 
-  it('returns 403 if user does not have ORG_ADMIN role', async () => {
+  await t.test('returns 403 if user does not have ORG_ADMIN role', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfpd/members',
@@ -33,7 +26,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.strictEqual(response.statusCode, 403);
   });
 
-  it('returns 403 if org admin requests a different org', async () => {
+  await t.test('returns 403 if org admin requests a different org', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfpd/members',
@@ -42,7 +35,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.strictEqual(response.statusCode, 403);
   });
 
-  it('returns grouped members for org admin', async () => {
+  await t.test('returns grouped members for org admin', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfso/members',
@@ -55,7 +48,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.ok(Array.isArray(body.disabled));
   });
 
-  it('returns grouped members for super admin (any org)', async () => {
+  await t.test('returns grouped members for super admin (any org)', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfso/members',
@@ -68,7 +61,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.ok(Array.isArray(body.disabled));
   });
 
-  it('does not include expired invites in the invited list', async () => {
+  await t.test('does not include expired invites in the invited list', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfso/members',
@@ -79,7 +72,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.strictEqual(expiredInvite, undefined);
   });
 
-  it('does not include deleted users', async () => {
+  await t.test('does not include deleted users', async () => {
     await app.prisma.user.update({
       where: { id: '49acdf99-536f-49ac-8138-1c77e5087697' },
       data: { deactivatedAt: new Date(), deletedAt: new Date() },
@@ -95,7 +88,7 @@ describe('GET /api/organizations/:organizationId/members', () => {
     assert.strictEqual(deletedUser, undefined);
   });
 
-  it('marks the current user with isCurrentUser: true', async () => {
+  await t.test('marks the current user with isCurrentUser: true', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/organizations/sfso/members',
