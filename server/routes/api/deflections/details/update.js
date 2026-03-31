@@ -25,11 +25,9 @@ export default async function (fastify) {
       const { id } = request.params;
       const data = request.body;
       const { id: userId } = request.user;
-
       const record = await fastify.prisma.deflectionDetail.findUnique({
         where: { id },
       });
-
       if (!record) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection detail category not found' });
       }

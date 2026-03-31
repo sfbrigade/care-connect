@@ -7,6 +7,7 @@ import DeflectionDetail from './deflectionDetail.js';
 
 const DeflectionDetailCategoryAttributesSchema = z.object({
   name: z.string(),
+
 });
 
 const DeflectionDetailCategoryCreateSchema = DeflectionDetailCategoryAttributesSchema.extend({

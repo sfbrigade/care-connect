@@ -17,11 +17,7 @@ export default async function (fastify) {
     async function (request, reply) {
       const records = await fastify.prisma.DeflectionDetail.findMany({
         orderBy: { name: 'asc' },
-        where: {
-          deletedById: null
-        }
       });
-      console.log('called');
       return reply.send(records);
     });
 }

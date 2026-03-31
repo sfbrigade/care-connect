@@ -40,7 +40,6 @@ function AdminDeflectionDetailCategoriesForm () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => {
       if (isNew) {
-        console.log(values);
         return Api.deflections.detailCategories.create(values);
       } else {
         return Api.deflections.detailCategories.update(categoryId, values);

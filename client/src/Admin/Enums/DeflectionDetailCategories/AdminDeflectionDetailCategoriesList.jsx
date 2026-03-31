@@ -18,7 +18,7 @@ function AdminDeflectionDetailCategoriesList () {
       <Head>
         <title>Manage Arrest Cancel Reasons</title>
       </Head>
-      <Title mb='md'>Manage Arrest Cancel Reasons</Title>
+      <Title mb='md'>Manage </Title>
       <Group mb='lg'>
         <Button component={Link} to='new'>
           Create a new Cancel Reason

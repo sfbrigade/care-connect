@@ -446,6 +446,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
   "DeflectionDetail" {
     String id "🗝️"
     String deflectionDetailCategoryId 
+    DateTime deletedAt "❓"
+    String deletedById "❓"
     String name 
     String createdById 
     DateTime createdAt 
