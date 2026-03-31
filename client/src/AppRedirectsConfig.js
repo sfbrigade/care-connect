@@ -16,6 +16,7 @@ export const ROLE_PROTECTED_PATHS = [
   { pattern: '/custody/*', roles: [UserRole.CUSTODY] },
   { pattern: '/care', roles: [UserRole.CARE] },
   { pattern: '/care/*', roles: [UserRole.CARE] },
+  { pattern: '/manage-users', roles: [UserRole.ORG_ADMIN] },
 ];
 export const REDIRECTS = [
   ['/admin', '/admin/users'],
