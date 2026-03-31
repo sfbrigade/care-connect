@@ -126,6 +126,7 @@ enum RoleEnum {
   CUSTODY
   CARE
   ORG_ADMIN
+  FACILITY_ADMIN
 }
 
 enum SubjectStatusEnum {

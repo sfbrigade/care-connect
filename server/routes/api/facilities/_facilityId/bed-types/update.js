@@ -8,7 +8,7 @@ import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 export default async function (fastify, opts) {
   fastify.patch('/:bedTypeId',
     {
-      onRequest: fastify.requireCare,
+      onRequest: fastify.requireFacilityAdmin,
       schema: {
         description: 'Update a bed type record.',
         params: z.object({

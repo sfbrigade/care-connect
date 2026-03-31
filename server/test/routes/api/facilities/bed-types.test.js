@@ -8,6 +8,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
   const app = await build(t);
   const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
 
   // Helper to get a facility ID
   const facility = await app.prisma.facility.findFirst();
@@ -42,6 +43,23 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
   });
 
   await t.test('PATCH /:id', async (t) => {
+    await t.test('returns 401 without authentication', async () => {
+      const response = await app.inject()
+        .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .payload({ capacity: 10 });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('returns 403 for non-FACILITY_ADMIN user', async () => {
+      const response = await app.inject()
+        .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .headers(userHeaders)
+        .payload({ capacity: 10 });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
     await t.test('updates bed type and creates bed type update', async () => {
       // fixtures contain one expired deflection, this will create 1 update record
       await app.prisma.deflection.expire();
@@ -55,7 +73,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload(updateData);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -91,7 +109,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload(updateData);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -202,7 +220,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
     await t.test('returns 404 if bed type not found', async () => {
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/00000000-0000-0000-0000-000000000000`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload({ capacity: 10 });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);

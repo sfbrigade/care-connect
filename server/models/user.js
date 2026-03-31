@@ -87,6 +87,10 @@ export class User extends Base {
     return this.roles.includes('ORG_ADMIN');
   }
 
+  get isFacilityAdmin () {
+    return this.roles?.includes(User.Role.FACILITY_ADMIN) ?? false;
+  }
+
   get isDeleted () {
     return !!this.deletedAt;
   }
