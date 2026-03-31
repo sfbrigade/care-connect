@@ -173,7 +173,7 @@ function LegalReleaseQuestions () {
             <Input.Wrapper label='Release reason' required>
               <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                 <Group gap='sm'>
-                  <Chip value='sobered'>Sobered</Chip>
+                  <Chip value='can_care_for_themselves'>Can care for themselves</Chip>
                   <Chip value='medical_issue'>Medical issue</Chip>
                   <Chip value='other'>Other (please specify)</Chip>
                 </Group>
@@ -238,7 +238,7 @@ function LegalReleaseQuestions () {
                 !releaseReasonId ||
                 (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
                 (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
+                (releaseReasonId !== 'can_care_for_themselves' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
               }
             >
               {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}

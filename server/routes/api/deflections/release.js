@@ -38,7 +38,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const releaseReasonId = request.body?.releaseReasonId || 'sobered';
+      const releaseReasonId = request.body?.releaseReasonId || 'can_care_for_themselves';
       const exitDestinationId = request.body?.exitDestinationId || null;
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
