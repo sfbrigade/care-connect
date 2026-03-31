@@ -21,6 +21,4 @@ export const FORM_REGISTRY = {
     description: (name) => `SFSO 849(b) Report for ${name}`,
     downloadFilename: (id) => `849b-report-${id}.pdf`,
   },
-  '647f': {
-  },
 };
