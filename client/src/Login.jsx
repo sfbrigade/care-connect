@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Button, Container, Fieldset, PinInput, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
+import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -30,7 +30,7 @@ function Login () {
 
   const [step, setStep] = useState('credentials');
   const [mfaToken, setMfaToken] = useState(null);
-  const [maskedEmail, setMaskedEmail] = useState('');
+  const [mfaEmail, setMfaEmail] = useState('');
   const [resendAvailableAt, setResendAvailableAt] = useState(null);
   const isCoolingDown = step === 'verify' && resendAvailableAt !== null && new Date() < resendAvailableAt;
   const now = useNow(1000, isCoolingDown);
@@ -68,7 +68,7 @@ function Login () {
     onSuccess: async (response) => {
       if (response.data.mfaRequired) {
         setMfaToken(response.data.mfaToken);
-        setMaskedEmail(response.data.email);
+        setMfaEmail(response.data.email);
         setStep('verify');
         setResendAvailableAt(null);
       } else {
@@ -97,7 +97,7 @@ function Login () {
     mutationFn: ({ token }) => Api.auth.resendCode(token),
     onSuccess: async (response) => {
       setMfaToken(response.data.mfaToken);
-      setMaskedEmail(response.data.email);
+      setMfaEmail(response.data.email);
       setResendAvailableAt(new Date(Date.now() + 30000));
       showToast('A new code has been sent', 'success', 4000, 'Check your email.');
     },
@@ -111,7 +111,7 @@ function Login () {
   function handleBackToLogin () {
     setStep('credentials');
     setMfaToken(null);
-    setMaskedEmail('');
+    setMfaEmail('');
     verifyForm.reset();
   }
 
@@ -149,17 +149,6 @@ function Login () {
                     Login
                   </Title>
                 </Stack>
-                {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && (
-                  <SegmentedControl
-                    fullWidth
-                    value='signin'
-                    onChange={() => navigate('/register')}
-                    data={[
-                      { label: 'Login', value: 'signin' },
-                      { label: 'Create an account', value: 'create' },
-                    ]}
-                  />
-                )}
                 {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
                 {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
                 <TextInput
@@ -176,13 +165,12 @@ function Login () {
                   placeholder='Enter password'
                   leftSection={<IconLock size={20} color='var(--mantine-color-dark-1)' />}
                 />
-                <Stack align='center'>
+                <Stack align='center' mt='3rem'>
                   <Button
                     type='submit'
                     loading={loginMutation.isPending}
-                    fullWidth
                   >
-                    Login
+                    Continue
                   </Button>
                   <Link to='/passwords/forgot'>
                     <Text size='lg'>Forgot password</Text>
@@ -194,48 +182,50 @@ function Login () {
         </form>
       )}
       {step === 'verify' && (
-        <Container>
+        <Container mt='-4rem'>
           <Stack>
             <IconButtonLink icon={IconArrowLeft} onClick={handleBackToLogin} />
 
             <div>
-              <Text c='dimmed' size='sm'>Check your email</Text>
-              <Title order={2}>We sent a 6-digit code to {maskedEmail}.</Title>
+              <Text c='dimmed' size='lg'>Check your email</Text>
+              <Text fz={24} lh='32px'>We sent a 6-digit code to {mfaEmail}.</Text>
             </div>
 
             <form onSubmit={verifyForm.onSubmit(() => verifyMutation.mutateAsync({ token: mfaToken, code: verifyForm.getValues().code }))}>
               <Fieldset disabled={verifyMutation.isPending} variant='unstyled'>
                 <Stack align='flex-start'>
-                  <Text fw={700}>Verification code</Text>
-                  <PinInput
-                    length={6}
-                    type='number'
-                    oneTimeCode
-                    autoFocus
-                    {...verifyForm.getInputProps('code')}
-                    error={!!verifyForm.errors.code}
-                  />
-                  {verifyForm.errors.code && (
-                    <Text size='sm' c='red'>{verifyForm.errors.code}</Text>
-                  )}
+                  <Input.Wrapper label='Verification code' error={verifyForm.errors.code} errorProps={{ size: 'lg', lh: 1.5 }}>
+                    <PinInput
+                      length={6}
+                      size='lg'
+                      radius='md'
+                      type='number'
+                      oneTimeCode
+                      autoFocus
+                      {...verifyForm.getInputProps('code')}
+                      error={!!verifyForm.errors.code}
+                    />
+                  </Input.Wrapper>
 
-                  <Button
-                    variant={resendCooldown > 0 ? 'default' : 'secondary'}
-                    onClick={handleResend}
-                    disabled={resendCooldown > 0 || resendMutation.isPending}
-                  >
-                    {resendCooldown > 0
-                      ? `Resend code in ${String(Math.floor(resendCooldown / 60)).padStart(2, '0')}:${String(resendCooldown % 60).padStart(2, '0')}`
-                      : 'Resend code'}
-                  </Button>
+                  <Stack mt='md' gap='sm' align='flex-start'>
+                    <Button
+                      variant={resendCooldown > 0 ? 'default' : 'secondary'}
+                      onClick={handleResend}
+                      disabled={resendCooldown > 0 || resendMutation.isPending}
+                    >
+                      {resendCooldown > 0
+                        ? `Resend code in ${String(Math.floor(resendCooldown / 60)).padStart(2, '0')}:${String(resendCooldown % 60).padStart(2, '0')}`
+                        : 'Resend code'}
+                    </Button>
 
-                  <Button
-                    type='submit'
-                    loading={verifyMutation.isPending}
-                    disabled={verifyForm.getValues().code.length !== 6}
-                  >
-                    Verify and continue
-                  </Button>
+                    <Button
+                      type='submit'
+                      loading={verifyMutation.isPending}
+                      disabled={verifyForm.getValues().code.length !== 6}
+                    >
+                      Verify and continue
+                    </Button>
+                  </Stack>
                 </Stack>
               </Fieldset>
             </form>
