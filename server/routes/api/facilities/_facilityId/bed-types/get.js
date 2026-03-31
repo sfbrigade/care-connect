@@ -6,6 +6,7 @@ import BedType from '#models/bedType.js';
 export default async function (fastify, opts) {
   fastify.get('/:bedTypeId',
     {
+      // TODO: requireAuth is not a defined decorator — this is a no-op. Replace with requireUser or appropriate role check.
       onRequest: fastify.requireAuth,
       schema: {
         description: 'Get a bed type record.',
