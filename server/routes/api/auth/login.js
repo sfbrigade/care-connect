@@ -9,7 +9,6 @@ function generateMfaCode () {
   return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
 }
 
-
 export default async function (fastify, opts) {
   fastify.post('/login',
     {

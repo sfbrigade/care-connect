@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
-import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title, SegmentedControl } from '@mantine/core';
+import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title } from '@mantine/core';
 import { isEmail, useForm } from '@mantine/form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -13,11 +13,10 @@ import PasswordInput from '@/components/PasswordInput';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
-import { useStaticContext } from '@/StaticContext';
+
 import { useToast } from '@/components/ToastContext';
 
 function Login () {
-  const staticContext = useStaticContext();
   const authContext = useAuthContext();
   const { facility } = useFacilityContext();
   const location = useLocation();
