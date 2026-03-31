@@ -6,6 +6,7 @@ import Incident from '#models/incident.js';
 export default async function (fastify, opts) {
   fastify.get('/active-incident',
     {
+      // TODO: requireAuth is not a defined decorator — this is a no-op. Replace with requireUser or appropriate role check.
       onRequest: fastify.requireAuth,
       schema: {
         description: 'Get the active incident for a facility and the calling user, if any.',
