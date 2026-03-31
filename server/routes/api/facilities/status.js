@@ -7,7 +7,7 @@ import FacilityUpdate from '#models/facilityUpdate.js';
 export default async function (fastify, opts) {
   fastify.post('/:id/status',
     {
-      onRequest: fastify.requireAdmin,
+      onRequest: fastify.requireFacilityAdmin,
       schema: {
         description: 'Update a facility\'s status (admin only).',
         params: z.object({
