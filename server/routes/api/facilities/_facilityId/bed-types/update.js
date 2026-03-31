@@ -6,7 +6,7 @@ import BedType from '#models/bedType.js';
 export default async function (fastify, opts) {
   fastify.patch('/:bedTypeId',
     {
-      onRequest: fastify.requireAuth,
+      onRequest: fastify.requireFacilityAdmin,
       schema: {
         description: 'Update a bed type record.',
         params: z.object({
