@@ -9,7 +9,7 @@ test('MFA — Email Verification', async (t) => {
   const { prisma } = app;
 
   await t.test('POST /login', async (t) => {
-    await t.test('returns mfaRequired with token and masked email on valid credentials', async () => {
+    await t.test('returns mfaRequired with token and email on valid credentials', async () => {
       nodemailerMock.mock.reset();
 
       const response = await app.inject().post('/api/auth/login').payload({
@@ -22,8 +22,7 @@ test('MFA — Email Verification', async (t) => {
       assert.deepStrictEqual(data.mfaRequired, true);
       assert.ok(data.mfaToken);
       assert.ok(data.email);
-      // Email should be masked
-      assert.ok(data.email.includes('***'));
+      assert.deepStrictEqual(data.email, 'regular.user@test.com');
       // Should NOT set session cookie
       const cookie = response.headers['set-cookie'];
       assert.ok(!cookie || !cookie.includes('session='));

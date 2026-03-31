@@ -9,11 +9,6 @@ function generateMfaCode () {
   return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
 }
 
-function maskEmail (email) {
-  const [local, domain] = email.split('@');
-  if (local.length <= 2) return `${local[0]}***@${domain}`;
-  return `${local[0]}${local[1]}***@${domain}`;
-}
 
 export default async function (fastify, opts) {
   fastify.post('/login',
@@ -97,7 +92,7 @@ export default async function (fastify, opts) {
       return reply.send({
         mfaRequired: true,
         mfaToken,
-        email: maskEmail(user.email),
+        email: user.email,
       });
     });
 }
