@@ -52,6 +52,14 @@ export default async function (fastify, opts) {
       if (!data) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
+      // Self-protection: prevent users from disabling/deleting their own account
+      if (data.id === request.user.id) {
+        const selfProtectedFields = ['deactivatedAt', 'deletedAt'];
+        const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
+        if (bodyFields.some((f) => selfProtectedFields.includes(f))) {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
+      }
       if (data.id !== request.user.id && !request.user.isAdmin) {
         // Check if org admin editing a user in their org
         const requestUser = new User(request.user);
@@ -75,7 +83,7 @@ export default async function (fastify, opts) {
       if (updateData.unitId === '') updateData.unitId = null;
       user.update(updateData);
       // ensure only admins can change isAdmin and deactivatedAt params
-      if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt'])).size && !request.user.isAdmin) {
+      if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt', 'deletedAt'])).size && !request.user.isAdmin) {
         // Allow org admins to change deactivatedAt (but not isAdmin) for users in their org
         const requestUser = new User(request.user);
         if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
