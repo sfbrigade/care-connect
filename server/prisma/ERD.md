@@ -127,6 +127,7 @@ UNKNOWN UNKNOWN
             FIELD FIELD
 CUSTODY CUSTODY
 CARE CARE
+ORG_ADMIN ORG_ADMIN
         }
     
 
@@ -188,6 +189,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String unitId "❓"
     String hashedPassword 
     DateTime deactivatedAt "❓"
+    DateTime deletedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
     String badgeNumber "❓"
@@ -207,6 +209,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String titleId "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
+    DateTime expiresAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     String createdById 
