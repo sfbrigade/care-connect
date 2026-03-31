@@ -1,5 +1,5 @@
 import { useNavigate, useParams, Link } from 'react-router';
-import { Alert, Button, Container, Fieldset, Stack, Text, Title } from '@mantine/core';
+import { Button, Container, Fieldset, Stack, Text, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -7,10 +7,12 @@ import { StatusCodes } from 'http-status-codes';
 
 import Api from '@/Api';
 import PasswordInput from '@/components/PasswordInput';
+import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 
 function ResetPassword () {
   const navigate = useNavigate();
+  const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const { token } = useParams();
 
@@ -55,17 +57,35 @@ function ResetPassword () {
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
             <Stack>
-              {error?.response?.status === StatusCodes.NOT_FOUND && (
-                <Alert color='red'>
-                  Sorry, this password reset link is invalid.<br />
-                  <Link to='/passwords/forgot'>Request another?</Link>
-                </Alert>
-              )}
               {error?.response?.status === StatusCodes.GONE && (
-                <Alert color='red'>
-                  Sorry, this password reset link has expired.<br />
-                  <Link to='/passwords/forgot'>Request another?</Link>
-                </Alert>
+                <Stack align='center'>
+                  <Stack justify='center' align='center' w='134px' h='134px' bdrs='50%' bg='gray.3'>
+                    <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+                  </Stack>
+                  <div>
+                    <Text c='dimmed' size='lg' ta='center'>Reset link expired</Text>
+                    <Title order={3} ta='center'>This password reset link is no longer valid. Request a new one to continue.</Title>
+                  </div>
+                  <Stack align='center' gap='sm' mt='3rem'>
+                    <Button variant='secondary' component={Link} to='/login'>Back to sign in</Button>
+                    <Button component={Link} to='/passwords/forgot'>Request new link</Button>
+                  </Stack>
+                </Stack>
+              )}
+              {error?.response?.status === StatusCodes.NOT_FOUND && (
+                <Stack align='center'>
+                  <Stack justify='center' align='center' w='134px' h='134px' bdrs='50%' bg='gray.3'>
+                    <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+                  </Stack>
+                  <div>
+                    <Text c='dimmed' size='lg' ta='center'>Reset link invalid</Text>
+                    <Title order={3} ta='center'>The password reset link is not valid. Request a new one to continue.</Title>
+                  </div>
+                  <Stack align='center' gap='sm' mt='3rem'>
+                    <Button variant='secondary' component={Link} to='/login'>Back to sign in</Button>
+                    <Button component={Link} to='/passwords/forgot'>Request new link</Button>
+                  </Stack>
+                </Stack>
               )}
               {!isLoading && !error && (
                 <>
