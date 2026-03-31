@@ -22,4 +22,5 @@ export const FORM_REGISTRY = {
     downloadFilename: (id) => `849b-report-${id}.pdf`,
   },
   '647f': {
+  },
 };
