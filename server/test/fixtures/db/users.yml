@@ -62,3 +62,12 @@ items:
     roles: [CARE]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@connections"
+  orgadminuser1:
+    id: 'b1a2c3d4-e5f6-7890-abcd-ef1234567890'
+    firstName: OrgAdmin
+    lastName: User
+    email: orgadmin@test.com
+    hashedPassword: '$2b$10$Dkm9cOMmOlNSPRsVbgavUeR/VPKfQdS4.b2ExT4MdHR8cwOHkfMeO'
+    isAdmin: false
+    roles: '{CUSTODY,ORG_ADMIN}'
+    organization: '@sfso'
