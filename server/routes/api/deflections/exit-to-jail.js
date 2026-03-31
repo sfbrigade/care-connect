@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
 
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -53,6 +54,7 @@ export default async function (fastify, opts) {
         }
 
         const now = new Date();
+        const refusalReasonId = refusalReasonIdFromExitDestination('jail');
 
         const previousSubjectStatus = deflection.subjectStatus;
 
@@ -61,6 +63,7 @@ export default async function (fastify, opts) {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitDestinationId: 'jail',
+            refusalReasonId,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -73,6 +76,7 @@ export default async function (fastify, opts) {
             exitedAt: now,
             exitedById: request.user.id,
             exitDestinationId: 'jail',
+            refusalReasonId,
             updatedAt: now,
           },
           include: {

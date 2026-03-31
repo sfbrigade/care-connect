@@ -312,6 +312,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
 
@@ -347,6 +348,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
       assert.strictEqual(data.releasedAt, null);
@@ -354,6 +356,7 @@ test('/api/deflections', async (t) => {
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
       assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'aggressive_behavior');
       assert.ok(updatedDeflection.exitedAt);
       assert.ok(updatedDeflection.exitedById);
       assert.strictEqual(updatedDeflection.releasedAt, null);
@@ -394,6 +397,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
       assert.strictEqual(data.rejectedAt, null);
@@ -401,6 +405,7 @@ test('/api/deflections', async (t) => {
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
       assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'aggressive_behavior');
       assert.ok(updatedDeflection.exitedAt);
       assert.ok(updatedDeflection.exitedById);
       assert.strictEqual(updatedDeflection.rejectedAt, null);
@@ -442,6 +447,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
 
