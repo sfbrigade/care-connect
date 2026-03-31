@@ -69,5 +69,6 @@ items:
     email: orgadmin@test.com
     hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
     isAdmin: false
-    roles: '{CUSTODY,ORG_ADMIN}'
+    roles: [CUSTODY, ORG_ADMIN]
+    createdAt: '2024-12-27T09:53:41-07:00'
     organization: '@sfso'
