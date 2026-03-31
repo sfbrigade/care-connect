@@ -17,7 +17,7 @@ export default async function (fastify, opts) {
           [StatusCodes.NOT_FOUND]: z.null(),
         },
       },
-      onRequest: fastify.requireAdmin
+      onRequest: fastify.requireRole('ORG_ADMIN')
     },
     async function (request, reply) {
       const { id } = request.params;
@@ -26,6 +26,10 @@ export default async function (fastify, opts) {
       });
       if (!data) {
         return reply.code(StatusCodes.NOT_FOUND).send();
+      }
+      // Org-scope: non-super-admins can only resend invites for their own org
+      if (!request.user.isAdmin && data.organizationId !== request.user.organizationId) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
       }
       const invite = new Invite(data);
       if (!invite.isValid) {
