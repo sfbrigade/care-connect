@@ -138,6 +138,7 @@ test('/api/passwords', async (t) => {
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
+        deletedAt: null,
       });
 
       data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
