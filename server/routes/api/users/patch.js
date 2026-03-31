@@ -53,7 +53,19 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
       if (data.id !== request.user.id && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+        // Check if org admin editing a user in their org
+        const requestUser = new User(request.user);
+        if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
+          // Org admins can only change deactivatedAt and deletedAt
+          const allowedFields = new Set(['deactivatedAt', 'deletedAt']);
+          const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
+          const hasDisallowedFields = bodyFields.some((f) => !allowedFields.has(f));
+          if (hasDisallowedFields) {
+            return reply.code(StatusCodes.FORBIDDEN).send();
+          }
+        } else {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
       }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
@@ -64,7 +76,15 @@ export default async function (fastify, opts) {
       user.update(updateData);
       // ensure only admins can change isAdmin and deactivatedAt params
       if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt'])).size && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+        // Allow org admins to change deactivatedAt (but not isAdmin) for users in their org
+        const requestUser = new User(request.user);
+        if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
+          if (user.changes.has('isAdmin')) {
+            return reply.code(StatusCodes.FORBIDDEN).send();
+          }
+        } else {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
       }
       // update password _if provided_
       if (password) {

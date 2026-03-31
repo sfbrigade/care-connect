@@ -217,6 +217,40 @@ test('/api/invites', async (t) => {
     });
   });
 
+  await t.test('POST / (org admin)', async (t) => {
+    await t.test('allows org admin to create invite for their own org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser@test.com',
+          organizationId: 'sfso',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.CREATED);
+    });
+
+    await t.test('prevents org admin from creating invite for different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser2@test.com',
+          organizationId: 'sfpd',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
   await t.test('DELETE /:id', async (t) => {
     await t.test('revokes an Invite', async (t) => {
       const response = await app.inject().delete('/api/invites/7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de').headers(adminHeaders);

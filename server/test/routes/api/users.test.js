@@ -316,4 +316,45 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data.unitId, null);
     });
   });
+
+  await t.test('PATCH /:id (org admin)', async (t) => {
+    await t.test('allows org admin to disable a user in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+    });
+
+    await t.test('prevents org admin from disabling user in different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('prevents org admin from disabling themselves', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/b1a2c3d4-e5f6-7890-abcd-ef1234567890',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
 });
