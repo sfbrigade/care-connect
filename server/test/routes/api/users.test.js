@@ -19,7 +19,7 @@ test('/api/users', async (t) => {
         url: '/api/users'
       }).headers(adminHeaders);
       const data = JSON.parse(response.payload);
-      assert.deepStrictEqual(data.length, 6);
+      assert.deepStrictEqual(data.length, 7);
       assert.deepStrictEqual(data[0].email, 'admin.user@test.com');
       assert.deepStrictEqual(data[1].email, 'another.user@test.com');
       assert.deepStrictEqual(data[2].email, 'deactivated.user@test.com');
@@ -64,7 +64,8 @@ test('/api/users', async (t) => {
         unitId: null,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
-        deactivatedAt: null
+        deactivatedAt: null,
+        deletedAt: null
       });
     });
   });
@@ -102,6 +103,7 @@ test('/api/users', async (t) => {
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
+        deletedAt: null,
       });
     });
   });
