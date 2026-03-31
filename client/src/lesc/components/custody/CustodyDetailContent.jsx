@@ -16,7 +16,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
-import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
