@@ -122,6 +122,7 @@ enum RoleEnum {
   FIELD
   CUSTODY
   CARE
+  ORG_ADMIN
 }
 
 enum SubjectStatusEnum {
@@ -206,6 +207,7 @@ model User {
   unitId                       String?
   hashedPassword               String
   deactivatedAt                DateTime?
+  deletedAt                    DateTime?
   passwordResetToken           String?                 @unique @db.Uuid
   passwordResetExpiresAt       DateTime?
   badgeNumber                  String?
@@ -268,6 +270,7 @@ model Invite {
   titleId                      String?
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
+  expiresAt                    DateTime?
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
