@@ -7,8 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "build": "npm run prisma:generate",
-    "dev": "prisma db push --accept-data-loss; fastify start -w -l info -P app.js",
+    "build": "npm run prisma:generate && npm run build:forms",
+    "build:forms": "node esbuild.forms.js",
+    "build:forms:watch": "node esbuild.forms.js --watch",
+    "dev": "prisma db push --accept-data-loss && npm run build:forms && fastify start -w -l info -P app.js",
     "lint": "eslint --fix",
     "lint:check": "eslint",
     "pretest": "npm run prisma:generate && eslint",
@@ -16,7 +18,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
-    "test": "node --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "test": "node --experimental-test-module-mocks --test-concurrency 1 --test $(find test -name '*.test.js')",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",
     "worker:dev": "npm run prisma:generate && node --watch worker.js"
@@ -51,9 +53,13 @@
     "luxon": "^3.7.2",
     "mime-types": "^3.0.1",
     "nodemailer": "^7.0.6",
+    "pdf-lib": "^1.17.1",
     "pg-boss": "^12.14.0",
     "pm2": "^6.0.11",
     "posthog-node": "^5.21.2",
+    "puppeteer-core": "^24.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "wellknown": "^0.5.0",
     "zod": "^4.1.11",
     "zod-openapi": "^5.4.1"
@@ -72,7 +78,7 @@
     "yaml": "^2.8.1"
   },
   "imports": {
-    "#lib/*.js": "./lib/*.js",
+    "#lib/*": "./lib/*",
     "#models/*.js": "./models/*.js",
     "#prisma/*.js": "./prisma/*.js",
     "#test/*.js": "./test/*.js"
