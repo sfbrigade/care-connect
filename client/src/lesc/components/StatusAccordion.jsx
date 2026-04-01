@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Accordion, ActionIcon, Group, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { Accordion, ActionIcon, Box, Group, Popover, Stack, Text, Title } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 
 function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCard }) {
@@ -48,11 +48,18 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
               <Group justify='space-between' wrap='nowrap'>
                 <Title order={4}>{label}: {items.length}</Title>
                 {tooltip && (
-                  <Tooltip label={tooltip} multiline w={250} withArrow radius='md' p='md'>
-                    <ActionIcon variant='transparent' c='gray.5' size='md' mr='sm' onClick={(e) => e.stopPropagation()}>
-                      <IconInfoCircle size={22} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <Box onClick={(e) => e.stopPropagation()}>
+                    <Popover width={250} withArrow radius='md' shadow='none'>
+                      <Popover.Target>
+                        <ActionIcon variant='transparent' c='gray.5' size='md' mr='sm'>
+                          <IconInfoCircle size={22} />
+                        </ActionIcon>
+                      </Popover.Target>
+                      <Popover.Dropdown p='md' bg='dark' style={{ border: 'none' }}>
+                        <Text size='sm' c='white'>{tooltip}</Text>
+                      </Popover.Dropdown>
+                    </Popover>
+                  </Box>
                 )}
               </Group>
             </Accordion.Control>
