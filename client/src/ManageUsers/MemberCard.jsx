@@ -18,13 +18,13 @@ function MemberCard ({ member, roleLabel, onResendInvite, onCancelInvite, onDisa
                 <Button variant='light' size='xs' onClick={() => onResendInvite(member)}>
                   Resend invite
                 </Button>
-                <Button variant='subtle' size='xs' c='red' onClick={() => onCancelInvite(member)}>
+                <Button variant='destructive' size='xs' onClick={() => onCancelInvite(member)}>
                   Cancel
                 </Button>
               </>
             )}
             {!isInvite && !member.deactivatedAt && (
-              <Button variant='subtle' size='xs' c='red' onClick={() => onDisable(member)}>
+              <Button variant='destructive' size='xs' onClick={() => onDisable(member)}>
                 Disable
               </Button>
             )}
@@ -33,7 +33,7 @@ function MemberCard ({ member, roleLabel, onResendInvite, onCancelInvite, onDisa
                 <Button variant='light' size='xs' onClick={() => onEnable(member)}>
                   Enable
                 </Button>
-                <Button variant='subtle' size='xs' c='red' onClick={() => onDelete(member)}>
+                <Button variant='destructive' size='xs' onClick={() => onDelete(member)}>
                   Delete account
                 </Button>
               </>

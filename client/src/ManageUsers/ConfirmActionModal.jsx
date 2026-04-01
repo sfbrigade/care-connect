@@ -43,7 +43,7 @@ function ConfirmActionModal ({ action, onClose, onConfirm }) {
         <Title order={3}>{config.title(action.member.email)}</Title>
         <Text c='dimmed'>{config.description}</Text>
         <Group>
-          <Button variant='subtle' c='red' onClick={onClose}>
+          <Button variant='destructive' onClick={onClose}>
             {config.cancelLabel}
           </Button>
           <Button

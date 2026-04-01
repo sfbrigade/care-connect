@@ -1,9 +1,18 @@
+import { useEffect, useRef } from 'react';
 import { ActionIcon, Popover, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconInfoCircle } from '@tabler/icons-react';
 
 function SectionLabel ({ label, info }) {
   const [opened, { toggle, close }] = useDisclosure(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (opened) {
+      timerRef.current = setTimeout(close, 15000);
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [opened, close]);
 
   return (
     <>

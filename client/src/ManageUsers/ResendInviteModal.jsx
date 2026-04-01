@@ -1,29 +1,32 @@
-import { Button, Group, Modal, Stack, TextInput, Title } from '@mantine/core';
+import { Button, TextInput } from '@mantine/core';
+
+import FullScreenModal from './FullScreenModal';
 
 function ResendInviteModal ({ member, onClose, onConfirm }) {
   return (
-    <Modal opened={!!member} onClose={onClose} size='sm' centered withCloseButton={false}>
-      <Stack gap='md'>
-        <div>
-          <Title order={5} c='dimmed'>Resend invite</Title>
-          <Title order={3}>A new invite email will be sent to this user. Check email address.</Title>
-        </div>
-        <TextInput
-          label='Email'
-          value={member?.email ?? ''}
-          disabled
-          required
-        />
-        <Group>
-          <Button variant='subtle' c='red' onClick={onClose}>
+    <FullScreenModal
+      opened={!!member}
+      onClose={onClose}
+      subtitle='Resend invite'
+      title='A new invite email will be sent to this user. Check email address.'
+      actions={
+        <>
+          <Button variant='destructive' onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={() => onConfirm(member)}>
             Resend invite
           </Button>
-        </Group>
-      </Stack>
-    </Modal>
+        </>
+      }
+    >
+      <TextInput
+        label='Email'
+        value={member?.email ?? ''}
+        disabled
+        required
+      />
+    </FullScreenModal>
   );
 }
 
