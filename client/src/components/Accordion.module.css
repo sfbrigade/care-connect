@@ -9,25 +9,35 @@
 }
 
 [data-variant=section] {
-  .control {
-    padding: 1rem 0;
+  .item {
+    background-color: var(--mantine-color-gray-1);
+    border-radius: var(--mantine-radius-xl);
+    border-bottom: none;
+    margin-bottom: var(--mantine-spacing-sm);
+    padding: 0.25rem 0.125rem;
   }
 
-  .content {
-    padding: 0 0 1.5rem 0;
+  .control {
+    padding: 0.75rem 0.5rem;
+    position: relative;
   }
 
   .chevron {
-    background-color: rgb(from var(--mantine-color-gray-6) R G B / 0.1);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: absolute;
+    left: 0.5rem;
+    width: 20px;
+    height: 20px;
+    color: var(--mantine-color-gray-6);
   }
 
-  .item {
-    border-bottom: 1px solid var(--mantine-color-gray-3);
+  .label {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
+    font-size: var(--mantine-font-size-lg);
+  }
+
+  .content {
+    padding: 0 0.375rem 0.375rem 0.375rem;
   }
 }

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Accordion, Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Button, Container, Group, Loader, Stack, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
-import { IconSend } from '@tabler/icons-react';
+import { IconUserPlus } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
@@ -12,6 +12,7 @@ import MemberCard from './MemberCard';
 import InviteUserModal from './InviteUserModal';
 import ResendInviteModal from './ResendInviteModal';
 import ConfirmActionModal from './ConfirmActionModal';
+import SectionLabel from '@/components/SectionLabel';
 import { getRoleLabel } from './roleLabels';
 
 function ManageUsersPage () {
@@ -102,79 +103,72 @@ function ManageUsersPage () {
         <title>Account management</title>
       </Head>
       <Container>
-        <Title mb='lg'>Account management</Title>
-        <Accordion multiple defaultValue={['invited', 'active', 'disabled']}>
+        <Accordion variant='section' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
           <Accordion.Item value='invited'>
             <Accordion.Control>
-              <Group justify='space-between'>
-                <Text>Invited: {data?.invited?.length ?? 0}</Text>
-              </Group>
+              <SectionLabel label={`Invited: ${data?.invited?.length ?? 0}`} info='Users who have been sent an invite but have not yet accepted.' />
             </Accordion.Control>
-            <Accordion.Panel>
-              <Stack gap='sm'>
-                {data?.invited?.map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    roleLabel={getRoleLabel([], organizationId)}
-                    onResendInvite={(m) => setResendTarget(m)}
-                    onCancelInvite={(m) => setConfirmAction({ type: 'cancel', member: m })}
-                  />
-                ))}
-                {data?.invited?.length === 0 && (
-                  <Text c='dimmed' ta='center' py='md'>No pending invites</Text>
-                )}
-              </Stack>
-            </Accordion.Panel>
+            {data?.invited?.length > 0 && (
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {data.invited.map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      roleLabel={getRoleLabel([], organizationId)}
+                      onResendInvite={(m) => setResendTarget(m)}
+                      onCancelInvite={(m) => setConfirmAction({ type: 'cancel', member: m })}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            )}
           </Accordion.Item>
 
           <Accordion.Item value='active'>
             <Accordion.Control>
-              <Group justify='space-between'>
-                <Text>Active: {data?.active?.length ?? 0}</Text>
-              </Group>
+              <SectionLabel label={`Active: ${data?.active?.length ?? 0}`} info='Users with active accounts who can sign in.' />
             </Accordion.Control>
-            <Accordion.Panel>
-              <Stack gap='sm'>
-                {data?.active?.map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    roleLabel={getRoleLabel(member.roles, organizationId)}
-                    onDisable={(m) => setConfirmAction({ type: 'disable', member: m })}
-                  />
-                ))}
-              </Stack>
-            </Accordion.Panel>
+            {data?.active?.length > 0 && (
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {data.active.map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      roleLabel={getRoleLabel(member.roles, organizationId)}
+                      onDisable={(m) => setConfirmAction({ type: 'disable', member: m })}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            )}
           </Accordion.Item>
 
           <Accordion.Item value='disabled'>
             <Accordion.Control>
-              <Group justify='space-between'>
-                <Text>Disabled: {data?.disabled?.length ?? 0}</Text>
-              </Group>
+              <SectionLabel label={`Disabled: ${data?.disabled?.length ?? 0}`} info='Accounts that have been disabled. They can be re-enabled.' />
             </Accordion.Control>
-            <Accordion.Panel>
-              <Stack gap='sm'>
-                {data?.disabled?.map((member) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    roleLabel={getRoleLabel(member.roles, organizationId)}
-                    onEnable={(m) => setConfirmAction({ type: 'enable', member: m })}
-                    onDelete={(m) => setConfirmAction({ type: 'delete', member: m })}
-                  />
-                ))}
-                {data?.disabled?.length === 0 && (
-                  <Text c='dimmed' ta='center' py='md'>No disabled accounts</Text>
-                )}
-              </Stack>
-            </Accordion.Panel>
+            {data?.disabled?.length > 0 && (
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  {data.disabled.map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      roleLabel={getRoleLabel(member.roles, organizationId)}
+                      onEnable={(m) => setConfirmAction({ type: 'enable', member: m })}
+                      onDelete={(m) => setConfirmAction({ type: 'delete', member: m })}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            )}
           </Accordion.Item>
         </Accordion>
 
-        <Group justify='center' mt='lg' mb='xl'>
-          <Button leftSection={<IconSend size={16} />} onClick={openInvite}>
+        <Group justify='center' mt={48} mb='xl'>
+          <Button variant='light' leftSection={<IconUserPlus size={18} style={{ marginRight: 4 }} />} bd='5px solid white' onClick={openInvite}>
             Send invite
           </Button>
         </Group>
