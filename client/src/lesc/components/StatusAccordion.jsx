@@ -44,25 +44,25 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
         const items = groupedDeflections[status] ?? [];
         return (
           <Accordion.Item key={status} value={status}>
-            <Accordion.Control disabled={items.length === 0}>
-              <Group justify='space-between' wrap='nowrap'>
+            <Group wrap='nowrap' gap={0}>
+              <Accordion.Control disabled={items.length === 0}>
                 <Title order={4}>{label}: {items.length}</Title>
-                {tooltip && (
-                  <Box onClick={(e) => e.stopPropagation()}>
-                    <Popover width={250} withArrow radius='md' shadow='none'>
-                      <Popover.Target>
-                        <ActionIcon variant='transparent' c='gray.5' size='md' mr='sm'>
-                          <IconInfoCircle size={22} />
-                        </ActionIcon>
-                      </Popover.Target>
-                      <Popover.Dropdown p='md' bg='dark' style={{ border: 'none' }}>
-                        <Text size='sm' c='white'>{tooltip}</Text>
-                      </Popover.Dropdown>
-                    </Popover>
-                  </Box>
-                )}
-              </Group>
-            </Accordion.Control>
+              </Accordion.Control>
+              {tooltip && (
+                <Box onClick={(e) => e.stopPropagation()} mr='sm'>
+                  <Popover width={250} withArrow radius='md' shadow='none'>
+                    <Popover.Target>
+                      <ActionIcon variant='transparent' c='gray.5' size='md'>
+                        <IconInfoCircle size={22} />
+                      </ActionIcon>
+                    </Popover.Target>
+                    <Popover.Dropdown p='md' bg='dark' style={{ border: 'none' }}>
+                      <Text size='sm' c='white'>{tooltip}</Text>
+                    </Popover.Dropdown>
+                  </Popover>
+                </Box>
+              )}
+            </Group>
             <Accordion.Panel>
               <Stack gap='md'>
                 {items.map(d => renderCard(d))}
