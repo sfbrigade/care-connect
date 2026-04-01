@@ -1,9 +1,17 @@
 import { Box, Group, Text } from '@mantine/core';
 import { IconPencilMinus } from '@tabler/icons-react';
+import { DateTime } from 'luxon';
 import { formatTime } from '@/utils/format';
 
 import IconButtonLink from '@/components/IconButtonLink';
 import { isValidIncident } from '@/utils/validators';
+
+function formatIncidentTime (arrestedAt) {
+  if (!arrestedAt) return 'Time unavailable';
+  const dt = DateTime.fromISO(arrestedAt);
+  const isToday = dt.hasSame(DateTime.now(), 'day');
+  return isToday ? formatTime(arrestedAt) : `${dt.toFormat('MM/dd/yyyy')} ${formatTime(arrestedAt)}`;
+}
 
 function Incident ({ incident, incidentId, editLink }) {
   const isIncomplete = incident ? !isValidIncident(incident) : false;
@@ -23,7 +31,7 @@ function Incident ({ incident, incidentId, editLink }) {
         <Group gap='xs'>
           <Text c='dimmed' size='md'>{address || 'Address unavailable'}</Text>
           <Text c='dimmed' size='md'>•</Text>
-          <Text c='dimmed' size='md'>{incident?.arrestedAt ? formatTime(incident.arrestedAt) : 'Time unavailable'}</Text>
+          <Text c='dimmed' size='md'>{formatIncidentTime(incident?.arrestedAt)}</Text>
         </Group>
       </Box>
       {editLink && (
