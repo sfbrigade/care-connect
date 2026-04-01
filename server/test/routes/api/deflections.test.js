@@ -1135,26 +1135,26 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('POST /:id/release', async (t) => {
-    await t.test('marks a subject as legally released (can care for themselves)', async () => {
+    await t.test('marks a subject as legally released (simple sobered)', async () => {
       const response = await app.inject()
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
         .payload({
-          releaseReasonId: 'can_care_for_themselves',
+          releaseReasonId: 'sobered',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'RELEASED');
-      assert.strictEqual(data.releaseReasonId, 'can_care_for_themselves');
+      assert.strictEqual(data.releaseReasonId, 'sobered');
       assert.ok(data.releasedAt);
       assert.ok(data.releasedById);
 
       // Verify DB state
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
-      assert.strictEqual(dbDeflection.releaseReasonId, 'can_care_for_themselves');
+      assert.strictEqual(dbDeflection.releaseReasonId, 'sobered');
       assert.ok(dbDeflection.releasedAt);
 
       // Verify deflection update history
@@ -1251,7 +1251,7 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
         .payload({
-          releaseReasonId: 'can_care_for_themselves',
+          releaseReasonId: 'sobered',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.CONFLICT);
@@ -1262,7 +1262,7 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/99999/release')
         .headers(custodyUserHeaders)
         .payload({
-          releaseReasonId: 'can_care_for_themselves',
+          releaseReasonId: 'sobered',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.NOT_FOUND);

@@ -9,45 +9,10 @@ export default async function main (prisma) {
     throw new Error('Admin user not found for seeding deflection release reasons');
   }
 
-  const legacyReason = await prisma.deflectionReleaseReason.findUnique({
-    where: { id: 'sobered' },
-  });
-
-  if (legacyReason) {
-    await prisma.$transaction(async (tx) => {
-      const replacementReason = await tx.deflectionReleaseReason.findUnique({
-        where: { id: 'can_care_for_themselves' },
-      });
-
-      if (replacementReason) {
-        await tx.deflection.updateMany({
-          where: { releaseReasonId: 'sobered' },
-          data: { releaseReasonId: 'can_care_for_themselves' },
-        });
-        await tx.deflectionUpdate.updateMany({
-          where: { releaseReasonId: 'sobered' },
-          data: { releaseReasonId: 'can_care_for_themselves' },
-        });
-        await tx.deflectionReleaseReason.delete({
-          where: { id: 'sobered' },
-        });
-      } else {
-        await tx.deflectionReleaseReason.update({
-          where: { id: 'sobered' },
-          data: {
-            id: 'can_care_for_themselves',
-            name: 'Can care for themselves',
-            updatedById: adminUser.id,
-          },
-        });
-      }
-    });
-  }
-
   const deflectionReleaseReasons = [
     {
-      id: 'can_care_for_themselves',
-      name: 'Can care for themselves',
+      id: 'sobered',
+      name: 'Sobered',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
