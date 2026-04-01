@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Accordion, Button, Container, Group, Loader, Stack, Text } from '@mantine/core';
+import { Accordion, Button, Container, Loader, Stack } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
