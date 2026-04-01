@@ -12,6 +12,7 @@ import { useToast } from '@/components/ToastContext';
 import Incident from './Incident';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
+import SectionContainer from './SectionContainer';
 import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
@@ -110,9 +111,6 @@ function HoldsActive ({
           onClose={onDismissAutoCancelledNotice}
         />
       )}
-      {showIncident && (
-        <Incident incident={incident} editLink='/incident' />
-      )}
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
@@ -134,20 +132,25 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          <Stack gap='md'>
-            {deflections?.map((deflection) => (
-              <Hold
-                key={deflection.id}
-                incident={incident}
-                deflection={deflection}
-                highlighted={holdsHighlighted}
-                onCancelClick={() => onCancelHoldClick(deflection)}
-                onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                }}
-              />
-            ))}
-          </Stack>
+          <SectionContainer>
+            <Stack gap='md'>
+              {showIncident && (
+                <Incident incident={incident} editLink='/incident' />
+              )}
+              {deflections?.map((deflection) => (
+                <Hold
+                  key={deflection.id}
+                  incident={incident}
+                  deflection={deflection}
+                  highlighted={holdsHighlighted}
+                  onCancelClick={() => onCancelHoldClick(deflection)}
+                  onDetailsClick={() => {
+                    navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                  }}
+                />
+              ))}
+            </Stack>
+          </SectionContainer>
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}

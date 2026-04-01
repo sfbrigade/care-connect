@@ -10,7 +10,7 @@ function Incident ({ incident, editLink }) {
   const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
 
   return (
-    <Group justify='space-between'>
+    <Group justify='space-between' px='sm'>
       <Box>
         <Group gap='xs'>
           <Text size='md'>
