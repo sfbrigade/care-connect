@@ -46,11 +46,11 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
           <Accordion.Item key={status} value={status}>
             <Accordion.Control disabled={items.length === 0}>
               <Group justify='space-between' wrap='nowrap'>
-                <Title order={3}>{label}: {items.length}</Title>
+                <Title order={4}>{label}: {items.length}</Title>
                 {tooltip && (
                   <Tooltip label={tooltip} multiline w={250} withArrow radius='md' p='md'>
-                    <ActionIcon variant='transparent' c='gray.5' size='lg' mr='sm' onClick={(e) => e.stopPropagation()}>
-                      <IconInfoCircle size={28} />
+                    <ActionIcon variant='transparent' c='gray.5' size='md' mr='sm' onClick={(e) => e.stopPropagation()}>
+                      <IconInfoCircle size={22} />
                     </ActionIcon>
                   </Tooltip>
                 )}

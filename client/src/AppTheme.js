@@ -85,7 +85,7 @@ const AppTheme = createTheme({
               borderRadius: 'var(--mantine-radius-xl)',
               marginBottom: 'var(--mantine-spacing-md)',
               border: 'none',
-              padding: '0 var(--mantine-spacing-lg)',
+              padding: '0 var(--mantine-spacing-md)',
             },
           };
         }
