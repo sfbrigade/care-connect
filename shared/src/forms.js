@@ -21,4 +21,11 @@ export const FORM_REGISTRY = {
     description: (name) => `SFSO 849(b) Report for ${name}`,
     downloadFilename: (id) => `849b-report-${id}.pdf`,
   },
+  '647f': {
+    componentName: 'Form647f',
+    title: 'SFPD 647(f) Report',
+    generateLabel: 'Generate SFPD 647(f) Report',
+    description: (name) => `SFPD 647(f) Report for ${name}`,
+    downloadFilename: (id) => `647f-report-${id}.pdf`,
+  }
 };
