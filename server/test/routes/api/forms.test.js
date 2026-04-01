@@ -158,7 +158,7 @@ test('/api/forms', async (t) => {
       assert.strictEqual(response.headers['content-type'], 'application/pdf');
       assert.match(
         response.headers['content-disposition'],
-        new RegExp(`647f-transfer-form-${unreleasedDeflection.id}\\.pdf`)
+        new RegExp(`647f-report-${unreleasedDeflection.id}\\.pdf`)
       );
     });
 
@@ -187,7 +187,7 @@ test('/api/forms', async (t) => {
       assert.strictEqual(response.headers['content-type'], 'application/pdf');
       assert.match(
         response.headers['content-disposition'],
-        new RegExp(`cert-Certificate-of-Release-${releasedDeflection.id}\\.pdf`)
+        new RegExp(`cert-${releasedDeflection.id}\\.pdf`)
       );
     });
 
