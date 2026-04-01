@@ -52,6 +52,7 @@ items:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject2'
+    subjectStatus: 'RELEASED'
     incident: '@incident1'
     expiresAt: '2025-01-15T16:30:00-07:00'
     releasedAt: '2025-01-15T14:30:00-07:00'
