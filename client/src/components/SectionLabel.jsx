@@ -21,8 +21,8 @@ function SectionLabel ({ label, info }) {
               <IconInfoCircle size={20} />
             </ActionIcon>
           </Popover.Target>
-          <Popover.Dropdown>
-            <Text size='sm'>{info}</Text>
+          <Popover.Dropdown bg='dark.7' style={{ border: 'none', maxWidth: 280 }}>
+            <Text size='sm' c='white' style={{ whiteSpace: 'normal' }}>{info}</Text>
           </Popover.Dropdown>
         </Popover>
       )}

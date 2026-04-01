@@ -1,4 +1,4 @@
-import { Accordion, Card, Stack, Text } from '@mantine/core';
+import { Accordion, Card, Stack, Text, Title } from '@mantine/core';
 import SectionLabel from './SectionLabel';
 
 export default {
@@ -8,10 +8,11 @@ export default {
   },
 };
 
-export const Default = {
+export const CardVariant = {
+  name: 'Card variant (new)',
   render: () => (
     <div style={{ width: 420 }}>
-      <Accordion variant='section' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
+      <Accordion variant='card' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
         <Accordion.Item value='invited'>
           <Accordion.Control>
             <SectionLabel label='Invited: 2' info='Users who have been sent an invite but have not yet accepted.' />
@@ -63,20 +64,32 @@ export const Default = {
   ),
 };
 
-export const WithoutInfo = {
+export const SectionVariant = {
+  name: 'Section variant (legacy)',
   render: () => (
     <div style={{ width: 420 }}>
-      <Accordion variant='section' chevronPosition='left' multiple defaultValue={['active']}>
-        <Accordion.Item value='active'>
+      <Accordion variant='section' multiple defaultValue={['narcotics', 'drug-use']}>
+        <Accordion.Item value='narcotics'>
           <Accordion.Control>
-            <SectionLabel label='Active: 3' />
+            <Title order={3}>Narcotics</Title>
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap='sm'>
-              <Card bg='white' p='md'>
-                <Text fw={500}>Alice Johnson</Text>
-                <Text size='sm' c='dimmed'>Org Admin</Text>
-              </Card>
+              <Text c='dimmed'>Controlled substance</Text>
+              <Text c='teal.6'>No</Text>
+            </Stack>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='drug-use'>
+          <Accordion.Control>
+            <Title order={3}>Drug use</Title>
+            <Text c='gray.5' size='sm'>Optional</Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Stack gap='sm'>
+              <Text c='dimmed'>Evidence of drug use</Text>
+              <Text c='red.6'>Yes</Text>
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>

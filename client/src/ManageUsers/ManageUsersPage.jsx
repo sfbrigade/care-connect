@@ -103,7 +103,7 @@ function ManageUsersPage () {
         <title>Account management</title>
       </Head>
       <Container>
-        <Accordion variant='section' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
+        <Accordion variant='card' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
           <Accordion.Item value='invited'>
             <Accordion.Control>
               <SectionLabel label={`Invited: ${data?.invited?.length ?? 0}`} info='Users who have been sent an invite but have not yet accepted.' />
