@@ -1,3 +1,4 @@
+import Invite from '#models/invite.js';
 import { User } from '#models/user.js';
 
 export default async function (fastify) {
@@ -49,39 +50,19 @@ export default async function (fastify) {
       });
 
       return {
-        invited: invites.map((invite) => ({
-          id: invite.id,
+        invited: invites.map((i) => ({
+          ...new Invite(i).toJSON(),
           type: 'invite',
-          firstName: invite.firstName,
-          lastName: invite.lastName,
-          email: invite.email,
-          expiresAt: invite.expiresAt,
-          createdAt: invite.createdAt,
         })),
-        active: activeUsers.map((u) => {
-          const user = new User(u);
-          return {
-            id: user.id,
-            type: 'user',
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            roles: user.roles,
-            isCurrentUser: user.id === request.user.id,
-          };
-        }),
-        disabled: disabledUsers.map((u) => {
-          const user = new User(u);
-          return {
-            id: user.id,
-            type: 'user',
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            roles: user.roles,
-            deactivatedAt: user.deactivatedAt,
-          };
-        }),
+        active: activeUsers.map((u) => ({
+          ...new User(u).toJSON(),
+          type: 'user',
+          isCurrentUser: u.id === request.user.id,
+        })),
+        disabled: disabledUsers.map((u) => ({
+          ...new User(u).toJSON(),
+          type: 'user',
+        })),
       };
     }
   );
