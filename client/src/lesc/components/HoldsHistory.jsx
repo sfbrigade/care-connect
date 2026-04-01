@@ -30,10 +30,9 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
     })),
   });
 
-  // Derive ID from queryKey
-  const incidentsById = incidentQueries.reduce((acc, query) => {
-    const incidentId = query.queryKey?.[1];
-    if (query.data && incidentId) {
+  const incidentsById = incidentIdList.reduce((acc, incidentId, index) => {
+    const query = incidentQueries[index];
+    if (query?.data) {
       acc[incidentId] = query.data;
     }
     return acc;
