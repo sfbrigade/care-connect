@@ -49,8 +49,8 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
                 <Title order={3}>{label}: {items.length}</Title>
                 {tooltip && (
                   <Tooltip label={tooltip} multiline w={250} withArrow radius='md' p='md'>
-                    <ActionIcon variant='transparent' c='gray.5' size='sm' onClick={(e) => e.stopPropagation()}>
-                      <IconInfoCircle size={24} />
+                    <ActionIcon variant='transparent' c='gray.5' size='lg' mr='sm' onClick={(e) => e.stopPropagation()}>
+                      <IconInfoCircle size={28} />
                     </ActionIcon>
                   </Tooltip>
                 )}
