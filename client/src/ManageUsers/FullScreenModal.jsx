@@ -1,9 +1,7 @@
 import { ActionIcon, Container, Group, Modal, Stack, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
-import ActionFooter from '@/components/ActionFooter';
-
-function FullScreenModal ({ opened, onClose, subtitle, title, actions, stickyActions, children }) {
+function FullScreenModal ({ opened, onClose, subtitle, title, actions, children }) {
   return (
     <Modal opened={opened} onClose={onClose} fullScreen withCloseButton={false}>
       <Container>
@@ -23,18 +21,13 @@ function FullScreenModal ({ opened, onClose, subtitle, title, actions, stickyAct
             <Title order={3}>{title}</Title>
           </div>
           {children}
-          {actions && !stickyActions && (
+          {actions && (
             <Group gap='sm'>
               {actions}
             </Group>
           )}
         </Stack>
       </Container>
-      {actions && stickyActions && (
-        <ActionFooter>
-          {actions}
-        </ActionFooter>
-      )}
     </Modal>
   );
 }

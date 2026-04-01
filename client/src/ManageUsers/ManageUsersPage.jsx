@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconUserPlus } from '@tabler/icons-react';
 
+import ActionFooter from '@/components/ActionFooter';
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import { useToast } from '@/components/ToastContext';
@@ -167,12 +168,12 @@ function ManageUsersPage () {
           </Accordion.Item>
         </Accordion>
 
-        <Group justify='center' mt={48} mb='xl'>
-          <Button variant='light' leftSection={<IconUserPlus size={18} style={{ marginRight: 4 }} />} bd='5px solid white' onClick={openInvite}>
-            Send invite
-          </Button>
-        </Group>
       </Container>
+      <ActionFooter>
+        <Button variant='light' leftSection={<IconUserPlus size={18} style={{ marginRight: 4 }} />} onClick={openInvite}>
+          Send invite
+        </Button>
+      </ActionFooter>
 
       <InviteUserModal
         opened={inviteOpened}
