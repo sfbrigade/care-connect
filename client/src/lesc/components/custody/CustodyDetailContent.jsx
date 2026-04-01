@@ -257,7 +257,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               )}
             </Stack>
           )}
-          {!isCareView && (
+          {!isCareView && (isLegallyReleased || isExited) && (
             <Stack gap='xs' align='flex-start'>
               <Button
                 onClick={open849bPdf}
@@ -610,6 +610,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       }
                       if (showPrimaryStartLegalRelease) {
                         navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                        return;
+                      }
+                      if (showPrimaryPrintCertificate) {
+                        window.open(`/api/forms/cert/pdf/${deflection.id}`, '_blank');
                       }
                     }}
                     loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
