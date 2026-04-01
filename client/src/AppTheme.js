@@ -77,7 +77,7 @@ const AppTheme = createTheme({
         chevronIconSize: 20,
       },
       classNames: accordionClasses,
-      styles: (theme, props) => {
+      styles: (_theme, props) => {
         if (props.variant === 'contained') {
           return {
             item: {

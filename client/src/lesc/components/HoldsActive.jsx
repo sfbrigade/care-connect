@@ -12,7 +12,7 @@ import { useToast } from '@/components/ToastContext';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import IncidentGroup from './IncidentGroup';
-import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
+import { isInitialLoading, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
@@ -94,7 +94,6 @@ function HoldsActive ({
 
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
-  const showIncident = shouldShowIncidentInActive(incident, deflections);
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
   const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
@@ -131,39 +130,20 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          {showIncident
-            ? (
-              <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident'>
-                {deflections?.map((deflection) => (
-                  <Hold
-                    key={deflection.id}
-                    incident={incident}
-                    deflection={deflection}
-                    highlighted={holdsHighlighted}
-                    onCancelClick={() => onCancelHoldClick(deflection)}
-                    onDetailsClick={() => {
-                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                    }}
-                  />
-                ))}
-              </IncidentGroup>
-              )
-            : (
-              <Stack gap='md'>
-                {deflections?.map((deflection) => (
-                  <Hold
-                    key={deflection.id}
-                    incident={incident}
-                    deflection={deflection}
-                    highlighted={holdsHighlighted}
-                    onCancelClick={() => onCancelHoldClick(deflection)}
-                    onDetailsClick={() => {
-                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                    }}
-                  />
-                ))}
-              </Stack>
-              )}
+          <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident'>
+            {deflections?.map((deflection) => (
+              <Hold
+                key={deflection.id}
+                incident={incident}
+                deflection={deflection}
+                highlighted={holdsHighlighted}
+                onCancelClick={() => onCancelHoldClick(deflection)}
+                onDetailsClick={() => {
+                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                }}
+              />
+            ))}
+          </IncidentGroup>
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}
