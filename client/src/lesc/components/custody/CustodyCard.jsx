@@ -111,7 +111,7 @@ function CustodyCard ({ deflection, highlighted }) {
               onClick={() => safetyCheckMutation.mutate()}
               loading={safetyCheckMutation.isPending}
             >
-              Safety checked
+              Mark complete
             </Button>
           )}
           {showLegalRelease && (

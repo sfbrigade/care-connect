@@ -25,13 +25,13 @@ const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently in a sobering chair. If legally released, you can start their exit process.' },
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
-  { status: 'STILL_ONSITE', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 

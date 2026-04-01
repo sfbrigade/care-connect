@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Accordion, Stack, Text, Title } from '@mantine/core';
+import { Accordion, ActionIcon, Group, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { IconInfoCircle } from '@tabler/icons-react';
 
 function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCard }) {
   // track counts of each status to determine if a section should be open
@@ -38,14 +39,22 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
   }, [defaultOpen, sections, groupedDeflections]);
 
   return (
-    <Accordion variant='section' multiple value={value} onChange={setValue}>
-      {sections.map(({ status, label, description }) => {
+    <Accordion variant='section' multiple value={value} onChange={setValue} chevronPosition='left'>
+      {sections.map(({ status, label, tooltip }) => {
         const items = groupedDeflections[status] ?? [];
         return (
           <Accordion.Item key={status} value={status}>
             <Accordion.Control disabled={items.length === 0}>
-              <Title order={3}>{label}: {items.length}</Title>
-              {description && <Text c='gray.5' size='sm'>{description}</Text>}
+              <Group justify='space-between' wrap='nowrap'>
+                <Title order={3}>{label}: {items.length}</Title>
+                {tooltip && (
+                  <Tooltip label={tooltip} multiline w={250} withArrow>
+                    <ActionIcon variant='transparent' c='gray.5' size='sm' onClick={(e) => e.stopPropagation()}>
+                      <IconInfoCircle size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </Group>
             </Accordion.Control>
             <Accordion.Panel>
               <Stack gap='md'>

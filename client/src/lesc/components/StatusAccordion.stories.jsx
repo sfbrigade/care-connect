@@ -31,10 +31,10 @@ const makeDeflection = (id, subjectStatus) => ({
 });
 
 const inCustodySections = [
-  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update subject details as needed before completing the safety check.' },
-  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake' },
-  { status: 'ADMITTED', label: 'In Medical Intake' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
+  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake', tooltip: 'Ready to start process of medical admission. Show the QR code to Connections staff.' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'Medical admission in process. Monitor status until person is admitted.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying sobering chairs. Start legal release when they are ready.' },
 ];
 
 const releasedSections = [
