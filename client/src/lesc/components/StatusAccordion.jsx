@@ -39,7 +39,7 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
   }, [defaultOpen, sections, groupedDeflections]);
 
   return (
-    <Accordion variant='section' multiple value={value} onChange={setValue} chevronPosition='left'>
+    <Accordion variant='contained' multiple value={value} onChange={setValue} chevronPosition='left'>
       {sections.map(({ status, label, tooltip }) => {
         const items = groupedDeflections[status] ?? [];
         return (
@@ -48,9 +48,9 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
               <Group justify='space-between' wrap='nowrap'>
                 <Title order={3}>{label}: {items.length}</Title>
                 {tooltip && (
-                  <Tooltip label={tooltip} multiline w={250} withArrow>
+                  <Tooltip label={tooltip} multiline w={250} withArrow radius='md' p='md'>
                     <ActionIcon variant='transparent' c='gray.5' size='sm' onClick={(e) => e.stopPropagation()}>
-                      <IconInfoCircle size={18} />
+                      <IconInfoCircle size={24} />
                     </ActionIcon>
                   </Tooltip>
                 )}

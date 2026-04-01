@@ -77,6 +77,20 @@ const AppTheme = createTheme({
         chevronIconSize: 20,
       },
       classNames: accordionClasses,
+      styles: (theme, props) => {
+        if (props.variant === 'contained') {
+          return {
+            item: {
+              backgroundColor: 'var(--mantine-color-gray-1)',
+              borderRadius: 'var(--mantine-radius-xl)',
+              marginBottom: 'var(--mantine-spacing-md)',
+              border: 'none',
+              padding: '0 var(--mantine-spacing-lg)',
+            },
+          };
+        }
+        return {};
+      },
     }),
     Alert: Alert.extend({
       styles: {
