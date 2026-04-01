@@ -3,10 +3,9 @@ import { Box, Stack, Title, Text, Loader } from '@mantine/core';
 import { useQueries } from '@tanstack/react-query';
 
 import Hold from './Hold';
-import Incident from './Incident';
-import SectionContainer from './SectionContainer';
+import IncidentGroup from './IncidentGroup';
 import Api from '@/Api';
-import { buildIncidentSubtitle, getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
+import { getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
 
 function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false }) {
   const navigate = useNavigate();
@@ -60,47 +59,34 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
         <>
           <Stack gap='md'>
             {shouldShowCurrentIncidentGroup && currentIncidentDeflections.length > 0 && (
-              <SectionContainer>
-                <Stack gap='xs'>
-                  <Incident incident={incident} editLink='/incident' />
-                  {[...currentIncidentDeflections]
-                    .sort((a, b) => getDeflectionActivityMs(b) - getDeflectionActivityMs(a))
-                    .map((deflection) => (
-                      <Hold
-                        key={deflection.id}
-                        deflection={deflection}
-                        onDetailsClick={() => {
-                          navigate(`/holds/${deflection.id}`);
-                        }}
-                      />
-                    ))}
-                </Stack>
-              </SectionContainer>
+              <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident' gap='xs'>
+                {[...currentIncidentDeflections]
+                  .sort((a, b) => getDeflectionActivityMs(b) - getDeflectionActivityMs(a))
+                  .map((deflection) => (
+                    <Hold
+                      key={deflection.id}
+                      deflection={deflection}
+                      onDetailsClick={() => {
+                        navigate(`/holds/${deflection.id}`);
+                      }}
+                    />
+                  ))}
+              </IncidentGroup>
             )}
-            {groupedByIncident.map((group) => {
-              const subtitle = buildIncidentSubtitle(group.incident);
-
-              return (
-                <SectionContainer key={`incident-${group.incidentId}`}>
-                  <Stack gap='xs'>
-                    <Box>
-                      <Text size='md'>Incident {group.incidentId}</Text>
-                      <Text size='md' c='dimmed'>{subtitle}</Text>
-                    </Box>
-                    {group.deflections.map((deflection) => (
-                      <Hold
-                        incident={incident}
-                        key={deflection.id}
-                        deflection={deflection}
-                        onDetailsClick={() => {
-                          navigate(`/holds/${deflection.id}`);
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                </SectionContainer>
-              );
-            })}
+            {groupedByIncident.map((group) => (
+              <IncidentGroup key={`incident-${group.incidentId}`} incident={group.incident} incidentId={group.incidentId} gap='xs'>
+                {group.deflections.map((deflection) => (
+                  <Hold
+                    incident={incident}
+                    key={deflection.id}
+                    deflection={deflection}
+                    onDetailsClick={() => {
+                      navigate(`/holds/${deflection.id}`);
+                    }}
+                  />
+                ))}
+              </IncidentGroup>
+            ))}
           </Stack>
         </>
       )}

@@ -5,29 +5,32 @@ import { formatTime } from '@/utils/format';
 import IconButtonLink from '@/components/IconButtonLink';
 import { isValidIncident } from '@/utils/validators';
 
-function Incident ({ incident, editLink }) {
-  const isIncomplete = !isValidIncident(incident);
+function Incident ({ incident, incidentId, editLink }) {
+  const isIncomplete = incident ? !isValidIncident(incident) : false;
   const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
+  const displayId = incident?.id ?? incidentId ?? '';
 
   return (
     <Group justify='space-between' px='sm'>
       <Box>
         <Group gap='xs'>
           <Text size='md'>
-            Incident {incident ? incident.id : ''}
+            Incident {displayId}
           </Text>
           {isIncomplete && <Text c='gray.5' size='md'>•</Text>}
           {isIncomplete && <Text c='red.6' size='md'>Details incomplete</Text>}
         </Group>
         <Group gap='xs'>
-          {address && <Text c='dimmed' size='md'>{address}</Text>}
-          {address && incident?.arrestedAt && <Text c='dimmed' size='md'>•</Text>}
-          {incident?.arrestedAt && <Text c='dimmed' size='md'>{formatTime(incident.arrestedAt)}</Text>}
+          <Text c='dimmed' size='md'>{address || 'Address unavailable'}</Text>
+          <Text c='dimmed' size='md'>•</Text>
+          <Text c='dimmed' size='md'>{incident?.arrestedAt ? formatTime(incident.arrestedAt) : 'Time unavailable'}</Text>
         </Group>
       </Box>
-      <Box>
-        <IconButtonLink icon={IconPencilMinus} to={editLink} variant={isIncomplete ? 'primary' : 'default'} />
-      </Box>
+      {editLink && (
+        <Box>
+          <IconButtonLink icon={IconPencilMinus} to={editLink} variant={isIncomplete ? 'primary' : 'default'} />
+        </Box>
+      )}
     </Group>
   );
 }
