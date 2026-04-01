@@ -104,14 +104,10 @@ export default async function (fastify, opts) {
             },
             data: updatedData,
           });
-          const activeDeflections = await tx.deflection.count({
-            where: {
-              incidentId: deflection.incidentId,
-              status: Deflection.HoldStatus.ACTIVE,
-            },
-          });
+          // prisma does not support lte on enums, so we use a raw query
+          const [{ activeDeflections }] = await tx.$queryRaw`SELECT COUNT(*) as "activeDeflections" FROM "Deflection" WHERE "incidentId" = ${deflection.incidentId} AND "status" = ${Deflection.HoldStatus.ACTIVE}::"HoldStatusEnum" AND "subjectStatus" <= ${Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER}::"SubjectStatusEnum"`;
           // if the user has not arrived yet, close the incident if there no more deflections
-          if (activeDeflections === 0) {
+          if (activeDeflections === BigInt(0)) {
             // note- using updateMany because update throws an error if no record matches
             await tx.incident.updateMany({
               where: {
