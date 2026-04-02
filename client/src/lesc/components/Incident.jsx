@@ -11,7 +11,7 @@ function Incident ({ incident, incidentId, editLink }) {
   const displayId = incident?.id ?? incidentId ?? '';
 
   return (
-    <Group justify='space-between' px='sm'>
+    <Group justify='space-between'>
       <Box>
         <Group gap='xs'>
           <Text size='md'>
