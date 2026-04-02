@@ -24,6 +24,7 @@ const BedTypeResponseSchema = BedTypeCreateSchema.extend({
   id: z.string().uuid(),
   occupied: z.number(),
   holds: z.number(),
+  inTransit: z.number(),
   available: z.number(),
   createdAt: z.coerce.date(),
   createdBy: User.ResponseSchema.optional(),

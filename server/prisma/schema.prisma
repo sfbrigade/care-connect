@@ -402,6 +402,7 @@ model BedType {
   unavailableOccupied          Int                     @default(0)
   occupied                     Int                     @default(0)
   holds                        Int                     @default(0)
+  inTransit                    Int                     @default(0)
   available                    Int                     @default(0)
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
@@ -429,12 +430,13 @@ model BedTypeUpdate {
   unavailableOccupied          Int                     @default(0)
   occupied                     Int                     @default(0)
   holds                        Int                     @default(0)
+  inTransit                    Int                     @default(0)
   available                    Int                     @default(0)
   updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
   updateNotes                  String?
   updatedAt                    DateTime                @default(now())
   updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid  
+  updatedById                  String                  @db.Uuid
 }
 
 model FacilityEligibility {
