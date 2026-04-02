@@ -47,7 +47,8 @@ function ManageCapacity () {
         {bedType && (
           <Stack gap='xs'>
             <Text>Available now – <Text span fw={700}>{bedType.available}</Text>/{bedType.capacity}</Text>
-            <Text>Held (in transit) – <Text span fw={700}>{bedType.holds}</Text></Text>
+            <Text>Held (in transit) – <Text span fw={700}>{bedType.inTransit}</Text></Text>
+            <Text>Held (in custody on site) – <Text span fw={700}>{bedType.holds - bedType.inTransit}</Text></Text>
             <Text>Occupied – <Text span fw={700}>{bedType.occupied}</Text></Text>
             <Text>Unavailable – <Text span fw={700}>{bedType.unavailableUnoccupied}</Text></Text>
           </Stack>
