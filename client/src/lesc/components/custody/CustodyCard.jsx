@@ -68,7 +68,7 @@ function CustodyCard ({ deflection, highlighted }) {
             {isFailedIntake && (
               <>
                 <Text size='md' c='gray.5'>&middot;</Text>
-                <Text size='md' c='gray.6'>Pending safety check</Text>
+                <Text size='md' c='red.6'>Intake not completed</Text>
               </>
             )}
             {releaseTimingChip && (
