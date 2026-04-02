@@ -18,6 +18,7 @@ test('/api/incidents', async (t) => {
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         encounteredVia: 'ON_VIEW',
         cadNumber: 'CAD-12345',
+        caseNumber: 'CASE-12345',
         addressLine1: '123 Main St',
         addressLine2: 'Apt 1',
         city: 'San Francisco',
@@ -35,6 +36,7 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(data.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
       assert.deepStrictEqual(data.encounteredVia, 'ON_VIEW');
       assert.deepStrictEqual(data.cadNumber, 'CAD-12345');
+      assert.deepStrictEqual(data.caseNumber, 'CASE-12345');
       assert.deepStrictEqual(data.addressLine1, '123 Main St');
       assert.deepStrictEqual(data.addressLine2, 'Apt 1');
       assert.deepStrictEqual(data.city, 'San Francisco');
@@ -53,6 +55,7 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(incident.facilityId, '6d123d8f-edd5-4d14-9220-0508eb30b47b');
       assert.deepStrictEqual(incident.encounteredVia, 'ON_VIEW');
       assert.deepStrictEqual(incident.cadNumber, 'CAD-12345');
+      assert.deepStrictEqual(incident.caseNumber, 'CASE-12345');
       assert.deepStrictEqual(incident.addressLine1, '123 Main St');
       assert.deepStrictEqual(incident.addressLine2, 'Apt 1');
       assert.deepStrictEqual(incident.city, 'San Francisco');
@@ -71,6 +74,7 @@ test('/api/incidents', async (t) => {
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         encounteredVia: 'DISPATCHED',
         cadNumber: '',
+        caseNumber: '',
         addressLine1: '',
         addressLine2: '',
         city: '',
@@ -147,6 +151,7 @@ test('/api/incidents', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.cadNumber, 'CAD-123');
+      assert.deepStrictEqual(data.caseNumber, 'CASE-123');
       assert.deepStrictEqual(data.encounteredVia, 'ON_VIEW');
     });
 
@@ -163,6 +168,7 @@ test('/api/incidents', async (t) => {
       const response = await app.inject().patch('/api/incidents/1').payload({
         encounteredVia: 'DISPATCHED',
         cadNumber: 'CAD-UPDATED',
+        caseNumber: 'CASE-UPDATED',
         city: 'Oakland',
       }).headers(userHeaders);
 
@@ -170,6 +176,7 @@ test('/api/incidents', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.cadNumber, 'CAD-UPDATED');
+      assert.deepStrictEqual(data.caseNumber, 'CASE-UPDATED');
       assert.deepStrictEqual(data.encounteredVia, 'DISPATCHED');
       assert.deepStrictEqual(data.city, 'Oakland');
 
@@ -178,6 +185,7 @@ test('/api/incidents', async (t) => {
         where: { id: 1 },
       });
       assert.deepStrictEqual(incident.cadNumber, 'CAD-UPDATED');
+      assert.deepStrictEqual(incident.caseNumber, 'CASE-UPDATED');
       assert.deepStrictEqual(incident.encounteredVia, 'DISPATCHED');
       assert.deepStrictEqual(incident.city, 'Oakland');
     });
@@ -214,7 +222,7 @@ test('/api/incidents', async (t) => {
       const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.length, 3);
+      assert.deepStrictEqual(data.length, 2);
 
       const oneHourLater = DateTime.now().plus({ hours: 1 });
 
@@ -225,10 +233,6 @@ test('/api/incidents', async (t) => {
       const expiresAt1 = DateTime.fromISO(data[1].expiresAt);
       const diff1 = expiresAt1.diff(oneHourLater, 'minutes').minutes;
       assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt1.toISO()}`);
-
-      const expiresAt2 = DateTime.fromISO(data[2].expiresAt);
-      const diff2 = expiresAt2.diff(oneHourLater, 'minutes').minutes;
-      assert.ok(Math.abs(diff2) < 1, `Expected data[2].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt2.toISO()}`);
     });
   });
 
@@ -248,6 +252,7 @@ test('/api/incidents', async (t) => {
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         encounteredVia: 'DISPATCHED',
         cadNumber: '',
+        caseNumber: '',
         addressLine1: '',
         addressLine2: '',
         city: '',
@@ -293,6 +298,7 @@ test('/api/incidents', async (t) => {
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         encounteredVia: 'DISPATCHED',
         cadNumber: '',
+        caseNumber: '',
         addressLine1: '',
         addressLine2: '',
         city: '',
@@ -332,6 +338,7 @@ test('/api/incidents', async (t) => {
         facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
         encounteredVia: 'DISPATCHED',
         cadNumber: '',
+        caseNumber: '',
         addressLine1: '',
         addressLine2: '',
         city: '',

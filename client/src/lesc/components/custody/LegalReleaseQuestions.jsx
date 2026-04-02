@@ -98,6 +98,8 @@ function LegalReleaseQuestions () {
         title: 'Person legally released',
         body: '849(b) record finalized. Please print the release certificate.',
       }));
+      window.sessionStorage.setItem('_session-custody', 'released');
+      window.sessionStorage.setItem('custodyHighlightTarget', String(id));
       navigate('/custody');
     },
     onError: (error) => {

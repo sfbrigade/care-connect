@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import ActionFooter from '@/components/ActionFooter';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
@@ -14,7 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
-import { generateCertificateOfReleasePDF } from '@/utils/pdfGenerator';
+import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
@@ -64,6 +65,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const propertySectionId = `custody-property-section-${deflection?.id ?? 'unknown'}`;
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
+  const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
 
   useEffect(() => {
@@ -195,19 +197,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    const holdData = {
-      id: String(deflection.id),
-      client: deflection.subject,
-      incident: {
-        dateTimeArrested: incident?.arrestedAt ?? null,
-      },
-      createdAt: deflection?.createdAt,
-      transferredAt: deflection?.releasedAt ?? null,
-      createdBy: deflection?.createdBy ?? null,
-    };
-    const doc = generateCertificateOfReleasePDF(holdData);
-    const blobUrl = doc.output('bloburl');
-    window.open(blobUrl, '_blank');
+    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
   }
 
   function onReleaseNarrativeButtonClick () {
@@ -234,13 +224,21 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {!isCareView && (
               <Stack gap='xs' align='center'>
                 <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {releaseTimingChip && (
+                  <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
+                )}
                 {showAwaitingPropertyReturnChip && (
                   <DeflectionStatusChip label='Awaiting property return' tone='info' />
                 )}
               </Stack>
             )}
             {isCareView && (
-              <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+              <Stack gap='xs' align='center'>
+                <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+                {releaseTimingChip && (
+                  <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
+                )}
+              </Stack>
             )}
           </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
@@ -259,7 +257,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               )}
             </Stack>
           )}
-          {!isCareView && (
+          {!isCareView && (isLegallyReleased || isExited) && (
             <Stack gap='xs' align='flex-start'>
               <Button
                 onClick={open849bPdf}
@@ -355,7 +353,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 </Accordion.Item>
                 <Accordion.Item value='deflection'>
                   <Accordion.Control>
-                    <Title order={3}>Arrest details</Title>
+                    <Title order={3}>Behavioral observations</Title>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
@@ -367,7 +365,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       )}
                       {!!deflection?.behavior && (
                         <Box>
-                          <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                          <Text c='dimmed'>647(f) narrative</Text>
                           <Text>{deflection?.behavior}</Text>
                         </Box>
                       )}
@@ -436,6 +434,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{incident.cadNumber}</Text>
                         </Box>
                       )}
+                      {incident?.caseNumber && (
+                        <Box>
+                          <Text c='dimmed'>Case #</Text>
+                          <Text>{incident.caseNumber}</Text>
+                        </Box>
+                      )}
                       {incident?.supervisorBadgeNumber && (
                         <Box>
                           <Text c='dimmed'>SFSO supervisor star #</Text>
@@ -485,182 +489,146 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         </Stack>
       </Container>
       {careFooterState.showFooter && (
-        <Box
-          className='action-footer-gradient'
-          pos='fixed'
-          left={0}
-          right={0}
-          bottom={0}
-          pt='md'
-          pb='xl'
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
-              <Button
-                color='indigo'
-                radius='xl'
-                size='lg'
-                onClick={() => {
-                  if (careFooterState.primaryAction === 'complete-intake') {
-                    setCompleteIntakeModalOpened(true);
-                    return;
-                  }
-                  if (careFooterState.primaryAction === 'start-exit') {
-                    navigate(careFooterState.startExitPath);
-                  }
-                }}
-              >
-                {careFooterState.primaryLabel}
-              </Button>
-            </Group>
-          </Container>
-        </Box>
+        <ActionFooter>
+          <Button
+            variant='secondary'
+            onClick={() => {
+              if (careFooterState.primaryAction === 'complete-intake') {
+                setCompleteIntakeModalOpened(true);
+                return;
+              }
+              if (careFooterState.primaryAction === 'start-exit') {
+                navigate(careFooterState.startExitPath);
+              }
+            }}
+          >
+            {careFooterState.primaryLabel}
+          </Button>
+        </ActionFooter>
       )}
       {showCustodyActionFooter && (
-        <Box
-          className='action-footer-gradient'
-          pos='fixed'
-          left={0}
-          right={0}
-          bottom={0}
-          pt={showRecordPropertyReturnAction ? 'xl' : 'md'}
-          pb='xl'
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
-              {showMoreActionsPrimaryOnly
-                ? (
-                  <Menu
-                    position='top-start'
-                    shadow='sm'
-                    radius='lg'
-                    width={260}
-                    withinPortal
+        <ActionFooter>
+          {showMoreActionsPrimaryOnly
+            ? (
+              <Menu
+                position='top-start'
+                shadow='sm'
+                radius='lg'
+                width={260}
+                withinPortal
+              >
+                <Menu.Target>
+                  <Button
+                    variant='secondary'
+                    leftSection={<IconDots size={22} color='var(--mantine-color-indigo-6)' />}
                   >
-                    <Menu.Target>
-                      <Button
-                        variant='outline'
-                        color='indigo'
-                        radius='xl'
-                        size='lg'
-                        leftSection={<IconDots size={22} />}
-                      >
-                        More actions
-                      </Button>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                      >
-                        Legal release
-                      </Menu.Item>
-                      <Menu.Item
-                        leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => setExitToJailModalOpened(true)}
-                      >
-                        Exit to jail
-                      </Menu.Item>
-                      <Menu.Item
-                        leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                        onClick={() => setRecordDeathModalOpened(true)}
-                      >
-                        Record death
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                  )
-                : (
-                  <Stack gap='sm' w='100%' align='center'>
-                    {showRecordPropertyReturnAction && (
-                      <Group justify='center' gap='sm' wrap='nowrap'>
-                        {!isExited && <Box w={48} h={48} style={{ visibility: 'hidden' }} />}
-                        <Button
-                          variant='outline'
-                          color='indigo'
-                          radius='xl'
-                          size='lg'
-                          onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
+                    More actions
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item
+                    leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                  >
+                    Legal release
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => setExitToJailModalOpened(true)}
+                  >
+                    Exit to jail
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => setRecordDeathModalOpened(true)}
+                  >
+                    Record death
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+              )
+            : (
+              <Stack gap='sm' w='100%' align='stretch'>
+                {showRecordPropertyReturnAction && (
+                  <Button
+                    variant='secondary'
+                    onClick={() => navigate(`/custody/${deflection.id}/property-return`)}
+                  >
+                    Record property return
+                  </Button>
+                )}
+                <Group gap='sm' wrap='nowrap'>
+                  {!isExited && (
+                    <Menu
+                      position='top-start'
+                      shadow='sm'
+                      radius='lg'
+                      width={260}
+                      withinPortal
+                    >
+                      <Menu.Target>
+                        <ActionIcon
+                          variant='filled'
+                          color='indigo.0'
+                          radius='50%'
+                          size={48}
+                          aria-label='More actions'
+                          style={{ minWidth: 48, flex: '0 0 48px' }}
                         >
-                          Record property return
-                        </Button>
-                      </Group>
-                    )}
-                    <Group justify='center' gap='sm' wrap='nowrap'>
-                      {!isExited && (
-                        <Menu
-                          position='top-start'
-                          shadow='sm'
-                          radius='lg'
-                          width={260}
-                          withinPortal
+                          <IconDots size={24} color='var(--mantine-color-indigo-6)' />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        {isAwaitingSafetyCheck && (
+                          <Menu.Item
+                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
+                          >
+                            Legal release
+                          </Menu.Item>
+                        )}
+                        <Menu.Item
+                          leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
+                          onClick={() => setExitToJailModalOpened(true)}
                         >
-                          <Menu.Target>
-                            <ActionIcon
-                              variant='outline'
-                              color='indigo'
-                              radius='50%'
-                              size={48}
-                              aria-label='More actions'
-                              style={{ minWidth: 48, flex: '0 0 48px' }}
-                            >
-                              <IconDots size={24} />
-                            </ActionIcon>
-                          </Menu.Target>
-                          <Menu.Dropdown>
-                            {isAwaitingSafetyCheck && (
-                              <Menu.Item
-                                leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                                onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                              >
-                                Legal release
-                              </Menu.Item>
-                            )}
-                            <Menu.Item
-                              leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
-                              onClick={() => setExitToJailModalOpened(true)}
-                            >
-                              Record exit to jail
-                            </Menu.Item>
-                            <Menu.Item
-                              leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                              onClick={() => setRecordDeathModalOpened(true)}
-                            >
-                              Record death
-                            </Menu.Item>
-                          </Menu.Dropdown>
-                        </Menu>
-                      )}
-                      <Button
-                        color='indigo'
-                        radius='xl'
-                        size='lg'
-                        onClick={() => {
-                          if (isAwaitingSafetyCheck) {
-                            safetyCheckMutation.mutate();
-                            return;
-                          }
-                          if (showPrimaryStartLegalRelease) {
-                            navigate(`/custody/${deflection.id}/legal-release?from=detail`);
-                          }
-                        }}
-                        loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
-                      >
-                        {isAwaitingSafetyCheck
-                          ? 'Complete safety check'
-                          : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
-                      </Button>
-                    </Group>
-                  </Stack>
+                          Record exit to jail
+                        </Menu.Item>
+                        <Menu.Item
+                          leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                          onClick={() => setRecordDeathModalOpened(true)}
+                        >
+                          Record death
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
                   )}
-            </Group>
-          </Container>
-        </Box>
+                  <Button
+                    onClick={() => {
+                      if (isAwaitingSafetyCheck) {
+                        safetyCheckMutation.mutate();
+                        return;
+                      }
+                      if (showPrimaryStartLegalRelease) {
+                        navigate(`/custody/${deflection.id}/legal-release?from=detail`);
+                        return;
+                      }
+                      if (showPrimaryPrintCertificate) {
+                        window.open(`/api/forms/cert/pdf/${deflection.id}`, '_blank');
+                      }
+                    }}
+                    loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
+                  >
+                    {isAwaitingSafetyCheck
+                      ? 'Complete safety check'
+                      : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                  </Button>
+                </Group>
+              </Stack>
+              )}
+        </ActionFooter>
       )}
       {(careFooterState.showFooter || showCustodyActionFooter) && (
-        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '164px' : '104px'} />
+        <Box h={showCustodyActionFooter && showRecordPropertyReturnAction ? '184px' : '128px'} />
       )}
       <RecordDeathModal
         opened={recordDeathModalOpened}
