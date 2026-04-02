@@ -106,6 +106,17 @@ export function detectAutoCancelledExpiredHolds ({
   };
 }
 
+export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personName, facilityName }) {
+  if (allCancelled) {
+    return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
+  }
+  if (count === 1) {
+    const name = personName || 'this person';
+    return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
+  }
+  return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
+}
+
 function toMillis (value) {
   if (!value) return 0;
   const asDate = new Date(value);

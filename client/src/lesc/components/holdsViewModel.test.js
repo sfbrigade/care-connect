@@ -4,6 +4,7 @@ import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
   buildActiveHoldDisplayDeflections,
+  buildAdminCancelledHoldsMessage,
   buildIncidentSubtitle,
   buildHistoryDisplayDeflections,
   buildAutoCancelledHoldsMessage,
@@ -209,6 +210,44 @@ describe('holdsViewModel', () => {
       releasedAt: '2026-02-27T10:00:00.000Z',
     }));
     expect(result).toBe(new Date('2026-02-27T12:00:00.000Z').getTime());
+  });
+
+  describe('buildAdminCancelledHoldsMessage', () => {
+    it('builds single hold message with person name', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 1,
+        allCancelled: false,
+        personName: 'Jane Doe',
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled hold for Jane Doe. Do not bring this person to RESET.');
+    });
+
+    it('builds all-cancelled message', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 2,
+        allCancelled: true,
+        personName: 'Jane Doe',
+        facilityName: 'RESET',
+      })).toBe('All active holds were cancelled by RESET. Incident was moved to History.');
+    });
+
+    it('builds single hold message without person name', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 1,
+        allCancelled: false,
+        personName: null,
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled hold for this person. Do not bring this person to RESET.');
+    });
+
+    it('builds multi-hold message', () => {
+      expect(buildAdminCancelledHoldsMessage({
+        count: 3,
+        allCancelled: false,
+        personName: null,
+        facilityName: 'RESET',
+      })).toBe('RESET cancelled 3 holds. Do not bring these persons to RESET.');
+    });
   });
 
   it('builds incident subtitle with address/time when present and fallback when missing', () => {

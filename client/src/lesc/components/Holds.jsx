@@ -6,11 +6,13 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import Facility from './Facility';
@@ -20,6 +22,7 @@ import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
   buildActiveHoldDisplayDeflections,
+  buildAdminCancelledHoldsMessage,
   buildHistoryDisplayDeflections,
   detectAutoCancelledExpiredHolds,
   mergeHistoryDeflections,
@@ -37,6 +40,7 @@ function parseAutoCancelledNoticeState (value) {
 
 function Holds () {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -104,6 +108,8 @@ function Holds () {
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
   const autoCancelledNotice = parseAutoCancelledNoticeState(autoCancelledNoticeState);
+  const [adminCancelledNoticeState, setAdminCancelledNoticeState] = useSessionState('holds-admin-cancelled-notice', '');
+  const adminCancelledNotice = parseAutoCancelledNoticeState(adminCancelledNoticeState);
   const previousActiveIncidentIdRef = useRef(null);
   const previousActiveDeflectionIdsRef = useRef([]);
   const pendingAutoCancelledCheckRef = useRef(null);
@@ -135,6 +141,8 @@ function Holds () {
       pendingAutoCancelledCheckRef.current = null;
     } else if (autoCancelledNotice && incident?.id && autoCancelledNotice.incidentId !== incident.id) {
       setAutoCancelledNoticeState('');
+    } else if (adminCancelledNotice && incident?.id && adminCancelledNotice.incidentId !== incident.id) {
+      setAdminCancelledNoticeState('');
     } else if (pendingCheck) {
       const matchedHistoryDeflectionCount = historyDeflections
         .filter((deflection) => (
@@ -148,6 +156,45 @@ function Holds () {
       }
     }
 
+    // Check for admin-cancelled holds by fetching removed deflections directly
+    if (removedDeflectionIds.length > 0 && !detectedNotice) {
+      (async () => {
+        try {
+          const [removed, freshFacility] = await Promise.all([
+            Promise.all(removedDeflectionIds.map(id => Api.deflections.get(id).then(r => r.data))),
+            Api.facilities.get(facility.id).then(r => r.data),
+          ]);
+          const adminCancelled = removed.filter(d =>
+            d.status === 'CANCELLED' &&
+            d.cancelledById &&
+            d.cancelledById !== user?.id
+          );
+          if (adminCancelled.length > 0) {
+            const allCancelled = freshFacility.status === 'CLOSED';
+            const firstCancelled = adminCancelled[0];
+            const personName = [
+              firstCancelled.subject?.firstName,
+              firstCancelled.subject?.lastName,
+            ].filter(Boolean).join(' ') || null;
+            const message = buildAdminCancelledHoldsMessage({
+              count: adminCancelled.length,
+              allCancelled,
+              personName,
+              facilityName: facility?.name || 'Facility',
+            });
+            setAdminCancelledNoticeState(JSON.stringify({
+              incidentId: previousActiveIncidentIdRef.current,
+              count: adminCancelled.length,
+              allCancelled,
+              message,
+            }));
+          }
+        } catch {
+          // Silently ignore fetch errors for notification detection
+        }
+      })();
+    }
+
     if (incident?.id) {
       previousActiveIncidentIdRef.current = incident.id;
     }
@@ -158,10 +205,18 @@ function Holds () {
     historyDeflections,
     incident?.id,
     setAutoCancelledNoticeState,
+    setAdminCancelledNoticeState,
+    adminCancelledNotice,
+    user?.id,
+    facility?.name,
   ]);
 
   function onDismissAutoCancelledNotice () {
     setAutoCancelledNoticeState('');
+  }
+
+  function onDismissAdminCancelledNotice () {
+    setAdminCancelledNoticeState('');
   }
 
   const markArrivedMutation = useMutation({
@@ -349,6 +404,7 @@ function Holds () {
               { label: 'History', value: 'history' },
             ]}
           />
+          <FacilityStatusBanner />
           {tab === 'active' && (
             <HoldsActive
               incident={incident}
@@ -357,6 +413,8 @@ function Holds () {
               onCancelHoldClick={onCancelHoldClick}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
+              adminCancelledNotice={adminCancelledNotice}
+              onDismissAdminCancelledNotice={onDismissAdminCancelledNotice}
               updatedAtMs={lastSyncedAtMs}
             />
           )}

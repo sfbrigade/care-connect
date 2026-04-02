@@ -44,8 +44,6 @@ export default async function (fastify, opts) {
         });
       }
 
-      await fastify.prisma.deflection.expire();
-
       try {
         await fastify.prisma.$transaction(async (tx) => {
           const deflections = await tx.deflection.findMany({
@@ -73,13 +71,18 @@ export default async function (fastify, opts) {
               },
             });
             const activeCount = deflections.length;
-            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+            const inTransitCount = deflections.filter(d => [
+              'DETAINED',
+              'ONSITE_AWAITING_TRANSFER',
+            ].includes(d.subjectStatus)).length;
+            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
             const updatedData = {
               capacity,
               unavailableUnoccupied,
               unavailableOccupied,
               occupied,
               holds: Math.max(holds - activeCount, 0),
+              inTransit: Math.max(inTransit - inTransitCount, 0),
               available: available + activeCount,
               updateMethod: 'API',
               updatedById: request.user.id,
