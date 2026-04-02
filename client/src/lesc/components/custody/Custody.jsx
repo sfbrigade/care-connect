@@ -32,6 +32,7 @@ const RELEASED_SECTIONS = [
   { status: 'RELEASED', label: 'Still onsite' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
   { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', description: 'Exited without legal release. Visible for 24 hours.' },
 ];
 
 function groupByStatus (deflections) {
@@ -55,13 +56,26 @@ function groupReleasedByStatus (deflections) {
     );
   }
 
+  function isTransferredToHospitalWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'hospital' &&
+      !deflection?.releasedAt
+    );
+  }
+
   return {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
+      d => d.subjectStatus === 'EXITED' &&
+        !isTransferredToJailWithoutLegalRelease(d) &&
+        !isTransferredToHospitalWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
       d => isTransferredToJailWithoutLegalRelease(d)
+    ),
+    TRANSFERRED_TO_HOSPITAL: (deflections ?? []).filter(
+      d => isTransferredToHospitalWithoutLegalRelease(d)
     ),
   };
 }

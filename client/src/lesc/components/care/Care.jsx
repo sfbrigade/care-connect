@@ -32,6 +32,7 @@ const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'STILL_ONSITE', label: 'Still onsite' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
   { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', description: 'Exited without legal release. Visible for 24 hours.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
