@@ -13,6 +13,8 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
 
+import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
+
 const initialValues = {
   drugUseEvidence: null,
   drugType: null,
@@ -108,10 +110,9 @@ function DrugUseForm () {
                     {...form.getInputProps('drugType')}
                   >
                     <Group gap='sm' mt='md'>
-                      <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
-                      <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
-                      <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
-                      <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                      ))}
                     </Group>
                   </Chip.Group>
                 </Input.Wrapper>
