@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { canReadDeflection, redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
@@ -31,6 +32,7 @@ export default async function (fastify, opts) {
           subject: true,
           cancelReason: true,
           deflectionDetails: true,
+          deflectionDocuments: true,
           propertyPhotos: true,
         },
       });
@@ -42,6 +44,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
+      deflection.deflectionDocuments = deflection.deflectionDocuments.map(doc => new DeflectionDocument(doc));
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
