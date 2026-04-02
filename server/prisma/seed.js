@@ -15,8 +15,14 @@ import seedDeflectionExitDestinations from './seeds/deflectionExitDestinations.j
 import seedDeflectionExitHousingStatuses from './seeds/deflectionExitHousingStatuses.js';
 import seedDeflectionReleaseReasons from './seeds/deflectionReleaseReasons.js';
 import seedTestDeflections from './seeds/testDeflections.js';
+import { createBoss } from '#lib/jobQueue/pgBoss.js';
 
 try {
+  // Calling pg-boss start() ensures the pg-boss schema exists in DB
+  const boss = createBoss();
+  await boss.start();
+  await boss.stop();
+
   await seedAdminUser(prisma);
   await seedOrganizations(prisma);
   await seedUsers(prisma);
