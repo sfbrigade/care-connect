@@ -186,7 +186,7 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
+          {(deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' || isCustodyTransferred) && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
