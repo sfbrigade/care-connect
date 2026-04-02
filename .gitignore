@@ -65,6 +65,9 @@ server/tmp
 *.pem
 *.zip
 
+# Ignore AI settings
+.claude
+
 # Ignore implementation plans
 implementation_plans/
 pr-body.md
