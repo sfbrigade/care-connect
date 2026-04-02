@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -162,7 +163,7 @@ function Care () {
               { label: 'Not in custody', value: 'not-in-custody' },
             ]}
           />
-
+          <FacilityStatusBanner />
           {tab === 'in-custody' && (
             hasInCustody
               ? (
