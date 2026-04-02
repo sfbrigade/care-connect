@@ -14,7 +14,7 @@ import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
@@ -168,7 +168,7 @@ function Care () {
               ? (
                 <StatusAccordion
                   sections={IN_CUSTODY_SECTIONS}
-                  groupedDeflections={groupedInCustody}
+                  groupedItems={groupedInCustody}
                   renderCard={(d) =>
                     <CareCard
                       key={d.id}
@@ -190,7 +190,7 @@ function Care () {
           {tab === 'not-in-custody' && (
             <StatusAccordion
               sections={NOT_IN_CUSTODY_SECTIONS}
-              groupedDeflections={groupedNotInCustody}
+              groupedItems={groupedNotInCustody}
               renderCard={(d) =>
                 <CareCard
                   key={d.id}

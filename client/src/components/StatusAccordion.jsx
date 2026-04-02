@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Accordion, ActionIcon, Box, Group, Popover, Stack, Text, Title } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
 
-function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCard }) {
+const defaultRenderLabel = (label, count) => <Title order={4}>{label}: {count}</Title>;
+
+function StatusAccordion ({ sections, groupedItems, defaultOpen, renderCard, renderLabel = defaultRenderLabel }) {
   // track counts of each status to determine if a section should be open
   const [, setCounts] = useState({});
   const [value, setValue] = useState();
@@ -11,7 +13,7 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
     // get the old counts, then calculate the new counts
     let oldCounts;
     const newCounts = sections.reduce((acc, s) => {
-      acc[s.status] = groupedDeflections[s.status]?.length ?? 0;
+      acc[s.status] = groupedItems[s.status]?.length ?? 0;
       return acc;
     }, {});
     setCounts((prev) => {
@@ -23,7 +25,7 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
     setValue((oldValue) => {
       if (!oldValue) {
         return defaultOpen ?? sections
-          .filter(s => (groupedDeflections[s.status]?.length ?? 0) > 0)
+          .filter(s => (groupedItems[s.status]?.length ?? 0) > 0)
           .map(s => s.status);
       }
       const newValue = [];
@@ -36,17 +38,17 @@ function StatusAccordion ({ sections, groupedDeflections, defaultOpen, renderCar
       });
       return newValue;
     });
-  }, [defaultOpen, sections, groupedDeflections]);
+  }, [defaultOpen, sections, groupedItems]);
 
   return (
     <Accordion variant='contained' multiple value={value} onChange={setValue} chevronPosition='left'>
       {sections.map(({ status, label, tooltip }) => {
-        const items = groupedDeflections[status] ?? [];
+        const items = groupedItems[status] ?? [];
         return (
           <Accordion.Item key={status} value={status}>
             <Group wrap='nowrap' gap={0}>
               <Accordion.Control disabled={items.length === 0}>
-                <Title order={4}>{label}: {items.length}</Title>
+                {renderLabel(label, items.length)}
               </Accordion.Control>
               {tooltip && (
                 <Box onClick={(e) => e.stopPropagation()} mr='sm'>

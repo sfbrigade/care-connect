@@ -1,8 +1,8 @@
-import StatusAccordion from './StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './custody/CustodyCard';
 
 export default {
-  title: 'LESC/StatusAccordion',
+  title: 'Components/StatusAccordion',
   component: StatusAccordion,
   parameters: { layout: 'fullscreen' },
   tags: ['autodocs'],
@@ -45,7 +45,7 @@ const releasedSections = [
 export const SfsoInCustodyWithItems = {
   args: {
     sections: inCustodySections,
-    groupedDeflections: {
+    groupedItems: {
       AWAITING_INTAKE: [makeDeflection(1, 'AWAITING_INTAKE'), makeDeflection(2, 'AWAITING_INTAKE')],
       READY_FOR_INTAKE: [makeDeflection(3, 'READY_FOR_INTAKE')],
       ADMITTED: [],
@@ -59,7 +59,7 @@ export const SfsoNotInCustodyWithItems = {
   args: {
     sections: releasedSections,
     defaultOpen: ['RELEASED', 'EXITED'],
-    groupedDeflections: {
+    groupedItems: {
       RELEASED: [makeDeflection(4, 'RELEASED')],
       EXITED: [makeDeflection(5, 'EXITED'), makeDeflection(6, 'EXITED')],
     },
@@ -70,7 +70,7 @@ export const SfsoNotInCustodyWithItems = {
 export const SfsoAllEmpty = {
   args: {
     sections: inCustodySections,
-    groupedDeflections: {},
+    groupedItems: {},
     renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
   },
 };

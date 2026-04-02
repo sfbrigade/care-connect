@@ -12,7 +12,7 @@ import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
@@ -244,7 +244,7 @@ function Custody () {
                 ? (
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
-                    groupedDeflections={inCustodyGrouped}
+                    groupedItems={inCustodyGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
@@ -262,7 +262,7 @@ function Custody () {
                 ? (
                   <StatusAccordion
                     sections={RELEASED_SECTIONS}
-                    groupedDeflections={releasedGrouped}
+                    groupedItems={releasedGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
