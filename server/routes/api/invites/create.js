@@ -2,12 +2,13 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Invite from '#models/invite.js';
+import { QUEUE_INVITE_EMAIL } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',
     {
       schema: {
-        description: 'Creates a new Invite and sends it via email.',
+        description: 'Creates a new Invite and queues it for email sending.',
         body: Invite.AttibutesSchema,
         response: {
           [StatusCodes.CREATED]: Invite.ResponseSchema,
@@ -28,8 +29,10 @@ export default async function (fastify, opts) {
         data.titleId = null;
       }
       data = await fastify.prisma.invite.create({ data });
-      const invite = new Invite(data);
-      await invite.sendInviteEmail(request.facility);
+      await fastify.backgroundJobs.send(QUEUE_INVITE_EMAIL, {
+        inviteId: data.id,
+        facilityId: request.facility?.id ?? null,
+      });
       return reply.code(StatusCodes.CREATED).send(data);
     });
 }

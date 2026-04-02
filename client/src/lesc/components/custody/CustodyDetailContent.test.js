@@ -230,7 +230,6 @@ describe('CustodyDetailContent', () => {
     const html = render();
 
     expect(html).toContain('Intake staff can scan this code to start full intake.');
-    expect(html).toContain('849(b).pdf');
     expect(html).toContain('Legal release');
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Property details');

@@ -70,3 +70,6 @@ data
 # Ignore implementation plans
 implementation_plans/
 pr-body.md
+
+# Agents
+.claude

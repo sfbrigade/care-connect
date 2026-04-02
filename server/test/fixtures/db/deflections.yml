@@ -1,7 +1,29 @@
 entity: deflection
-connectedFields: [facility, bedType, subject, incident, createdBy]
+connectedFields: [facility, bedType, subject, incident, createdBy, releasedBy]
 items:
-  activeHold:
+  deflection1AnotherActive:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    status: 'ACTIVE'
+    createdBy: '@user4'
+  deflection2Expired:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: '2024-12-27T09:53:41-07:00'
+    status: 'ACTIVE'
+    createdBy: '@user4'
+  deflection3Cancelled:
+    facility: '@lescFacility1'
+    bedType: '@lescFacility1BedType'
+    incident: '@incident2'
+    expiresAt: '2024-12-27T09:53:41-07:00'
+    status: 'CANCELLED'
+    cancelledAt: '2024-12-27T09:53:41-07:00'
+    createdBy: '@user4'
+  deflection4Active:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject1'
@@ -9,7 +31,7 @@ items:
     expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     createdBy: '@user2'
-  extendedHold:
+  deflection5Extended:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject2'
@@ -17,7 +39,7 @@ items:
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     createdBy: '@user2'
-  readyForIntake:
+  deflection6ReadyForIntake:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject3'
@@ -26,25 +48,14 @@ items:
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     createdBy: '@user2'
-  anotherActiveHold:
+  deflection7Released:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
-    incident: '@incident2'
-    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    subject: '@subject2'
+    subjectStatus: 'RELEASED'
+    incident: '@incident1'
+    expiresAt: '2025-01-15T16:30:00-07:00'
+    releasedAt: '2025-01-15T14:30:00-07:00'
+    releasedBy: '@user2'
     status: 'ACTIVE'
-    createdBy: '@user4'
-  expiredHold:
-    facility: '@lescFacility1'
-    bedType: '@lescFacility1BedType'
-    incident: '@incident2'
-    expiresAt: '2024-12-27T09:53:41-07:00'
-    status: 'ACTIVE'
-    createdBy: '@user4'
-  cancelledHold:
-    facility: '@lescFacility1'
-    bedType: '@lescFacility1BedType'
-    incident: '@incident2'
-    expiresAt: '2024-12-27T09:53:41-07:00'
-    status: 'CANCELLED'
-    cancelledAt: '2024-12-27T09:53:41-07:00'
-    createdBy: '@user4'
+    createdBy: '@user2'
