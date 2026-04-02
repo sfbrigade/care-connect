@@ -241,6 +241,11 @@ const Api = {
         return instance.get(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`);
       },
     },
+    bedTypeUnavailableReasons: {
+      index () {
+        return instance.get('/api/facilities/bed-type-unavailable-reasons');
+      },
+    },
     statusReasons: {
       index (type = '') {
         const params = {};

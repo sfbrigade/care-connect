@@ -38,7 +38,8 @@ export default async function (fastify, opts) {
         deflections = await tx.deflection.findMany({
           where: {
             incidentId: id,
-            status: 'ACTIVE',
+            status: Deflection.HoldStatus.ACTIVE,
+            subjectStatus: Deflection.SubjectStatus.DETAINED
           },
         });
 
