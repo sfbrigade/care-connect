@@ -17,7 +17,6 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
@@ -156,15 +155,7 @@ function Deflection () {
   }
 
   function on647fClick () {
-    try {
-      const doc = generate647fTransferFormPDF(deflection, facility);
-      // Open PDF in browser
-      doc.output('dataurlnewwindow');
-      showToast('647(f) Transfer Form opened in new window', 'success');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      showToast('Failed to generate PDF', 'error');
-    }
+    window.open(`/api/forms/647f/pdf/${deflection.id}`, '_blank');
   }
 
   return (

@@ -12,6 +12,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import Facility from './Facility';
@@ -399,6 +400,7 @@ function Holds () {
               { label: 'History', value: 'history' },
             ]}
           />
+          <FacilityStatusBanner />
           {tab === 'active' && (
             <HoldsActive
               incident={incident}

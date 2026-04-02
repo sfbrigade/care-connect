@@ -8,6 +8,7 @@ import seedResetCenter from './seeds/resetCenter.js';
 import seedOrganizations from './seeds/organizations.js';
 import seedTitles from './seeds/titles.js';
 import seedUnits from './seeds/units.js';
+import seedBedTypeUnavailableReasons from './seeds/bedTypeUnavailableReasons.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
@@ -15,8 +16,14 @@ import seedDeflectionExitDestinations from './seeds/deflectionExitDestinations.j
 import seedDeflectionExitHousingStatuses from './seeds/deflectionExitHousingStatuses.js';
 import seedDeflectionReleaseReasons from './seeds/deflectionReleaseReasons.js';
 import seedTestDeflections from './seeds/testDeflections.js';
+import { createBoss } from '#lib/jobQueue/pgBoss.js';
 
 try {
+  // Calling pg-boss start() ensures the pg-boss schema exists in DB
+  const boss = createBoss();
+  await boss.start();
+  await boss.stop();
+
   await seedAdminUser(prisma);
   await seedOrganizations(prisma);
   await seedUsers(prisma);
@@ -25,6 +32,7 @@ try {
   await seedResetCenter(prisma);
   await seedTitles(prisma);
   await seedUnits(prisma);
+  await seedBedTypeUnavailableReasons(prisma);
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
   await seedDeflectionDetails(prisma);
