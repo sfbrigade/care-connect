@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 function BooleanInput ({ label, description, required, error, disabled, value, children, defaultValue, onChange, ...props }) {
   const { t } = useTranslation();
+  const normalizedValue = (typeof value === 'boolean') ? (value ? 'true' : 'false') : undefined;
+  const normalizedDefaultValue = (typeof defaultValue === 'boolean') ? (defaultValue ? 'true' : 'false') : undefined;
   const [_value, setValue] = useUncontrolled({
-    value: (typeof value === 'boolean') ? (value ? 'true' : 'false') : value,
-    defaultValue: (typeof defaultValue === 'boolean') ? (defaultValue ? 'true' : 'false') : defaultValue,
+    value: normalizedValue,
+    defaultValue: normalizedDefaultValue,
     onChange: (newValue) => {
       onChange?.(newValue === 'true');
     },
@@ -17,7 +19,7 @@ function BooleanInput ({ label, description, required, error, disabled, value, c
       {children}
       <Chip.Group
         {...props}
-        value={_value}
+        value={_value ?? undefined}
         onChange={setValue}
       >
         <Group gap='sm' mt='md'>
