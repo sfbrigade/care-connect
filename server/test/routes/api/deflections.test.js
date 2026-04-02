@@ -199,6 +199,51 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/transfer', async (t) => {
+    await t.test('transfers custody of a deflection', async () => {
+      await prisma.deflection.expire();
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: {
+          subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+        }
+      });
+
+      let bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'AWAITING_INTAKE');
+      assert.ok(data.transferredAt);
+      assert.deepStrictEqual(data.transferredById, '49acdf99-536f-49ac-8138-1c77e5087697');
+
+      // Verify in database
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 5 },
+      });
+      assert.deepStrictEqual(deflection.subjectStatus, 'AWAITING_INTAKE');
+      assert.ok(deflection.transferredAt);
+      assert.deepStrictEqual(deflection.transferredById, '49acdf99-536f-49ac-8138-1c77e5087697');
+
+      // Verify bed type counts
+      bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 2); // in-transit decrements
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+  });
+
   await t.test('POST /:id/admit', async (t) => {
     await t.test('admits the subject of the deflection', async () => {
       await prisma.deflection.expire();
