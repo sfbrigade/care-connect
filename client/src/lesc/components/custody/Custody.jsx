@@ -5,6 +5,7 @@ import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -238,6 +239,7 @@ function Custody () {
               { label: 'Not in custody', value: 'released' },
             ]}
           />
+          <FacilityStatusBanner />
           {tab === 'in-custody' && (
             <Stack gap='md'>
               {hasInCustody
