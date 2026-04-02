@@ -1,6 +1,8 @@
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
 
+import { DRUG_TYPE_OPTIONS } from '@/lesc/constants/drugTypeOptions';
+
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
@@ -30,6 +32,19 @@ const SubjectSchema = z.object({
   race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
 });
 
+const DrugUseSchema = z.object({
+  drugUseEvidence: z.boolean(ERROR_SELECT_ONE),
+  drugType: z.nullable(z.optional(z.enum(DRUG_TYPE_OPTIONS, ERROR_SELECT_ONE))),
+}).check(z.refine((value) => !value.drugUseEvidence || value.drugType !== null, {
+  error: ERROR_SELECT_ONE,
+  path: ['drugType'],
+}));
+
+const SubjectDetailsSchema = z.object({
+  ...SubjectSchema.shape,
+  ...DrugUseSchema.shape,
+});
+
 const NarcoticsSchema = z.object({
   narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
   narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
@@ -47,9 +62,14 @@ const PropertySchema = z.object({
 const DeflectionSchema = z.object({
   subject: SubjectSchema,
   ...NarcoticsSchema.shape,
+  ...DrugUseSchema.shape,
   ...DeflectionDetailsSchema.shape,
   ...PropertySchema.shape,
 });
+
+export const isValidDrugUse = (obj) => {
+  return !!DrugUseSchema.safeParse(obj)?.success;
+};
 
 export const validateIncident = zod4Resolver(IncidentSchema);
 
@@ -61,6 +81,12 @@ export const validateSubject = zod4Resolver(SubjectSchema);
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
+};
+
+export const validateSubjectDetails = zod4Resolver(SubjectDetailsSchema);
+
+export const isValidSubjectDetails = (obj) => {
+  return !!SubjectDetailsSchema.safeParse(obj)?.success;
 };
 
 export const validateNarcotics = zod4Resolver(NarcoticsSchema);

@@ -17,7 +17,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { validateSubject } from '@/utils/validators';
+import { validateSubjectDetails } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -100,7 +100,7 @@ function SubjectForm () {
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubject({
+          const errors = validateSubjectDetails({
             ...normalized,
             dateOfBirth: deflection.subject.dateOfBirth,
           });
@@ -369,15 +369,15 @@ function SubjectForm () {
                         />
                         <Divider />
                         <Stack gap='xl' data-section='drug-use'>
-                          <Title order={3}>Drug use</Title>
+                          <Title order={3}>Substance use</Title>
                           <Stack gap='xl'>
                             <BooleanInput
                               {...form.getInputProps('drugUseEvidence')}
                               key={form.key('drugUseEvidence')}
-                              label='Evidence of drug use'
+                              label={<>Evidence of substance use<span>*</span></>}
                             />
                             {showDrugTypeQuestion && (
-                              <Input.Wrapper label='Drug type'>
+                              <Input.Wrapper label={<>Substance type<span>*</span></>}>
                                 <Chip.Group
                                   key={form.key('drugType')}
                                   {...form.getInputProps('drugType')}

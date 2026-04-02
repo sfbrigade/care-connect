@@ -79,7 +79,7 @@ function DrugUseForm () {
   return (
     <>
       <Head>
-        <title>Drug use details</title>
+        <title>Substance use details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -94,17 +94,17 @@ function DrugUseForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Drug use details</Title>
+        <Title order={2} mb='xs'>Substance use details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <BooleanInput
                 {...form.getInputProps('drugUseEvidence')}
                 key={form.key('drugUseEvidence')}
-                label='Evidence of drug use (optional)'
+                label='Evidence of substance use (optional)'
               />
               {showDrugTypeQuestion && (
-                <Input.Wrapper label='Drug type'>
+                <Input.Wrapper label='Substance type'>
                   <Chip.Group
                     key={form.key('drugType')}
                     {...form.getInputProps('drugType')}
