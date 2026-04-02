@@ -418,6 +418,7 @@ model BedType {
   unavailableOccupied          Int                     @default(0)
   occupied                     Int                     @default(0)
   holds                        Int                     @default(0)
+  inTransit                    Int                     @default(0)
   available                    Int                     @default(0)
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
@@ -448,6 +449,7 @@ model BedTypeUpdate {
   unavailableOccupied          Int                     @default(0)
   occupied                     Int                     @default(0)
   holds                        Int                     @default(0)
+  inTransit                    Int                     @default(0)
   available                    Int                     @default(0)
   unavailableReason            BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
   unavailableReasonId          String?                 @db.Uuid
