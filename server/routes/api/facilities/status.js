@@ -108,6 +108,7 @@ export default async function (fastify, opts) {
             const updatedAvailable = bedType.capacity - bedType.unavailableUnoccupied - bedType.unavailableOccupied - bedType.occupied - updatedHolds;
             const bedTypeData = {
               holds: updatedHolds,
+              inTransit: bedType.inTransit - 1,
               available: updatedAvailable,
               updateMethod: BedType.UpdateMethod.MANUAL,
               updatedById: userId,

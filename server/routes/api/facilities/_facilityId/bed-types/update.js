@@ -130,6 +130,7 @@ export default async function (fastify, opts) {
 
           // Adjust holds count and recalculate available
           nextData.holds -= inTransitHolds.length;
+          nextData.inTransit -= inTransitHolds.length;
           available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
         }
 
@@ -156,6 +157,7 @@ export default async function (fastify, opts) {
             unavailableOccupied: nextData.unavailableOccupied,
             occupied: nextData.occupied,
             holds: nextData.holds,
+            inTransit: nextData.inTransit,
             available,
             unavailableReasonId,
             unavailableOther,
@@ -175,6 +177,7 @@ export default async function (fastify, opts) {
             unavailableOccupied: nextData.unavailableOccupied,
             occupied: nextData.occupied,
             holds: nextData.holds,
+            inTransit: nextData.inTransit,
             available,
             unavailableReasonId,
             unavailableOther,

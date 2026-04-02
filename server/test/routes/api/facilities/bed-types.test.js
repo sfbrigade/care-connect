@@ -102,6 +102,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       assert.deepStrictEqual(updated.unavailableUnoccupied, 1);
       assert.deepStrictEqual(updated.occupied, 0);
       assert.deepStrictEqual(updated.holds, 4);
+      assert.deepStrictEqual(updated.inTransit, 3);
       assert.deepStrictEqual(updated.available, 4);
 
       // Check history count
