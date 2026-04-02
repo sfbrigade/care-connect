@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
 
 import QRScanner from '@/components/QRScanner';
-import { sanitizeManualCodeInput } from './scanCodeModalUtils';
 import classes from './ScanCodeModal.module.css';
 import SegmentedControl from './SegmentedControl';
 
@@ -25,7 +24,7 @@ function ScanCodeModal ({
   const [manualEntry, setManualEntry] = useState(false);
   const [codes, setCodes] = useState(['']);
   const [scanAccepted, setScanAccepted] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessages, setErrorMessages] = useState([]);
 
   useEffect(() => {
     if (!opened) return;
@@ -33,6 +32,7 @@ function ScanCodeModal ({
     setManualEntry(false);
     setCodes(['']);
     setScanAccepted(false);
+    setErrorMessages([]);
   }, [opened]);
 
   async function handleScan (text, forQrCamera = false) {
@@ -62,12 +62,14 @@ function ScanCodeModal ({
 
     if (manualEntryAllowMultiple && onManualSubmitCodes) {
       setIsLoading(true);
-      try {
-        await onManualSubmitCodes(trimmedCodes);
+      const results = await onManualSubmitCodes(trimmedCodes);
+      const failed = results.filter((r) => r.error);
+      if (failed.length === 0) {
         handleClose();
-      } catch (err) {
+      } else {
+        setCodes(failed.map((r) => r.code));
+        setErrorMessages(failed.map((r) => r.error));
         setIsLoading(false);
-        setErrorMessage(err);
       }
       return;
     }
@@ -80,6 +82,7 @@ function ScanCodeModal ({
     setManualEntry(false);
     setCodes(['']);
     setScanAccepted(false);
+    setErrorMessages([]);
     onClose();
   }
 
@@ -88,12 +91,13 @@ function ScanCodeModal ({
   }
 
   function handleCodeChange (index, value) {
-    const sanitizedValue = sanitizeManualCodeInput(value);
-    setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? sanitizedValue : code)));
+    setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? value : code)));
+    setErrorMessages((prev) => prev.map((msg, i) => (i === index ? undefined : msg)));
   }
 
   function handleAddCodeField () {
     setCodes((prev) => [...prev, '']);
+    setErrorMessages((prev) => [...prev, undefined]);
   }
 
   const trimmedCodes = codes.map((code) => code.trim());
@@ -167,7 +171,6 @@ function ScanCodeModal ({
 
                       <Stack gap='sm'>
                         {codes.map((code, index) => (
-                          <>
                           <TextInput
                             key={index}
                             placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
@@ -177,9 +180,8 @@ function ScanCodeModal ({
                             pattern='[0-9]*'
                             maxLength={6}
                             autoFocus={index === 0}
+                            error={errorMessages[index]}
                           />
-                          <Text size='sm' c='dimmed'>{errorMessage}</Text>
-                          </>
                         ))}
                       </Stack>
 

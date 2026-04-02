@@ -315,12 +315,11 @@ const Api = {
     transfer (id) {
       return instance.post(`/api/deflections/${id}/transfer`).catch(error => {
         const status = error?.response?.status;
-        console.log('transfer status:', status);
         switch (status) {
-          case StatusCodes.CONFLICT:
-            throw { _form: 'This person was already received. Please check chair status.' };
           case StatusCodes.NOT_FOUND:
-            throw { _form: 'Transfer code not recognized. Check the code and try again.' };
+            throw { _form: 'This transfer code is not valid. Check the number and try again.' };
+          case StatusCodes.CONFLICT:
+            throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
           default:
             throw { _form: error.message };
         }
