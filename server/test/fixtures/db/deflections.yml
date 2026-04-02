@@ -7,6 +7,7 @@ items:
     incident: '@incident2'
     expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
+    subjectStatus: 'DETAINED'
     createdBy: '@user4'
   deflection2Expired:
     facility: '@lescFacility1'
@@ -14,6 +15,7 @@ items:
     incident: '@incident2'
     expiresAt: '2024-12-27T09:53:41-07:00'
     status: 'ACTIVE'
+    subjectStatus: 'DETAINED'
     createdBy: '@user4'
   deflection3Cancelled:
     facility: '@lescFacility1'
@@ -21,6 +23,7 @@ items:
     incident: '@incident2'
     expiresAt: '2024-12-27T09:53:41-07:00'
     status: 'CANCELLED'
+    subjectStatus: 'DETAINED'
     cancelledAt: '2024-12-27T09:53:41-07:00'
     createdBy: '@user4'
   deflection4Active:
@@ -30,6 +33,7 @@ items:
     incident: '@incident1'
     expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
+    subjectStatus: 'DETAINED'
     createdBy: '@user2'
   deflection5Extended:
     facility: '@lescFacility1'
@@ -38,24 +42,25 @@ items:
     incident: '@incident1'
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
+    subjectStatus: 'DETAINED'
     createdBy: '@user2'
   deflection6ReadyForIntake:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject3'
-    subjectStatus: 'READY_FOR_INTAKE'
     incident: '@incident1'
     expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
+    subjectStatus: 'READY_FOR_INTAKE'
     createdBy: '@user2'
   deflection7Released:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     subject: '@subject2'
-    subjectStatus: 'RELEASED'
     incident: '@incident1'
     expiresAt: '2025-01-15T16:30:00-07:00'
     releasedAt: '2025-01-15T14:30:00-07:00'
     releasedBy: '@user2'
     status: 'ACTIVE'
+    subjectStatus: 'RELEASED'
     createdBy: '@user2'

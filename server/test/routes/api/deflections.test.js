@@ -55,6 +55,7 @@ test('/api/deflections', async (t) => {
       });
       assert.ok(bedType);
       assert.deepStrictEqual(bedType.holds, 5);
+      assert.deepStrictEqual(bedType.inTransit, 4);
       assert.deepStrictEqual(bedType.available, 3);
     });
 
@@ -207,6 +208,7 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
 
       const response = await app.inject().post('/api/deflections/6/admit').headers(careUserHeaders);
@@ -232,6 +234,7 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
   });
@@ -290,9 +293,10 @@ test('/api/deflections', async (t) => {
 
   await t.test('POST /:id/exit-to-jail', async (t) => {
     await t.test('records direct jail exit from awaiting-intake and releases hold', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 5, available: 3 },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -321,13 +325,15 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('records direct jail exit from ready-for-intake and releases hold', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 5, available: 3 },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -364,13 +370,15 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('records direct jail exit from admitted and releases hold', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 4, available: 4 },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -411,14 +419,16 @@ test('/api/deflections', async (t) => {
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
       assert.deepStrictEqual(bedType.occupied, 0);
-      assert.deepStrictEqual(bedType.holds, 3);
-      assert.deepStrictEqual(bedType.available, 5);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('records direct jail exit from failed intake and releases hold', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 4, available: 4 },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -450,16 +460,12 @@ test('/api/deflections', async (t) => {
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
       assert.deepStrictEqual(bedType.occupied, 0);
-      assert.deepStrictEqual(bedType.holds, 3);
-      assert.deepStrictEqual(bedType.available, 5);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('returns conflict when deflection status is not eligible for exit-to-jail', async () => {
-      await prisma.deflection.update({
-        where: { id: 4 },
-        data: { subjectStatus: 'DETAINED' },
-      });
-
       const response = await app.inject()
         .post('/api/deflections/4/exit-to-jail')
         .headers(custodyUserHeaders);
@@ -470,9 +476,10 @@ test('/api/deflections', async (t) => {
 
   await t.test('POST /:id/record-death', async (t) => {
     await t.test('records death in custody and releases a hold for pre-intake statuses', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 0, holds: 5, available: 3 },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -503,13 +510,15 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('records death in facility for legally released status and releases occupied chair', async () => {
+      await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
-        data: { occupied: 1, holds: 3, available: 4 },
+        data: { occupied: 1, holds: 4, inTransit: 3, available: 4 },
       });
 
       const testDeflection = await prisma.deflection.create({
@@ -541,7 +550,8 @@ test('/api/deflections', async (t) => {
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
       assert.deepStrictEqual(bedType.occupied, 0);
-      assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 5);
 
       const custodyListResponse = await app.inject()
@@ -554,11 +564,6 @@ test('/api/deflections', async (t) => {
     });
 
     await t.test('returns conflict when status is not eligible for death recording', async () => {
-      await prisma.deflection.update({
-        where: { id: 4 },
-        data: { subjectStatus: 'DETAINED' },
-      });
-
       const response = await app.inject()
         .post('/api/deflections/4/record-death')
         .headers(custodyUserHeaders);
@@ -844,6 +849,7 @@ test('/api/deflections', async (t) => {
         where: { id: deflection.bedTypeId },
       });
       assert.deepStrictEqual(bedType.holds, 3);
+      assert.deepStrictEqual(bedType.inTransit, 2);
       assert.deepStrictEqual(bedType.available, 5);
 
       response = await app.inject().delete('/api/deflections/5?cancelReasonId=5150').headers(userHeaders);
@@ -853,6 +859,7 @@ test('/api/deflections', async (t) => {
         where: { id: deflection.bedTypeId },
       });
       assert.deepStrictEqual(bedType.holds, 2);
+      assert.deepStrictEqual(bedType.inTransit, 1);
       assert.deepStrictEqual(bedType.available, 6);
 
       response = await app.inject().delete('/api/deflections/6?cancelReasonId=5150').headers(userHeaders);
@@ -862,6 +869,7 @@ test('/api/deflections', async (t) => {
         where: { id: deflection.bedTypeId },
       });
       assert.deepStrictEqual(bedType.holds, 1);
+      assert.deepStrictEqual(bedType.inTransit, 1); // deflection 6 is READY_FOR_INTAKE so is NOT considered in transit
       assert.deepStrictEqual(bedType.available, 7);
 
       // incident is marked completed after cancellation of the last hold
@@ -899,6 +907,7 @@ test('/api/deflections', async (t) => {
 
       const bedTypeAfter = await prisma.bedType.findUnique({ where: { id: deflection.bedTypeId } });
       assert.deepStrictEqual(bedTypeAfter.holds, bedTypeBefore.holds + 1);
+      assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit + 1);
       assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available - 1);
     });
 
