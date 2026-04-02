@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon';
 
 import { formatAddress } from '../../utils/format';
+import { isCustodyTransferredStatus } from './deflectionStatusChipUtils';
 
 export const SFPD_ACTIVE_SUBJECT_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 export const SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED';
@@ -20,6 +21,42 @@ export function shouldShowIncidentInActive (incident, deflections) {
 
 export function shouldShowTransferredHoldsPrompt (incident, deflections) {
   return !!incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0;
+}
+
+export function getTransferredDeflectionsForIncident (deflections = [], incidentId) {
+  if (!incidentId) return [];
+
+  return deflections.filter((deflection) => (
+    deflection.incidentId === incidentId &&
+    isCustodyTransferredStatus(deflection.subjectStatus)
+  ));
+}
+
+export function buildActiveHoldDisplayDeflections (activeDeflections = [], historyDeflections = [], incident) {
+  if (!incident?.id) return activeDeflections;
+
+  if ((activeDeflections?.length ?? 0) === 0) {
+    return activeDeflections;
+  }
+
+  const transferredDeflections = getTransferredDeflectionsForIncident(historyDeflections, incident.id);
+  const combinedDeflections = [...activeDeflections, ...transferredDeflections];
+  const byId = new Map();
+
+  for (const deflection of combinedDeflections) {
+    byId.set(deflection.id, deflection);
+  }
+
+  return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function buildHistoryDisplayDeflections (historyDeflections = [], incident, hasActiveHolds = false) {
+  if (!incident?.id || !hasActiveHolds) return historyDeflections;
+
+  return historyDeflections.filter((deflection) => !(
+    deflection.incidentId === incident.id &&
+    isCustodyTransferredStatus(deflection.subjectStatus)
+  ));
 }
 
 export function isInitialLoading (isFetching, data) {
@@ -67,6 +104,17 @@ export function detectAutoCancelledExpiredHolds ({
     count: expiredDeflections.length,
     allExpired: currentDeflectionIds.size === 0,
   };
+}
+
+export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personName, facilityName }) {
+  if (allCancelled) {
+    return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
+  }
+  if (count === 1) {
+    const name = personName || 'this person';
+    return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
+  }
+  return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
 }
 
 function toMillis (value) {
