@@ -364,7 +364,7 @@ function Holds () {
               hasActiveHolds={(deflections?.length ?? 0) > 0}
             />
           )}
-          {!(tab === 'active' && incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0) && (
+          {tab !== 'active' && (
             <Text size='xs' c='gray.5' align='center'>
               Last updated: {lastSyncedAtMs ? DateTime.fromMillis(lastSyncedAtMs).toLocaleString(DateTime.TIME_SIMPLE) : ''}
             </Text>

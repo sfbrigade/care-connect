@@ -13,10 +13,10 @@ import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
+import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
 import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
@@ -155,15 +155,7 @@ function Deflection () {
   }
 
   function on647fClick () {
-    try {
-      const doc = generate647fTransferFormPDF(deflection, facility);
-      // Open PDF in browser
-      doc.output('dataurlnewwindow');
-      showToast('647(f) Transfer Form opened in new window', 'success');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      showToast('Failed to generate PDF', 'error');
-    }
+    window.open(`/api/forms/647f/pdf/${deflection.id}`, '_blank');
   }
 
   return (
@@ -307,7 +299,7 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
+                <Title order={3}>Behavioral observations</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -326,7 +318,7 @@ function Deflection () {
                     </Box>
                   )}
                   <Box>
-                    <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                    <Text c='dimmed'>647(f) narrative</Text>
                     {deflection?.behavior
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>
@@ -422,6 +414,14 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
+                    <Text c='dimmed'>Case number</Text>
+                    {incident?.caseNumber
+                      ? (
+                        <Text>{incident?.caseNumber}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                  <Box>
                     <Text c='dimmed'>Supervising Sergeant's Star Number</Text>
                     {incident?.supervisorBadgeNumber
                       ? (
@@ -441,38 +441,24 @@ function Deflection () {
         </Stack>
       </Container>
       {showActionFooter && (
-        <Box
-          className='action-footer-gradient'
-          pos='fixed'
-          left={0}
-          right={0}
-          bottom={0}
-          pt='md'
-          pb='xl'
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
-              <Button
-                onClick={() => setShowCancelModal(true)}
-                variant='destructive'
-                disabled={isFetchingActiveDeflections}
-              >
-                Cancel hold
-              </Button>
-              {showFinishDetailsFooter && (
-                <Button
-                  onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
-                  color='indigo'
-                >
-                  Finish details
-                </Button>
-              )}
-            </Group>
-          </Container>
-        </Box>
+        <ActionFooter>
+          <Button
+            onClick={() => setShowCancelModal(true)}
+            variant='destructive'
+            disabled={isFetchingActiveDeflections}
+          >
+            Cancel hold
+          </Button>
+          {showFinishDetailsFooter && (
+            <Button
+              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+            >
+              Finish details
+            </Button>
+          )}
+        </ActionFooter>
       )}
-      {showActionFooter && <Box h='104px' />}
+      {showActionFooter && <Box h='120px' />}
       {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
         <CancelHoldModal
           deflection={deflection}

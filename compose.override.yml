@@ -21,6 +21,7 @@ services:
       - 3333:3333 # vite
       - 5555:5555 # prisma studio
       - 6006:6006 # storybook
+      - 8671:8671 # pgboss admin dashboard
     depends_on:
       - db
       - mail

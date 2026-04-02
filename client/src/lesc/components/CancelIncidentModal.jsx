@@ -88,7 +88,7 @@ function CancelIncidentModal ({
             stacked
           />
         </Stack>
-        <Group grow>
+        <Group grow preventGrowOverflow={false}>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}
