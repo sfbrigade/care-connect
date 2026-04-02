@@ -229,10 +229,16 @@ function ScanCodeModal ({
                   >
                     <Box className={classes.scanSpacer} />
 
-                    <Stack className={classes.scanFooter} align='center' gap='lg' w='100%'>
+                    <Stack className={classes.scanFooter} align='center' gap='lg' w='100%' maw={400} mx='auto' px='xl'>
+                      {prompt && (
+                        <Text c='white' ta='center' fw={500} size='lg' maw={300}>
+                          {prompt}
+                        </Text>
+                      )}
                       <Button
-                        variant='outline'
-                        color={scanAccepted ? 'mantine-color-primary-5' : 'white'}
+                        variant='filled'
+                        color='blue.7'
+                        c='white'
                         size='lg'
                         radius='xl'
                         disabled={!scanAccepted}
@@ -243,7 +249,7 @@ function ScanCodeModal ({
                     </Stack>
                   </Stack>
                 </Box>
-                <Box className={classes.scanChromeOverlay}>
+                <Box className={classes.scanControlsOverlay}>
                   <SegmentedControl
                     manualEntry={manualEntry}
                     onClose={handleClose}

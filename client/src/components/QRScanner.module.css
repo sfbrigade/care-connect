@@ -3,7 +3,7 @@
   inset: 0 !important;
   overflow: hidden;
   min-height: unset !important;
-  background: black;
+  background: var(--mantine-color-black);
 }
 
 .fullScreen video {
@@ -17,7 +17,6 @@
  */
 .prompt {
   --qr-viewfinder-half: 120px;
-
   position: absolute;
   inset: 0;
   z-index: 10;
@@ -39,30 +38,14 @@
   position: absolute;
   inset-inline: 0;
   top: calc(50% + var(--qr-viewfinder-half) + var(--mantine-spacing-md));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--mantine-spacing-xs);
-  width: 100%;
   padding-inline: var(--mantine-spacing-xl);
   box-sizing: border-box;
   pointer-events: none;
 }
 
 .viewfinder {
-  border-radius: 20px;
+  border-radius: var(--mantine-radius-lg);
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-}
-
-.scanStatusSlot {
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 300px;
-  min-height: 5.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
 }
 
 .promptText {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useId } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Button, Alert, Loader, Text } from '@mantine/core';
+import { Button, Alert, Center, Loader, Stack, Text } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
 
@@ -365,8 +365,8 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
             {displayPhase === 'success' && <Viewfinder success />}
             {displayPhase === 'error' && <Viewfinder error />}
           </div>
-          <div className={classes.promptBelowViewfinder}>
-            <div className={classes.scanStatusSlot}>
+          <Stack align='center' gap='xs' className={classes.promptBelowViewfinder}>
+            <Center maw={300} mih='5.5rem' w='100%'>
               {(displayPhase === 'success' || displayPhase === 'error') && (
                 <Text
                   ta='center'
@@ -383,13 +383,8 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
                     : FULLSCREEN_SCAN_STATUS_TEXT.error}
                 </Text>
               )}
-            </div>
-            {prompt && (
-              <Text c='white' ta='center' fw={500} size='lg' maw={300} className={classes.promptText}>
-                {prompt}
-              </Text>
-            )}
-          </div>
+            </Center>
+          </Stack>
         </div>
       </>
     );

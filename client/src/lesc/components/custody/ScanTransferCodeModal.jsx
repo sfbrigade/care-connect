@@ -27,20 +27,20 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
 
   async function handleManualSubmitCodes (codes) {
     let lastDeflectionId = null;
-    const results = [];
+    const transferResults = [];
 
     for (const code of codes) {
       const deflectionId = parseDeflectionId(code);
       if (!deflectionId) {
-        results.push({ code, error: 'Invalid code' });
+        transferResults.push({ code, error: 'Invalid code' });
         continue;
       }
       try {
         await Api.deflections.transfer(deflectionId);
         lastDeflectionId = deflectionId;
-        results.push({ code, error: null });
+        transferResults.push({ code, error: null });
       } catch (err) {
-        results.push({ code, error: err?._form ?? err?.message ?? 'Something went wrong' });
+        transferResults.push({ code, error: err?._form ?? err?.message ?? 'Something went wrong' });
       }
     }
 
@@ -48,13 +48,15 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
       window.sessionStorage.setItem('custodyHighlightTarget', String(lastDeflectionId));
     }
     onSuccess?.();
-    showToast(
-      codes.length === 1 ? 'Person received' : `${codes.length} persons received`,
-      'success',
-      3000,
-      codes.length === 1 ? 'Transfer code confirmed.' : 'Transfer codes confirmed .'
-    );
-    return results;
+    if (transferResults.every((r) => !r.error)) {
+      showToast(
+        'Person received',
+        'success',
+        3000,
+        'Transfer code confirmed.'
+      );
+    }
+    return transferResults;
   }
 
   return (
