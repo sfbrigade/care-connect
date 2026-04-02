@@ -66,13 +66,14 @@ export default async function (fastify, opts) {
                 createdById: request.user.id,
               }
             });
-            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
             const updatedData = {
               capacity,
               unavailableUnoccupied,
               unavailableOccupied,
               occupied,
               holds: holds + 1,
+              inTransit: inTransit + 1,
               available: available - 1,
               updateMethod: 'API',
               updatedById: request.user.id,

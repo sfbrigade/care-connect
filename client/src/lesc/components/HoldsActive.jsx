@@ -63,6 +63,8 @@ function HoldsActive ({
   onCancelHoldClick,
   autoCancelledNotice,
   onDismissAutoCancelledNotice,
+  adminCancelledNotice,
+  onDismissAdminCancelledNotice,
   updatedAtMs = 0
 }) {
   const navigate = useNavigate();
@@ -95,14 +97,22 @@ function HoldsActive ({
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
+  const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
   const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
+  const showAllAdminCancelledState = !showInitialLoading && !hasDeflections && adminCancelledNotice?.allCancelled;
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
-  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
+  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt && !showAllAdminCancelledState;
   const showExtendAllButton = hasDeflections;
   const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
     <>
+      {hasAdminCancelledHolds && (
+        <HoldsAutoCancelledNotice
+          message={adminCancelledNotice.message}
+          onClose={onDismissAdminCancelledNotice}
+        />
+      )}
       {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
         <HoldsAutoCancelledNotice
           count={autoCancelledNotice.count}

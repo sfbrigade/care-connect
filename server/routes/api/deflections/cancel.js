@@ -80,13 +80,18 @@ export default async function (fastify, opts) {
               propertyPhotos: true,
             },
           });
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const isInTransit = [
+            Deflection.SubjectStatus.DETAINED,
+            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+          ].includes(deflection.subjectStatus);
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
             capacity,
             unavailableUnoccupied,
             unavailableOccupied,
             occupied,
             holds: holds - 1,
+            inTransit: isInTransit ? Math.max(0, inTransit - 1) : inTransit,
             available: available + 1,
             updateMethod: 'API',
             updatedById: request.user.id,

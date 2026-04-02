@@ -54,6 +54,12 @@ vi.mock('@/Api', () => ({
   },
 }));
 
+vi.mock('@/AuthContext', () => ({
+  useAuthContext: () => ({
+    user: { id: 'test-user-1' },
+  }),
+}));
+
 vi.mock('@/FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: {
@@ -72,7 +78,7 @@ vi.mock('@/components/ToastContext', () => ({
 }));
 
 vi.mock('@/hooks/useSessionState', () => ({
-  default: () => ['active', vi.fn()],
+  default: (key, defaultValue) => [defaultValue, vi.fn()],
 }));
 
 vi.mock('@unhead/react', () => ({

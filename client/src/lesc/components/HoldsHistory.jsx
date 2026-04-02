@@ -65,6 +65,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
                     <Hold
                       key={deflection.id}
                       deflection={deflection}
+                      isHistory
                       onDetailsClick={() => {
                         navigate(`/holds/${deflection.id}`);
                       }}
@@ -79,6 +80,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
                     incident={incident}
                     key={deflection.id}
                     deflection={deflection}
+                    isHistory
                     onDetailsClick={() => {
                       navigate(`/holds/${deflection.id}`);
                     }}
