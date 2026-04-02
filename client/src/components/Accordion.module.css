@@ -33,6 +33,14 @@
 }
 
 [data-variant=contained] {
+  .item {
+    background-color: var(--mantine-color-gray-1);
+    border-radius: var(--mantine-radius-xl);
+    margin-bottom: var(--mantine-spacing-md);
+    border: none;
+    padding: 0 var(--mantine-spacing-md);
+  }
+
   .control {
     padding: 1rem 0;
     &:hover {
