@@ -1,7 +1,7 @@
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
 
-import { DRUG_TYPE_OPTIONS } from '@/lesc/constants/drugTypeOptions';
+import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
 
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
