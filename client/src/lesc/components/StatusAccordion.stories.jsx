@@ -1,3 +1,4 @@
+import { Text } from '@mantine/core';
 import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './custody/CustodyCard';
 
@@ -72,5 +73,21 @@ export const SfsoAllEmpty = {
     sections: inCustodySections,
     groupedItems: {},
     renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
+  },
+};
+
+export const CustomLabel = {
+  args: {
+    sections: inCustodySections,
+    groupedItems: {
+      AWAITING_INTAKE: [makeDeflection(1, 'AWAITING_INTAKE'), makeDeflection(2, 'AWAITING_INTAKE')],
+      READY_FOR_INTAKE: [makeDeflection(3, 'READY_FOR_INTAKE')],
+      ADMITTED: [],
+      IN_CHAIR: [],
+    },
+    renderCard: (d) => <CustodyCard key={d.id} deflection={d} />,
+    renderLabel: (label, count) => (
+      <Text ta='center' size='lg' fw={500}>{label} ({count})</Text>
+    ),
   },
 };
