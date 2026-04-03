@@ -58,7 +58,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
         <>
           <Stack gap='md'>
             {shouldShowCurrentIncidentGroup && currentIncidentDeflections.length > 0 && (
-              <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident' gap='xs'>
+              <IncidentGroup incident={incident} incidentId={incident?.id} gap='xs'>
                 {[...currentIncidentDeflections]
                   .sort((a, b) => getDeflectionActivityMs(b) - getDeflectionActivityMs(a))
                   .map((deflection) => (

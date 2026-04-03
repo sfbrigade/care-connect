@@ -18,9 +18,6 @@ export default {
     incident: {
       description: 'Incident object',
     },
-    editLink: {
-      description: 'Link for the "Edit" button',
-    },
   },
 };
 
