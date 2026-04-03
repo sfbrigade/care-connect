@@ -36,6 +36,8 @@ function renderHoldsActive (props) {
             deflections={[]}
             isFetchingDeflections={false}
             onCancelHoldClick={vi.fn()}
+            onEditIncidentClick={vi.fn()}
+            onCancelIncidentClick={vi.fn()}
             {...props}
           />
         </MemoryRouter>

@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Text, Loader } from '@mantine/core';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Box, Stack, Text, Loader } from '@mantine/core';
 
-import Api from '@/Api';
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
-import ActionFooter from '@/components/ActionFooter';
-import { useToast } from '@/components/ToastContext';
 
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
@@ -42,57 +37,21 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
   );
 }
 
-function ExtendAllHoldsAction ({ loading, onClick }) {
-  return (
-    <ActionFooter>
-      <Button
-        disabled={loading}
-        variant='secondary'
-        onClick={onClick}
-      >
-        {loading ? <Loader size='sm' /> : 'Extend active holds'}
-      </Button>
-    </ActionFooter>
-  );
-}
-
 function HoldsActive ({
   incident,
   deflections,
   isFetchingDeflections,
   onCancelHoldClick,
+  onEditIncidentClick,
+  onCancelIncidentClick,
   autoCancelledNotice,
   onDismissAutoCancelledNotice,
   adminCancelledNotice,
   onDismissAdminCancelledNotice,
-  updatedAtMs = 0
+  updatedAtMs = 0,
+  holdsHighlighted = false,
 }) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
-  const [holdsHighlighted, setHoldsHighlighted] = useState(false);
-
-  const extendAllHoldsMutation = useMutation({
-    mutationFn: () => Api.incidents.extend(incident.id),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
-      showToast('All active holds have been reset to 60 minutes.', 'success');
-      setHoldsHighlighted(true);
-    },
-    onError: () => {
-      showToast('Couldn\u2019t extend holds. Please try again.', 'error');
-    },
-  });
-
-  useEffect(() => {
-    if (!holdsHighlighted) return undefined;
-    const timerId = window.setTimeout(() => setHoldsHighlighted(false), 3000);
-    return () => window.clearTimeout(timerId);
-  }, [holdsHighlighted]);
-
-  function onExtendAllClick () {
-    extendAllHoldsMutation.mutate();
-  }
 
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
@@ -102,7 +61,6 @@ function HoldsActive ({
   const showAllAdminCancelledState = !showInitialLoading && !hasDeflections && adminCancelledNotice?.allCancelled;
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
   const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt && !showAllAdminCancelledState;
-  const showExtendAllButton = hasDeflections;
   const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
@@ -140,7 +98,12 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident'>
+          <IncidentGroup
+            incident={incident}
+            incidentId={incident?.id}
+            onEditClick={onEditIncidentClick}
+            onCancelClick={onCancelIncidentClick}
+          >
             {deflections?.map((deflection) => (
               <Hold
                 key={deflection.id}
@@ -158,12 +121,6 @@ function HoldsActive ({
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}
             </Text>
-          )}
-          {showExtendAllButton && (
-            <ExtendAllHoldsAction
-              loading={extendAllHoldsMutation.isPending}
-              onClick={onExtendAllClick}
-            />
           )}
         </>
       )}
