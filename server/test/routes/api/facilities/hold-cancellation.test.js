@@ -48,6 +48,7 @@ test('Hold cancellation edge cases', async (t) => {
     // After expire: holds = 4. available = 10 - 7 - 0 - 0 - 4 = -1, so 1 hold cancelled.
     // Final: holds = 3, available = 10 - 7 - 0 - 0 - 3 = 0
     assert.deepStrictEqual(updated.holds, 3);
+    assert.deepStrictEqual(updated.inTransit, 2);
     assert.deepStrictEqual(updated.available, 0);
     assert.deepStrictEqual(updated.unavailableUnoccupied, 7);
 
@@ -125,6 +126,7 @@ test('Hold cancellation edge cases', async (t) => {
     });
     // holds should have decreased by the number of in-transit holds cancelled
     assert.ok(bedType.holds < inTransitBefore + bedType.holds, 'Bed type holds should have decreased');
+    assert.deepStrictEqual(bedType.inTransit, 0, 'Bed type in-transit should be 0');
   });
 
   await t.test('POST deflections: blocks new holds when facility is not accepting', async () => {

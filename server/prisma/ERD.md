@@ -88,10 +88,13 @@ OTHER OTHER
 
 
         DrugTypeEnum {
-            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
-DRUG DRUG
-TOLUENE TOLUENE
-COMBINATION COMBINATION
+            CNS_DEPRESSANTS CNS_DEPRESSANTS
+CNS_STIMULANTS CNS_STIMULANTS
+HALLUCINOGENS HALLUCINOGENS
+DISSOCIATIVE_ANESTHETICS DISSOCIATIVE_ANESTHETICS
+NARCOTIC_ANALGESICS NARCOTIC_ANALGESICS
+INHALANTS INHALANTS
+CANNABIS CANNABIS
         }
     
 
@@ -325,6 +328,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     DateTime createdAt 
     String createdById 
@@ -346,6 +350,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     String unavailableReasonId "❓"
     String unavailableOther "❓"
