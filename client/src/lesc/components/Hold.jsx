@@ -6,11 +6,12 @@ import useNow from '@/hooks/useNow';
 import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
 import { useQuery } from '@tanstack/react-query';
+import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
 import Api from '@/Api';
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
-function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick }) {
+function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false }) {
   const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
@@ -54,11 +55,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const transferredAt = deflection?.transferredAt;
-  const canViewDetails = !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
+  const canViewDetails = !isHistory && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
   const canFinishDetails = isActive && !isNew && !isValid && !isExpired && !isCancelled;
   const canAddDetails = isActive && isNew && !isExpired && !isCancelled;
-  const showFooter = isActive || canViewDetails;
+  const showFooter = !isHistory && (isActive || canViewDetails);
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -69,7 +69,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const cancelReasonLabel = cancelReason?.name;
 
   return (
-    <Card bg='white' p='xl' withBorder>
+    <Card bg='white' p='md' withBorder>
       <Stack gap='2xl'>
         <Stack gap='sm'>
           <Group gap='xs'>
@@ -92,10 +92,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
                 <Text size='md' c='red.6'>Canceled after expiry</Text>
               </>
             )}
-            {isCustodyTransferred && transferredAt && (
+            {isCustodyTransferred && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='teal.5'>Transferred at {formatTime(transferredAt)}</Text>
+                <Text size='md' c='teal.5'>Transferred</Text>
               </>
             )}
           </Group>
@@ -106,6 +106,18 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
             )}
           </Box>
         </Stack>
+        {isCustodyTransferred && !isHistory && (
+          <Stack align='center' gap='xs'>
+            <Box
+              component='img'
+              data-testid='transferred-hold-checkerboard'
+              src={checkerboardEmptyState}
+              alt=''
+              w={160}
+              h={160}
+            />
+          </Stack>
+        )}
         {isActive && isArrived && (
           <Stack align='center' gap='xs'>
             <LockedQRCode value={transferUrl} locked={!isValid} />

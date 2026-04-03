@@ -1,0 +1,49 @@
+# local-vite development override
+#
+# Runs infrastructure services + the Fastify backend inside Docker, while
+# the Vite client runs natively on the host for fast, OS-level HMR.
+#
+# This file is self-contained (does not need compose.override.yml) so that
+# Docker does not bind ports 3333/6006, leaving them free for the native
+# Vite and Storybook processes on the host.
+#
+# Usage:
+#   docker compose -f compose.yml -f compose.local-vite.yml up
+#
+# Then in a separate terminal (native shell):
+#   npm run dev:client
+
+services:
+  server:
+    build: .
+    # Only start the Fastify API server – Vite runs on the host instead.
+    command: bash -l -c "npm install && until pg_isready -h db -U postgres -q; do sleep 2; done && (npm run build:forms:watch -w server & npm run dev -w server -- --port 3000)"
+    environment:
+      - AWS_S3_ACCESS_KEY_ID=minioadmin
+      - AWS_S3_SECRET_ACCESS_KEY=minioadmin
+      - AWS_S3_BUCKET=app
+      - AWS_S3_ENDPOINT=http://storage:9000
+      - AWS_S3_REGION=us-east-1
+      - AWS_S3_SIGNER_ENDPOINT=http://localhost:9000
+      - DATABASE_URL=postgresql://postgres@db/app
+      - SMTP_HOST=mail
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+    networks:
+      - care-connect
+    ports:
+      - 3000:3000 # fastify
+      - 5555:5555 # prisma studio
+    depends_on:
+      - db
+      - mail
+      - storage
+    volumes:
+      - .:/opt/node/app
+      - /opt/node/app/node_modules
+      - /opt/node/app/server/node_modules
+      - /opt/node/app/client/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.aws:/root/.aws
+      - ~/.ssh:/root/.ssh

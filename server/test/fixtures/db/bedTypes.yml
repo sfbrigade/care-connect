@@ -10,6 +10,7 @@ items:
     unavailableOccupied: 0
     occupied: 0
     holds: 5
+    inTransit: 4
     available: 3
     createdBy: '@user1'
     updatedBy: '@user1'
