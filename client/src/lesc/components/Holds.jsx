@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Container, SegmentedControl, Stack, Text } from '@mantine/core';
+import { ActionIcon, Box, Button, Container, Paper, SegmentedControl, Stack, Text, UnstyledButton } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
+import { IconAlarmPlus, IconDots, IconScan } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import { useClickOutside } from '@mantine/hooks';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
+import ActionFooter from '@/components/ActionFooter';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
@@ -14,6 +18,7 @@ import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
+import CancelIncidentModal from './CancelIncidentModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
@@ -40,10 +45,14 @@ function parseAutoCancelledNoticeState (value) {
 
 function Holds () {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const [holdsHighlighted, setHoldsHighlighted] = useState(false);
+  const [footerMenuOpened, setFooterMenuOpened] = useState(false);
+  const footerMenuRef = useClickOutside(() => setFooterMenuOpened(false));
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -269,6 +278,18 @@ function Holds () {
     },
   });
 
+  const extendAllHoldsMutation = useMutation({
+    mutationFn: (id) => Api.incidents.extend(id),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
+      showToast('All active holds have been reset to 60 minutes.', 'success');
+      setHoldsHighlighted(true);
+    },
+    onError: () => {
+      showToast('Couldn’t extend holds. Please try again.', 'error');
+    },
+  });
+
   function onHoldClick () {
     let bedTypeId;
     if (bedTypes?.length === 1) {
@@ -309,7 +330,7 @@ function Holds () {
   });
 
   const cancelIncidentMutation = useMutation({
-    mutationFn: ({ id }) => Api.incidents.cancel(id),
+    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, cancelReasonId ? { cancelReasonId } : undefined),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -359,6 +380,12 @@ function Holds () {
     setShowCancelModal(true);
   }
 
+  useEffect(() => {
+    if (!holdsHighlighted) return undefined;
+    const timerId = window.setTimeout(() => setHoldsHighlighted(false), 3000);
+    return () => window.clearTimeout(timerId);
+  }, [holdsHighlighted]);
+
   async function onCancelHoldConfirmed (cancelReasonId) {
     if (shouldCancelIncidentWithHold && incident?.id) {
       await cancelIncidentMutation.mutateAsync({
@@ -372,10 +399,53 @@ function Holds () {
     });
   }
 
+  async function onCancelIncidentConfirmed (cancelReasonId) {
+    if (incident?.id) {
+      await cancelIncidentMutation.mutateAsync({
+        id: incident.id,
+        cancelReasonId,
+      });
+    }
+  }
+
   function onCloseCancelModal () {
     setSelectedDeflection();
     setShowCancelModal(false);
   }
+
+  function onOpenCancelIncidentModal () {
+    setSelectedDeflection();
+    setShowCancelModal(true);
+  }
+
+  function onEditIncidentClick () {
+    navigate('/incident');
+  }
+
+  function onExtendActiveHoldsClick () {
+    if (incident?.id) {
+      extendAllHoldsMutation.mutate(incident.id);
+    }
+    setFooterMenuOpened(false);
+  }
+
+  const showActionFooter = true;
+  const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
+  const isClosed = facility.status === 'CLOSED';
+  const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
+  const hasArrived = !!incident?.arrivedAt;
+  const hasLeft = !!incident?.leftAt;
+  const isHoldButtonDisabled = (
+    markArrivedMutation.isPending ||
+    markLeftMutation.isPending ||
+    createDeflectionMutation.isPending ||
+    isClosed ||
+    isFull ||
+    !primaryBedType ||
+    (hasArrived && !hasLeft)
+  );
+  const showExtendActiveHoldsAction = (displayActiveDeflections?.length ?? 0) > 0;
+  const incidentHasDetailedHolds = !!displayActiveDeflections?.some(deflection => deflection.subjectId);
 
   return (
     <>
@@ -392,7 +462,6 @@ function Holds () {
             hasActiveHold={(deflections?.length ?? 0) > 0}
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
-            onHoldClick={onHoldClick}
             isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
           />
           <SegmentedControl
@@ -411,11 +480,14 @@ function Holds () {
               deflections={displayActiveDeflections}
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
+              onEditIncidentClick={onEditIncidentClick}
+              onCancelIncidentClick={onOpenCancelIncidentModal}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
               adminCancelledNotice={adminCancelledNotice}
               onDismissAdminCancelledNotice={onDismissAdminCancelledNotice}
               updatedAtMs={lastSyncedAtMs}
+              holdsHighlighted={holdsHighlighted}
             />
           )}
           {tab === 'history' && (
@@ -443,6 +515,70 @@ function Holds () {
           loading={cancelDeflectionMutation.isPending || cancelIncidentMutation.isPending}
         />
       )}
+      {showActionFooter && (
+        <ActionFooter>
+          <Box ref={footerMenuRef}>
+            {footerMenuOpened && (
+              <Paper
+                shadow='sm'
+                radius='lg'
+                p='xs'
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  bottom: 'calc(100% + 8px)',
+                  transform: 'translateX(-50%)',
+                  width: 280,
+                  zIndex: 1,
+                }}
+              >
+                <Stack gap={0}>
+                  {showExtendActiveHoldsAction && (
+                    <UnstyledButton
+                      onClick={onExtendActiveHoldsClick}
+                      disabled={extendAllHoldsMutation.isPending}
+                      style={{ borderRadius: 'var(--mantine-radius-md)' }}
+                    >
+                      <Box px='md' py='sm'>
+                        <Box component='span' style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />
+                          <Text size='md'>Extend active holds</Text>
+                        </Box>
+                      </Box>
+                    </UnstyledButton>
+                  )}
+                  <UnstyledButton
+                    onClick={() => setFooterMenuOpened(false)}
+                    style={{ borderRadius: 'var(--mantine-radius-md)' }}
+                  >
+                    <Box px='md' py='sm'>
+                      <Box component='span' style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <IconScan size={18} color='var(--mantine-color-gray-5)' />
+                        <Text size='md'>Scan a handoff code</Text>
+                      </Box>
+                    </Box>
+                  </UnstyledButton>
+                </Stack>
+              </Paper>
+            )}
+            <ActionIcon
+              variant='filled'
+              color='indigo.0'
+              radius='50%'
+              size={48}
+              aria-label='More actions'
+              style={{ minWidth: 48, flex: '0 0 48px' }}
+              onClick={() => setFooterMenuOpened((opened) => !opened)}
+            >
+              <IconDots size={24} color='var(--mantine-color-indigo-6)' />
+            </ActionIcon>
+          </Box>
+          <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
+            Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
+          </Button>
+        </ActionFooter>
+      )}
+      {showActionFooter && <Box h='120px' />}
       <ArrivalConfirmationModal
         facilityName={facility?.name}
         opened={showArrivalConfirmationModal}
@@ -450,6 +586,15 @@ function Holds () {
         onConfirm={onConfirmArrival}
         loading={markArrivedMutation.isPending}
       />
+      {!selectedDeflection && incident && (
+        <CancelIncidentModal
+          opened={showCancelModal}
+          onClose={onCloseCancelModal}
+          onConfirm={onCancelIncidentConfirmed}
+          requiresReason={incidentHasDetailedHolds}
+          loading={cancelIncidentMutation.isPending}
+        />
+      )}
     </>
   );
 }

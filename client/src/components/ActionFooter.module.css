@@ -13,6 +13,7 @@
   flex-direction: column;
   gap: 8px;
   width: fit-content;
+  position: relative;
   margin: 0 auto;
   padding: 8px;
   background-color: var(--mantine-color-white);
