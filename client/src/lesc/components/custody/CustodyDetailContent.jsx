@@ -13,6 +13,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
@@ -172,22 +173,30 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
 
-  const { data: incident } = useQuery({
+  const incidentQuery = useQuery({
     queryKey: ['incidents', deflection?.incidentId],
     queryFn: () => Api.incidents.get(deflection.incidentId).then(response => response.data),
     enabled: !!deflection?.incidentId,
   });
+  const incident = incidentQuery.data;
   const incidentAddress = formatAddress(incident ?? {});
+  const resolvedReleaseNarrative = useEnsureReleaseNarrative({
+    deflection,
+    incident,
+    incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
+  });
 
   useEffect(() => {
-    setReleaseNarrative(deflection?.releaseNarrative ?? '');
-    setIsEditingReleaseNarrative(false);
-  }, [deflection?.releaseNarrative]);
+    if (!isEditingReleaseNarrative) {
+      setReleaseNarrative(resolvedReleaseNarrative);
+    }
+  }, [resolvedReleaseNarrative, isEditingReleaseNarrative]);
 
   const saveReleaseNarrativeMutation = useMutation({
     mutationFn: () => Api.deflections.update(deflection.id, { releaseNarrative: releaseNarrative.trim() || null }),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', String(deflection.id)], response.data);
+      queryClient.setQueryData(['deflections', deflection.id], response.data);
       setIsEditingReleaseNarrative(false);
       showToast('849(b) narrative saved', 'success');
     },
@@ -198,14 +207,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   function open849bPdf () {
     window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
-  }
-
-  function onReleaseNarrativeButtonClick () {
-    if (!isEditingReleaseNarrative) {
-      setIsEditingReleaseNarrative(true);
-      return;
-    }
-    saveReleaseNarrativeMutation.mutate();
   }
 
   return (
@@ -468,18 +469,40 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                               mt='xs'
                             />
                             )
-                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
+                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
                       </Box>
-                      <Group>
-                        <Button
-                          variant='secondary'
-                          size='md'
-                          onClick={onReleaseNarrativeButtonClick}
-                          loading={saveReleaseNarrativeMutation.isPending}
-                        >
-                          Edit
-                        </Button>
-                      </Group>
+                      {!isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => setIsEditingReleaseNarrative(true)}
+                          >
+                            Edit
+                          </Button>
+                        </Group>
+                      )}
+                      {isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => {
+                              setReleaseNarrative(resolvedReleaseNarrative);
+                              setIsEditingReleaseNarrative(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size='md'
+                            onClick={() => saveReleaseNarrativeMutation.mutate()}
+                            loading={saveReleaseNarrativeMutation.isPending}
+                          >
+                            Save narrative
+                          </Button>
+                        </Group>
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
