@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ActionIcon, Box, Button, Container, Paper, SegmentedControl, Stack, Text, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Box, Button, Container, Menu, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { IconAlarmPlus, IconDots, IconScan } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useClickOutside } from '@mantine/hooks';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
@@ -51,8 +50,6 @@ function Holds () {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [holdsHighlighted, setHoldsHighlighted] = useState(false);
-  const [footerMenuOpened, setFooterMenuOpened] = useState(false);
-  const footerMenuRef = useClickOutside(() => setFooterMenuOpened(false));
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -426,7 +423,6 @@ function Holds () {
     if (incident?.id) {
       extendAllHoldsMutation.mutate(incident.id);
     }
-    setFooterMenuOpened(false);
   }
 
   const showActionFooter = true;
@@ -517,62 +513,36 @@ function Holds () {
       )}
       {showActionFooter && (
         <ActionFooter>
-          <Box ref={footerMenuRef}>
-            {footerMenuOpened && (
-              <Paper
-                shadow='sm'
-                radius='lg'
-                p='xs'
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  bottom: 'calc(100% + 8px)',
-                  transform: 'translateX(-50%)',
-                  width: 280,
-                  zIndex: 1,
-                }}
+          <Menu position='top' shadow='sm' radius='lg' width={280} withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                variant='filled'
+                color='indigo.0'
+                radius='50%'
+                size={48}
+                aria-label='More actions'
+                style={{ minWidth: 48, flex: '0 0 48px' }}
               >
-                <Stack gap={0}>
-                  {showExtendActiveHoldsAction && (
-                    <UnstyledButton
-                      onClick={onExtendActiveHoldsClick}
-                      disabled={extendAllHoldsMutation.isPending}
-                      style={{ borderRadius: 'var(--mantine-radius-md)' }}
-                    >
-                      <Box px='md' py='sm'>
-                        <Box component='span' style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />
-                          <Text size='md'>Extend active holds</Text>
-                        </Box>
-                      </Box>
-                    </UnstyledButton>
-                  )}
-                  <UnstyledButton
-                    onClick={() => setFooterMenuOpened(false)}
-                    style={{ borderRadius: 'var(--mantine-radius-md)' }}
-                  >
-                    <Box px='md' py='sm'>
-                      <Box component='span' style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IconScan size={18} color='var(--mantine-color-gray-5)' />
-                        <Text size='md'>Scan a handoff code</Text>
-                      </Box>
-                    </Box>
-                  </UnstyledButton>
-                </Stack>
-              </Paper>
-            )}
-            <ActionIcon
-              variant='filled'
-              color='indigo.0'
-              radius='50%'
-              size={48}
-              aria-label='More actions'
-              style={{ minWidth: 48, flex: '0 0 48px' }}
-              onClick={() => setFooterMenuOpened((opened) => !opened)}
-            >
-              <IconDots size={24} color='var(--mantine-color-indigo-6)' />
-            </ActionIcon>
-          </Box>
+                <IconDots size={24} color='var(--mantine-color-indigo-6)' />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {showExtendActiveHoldsAction && (
+                <Menu.Item
+                  leftSection={<IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />}
+                  onClick={onExtendActiveHoldsClick}
+                  disabled={extendAllHoldsMutation.isPending}
+                >
+                  Extend active holds
+                </Menu.Item>
+              )}
+              <Menu.Item
+                leftSection={<IconScan size={18} color='var(--mantine-color-gray-5)' />}
+              >
+                Scan a handoff code
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
           <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
             Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
           </Button>
