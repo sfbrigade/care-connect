@@ -9,10 +9,10 @@ import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg'
 import ActionFooter from '@/components/ActionFooter';
 import { useToast } from '@/components/ToastContext';
 
-import Incident from './Incident';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
-import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
+import IncidentGroup from './IncidentGroup';
+import { isInitialLoading, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
@@ -96,7 +96,6 @@ function HoldsActive ({
 
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
-  const showIncident = shouldShowIncidentInActive(incident, deflections);
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
   const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
   const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
@@ -120,9 +119,6 @@ function HoldsActive ({
           onClose={onDismissAutoCancelledNotice}
         />
       )}
-      {showIncident && (
-        <Incident incident={incident} editLink='/incident' />
-      )}
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
@@ -144,7 +140,7 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          <Stack gap='md'>
+          <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident'>
             {deflections?.map((deflection) => (
               <Hold
                 key={deflection.id}
@@ -157,7 +153,7 @@ function HoldsActive ({
                 }}
               />
             ))}
-          </Stack>
+          </IncidentGroup>
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}
