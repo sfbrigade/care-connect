@@ -9,10 +9,10 @@ import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg'
 import ActionFooter from '@/components/ActionFooter';
 import { useToast } from '@/components/ToastContext';
 
-import Incident from './Incident';
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
-import { isInitialLoading, shouldShowIncidentInActive, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
+import IncidentGroup from './IncidentGroup';
+import { isInitialLoading, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
@@ -63,6 +63,8 @@ function HoldsActive ({
   onCancelHoldClick,
   autoCancelledNotice,
   onDismissAutoCancelledNotice,
+  adminCancelledNotice,
+  onDismissAdminCancelledNotice,
   updatedAtMs = 0
 }) {
   const navigate = useNavigate();
@@ -94,24 +96,28 @@ function HoldsActive ({
 
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
-  const showIncident = shouldShowIncidentInActive(incident, deflections);
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
+  const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
   const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
+  const showAllAdminCancelledState = !showInitialLoading && !hasDeflections && adminCancelledNotice?.allCancelled;
   const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
-  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt;
+  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt && !showAllAdminCancelledState;
   const showExtendAllButton = hasDeflections;
   const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
     <>
+      {hasAdminCancelledHolds && (
+        <HoldsAutoCancelledNotice
+          message={adminCancelledNotice.message}
+          onClose={onDismissAdminCancelledNotice}
+        />
+      )}
       {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
         <HoldsAutoCancelledNotice
           count={autoCancelledNotice.count}
           onClose={onDismissAutoCancelledNotice}
         />
-      )}
-      {showIncident && (
-        <Incident incident={incident} editLink='/incident' />
       )}
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
@@ -134,7 +140,7 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          <Stack gap='md'>
+          <IncidentGroup incident={incident} incidentId={incident?.id} editLink='/incident'>
             {deflections?.map((deflection) => (
               <Hold
                 key={deflection.id}
@@ -147,7 +153,7 @@ function HoldsActive ({
                 }}
               />
             ))}
-          </Stack>
+          </IncidentGroup>
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}
