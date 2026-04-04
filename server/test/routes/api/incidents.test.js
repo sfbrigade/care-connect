@@ -103,6 +103,7 @@ test('/api/incidents', async (t) => {
       });
       assert.ok(bedType);
       assert.deepStrictEqual(bedType.holds, 5);
+      assert.deepStrictEqual(bedType.inTransit, 4);
       assert.deepStrictEqual(bedType.available, 3);
     });
 
@@ -222,7 +223,7 @@ test('/api/incidents', async (t) => {
       const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.length, 3);
+      assert.deepStrictEqual(data.length, 2);
 
       const oneHourLater = DateTime.now().plus({ hours: 1 });
 
@@ -233,10 +234,6 @@ test('/api/incidents', async (t) => {
       const expiresAt1 = DateTime.fromISO(data[1].expiresAt);
       const diff1 = expiresAt1.diff(oneHourLater, 'minutes').minutes;
       assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt1.toISO()}`);
-
-      const expiresAt2 = DateTime.fromISO(data[2].expiresAt);
-      const diff2 = expiresAt2.diff(oneHourLater, 'minutes').minutes;
-      assert.ok(Math.abs(diff2) < 1, `Expected data[2].expiresAt to be close to ${oneHourLater.toISO()}, got ${expiresAt2.toISO()}`);
     });
   });
 
@@ -293,6 +290,7 @@ test('/api/incidents', async (t) => {
         where: { id: bedTypeId },
       });
       assert.deepStrictEqual(afterBedType.holds, beforeBedType.holds);
+      assert.deepStrictEqual(afterBedType.inTransit, beforeBedType.inTransit);
       assert.deepStrictEqual(afterBedType.available, beforeBedType.available);
     });
 

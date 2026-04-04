@@ -1,0 +1,21 @@
+Dear <%= firstName %>,
+
+<% if (holds.length === 1) { -%>
+<% if (holds[0].personName) { -%>
+Your hold for <%= holds[0].personName %> at <%= facilityName %> has been cancelled.
+<% } else { -%>
+Your hold at <%= facilityName %> has been cancelled.
+<% } -%>
+<% } else { -%>
+Your holds at <%= facilityName %> have been cancelled:
+<% holds.forEach(function(hold) { -%>
+- <%= hold.personName || ('Hold #' + hold.id) %>
+<% }); -%>
+<% } -%>
+
+Do not bring <%= holds.length === 1 ? 'this person' : 'these persons' %> to <%= facilityName %>.
+
+Sincerely,
+The <%= _layout.TITLE %> Team
+
+<%- include('../_footer.text.ejs') %>
