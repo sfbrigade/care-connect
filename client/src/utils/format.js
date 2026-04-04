@@ -49,6 +49,18 @@ export function formatTime (date) {
 }
 
 /**
+ * Format a date/time as time-only if today, or date + time if a different day
+ * @param {string|Date} date - Date to format
+ * @param {DateTime} [now] - Current time (for testing)
+ * @returns {string} - Formatted string like "3:45 PM" or "03/25/2026 3:45 PM"
+ */
+export function formatSmartDateTime (date, now = DateTime.now()) {
+  const dt = dateTime(date);
+  const isToday = dt.hasSame(now, 'day');
+  return isToday ? dt.toLocaleString(DateTime.TIME_SIMPLE) : `${dt.toFormat('MM/dd/yyyy')} ${dt.toLocaleString(DateTime.TIME_SIMPLE)}`;
+}
+
+/**
  * Format a created date as relative time or date
  * @param {string|Date} createdAt - Creation date/time
  * @returns {string} - Formatted string like "2 hours ago", "Yesterday", or "Jan 15"
