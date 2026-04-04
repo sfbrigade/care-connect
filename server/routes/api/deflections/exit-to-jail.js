@@ -87,17 +87,19 @@ export default async function (fastify, opts) {
           },
         });
 
-        const isHoldOnlyStatus = [
+        const releasesHold = [
           Deflection.SubjectStatus.AWAITING_INTAKE,
           Deflection.SubjectStatus.READY_FOR_INTAKE,
+          Deflection.SubjectStatus.ADMITTED,
+          Deflection.SubjectStatus.FAILED_INTAKE,
         ].includes(previousSubjectStatus);
         const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
         const updatedBedTypeData = {
           capacity,
           unavailableUnoccupied,
           unavailableOccupied,
-          occupied: isHoldOnlyStatus ? occupied : Math.max(0, occupied - 1),
-          holds: isHoldOnlyStatus ? Math.max(0, holds - 1) : holds,
+          occupied,
+          holds: releasesHold ? Math.max(0, holds - 1) : holds,
           available: available + 1,
           updateMethod: 'API',
           updatedById: request.user.id,
