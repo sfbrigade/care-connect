@@ -16,17 +16,7 @@ export default async function (fastify, opts) {
           password: User.PasswordSchema,
         }),
         response: {
-          [StatusCodes.OK]: User.ResponseSchema.meta({
-            description:
-                        'Successfully authenticated. The response sets a cookie named `session` that should be sent in subsequent requests for authentication. This cookie will NOT appear in the web-based API tester infterface because it is an HttpOnly cookie that cannot be accessed by JavaScript.',
-            headers: {
-              'Set-Cookie': {
-                schema: {
-                  type: 'string',
-                },
-              },
-            },
-          }),
+          [StatusCodes.OK]: z.object({ message: z.string() }),
           [StatusCodes.NOT_FOUND]: z.null(),
           [StatusCodes.GONE]: z.null(),
           [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
@@ -49,6 +39,13 @@ export default async function (fastify, opts) {
         if (!user.isPasswordResetTokenValid) {
           return reply.code(StatusCodes.GONE).send();
         }
+        const isSamePassword = await user.comparePassword(password);
+        if (isSamePassword) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            errors: [{ path: 'password', message: "You can't reuse a previous password. Choose a new one." }],
+          });
+        }
         await user.setPassword(password);
         await fastify.prisma.user.update({
           where: { id: user.id },
@@ -58,8 +55,7 @@ export default async function (fastify, opts) {
             hashedPassword: user.hashedPassword,
           },
         });
-        request.session.set('userId', user.id);
-        return reply.send(user);
+        return reply.code(StatusCodes.OK).send({ message: 'Password updated' });
       } catch (error) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
