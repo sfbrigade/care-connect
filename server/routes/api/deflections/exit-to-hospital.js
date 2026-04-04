@@ -87,7 +87,6 @@ export default async function (fastify, opts) {
           },
         });
 
-
         const releasesHold = [
           Deflection.SubjectStatus.AWAITING_INTAKE,
           Deflection.SubjectStatus.READY_FOR_INTAKE,
