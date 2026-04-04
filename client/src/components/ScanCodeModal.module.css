@@ -23,7 +23,7 @@
 .scanDoneButton {
   position: absolute;
   inset-inline: 0;
-  bottom: calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(2 * var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
   z-index: 11;
   display: flex;
   justify-content: center;

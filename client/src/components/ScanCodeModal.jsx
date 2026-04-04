@@ -223,9 +223,6 @@ function ScanCodeModal ({
 
                 <Box className={classes.scanDoneButton}>
                   <Button
-                    variant='filled'
-                    color='blue.7'
-                    c='white'
                     size='lg'
                     radius='xl'
                     disabled={!scanAccepted}
