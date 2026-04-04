@@ -29,24 +29,44 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+      // Allow if user is the creator, or currently holds deflections on this incident
+      const holdsDeflections = await fastify.prisma.deflection.count({
+        where: { incidentId: id, currentOfficerId: request.user.id, status: 'ACTIVE' },
+      });
+      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {
         const now = new Date();
-        incident = await tx.incident.update({
-          where: { id },
-          data: {
-            arrivedAt: now,
-            updatedById: request.user.id,
+
+        // Update arrivedAt on the officer's IncidentOfficer record
+        await tx.incidentOfficer.updateMany({
+          where: {
+            incidentId: id,
+            facilityId: incident.facilityId,
+            officerId: request.user.id,
           },
+          data: { arrivedAt: now },
         });
 
+        // Also set on incident for backward compatibility (if this is the creator)
+        if (incident.createdById === request.user.id) {
+          incident = await tx.incident.update({
+            where: { id },
+            data: {
+              arrivedAt: now,
+              updatedById: request.user.id,
+            },
+          });
+        }
+
+        // Only update deflections belonging to the requesting officer
         deflections = await tx.deflection.findMany({
           where: {
             incidentId: id,
+            currentOfficerId: request.user.id,
             status: 'ACTIVE',
           },
         });

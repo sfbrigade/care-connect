@@ -38,7 +38,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && !request.user.isAdmin && !request.user.isCustody) {
+      if (deflection.createdById !== request.user.id && deflection.currentOfficerId !== request.user.id && !request.user.isAdmin && !request.user.isCustody) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

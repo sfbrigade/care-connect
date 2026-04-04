@@ -20,13 +20,43 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { facilityId } = request.params;
 
-      const incident = await fastify.prisma.incident.findFirst({
+      // Find incident the user created, or one where they currently hold deflections
+      let incident = await fastify.prisma.incident.findFirst({
         where: {
           facilityId,
           createdById: request.user.id,
           completedAt: null,
         },
+        include: {
+          incidentOfficers: {
+            where: { officerId: request.user.id },
+          },
+        },
       });
+
+      if (!incident) {
+        // Check if user holds any active deflections on an incident they didn't create
+        const heldDeflection = await fastify.prisma.deflection.findFirst({
+          where: {
+            currentOfficerId: request.user.id,
+            status: 'ACTIVE',
+            incident: {
+              facilityId,
+              completedAt: null,
+            },
+          },
+          include: {
+            incident: {
+              include: {
+                incidentOfficers: {
+                  where: { officerId: request.user.id },
+                },
+              },
+            },
+          },
+        });
+        incident = heldDeflection?.incident ?? null;
+      }
 
       return reply.send(incident);
     });

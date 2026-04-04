@@ -29,7 +29,11 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+      // Allow if user is the creator, or currently holds deflections on this incident
+      const holdsDeflections = await fastify.prisma.deflection.count({
+        where: { incidentId: id, currentOfficerId: request.user.id, status: Deflection.HoldStatus.ACTIVE },
+      });
+      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -38,8 +42,9 @@ export default async function (fastify, opts) {
         deflections = await tx.deflection.findMany({
           where: {
             incidentId: id,
+            currentOfficerId: request.user.id,
             status: Deflection.HoldStatus.ACTIVE,
-            subjectStatus: Deflection.SubjectStatus.DETAINED
+            subjectStatus: Deflection.SubjectStatus.DETAINED,
           },
         });
 

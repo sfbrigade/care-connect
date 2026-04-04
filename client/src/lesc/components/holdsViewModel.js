@@ -6,8 +6,8 @@ import { isCustodyTransferredStatus } from './deflectionStatusChipUtils';
 export const SFPD_ACTIVE_SUBJECT_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 export const SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED';
 
-export function mergeHistoryDeflections (inactiveDeflections = [], postTransferActiveDeflections = []) {
-  const merged = [...inactiveDeflections, ...postTransferActiveDeflections];
+export function mergeHistoryDeflections (inactiveDeflections = [], postTransferActiveDeflections = [], handedOffDeflections = []) {
+  const merged = [...inactiveDeflections, ...postTransferActiveDeflections, ...handedOffDeflections];
   const byId = new Map();
   for (const deflection of merged) {
     byId.set(deflection.id, deflection);
