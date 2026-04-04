@@ -8,8 +8,12 @@
   --viewfinder-gap: var(--mantine-spacing-md);
   position: relative;
   flex: 1 1 0;
-  min-height: 0;
+  height: 100dvh;
   width: 100%;
+}
+
+.scanHeader {
+  background: transparent;
 }
 
 .scanFooter {
@@ -29,84 +33,33 @@
   justify-content: center;
 }
 
-.manualFormScroll {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: auto;
-}
-
 .scanControlsOverlay {
   position: absolute;
   inset-inline: 0;
-  bottom: calc(50% + var(--viewfinder-size) / 2 + 68px);
+  top: calc(50% - var(--viewfinder-size) / 2 - 112px);
   z-index: 20;
   pointer-events: none;
+  flex: 1 1 0;
+  align-items: center;
+  min-height: 0;
+  overflow: auto;
 }
 
 .scanControlsOverlay > * {
   pointer-events: auto;
 }
 
-.segmentWrap {
-  display: flex;
-  justify-content: center;
-  padding: 35px var(--mantine-spacing-md) 0;
-}
-
-.segmentedRoot {
-  --sc-padding: var(--mantine-spacing-3xs, 4px);
-  width: 100%;
-  max-width: 266px;
-  min-height: 44px;
-  border-radius: var(--mantine-radius-xl);
-  background: var(--mantine-color-dark-5, #3b3b3b);
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.45);
-}
-
-.segmentedIndicator {
-  border-radius: calc(var(--mantine-radius-xl) - var(--mantine-spacing-3xs, 4px));
-  background-color: var(--mantine-color-gray-6);
-  height: calc(100% - 2 * var(--mantine-spacing-3xs, 4px)) !important;
-}
-
-.segmentedLabel {
-  font-size: var(--mantine-font-size-sm);
-  font-weight: 500;
-  color: rgb(255 255 255 / 0.78);
-  transition: color 120ms ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-.segmentedLabel:hover {
-  color: var(--mantine-color-white);
-}
-
-/* Type mode: overrides .segmentedRoot track; white shadow indicator + inactive/selected label colors (.segmentedControl already transparent). */
-.segmentedRootTypeMode {
-  background: var(--mantine-color-gray-2, #e9ecef);
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
-}
-
-.segmentedRootTypeMode .segmentedIndicator {
-  background-color: var(--mantine-color-white);
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.06),
-    0 2px 8px rgb(0 0 0 / 0.1);
-}
-
-.segmentedRootTypeMode .segmentedLabel {
-  color: rgb(0 0 0 / 0.45);
-}
-
-.segmentedRootTypeMode .segmentedLabel:hover {
-  color: rgb(0 0 0 / 0.55);
-}
-
-.segmentedRootTypeMode .segmentedControl[data-active] .segmentedLabel,
-.segmentedRootTypeMode .segmentedControl[aria-pressed='true'] .segmentedLabel {
-  color: var(--mantine-color-black);
-  font-weight: 600;
+.scanRoot--scan {
+  .segmentedControlRoot {
+    background-color: var(--mantine-color-dark-5);
+  }
+  .segmentedControlIndicator {
+    background-color: var(--mantine-color-dark-3);
+  }
+  .segmentedControlLabel {
+    color: var(--mantine-color-gray-5);
+    &[data-active], &:hover {
+      color: var(--mantine-color-white);
+    }
+  }
 }

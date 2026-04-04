@@ -1,11 +1,12 @@
 import { Box, Container } from '@mantine/core';
+import classNames from 'classnames';
 
-import classNames from './Header.module.css';
+import classes from './Header.module.css';
 
-function Header ({ children }) {
+function Header ({ children, className }) {
   return (
-    <Box className={classNames.header}>
-      <Container className={classNames.headerContainer}>
+    <Box className={classNames(classes.header, className)}>
+      <Container className={classes.headerContainer}>
         {children}
       </Container>
     </Box>
