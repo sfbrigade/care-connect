@@ -100,9 +100,9 @@ class Base {
     return filePath;
   }
 
-  setAsset (attribute, newValue) {
+  setAsset (attribute, newValue, { buffer } = {}) {
     const value = this[attribute];
-    if (value === newValue) {
+    if (value === newValue && !buffer) {
       return;
     }
     this[attribute] = newValue;
@@ -117,7 +117,10 @@ class Base {
         prevPath = path.join(assetDirPath, value);
         await s3.deleteObject(prevPath);
       }
-      if (newValue) {
+      if (newValue && buffer) {
+        newPath = path.join(assetDirPath, newValue);
+        await s3.putObject(newPath, buffer);
+      } else if (newValue) {
         newPath = path.join(assetDirPath, newValue);
         await s3.copyObject(path.join(process.env.AWS_S3_BUCKET, '_uploads', newValue), newPath);
         await s3.deleteObject(path.join('_uploads', newValue));
