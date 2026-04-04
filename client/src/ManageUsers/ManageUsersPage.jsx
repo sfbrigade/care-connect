@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Accordion, Button, Container, Loader, Stack } from '@mantine/core';
+import { Accordion, ActionIcon, Box, Button, Container, Group, Loader, Popover, Stack, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
-import { IconUserPlus } from '@tabler/icons-react';
+import { IconInfoCircle, IconUserPlus } from '@tabler/icons-react';
 
 import ActionFooter from '@/components/ActionFooter';
 import Api from '@/Api';
@@ -13,7 +13,6 @@ import MemberCard from './MemberCard';
 import InviteUserModal from './InviteUserModal';
 import ResendInviteModal from './ResendInviteModal';
 import ConfirmActionModal from './ConfirmActionModal';
-import SectionLabel from '@/components/SectionLabel';
 import { getRoleLabel } from './roleLabels';
 
 function ManageUsersPage () {
@@ -90,6 +89,12 @@ function ManageUsersPage () {
     setConfirmAction(null);
   }
 
+  const sections = [
+    { key: 'invited', label: 'Invited', tooltip: 'Users who have been sent an invite but have not yet accepted.' },
+    { key: 'active', label: 'Active', tooltip: 'Users with active accounts who can sign in.' },
+    { key: 'disabled', label: 'Disabled', tooltip: 'Accounts that have been disabled. They can be re-enabled.' },
+  ];
+
   if (isLoading) {
     return (
       <Container ta='center' py='xl'>
@@ -105,67 +110,54 @@ function ManageUsersPage () {
       </Head>
       <Container>
         <Accordion variant='contained' chevronPosition='left' multiple defaultValue={['invited', 'active', 'disabled']}>
-          <Accordion.Item value='invited'>
-            <Accordion.Control>
-              <SectionLabel label={`Invited: ${data?.invited?.length ?? 0}`} info='Users who have been sent an invite but have not yet accepted.' />
-            </Accordion.Control>
-            {data?.invited?.length > 0 && (
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {data.invited.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      roleLabel={getRoleLabel([], organizationId)}
-                      onResendInvite={(m) => setResendTarget(m)}
-                      onCancelInvite={(m) => setConfirmAction({ type: 'cancel', member: m })}
-                    />
-                  ))}
-                </Stack>
-              </Accordion.Panel>
-            )}
-          </Accordion.Item>
-
-          <Accordion.Item value='active'>
-            <Accordion.Control>
-              <SectionLabel label={`Active: ${data?.active?.length ?? 0}`} info='Users with active accounts who can sign in.' />
-            </Accordion.Control>
-            {data?.active?.length > 0 && (
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {data.active.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      roleLabel={getRoleLabel(member.roles, organizationId)}
-                      onDisable={(m) => setConfirmAction({ type: 'disable', member: m })}
-                    />
-                  ))}
-                </Stack>
-              </Accordion.Panel>
-            )}
-          </Accordion.Item>
-
-          <Accordion.Item value='disabled'>
-            <Accordion.Control>
-              <SectionLabel label={`Disabled: ${data?.disabled?.length ?? 0}`} info='Accounts that have been disabled. They can be re-enabled.' />
-            </Accordion.Control>
-            {data?.disabled?.length > 0 && (
-              <Accordion.Panel>
-                <Stack gap='sm'>
-                  {data.disabled.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      roleLabel={getRoleLabel(member.roles, organizationId)}
-                      onEnable={(m) => setConfirmAction({ type: 'enable', member: m })}
-                      onDelete={(m) => setConfirmAction({ type: 'delete', member: m })}
-                    />
-                  ))}
-                </Stack>
-              </Accordion.Panel>
-            )}
-          </Accordion.Item>
+          {sections.map(({ key, label, tooltip }) => {
+            const members = data?.[key] ?? [];
+            return (
+              <Accordion.Item key={key} value={key}>
+                <Group wrap='nowrap' gap={0}>
+                  <Accordion.Control>
+                    <Title order={4} ta='center'>{label}: {members.length}</Title>
+                  </Accordion.Control>
+                  <Box onClick={(e) => e.stopPropagation()} mr='sm'>
+                    <Popover width={250} withArrow radius='md' shadow='none'>
+                      <Popover.Target>
+                        <ActionIcon variant='transparent' c='gray.5' size='md'>
+                          <IconInfoCircle size={22} />
+                        </ActionIcon>
+                      </Popover.Target>
+                      <Popover.Dropdown p='md' bg='dark' style={{ border: 'none' }}>
+                        <Text size='sm' c='white'>{tooltip}</Text>
+                      </Popover.Dropdown>
+                    </Popover>
+                  </Box>
+                </Group>
+                {members.length > 0 && (
+                  <Accordion.Panel>
+                    <Stack gap='sm'>
+                      {members.map((member) => (
+                        <MemberCard
+                          key={member.id}
+                          member={member}
+                          roleLabel={getRoleLabel(key === 'invited' ? [] : member.roles, organizationId)}
+                          {...(key === 'invited' && {
+                            onResendInvite: (m) => setResendTarget(m),
+                            onCancelInvite: (m) => setConfirmAction({ type: 'cancel', member: m }),
+                          })}
+                          {...(key === 'active' && {
+                            onDisable: (m) => setConfirmAction({ type: 'disable', member: m }),
+                          })}
+                          {...(key === 'disabled' && {
+                            onEnable: (m) => setConfirmAction({ type: 'enable', member: m }),
+                            onDelete: (m) => setConfirmAction({ type: 'delete', member: m }),
+                          })}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                )}
+              </Accordion.Item>
+            );
+          })}
         </Accordion>
 
       </Container>
