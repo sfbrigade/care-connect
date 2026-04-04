@@ -33,9 +33,9 @@ function isSecureContext () {
 
 /** Corner bracket color: white while scanning, green on success, red on error */
 const VIEWFINDER_COLOR = {
-  idle: '#DEE2E6',
-  success: '#12B886',
-  error: '#FA5252',
+  idle: 'var(--mantine-color-gray-3)',
+  success: 'var(--mantine-color-teal-5)',
+  error: 'var(--mantine-color-red-6)',
 };
 
 /** Full-screen overlay copy below the viewfinder after a scan is validated by the parent */
