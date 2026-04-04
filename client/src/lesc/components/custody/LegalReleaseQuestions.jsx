@@ -173,7 +173,7 @@ function LegalReleaseQuestions () {
             <Input.Wrapper label='Release reason' required>
               <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                 <Group gap='sm'>
-                  <Chip value='sobered'>Sobered</Chip>
+                  <Chip value='sobered'>Can care for themselves</Chip>
                   <Chip value='medical_issue'>Medical issue</Chip>
                   <Chip value='other'>Other (please specify)</Chip>
                 </Group>
