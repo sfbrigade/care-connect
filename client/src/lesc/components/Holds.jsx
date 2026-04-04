@@ -449,8 +449,8 @@ function Holds () {
   const isClosed = facility.status === 'CLOSED';
   const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const myOfficerRecord = incident?.incidentOfficers?.[0];
-  const myArrivedAt = myOfficerRecord?.arrivedAt ?? incident?.arrivedAt;
-  const myLeftAt = myOfficerRecord?.leftAt ?? incident?.leftAt;
+  const myArrivedAt = myOfficerRecord ? myOfficerRecord.arrivedAt : incident?.arrivedAt;
+  const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
   const hasArrived = !!myArrivedAt;
   const hasLeft = !!myLeftAt;
   const isHoldButtonDisabled = (
@@ -462,6 +462,7 @@ function Holds () {
     !primaryBedType ||
     (hasArrived && !hasLeft)
   );
+  const isIncidentCreator = !incident || incident.createdById === user?.id;
   const showExtendActiveHoldsAction = (displayActiveDeflections?.length ?? 0) > 0;
   const incidentHasDetailedHolds = !!displayActiveDeflections?.some(deflection => deflection.subjectId);
 
@@ -498,15 +499,16 @@ function Holds () {
               deflections={displayActiveDeflections}
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
-              onEditIncidentClick={onEditIncidentClick}
+              onEditIncidentClick={isIncidentCreator ? onEditIncidentClick : undefined}
               onHandoffClick={onHandoffClick}
-              onCancelIncidentClick={onOpenCancelIncidentModal}
+              onCancelIncidentClick={isIncidentCreator ? onOpenCancelIncidentModal : undefined}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
               adminCancelledNotice={adminCancelledNotice}
               onDismissAdminCancelledNotice={onDismissAdminCancelledNotice}
               updatedAtMs={lastSyncedAtMs}
               holdsHighlighted={holdsHighlighted}
+              currentUserId={user?.id}
             />
           )}
           {tab === 'history' && (
@@ -515,6 +517,7 @@ function Holds () {
               isFetchingDeflections={isFetchingInactiveDeflections || isFetchingPostTransferActiveDeflections}
               incident={incident}
               hasActiveHolds={(deflections?.length ?? 0) > 0}
+              currentUserId={user?.id}
             />
           )}
           {tab !== 'active' && (
@@ -567,9 +570,11 @@ function Holds () {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
-            Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
-          </Button>
+          {isIncidentCreator && (
+            <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
+              Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
+            </Button>
+          )}
         </ActionFooter>
       )}
       {showActionFooter && <Box h='120px' />}

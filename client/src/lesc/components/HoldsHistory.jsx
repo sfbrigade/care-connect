@@ -7,7 +7,7 @@ import IncidentGroup from './IncidentGroup';
 import Api from '@/Api';
 import { getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
 
-function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false }) {
+function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false, currentUserId }) {
   const navigate = useNavigate();
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
   const hasDeflections = (deflections?.length ?? 0) > 0;
@@ -66,6 +66,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
                       key={deflection.id}
                       deflection={deflection}
                       isHistory
+                      isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
                       onDetailsClick={() => {
                         navigate(`/holds/${deflection.id}`);
                       }}
@@ -81,6 +82,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
                     key={deflection.id}
                     deflection={deflection}
                     isHistory
+                    isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
                     onDetailsClick={() => {
                       navigate(`/holds/${deflection.id}`);
                     }}

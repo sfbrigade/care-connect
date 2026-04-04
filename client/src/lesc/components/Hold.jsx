@@ -11,7 +11,7 @@ import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg'
 import Api from '@/Api';
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
-function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false }) {
+function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false, isHandedOff = false }) {
   const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
@@ -46,7 +46,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isValid = isValidDeflection(deflection);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
 
-  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isArrived;
+  const timerEnabled = !!expiresAt && (isActive || isExpiredStatus) && !isArrived && !isHandedOff;
   const now = useNow(1000, timerEnabled);
   const minutesUntilExpiration = expiresAt
     ? DateTime.fromISO(expiresAt).diff(now, 'minutes').minutes
@@ -55,10 +55,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const canViewDetails = !isHistory && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
-  const canFinishDetails = isActive && !isNew && !isValid && !isExpired && !isCancelled;
-  const canAddDetails = isActive && isNew && !isExpired && !isCancelled;
-  const showFooter = !isHistory && (isActive || canViewDetails);
+  const canViewDetails = !isHistory && !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
+  const canFinishDetails = !isHandedOff && isActive && !isNew && !isValid && !isExpired && !isCancelled;
+  const canAddDetails = !isHandedOff && isActive && isNew && !isExpired && !isCancelled;
+  const showFooter = !isHistory && !isHandedOff && (isActive || canViewDetails);
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -92,7 +92,13 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
                 <Text size='md' c='red.6'>Canceled after expiry</Text>
               </>
             )}
-            {isCustodyTransferred && (
+            {isHandedOff && (
+              <>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='indigo.6'>Handed off</Text>
+              </>
+            )}
+            {!isHandedOff && isCustodyTransferred && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='teal.5'>Transferred</Text>

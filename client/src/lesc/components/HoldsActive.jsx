@@ -51,6 +51,7 @@ function HoldsActive ({
   onDismissAdminCancelledNotice,
   updatedAtMs = 0,
   holdsHighlighted = false,
+  currentUserId,
 }) {
   const navigate = useNavigate();
 
@@ -106,18 +107,30 @@ function HoldsActive ({
             onHandoffClick={onHandoffClick}
             onCancelClick={onCancelIncidentClick}
           >
-            {deflections?.map((deflection) => (
-              <Hold
-                key={deflection.id}
-                incident={incident}
-                deflection={deflection}
-                highlighted={holdsHighlighted}
-                onCancelClick={() => onCancelHoldClick(deflection)}
-                onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                }}
-              />
-            ))}
+            {[...(deflections ?? [])]
+              .sort((a, b) => {
+                const aHandedOff = currentUserId && a.currentOfficerId && a.currentOfficerId !== currentUserId;
+                const bHandedOff = currentUserId && b.currentOfficerId && b.currentOfficerId !== currentUserId;
+                if (aHandedOff && !bHandedOff) return 1;
+                if (!aHandedOff && bHandedOff) return -1;
+                return 0;
+              })
+              .map((deflection) => {
+                const isHandedOff = !!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId;
+                return (
+                  <Hold
+                    key={deflection.id}
+                    incident={incident}
+                    deflection={deflection}
+                    highlighted={holdsHighlighted}
+                    isHandedOff={isHandedOff}
+                    onCancelClick={() => onCancelHoldClick(deflection)}
+                    onDetailsClick={() => {
+                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                    }}
+                  />
+                );
+              })}
           </IncidentGroup>
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>

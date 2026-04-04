@@ -13,7 +13,7 @@ import ActionFooter from '@/components/ActionFooter';
 
 import { useTranslation } from 'react-i18next';
 
-function HandoffHoldCard ({ deflection, isHandedOff }) {
+function HandoffHoldCard ({ deflection, isHandedOff, incidentComplete }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const displayId = String(deflection.id);
@@ -61,7 +61,7 @@ function HandoffHoldCard ({ deflection, isHandedOff }) {
               )
             : (
               <>
-                <LockedQRCode value={handoffUrl} />
+                <LockedQRCode value={handoffUrl} locked={!incidentComplete} />
                 <Text size='sm' c='dimmed'>Handoff code: {deflection.id}</Text>
               </>
               )}
@@ -197,6 +197,7 @@ function HandoffScreen () {
                       key={deflection.id}
                       deflection={deflection}
                       isHandedOff={handedOffIds.has(deflection.id)}
+                      incidentComplete={incidentComplete}
                     />
                   ))}
                 </Stack>
