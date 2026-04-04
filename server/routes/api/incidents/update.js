@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
+import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -53,6 +54,17 @@ export default async function (fastify, opts) {
 
       updated.createdBy = new User(updated.createdBy);
       updated.updatedBy = new User(updated.updatedBy);
+
+      const documents = await fastify.prisma.deflectionDocument.findMany({
+        where: { formId: '647f', deflection: { incidentId: id } },
+      });
+      for (const doc of documents) {
+        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+          deflectionId: doc.deflectionId,
+          userId: request.user.id,
+          formIds: ['647f'],
+        });
+      }
 
       return reply.send(updated);
     });

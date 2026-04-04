@@ -255,6 +255,8 @@ model User {
   invitesAccepted              Invite[]                @relation("AcceptedBy")
   invitesRevoked               Invite[]                @relation("RevokedBy")
   organizationsCreated         Organization[]          @relation("CreatedBy")
+  deflectionDocumentsCreated   DeflectionDocument[]    @relation("CreatedBy")
+  deflectionDocumentsUpdated   DeflectionDocument[]    @relation("UpdatedBy")
   propertyPhotosCreated        PropertyPhoto[]         @relation("CreatedBy")
   propertyPhotosUpdated        PropertyPhoto[]         @relation("UpdatedBy")
   titlesCreated                Title[]                 @relation("CreatedBy")
@@ -573,6 +575,7 @@ model Deflection {
 
   deflectionDetails            DeflectionDetail[]
   deflectionUpdates            DeflectionUpdate[]
+  deflectionDocuments          DeflectionDocument[]
   propertyPhotos               PropertyPhoto[]
 }
 
@@ -702,6 +705,22 @@ model DeflectionExitHousingStatus {
 
   deflections                  Deflection[]
   deflectionUpdates            DeflectionUpdate[]
+}
+
+model DeflectionDocument {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId                 Int
+  formId                       String
+  file                         String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+
+  @@unique([deflectionId, formId])
 }
 
 model PropertyPhoto {

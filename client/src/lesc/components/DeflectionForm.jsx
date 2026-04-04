@@ -17,6 +17,8 @@ import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
 const initialValues = {
   behaviorAdditions: '',
   deflectionDetails: [],
+  drugType: null,
+  drugUseEvidence: null,
   volunteeredToReset: null,
 };
 
@@ -31,6 +33,11 @@ function DeflectionForm () {
   const lastDetailSelectionKeyRef = useRef('');
   const generatedNarrativeRef = useRef('');
   const [generatedNarrative, setGeneratedNarrative] = useState('');
+  const [narrativeContext, setNarrativeContext] = useState({
+    drugType: null,
+    drugUseEvidence: null,
+    volunteeredToReset: null,
+  });
   const [category, setCategory] = useState(null);
 
   const { data: incident } = useQuery({
@@ -55,6 +62,11 @@ function DeflectionForm () {
     mode: 'uncontrolled',
     initialValues,
     onValuesChange: (values) => {
+      setNarrativeContext({
+        drugType: values.drugType ?? null,
+        drugUseEvidence: values.drugUseEvidence ?? null,
+        volunteeredToReset: values.volunteeredToReset ?? null,
+      });
       const nextDetailSelectionKey = getDetailSelectionKey(values.deflectionDetails);
       if (nextDetailSelectionKey !== lastDetailSelectionKeyRef.current) {
         lastDetailSelectionKeyRef.current = nextDetailSelectionKey;
@@ -72,7 +84,14 @@ function DeflectionForm () {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
           deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
+          drugType: deflection.drugType,
+          drugUseEvidence: deflection.drugUseEvidence,
           volunteeredToReset: deflection.volunteeredToReset,
+        });
+        setNarrativeContext({
+          drugType: normalized.drugType,
+          drugUseEvidence: normalized.drugUseEvidence,
+          volunteeredToReset: normalized.volunteeredToReset,
         });
         form.initialize(normalized);
       }
@@ -92,11 +111,14 @@ function DeflectionForm () {
       nextGeneratedNarrative = buildDeflectionNarrative({
         incident,
         observedBehaviorNames: selectedDetails.map(detail => detail?.name),
+        drugType: narrativeContext.drugType,
+        drugUseEvidence: narrativeContext.drugUseEvidence,
+        volunteeredToReset: narrativeContext.volunteeredToReset,
       });
     }
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [incident, selectedDetails]);
+  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset, selectedDetails]);
 
   function countValues (values) {
     const newSelectedDetails = [];
@@ -125,6 +147,8 @@ function DeflectionForm () {
       deflectionDetails: [...(values.deflectionDetails ?? [])]
         .map((detailId) => detailId)
         .sort((a, b) => String(a).localeCompare(String(b))),
+      drugType: values.drugType ?? null,
+      drugUseEvidence: values.drugUseEvidence ?? null,
       volunteeredToReset: values.volunteeredToReset ?? null,
     };
   }
@@ -254,7 +278,7 @@ function DeflectionForm () {
                 {...form.getInputProps('volunteeredToReset')}
                 key={form.key('volunteeredToReset')}
                 label='Person volunteered to be taken to RESET'
-                description={<Text c='gray.5' size='sm'>Optional</Text>}
+                description='Optional'
               />
               <Input.Wrapper label='647(f) narrative'>
                 <Text size='md' mb='xs' c='dimmed'>This text is auto-generated and will be inserted in the 647(f). Add to it using the form below.</Text>
