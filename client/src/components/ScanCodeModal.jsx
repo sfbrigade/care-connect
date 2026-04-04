@@ -39,7 +39,6 @@ function ScanCodeModal ({
     try {
       await onScan(text);
     } catch (err) {
-      if (forQrCamera) setScanAccepted(false);
       throw err;
     }
     if (forQrCamera) setScanAccepted(true);
@@ -209,54 +208,45 @@ function ScanCodeModal ({
               </Box>
               )
             : (
-              <>
                 <Box className={classes.scanRoot}>
-                  <Box className={classes.scanCameraRegion}>
-                    <QRScanner
-                      onScanSuccess={(text) => handleScan(text, true)}
-                      autoStart
-                      fullScreen
-                      prompt={prompt}
-                      _debugScanPhase={_debugScanPhase}
-                    />
+                  <QRScanner
+                    onScanSuccess={(text) => handleScan(text, true)}
+                    autoStart
+                    fullScreen
+                    prompt={prompt}
+                    _debugScanPhase={_debugScanPhase}
+                  />
+
+                  <Box className={classes.scanFooter}>
+                    {prompt && (
+                      <Text c='white' ta='center' fw={500} size='lg' maw={300} mx='auto'>
+                        {prompt}
+                      </Text>
+                    )}
                   </Box>
 
-                  <Stack
-                    className={classes.scanOverlay}
-                    gap={0}
-                    align='stretch'
-                    justify='flex-start'
-                  >
-                    <Box className={classes.scanSpacer} />
+                  <Box className={classes.scanDoneButton}>
+                    <Button
+                      variant='filled'
+                      color='blue.7'
+                      c='white'
+                      size='lg'
+                      radius='xl'
+                      disabled={!scanAccepted}
+                      onClick={handleClose}
+                    >
+                      Done
+                    </Button>
+                  </Box>
 
-                    <Stack className={classes.scanFooter} align='center' gap='lg' w='100%' maw={400} mx='auto' px='xl'>
-                      {prompt && (
-                        <Text c='white' ta='center' fw={500} size='lg' maw={300}>
-                          {prompt}
-                        </Text>
-                      )}
-                      <Button
-                        variant='filled'
-                        color='blue.7'
-                        c='white'
-                        size='lg'
-                        radius='xl'
-                        disabled={!scanAccepted}
-                        onClick={handleClose}
-                      >
-                        Done
-                      </Button>
-                    </Stack>
-                  </Stack>
+                  <Box className={classes.scanControlsOverlay}>
+                    <SegmentedControl
+                      manualEntry={manualEntry}
+                      onClose={handleClose}
+                      onManualEntryChange={setManualEntry}
+                    />
+                  </Box>
                 </Box>
-                <Box className={classes.scanControlsOverlay}>
-                  <SegmentedControl
-                    manualEntry={manualEntry}
-                    onClose={handleClose}
-                    onManualEntryChange={setManualEntry}
-                  />
-                </Box>
-              </>
               )}
         </Stack>
       )}

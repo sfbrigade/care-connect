@@ -13,15 +13,15 @@ export default function SegmentedControl ({ manualEntry, onClose, onManualEntryC
     <>
       <Group justify='flex-end' w='100%' pt='xl' px='xl'>
         <ActionIcon
-          variant={manualEntry ? 'subtle' : 'white'}
-          color='dark'
+          variant='filled'
+          color={manualEntry ? '#868E961A' : '#3B3B3B'}
           size='xl'
           radius='xl'
           p='sm'
           onClick={onClose}
           aria-label='Close'
         >
-          <IconX size={24} />
+          <IconX color={manualEntry ? '#3B3B3B' : 'white'} size={24} />
         </ActionIcon>
       </Group>
       <Box className={classes.segmentWrap}>

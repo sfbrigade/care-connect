@@ -358,34 +358,32 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           ref={scannerRef}
           className={classes.fullScreen}
         />
-        <div className={classes.prompt}>
-          <div className={classes.promptViewfinderCenter}>
-            {displayPhase === 'idle' && <Viewfinder />}
-            {displayPhase === 'pending' && <Loader color='white' size='xl' />}
-            {displayPhase === 'success' && <Viewfinder success />}
-            {displayPhase === 'error' && <Viewfinder error />}
-          </div>
-          <Stack align='center' gap='xs' className={classes.promptBelowViewfinder}>
-            <Center maw={300} mih='5.5rem' w='100%'>
-              {(displayPhase === 'success' || displayPhase === 'error') && (
-                <Text
-                  ta='center'
-                  fw={500}
-                  size='lg'
-                  maw={300}
-                  style={{
-                    color: displayPhase === 'success' ? VIEWFINDER_COLOR.success : VIEWFINDER_COLOR.error,
-                  }}
-                  className={classes.promptText}
-                >
-                  {displayPhase === 'success'
-                    ? FULLSCREEN_SCAN_STATUS_TEXT.success
-                    : FULLSCREEN_SCAN_STATUS_TEXT.error}
-                </Text>
-              )}
-            </Center>
-          </Stack>
+        <div className={classes.promptViewfinderCenter}>
+          {displayPhase === 'idle' && <Viewfinder />}
+          {displayPhase === 'pending' && <Loader color='white' size='xl' />}
+          {displayPhase === 'success' && <Viewfinder success />}
+          {displayPhase === 'error' && <Viewfinder error />}
         </div>
+        <Stack align='center' gap='xs' className={classes.promptBelowViewfinder}>
+          <Center maw={300} mih='5.5rem' w='100%'>
+            {(displayPhase === 'success' || displayPhase === 'error') && (
+              <Text
+                ta='center'
+                fw={500}
+                size='lg'
+                maw={300}
+                style={{
+                  color: displayPhase === 'success' ? VIEWFINDER_COLOR.success : VIEWFINDER_COLOR.error,
+                }}
+                className={classes.promptText}
+              >
+                {displayPhase === 'success'
+                  ? FULLSCREEN_SCAN_STATUS_TEXT.success
+                  : FULLSCREEN_SCAN_STATUS_TEXT.error}
+              </Text>
+            )}
+          </Center>
+        </Stack>
       </>
     );
   }

@@ -1,36 +1,32 @@
-/* Scan area below chrome — flex-grow only (no height:100%: breaks camera in modal) */
+/*
+ * Viewfinder is the layout anchor. All surrounding elements
+ * (SegmentedControl above, prompt text + Done below) are
+ * positioned relative to its edges via these two tokens.
+ */
 .scanRoot {
+  --viewfinder-size: 240px;
+  --viewfinder-gap: var(--mantine-spacing-md);
   position: relative;
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
 }
 
-.scanCameraRegion {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.scanOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 11;
-  pointer-events: none;
-}
-
-.scanSpacer {
-  flex: 1;
-  min-height: 0;
-}
-
 .scanFooter {
-  flex-shrink: 0;
-  padding-bottom: calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
-  pointer-events: auto;
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% + var(--viewfinder-size) / 2 + 88px);
+  height: 48px;
+  z-index: 11;
+}
+
+.scanDoneButton {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
+  z-index: 11;
+  display: flex;
+  justify-content: center;
 }
 
 .manualFormScroll {
@@ -39,12 +35,10 @@
   overflow: auto;
 }
 
-/* Floated over scanRoot in camera mode; overflow visible so camera/viewfinder can read as “under” this row */
 .scanControlsOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
+  bottom: calc(50% + var(--viewfinder-size) / 2 + 68px);
   z-index: 20;
   pointer-events: none;
 }
@@ -56,27 +50,23 @@
 .segmentWrap {
   display: flex;
   justify-content: center;
-  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) var(--mantine-spacing-md);
+  padding: 35px var(--mantine-spacing-md) 0;
 }
 
 .segmentedRoot {
+  --sc-padding: var(--mantine-spacing-3xs, 4px);
   width: 100%;
   max-width: 266px;
   min-height: 44px;
-  padding: var(--mantine-spacing-3xs, 4px);
-  margin-inline: auto;
   border-radius: var(--mantine-radius-xl);
   background: var(--mantine-color-dark-5, #3b3b3b);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.45);
 }
 
 .segmentedIndicator {
-  border-radius: var(--mantine-radius-xl);
+  border-radius: calc(var(--mantine-radius-xl) - var(--mantine-spacing-3xs, 4px));
   background-color: var(--mantine-color-gray-6);
-}
-
-.segmentedControl {
-  transition: background-color 120ms ease, color 120ms ease;
+  height: calc(100% - 2 * var(--mantine-spacing-3xs, 4px)) !important;
 }
 
 .segmentedLabel {
@@ -84,6 +74,10 @@
   font-weight: 500;
   color: rgb(255 255 255 / 0.78);
   transition: color 120ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
 .segmentedLabel:hover {
