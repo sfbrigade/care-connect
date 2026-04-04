@@ -97,6 +97,7 @@ function CustodyCard ({ deflection, highlighted }) {
           {showViewDetails && (
             <Button
               variant='secondary'
+              size='md'
               onClick={() => {
                 window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
                 navigate(`/custody/${deflection.id}`);
@@ -107,10 +108,11 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showMarkComplete && (
             <Button
+              size='md'
               onClick={() => safetyCheckMutation.mutate()}
               loading={safetyCheckMutation.isPending}
             >
-              Safety checked
+              Mark complete
             </Button>
           )}
           {showLegalRelease && (
@@ -123,6 +125,7 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showStartRelease && (
             <Button
+              size='md'
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Start release
