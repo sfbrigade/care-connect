@@ -14,6 +14,15 @@ export default async function main (prisma) {
       badgeNumber: '1234',
     },
     {
+      email: 'sfpd2@careconnectsf.org',
+      firstName: 'SFPD2',
+      lastName: 'User',
+      isAdmin: false,
+      organizationId: 'sfpd',
+      roles: ['FIELD'],
+      badgeNumber: '4321',
+    },
+    {
       email: 'sfso@careconnectsf.org',
       firstName: 'SFSO',
       lastName: 'User',
