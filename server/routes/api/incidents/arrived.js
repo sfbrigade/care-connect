@@ -93,6 +93,16 @@ export default async function (fastify, opts) {
         )));
       });
 
+      // Re-fetch incident with incidentOfficers to ensure response reflects updated state
+      incident = await fastify.prisma.incident.findUnique({
+        where: { id },
+        include: {
+          incidentOfficers: {
+            where: { officerId: request.user.id },
+          },
+        },
+      });
+
       deflections.forEach((deflection) => {
         deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
       });

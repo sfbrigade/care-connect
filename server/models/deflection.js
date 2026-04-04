@@ -94,6 +94,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
   exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
+  currentOfficerId: z.string().uuid().nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),

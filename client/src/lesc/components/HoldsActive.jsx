@@ -43,6 +43,7 @@ function HoldsActive ({
   isFetchingDeflections,
   onCancelHoldClick,
   onEditIncidentClick,
+  onHandoffClick,
   onCancelIncidentClick,
   autoCancelledNotice,
   onDismissAutoCancelledNotice,
@@ -102,6 +103,7 @@ function HoldsActive ({
             incident={incident}
             incidentId={incident?.id}
             onEditClick={onEditIncidentClick}
+            onHandoffClick={onHandoffClick}
             onCancelClick={onCancelIncidentClick}
           >
             {deflections?.map((deflection) => (

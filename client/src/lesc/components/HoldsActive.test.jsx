@@ -37,6 +37,7 @@ function renderHoldsActive (props) {
             isFetchingDeflections={false}
             onCancelHoldClick={vi.fn()}
             onEditIncidentClick={vi.fn()}
+            onHandoffClick={vi.fn()}
             onCancelIncidentClick={vi.fn()}
             {...props}
           />

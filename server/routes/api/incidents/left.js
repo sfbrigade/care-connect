@@ -28,11 +28,14 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      // Allow if user is the creator, or currently holds deflections on this incident
+      // Allow if user is the creator, holds deflections, or has an IncidentOfficer record (arrived but not left)
       const holdsDeflections = await fastify.prisma.deflection.count({
         where: { incidentId: id, currentOfficerId: request.user.id, status: 'ACTIVE' },
       });
-      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0) {
+      const hasOfficerRecord = await fastify.prisma.incidentOfficer.count({
+        where: { incidentId: id, facilityId: incident.facilityId, officerId: request.user.id, arrivedAt: { not: null }, leftAt: null },
+      });
+      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0 && hasOfficerRecord === 0) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -65,6 +68,11 @@ export default async function (fastify, opts) {
         incident = await tx.incident.update({
           where: { id },
           data: updateData,
+          include: {
+            incidentOfficers: {
+              where: { officerId: request.user.id },
+            },
+          },
         });
       });
 

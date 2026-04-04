@@ -23,23 +23,26 @@ export function shouldShowTransferredHoldsPrompt (incident, deflections) {
   return !!incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0;
 }
 
-export function getTransferredDeflectionsForIncident (deflections = [], incidentId) {
+export function getTransferredDeflectionsForIncident (deflections = [], incidentId, currentUserId) {
   if (!incidentId) return [];
 
-  return deflections.filter((deflection) => (
-    deflection.incidentId === incidentId &&
-    isCustodyTransferredStatus(deflection.subjectStatus)
-  ));
+  return deflections.filter((deflection) => {
+    if (deflection.incidentId !== incidentId) return false;
+    if (!isCustodyTransferredStatus(deflection.subjectStatus)) return false;
+    // Exclude holds that were handed off to a different officer
+    if (currentUserId && deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId) return false;
+    return true;
+  });
 }
 
-export function buildActiveHoldDisplayDeflections (activeDeflections = [], historyDeflections = [], incident) {
+export function buildActiveHoldDisplayDeflections (activeDeflections = [], historyDeflections = [], incident, currentUserId) {
   if (!incident?.id) return activeDeflections;
 
   if ((activeDeflections?.length ?? 0) === 0) {
     return activeDeflections;
   }
 
-  const transferredDeflections = getTransferredDeflectionsForIncident(historyDeflections, incident.id);
+  const transferredDeflections = getTransferredDeflectionsForIncident(historyDeflections, incident.id, currentUserId);
   const combinedDeflections = [...activeDeflections, ...transferredDeflections];
   const byId = new Map();
 

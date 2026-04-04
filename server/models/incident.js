@@ -50,6 +50,14 @@ const IncidentResponseSchema = IncidentCreateSchema.extend({
   updatedBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),
   deflections: z.array(Deflection.ResponseSchema).optional(),
+  incidentOfficers: z.array(z.object({
+    id: z.string().uuid(),
+    officerId: z.string().uuid(),
+    role: z.enum(['ARRESTING', 'RECEIVING']),
+    arrivedAt: z.coerce.date().nullable(),
+    leftAt: z.coerce.date().nullable(),
+    handedOffAt: z.coerce.date().nullable(),
+  })).optional(),
 });
 
 export class Incident extends Base {

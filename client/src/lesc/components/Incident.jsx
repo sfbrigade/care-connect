@@ -3,7 +3,7 @@ import { IconDots, IconFileExport, IconPencilMinus, IconTrash } from '@tabler/ic
 import { formatSmartDateTime } from '@/utils/format';
 import { isValidIncident } from '@/utils/validators';
 
-function Incident ({ incident, incidentId, onEditClick, onCancelClick }) {
+function Incident ({ incident, incidentId, onEditClick, onHandoffClick, onCancelClick }) {
   const isIncomplete = incident ? !isValidIncident(incident) : false;
   const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
   const displayId = incident?.id ?? incidentId ?? '';
@@ -24,7 +24,7 @@ function Incident ({ incident, incidentId, onEditClick, onCancelClick }) {
           <Text c='dimmed' size='md'>{incident?.arrestedAt ? formatSmartDateTime(incident.arrestedAt) : 'Time unavailable'}</Text>
         </Group>
       </Box>
-      {(onEditClick || onCancelClick) && (
+      {(onEditClick || onHandoffClick || onCancelClick) && (
         <Box>
           <Menu
             position='bottom-end'
@@ -51,11 +51,14 @@ function Incident ({ incident, incidentId, onEditClick, onCancelClick }) {
               >
                 Edit details
               </Menu.Item>
-              <Menu.Item
-                leftSection={<IconFileExport size={18} color='var(--mantine-color-gray-5)' />}
-              >
-                Handoff
-              </Menu.Item>
+              {onHandoffClick && (
+                <Menu.Item
+                  leftSection={<IconFileExport size={18} color='var(--mantine-color-gray-5)' />}
+                  onClick={onHandoffClick}
+                >
+                  Handoff
+                </Menu.Item>
+              )}
               <Menu.Item
                 c='red.6'
                 leftSection={<IconTrash size={18} color='var(--mantine-color-red-4)' />}

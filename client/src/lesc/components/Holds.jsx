@@ -19,6 +19,7 @@ import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
+import ScanHandoffCodeModal from './ScanHandoffCodeModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
@@ -50,6 +51,7 @@ function Holds () {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [holdsHighlighted, setHoldsHighlighted] = useState(false);
+  const [scanHandoffModalOpened, setScanHandoffModalOpened] = useState(false);
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
@@ -120,7 +122,7 @@ function Holds () {
   });
 
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? [], handedOffDeflections ?? []);
-  const displayActiveDeflections = buildActiveHoldDisplayDeflections(deflections ?? [], historyDeflections, incident);
+  const displayActiveDeflections = buildActiveHoldDisplayDeflections(deflections ?? [], historyDeflections, incident, user?.id);
   const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, incident, (deflections?.length ?? 0) > 0);
 
   const [tab, setTab] = useSessionState('holds', 'active');
@@ -263,7 +265,8 @@ function Holds () {
   const markLeftMutation = useMutation({
     mutationFn: (id) => Api.incidents.left(id),
     onSuccess: (response) => {
-      const leftAt = response?.data?.leftAt;
+      const officerRecord = response?.data?.incidentOfficers?.[0];
+      const leftAt = officerRecord?.leftAt ?? response?.data?.leftAt;
       const facilityName = facility?.name ?? 'RESET';
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
@@ -431,6 +434,10 @@ function Holds () {
     navigate('/incident');
   }
 
+  function onHandoffClick () {
+    navigate('/incident/handoff');
+  }
+
   function onExtendActiveHoldsClick () {
     if (incident?.id) {
       extendAllHoldsMutation.mutate(incident.id);
@@ -441,8 +448,11 @@ function Holds () {
   const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
   const isClosed = facility.status === 'CLOSED';
   const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
-  const hasArrived = !!incident?.arrivedAt;
-  const hasLeft = !!incident?.leftAt;
+  const myOfficerRecord = incident?.incidentOfficers?.[0];
+  const myArrivedAt = myOfficerRecord?.arrivedAt ?? incident?.arrivedAt;
+  const myLeftAt = myOfficerRecord?.leftAt ?? incident?.leftAt;
+  const hasArrived = !!myArrivedAt;
+  const hasLeft = !!myLeftAt;
   const isHoldButtonDisabled = (
     markArrivedMutation.isPending ||
     markLeftMutation.isPending ||
@@ -465,8 +475,8 @@ function Holds () {
           <Facility
             facility={facility}
             bedTypes={bedTypes ?? facility.bedTypes}
-            arrivedAt={incident?.arrivedAt}
-            leftAt={incident?.leftAt}
+            arrivedAt={myArrivedAt}
+            leftAt={myLeftAt}
             hasActiveHold={(deflections?.length ?? 0) > 0}
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
@@ -489,6 +499,7 @@ function Holds () {
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
               onEditIncidentClick={onEditIncidentClick}
+              onHandoffClick={onHandoffClick}
               onCancelIncidentClick={onOpenCancelIncidentModal}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
@@ -550,6 +561,7 @@ function Holds () {
               )}
               <Menu.Item
                 leftSection={<IconScan size={18} color='var(--mantine-color-gray-5)' />}
+                onClick={() => setScanHandoffModalOpened(true)}
               >
                 Scan a handoff code
               </Menu.Item>
@@ -575,6 +587,18 @@ function Holds () {
           onConfirm={onCancelIncidentConfirmed}
           requiresReason={incidentHasDetailedHolds}
           loading={cancelIncidentMutation.isPending}
+        />
+      )}
+      {scanHandoffModalOpened && (
+        <ScanHandoffCodeModal
+          opened={scanHandoffModalOpened}
+          onClose={() => setScanHandoffModalOpened(false)}
+          onSuccess={() => {
+            setScanHandoffModalOpened(false);
+            queryClient.invalidateQueries({ queryKey: ['deflections'] });
+            queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
+            setTab('active');
+          }}
         />
       )}
     </>
