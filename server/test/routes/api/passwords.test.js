@@ -91,7 +91,7 @@ test('/api/passwords', async (t) => {
       );
     });
 
-    await t.test('sets a new password and logs user in', async (t) => {
+    await t.test('sets a new password without logging user in', async (t) => {
       let response = await app.inject().post('/api/passwords').payload({
         email: 'regular.user@test.com',
       });
@@ -101,48 +101,47 @@ test('/api/passwords', async (t) => {
         password: 'Abcdef12345!',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const cookie = response.headers['set-cookie']
-        ?.split(';')
-        .map((t) => t.trim());
-      assert.ok(cookie[0].startsWith('session='));
-      assert.ok(cookie.includes('HttpOnly'));
-      // Will be Secure only in production
-      // assert.ok(cookie.includes('Secure'));
-      assert.ok(cookie.includes('SameSite=Strict'));
 
+      // Should NOT set session cookie
+      const cookie = response.headers['set-cookie'];
+      assert.ok(!cookie || !cookie.includes('session='));
+
+      // Should return simple message
       data = JSON.parse(response.body);
-      assert.deepStrictEqual(data, {
-        id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
-        firstName: 'Regular',
-        lastName: 'User',
-        email: 'regular.user@test.com',
-        isAdmin: false,
-        roles: ['FIELD'],
-        picture: null,
-        pictureUrl: null,
-        organization: {
-          id: 'sfpd',
-          name: 'SFPD',
-          defaultRoles: ['FIELD'],
-          createdById: '555740af-17e9-48a3-93b8-d5236dfd2c29',
-          createdAt: data.organization.createdAt,
-          updatedAt: data.organization.updatedAt,
-        },
-        organizationId: 'sfpd',
-        badgeNumber: null,
-        title: null,
-        titleId: null,
-        prop115Certified: false,
-        unit: null,
-        unitId: null,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-        deactivatedAt: null,
-      });
+      assert.deepStrictEqual(data.message, 'Password updated');
 
+      // Password should be updated
+      const user = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const updatedUser = new User(user);
+      assert.ok(await updatedUser.comparePassword('Abcdef12345!'));
+
+      // Reset token should be cleared
+      assert.deepStrictEqual(user.passwordResetToken, null);
+      assert.deepStrictEqual(user.passwordResetExpiresAt, null);
+    });
+
+    await t.test('rejects reuse of current password', async (t) => {
+      // First, set a known password
+      await app.inject().post('/api/passwords').payload({
+        email: 'regular.user@test.com',
+      });
+      let data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      let response = await app.inject().patch(`/api/passwords/${data.passwordResetToken}`).payload({
+        password: 'NewPassword123!',
+      });
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      // Now request another reset and try to set the same password
+      await app.inject().post('/api/passwords').payload({
+        email: 'regular.user@test.com',
+      });
       data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      assert.ok(user.comparePassword('Abcd1234!'));
+      response = await app.inject().patch(`/api/passwords/${data.passwordResetToken}`).payload({
+        password: 'NewPassword123!',
+      });
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const error = JSON.parse(response.body);
+      assert.ok(error.errors[0].message.includes('reuse'));
     });
   });
 });

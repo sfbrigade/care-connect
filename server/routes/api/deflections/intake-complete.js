@@ -42,7 +42,7 @@ export default async function (fastify, opts) {
 
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = deflection;
-        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
 
         deflection = await tx.deflection.findUnique({
           where: { id },
@@ -89,6 +89,33 @@ export default async function (fastify, opts) {
             propertyPhotos: true,
           },
         });
+
+        // When intake is completed (ADMITTED → IN_CHAIR), transition from hold to occupied.
+        // When intake fails (ADMITTED → FAILED_INTAKE), both are holds so no count change.
+        if (completed) {
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied: occupied + 1,
+            holds: Math.max(0, holds - 1),
+            available,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
+          await tx.bedType.update({
+            where: { id: bedTypeId },
+            data: updatedData,
+          });
+        }
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

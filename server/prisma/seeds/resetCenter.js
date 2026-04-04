@@ -11,7 +11,7 @@ export default async function main (prisma) {
     serviceTypeId: 'lesc',
     subdomain: 'reset',
     addressLine1: '444 6th St',
-    phone: '(415) 123-1234',
+    phone: '(415) 684-1902',
     createdById: admin.id,
     updatedById: admin.id,
   };

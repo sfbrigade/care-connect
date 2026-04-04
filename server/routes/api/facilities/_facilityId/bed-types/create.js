@@ -6,7 +6,7 @@ import BedType from '#models/bedType.js';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
-      onRequest: fastify.requireAuth,
+      onRequest: fastify.requireAdmin,
       schema: {
         description: 'Create a new bed type for a facility.',
         params: z.object({

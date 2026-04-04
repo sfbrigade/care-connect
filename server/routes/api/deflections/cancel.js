@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -80,13 +81,18 @@ export default async function (fastify, opts) {
               propertyPhotos: true,
             },
           });
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const isInTransit = [
+            Deflection.SubjectStatus.DETAINED,
+            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+          ].includes(deflection.subjectStatus);
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
             capacity,
             unavailableUnoccupied,
             unavailableOccupied,
             occupied,
             holds: holds - 1,
+            inTransit: isInTransit ? Math.max(0, inTransit - 1) : inTransit,
             available: available + 1,
             updateMethod: 'API',
             updatedById: request.user.id,
@@ -124,6 +130,21 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      // Send email if cancelled by someone other than the creator
+      if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {
+        const [creator, facility] = await Promise.all([
+          fastify.prisma.user.findUnique({ where: { id: deflection.createdById } }),
+          fastify.prisma.facility.findUnique({ where: { id: deflection.facilityId } }),
+        ]);
+        if (creator && facility) {
+          await sendHoldCancelledEmails(
+            [{ ...deflection, createdBy: creator }],
+            facility.name,
+            request.user.id
+          );
+        }
+      }
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

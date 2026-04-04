@@ -94,6 +94,7 @@ export default async function (fastify) {
         orderBy: { createdAt: 'desc' },
         include: {
           subject: true,
+          createdBy: true,
           cancelReason: true,
           releaseReason: true,
           refusalReason: true,

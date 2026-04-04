@@ -103,6 +103,7 @@ test('/api/incidents', async (t) => {
       });
       assert.ok(bedType);
       assert.deepStrictEqual(bedType.holds, 5);
+      assert.deepStrictEqual(bedType.inTransit, 4);
       assert.deepStrictEqual(bedType.available, 3);
     });
 
@@ -289,6 +290,7 @@ test('/api/incidents', async (t) => {
         where: { id: bedTypeId },
       });
       assert.deepStrictEqual(afterBedType.holds, beforeBedType.holds);
+      assert.deepStrictEqual(afterBedType.inTransit, beforeBedType.inTransit);
       assert.deepStrictEqual(afterBedType.available, beforeBedType.available);
     });
 

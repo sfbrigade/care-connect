@@ -277,6 +277,16 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "BedTypeUnavailableReason" {
+    String id "🗝️"
+    String description 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
   "FacilityContact" {
     String id "🗝️"
     String facilityId 
@@ -318,9 +328,12 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     DateTime createdAt 
     String createdById 
+    String unavailableReasonId "❓"
+    String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
@@ -337,7 +350,10 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
+    String unavailableReasonId "❓"
+    String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
@@ -603,6 +619,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o|--|o "Unit" : "unit"
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
+    "User" o{--}o "BedTypeUnavailableReason" : ""
+    "User" o{--}o "BedTypeUnavailableReason" : ""
     "User" o{--}o "BedTypeUpdate" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
@@ -667,16 +685,22 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "FacilityStatusReason" o|--|o "FacilityTypeEnum" : "enum:type"
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
+    "BedTypeUnavailableReason" o|--|| "User" : "createdBy"
+    "BedTypeUnavailableReason" o|--|| "User" : "updatedBy"
+    "BedTypeUnavailableReason" o{--}o "BedType" : ""
+    "BedTypeUnavailableReason" o{--}o "BedTypeUpdate" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
     "BedType" o|--|| "Facility" : "facility"
     "BedType" o|--|| "BedTypeEnum" : "enum:type"
     "BedType" o|--|| "User" : "createdBy"
+    "BedType" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
     "BedType" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedType" o|--|| "User" : "updatedBy"
     "BedType" o{--}o "Deflection" : ""
     "BedType" o{--}o "BedTypeUpdate" : ""
     "BedTypeUpdate" o|--|| "BedType" : "bedType"
     "BedTypeUpdate" o|--|| "Facility" : "facility"
+    "BedTypeUpdate" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
     "BedTypeUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedTypeUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
