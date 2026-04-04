@@ -63,16 +63,17 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
           {showViewDetails && (
             <Button
               variant='secondary'
+              size='md'
               onClick={() => navigate(`/care/${deflection.id}`)}
             >
               View details
             </Button>
           )}
           {isInMedicalIntake && (
-            <Button onClick={onCompleteIntake}>Complete intake</Button>
+            <Button size='md' onClick={onCompleteIntake}>Complete intake</Button>
           )}
           {isReleased && (
-            <Button onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
+            <Button size='md' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
           )}
         </Group>
       </Stack>

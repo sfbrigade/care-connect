@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -14,7 +15,7 @@ import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
@@ -25,14 +26,14 @@ const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently in a sobering chair. If legally released, you can start their exit process.' },
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
-  { status: 'STILL_ONSITE', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
-  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
+  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -163,13 +164,13 @@ function Care () {
               { label: 'Not in custody', value: 'not-in-custody' },
             ]}
           />
-
+          <FacilityStatusBanner />
           {tab === 'in-custody' && (
             hasInCustody
               ? (
                 <StatusAccordion
                   sections={IN_CUSTODY_SECTIONS}
-                  groupedDeflections={groupedInCustody}
+                  groupedItems={groupedInCustody}
                   renderCard={(d) =>
                     <CareCard
                       key={d.id}
@@ -191,7 +192,7 @@ function Care () {
           {tab === 'not-in-custody' && (
             <StatusAccordion
               sections={NOT_IN_CUSTODY_SECTIONS}
-              groupedDeflections={groupedNotInCustody}
+              groupedItems={groupedNotInCustody}
               renderCard={(d) =>
                 <CareCard
                   key={d.id}

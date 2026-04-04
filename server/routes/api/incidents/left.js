@@ -32,8 +32,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      await fastify.prisma.deflection.expire();
-
       await fastify.prisma.$transaction(async (tx) => {
         const now = new Date();
         incident = await tx.incident.update({
