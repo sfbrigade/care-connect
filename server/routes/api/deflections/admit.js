@@ -33,9 +33,6 @@ export default async function (fastify, opts) {
       }
 
       await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
         deflection = await tx.deflection.findUnique({
           where: { id },
         });
@@ -44,6 +41,8 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
         // update deflection
+        // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses.
+        // The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR).
         const now = new Date();
         await tx.deflectionUpdate.create({
           data: {
@@ -66,31 +65,6 @@ export default async function (fastify, opts) {
             deflectionDetails: true,
             propertyPhotos: true,
           },
-        });
-        // update bed type counts
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied + 1,
-          holds: holds - 1,
-          available,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          }
-        });
-        await tx.bedType.update({
-          where: {
-            id: bedTypeId,
-          },
-          data: updatedData,
         });
       });
 

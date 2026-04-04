@@ -10,6 +10,7 @@ import {
   formatDob,
   formatInputDob,
   formatDateTime,
+  formatSmartDateTime,
 } from './format';
 
 describe('format utils', () => {
@@ -195,6 +196,22 @@ describe('format utils', () => {
 
     it('returns TBD for null date', () => {
       expect(formatDateTime(null)).toBe('TBD');
+    });
+  });
+
+  describe('formatSmartDateTime', () => {
+    it('returns time only for today', () => {
+      const today = '2023-05-15T14:30:00.000Z';
+      const result = formatSmartDateTime(today);
+      expect(result).toMatch(/2:30\s?PM/);
+      expect(result).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it('returns date + time for a different day', () => {
+      const yesterday = '2023-05-14T14:30:00.000Z';
+      const result = formatSmartDateTime(yesterday);
+      expect(result).toMatch(/05\/14\/2023/);
+      expect(result).toMatch(/2:30\s?PM/);
     });
   });
 });

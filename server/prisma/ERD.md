@@ -88,10 +88,13 @@ OTHER OTHER
 
 
         DrugTypeEnum {
-            INTOXICATING_LIQUOR INTOXICATING_LIQUOR
-DRUG DRUG
-TOLUENE TOLUENE
-COMBINATION COMBINATION
+            CNS_DEPRESSANTS CNS_DEPRESSANTS
+CNS_STIMULANTS CNS_STIMULANTS
+HALLUCINOGENS HALLUCINOGENS
+DISSOCIATIVE_ANESTHETICS DISSOCIATIVE_ANESTHETICS
+NARCOTIC_ANALGESICS NARCOTIC_ANALGESICS
+INHALANTS INHALANTS
+CANNABIS CANNABIS
         }
     
 
@@ -278,6 +281,16 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "BedTypeUnavailableReason" {
+    String id "🗝️"
+    String description 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
   "FacilityContact" {
     String id "🗝️"
     String facilityId 
@@ -319,9 +332,12 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
     DateTime createdAt 
     String createdById 
+    String unavailableReasonId "❓"
+    String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
@@ -338,7 +354,10 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int unavailableOccupied 
     Int occupied 
     Int holds 
+    Int inTransit 
     Int available 
+    String unavailableReasonId "❓"
+    String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
     DateTime updatedAt 
@@ -530,6 +549,18 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "DeflectionDocument" {
+    String id "🗝️"
+    Int deflectionId 
+    String formId 
+    String file 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
@@ -604,6 +635,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o|--|o "Unit" : "unit"
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
+    "User" o{--}o "BedTypeUnavailableReason" : ""
+    "User" o{--}o "BedTypeUnavailableReason" : ""
     "User" o{--}o "BedTypeUpdate" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
@@ -638,6 +671,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
+    "User" o{--}o "DeflectionDocument" : ""
+    "User" o{--}o "DeflectionDocument" : ""
     "User" o{--}o "PropertyPhoto" : ""
     "User" o{--}o "PropertyPhoto" : ""
     "Invite" o|--|o "Organization" : "organization"
@@ -668,16 +703,22 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "FacilityStatusReason" o|--|o "FacilityTypeEnum" : "enum:type"
     "FacilityStatusReason" o|--|| "User" : "createdBy"
     "FacilityStatusReason" o|--|| "User" : "updatedBy"
+    "BedTypeUnavailableReason" o|--|| "User" : "createdBy"
+    "BedTypeUnavailableReason" o|--|| "User" : "updatedBy"
+    "BedTypeUnavailableReason" o{--}o "BedType" : ""
+    "BedTypeUnavailableReason" o{--}o "BedTypeUpdate" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
     "BedType" o|--|| "Facility" : "facility"
     "BedType" o|--|| "BedTypeEnum" : "enum:type"
     "BedType" o|--|| "User" : "createdBy"
+    "BedType" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
     "BedType" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedType" o|--|| "User" : "updatedBy"
     "BedType" o{--}o "Deflection" : ""
     "BedType" o{--}o "BedTypeUpdate" : ""
     "BedTypeUpdate" o|--|| "BedType" : "bedType"
     "BedTypeUpdate" o|--|| "Facility" : "facility"
+    "BedTypeUpdate" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
     "BedTypeUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedTypeUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
@@ -714,6 +755,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionDetail" : ""
     "Deflection" o{--}o "DeflectionUpdate" : ""
+    "Deflection" o{--}o "DeflectionDocument" : ""
     "Deflection" o{--}o "PropertyPhoto" : ""
     "DeflectionDetailCategory" o|--|| "User" : "createdBy"
     "DeflectionDetailCategory" o|--|o "User" : "updatedBy"
@@ -743,6 +785,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "DeflectionExitDestination" o|--|| "User" : "updatedBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "createdBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "updatedBy"
+    "DeflectionDocument" o|--|| "Deflection" : "deflection"
+    "DeflectionDocument" o|--|| "User" : "createdBy"
+    "DeflectionDocument" o|--|| "User" : "updatedBy"
     "PropertyPhoto" o|--|| "Deflection" : "deflection"
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"

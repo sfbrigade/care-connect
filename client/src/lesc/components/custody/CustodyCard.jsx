@@ -53,7 +53,7 @@ function CustodyCard ({ deflection, highlighted }) {
   return (
     <Card
       bg='white'
-      p={{ base: 'md', sm: 'xl' }}
+      p='xl'
       withBorder
       id={`custody-card-${deflection.id}`}
       style={{
@@ -61,33 +61,32 @@ function CustodyCard ({ deflection, highlighted }) {
         animation: highlighted ? 'cardHighlight 3s ease-out' : undefined,
       }}
     >
-      <Stack gap='sm'>
-        {isFailedIntake && (
-          <Text size='md' c='red.6'>Intake not completed</Text>
-        )}
-        <Group gap={4} wrap='nowrap'>
-          <Text size='md' c='gray.6'>Hold {displayId}</Text>
-          {isFailedIntake && (
-            <>
-              <Text size='md' c='gray.5'>&middot;</Text>
-              <Text size='md' c='gray.6'>Pending safety check</Text>
-            </>
-          )}
-          {releaseTimingChip && (
-            <>
-              <Text size='md' c='gray.5'>&middot;</Text>
-              <Text size='md' c={releaseTimingChip.tone === 'danger' ? 'red.6' : 'yellow.6'}>{releaseTimingChip.label}</Text>
-            </>
-          )}
-        </Group>
-        <Box>
-          <Title order={3}>{displayName}</Title>
-          {subjectDetails.length > 0 && (
-            <Text size='md'>
-              {subjectDetails.join(', ')}
-            </Text>
-          )}
-        </Box>
+      <Stack gap='2xl'>
+        <Stack gap='sm'>
+          <Group gap='xs' wrap='nowrap'>
+            <Text size='md' c='gray.6'>Hold {displayId}</Text>
+            {isFailedIntake && (
+              <>
+                <Text size='md' c='gray.5'>&middot;</Text>
+                <Text size='md' c='red.6'>Intake not completed</Text>
+              </>
+            )}
+            {releaseTimingChip && (
+              <>
+                <Text size='md' c='gray.5'>&middot;</Text>
+                <Text size='md' c={releaseTimingChip.tone === 'danger' ? 'red.6' : 'yellow.6'}>{releaseTimingChip.label}</Text>
+              </>
+            )}
+          </Group>
+          <Box>
+            <Title order={3}>{displayName}</Title>
+            {subjectDetails.length > 0 && (
+              <Text size='md'>
+                {subjectDetails.join(', ')}
+              </Text>
+            )}
+          </Box>
+        </Stack>
         {showQrCode && (
           <Stack align='center' gap='xs'>
             <QRCodeSVG value={`${window.location.origin}/admit/${deflection.id}`} size={160} />
@@ -98,6 +97,7 @@ function CustodyCard ({ deflection, highlighted }) {
           {showViewDetails && (
             <Button
               variant='secondary'
+              size='md'
               onClick={() => {
                 window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
                 navigate(`/custody/${deflection.id}`);
@@ -108,10 +108,11 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showMarkComplete && (
             <Button
+              size='md'
               onClick={() => safetyCheckMutation.mutate()}
               loading={safetyCheckMutation.isPending}
             >
-              Safety checked
+              Mark complete
             </Button>
           )}
           {showLegalRelease && (
@@ -124,6 +125,7 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showStartRelease && (
             <Button
+              size='md'
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Start release

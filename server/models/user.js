@@ -39,7 +39,7 @@ const UserRegisterSchema = UserAttributesSchema.extend({
 const UserResponseSchema = UserAttributesSchema.extend({
   id: z.string().uuid(),
   picture: z.string().nullable(),
-  pictureUrl: z.string().nullable(),
+  pictureUrl: z.string().nullable().optional(),
   isAdmin: z.boolean(),
   organization: Organization.ResponseSchema.nullable().optional(),
   title: Title.ResponseSchema.nullable().optional(),

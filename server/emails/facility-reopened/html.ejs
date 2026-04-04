@@ -1,0 +1,11 @@
+<%- include('../_header.html.ejs') %>
+
+<p>Dear <%= firstName %>,</p>
+
+<p><strong><%= facilityName %></strong> is now open and accepting new holds.</p>
+
+<p>Your previous hold was cancelled when the facility closed. You may create a new hold if needed.</p>
+
+<p>Sincerely,<br />The <%= _layout.TITLE %> Team</p>
+
+<%- include('../_footer.html.ejs') %>
