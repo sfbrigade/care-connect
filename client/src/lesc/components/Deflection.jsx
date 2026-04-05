@@ -134,11 +134,13 @@ function Deflection () {
     },
   });
 
-  const activeHoldsCount = activeDeflections?.length;
+  const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
+  const totalActiveHolds = incident?.permissions?.totalActiveHolds ?? activeDeflections?.length ?? 0;
   const isLastActiveDetailedHold =
+    canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
-    activeHoldsCount === 1;
+    totalActiveHolds <= 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
     if (isLastActiveDetailedHold && incident?.id) {

@@ -48,21 +48,22 @@ function Incident ({ incident, incidentId, onEditClick, onHandoffClick, onCancel
               <Menu.Item
                 leftSection={<IconPencilMinus size={18} color='var(--mantine-color-gray-5)' />}
                 onClick={onEditClick}
+                disabled={!onEditClick}
               >
                 Edit details
               </Menu.Item>
-              {onHandoffClick && (
-                <Menu.Item
-                  leftSection={<IconFileExport size={18} color='var(--mantine-color-gray-5)' />}
-                  onClick={onHandoffClick}
-                >
-                  Handoff
-                </Menu.Item>
-              )}
+              <Menu.Item
+                leftSection={<IconFileExport size={18} color='var(--mantine-color-gray-5)' />}
+                onClick={onHandoffClick}
+                disabled={!onHandoffClick}
+              >
+                Handoff
+              </Menu.Item>
               <Menu.Item
                 c='red.6'
                 leftSection={<IconTrash size={18} color='var(--mantine-color-red-4)' />}
                 onClick={onCancelClick}
+                disabled={!onCancelClick}
               >
                 Cancel incident
               </Menu.Item>

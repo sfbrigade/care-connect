@@ -376,15 +376,17 @@ function Holds () {
     },
   });
 
-  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
-  const isLastActiveHoldSelected = !!selectedDeflection && (deflections?.length ?? 0) === 1;
+  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false, totalActiveHolds: 0 };
 
+  const isLastHoldOnIncident = (permissions.totalActiveHolds ?? 0) <= 1;
   const incidentContainsOnlyEmptyHolds = deflections
     ? deflections.every(deflection => !deflection.subjectId)
-    : false; // Default false to avoid triggering auto-cancel in a loading/error state
+    : false;
 
   const shouldCancelIncidentWithHold =
-    isLastActiveHoldSelected &&
+    permissions.canCancelIncident &&
+    !!selectedDeflection &&
+    isLastHoldOnIncident &&
     !selectedDeflection?.subjectId &&
     incidentContainsOnlyEmptyHolds;
 

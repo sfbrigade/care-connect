@@ -109,15 +109,34 @@ export async function getOfficerPermissions (prisma, incident, officerId) {
 
   const controlsHolds = activePreTransferHolds > 0;
 
+  const totalActiveHolds = await prisma.deflection.count({
+    where: {
+      incidentId: incident.id,
+      status: 'ACTIVE',
+      subjectStatus: { in: PRE_TRANSFER_STATUSES },
+    },
+  });
+
+  // Full handoff: all active holds (any status) belong to this officer
+  const otherOfficerActiveHolds = await prisma.deflection.count({
+    where: {
+      incidentId: incident.id,
+      status: 'ACTIVE',
+      currentOfficerId: { not: officerId },
+    },
+  });
+  const hasFullHandoff = !isCreator && otherOfficerActiveHolds === 0;
+
   return {
     isCreator,
     canExtend: controlsHolds,
     canArrive: controlsHolds && !hasArrived,
     canLeave: hasArrived && !hasLeft,
-    canCancelIncident: isCreator,
+    canCancelIncident: isCreator || hasFullHandoff,
     canEditIncident: isCreator,
     canCreateHold: isCreator && !hasArrived,
     canHandoff: controlsHolds,
+    totalActiveHolds,
   };
 }
 

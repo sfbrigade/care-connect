@@ -34,8 +34,18 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
+      // Allow creator, admin, or full-handoff recipient (controls all active holds)
       if (incident.createdById !== request.user.id && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+        const otherOfficerActiveHolds = await fastify.prisma.deflection.count({
+          where: {
+            incidentId: id,
+            status: 'ACTIVE',
+            currentOfficerId: { not: request.user.id },
+          },
+        });
+        if (otherOfficerActiveHolds > 0) {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
       }
 
       if (incident.completedAt) {
