@@ -37,7 +37,6 @@ export const metadata = {
     arrestLocation: z.string(),
     officerName: z.string(),
     officerBadge: z.string(),
-    caseNumber: z.string(),
     subjectName: z.string(),
     subjectFullName: z.string(),
     subjectRace: z.string(),
@@ -114,7 +113,7 @@ export const metadata = {
   async generatePdf (deflectionData, user) {
     const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/Form849b.pdf');
     const templateBytes = await readFile(templatePath);
-    const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.INTOXICATING_LIQUOR;
+    const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.CNS_DEPRESSANTS;
 
     // Map deflection data to 849b form fields
     const formData = {
