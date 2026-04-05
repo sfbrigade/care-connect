@@ -351,6 +351,9 @@ const Api = {
     exitToJail (id) {
       return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
     },
+    exitToHospital (id) {
+      return instance.post(`/api/deflections/${id}/exit-to-hospital`).catch(handleError);
+    },
     recordDeath (id) {
       return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);
     },
