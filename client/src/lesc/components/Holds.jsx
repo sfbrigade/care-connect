@@ -376,6 +376,7 @@ function Holds () {
     },
   });
 
+  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
   const isLastActiveHoldSelected = !!selectedDeflection && (deflections?.length ?? 0) === 1;
 
   const incidentContainsOnlyEmptyHolds = deflections
@@ -448,13 +449,13 @@ function Holds () {
   const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
   const isClosed = facility.status === 'CLOSED';
   const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
-  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
   const myOfficerRecord = incident?.incidentOfficers?.[0];
   const myArrivedAt = myOfficerRecord ? myOfficerRecord.arrivedAt : incident?.arrivedAt;
   const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
   const hasArrived = !!myArrivedAt;
   const hasLeft = !!myLeftAt;
   const isHoldButtonDisabled = (
+    !permissions.canCreateHold ||
     markArrivedMutation.isPending ||
     markLeftMutation.isPending ||
     createDeflectionMutation.isPending ||
@@ -570,11 +571,9 @@ function Holds () {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          {(permissions.canCreateHold || !incident) && (
-            <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
-              Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
-            </Button>
-          )}
+          <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
+            Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
+          </Button>
         </ActionFooter>
       )}
       {showActionFooter && <Box h='120px' />}
