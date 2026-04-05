@@ -1,5 +1,5 @@
 import { Box, Group, Text } from '@mantine/core';
-import { IconCircleCheckFilled, IconLock } from '@tabler/icons-react';
+import { IconCircleCheck, IconLock } from '@tabler/icons-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 function LockedQRCode ({ value, variant, size = 160 }) {
@@ -18,7 +18,7 @@ function LockedQRCode ({ value, variant, size = 160 }) {
       {variant === 'handedOff' && (
         <Group pos='absolute' top={0} left={0} w={size} h={size} justify='center' align='center'>
           <Group gap={4} bg='white' px='md' py='xs' style={{ borderRadius: 999 }} wrap='nowrap'>
-            <IconCircleCheckFilled size={18} color='var(--mantine-color-teal-6)' />
+            <IconCircleCheck size={18} color='var(--mantine-color-teal-6)' />
             <Text size='sm' fw={500} c='teal.6'>Handed off</Text>
           </Group>
         </Group>
