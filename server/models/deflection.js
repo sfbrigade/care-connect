@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Base from './base.js';
 import DeflectionCancelReason from './deflectionCancelReason.js';
 import DeflectionDetail from './deflectionDetail.js';
+import DeflectionDocument from './deflectionDocument.js';
 import DeflectionExitDestination from './deflectionExitDestination.js';
 import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
 import DeflectionRefusalReason from './deflectionRefusalReason.js';
@@ -44,6 +45,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
   deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
+  deflectionDocuments: z.array(DeflectionDocument.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   propertyReturned: z.boolean().nullable().optional(),
   propertyNotReturnedReason: z.string().nullable().optional(),
