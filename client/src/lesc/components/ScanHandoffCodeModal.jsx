@@ -1,7 +1,6 @@
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 import ScanCodeModal from '@/components/ScanCodeModal';
-import { getHandoffErrorMessage } from './scanHandoffCodeModalUtils';
 
 function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
   const { showToast } = useToast();
@@ -26,7 +25,7 @@ function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
       onSuccess?.();
       showToast('Hold received', 'success', 3000, 'Handoff code confirmed.');
     } catch (err) {
-      showToast(getHandoffErrorMessage(err), 'error');
+      showToast(err?._form || 'Failed to accept handoff. Please try again.', 'error');
       throw err;
     }
   }
@@ -51,7 +50,7 @@ function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
         codes.length === 1 ? 'Handoff code confirmed.' : 'Handoff codes confirmed.'
       );
     } catch (err) {
-      showToast(getHandoffErrorMessage(err), 'error');
+      showToast(err?._form || 'Failed to accept handoff. Please try again.', 'error');
       throw err;
     }
   }

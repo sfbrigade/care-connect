@@ -17,10 +17,11 @@ export default async function (fastify) {
         }),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
-          [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.CONFLICT]: z.null(),
           [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({
-            message: z.string(),
+            errors: z.array(z.object({
+              path: z.string(),
+              message: z.string(),
+            })),
           }),
         },
       },
@@ -35,23 +36,29 @@ export default async function (fastify) {
       });
 
       if (!deflection) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{ path: '_form', message: 'Handoff code not recognized. Check the code and try again.' }],
+        });
       }
 
       if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
-        return reply.code(StatusCodes.CONFLICT).send();
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{ path: '_form', message: 'This hold is no longer active.' }],
+        });
       }
 
       // Can't hand off to yourself
       if (deflection.currentOfficerId === receivingOfficerId) {
-        return reply.code(StatusCodes.CONFLICT).send();
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{ path: '_form', message: 'You already control this hold.' }],
+        });
       }
 
       // Receiving officer must not have their own active incident
       const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
       if (existingIncident) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          message: 'You already have an active incident. Cannot accept a handoff.',
+          errors: [{ path: '_form', message: 'You already have an active incident. Cannot accept a handoff.' }],
         });
       }
 
