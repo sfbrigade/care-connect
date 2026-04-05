@@ -154,8 +154,11 @@ function Deflection () {
     });
   }
 
+  const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
+
   function on647fClick () {
-    window.open(`/api/forms/647f/pdf/${deflection.id}`, '_blank');
+    const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -186,7 +189,7 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
+          {(doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
