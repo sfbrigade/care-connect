@@ -3,7 +3,7 @@
   inset: 0 !important;
   overflow: hidden;
   min-height: unset !important;
-  background: black;
+  background: var(--mantine-color-black);
 }
 
 .fullScreen video {
@@ -12,19 +12,33 @@
   object-fit: cover !important;
 }
 
-.prompt {
+/*
+ * Inherits --viewfinder-size and --viewfinder-gap from .scanRoot in ScanCodeModal.
+ */
+.promptViewfinderCenter {
   position: absolute;
-  inset: 0;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 10;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.promptBelowViewfinder {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% + var(--viewfinder-size) / 2 + var(--viewfinder-gap));
+  height: 24px;
+  z-index: 10;
   pointer-events: none;
 }
 
 .viewfinder {
-  border-radius: 20px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
 }
 
 .promptText {
