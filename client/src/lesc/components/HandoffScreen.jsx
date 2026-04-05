@@ -52,19 +52,11 @@ function HandoffHoldCard ({ deflection, isHandedOff, incidentComplete }) {
           )}
         </Box>
         <Stack align='center' gap='xs'>
-          {isHandedOff
-            ? (
-              <Group gap='xs' c='teal.6'>
-                <IconCircleCheckFilled size={24} />
-                <Text size='md' fw={500}>Handed off</Text>
-              </Group>
-              )
-            : (
-              <>
-                <LockedQRCode value={handoffUrl} locked={!incidentComplete} />
-                <Text size='sm' c='dimmed'>Handoff code: {deflection.id}</Text>
-              </>
-              )}
+          <LockedQRCode
+            value={handoffUrl}
+            variant={isHandedOff ? 'handedOff' : !incidentComplete ? 'locked' : undefined}
+          />
+          <Text size='sm' c='dimmed'>Handoff code: {deflection.id}</Text>
         </Stack>
         <Group justify='flex-end' w='100%'>
           <Button

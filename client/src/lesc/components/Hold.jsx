@@ -126,7 +126,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
         )}
         {isActive && isArrived && (
           <Stack align='center' gap='xs'>
-            <LockedQRCode value={transferUrl} locked={!isValid} />
+            <LockedQRCode value={transferUrl} variant={!isValid ? 'locked' : undefined} />
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}
