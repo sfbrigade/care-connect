@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -37,7 +38,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && deflection.currentOfficerId !== request.user.id && !request.user.isAdmin) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

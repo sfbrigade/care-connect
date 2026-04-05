@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import Subject from '#models/subject.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.put('/:id/subject',
@@ -38,7 +39,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && deflection.currentOfficerId !== request.user.id && !request.user.isAdmin && !request.user.isCustody) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

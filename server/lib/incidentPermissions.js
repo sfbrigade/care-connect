@@ -3,6 +3,7 @@
  *
  * Q1  getActiveIncidentForOfficer  — returns the officer's active incident (or null)
  * Q6  getOfficerPermissions        — returns permission flags for this officer on this incident
+ *     canModifyDeflection          — can this user modify a deflection?
  */
 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
@@ -118,4 +119,14 @@ export async function getOfficerPermissions (prisma, incident, officerId) {
     canCreateHold: isCreator && !hasArrived,
     canHandoff: controlsHolds,
   };
+}
+
+/**
+ * Can this user modify a deflection (edit fields, update subject, cancel, upload photos)?
+ * Allowed for: the officer who currently controls the hold, custody users, or admins.
+ */
+export function canModifyDeflection (deflection, user) {
+  if (user.isAdmin) return true;
+  if (user.isCustody) return true;
+  return deflection.currentOfficerId === user.id;
 }
