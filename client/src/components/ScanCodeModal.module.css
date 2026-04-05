@@ -1,0 +1,65 @@
+/*
+ * Viewfinder is the layout anchor. All surrounding elements
+ * (SegmentedControl above, prompt text + Done below) are
+ * positioned relative to its edges via these two tokens.
+ */
+.scanRoot {
+  --viewfinder-size: 240px;
+  --viewfinder-gap: var(--mantine-spacing-md);
+  position: relative;
+  flex: 1 1 0;
+  height: 100dvh;
+  width: 100%;
+}
+
+.scanHeader {
+  background: transparent;
+}
+
+.scanFooter {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% + var(--viewfinder-size) / 2 + 88px);
+  height: 48px;
+  z-index: 11;
+}
+
+.scanDoneButton {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(2 * var(--mantine-spacing-xl) + env(safe-area-inset-bottom, 0px));
+  z-index: 11;
+  display: flex;
+  justify-content: center;
+}
+
+.scanControlsOverlay {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% - var(--viewfinder-size) / 2 - 112px);
+  z-index: 20;
+  pointer-events: none;
+  flex: 1 1 0;
+  align-items: center;
+  min-height: 0;
+  overflow: auto;
+}
+
+.scanControlsOverlay > * {
+  pointer-events: auto;
+}
+
+.scanRoot--scan {
+  .segmentedControlRoot {
+    background-color: var(--mantine-color-dark-5);
+  }
+  .segmentedControlIndicator {
+    background-color: var(--mantine-color-dark-3);
+  }
+  .segmentedControlLabel {
+    color: var(--mantine-color-gray-5);
+    &[data-active], &:hover {
+      color: var(--mantine-color-white);
+    }
+  }
+}

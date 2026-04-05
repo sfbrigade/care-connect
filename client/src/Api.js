@@ -318,7 +318,17 @@ const Api = {
       return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
     },
     transfer (id) {
-      return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
+      return instance.post(`/api/deflections/${id}/transfer`).catch(error => {
+        const status = error?.response?.status;
+        switch (status) {
+          case StatusCodes.NOT_FOUND:
+            throw { _form: 'This transfer code is not valid. Check the number and try again.' };
+          case StatusCodes.CONFLICT:
+            throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
+          default:
+            throw { _form: error.message };
+        }
+      });
     },
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
@@ -340,6 +350,9 @@ const Api = {
     },
     exitToJail (id) {
       return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
+    },
+    exitToHospital (id) {
+      return instance.post(`/api/deflections/${id}/exit-to-hospital`).catch(handleError);
     },
     recordDeath (id) {
       return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);
