@@ -32,6 +32,8 @@ function buildDeflection (overrides = {}) {
     },
     narcoticsSubstance: false,
     narcoticsParaphernalia: false,
+    drugUseEvidence: false,
+    drugType: null,
     deflectionDetails: [{}],
     behavior: 'Observed unsafe behavior',
     property: 'NONE',
@@ -52,6 +54,22 @@ describe('getSfpdDeflectionStatusChip', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection(),
       incident: buildIncident({ caseNumber: '-' }),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when substance use evidence is unanswered', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ drugUseEvidence: null }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when substance type is missing after yes', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ drugUseEvidence: true, drugType: null }),
+      incident: buildIncident(),
     });
     expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
   });

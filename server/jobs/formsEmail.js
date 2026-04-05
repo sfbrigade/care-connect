@@ -2,7 +2,7 @@ import prisma from '#prisma/client.js';
 import mailer from '#lib/mailer.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 
-const EMAIL_RECIPIENT = 'careconnect@sf.gov';
+const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
 
 export default async function formsEmail (data, prismaClient = prisma) {
   const { deflectionId, formIds, template } = data;
