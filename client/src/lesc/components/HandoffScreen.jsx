@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Button, Card, Container, Group, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconCircleCheckFilled } from '@tabler/icons-react';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -117,6 +118,10 @@ function HandoffScreen () {
     ...(handedOffDeflections ?? []),
   ];
 
+  useEffect(() => {
+    if (allHandedOff) navigate('/holds');
+  }, [allHandedOff, navigate]);
+
   return (
     <>
       <Head>
@@ -135,66 +140,58 @@ function HandoffScreen () {
             </Button>
           </Group>
 
-          {allHandedOff
-            ? (
-              <Stack gap='md' align='center' py='xl'>
-                <IconCircleCheckFilled size={48} color='var(--mantine-color-teal-6)' />
-                <Title order={3} ta='center'>All holds have been handed off.</Title>
-                <Text size='md' c='dimmed' ta='center'>You can now return to the home screen.</Text>
+          {incident && (
+            <>
+              <Stack gap='xs'>
+                <Text size='md' c='indigo.6'>Hand off incident to officer</Text>
+                <Title order={3}>
+                  Ask the receiving Officer to scan the code for each person you want to hand off.
+                </Title>
               </Stack>
-              )
-            : (
-              <>
-                <Stack gap='xs'>
-                  <Text size='md' c='indigo.6'>Hand off incident to officer</Text>
-                  <Title order={3}>
-                    Ask the receiving Officer to scan the code for each person you want to hand off.
-                  </Title>
-                </Stack>
 
-                <Group gap='xs'>
-                  <Text size='md'>Incident {incident.id}</Text>
-                  {!incidentComplete && (
-                    <>
-                      <Text size='md' c='gray.5'>•</Text>
-                      <Text size='md' c='red.6'>Details incomplete</Text>
-                    </>
-                  )}
-                </Group>
-
-                <Text size='md' c='dimmed'>
-                  {address || 'Address unavailable'} • {incident.arrestedAt ? formatSmartDateTime(incident.arrestedAt) : 'Time unavailable'}
-                </Text>
-
+              <Group gap='xs'>
+                <Text size='md'>Incident {incident.id}</Text>
                 {!incidentComplete && (
-                  <Card bg='yellow.0' p='md' withBorder>
-                    <Stack gap='sm'>
-                      <Text size='md'>
-                        Handoff holds are currently locked. This incident cannot be handed off until all details are complete.
-                      </Text>
-                      <Button
-                        variant='secondary'
-                        size='md'
-                        onClick={() => navigate('/incident')}
-                      >
-                        Add Incident Details
-                      </Button>
-                    </Stack>
-                  </Card>
+                  <>
+                    <Text size='md' c='gray.5'>•</Text>
+                    <Text size='md' c='red.6'>Details incomplete</Text>
+                  </>
                 )}
+              </Group>
 
-                <Stack gap='md'>
-                  {allDeflections.map((deflection) => (
-                    <HandoffHoldCard
-                      key={deflection.id}
-                      deflection={deflection}
-                      isHandedOff={handedOffIds.has(deflection.id)}
-                      incidentComplete={incidentComplete}
-                    />
-                  ))}
-                </Stack>
-              </>
+              <Text size='md' c='dimmed'>
+                {address || 'Address unavailable'} • {incident.arrestedAt ? formatSmartDateTime(incident.arrestedAt) : 'Time unavailable'}
+              </Text>
+
+              {!incidentComplete && (
+                <Card bg='yellow.0' p='md' withBorder>
+                  <Stack gap='sm'>
+                    <Text size='md'>
+                      Handoff holds are currently locked. This incident cannot be handed off until all details are complete.
+                    </Text>
+                    <Button
+                      variant='secondary'
+                      size='md'
+                      onClick={() => navigate('/incident')}
+                    >
+                      Add Incident Details
+                    </Button>
+                  </Stack>
+                </Card>
               )}
+
+              <Stack gap='md'>
+                {allDeflections.map((deflection) => (
+                  <HandoffHoldCard
+                    key={deflection.id}
+                    deflection={deflection}
+                    isHandedOff={handedOffIds.has(deflection.id)}
+                    incidentComplete={incidentComplete}
+                  />
+                ))}
+              </Stack>
+            </>
+          )}
         </Stack>
       </Container>
       <ActionFooter>
