@@ -46,15 +46,20 @@ export default async function (fastify) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      // Receiving officer must not have their own active incident
-      const existingIncident = await fastify.prisma.incident.findFirst({
+      // Receiving officer must not have their own active incident with holds they still control
+      const activeHoldsOnOwnIncident = await fastify.prisma.deflection.count({
         where: {
-          createdById: receivingOfficerId,
-          completedAt: null,
+          currentOfficerId: receivingOfficerId,
+          status: 'ACTIVE',
+          subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
+          incident: {
+            createdById: receivingOfficerId,
+            completedAt: null,
+          },
         },
       });
 
-      if (existingIncident) {
+      if (activeHoldsOnOwnIncident > 0) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           message: 'You already have an active incident. Cannot accept a handoff.',
         });
