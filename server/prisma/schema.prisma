@@ -218,6 +218,8 @@ model User {
 
   bedTypesCreated              BedType[]               @relation("CreatedBy")
   bedTypesUpdated              BedType[]               @relation("UpdatedBy")
+  bedTypeUnavailableReasonsCreated BedTypeUnavailableReason[] @relation("CreatedBy")
+  bedTypeUnavailableReasonsUpdated BedTypeUnavailableReason[] @relation("UpdatedBy")
   bedTypeUpdatesCreated        BedTypeUpdate[]
   deflectionCancelReasonsCreated DeflectionCancelReason[] @relation("CreatedBy")
   deflectionCancelReasonsUpdated DeflectionCancelReason[] @relation("UpdatedBy")
@@ -361,6 +363,20 @@ model FacilityStatusReason {
   facilityUpdates              FacilityUpdate[]
 }
 
+model BedTypeUnavailableReason {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description                  String
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
+
+  bedTypes                     BedType[]
+  bedTypeUpdates               BedTypeUpdate[]
+}
+
 model FacilityContact {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
@@ -409,6 +425,9 @@ model BedType {
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
   createdById                  String                  @db.Uuid
+  unavailableReason            BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
+  unavailableReasonId          String?                 @db.Uuid
+  unavailableOther             String?
   updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
   updateNotes                  String?
   updatedAt                    DateTime                @updatedAt
@@ -434,6 +453,9 @@ model BedTypeUpdate {
   holds                        Int                     @default(0)
   inTransit                    Int                     @default(0)
   available                    Int                     @default(0)
+  unavailableReason            BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
+  unavailableReasonId          String?                 @db.Uuid
+  unavailableOther             String?
   updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
   updateNotes                  String?
   updatedAt                    DateTime                @default(now())

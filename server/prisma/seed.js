@@ -8,12 +8,14 @@ import seedResetCenter from './seeds/resetCenter.js';
 import seedOrganizations from './seeds/organizations.js';
 import seedTitles from './seeds/titles.js';
 import seedUnits from './seeds/units.js';
+import seedBedTypeUnavailableReasons from './seeds/bedTypeUnavailableReasons.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
 import seedDeflectionDetails from './seeds/deflectionDetails.js';
 import seedDeflectionExitDestinations from './seeds/deflectionExitDestinations.js';
 import seedDeflectionExitHousingStatuses from './seeds/deflectionExitHousingStatuses.js';
 import seedDeflectionReleaseReasons from './seeds/deflectionReleaseReasons.js';
+import seedDeflectionRefusalReasons from './seeds/deflectionRefusalReasons.js';
 import seedTestDeflections from './seeds/testDeflections.js';
 import { createBoss } from '#lib/jobQueue/pgBoss.js';
 
@@ -31,12 +33,14 @@ try {
   await seedResetCenter(prisma);
   await seedTitles(prisma);
   await seedUnits(prisma);
+  await seedBedTypeUnavailableReasons(prisma);
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
   await seedDeflectionDetails(prisma);
   await seedDeflectionExitDestinations(prisma);
   await seedDeflectionExitHousingStatuses(prisma);
   await seedDeflectionReleaseReasons(prisma);
+  await seedDeflectionRefusalReasons(prisma);
   await seedTestDeflections(prisma);
 } catch (error) {
   console.error('Error seeding:', error);

@@ -92,11 +92,11 @@ afterEach(() => {
 });
 
 describe('CustodyCard', () => {
-  it('shows View details and Safety checked for awaiting intake', () => {
+  it('shows View details and Mark complete for awaiting intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Safety checked' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mark complete' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
@@ -107,7 +107,7 @@ describe('CustodyCard', () => {
     expect(screen.getByText('Intake not completed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Safety checked' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
   });
 
   it('shows qr code and only View details for ready for intake', () => {
@@ -115,7 +115,7 @@ describe('CustodyCard', () => {
 
     expect(screen.getByText('Transfer code: 123')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Safety checked' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
   });
 
@@ -125,7 +125,7 @@ describe('CustodyCard', () => {
       renderCard(buildDeflection({ subjectStatus: status }));
 
       expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Safety checked' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     }
   );
@@ -153,10 +153,10 @@ describe('CustodyCard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123/legal-release');
   });
 
-  it('calls safety check mutation when Safety checked is clicked', async () => {
+  it('calls safety check mutation when Mark complete is clicked', async () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Safety checked' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
 
     await waitFor(() => {
       expect(mockSafetyCheck).toHaveBeenCalledWith(123);
