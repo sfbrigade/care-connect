@@ -89,6 +89,7 @@ vi.mock('@/components/LockedQRCode', () => ({
 vi.mock('@tabler/icons-react', () => ({
   IconAlertCircle: () => null,
   IconArrowLeft: () => null,
+  IconBuildingHospital: () => null,
   IconDoorExit: () => null,
   IconDots: () => null,
   IconExternalLink: () => null,

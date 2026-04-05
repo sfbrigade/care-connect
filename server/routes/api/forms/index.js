@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
-import { FORM_REGISTRY as sharedForms } from '@care-connect/shared/forms';
+import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
 
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -37,16 +37,7 @@ function sendError (reply, result) {
 // ---------------------------------------------------------------------------
 
 export default async function (fastify, _opts) {
-  // Load each form's metadata from its compiled file at startup.
-  // Shared metadata (title, downloadFilename) is merged first; form-file
-  // metadata (deflectionInclude, dataSchema, transformData, etc.) is merged
-  // on top and can override shared values if needed.
-  // Note: every form file must export canGenerate(deflection) in its metadata.
-  const forms = {};
-  for (const [formId, { componentName, ...sharedMeta }] of Object.entries(sharedForms)) {
-    const { metadata } = await import(`#lib/forms/dist/${componentName}.js`);
-    forms[formId] = { componentName, ...sharedMeta, ...metadata };
-  }
+  const forms = await getFormMetadata();
 
   for (const [formId, form] of Object.entries(forms)) {
     // --- JSON data endpoint ---

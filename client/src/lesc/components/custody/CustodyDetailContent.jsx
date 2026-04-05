@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
+import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,7 @@ import { getCareDetailFooterState } from './careDetailFooterUtils';
 import { getCareStatusChip } from './careStatusChipUtils';
 import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
+import ExitToHospitalModal from './ExitToHospitalModal';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
@@ -34,6 +35,7 @@ const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
+  const [exitToHospitalModalOpened, setExitToHospitalModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
@@ -131,6 +133,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      navigate('/custody?tab=released');
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  const exitToHospitalMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToHospital(deflection.id),
+    onSuccess: () => {
+      setExitToHospitalModalOpened(false);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_HOSPITAL');
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to hospital" under Not in custody.');
       navigate('/custody?tab=released');
     },
     onError: () => {
@@ -562,6 +581,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     Exit to jail
                   </Menu.Item>
                   <Menu.Item
+                    leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => setExitToHospitalModalOpened(true)}
+                  >
+                    Exit to hospital
+                  </Menu.Item>
+                  <Menu.Item
                     leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setRecordDeathModalOpened(true)}
                   >
@@ -617,6 +642,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           Record exit to jail
                         </Menu.Item>
                         <Menu.Item
+                          leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                          onClick={() => setExitToHospitalModalOpened(true)}
+                        >
+                          Record exit to hospital
+                        </Menu.Item>
+                        <Menu.Item
                           leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setRecordDeathModalOpened(true)}
                         >
@@ -664,6 +695,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setExitToJailModalOpened(false)}
         onConfirm={() => exitToJailMutation.mutate()}
         loading={exitToJailMutation.isPending}
+      />
+      <ExitToHospitalModal
+        opened={exitToHospitalModalOpened}
+        onClose={() => setExitToHospitalModalOpened(false)}
+        onConfirm={() => exitToHospitalMutation.mutate()}
+        loading={exitToHospitalMutation.isPending}
       />
       <CompleteIntakeModal
         opened={completeIntakeModalOpened}
