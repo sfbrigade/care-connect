@@ -3,18 +3,7 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { DrugTypeEnum } from '@prisma/client';
 import { fill849b } from './fill849b.js';
-import { formatDateTime24 } from '../formUtils.js';
-
-function buildNarrative ({ arrestedAt, officerName, subjectFullName, arrivedAtReset, transferredAt, releaseReason }) {
-  const t1 = formatDateTime24(arrestedAt) || '[date/time]';
-  const officer = officerName || '[SFPD Officer name]';
-  const person = subjectFullName || '[person full name]';
-  const t2 = formatDateTime24(arrivedAtReset) || '[date/time]';
-  const t3 = formatDateTime24(transferredAt) || '[date/time]';
-  const reason = releaseReason || '[release reason]';
-
-  return `At ${t1}, SFPD Officer ${officer} arrested ${person} because they were found to be under the influence of a controlled substance or alcohol in a public location. ${person} was brought to RESET at ${t2} and transferred to Sheriff's Office custody at ${t3}. They were subsequently released from their detention due to: ${reason}.`;
-}
+import { build849bReleaseNarrative } from './releaseNarrative.js';
 
 export const metadata = {
   generatorType: 'pdf',
@@ -48,6 +37,7 @@ export const metadata = {
     arrestLocation: z.string(),
     officerName: z.string(),
     officerBadge: z.string(),
+    caseNumber: z.string(),
     subjectName: z.string(),
     subjectFullName: z.string(),
     subjectRace: z.string(),
@@ -61,6 +51,8 @@ export const metadata = {
     transferredAt: z.string().nullable(),
     releasedAt: z.string(),
     releaseReason: z.string(),
+    behavior: z.string().nullable(),
+    releaseNarrative: z.string().nullable(),
   }),
 
   transformData (deflection) {
@@ -114,6 +106,8 @@ export const metadata = {
       transferredAt: deflection.transferredAt?.toISOString() || null,
       releasedAt: deflection.releasedAt.toISOString(),
       releaseReason: deflection.releaseReason?.name || '',
+      behavior: deflection.behavior || null,
+      releaseNarrative: deflection.releaseNarrative || null,
     };
   },
 
@@ -188,8 +182,11 @@ export const metadata = {
         ? ['19090', '64085']
         : ['19095', '64085'],
 
-      // Narrative with full timeline
-      narrative: buildNarrative(deflectionData),
+      narrative: deflectionData.releaseNarrative || build849bReleaseNarrative({
+        caseNumber: deflectionData.caseNumber,
+        cadNumber: deflectionData.cadNumber,
+        behavior: deflectionData.behavior,
+      }),
     };
 
     return fill849b(templateBytes, formData);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useId } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Button, Alert, Loader, Stack, Text } from '@mantine/core';
-import { IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
+import { Button, Alert, Center, Loader, Stack, Text } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
 
 import classes from './QRScanner.module.css';
@@ -31,12 +31,29 @@ function isSecureContext () {
     window.location.hostname === '127.0.0.1';
 }
 
-function Viewfinder ({ error = false }) {
+/** Corner bracket color: white while scanning, green on success, red on error */
+const VIEWFINDER_COLOR = {
+  idle: 'var(--mantine-color-gray-3)',
+  success: 'var(--mantine-color-teal-5)',
+  error: 'var(--mantine-color-red-6)',
+};
+
+/** Full-screen overlay copy below the viewfinder after a scan is validated by the parent */
+const FULLSCREEN_SCAN_STATUS_TEXT = {
+  success: 'Valid QR code. Person received.',
+  error: 'Invalid QR code. Try again.',
+};
+
+function Viewfinder ({ error = false, success = false }) {
   const size = 240;
   const len = 50;
   const thickness = 8;
   const radius = 20;
-  const color = error ? '#fa5252' : 'white';
+  const color = error
+    ? VIEWFINDER_COLOR.error
+    : success
+      ? VIEWFINDER_COLOR.success
+      : VIEWFINDER_COLOR.idle;
 
   const corner = {
     position: 'absolute',
@@ -73,7 +90,7 @@ function Viewfinder ({ error = false }) {
  * @param {string} className - Additional CSS classes
  * @param {boolean} autoStart - Automatically start scanning when component mounts (iOS will ignore this)
  * @param {boolean} fullScreen - Render as full-screen camera feed with no built-in UI
- * @param {string} prompt - Prompt text displayed beneath the viewfinder in fullScreen mode
+ * @param {string} prompt - Prompt text beneath the viewfinder (hidden briefly on scan success/error)
  */
 export default function QRScanner ({ onScanSuccess, onScanError, className = '', autoStart = false, fullScreen = false, prompt, _debugScanPhase }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -341,16 +358,31 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           ref={scannerRef}
           className={classes.fullScreen}
         />
-        <Stack align='center' className={classes.prompt}>
+        <div className={classes.promptViewfinderCenter}>
           {displayPhase === 'idle' && <Viewfinder />}
           {displayPhase === 'pending' && <Loader color='white' size='xl' />}
-          {displayPhase === 'success' && <IconCircleCheck size={80} color='#40c057' stroke={1.5} />}
+          {displayPhase === 'success' && <Viewfinder success />}
           {displayPhase === 'error' && <Viewfinder error />}
-          {prompt && (
-            <Text c='white' ta='center' fw={500} size='lg' maw={300} className={classes.promptText}>
-              {prompt}
-            </Text>
-          )}
+        </div>
+        <Stack align='center' gap='xs' className={classes.promptBelowViewfinder}>
+          <Center maw={300} mih='5.5rem' w='100%'>
+            {(displayPhase === 'success' || displayPhase === 'error') && (
+              <Text
+                ta='center'
+                fw={500}
+                size='lg'
+                maw={300}
+                style={{
+                  color: displayPhase === 'success' ? VIEWFINDER_COLOR.success : VIEWFINDER_COLOR.error,
+                }}
+                className={classes.promptText}
+              >
+                {displayPhase === 'success'
+                  ? FULLSCREEN_SCAN_STATUS_TEXT.success
+                  : FULLSCREEN_SCAN_STATUS_TEXT.error}
+              </Text>
+            )}
+          </Center>
         </Stack>
       </>
     );
