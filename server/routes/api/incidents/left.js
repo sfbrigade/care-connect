@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
+import { getOfficerPermissions } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/left',
@@ -28,14 +29,8 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      // Allow if user is the creator, holds deflections, or has an IncidentOfficer record (arrived but not left)
-      const holdsDeflections = await fastify.prisma.deflection.count({
-        where: { incidentId: id, currentOfficerId: request.user.id, status: 'ACTIVE' },
-      });
-      const hasOfficerRecord = await fastify.prisma.incidentOfficer.count({
-        where: { incidentId: id, facilityId: incident.facilityId, officerId: request.user.id, arrivedAt: { not: null }, leftAt: null },
-      });
-      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0 && hasOfficerRecord === 0) {
+      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+      if (!permissions.canLeave && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

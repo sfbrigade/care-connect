@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { getActiveIncidentForOfficer } from '#lib/incidentPermissions.js';
 
 export default async function (fastify) {
   fastify.post('/:id/handoff',
@@ -46,20 +47,9 @@ export default async function (fastify) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      // Receiving officer must not have their own active incident with holds they still control
-      const activeHoldsOnOwnIncident = await fastify.prisma.deflection.count({
-        where: {
-          currentOfficerId: receivingOfficerId,
-          status: 'ACTIVE',
-          subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
-          incident: {
-            createdById: receivingOfficerId,
-            completedAt: null,
-          },
-        },
-      });
-
-      if (activeHoldsOnOwnIncident > 0) {
+      // Receiving officer must not have their own active incident
+      const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
+      if (existingIncident) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           message: 'You already have an active incident. Cannot accept a handoff.',
         });
@@ -108,8 +98,8 @@ export default async function (fastify) {
             facilityId: deflection.facilityId,
             officerId: receivingOfficerId,
             role: 'RECEIVING',
-            handedOffAt: now,
-            handedOffById: previousOfficerId,
+            handoffReceivedAt: now,
+            handoffReceivedFromId: previousOfficerId,
             badgeNumber: request.user.badgeNumber,
             organizationId: request.user.organizationId,
             unitId: request.user.unitId,
@@ -118,8 +108,8 @@ export default async function (fastify) {
           update: {
             // Officer may already have an IncidentOfficer record if they
             // previously received other holds from this same incident
-            handedOffAt: now,
-            handedOffById: previousOfficerId,
+            handoffReceivedAt: now,
+            handoffReceivedFromId: previousOfficerId,
           },
         });
       });

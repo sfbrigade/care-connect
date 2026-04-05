@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Incident from '#models/incident.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { getOfficerPermissions } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/arrived',
@@ -29,11 +30,8 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      // Allow if user is the creator, or currently holds deflections on this incident
-      const holdsDeflections = await fastify.prisma.deflection.count({
-        where: { incidentId: id, currentOfficerId: request.user.id, status: 'ACTIVE' },
-      });
-      if (incident.createdById !== request.user.id && !request.user.isAdmin && holdsDeflections === 0) {
+      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+      if (!permissions.canArrive && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

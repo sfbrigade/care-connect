@@ -448,6 +448,7 @@ function Holds () {
   const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
   const isClosed = facility.status === 'CLOSED';
   const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
+  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
   const myOfficerRecord = incident?.incidentOfficers?.[0];
   const myArrivedAt = myOfficerRecord ? myOfficerRecord.arrivedAt : incident?.arrivedAt;
   const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
@@ -462,7 +463,6 @@ function Holds () {
     !primaryBedType ||
     (hasArrived && !hasLeft)
   );
-  const isIncidentCreator = !incident || incident.createdById === user?.id;
   const showExtendActiveHoldsAction = (displayActiveDeflections?.length ?? 0) > 0;
   const incidentHasDetailedHolds = !!displayActiveDeflections?.some(deflection => deflection.subjectId);
 
@@ -499,9 +499,9 @@ function Holds () {
               deflections={displayActiveDeflections}
               isFetchingDeflections={isFetchingDeflections}
               onCancelHoldClick={onCancelHoldClick}
-              onEditIncidentClick={isIncidentCreator ? onEditIncidentClick : undefined}
-              onHandoffClick={onHandoffClick}
-              onCancelIncidentClick={isIncidentCreator ? onOpenCancelIncidentModal : undefined}
+              onEditIncidentClick={permissions.canEditIncident ? onEditIncidentClick : undefined}
+              onHandoffClick={permissions.canHandoff ? onHandoffClick : undefined}
+              onCancelIncidentClick={permissions.canCancelIncident ? onOpenCancelIncidentModal : undefined}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
               adminCancelledNotice={adminCancelledNotice}
@@ -570,7 +570,7 @@ function Holds () {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          {isIncidentCreator && (
+          {(permissions.canCreateHold || !incident) && (
             <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
               Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
             </Button>

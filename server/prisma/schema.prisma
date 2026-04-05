@@ -259,7 +259,7 @@ model User {
   facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
   facilityUpdatesCreated       FacilityUpdate[]
   incidentOfficers             IncidentOfficer[]       @relation("IncidentOfficer")
-  incidentOfficersHandedOff    IncidentOfficer[]       @relation("HandedOffBy")
+  incidentOfficersHandedOff    IncidentOfficer[]       @relation("HandoffReceivedFrom")
   incidentsCreated             Incident[]              @relation("CreatedBy")
   incidentsUpdated             Incident[]              @relation("UpdatedBy")
   invitesCreated               Invite[]                @relation("CreatedBy")
@@ -781,9 +781,9 @@ model IncidentOfficer {
   role                         IncidentOfficerRoleEnum
   arrivedAt                    DateTime?
   leftAt                       DateTime?
-  handedOffAt                  DateTime?
-  handedOffBy                  User?                   @relation("HandedOffBy", fields: [handedOffById], references: [id])
-  handedOffById                String?                 @db.Uuid
+  handoffReceivedAt            DateTime?
+  handoffReceivedFrom          User?                   @relation("HandoffReceivedFrom", fields: [handoffReceivedFromId], references: [id])
+  handoffReceivedFromId        String?                 @db.Uuid
   badgeNumber                  String?
   organization                 Organization?           @relation(fields: [organizationId], references: [id])
   organizationId               String?

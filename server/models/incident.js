@@ -56,8 +56,18 @@ const IncidentResponseSchema = IncidentCreateSchema.extend({
     role: z.enum(['ARRESTING', 'RECEIVING']),
     arrivedAt: z.coerce.date().nullable(),
     leftAt: z.coerce.date().nullable(),
-    handedOffAt: z.coerce.date().nullable(),
+    handoffReceivedAt: z.coerce.date().nullable(),
   })).optional(),
+  permissions: z.object({
+    isCreator: z.boolean(),
+    canExtend: z.boolean(),
+    canArrive: z.boolean(),
+    canLeave: z.boolean(),
+    canCancelIncident: z.boolean(),
+    canEditIncident: z.boolean(),
+    canCreateHold: z.boolean(),
+    canHandoff: z.boolean(),
+  }).optional(),
 });
 
 export class Incident extends Base {
