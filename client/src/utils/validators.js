@@ -59,20 +59,7 @@ const PropertySchema = z.object({
   property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE'], ERROR_SELECT_ONE),
 });
 
-const SubjectDetailsSchema = z.union([
-  z.object({
-    ...SubjectSchema.shape,
-    drugUseEvidence: z.literal(false),
-    drugType: z.nullable(z.optional(DrugTypeSchema)),
-  }),
-  z.object({
-    ...SubjectSchema.shape,
-    drugUseEvidence: z.literal(true),
-    drugType: DrugTypeSchema,
-  }),
-], ERROR_SELECT_ONE);
-
-const DeflectionSchema = z.union([
+const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
   z.object({
     subject: SubjectSchema,
     ...NarcoticsSchema.shape,
@@ -105,12 +92,6 @@ export const validateSubject = zod4Resolver(SubjectSchema);
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
-};
-
-export const validateSubjectDetails = zod4Resolver(SubjectDetailsSchema);
-
-export const isValidSubjectDetails = (obj) => {
-  return !!SubjectDetailsSchema.safeParse(obj)?.success;
 };
 
 export const validateNarcotics = zod4Resolver(NarcoticsSchema);

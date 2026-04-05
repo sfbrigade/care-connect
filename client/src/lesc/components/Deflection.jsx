@@ -17,7 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubjectDetails, isValidNarcotics, isValidDrugUse, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDrugUse, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -49,21 +49,13 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
   const detailsComplete = deflection ? isValidDeflection(deflection) : false;
-  let subjectDetailsComplete = false;
-  if (deflection) {
-    subjectDetailsComplete = isValidSubjectDetails({
-      ...deflection.subject,
+  const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
+  const drugUseComplete = deflection
+    ? isValidDrugUse({
       drugUseEvidence: deflection.drugUseEvidence,
       drugType: deflection.drugType ?? null,
-    });
-  }
-  let drugUseComplete = false;
-  if (deflection) {
-    drugUseComplete = isValidDrugUse({
-      drugUseEvidence: deflection.drugUseEvidence,
-      drugType: deflection.drugType ?? null,
-    });
-  }
+    })
+    : false;
   const isCustodyTransferred = [
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',

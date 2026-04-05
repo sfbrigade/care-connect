@@ -17,7 +17,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { validateSubjectDetails } from '@/utils/validators';
+import { validateSubject } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -100,7 +100,7 @@ function SubjectForm () {
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubjectDetails({
+          const errors = validateSubject({
             ...normalized,
             dateOfBirth: deflection.subject.dateOfBirth,
           });
