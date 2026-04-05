@@ -1,0 +1,24 @@
+<%- include('../_header.html.ejs') %>
+
+<p>Dear <%= firstName %>,</p>
+
+<% if (holds.length === 1) { %>
+  <% if (holds[0].personName) { %>
+    <p>Your hold for <strong><%= holds[0].personName %></strong> at <%= facilityName %> has been cancelled.</p>
+  <% } else { %>
+    <p>Your hold at <%= facilityName %> has been cancelled.</p>
+  <% } %>
+<% } else { %>
+  <p>Your holds at <%= facilityName %> have been cancelled:</p>
+  <ul>
+    <% holds.forEach(function(hold) { %>
+      <li><%= hold.personName || ('Hold #' + hold.id) %></li>
+    <% }); %>
+  </ul>
+<% } %>
+
+<p>Do not bring <%= holds.length === 1 ? 'this person' : 'these persons' %> to <%= facilityName %>.</p>
+
+<p>Sincerely,<br />The <%= _layout.TITLE %> Team</p>
+
+<%- include('../_footer.html.ejs') %>
