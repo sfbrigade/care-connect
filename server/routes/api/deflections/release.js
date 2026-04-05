@@ -6,8 +6,6 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
 const RELEASABLE_STATUSES = [
-  Deflection.SubjectStatus.DETAINED,
-  Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
