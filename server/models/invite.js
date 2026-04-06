@@ -30,6 +30,7 @@ const InviteResponseSchema = InviteAttributesSchema.extend({
   acceptedById: z.string().uuid().nullable(),
   revokedAt: z.coerce.date().nullable(),
   revokedById: z.string().uuid().nullable(),
+  expiresAt: z.coerce.date().nullable(),
 });
 
 class Invite extends Base {
@@ -41,7 +42,7 @@ class Invite extends Base {
   }
 
   get isValid () {
-    return !this.isAccepted && !this.isRevoked;
+    return !this.isAccepted && !this.isRevoked && !this.isExpired;
   }
 
   get isAccepted () {
@@ -50,6 +51,10 @@ class Invite extends Base {
 
   get isRevoked () {
     return !!this.revokedAt;
+  }
+
+  get isExpired () {
+    return !!this.expiresAt && new Date(this.expiresAt) < new Date() && !this.acceptedAt && !this.revokedAt;
   }
 
   get fullNameAndEmail () {

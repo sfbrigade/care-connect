@@ -62,3 +62,23 @@ items:
     roles: [CARE]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@connections"
+  facilityadminuser1:
+    id: 'a1b2c3d4-e5f6-7890-abcd-fa1234567890'
+    firstName: FacilityAdmin
+    lastName: User
+    email: facilityadmin@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [CARE, FACILITY_ADMIN]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: '@connections'
+  orgadminuser1:
+    id: 'b1a2c3d4-e5f6-7890-abcd-ef1234567890'
+    firstName: OrgAdmin
+    lastName: User
+    email: orgadmin@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [CUSTODY, ORG_ADMIN]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: '@sfso'

@@ -19,13 +19,15 @@ test('/api/users', async (t) => {
         url: '/api/users'
       }).headers(adminHeaders);
       const data = JSON.parse(response.payload);
-      assert.deepStrictEqual(data.length, 6);
+      assert.deepStrictEqual(data.length, 8);
       assert.deepStrictEqual(data[0].email, 'admin.user@test.com');
       assert.deepStrictEqual(data[1].email, 'another.user@test.com');
       assert.deepStrictEqual(data[2].email, 'deactivated.user@test.com');
-      assert.deepStrictEqual(data[3].email, 'regular.user@test.com');
-      assert.deepStrictEqual(data[4].email, 'careuser1@test.com');
-      assert.deepStrictEqual(data[5].email, 'sfsouser1@test.com');
+      assert.deepStrictEqual(data[3].email, 'facilityadmin@test.com');
+      assert.deepStrictEqual(data[4].email, 'orgadmin@test.com');
+      assert.deepStrictEqual(data[5].email, 'regular.user@test.com');
+      assert.deepStrictEqual(data[6].email, 'careuser1@test.com');
+      assert.deepStrictEqual(data[7].email, 'sfsouser1@test.com');
     });
   });
 
@@ -64,7 +66,8 @@ test('/api/users', async (t) => {
         unitId: null,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
-        deactivatedAt: null
+        deactivatedAt: null,
+        deletedAt: null
       });
     });
   });
@@ -102,6 +105,7 @@ test('/api/users', async (t) => {
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
+        deletedAt: null,
       });
     });
   });
@@ -314,6 +318,47 @@ test('/api/users', async (t) => {
 
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.unitId, null);
+    });
+  });
+
+  await t.test('PATCH /:id (org admin)', async (t) => {
+    await t.test('allows org admin to disable a user in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+    });
+
+    await t.test('prevents org admin from disabling user in different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('prevents org admin from disabling themselves', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/b1a2c3d4-e5f6-7890-abcd-ef1234567890',
+        headers: orgAdminHeaders,
+        payload: {
+          deactivatedAt: new Date().toISOString(),
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 });

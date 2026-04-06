@@ -16,7 +16,7 @@ test('/api/invites', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 3);
     });
   });
 
@@ -206,6 +206,40 @@ test('/api/invites', async (t) => {
 
       response = await app.inject().patch('/api/invites/157d4be5-fd7d-4d08-b74e-2d3584062c8a/resend').headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.GONE);
+    });
+  });
+
+  await t.test('POST / (org admin)', async (t) => {
+    await t.test('allows org admin to create invite for their own org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser@test.com',
+          organizationId: 'sfso',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.CREATED);
+    });
+
+    await t.test('prevents org admin from creating invite for different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser2@test.com',
+          organizationId: 'sfpd',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 
