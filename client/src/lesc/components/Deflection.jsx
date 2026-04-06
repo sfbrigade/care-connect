@@ -147,7 +147,7 @@ function Deflection () {
     canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
-    totalActiveHolds <= 1;
+    totalActiveHolds === 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
     if (shouldCancelIncidentWithHold && incident?.id) {
