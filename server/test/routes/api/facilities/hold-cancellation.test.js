@@ -11,7 +11,7 @@ const BED_TYPE_ID = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
 
 test('Hold cancellation edge cases', async (t) => {
   const app = await build(t);
-  const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
   await t.test('PATCH bed-type: auto-cancels in-transit holds when unavailable squeezes capacity (LIFO)', async () => {
@@ -36,7 +36,7 @@ test('Hold cancellation edge cases', async (t) => {
     // available = 10 - 7 - 0 - 0 - 4 = -1 → need to cancel 1 hold
     const response = await app.inject()
       .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         unavailableUnoccupied: 7,
         unavailableReasonId: reason.id,
@@ -89,7 +89,7 @@ test('Hold cancellation edge cases', async (t) => {
 
     const response = await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/status`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
         statusReasonId: 'other',
@@ -133,7 +133,7 @@ test('Hold cancellation edge cases', async (t) => {
     // Set facility to OPEN_NOT_ACCEPTING
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/status`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.OPEN_NOT_ACCEPTING,
         statusReasonId: 'other',
@@ -156,7 +156,7 @@ test('Hold cancellation edge cases', async (t) => {
     // Restore facility to OPEN_ACCEPTING
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/status`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.OPEN_ACCEPTING,
       });
@@ -166,7 +166,7 @@ test('Hold cancellation edge cases', async (t) => {
     // Set facility to CLOSED
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/status`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
         statusReasonId: 'other',
@@ -187,7 +187,7 @@ test('Hold cancellation edge cases', async (t) => {
     // Restore facility to OPEN_ACCEPTING
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/status`)
-      .headers(adminHeaders)
+      .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.OPEN_ACCEPTING,
       });
