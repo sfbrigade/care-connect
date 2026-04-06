@@ -4,7 +4,7 @@ import { join } from 'path';
 import { DrugTypeEnum } from '@prisma/client';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
-import { formatDateTime24, formatDateOnly } from '../formUtils.js';
+import { formatDateTime24 } from '../formUtils.js';
 
 export const metadata = {
   generatorType: 'pdf',
