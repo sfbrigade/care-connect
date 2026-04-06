@@ -142,7 +142,7 @@ function Deflection () {
   });
 
   const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
-  const totalActiveHolds = incident?.permissions?.totalActiveHolds ?? activeDeflections?.length ?? 0;
+  const totalActiveHolds = incident?.permissions?.totalActiveHolds ?? 0;
   const shouldCancelIncidentWithHold =
     canCancelIncident &&
     !!deflection?.subjectId &&
