@@ -90,4 +90,5 @@ export default fp(async function (fastify) {
   fastify.decorate('requireCustody', requireRole(User.Role.CUSTODY));
   fastify.decorate('requireCare', requireRole(User.Role.CARE));
   fastify.decorate('requireLawEnforcement', requireRole(User.Role.FIELD, User.Role.CUSTODY));
+  fastify.decorate('requireFacilityAdmin', requireRole(User.Role.FACILITY_ADMIN));
 });

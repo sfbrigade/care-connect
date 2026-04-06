@@ -6,7 +6,7 @@ import Incident from '#models/incident.js';
 export default async function (fastify, opts) {
   fastify.get('/active-incident',
     {
-      onRequest: fastify.requireAuth,
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Get the active incident for a facility and the calling user, if any.',
         params: z.object({
