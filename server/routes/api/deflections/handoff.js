@@ -61,9 +61,9 @@ export default async function (fastify) {
         });
       }
 
-      // Receiving officer must not have their own active incident
+      // Receiving officer must not have an active incident on a DIFFERENT incident
       const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
-      if (existingIncident) {
+      if (existingIncident && existingIncident.id !== deflection.incidentId) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{ path: '_form', message: 'You already have an active incident. Cannot accept a handoff.' }],
         });

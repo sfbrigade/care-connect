@@ -568,7 +568,6 @@ function Holds () {
               <Menu.Item
                 leftSection={<IconScan size={18} color='var(--mantine-color-gray-5)' />}
                 onClick={() => setScanHandoffModalOpened(true)}
-                disabled={!!incident}
               >
                 Scan a handoff code
               </Menu.Item>
