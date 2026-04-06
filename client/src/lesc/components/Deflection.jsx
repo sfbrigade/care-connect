@@ -17,7 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDrugUse, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -49,6 +49,13 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
   const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
+  const drugUseComplete = deflection
+    ? isValidDrugUse({
+      drugUseEvidence: deflection.drugUseEvidence,
+      drugType: deflection.drugType ?? null,
+    })
+    : false;
   const isCustodyTransferred = [
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',
@@ -236,7 +243,9 @@ function Deflection () {
             )}
             {canEditHoldDetails && (
               <Group mt='md'>
-                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>{isValidSubject(deflection?.subject) ? 'Edit details' : 'Finish details'}</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>
+                  {subjectDetailsComplete ? 'Edit details' : 'Finish details'}
+                </Button>
               </Group>
             )}
           </Stack>
@@ -252,7 +261,7 @@ function Deflection () {
                     <Text c='dimmed'>Controlled substance</Text>
                     {(deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined)
                       ? (
-                        <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                        <Text>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
@@ -260,7 +269,7 @@ function Deflection () {
                     <Text c='dimmed'>Paraphernalia</Text>
                     {(deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined)
                       ? (
-                        <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                        <Text>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
@@ -274,28 +283,32 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='drug-use'>
               <Accordion.Control>
-                <Title order={3}>Drug use</Title>
+                <Title order={3}>Substance use</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
-                    ? (
-                      <Box>
-                        <Text c='dimmed'>Evidence of drug use</Text>
-                        <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
-                      </Box>
-                      )
-                    : (<Text c='dimmed'>No drug use details recorded</Text>)}
-                  {deflection?.drugUseEvidence === true && !!deflection?.drugType && (
+                  <Box>
+                    <Text c='dimmed'>Evidence of substance use</Text>
+                    {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
+                      ? (
+                        <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                  {deflection?.drugUseEvidence === true && (
                     <Box>
-                      <Text c='dimmed'>Drug type</Text>
-                      <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                      <Text c='dimmed'>Substance type</Text>
+                      {deflection?.drugType
+                        ? <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                        : <Text c='red.6'>Incomplete</Text>}
                     </Box>
                   )}
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>
+                      {drugUseComplete ? 'Edit substance use' : 'Finish substance use'}
+                    </Button>
                   </Group>
                 )}
               </Accordion.Panel>

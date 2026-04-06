@@ -362,6 +362,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
 
@@ -399,6 +400,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
       assert.strictEqual(data.releasedAt, null);
@@ -406,6 +408,7 @@ test('/api/deflections', async (t) => {
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
       assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'aggressive_behavior');
       assert.ok(updatedDeflection.exitedAt);
       assert.ok(updatedDeflection.exitedById);
       assert.strictEqual(updatedDeflection.releasedAt, null);
@@ -448,6 +451,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
       assert.strictEqual(data.rejectedAt, null);
@@ -455,6 +459,7 @@ test('/api/deflections', async (t) => {
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
       assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'aggressive_behavior');
       assert.ok(updatedDeflection.exitedAt);
       assert.ok(updatedDeflection.exitedById);
       assert.strictEqual(updatedDeflection.rejectedAt, null);
@@ -498,6 +503,7 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
 
@@ -513,6 +519,195 @@ test('/api/deflections', async (t) => {
     await t.test('returns conflict when deflection status is not eligible for exit-to-jail', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/exit-to-jail')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+    });
+  });
+
+  await t.test('POST /:id/exit-to-hospital', async (t) => {
+    await t.test('records direct hospital exit from awaiting-intake and releases hold', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'AWAITING_INTAKE',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-hospital`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(data.refusalReasonId, 'medical_issue');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records direct hospital exit from ready-for-intake and releases hold', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'READY_FOR_INTAKE',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-hospital`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(data.refusalReasonId, 'medical_issue');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+      assert.strictEqual(data.releasedAt, null);
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'medical_issue');
+      assert.ok(updatedDeflection.exitedAt);
+      assert.ok(updatedDeflection.exitedById);
+      assert.strictEqual(updatedDeflection.releasedAt, null);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records direct hospital exit from admitted and releases hold', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'ADMITTED',
+          admittedAt: new Date(),
+          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          rejectedAt: null,
+          rejectedById: null,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-hospital`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(data.refusalReasonId, 'medical_issue');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+      assert.strictEqual(data.rejectedAt, null);
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'medical_issue');
+      assert.ok(updatedDeflection.exitedAt);
+      assert.ok(updatedDeflection.exitedById);
+      assert.strictEqual(updatedDeflection.rejectedAt, null);
+      assert.strictEqual(updatedDeflection.rejectedById, null);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records direct hospital exit from failed intake and releases hold', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'FAILED_INTAKE',
+          admittedAt: new Date(),
+          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          rejectedAt: new Date(),
+          rejectedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-hospital`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'hospital');
+      assert.deepStrictEqual(data.refusalReasonId, 'medical_issue');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('returns conflict when deflection status is not eligible for exit-to-hospital', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/exit-to-hospital')
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
