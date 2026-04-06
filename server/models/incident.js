@@ -67,6 +67,7 @@ const IncidentResponseSchema = IncidentCreateSchema.extend({
     canEditIncident: z.boolean(),
     canCreateHold: z.boolean(),
     canHandoff: z.boolean(),
+    incidentDetailsComplete: z.boolean(),
     totalActiveHolds: z.number(),
   }).optional(),
 });

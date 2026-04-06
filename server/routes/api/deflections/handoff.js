@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { getActiveIncidentForOfficer } from '#lib/incidentPermissions.js';
+import { getActiveIncidentForOfficer, isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
 
 export default async function (fastify) {
   fastify.post('/:id/handoff',
@@ -44,6 +44,13 @@ export default async function (fastify) {
       if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{ path: '_form', message: 'This hold is no longer active.' }],
+        });
+      }
+
+      // Incident details must be complete before handoff
+      if (!isIncidentDetailsComplete(deflection.incident)) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{ path: '_form', message: 'Incident details must be complete before handing off.' }],
         });
       }
 

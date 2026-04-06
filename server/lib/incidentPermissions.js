@@ -9,6 +9,22 @@
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 
 /**
+ * Are all required incident fields filled in?
+ */
+export function isIncidentDetailsComplete (incident) {
+  return !!(
+    incident.addressLine1 &&
+    incident.city &&
+    incident.state &&
+    incident.arrestedAt &&
+    incident.encounteredVia &&
+    incident.cadNumber &&
+    incident.caseNumber &&
+    incident.supervisorBadgeNumber
+  );
+}
+
+/**
  * Find the active incident for an officer. An officer has an active incident if:
  *   (a) they control at least one active pre-transfer hold, OR
  *   (b) they are checked in at RESET (arrived but not left)
@@ -127,15 +143,18 @@ export async function getOfficerPermissions (prisma, incident, officerId) {
   });
   const hasFullHandoff = !isCreator && otherOfficerActiveHolds === 0;
 
+  const incidentDetailsComplete = isIncidentDetailsComplete(incident);
+
   return {
     isCreator,
+    incidentDetailsComplete,
     canExtend: controlsHolds,
     canArrive: controlsHolds && !hasArrived,
     canLeave: hasArrived && !hasLeft,
     canCancelIncident: isCreator || hasFullHandoff,
     canEditIncident: isCreator,
     canCreateHold: isCreator && !hasArrived,
-    canHandoff: controlsHolds,
+    canHandoff: controlsHolds && incidentDetailsComplete,
     totalActiveHolds,
   };
 }

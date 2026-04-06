@@ -14,7 +14,7 @@ import ActionFooter from '@/components/ActionFooter';
 
 import { useTranslation } from 'react-i18next';
 
-function HandoffHoldCard ({ deflection, isHandedOff, incidentComplete }) {
+function HandoffHoldCard ({ deflection, isHandedOff }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const displayId = String(deflection.id);
@@ -55,7 +55,7 @@ function HandoffHoldCard ({ deflection, isHandedOff, incidentComplete }) {
         <Stack align='center' gap='xs'>
           <LockedQRCode
             value={handoffUrl}
-            variant={isHandedOff ? 'handedOff' : !incidentComplete ? 'locked' : undefined}
+            variant={isHandedOff ? 'handedOff' : undefined}
           />
           <Text size='sm' c='dimmed'>Handoff code: {deflection.id}</Text>
         </Stack>
@@ -119,7 +119,7 @@ function HandoffScreen () {
   ];
 
   useEffect(() => {
-    if (allHandedOff) navigate('/holds');
+    if (allHandedOff || (incident && !incidentComplete)) navigate('/holds');
   }, [allHandedOff, navigate]);
 
   return (
@@ -149,36 +149,11 @@ function HandoffScreen () {
                 </Title>
               </Stack>
 
-              <Group gap='xs'>
-                <Text size='md'>Incident {incident.id}</Text>
-                {!incidentComplete && (
-                  <>
-                    <Text size='md' c='gray.5'>•</Text>
-                    <Text size='md' c='red.6'>Details incomplete</Text>
-                  </>
-                )}
-              </Group>
+              <Text size='md'>Incident {incident.id}</Text>
 
               <Text size='md' c='dimmed'>
                 {address || 'Address unavailable'} • {incident.arrestedAt ? formatSmartDateTime(incident.arrestedAt) : 'Time unavailable'}
               </Text>
-
-              {!incidentComplete && (
-                <Card bg='yellow.0' p='md' withBorder>
-                  <Stack gap='sm'>
-                    <Text size='md'>
-                      Handoff holds are currently locked. This incident cannot be handed off until all details are complete.
-                    </Text>
-                    <Button
-                      variant='secondary'
-                      size='md'
-                      onClick={() => navigate('/incident')}
-                    >
-                      Add Incident Details
-                    </Button>
-                  </Stack>
-                </Card>
-              )}
 
               <Stack gap='md'>
                 {allDeflections.map((deflection) => (
@@ -186,7 +161,6 @@ function HandoffScreen () {
                     key={deflection.id}
                     deflection={deflection}
                     isHandedOff={handedOffIds.has(deflection.id)}
-                    incidentComplete={incidentComplete}
                   />
                 ))}
               </Stack>
