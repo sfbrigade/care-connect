@@ -136,12 +136,12 @@ function Deflection () {
   });
 
   const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
-  const totalActiveHolds = incident?.totalActiveHolds ?? 0;
+  const activeHoldsCount = incident?.totalActiveHolds ?? 0;
   const shouldCancelIncidentWithHold =
     canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
-    totalActiveHolds === 1;
+    activeHoldsCount === 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
     if (shouldCancelIncidentWithHold && incident?.id) {
