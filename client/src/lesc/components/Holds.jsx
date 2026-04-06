@@ -381,7 +381,7 @@ function Holds () {
   const isLastHoldOnIncident = (incident?.totalActiveHolds ?? 0) <= 1;
   const incidentContainsOnlyEmptyHolds = deflections
     ? deflections.every(deflection => !deflection.subjectId)
-    : false;
+    : false; // Default false to avoid triggering auto-cancel in a loading/error state
 
   const shouldCancelIncidentWithHold =
     permissions.canCancelIncident &&
