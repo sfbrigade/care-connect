@@ -29,7 +29,6 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data[6].email, 'careuser1@test.com');
       assert.deepStrictEqual(data[7].email, 'sfsouser1@test.com');
       assert.deepStrictEqual(data[8].email, 'field.noholds@test.com');
-
     });
   });
 
