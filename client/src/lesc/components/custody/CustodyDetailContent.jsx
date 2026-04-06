@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
+import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
@@ -24,6 +25,7 @@ import { getCareDetailFooterState } from './careDetailFooterUtils';
 import { getCareStatusChip } from './careStatusChipUtils';
 import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
+import ExitToHospitalModal from './ExitToHospitalModal';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
@@ -33,6 +35,7 @@ const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
+  const [exitToHospitalModalOpened, setExitToHospitalModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
@@ -137,6 +140,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
+  const exitToHospitalMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToHospital(deflection.id),
+    onSuccess: () => {
+      setExitToHospitalModalOpened(false);
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
+      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_HOSPITAL');
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to hospital" under Not in custody.');
+      navigate('/custody?tab=released');
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
   const completeIntakeMutation = useMutation({
     mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
     onSuccess: (_, variables) => {
@@ -172,22 +192,30 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
 
-  const { data: incident } = useQuery({
+  const incidentQuery = useQuery({
     queryKey: ['incidents', deflection?.incidentId],
     queryFn: () => Api.incidents.get(deflection.incidentId).then(response => response.data),
     enabled: !!deflection?.incidentId,
   });
+  const incident = incidentQuery.data;
   const incidentAddress = formatAddress(incident ?? {});
+  const resolvedReleaseNarrative = useEnsureReleaseNarrative({
+    deflection,
+    incident,
+    incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
+  });
 
   useEffect(() => {
-    setReleaseNarrative(deflection?.releaseNarrative ?? '');
-    setIsEditingReleaseNarrative(false);
-  }, [deflection?.releaseNarrative]);
+    if (!isEditingReleaseNarrative) {
+      setReleaseNarrative(resolvedReleaseNarrative);
+    }
+  }, [resolvedReleaseNarrative, isEditingReleaseNarrative]);
 
   const saveReleaseNarrativeMutation = useMutation({
     mutationFn: () => Api.deflections.update(deflection.id, { releaseNarrative: releaseNarrative.trim() || null }),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', String(deflection.id)], response.data);
+      queryClient.setQueryData(['deflections', deflection.id], response.data);
       setIsEditingReleaseNarrative(false);
       showToast('849(b) narrative saved', 'success');
     },
@@ -198,14 +226,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   function open849bPdf () {
     window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
-  }
-
-  function onReleaseNarrativeButtonClick () {
-    if (!isEditingReleaseNarrative) {
-      setIsEditingReleaseNarrative(true);
-      return;
-    }
-    saveReleaseNarrativeMutation.mutate();
   }
 
   return (
@@ -468,18 +488,40 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                               mt='xs'
                             />
                             )
-                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
+                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
                       </Box>
-                      <Group>
-                        <Button
-                          variant='secondary'
-                          size='md'
-                          onClick={onReleaseNarrativeButtonClick}
-                          loading={saveReleaseNarrativeMutation.isPending}
-                        >
-                          Edit
-                        </Button>
-                      </Group>
+                      {!isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => setIsEditingReleaseNarrative(true)}
+                          >
+                            Edit
+                          </Button>
+                        </Group>
+                      )}
+                      {isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => {
+                              setReleaseNarrative(resolvedReleaseNarrative);
+                              setIsEditingReleaseNarrative(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size='md'
+                            onClick={() => saveReleaseNarrativeMutation.mutate()}
+                            loading={saveReleaseNarrativeMutation.isPending}
+                          >
+                            Save narrative
+                          </Button>
+                        </Group>
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -539,6 +581,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     Exit to jail
                   </Menu.Item>
                   <Menu.Item
+                    leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={() => setExitToHospitalModalOpened(true)}
+                  >
+                    Exit to hospital
+                  </Menu.Item>
+                  <Menu.Item
                     leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setRecordDeathModalOpened(true)}
                   >
@@ -594,6 +642,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           Record exit to jail
                         </Menu.Item>
                         <Menu.Item
+                          leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                          onClick={() => setExitToHospitalModalOpened(true)}
+                        >
+                          Record exit to hospital
+                        </Menu.Item>
+                        <Menu.Item
                           leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setRecordDeathModalOpened(true)}
                         >
@@ -641,6 +695,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setExitToJailModalOpened(false)}
         onConfirm={() => exitToJailMutation.mutate()}
         loading={exitToJailMutation.isPending}
+      />
+      <ExitToHospitalModal
+        opened={exitToHospitalModalOpened}
+        onClose={() => setExitToHospitalModalOpened(false)}
+        onConfirm={() => exitToHospitalMutation.mutate()}
+        loading={exitToHospitalMutation.isPending}
       />
       <CompleteIntakeModal
         opened={completeIntakeModalOpened}

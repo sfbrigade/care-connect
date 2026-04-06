@@ -553,6 +553,18 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "DeflectionDocument" {
+    String id "🗝️"
+    Int deflectionId 
+    String formId 
+    String file 
+    DateTime createdAt 
+    String createdById 
+    DateTime updatedAt 
+    String updatedById 
+    }
+  
+
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
@@ -688,6 +700,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
     "User" o{--}o "Invite" : ""
+    "User" o{--}o "DeflectionDocument" : ""
+    "User" o{--}o "DeflectionDocument" : ""
     "User" o{--}o "PropertyPhoto" : ""
     "User" o{--}o "PropertyPhoto" : ""
     "Invite" o|--|o "Organization" : "organization"
@@ -771,6 +785,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionDetail" : ""
     "Deflection" o{--}o "DeflectionUpdate" : ""
+    "Deflection" o{--}o "DeflectionDocument" : ""
     "Deflection" o{--}o "PropertyPhoto" : ""
     "DeflectionDetailCategory" o|--|| "User" : "createdBy"
     "DeflectionDetailCategory" o|--|o "User" : "updatedBy"
@@ -800,6 +815,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "DeflectionExitDestination" o|--|| "User" : "updatedBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "createdBy"
     "DeflectionExitHousingStatus" o|--|| "User" : "updatedBy"
+    "DeflectionDocument" o|--|| "Deflection" : "deflection"
+    "DeflectionDocument" o|--|| "User" : "createdBy"
+    "DeflectionDocument" o|--|| "User" : "updatedBy"
     "PropertyPhoto" o|--|| "Deflection" : "deflection"
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"
