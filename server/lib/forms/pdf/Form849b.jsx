@@ -96,7 +96,9 @@ export const metadata = {
       subjectFullName,
       subjectRace: subject?.race || '',
       subjectSex: subject?.sex || '',
-      subjectDOB: subject?.dateOfBirth ? formatDateOnly(subject.dateOfBirth.toISOString()).replace(/\//g, '-') : null,
+      subjectDOB: subject?.dateOfBirth
+        ? `${String(subject.dateOfBirth.getUTCMonth() + 1).padStart(2, '0')}-${String(subject.dateOfBirth.getUTCDate()).padStart(2, '0')}-${subject.dateOfBirth.getUTCFullYear()}`
+        : null,
       subjectAddress,
       subjectZip: subject?.postalCode || '',
       subjectDL: subject?.driverLicense || '',
@@ -135,6 +137,7 @@ export const metadata = {
       reportedTo: '', // TBC
 
       // Page info
+      prop115Years: '2',
       prop115Pages: '2',
 
       // Prop 115 certified - from user profile
