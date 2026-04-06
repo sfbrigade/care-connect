@@ -125,7 +125,7 @@ export default async function (fastify, _opts) {
         if (formId === 'cert' && (data.narcoticsSubstance || data.narcoticsParaphernalia)) {
           const [{ renderFormToHtml, renderToPdf: renderNotice }, { default: FormNarcoticsNotice }] = await Promise.all([
             import('#lib/pdf.js'),
-            import(`../../../lib/forms/dist/FormNarcoticsNotice.js`),
+            import('../../../lib/forms/dist/FormNarcoticsNotice.js'),
           ]);
 
           const noticeData = {
