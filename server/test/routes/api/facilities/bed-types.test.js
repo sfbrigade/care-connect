@@ -6,7 +6,6 @@ import { authenticate, build } from '#test/helper.js';
 
 test('/api/facilities/:facilityId/bed-types', async (t) => {
   const app = await build(t);
-  const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
 
@@ -144,7 +143,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload(updateData);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -170,7 +169,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       // First set a reason
       await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload({
           unavailableUnoccupied: 2,
           unavailableReasonId: reasonId,
@@ -180,7 +179,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       // Then set unavailable to 0
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload({ unavailableUnoccupied: 0 });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -195,7 +194,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload({ unavailableUnoccupied: 3 });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
@@ -206,7 +205,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
     await t.test('rejects invalid unavailableReasonId', async () => {
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
-        .headers(adminHeaders)
+        .headers(facilityAdminHeaders)
         .payload({
           unavailableUnoccupied: 1,
           unavailableReasonId: '00000000-0000-0000-0000-000000000000',
