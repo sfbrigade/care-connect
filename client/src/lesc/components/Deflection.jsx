@@ -143,14 +143,14 @@ function Deflection () {
 
   const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
   const totalActiveHolds = incident?.permissions?.totalActiveHolds ?? activeDeflections?.length ?? 0;
-  const isLastActiveDetailedHold =
+  const shouldCancelIncidentWithHold =
     canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
     totalActiveHolds <= 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (isLastActiveDetailedHold && incident?.id) {
+    if (shouldCancelIncidentWithHold && incident?.id) {
       await cancelIncidentMutation.mutateAsync({
         incidentId: incident.id,
         cancelReasonId,
@@ -477,7 +477,7 @@ function Deflection () {
         </ActionFooter>
       )}
       {showActionFooter && <Box h='120px' />}
-      {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
+      {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
         <CancelHoldModal
           deflection={deflection}
           opened={showCancelModal}
@@ -486,7 +486,7 @@ function Deflection () {
           loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
         />
       )}
-      {!!deflection && showCancelModal && isLastActiveDetailedHold && (
+      {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
         <CancelIncidentModal
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
