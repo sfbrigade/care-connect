@@ -1,8 +1,11 @@
+import React from 'react';
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { PDFDocument } from 'pdf-lib';
 import { fillCoR } from './fillCoR.js';
-import { formatDateParts, formatTime } from '../formUtils.js';
+import { formatDateParts, formatTime, formatDateOnly } from '../formUtils.js';
+import FormNarcoticsNotice from '../jsx/FormNarcoticsNotice.jsx';
 
 export const metadata = {
   generatorType: 'pdf',
@@ -52,6 +55,10 @@ export const metadata = {
     deputyName: z.string(),
     deputyBadge: z.string(),
     unitIdentifier: z.string(),
+    narcoticsSubstance: z.boolean().nullable(),
+    narcoticsParaphernalia: z.boolean().nullable(),
+    cadNumber: z.string(),
+    releaseDateFormatted: z.string(),
   }),
 
   transformData (deflection) {
@@ -85,6 +92,10 @@ export const metadata = {
       deputyName,
       deputyBadge,
       unitIdentifier,
+      narcoticsSubstance: deflection.narcoticsSubstance,
+      narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+      cadNumber: deflection.incident?.cadNumber || '',
+      releaseDateFormatted: formatDateOnly(deflection.releasedAt.toISOString()),
     };
   },
 
@@ -112,7 +123,34 @@ export const metadata = {
       signature: `${deflectionData.deputyName} #${deflectionData.deputyBadge}`,
     };
 
-    return fillCoR(templateBytes, formData);
+    const certBytes = await fillCoR(templateBytes, formData);
+
+    // If narcotics or paraphernalia were seized, append the narcotics notice as page 2
+    if (deflectionData.narcoticsSubstance || deflectionData.narcoticsParaphernalia) {
+      const { renderFormToHtml, renderToPdf } = await import('#lib/pdf.js');
+
+      const noticeData = {
+        date: deflectionData.releaseDateFormatted,
+        cadNumber: deflectionData.cadNumber,
+        substanceSeized: deflectionData.narcoticsSubstance === true,
+        paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
+      };
+
+      const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
+      const noticeBytes = await renderToPdf(noticeHtml);
+
+      // Merge: cert page 1 + narcotics notice page(s)
+      const certDoc = await PDFDocument.load(certBytes);
+      const noticeDoc = await PDFDocument.load(noticeBytes);
+      const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
+      for (const page of copiedPages) {
+        certDoc.addPage(page);
+      }
+
+      return certDoc.save();
+    }
+
+    return certBytes;
   },
 };
 
