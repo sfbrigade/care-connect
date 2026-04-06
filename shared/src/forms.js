@@ -27,5 +27,12 @@ export const FORM_REGISTRY = {
     generateLabel: 'Generate SFPD 647(f) Report',
     description: (name) => `SFPD 647(f) Report for ${name}`,
     downloadFilename: (id) => `647f-report-${id}.pdf`,
+  },
+  'narcotics-notice': {
+    componentName: 'FormNarcoticsNotice',
+    title: 'Notice to Owner - Contraband Property',
+    generateLabel: 'Generate Narcotics Notice',
+    description: (name) => `SFPD Narcotics Notice for ${name}`,
+    downloadFilename: (id) => `narcotics-notice-${id}.pdf`,
   }
 };
