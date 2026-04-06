@@ -6,7 +6,7 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
 
-const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
+const EXIT_TO_HOSPITAL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.ADMITTED,
@@ -14,11 +14,11 @@ const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
 ]);
 
 export default async function (fastify, opts) {
-  fastify.post('/:id/exit-to-jail',
+  fastify.post('/:id/exit-to-hospital',
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, or FAILED_INTAKE without legal release.',
+        description: 'Record direct exit to hospital from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, or FAILED_INTAKE without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -37,7 +37,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
+      if (!EXIT_TO_HOSPITAL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
@@ -49,12 +49,12 @@ export default async function (fastify, opts) {
           where: { id },
         });
 
-        if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
+        if (!EXIT_TO_HOSPITAL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
 
         const now = new Date();
-        const refusalReasonId = refusalReasonIdFromExitDestination('jail');
+        const refusalReasonId = refusalReasonIdFromExitDestination('hospital');
 
         const previousSubjectStatus = deflection.subjectStatus;
 
@@ -62,7 +62,7 @@ export default async function (fastify, opts) {
           data: {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
-            exitDestinationId: 'jail',
+            exitDestinationId: 'hospital',
             refusalReasonId,
             updatedById: request.user.id,
             updatedAt: now,
@@ -75,7 +75,7 @@ export default async function (fastify, opts) {
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitedAt: now,
             exitedById: request.user.id,
-            exitDestinationId: 'jail',
+            exitDestinationId: 'hospital',
             refusalReasonId,
             updatedAt: now,
           },

@@ -369,15 +369,15 @@ function SubjectForm () {
                         />
                         <Divider />
                         <Stack gap='xl' data-section='drug-use'>
-                          <Title order={3}>Drug use</Title>
+                          <Title order={3}>Substance use</Title>
                           <Stack gap='xl'>
                             <BooleanInput
                               {...form.getInputProps('drugUseEvidence')}
                               key={form.key('drugUseEvidence')}
-                              label='Evidence of drug use'
+                              label={<>Evidence of substance use<span>*</span></>}
                             />
                             {showDrugTypeQuestion && (
-                              <Input.Wrapper label='Drug type'>
+                              <Input.Wrapper label={<>Substance type<span>*</span></>}>
                                 <Chip.Group
                                   key={form.key('drugType')}
                                   {...form.getInputProps('drugType')}
