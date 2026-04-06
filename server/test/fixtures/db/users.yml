@@ -42,6 +42,16 @@ items:
     roles: [FIELD]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfpd"
+  fielduser1:
+    id: 7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d
+    firstName: Field
+    lastName: User NoHolds
+    email: field.noholds@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [FIELD]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfpd"
   sfsouser1:
     id: 49acdf99-536f-49ac-8138-1c77e5087697
     firstName: SFSO

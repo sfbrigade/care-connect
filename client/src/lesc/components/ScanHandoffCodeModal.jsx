@@ -31,28 +31,33 @@ function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
   }
 
   async function handleManualSubmitCodes (codes) {
-    try {
-      for (const code of codes) {
-        const deflectionId = parseDeflectionId(code);
-        if (!deflectionId) {
-          showToast('Invalid code. Please enter a handoff code number or URL.', 'error');
-          throw new Error('Invalid code');
-        }
+    const results = [];
 
-        await Api.deflections.handoff(deflectionId);
+    for (const code of codes) {
+      const deflectionId = parseDeflectionId(code);
+      if (!deflectionId) {
+        results.push({ code, error: 'Invalid code. Please enter a handoff code number or URL.' });
+        continue;
       }
 
-      onSuccess?.();
+      try {
+        await Api.deflections.handoff(deflectionId);
+        results.push({ code, error: null });
+      } catch (err) {
+        results.push({ code, error: err?._form || 'Failed to accept handoff. Please try again.' });
+      }
+    }
+
+    onSuccess?.();
+    if (results.every((r) => !r.error)) {
       showToast(
         codes.length === 1 ? 'Hold received' : `${codes.length} holds received`,
         'success',
         3000,
         codes.length === 1 ? 'Handoff code confirmed.' : 'Handoff codes confirmed.'
       );
-    } catch (err) {
-      showToast(err?._form || 'Failed to accept handoff. Please try again.', 'error');
-      throw err;
     }
+    return results;
   }
 
   return (
