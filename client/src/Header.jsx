@@ -3,17 +3,20 @@ import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core'
 import {
   IconBug,
   IconHome,
-  IconClipboardList,
+  IconAddressBook,
   IconMessages,
-  IconLogout
+  IconLogout,
+  IconUser
 } from '@tabler/icons-react';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import IconButtonLink from '@/components/IconButtonLink';
 
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
   const { user } = useAuthContext();
+  const { isOrgAdmin } = useUserRole();
 
   return (
     <Container h='100%'>
@@ -42,8 +45,18 @@ function Header ({ opened, close, toggle, logout }) {
                 >
                   Home
                 </Menu.Item>
+                {isOrgAdmin && (
+                  <Menu.Item
+                    leftSection={<IconAddressBook size={20} color='var(--mantine-color-gray-5)' />}
+                    component={Link}
+                    to='/manage-users'
+                    onClick={close}
+                  >
+                    Manage users
+                  </Menu.Item>
+                )}
                 <Menu.Item
-                  leftSection={<IconClipboardList size={20} color='var(--mantine-color-gray-5)' />}
+                  leftSection={<IconUser size={20} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/profile'
                   onClick={close}

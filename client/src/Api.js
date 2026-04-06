@@ -475,6 +475,9 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/organizations/${id}`, data).catch(handleError);
     },
+    members (organizationId) {
+      return instance.get(`/api/organizations/${organizationId}/members`);
+    },
     titles: {
       index (organizationId, page = 1) {
         return instance.get(`/api/organizations/${organizationId}/titles`, { params: { page } });

@@ -28,7 +28,7 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'sfso',
-      roles: ['CUSTODY'],
+      roles: ['CUSTODY', 'ORG_ADMIN'],
       badgeNumber: '5678',
     },
     {
@@ -37,7 +37,7 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'connections',
-      roles: ['CARE'],
+      roles: ['CARE', 'FACILITY_ADMIN'],
     },
   ];
 
