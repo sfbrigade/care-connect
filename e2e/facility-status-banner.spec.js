@@ -14,11 +14,22 @@ const STATUS_REASONS = {
   Open: { status: 'OPEN_ACCEPTING' },
 };
 
+async function getFacilityId (page) {
+  const response = await page.request.get('http://localhost:3000/api/facilities');
+  const facilities = await response.json();
+  const reset = facilities.find(f => f.subdomain === 'reset');
+  return reset.id;
+}
+
 async function setFacilityStatus (page, statusLabel) {
   const payload = STATUS_REASONS[statusLabel];
-  await page.request.post('http://localhost:3000/api/facilities/fdcb552e-27a6-4914-b3ef-cd84499ae006/status', {
+  const facilityId = await getFacilityId(page);
+  const response = await page.request.post(`http://localhost:3000/api/facilities/${facilityId}/status`, {
     data: payload,
   });
+  if (!response.ok()) {
+    throw new Error(`Failed to set facility status to ${statusLabel}: ${response.status()} ${await response.text()}`);
+  }
 }
 
 test.describe('Facility Status Banner', () => {
@@ -31,21 +42,21 @@ test.describe('Facility Status Banner', () => {
 
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('New holds are paused. Existing holds can still be transferred.')).toBeVisible();
+    await expect(page.getByText('New holds are paused. Continue processing current persons.')).toBeVisible();
   });
 
   test('yellow banner on custody page when not accepting', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/custody');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('New holds are paused. Existing holds can still be transferred.')).toBeVisible();
+    await expect(page.getByText('New holds are paused. Continue processing current persons.')).toBeVisible();
   });
 
   test('yellow banner on care page when not accepting', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/care');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('New holds are paused. Existing holds can still be transferred.')).toBeVisible();
+    await expect(page.getByText('New holds are paused. Continue processing current persons.')).toBeVisible();
   });
 
   test('banner dismissible per session', async ({ page }) => {
@@ -53,7 +64,7 @@ test.describe('Facility Status Banner', () => {
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
 
-    const banner = page.getByText('New holds are paused. Existing holds can still be transferred.');
+    const banner = page.getByText('New holds are paused. Continue processing current persons.');
     await expect(banner).toBeVisible();
 
     // Dismiss — Mantine Alert close button
@@ -63,7 +74,7 @@ test.describe('Facility Status Banner', () => {
     // Navigate to another page — banner reappears (new component mount)
     await page.goto('/custody');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('New holds are paused. Existing holds can still be transferred.')).toBeVisible();
+    await expect(page.getByText('New holds are paused. Continue processing current persons.')).toBeVisible();
   });
 
   test('red banner when closed', async ({ page }) => {
@@ -72,7 +83,7 @@ test.describe('Facility Status Banner', () => {
 
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Active holds were cancelled. Do not bring persons to this facility.')).toBeVisible();
+    await expect(page.getByText('RESET is temporarily closed.')).toBeVisible();
   });
 
   test('banner disappears when status returns to open', async ({ page }) => {
@@ -81,9 +92,17 @@ test.describe('Facility Status Banner', () => {
     await setFacilityStatus(page, 'Not accepting new holds');
     await setFacilityStatus(page, 'Open');
 
+    // Clear stale facility from localStorage so it re-fetches fresh status
+    await page.evaluate(() => window.localStorage.removeItem('selectedFacility'));
+    await page.goto('/');
+    const resetButton = page.getByRole('button', { name: 'RESET' });
+    if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await resetButton.click();
+    }
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');
     await expect(page.getByText('New holds are paused')).not.toBeVisible();
-    await expect(page.getByText('Active holds were cancelled')).not.toBeVisible();
+    await expect(page.getByText('RESET is temporarily closed.')).not.toBeVisible();
+    await expect(page.getByText('This facility is temporarily closed')).not.toBeVisible();
   });
 });

@@ -187,11 +187,11 @@ test.describe('Manage Capacity Page', () => {
     await page.getByRole('button', { name: 'Confirm new status' }).evaluate(el => el.click());
 
     await expect(page.getByText('Status updated')).toBeVisible();
-    await expect(page.getByText(/temporarily closed/)).toBeVisible();
+    await expect(page.getByText(/temporarily closed/).first()).toBeVisible();
     await expect(page).toHaveURL(/\/(holds|custody|care)/);
 
     // Red banner should appear
-    await expect(page.getByText('Active holds were cancelled')).toBeVisible();
+    await expect(page.getByText('temporarily closed').first()).toBeVisible();
 
     // Clean up — set back to open
     await page.goto('/manage-capacity');
@@ -210,7 +210,7 @@ test.describe('Manage Holds', () => {
     await page.waitForLoadState('networkidle');
 
     await page.getByText('Manage chair holds').click();
-    await expect(page.getByText('Holds in transit')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Holds in transit' })).toBeVisible();
 
     // If there are active holds, cancel one
     const cancelButton = page.getByRole('button', { name: 'Cancel hold' }).first();

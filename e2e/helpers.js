@@ -14,22 +14,15 @@ export async function apiLogin (page, email, password) {
 export async function login (page, email, password) {
   await page.goto('/');
 
-  // Click RESET facility if selector is shown
-  const resetButton = page.getByRole('button', { name: 'RESET' });
-  if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await resetButton.click();
-  }
-
-  // Wait for login form — retry goto if facility selector reappears
+  // Select RESET facility if selector is shown, retry if it reappears
   for (let i = 0; i < 3; i++) {
+    const resetButton = page.getByRole('button', { name: 'RESET' });
+    if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await resetButton.click();
+    }
     await page.goto('/login');
     const emailField = page.getByPlaceholder('youremail@example.com');
     if (await emailField.isVisible({ timeout: 5000 }).catch(() => false)) break;
-    // Facility selector showed again, click RESET
-    const retry = page.getByRole('button', { name: 'RESET' });
-    if (await retry.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await retry.click();
-    }
   }
 
   await page.getByPlaceholder('youremail@example.com').fill(email);
