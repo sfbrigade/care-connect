@@ -25,6 +25,13 @@ export default async function (fastify, opts) {
 
       if (incident) {
         incident.permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+        incident.totalActiveHolds = await fastify.prisma.deflection.count({
+          where: {
+            incidentId: incident.id,
+            status: 'ACTIVE',
+            subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
+          },
+        });
       }
 
       return reply.send(incident);

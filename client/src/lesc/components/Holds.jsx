@@ -376,9 +376,9 @@ function Holds () {
     },
   });
 
-  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false, totalActiveHolds: 0 };
+  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
 
-  const isLastHoldOnIncident = (permissions.totalActiveHolds ?? 0) <= 1;
+  const isLastHoldOnIncident = (incident?.totalActiveHolds ?? 0) <= 1;
   const incidentContainsOnlyEmptyHolds = deflections
     ? deflections.every(deflection => !deflection.subjectId)
     : false;

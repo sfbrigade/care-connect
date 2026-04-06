@@ -39,12 +39,6 @@ function Deflection () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const { data: activeDeflections, isFetching: isFetchingActiveDeflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
-    enabled: !!incident,
-  });
-
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
@@ -142,7 +136,7 @@ function Deflection () {
   });
 
   const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
-  const totalActiveHolds = incident?.permissions?.totalActiveHolds ?? 0;
+  const totalActiveHolds = incident?.totalActiveHolds ?? 0;
   const shouldCancelIncidentWithHold =
     canCancelIncident &&
     !!deflection?.subjectId &&
@@ -463,7 +457,7 @@ function Deflection () {
           <Button
             onClick={() => setShowCancelModal(true)}
             variant='destructive'
-            disabled={isFetchingActiveDeflections}
+            disabled={!incident}
           >
             Cancel hold
           </Button>
@@ -483,7 +477,7 @@ function Deflection () {
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
-          loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
+          loading={cancelDeflectionMutation.isPending}
         />
       )}
       {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
