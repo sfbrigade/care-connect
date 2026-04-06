@@ -7,15 +7,13 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
-import { formatSmartDateTime, calculateAge } from '@/utils/format';
+import { formatSmartDateTime } from '@/utils/format';
 import { isValidIncident } from '@/utils/validators';
 import LockedQRCode from '@/components/LockedQRCode';
 import ActionFooter from '@/components/ActionFooter';
-
-import { useTranslation } from 'react-i18next';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
 
 function HandoffHoldCard ({ deflection, isHandedOff }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const displayId = String(deflection.id);
   const displayName = [
@@ -23,14 +21,7 @@ function HandoffHoldCard ({ deflection, isHandedOff }) {
     deflection?.subject?.middleInitial,
     deflection?.subject?.lastName,
   ].filter(Boolean).join(' ') || 'Unknown person';
-
-  const subjectDetails = [];
-  if (deflection?.subject?.dateOfBirth) {
-    subjectDetails.push(`${calculateAge(deflection.subject.dateOfBirth)} y.o.`);
-  }
-  if (deflection?.subject?.sex) {
-    subjectDetails.push(t(`sex.${deflection.subject.sex}`));
-  }
+  const subjectDetails = useSubjectDetails(deflection?.subject);
 
   const handoffUrl = `${window.location.origin}/handoff/${deflection.id}`;
 

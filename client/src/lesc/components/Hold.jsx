@@ -1,9 +1,9 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
 import { DateTime } from 'luxon';
 import LockedQRCode from '@/components/LockedQRCode';
 import useNow from '@/hooks/useNow';
-import { calculateAge, formatTime, formatTimeRemaining } from '@/utils/format';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
+import { formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
 import { useQuery } from '@tanstack/react-query';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
@@ -12,7 +12,6 @@ import Api from '@/Api';
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
 function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false, isHandedOff = false }) {
-  const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
     [
@@ -24,20 +23,8 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
       .join(' ') || 'Let’s add subject details';
   const isActive = deflection.status === 'ACTIVE';
 
-  let subjectAge;
-  if (deflection?.subject?.dateOfBirth) {
-    subjectAge = calculateAge(deflection?.subject?.dateOfBirth);
-  }
-  const subjectDetails = [];
-  if (subjectAge) {
-    subjectDetails.push(`${subjectAge} y.o.`);
-  }
-  if (deflection?.subject?.sex) {
-    subjectDetails.push(t(`sex.${deflection?.subject?.sex}`));
-  }
-  if (subjectDetails.length === 0) {
-    subjectDetails.push('Age and sex missing');
-  }
+  const rawSubjectDetails = useSubjectDetails(deflection?.subject);
+  const subjectDetails = rawSubjectDetails.length > 0 ? rawSubjectDetails : ['Age and sex missing'];
 
   const isNew = !deflection?.subjectId;
   const isCancelled = deflection.status === 'CANCELLED';
