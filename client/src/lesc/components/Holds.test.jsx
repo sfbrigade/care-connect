@@ -119,6 +119,18 @@ beforeEach(() => {
       leftAt: null,
       addressLine1: '1001 Polk St',
       createdById: 1,
+      permissions: {
+        isCreator: true,
+        canExtend: true,
+        canArrive: false,
+        canLeave: true,
+        canCancelIncident: true,
+        canEditIncident: true,
+        canCreateHold: true,
+        canHandoff: true,
+        incidentDetailsComplete: true,
+      },
+      totalActiveHolds: 1,
     },
   });
   mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
