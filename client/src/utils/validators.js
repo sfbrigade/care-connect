@@ -1,6 +1,8 @@
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
 
+import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
+
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
@@ -30,6 +32,19 @@ const SubjectSchema = z.object({
   race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
 });
 
+const DrugTypeSchema = z.enum(DRUG_TYPE_OPTIONS, ERROR_SELECT_ONE);
+
+const DrugUseSchema = z.union([
+  z.object({
+    drugUseEvidence: z.literal(false),
+    drugType: z.nullable(z.optional(DrugTypeSchema)),
+  }),
+  z.object({
+    drugUseEvidence: z.literal(true),
+    drugType: DrugTypeSchema,
+  }),
+], ERROR_SELECT_ONE);
+
 const NarcoticsSchema = z.object({
   narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
   narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
@@ -44,12 +59,28 @@ const PropertySchema = z.object({
   property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE'], ERROR_SELECT_ONE),
 });
 
-const DeflectionSchema = z.object({
-  subject: SubjectSchema,
-  ...NarcoticsSchema.shape,
-  ...DeflectionDetailsSchema.shape,
-  ...PropertySchema.shape,
-});
+const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
+  z.object({
+    subject: SubjectSchema,
+    ...NarcoticsSchema.shape,
+    drugUseEvidence: z.literal(false),
+    drugType: z.nullable(z.optional(DrugTypeSchema)),
+    ...DeflectionDetailsSchema.shape,
+    ...PropertySchema.shape,
+  }),
+  z.object({
+    subject: SubjectSchema,
+    ...NarcoticsSchema.shape,
+    drugUseEvidence: z.literal(true),
+    drugType: DrugTypeSchema,
+    ...DeflectionDetailsSchema.shape,
+    ...PropertySchema.shape,
+  }),
+], ERROR_SELECT_ONE);
+
+export const isValidDrugUse = (obj) => {
+  return !!DrugUseSchema.safeParse(obj)?.success;
+};
 
 export const validateIncident = zod4Resolver(IncidentSchema);
 
