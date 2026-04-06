@@ -600,7 +600,6 @@ function Holds () {
           opened={scanHandoffModalOpened}
           onClose={() => setScanHandoffModalOpened(false)}
           onSuccess={() => {
-            setScanHandoffModalOpened(false);
             queryClient.invalidateQueries({ queryKey: ['deflections'] });
             queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
             setTab('active');
