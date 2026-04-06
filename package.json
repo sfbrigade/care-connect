@@ -12,9 +12,13 @@
     "dev:client": "node scripts/setup-env.js && npm run dev -w client -- --host --port 3333",
     "lint": "npm run lint --workspaces",
     "lint:check": "npm run lint:check --workspaces",
-    "test": "npm test --workspaces"
+    "test": "npm test --workspaces",
+    "test:e2e": "npx playwright test",
+    "test:e2e:watch": "SLOW_MO=500 npx playwright test --headed"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.12.0",
+    "@playwright/test": "^1.58.2",
     "foreman": "^3.0.1",
     "prisma-erd-generator": "^2.3.0"
   }
