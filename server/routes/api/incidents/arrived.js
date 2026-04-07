@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Incident from '#models/incident.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { getOfficerPermissions } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/arrived',
@@ -29,24 +30,41 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+      if (!permissions.canArrive && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {
         const now = new Date();
-        incident = await tx.incident.update({
-          where: { id },
-          data: {
-            arrivedAt: now,
-            updatedById: request.user.id,
+
+        // Update arrivedAt on the officer's IncidentOfficer record
+        await tx.incidentOfficer.updateMany({
+          where: {
+            incidentId: id,
+            facilityId: incident.facilityId,
+            officerId: request.user.id,
           },
+          data: { arrivedAt: now },
         });
 
+        // Also set on incident for backward compatibility (if this is the creator)
+        if (incident.createdById === request.user.id) {
+          incident = await tx.incident.update({
+            where: { id },
+            data: {
+              arrivedAt: now,
+              updatedById: request.user.id,
+            },
+          });
+        }
+
+        // Only update deflections belonging to the requesting officer
         deflections = await tx.deflection.findMany({
           where: {
             incidentId: id,
+            currentOfficerId: request.user.id,
             status: 'ACTIVE',
           },
         });
@@ -71,6 +89,16 @@ export default async function (fastify, opts) {
             },
           })
         )));
+      });
+
+      // Re-fetch incident with incidentOfficers to ensure response reflects updated state
+      incident = await fastify.prisma.incident.findUnique({
+        where: { id },
+        include: {
+          incidentOfficers: {
+            where: { officerId: request.user.id },
+          },
+        },
       });
 
       deflections.forEach((deflection) => {

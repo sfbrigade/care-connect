@@ -130,6 +130,15 @@ UNKNOWN UNKNOWN
             FIELD FIELD
 CUSTODY CUSTODY
 CARE CARE
+ORG_ADMIN ORG_ADMIN
+FACILITY_ADMIN FACILITY_ADMIN
+        }
+    
+
+
+        IncidentOfficerRoleEnum {
+            ARRESTING ARRESTING
+RECEIVING RECEIVING
         }
     
 
@@ -191,6 +200,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String unitId "❓"
     String hashedPassword 
     DateTime deactivatedAt "❓"
+    DateTime deletedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
     String badgeNumber "❓"
@@ -210,6 +220,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String titleId "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
+    DateTime expiresAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     String createdById 
@@ -413,6 +424,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Boolean propertyReturned "❓"
     DateTime propertyReturnedAt "❓"
     String propertyReturnedById "❓"
+    String currentOfficerId "❓"
     DateTime createdAt 
     String createdById 
     DateTime expiresAt 
@@ -597,6 +609,25 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "IncidentOfficer" {
+    String id "🗝️"
+    Int incidentId 
+    String facilityId 
+    String officerId 
+    IncidentOfficerRoleEnum role 
+    DateTime arrivedAt "❓"
+    DateTime leftAt "❓"
+    DateTime handoffReceivedAt "❓"
+    String handoffReceivedFromId "❓"
+    String badgeNumber "❓"
+    String organizationId "❓"
+    String unitId "❓"
+    String titleId "❓"
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
   "Feedback" {
     String id "🗝️"
     String message 
@@ -609,6 +640,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Organization" o|--}o "RoleEnum" : "enum:defaultRoles"
     "Organization" o|--|| "User" : "createdBy"
     "Organization" o{--}o "Deflection" : ""
+    "Organization" o{--}o "IncidentOfficer" : ""
     "Organization" o{--}o "Incident" : ""
     "Organization" o{--}o "Invite" : ""
     "Organization" o{--}o "Title" : ""
@@ -617,11 +649,13 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Unit" o|--|| "Organization" : "organization"
     "Unit" o|--|| "User" : "createdBy"
     "Unit" o{--}o "Deflection" : ""
+    "Unit" o{--}o "IncidentOfficer" : ""
     "Unit" o{--}o "Incident" : ""
     "Unit" o{--}o "User" : ""
     "Title" o|--|| "Organization" : "organization"
     "Title" o|--|| "User" : "createdBy"
     "Title" o{--}o "Deflection" : ""
+    "Title" o{--}o "IncidentOfficer" : ""
     "Title" o{--}o "Incident" : ""
     "Title" o{--}o "Invite" : ""
     "Title" o{--}o "User" : ""
@@ -656,12 +690,15 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityUpdate" : ""
+    "User" o{--}o "IncidentOfficer" : ""
+    "User" o{--}o "IncidentOfficer" : ""
     "User" o{--}o "Incident" : ""
     "User" o{--}o "Incident" : ""
     "User" o{--}o "Invite" : ""
@@ -731,6 +768,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "Deflection" o|--|o "User" : "propertyReturnedBy"
+    "Deflection" o|--|o "User" : "currentOfficer"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
@@ -794,4 +832,12 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Incident" o|--|o "Title" : "createdByTitle"
     "Incident" o|--|o "Unit" : "createdByUnit"
     "Incident" o|--|| "User" : "updatedBy"
+    "Incident" o{--}o "IncidentOfficer" : ""
+    "IncidentOfficer" o|--|| "Incident" : "incident"
+    "IncidentOfficer" o|--|| "User" : "officer"
+    "IncidentOfficer" o|--|| "IncidentOfficerRoleEnum" : "enum:role"
+    "IncidentOfficer" o|--|o "User" : "handoffReceivedFrom"
+    "IncidentOfficer" o|--|o "Organization" : "organization"
+    "IncidentOfficer" o|--|o "Unit" : "unit"
+    "IncidentOfficer" o|--|o "Title" : "title"
 ```

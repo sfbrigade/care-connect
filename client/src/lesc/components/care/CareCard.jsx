@@ -1,25 +1,16 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useNavigate } from 'react-router';
-import { useTranslation } from 'react-i18next';
 
-import { calculateAge } from '../../../utils/format';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { releaseTiming } from '../../../utils/releaseTiming';
 import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
-
-  const subjectDetails = [];
-  if (deflection?.subject?.dateOfBirth) {
-    subjectDetails.push(`${calculateAge(deflection.subject.dateOfBirth)} y.o.`);
-  }
-  if (deflection?.subject?.sex) {
-    subjectDetails.push(t(`sex.${deflection.subject.sex}`));
-  }
+  const subjectDetails = useSubjectDetails(deflection?.subject);
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
   const isReleased = deflection.subjectStatus === 'RELEASED';

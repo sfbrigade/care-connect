@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { DrugTypeEnum } from '@prisma/client';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 
@@ -30,13 +31,12 @@ export const metadata = {
   },
 
   dataSchema: z.object({
-    incidentId: z.union([z.number(), z.string()]),
     cadNumber: z.string(),
+    caseNumber: z.string(),
     arrestedAt: z.string().nullable(),
     arrestLocation: z.string(),
     officerName: z.string(),
     officerBadge: z.string(),
-    caseNumber: z.string(),
     subjectName: z.string(),
     subjectFullName: z.string(),
     subjectRace: z.string(),
@@ -84,11 +84,11 @@ export const metadata = {
       .join(', ');
 
     return {
-      incidentId: incident?.id ?? '',
       cadNumber: incident?.cadNumber || '',
       caseNumber: incident?.caseNumber || '',
       arrestedAt: incident?.arrestedAt?.toISOString() || null,
       arrestLocation,
+      locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
       officerName,
       officerBadge,
       subjectName,
@@ -100,6 +100,7 @@ export const metadata = {
       subjectZip: subject?.postalCode || '',
       subjectDL: subject?.driverLicense || '',
       subjectLocalId: subject?.localId || '',
+      subjectDrugType: subject?.drugType || null,
       arrivedAtReset: incident?.arrivedAt?.toISOString() || null,
       transferredAt: deflection.transferredAt?.toISOString() || null,
       releasedAt: deflection.releasedAt.toISOString(),
@@ -112,25 +113,24 @@ export const metadata = {
   async generatePdf (deflectionData, user) {
     const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/Form849b.pdf');
     const templateBytes = await readFile(templatePath);
-
-    // Determine location sent to based on how incident was reported
-    // If SFPD reported "on view" -> "Same/On View", otherwise -> "Other"
-    const locationSentTo = 'Other'; // TODO: Determine from incident data if on view
+    const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.CNS_DEPRESSANTS;
 
     // Map deflection data to 849b form fields
     const formData = {
       // Header fields
-      incidentNumber: String(deflectionData.incidentId),
+      incidentNumber: deflectionData.caseNumber,
       cadNumber: deflectionData.cadNumber,
 
       // Incident fields
-      primaryIncidentType: '849(b) Release', // TBC
+      primaryIncidentType: isDrugTypeCNSDepressants
+        ? 'Alcohol, Under Influence in Public Place, Investigative Detention'
+        : 'Drugs, Under Influence in a Public Place, Investigative Detention',
       occurrenceDateTime: deflectionData.arrestedAt,
       reportedDateTime: deflectionData.arrestedAt,
       additionalIncidentTypes: '', // TBC
       location: deflectionData.arrestLocation,
-      premiseType: 'Street', // TBC
-      locationSentTo,
+      premiseType: '',
+      locationSentTo: deflectionData.locationSentTo,
       reportedTo: '', // TBC
 
       // Page info
@@ -176,8 +176,10 @@ export const metadata = {
       // Report type - Supp. checked per requirements
       reportType: 'supplemental',
 
-      // Incident codes - TBC
-      incidentCodes: ['', '', ''],
+      // Incident codes based on drug type
+      incidentCodes: isDrugTypeCNSDepressants
+        ? ['19090', '64085']
+        : ['19095', '64085'],
 
       narrative: deflectionData.releaseNarrative || build849bReleaseNarrative({
         caseNumber: deflectionData.caseNumber,

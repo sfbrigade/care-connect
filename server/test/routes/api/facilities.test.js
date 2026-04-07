@@ -10,6 +10,7 @@ test('/api/facilities', async (t) => {
   const { prisma } = app;
   const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
 
   await t.test('GET /', async (t) => {
     await t.test('returns facilities with LESC service type', async () => {
@@ -232,6 +233,36 @@ test('/api/facilities', async (t) => {
   });
 
   await t.test('POST /:id/status', async (t) => {
+    await t.test('returns 401 without authentication', async () => {
+      const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
+        status: Facility.Status.CLOSED,
+        statusReasonId: 'other',
+        statusOther: 'Other reasons',
+      });
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('returns 403 for non-FACILITY_ADMIN user', async () => {
+      const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
+        status: Facility.Status.CLOSED,
+        statusReasonId: 'other',
+        statusOther: 'Other reasons',
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('allows FACILITY_ADMIN to update status', async () => {
+      const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
+        status: Facility.Status.CLOSED,
+        statusReasonId: 'other',
+        statusOther: 'Other reasons',
+        updateNotes: 'Facility admin closing',
+      }).headers(facilityAdminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, Facility.Status.CLOSED);
+    });
+
     await t.test('updates facility status', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.CLOSED,
