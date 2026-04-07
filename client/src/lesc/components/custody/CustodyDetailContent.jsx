@@ -224,8 +224,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
+  const doc849b = deflection?.deflectionDocuments?.find(d => d.formId === '849b');
+  const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
+
   function open849bPdf () {
-    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
+    const url = doc849b?.fileUrl || `/api/forms/849b/pdf/${deflection.id}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -667,7 +671,8 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        window.open(`/api/forms/cert/pdf/${deflection.id}`, '_blank');
+                        const url = docCert?.fileUrl || `/api/forms/cert/pdf/${deflection.id}`;
+                        window.open(url, '_blank');
                       }
                     }}
                     loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
