@@ -129,6 +129,11 @@ enum RoleEnum {
   FACILITY_ADMIN
 }
 
+enum IncidentOfficerRoleEnum {
+  ARRESTING
+  RECEIVING
+}
+
 enum SubjectStatusEnum {
   DETAINED
   ONSITE_AWAITING_TRANSFER
@@ -153,6 +158,7 @@ model Organization {
   updatedAt                    DateTime                @updatedAt
 
   deflections                  Deflection[]
+  incidentOfficers             IncidentOfficer[]
   incidents                    Incident[]
   invites                      Invite[]
   titles                       Title[]
@@ -171,6 +177,7 @@ model Unit {
   updatedAt                    DateTime                @updatedAt
 
   deflections                  Deflection[]
+  incidentOfficers             IncidentOfficer[]
   incidents                    Incident[]
   users                        User[]
 
@@ -188,6 +195,7 @@ model Title {
   updatedAt                    DateTime                @updatedAt
 
   deflections                  Deflection[]
+  incidentOfficers             IncidentOfficer[]
   incidents                    Incident[]
   invites                      Invite[]
   users                        User[]
@@ -240,6 +248,7 @@ model User {
   deflectionExitHousingStatusesUpdated DeflectionExitHousingStatus[] @relation("UpdatedBy")
   deflectionsCancelled         Deflection[]            @relation("CancelledBy")
   deflectionsCreated           Deflection[]            @relation("CreatedBy")
+  deflectionsCurrentOfficer    Deflection[]            @relation("CurrentOfficer")
   deflectionsTransferred       Deflection[]            @relation("TransferredBy")
   deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
   deflectionsRejected          Deflection[]            @relation("RejectedBy")
@@ -252,6 +261,8 @@ model User {
   facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
   facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
   facilityUpdatesCreated       FacilityUpdate[]
+  incidentOfficers             IncidentOfficer[]       @relation("IncidentOfficer")
+  incidentOfficersHandedOff    IncidentOfficer[]       @relation("HandoffReceivedFrom")
   incidentsCreated             Incident[]              @relation("CreatedBy")
   incidentsUpdated             Incident[]              @relation("UpdatedBy")
   invitesCreated               Invite[]                @relation("CreatedBy")
@@ -527,6 +538,8 @@ model Deflection {
   propertyReturnedAt           DateTime?
   propertyReturnedBy           User?                   @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
   propertyReturnedById         String?                 @db.Uuid
+  currentOfficer               User?                   @relation("CurrentOfficer", fields: [currentOfficerId], references: [id])
+  currentOfficerId             String?                 @db.Uuid
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                  String                  @db.Uuid
@@ -778,6 +791,33 @@ model Incident {
   @@index([caseNumber])
 
   deflections                  Deflection[]
+  incidentOfficers             IncidentOfficer[]
+}
+
+model IncidentOfficer {
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
+  incidentId                   Int
+  facilityId                   String                  @db.Uuid
+  officer                      User                    @relation("IncidentOfficer", fields: [officerId], references: [id])
+  officerId                    String                  @db.Uuid
+  role                         IncidentOfficerRoleEnum
+  arrivedAt                    DateTime?
+  leftAt                       DateTime?
+  handoffReceivedAt            DateTime?
+  handoffReceivedFrom          User?                   @relation("HandoffReceivedFrom", fields: [handoffReceivedFromId], references: [id])
+  handoffReceivedFromId        String?                 @db.Uuid
+  badgeNumber                  String?
+  organization                 Organization?           @relation(fields: [organizationId], references: [id])
+  organizationId               String?
+  unit                         Unit?                   @relation(fields: [organizationId, unitId], references: [organizationId, id])
+  unitId                       String?
+  title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
+  titleId                      String?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
+
+  @@unique([incidentId, facilityId, officerId])
 }
 
 model Feedback {

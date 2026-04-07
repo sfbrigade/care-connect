@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Group, Loader, Modal, Stack, Text, Title } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 import useNow from '@/hooks/useNow';
-import { calculateAge, formatTimeRemaining } from '@/utils/format';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
+import { formatTimeRemaining } from '@/utils/format';
 
-function HoldCard ({ deflection, facilityName, onCancelClick, t }) {
+function HoldCard ({ deflection, facilityName, onCancelClick }) {
   const now = useNow(1000, deflection.status === 'ACTIVE' && !!deflection.expiresAt);
 
   const personName = [
@@ -17,11 +17,7 @@ function HoldCard ({ deflection, facilityName, onCancelClick, t }) {
     deflection.subject?.middleInitial,
     deflection.subject?.lastName,
   ].filter(Boolean).join(' ') || 'Unknown';
-
-  const subjectDetails = [];
-  const age = calculateAge(deflection.subject?.dateOfBirth);
-  if (age) subjectDetails.push(`${age} y.o.`);
-  if (deflection.subject?.sex) subjectDetails.push(t(`sex.${deflection.subject.sex}`));
+  const subjectDetails = useSubjectDetails(deflection.subject);
 
   const officerName = [
     deflection.createdBy?.firstName,
@@ -70,7 +66,6 @@ function HoldCard ({ deflection, facilityName, onCancelClick, t }) {
 }
 
 function ManageHolds ({ facility }) {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -121,7 +116,6 @@ function ManageHolds ({ facility }) {
             deflection={hold}
             facilityName={facility.name}
             onCancelClick={setCancelTarget}
-            t={t}
           />
         ))}
       </Stack>
