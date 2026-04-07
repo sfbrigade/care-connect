@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { fillCoR } from './fillCoR.js';
-import { formatDateParts, formatTime } from '../formUtils.js';
+import { formatDateParts, formatTime, formatDateOnly } from '../formUtils.js';
 
 export const metadata = {
   generatorType: 'pdf',
@@ -52,6 +52,10 @@ export const metadata = {
     deputyName: z.string(),
     deputyBadge: z.string(),
     unitIdentifier: z.string(),
+    narcoticsSubstance: z.boolean().nullable(),
+    narcoticsParaphernalia: z.boolean().nullable(),
+    cadNumber: z.string(),
+    releaseDateFormatted: z.string(),
   }),
 
   transformData (deflection) {
@@ -85,6 +89,10 @@ export const metadata = {
       deputyName,
       deputyBadge,
       unitIdentifier,
+      narcoticsSubstance: deflection.narcoticsSubstance,
+      narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+      cadNumber: deflection.incident?.cadNumber || '',
+      releaseDateFormatted: formatDateOnly(deflection.releasedAt.toISOString()),
     };
   },
 

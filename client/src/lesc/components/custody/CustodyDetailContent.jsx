@@ -211,8 +211,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
+  const doc849b = deflection?.deflectionDocuments?.find(d => d.formId === '849b');
+  const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
+
   function open849bPdf () {
-    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
+    const url = doc849b?.fileUrl || `/api/forms/849b/pdf/${deflection.id}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -252,7 +256,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             <Stack gap='sm' align='center'>
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
-                  <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
+                  <LockedQRCode value={transferUrl} variant={!isReadyForIntake ? 'locked' : undefined} />
                   <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
                   {isAwaitingSafetyCheck && (
                     <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
@@ -658,7 +662,8 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        window.open(`/api/forms/cert/pdf/${deflection.id}`, '_blank');
+                        const url = docCert?.fileUrl || `/api/forms/cert/pdf/${deflection.id}`;
+                        window.open(url, '_blank');
                       }
                     }}
                     loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}

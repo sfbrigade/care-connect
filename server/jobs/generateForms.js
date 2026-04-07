@@ -1,3 +1,4 @@
+import { PDFDocument } from 'pdf-lib';
 import prisma from '#prisma/client.js';
 import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
@@ -38,6 +39,30 @@ export default async function generateForms (data, prismaClient = prisma) {
       const { default: FormComponent } = await import(`#lib/forms/dist/${form.componentName}.js`);
       const html = await renderFormToHtml(FormComponent, formData, { title: form.title });
       pdfBuffer = await renderToPdf(html);
+    }
+
+    // For the cert form, append narcotics notice as page 2 if narcotics/paraphernalia were seized
+    if (formId === 'cert' && (formData.narcoticsSubstance || formData.narcoticsParaphernalia)) {
+      const { renderFormToHtml, renderToPdf } = await import('#lib/pdf.js');
+      const { default: FormNarcoticsNotice } = await import('#lib/forms/dist/FormNarcoticsNotice.js');
+
+      const noticeData = {
+        date: formData.releaseDateFormatted,
+        cadNumber: formData.cadNumber,
+        substanceSeized: formData.narcoticsSubstance === true,
+        paraphernaliaSeized: formData.narcoticsParaphernalia === true,
+      };
+
+      const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
+      const noticeBytes = await renderToPdf(noticeHtml);
+
+      const certDoc = await PDFDocument.load(pdfBuffer);
+      const noticeDoc = await PDFDocument.load(noticeBytes);
+      const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
+      for (const page of copiedPages) {
+        certDoc.addPage(page);
+      }
+      pdfBuffer = Buffer.from(await certDoc.save());
     }
 
     const filename = form.downloadFilename(deflectionId);
