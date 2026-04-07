@@ -39,12 +39,6 @@ function Deflection () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const { data: activeDeflections, isFetching: isFetchingActiveDeflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
-    enabled: !!incident,
-  });
-
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
@@ -141,14 +135,16 @@ function Deflection () {
     },
   });
 
-  const activeHoldsCount = activeDeflections?.length;
-  const isLastActiveDetailedHold =
+  const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
+  const activeHoldsCount = incident?.totalActiveHolds ?? 0;
+  const shouldCancelIncidentWithHold =
+    canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
     activeHoldsCount === 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (isLastActiveDetailedHold && incident?.id) {
+    if (shouldCancelIncidentWithHold && incident?.id) {
       await cancelIncidentMutation.mutateAsync({
         incidentId: incident.id,
         cancelReasonId,
@@ -461,7 +457,7 @@ function Deflection () {
           <Button
             onClick={() => setShowCancelModal(true)}
             variant='destructive'
-            disabled={isFetchingActiveDeflections}
+            disabled={!incident}
           >
             Cancel hold
           </Button>
@@ -475,16 +471,16 @@ function Deflection () {
         </ActionFooter>
       )}
       {showActionFooter && <Box h='120px' />}
-      {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
+      {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
         <CancelHoldModal
           deflection={deflection}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
-          loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
+          loading={cancelDeflectionMutation.isPending}
         />
       )}
-      {!!deflection && showCancelModal && isLastActiveDetailedHold && (
+      {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
         <CancelIncidentModal
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}

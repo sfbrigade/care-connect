@@ -12,6 +12,7 @@ import RecordPropertyReturn from '../components/custody/RecordPropertyReturn';
 import IncidentForm from '../components/IncidentForm';
 import SubjectForm from '../components/SubjectForm';
 import Deflection from '../components/Deflection';
+import HandoffScreen from '../components/HandoffScreen';
 import DeflectionForm from '../components/DeflectionForm';
 import PropertyForm from '../components/PropertyForm';
 import NarcoticsForm from '../components/NarcoticsForm';
@@ -34,6 +35,7 @@ function LESCRoutes () {
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
       <Route path='incident' element={<IncidentForm />} />
+      <Route path='incident/handoff' element={<HandoffScreen />} />
       <Route path='custody/:id/subject' element={<SubjectForm />} />
       <Route path='custody/:id/legal-release' element={<LegalReleaseQuestions />} />
       <Route path='custody/:id/property-return' element={<RecordPropertyReturn />} />

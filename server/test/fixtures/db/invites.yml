@@ -7,6 +7,7 @@ items:
     lastName: User 1
     email: invited.user.1@test.com
     message: This is an invitation to Invited User 1.
+    expiresAt: '2099-01-01T00:00:00.000Z'
     createdAt: '2024-04-07T16:53:41-07:00'
     createdBy: '@user1'
   invite2:
@@ -17,6 +18,7 @@ items:
     message: This is an invitation to Invited User 2.
     organization: '@sfso'
     prop115Certified: true
+    expiresAt: '2099-01-01T00:00:00.000Z'
     createdAt: '2024-04-07T17:53:41-07:00'
     createdBy: '@user1'
   invite3:
@@ -39,3 +41,11 @@ items:
     createdBy: '@user1'
     acceptedAt: '2024-04-07T18:53:41-07:00'
     acceptedBy: '@user4'
+  invite5:
+    id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    firstName: Expired
+    lastName: Invite
+    email: expired@test.com
+    expiresAt: '2025-01-01T00:00:00.000Z'
+    organization: '@sfso'
+    createdBy: '@orgadminuser1'
