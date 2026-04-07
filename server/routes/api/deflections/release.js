@@ -14,6 +14,33 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
+function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
+  const isHoldRelease = [
+    Deflection.SubjectStatus.DETAINED,
+    Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+    Deflection.SubjectStatus.AWAITING_INTAKE,
+    Deflection.SubjectStatus.FAILED_INTAKE,
+    Deflection.SubjectStatus.READY_FOR_INTAKE,
+    Deflection.SubjectStatus.ADMITTED,
+  ].includes(previousSubjectStatus);
+
+  const isOccupiedRelease = [
+    Deflection.SubjectStatus.IN_CHAIR,
+    Deflection.SubjectStatus.RELEASED,
+  ].includes(previousSubjectStatus);
+
+  return {
+    capacity: bedType.capacity,
+    unavailableUnoccupied: bedType.unavailableUnoccupied,
+    unavailableOccupied: bedType.unavailableOccupied,
+    occupied: isOccupiedRelease ? Math.max(0, bedType.occupied - 1) : bedType.occupied,
+    holds: isHoldRelease ? Math.max(0, bedType.holds - 1) : bedType.holds,
+    available: bedType.available + 1,
+    updateMethod: 'API',
+    updatedById: userId,
+  };
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/release',
     {
@@ -97,6 +124,7 @@ export default async function (fastify, opts) {
         }
 
         const now = new Date();
+        const previousSubjectStatus = deflection.subjectStatus;
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
@@ -150,27 +178,21 @@ export default async function (fastify, opts) {
         });
 
         if (isExitRelease) {
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-          const updatedData = {
-            capacity,
-            unavailableUnoccupied,
-            unavailableOccupied,
-            occupied: occupied - 1,
-            holds,
-            available: available + 1,
-            updateMethod: 'API',
-            updatedById: request.user.id,
-          };
+          const bedTypeUpdateData = buildBedTypeUpdate({
+            previousSubjectStatus,
+            bedType,
+            userId: request.user.id,
+          });
           await tx.bedTypeUpdate.create({
             data: {
-              ...updatedData,
+              ...bedTypeUpdateData,
               bedTypeId,
               facilityId: deflection.facilityId,
             },
           });
           await tx.bedType.update({
             where: { id: bedTypeId },
-            data: updatedData,
+            data: bedTypeUpdateData,
           });
         }
       });

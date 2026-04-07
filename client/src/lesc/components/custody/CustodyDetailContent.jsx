@@ -269,7 +269,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             <Stack gap='sm' align='center'>
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
-                  <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
+                  <LockedQRCode value={transferUrl} variant={!isReadyForIntake ? 'locked' : undefined} />
                   <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
                   {isAwaitingSafetyCheck && (
                     <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>

@@ -6,7 +6,7 @@ import BedType from '#models/bedType.js';
 export default async function (fastify, opts) {
   fastify.get('/:bedTypeId',
     {
-      onRequest: fastify.requireAuth,
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Get a bed type record.',
         params: z.object({
