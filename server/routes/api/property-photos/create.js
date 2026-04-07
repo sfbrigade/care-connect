@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',
@@ -26,7 +27,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && !request.user.isAdmin) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
