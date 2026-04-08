@@ -456,10 +456,10 @@ function Holds () {
   const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
   const hasArrived = !!myArrivedAt;
   const hasLeft = !!myLeftAt;
+  const isArrivalPending = markArrivedMutation.isPending || markLeftMutation.isPending;
   const isHoldButtonDisabled = (
     !permissions.canCreateHold ||
-    markArrivedMutation.isPending ||
-    markLeftMutation.isPending ||
+    isArrivalPending ||
     createDeflectionMutation.isPending ||
     isClosed ||
     isFull ||
@@ -484,7 +484,7 @@ function Holds () {
             hasActiveHold={(deflections?.length ?? 0) > 0}
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
-            isPending={markArrivedMutation.isPending || markLeftMutation.isPending || createDeflectionMutation.isPending}
+            isArrivalPending={isArrivalPending}
           />
           <SegmentedControl
             fullWidth
