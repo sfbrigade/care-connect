@@ -33,7 +33,6 @@ const RELEASED_SECTIONS = [
   { status: 'RELEASED', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
   { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
-  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 
 function groupByStatus (deflections) {
