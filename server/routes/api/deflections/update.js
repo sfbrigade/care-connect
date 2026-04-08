@@ -4,6 +4,8 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
+import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -32,7 +34,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && !request.user.isAdmin && !request.user.isCustody) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -54,6 +56,17 @@ export default async function (fastify, opts) {
       });
 
       updated.propertyPhotos = updated.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      const hasDocument = await fastify.prisma.deflectionDocument.findUnique({
+        where: { deflectionId_formId: { deflectionId: id, formId: '647f' } },
+      });
+      if (hasDocument) {
+        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+          deflectionId: id,
+          userId: request.user.id,
+          formIds: ['647f'],
+        });
+      }
 
       return reply.send(redactDeflectionForUser(updated, request.user));
     });

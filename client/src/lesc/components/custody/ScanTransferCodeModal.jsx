@@ -1,9 +1,7 @@
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
-import { useToast } from '@/components/ToastContext';
 import ScanCodeModal from '@/components/ScanCodeModal';
-import { getTransferErrorMessage } from './scanTransferCodeModalUtils';
-
+import { useToast } from '@/components/ToastContext';
 function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
@@ -19,50 +17,46 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
   async function handleScan (text) {
     const deflectionId = parseDeflectionId(text);
     if (!deflectionId) {
-      showToast('Invalid code. Please enter a transfer code number or URL.', 'error');
       throw new Error('Invalid code');
     }
 
-    try {
-      await Api.deflections.transfer(deflectionId);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
-      onSuccess?.();
-      showToast('Person received', 'success', 3000, 'Transfer code confirmed.');
-    } catch (err) {
-      showToast(getTransferErrorMessage(err), 'error');
-      throw err;
-    }
+    await Api.deflections.transfer(deflectionId);
+    window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+    onSuccess?.();
   }
 
   async function handleManualSubmitCodes (codes) {
-    try {
-      let lastDeflectionId = null;
+    let lastDeflectionId = null;
+    const transferResults = [];
 
-      for (const code of codes) {
-        const deflectionId = parseDeflectionId(code);
-        if (!deflectionId) {
-          showToast('Invalid code. Please enter a transfer code number or URL.', 'error');
-          throw new Error('Invalid code');
-        }
-
+    for (const code of codes) {
+      const deflectionId = parseDeflectionId(code);
+      if (!deflectionId) {
+        transferResults.push({ code, error: 'Invalid code' });
+        continue;
+      }
+      try {
         await Api.deflections.transfer(deflectionId);
         lastDeflectionId = deflectionId;
+        transferResults.push({ code, error: null });
+      } catch (err) {
+        transferResults.push({ code, error: err?._form ?? err?.message ?? 'Something went wrong' });
       }
+    }
 
-      if (lastDeflectionId) {
-        window.sessionStorage.setItem('custodyHighlightTarget', String(lastDeflectionId));
-      }
-      onSuccess?.();
+    if (lastDeflectionId) {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(lastDeflectionId));
+    }
+    onSuccess?.();
+    if (transferResults.every((r) => !r.error)) {
       showToast(
-        codes.length === 1 ? 'Person received' : `${codes.length} persons received`,
+        'Person received',
         'success',
         3000,
-        codes.length === 1 ? 'Transfer code confirmed.' : 'Transfer codes confirmed.'
+        'Transfer code confirmed.'
       );
-    } catch (err) {
-      showToast(getTransferErrorMessage(err), 'error');
-      throw err;
     }
+    return transferResults;
   }
 
   return (

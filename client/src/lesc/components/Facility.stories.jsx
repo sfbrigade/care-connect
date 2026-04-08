@@ -34,13 +34,12 @@ export default {
       action: 'onArrivedClick',
       description: 'Callback for when the "I\'ve arrived" button is clicked',
     },
+    isArrivalPending: {
+      description: 'Whether the arrival/leave action is pending',
+    },
     onLeftClick: {
       action: 'onLeftClick',
       description: 'Callback for when the "I\'ve left" button is clicked',
-    },
-    onHoldClick: {
-      action: 'onHoldClick',
-      description: 'Callback for when the "Hold a Bed" button is clicked',
     },
   },
 };
@@ -61,7 +60,6 @@ export const Default = {
     hasActiveHold: true,
     onArrivedClick: () => console.log('I\'ve arrived clicked'),
     onLeftClick: () => console.log('I\'ve left clicked'),
-    onHoldClick: () => console.log('Hold a Bed clicked'),
   },
 };
 

@@ -145,7 +145,7 @@ function AdminFacilityForm () {
                   {...form.getInputProps('phone')}
                   key={form.key('phone')}
                   label='Phone'
-                  placeholder='(415) 555-0123'
+                  placeholder='(415) 684-1902'
                 />
                 <TextInput
                   {...form.getInputProps('email')}

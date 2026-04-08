@@ -89,6 +89,7 @@ vi.mock('@/components/LockedQRCode', () => ({
 vi.mock('@tabler/icons-react', () => ({
   IconAlertCircle: () => null,
   IconArrowLeft: () => null,
+  IconBuildingHospital: () => null,
   IconDoorExit: () => null,
   IconDots: () => null,
   IconExternalLink: () => null,
@@ -178,14 +179,22 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 let render;
+let CustodyDetailContent;
+let AuthContextProvider;
 
 describe('CustodyDetailContent', () => {
   beforeAll(async () => {
-    const CustodyDetailContent = (await import('./CustodyDetailContent')).default;
-    const AuthContextProvider = (await import('../../../AuthContextProvider')).default;
+    CustodyDetailContent = (await import('./CustodyDetailContent')).default;
+    AuthContextProvider = (await import('../../../AuthContextProvider')).default;
 
-    render = () => {
-      const content = h(CustodyDetailContent, { deflection, backTo: '/custody' });
+    render = (deflectionOverride = {}) => {
+      const content = h(CustodyDetailContent, {
+        deflection: {
+          ...deflection,
+          ...deflectionOverride,
+        },
+        backTo: '/custody'
+      });
       const provider = h(AuthContextProvider, null, content);
       return renderToStaticMarkup(provider);
     };
@@ -230,7 +239,6 @@ describe('CustodyDetailContent', () => {
     const html = render();
 
     expect(html).toContain('Intake staff can scan this code to start full intake.');
-    expect(html).toContain('849(b).pdf');
     expect(html).toContain('Legal release');
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Property details');
@@ -245,5 +253,21 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('This text will appear in the narrative block on the 849(b) form');
     expect((html.match(/>Edit</g) || [])).toHaveLength(3);
     expect(html).not.toContain('<textarea');
+  });
+
+  it('builds the default 849(b) narrative from case number, cad number, and 647(f) narrative', () => {
+    const html = render({ releaseNarrative: null });
+
+    expect(html).toContain('Incident number: CASE-456');
+    expect(html).toContain('Cad number: CAD-123');
+    expect(html).toContain('The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
+    expect(html).toContain('Behavior details');
+  });
+
+  it('does not show exit to hospital in overflow actions for released status', () => {
+    const html = render({ subjectStatus: 'RELEASED' });
+
+    expect(html).not.toContain('Exit to hospital');
+    expect(html).not.toContain('Record exit to hospital');
   });
 });

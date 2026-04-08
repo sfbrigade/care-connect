@@ -34,8 +34,18 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
+      // Allow creator, admin, or full-handoff recipient (controls all active holds)
       if (incident.createdById !== request.user.id && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+        const otherOfficerActiveHolds = await fastify.prisma.deflection.count({
+          where: {
+            incidentId: id,
+            status: 'ACTIVE',
+            currentOfficerId: { not: request.user.id },
+          },
+        });
+        if (otherOfficerActiveHolds > 0) {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
       }
 
       if (incident.completedAt) {
@@ -43,8 +53,6 @@ export default async function (fastify, opts) {
           error: 'Only active incidents can be cancelled.',
         });
       }
-
-      await fastify.prisma.deflection.expire();
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
@@ -73,13 +81,18 @@ export default async function (fastify, opts) {
               },
             });
             const activeCount = deflections.length;
-            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+            const inTransitCount = deflections.filter(d => [
+              'DETAINED',
+              'ONSITE_AWAITING_TRANSFER',
+            ].includes(d.subjectStatus)).length;
+            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
             const updatedData = {
               capacity,
               unavailableUnoccupied,
               unavailableOccupied,
               occupied,
               holds: Math.max(holds - activeCount, 0),
+              inTransit: Math.max(inTransit - inTransitCount, 0),
               available: available + activeCount,
               updateMethod: 'API',
               updatedById: request.user.id,

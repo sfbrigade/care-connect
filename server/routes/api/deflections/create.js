@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 
 import Deflection from '#models/deflection.js';
+import Facility from '#models/facility.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
@@ -21,6 +22,19 @@ export default async function (fastify, opts) {
 
       // TODO: check user authorization
 
+      // Block new holds if facility is not accepting
+      const facility = await fastify.prisma.facility.findUnique({
+        where: { id: data.facilityId },
+      });
+      if (!facility) {
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Facility not found' });
+      }
+      if (facility.status !== Facility.Status.OPEN_ACCEPTING) {
+        return reply.code(StatusCodes.CONFLICT).send({
+          error: 'Facility is not accepting new holds',
+        });
+      }
+
       let deflection;
       await fastify.prisma.$transaction(async (tx) => {
         const { bedTypeId } = data;
@@ -30,6 +44,7 @@ export default async function (fastify, opts) {
             data: {
               ...data,
               createdById: request.user.id,
+              currentOfficerId: request.user.id,
             },
             include: {
               subject: true,
@@ -37,13 +52,14 @@ export default async function (fastify, opts) {
               propertyPhotos: true,
             },
           });
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
             capacity,
             unavailableUnoccupied,
             unavailableOccupied,
             occupied,
             holds: holds + 1,
+            inTransit: inTransit + 1,
             available: available - 1,
             updateMethod: 'API',
             updatedById: request.user.id,
