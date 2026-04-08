@@ -37,7 +37,7 @@ vi.mock('@/FacilityContext', () => ({
     facility: {
       id: 7,
       status: 'OPEN',
-      bedTypes: [{ id: 1, available: 2, type: 'CHAIR' }],
+      bedTypes: [{ id: 1, available: 2, inTransit: 2, occupied: 2, type: 'CHAIR' }],
     },
   }),
 }));
@@ -87,7 +87,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   mockBedTypesIndex.mockResolvedValue({
-    data: [{ id: 1, available: 17, type: 'CHAIR' }],
+    data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],
   });
 
   mockDeflectionsList.mockImplementation(({ subjectStatus }) => {

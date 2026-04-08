@@ -25,7 +25,6 @@ import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFl
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
-const PRE_CUSTODY_TRANSFER_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
   { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
@@ -90,15 +89,6 @@ function Care () {
     refetchOnMount: 'always',
   });
 
-  const { data: preCustodyTransferDeflections = [] } = useQuery({
-    queryKey: ['deflections', facility.id, 'care-pre-custody-transfer'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: true, subjectStatus: PRE_CUSTODY_TRANSFER_STATUSES }).then(r => r.data),
-    refetchInterval: 3000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
-  });
-
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
@@ -134,9 +124,8 @@ function Care () {
     [notInCustodyDeflections]
   );
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
-  const inTransitCount = preCustodyTransferDeflections.length;
-  const occupiedCount = inCustodyDeflections.filter((deflection) => deflection.subjectStatus === 'IN_CHAIR').length +
-    notInCustodyDeflections.filter((deflection) => deflection.subjectStatus === 'RELEASED').length;
+  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   function handleScanSuccess () {
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });

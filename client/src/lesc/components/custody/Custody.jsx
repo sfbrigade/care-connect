@@ -23,7 +23,6 @@ import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
-const PRE_CUSTODY_TRANSFER_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
   { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
@@ -97,15 +96,6 @@ function Custody () {
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: IN_CUSTODY_STATUSES }).then(r => r.data),
-    refetchInterval: 3000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
-  });
-
-  const { data: preCustodyTransferDeflections } = useQuery({
-    queryKey: ['deflections', facility.id, 'pre-custody-transfer'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: true, subjectStatus: PRE_CUSTODY_TRANSFER_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -240,7 +230,7 @@ function Custody () {
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
-  const inTransitCount = preCustodyTransferDeflections?.length ?? 0;
+  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
   const inChairCount = (inCustodyDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'IN_CHAIR').length;
   const stillOnsiteCount = (releasedDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'RELEASED').length;
   const occupiedCount = inChairCount + stillOnsiteCount;
