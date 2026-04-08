@@ -32,6 +32,14 @@ vi.mock('@/Api', () => ({
   },
 }));
 
+vi.mock('@/AuthContext', () => ({
+  useAuthContext: () => ({
+    user: {
+      roles: ['CARE', 'FACILITY_ADMIN'],
+    },
+  }),
+}));
+
 vi.mock('@/FacilityContext', () => ({
   useFacilityContext: () => ({
     facility: {

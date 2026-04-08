@@ -6,6 +6,7 @@ import { Head } from '@unhead/react';
 import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
@@ -61,6 +62,7 @@ function hasSavedOrPersistedExitDetails (deflection) {
 }
 
 function Care () {
+  const { user } = useAuthContext();
   const [tab, setTab] = useSessionState('care', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
@@ -170,8 +172,8 @@ function Care () {
             availableChairs={availableChairs}
             inTransitCount={inTransitCount}
             occupiedCount={occupiedCount}
-            actionLabel='Manage capacity'
-            onActionClick={() => {}}
+            actionLabel={user.roles?.includes('FACILITY_ADMIN') ? 'Manage capacity' : undefined}
+            onActionClick={() => navigate('/manage-capacity')}
           />
           <SegmentedControl
             fullWidth
