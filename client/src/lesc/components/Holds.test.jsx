@@ -69,6 +69,11 @@ vi.mock('@/FacilityContext', () => ({
       id: 1,
       name: 'RESET',
       status: 'OPEN',
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+      phone: null,
       bedTypes: [{ id: 99, available: 2, type: 'CHAIR' }],
     },
   }),
@@ -161,6 +166,15 @@ afterEach(() => {
 });
 
 describe('Holds', () => {
+  it('shows centered facility contact details without the facility name in the header', async () => {
+    renderHolds();
+
+    expect(await screen.findByRole('heading', { name: /2 .*available/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '444 6th St' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '(415) 555-7890' })).toBeInTheDocument();
+    expect(screen.queryByText('RESET')).not.toBeInTheDocument();
+  });
+
   it('shows the departure toast after tapping "I\'ve left"', async () => {
     renderHolds();
 
