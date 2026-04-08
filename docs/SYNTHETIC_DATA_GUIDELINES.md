@@ -10,6 +10,7 @@ Care Connect tracks people through sobering center and drop-in facility workflow
 
 - **Incident** — A field encounter (e.g., a detox/welfare check). One incident can have multiple deflections.
 - **Deflection** (aka "Hold") — A reservation/hold placed for one person at one facility bed.
+- **IncidentOfficer** — Per-officer participation record for an incident, including arresting vs receiving role, arrival/leave times, and handoff metadata.
 - **Subject** — The person associated with a deflection (optional; only created when subject details are entered).
 - **Facility** — A LESC (Law Enforcement Sobering Center) or DIDO (Drop-In, Drop-Off) facility.
 - **BedType** — A specific bed category within a facility (type: `BED` or `CHAIR`).
@@ -84,8 +85,23 @@ Each `BedType` tracks these counters (all integers ≥ 0):
 | `supervisorBadgeNumber` | String? | Supervising officer's badge |
 | `createdBy` | User FK | Officer who created the incident |
 | `createdByOrganization/Title/Unit/BadgeNumber` | String | Snapshotted at creation |
+| `incidentOfficers[]` | Relation | Per-officer records; source of current arrival/leave/handoff tracking |
 
-### Incident Lifecycle (implicit states via timestamps)
+### Incident Officer Tracking
+
+Each incident now has one or more `IncidentOfficer` rows:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `incidentId`, `facilityId`, `officerId` | FK set | Unique per incident/facility/officer |
+| `role` | Enum | `ARRESTING` or `RECEIVING` |
+| `arrivedAt` | DateTime? | Officer-specific arrival time |
+| `leftAt` | DateTime? | Officer-specific leave time |
+| `handoffReceivedAt` | DateTime? | When this officer accepted a handoff |
+| `handoffReceivedFromId` | User FK? | Officer who handed off control |
+| `badgeNumber`, `organizationId`, `unitId`, `titleId` | Snapshot fields | Copied from the officer profile at create/handoff |
+
+### Incident Lifecycle (legacy top-level timestamps + current per-officer state)
 
 ```
 [Created]
@@ -105,11 +121,14 @@ Each `BedType` tracks these counters (all integers ≥ 0):
 ### Incident Business Rules
 
 1. An incident can have one or more deflections.
-2. **Cancel**: Only allowed if `arrivedAt == null` (never arrived at facility).
+2. **Incident cancel**: The current `DELETE /incidents/:id` route allows cancellation of any active incident by the creator, an admin, or a full-handoff recipient who controls all remaining active holds.
 3. **Cancel with subject details**: If any deflection has a `subjectId`, a cancel reason is required.
-4. **Auto-completion**: Incident auto-completes when all its deflections are cancelled/expired AND `arrivedAt == null`.
-5. **Arrived**: Setting `arrivedAt` cascades all deflections in `DETAINED` status → `ONSITE_AWAITING_TRANSFER`.
-6. Incidents are created with an optional first deflection.
+4. **Auto-completion**: Incident auto-completes when all pre-transfer deflections are cancelled/expired AND legacy `incident.arrivedAt == null`.
+5. **Arrived**: `PATCH /incidents/:id/arrived` updates the requesting officer's `IncidentOfficer.arrivedAt` and only that officer's active deflections move `DETAINED → ONSITE_AWAITING_TRANSFER`.
+6. **Legacy incident arrival field**: `incident.arrivedAt` is only set when the creator marks arrived; downstream logic still uses it for some completion checks.
+7. **Leave**: `PATCH /incidents/:id/left` updates the requesting officer's `IncidentOfficer.leftAt`; `incident.completedAt` is set once no active holds remain.
+8. **Handoff-aware ownership**: Active deflections are controlled by `deflection.currentOfficerId`, not necessarily `incident.createdById`.
+9. Incidents are created with an optional first deflection.
 
 ### Realistic Timing Patterns
 
@@ -135,6 +154,7 @@ Each `BedType` tracks these counters (all integers ≥ 0):
 | `subjectStatus` | SubjectStatusEnum | Person's current state (see below) |
 | `expiresAt` | DateTime | Default: 1 hour after creation |
 | `extensionCount` | Int | Number of times hold was extended (default 0) |
+| `currentOfficerId` | UUID? | FIELD officer who currently controls the hold |
 
 ### Hold Status Values
 
@@ -144,6 +164,8 @@ CANCELLED   → Cancelled by a user
 EXPIRED     → Automatically expired (expiresAt passed without completion)
 COMPLETED   → Person has exited/been released (terminal state)
 ```
+
+Note: the enum still includes `COMPLETED`, but the current API routes primarily represent finished journeys via terminal `subjectStatus` values (`EXITED`, `DEATH_IN_FACILITY`, `DEATH_IN_CUSTODY`) while `status` often remains `ACTIVE`. Synthetic data should match persisted code behavior, not the older conceptual model.
 
 ### Subject Status Values (Person's journey through the facility)
 
@@ -165,7 +187,8 @@ DEATH_IN_CUSTODY           (11) Died while in custody — terminal state
 
 ```
 DETAINED
-  └─ (incident.arrivedAt set) ──────────────────→ ONSITE_AWAITING_TRANSFER
+  └─ [/handoff] ─────────────────────────────────────→ DETAINED with new `currentOfficerId`
+  └─ (controlling officer marks arrived) ───────→ ONSITE_AWAITING_TRANSFER
                                                          │
                                                   [/transfer]
                                                          ↓
@@ -195,11 +218,10 @@ DETAINED
 
 Direct Exit Paths (bypass release):
   AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, IN_CHAIR
-    └─ [/exit-to-hospital] ────────────────────────────────→ EXITED
-    └─ [/exit-to-jail] ────────────────────────────────────→ EXITED
+    └─ [/exit-to-jail] ────────────────────────────────────→ EXITED without release
 
 Release Short-Circuit (auto-exit on certain release reasons):
-  [/release] with reason = "medical_issue" or "other" ────→ EXITED immediately
+  [/release] with reason = "medical_issue" or "other" ────→ RELEASED and EXITED immediately
   [/release] with reason = "sobered" ─────────────────────→ RELEASED (then needs /exit)
 
 Death Paths (from any in-custody or released state):
@@ -211,8 +233,8 @@ Death Paths (from any in-custody or released state):
 Cancellation (from ACTIVE hold, any subject status):
   ACTIVE hold ──────────────────────────────────────────→ status = CANCELLED
 
-Auto-expiration (from ACTIVE hold, if expiresAt passes):
-  ACTIVE hold ──────────────────────────────────────────→ status = EXPIRED
+Auto-expiration (job only expires DETAINED holds whose expiresAt passed):
+  ACTIVE + DETAINED ────────────────────────────────────→ status = EXPIRED
   (nightly job: expireHolds.js)
 
 Reopen (only from CANCELLED or EXPIRED):
@@ -257,10 +279,35 @@ Optional:
 - `deflectionDetails` (array of detail IDs)
 
 ### Transfer (`/transfer`)
-Required:
-- `transferredByBadgeNumber`
-- `transferredByProp115Certified` (Boolean)
-- `transferredByOrganizationId`, `transferredByUnitId`, `transferredByTitleId`
+Role required: `CUSTODY`
+
+No request body is currently required.
+
+Persisted by the current route:
+- `transferredAt`
+- `transferredById`
+
+Additional transfer-related columns exist on the model (`transferredByBadgeNumber`, `transferredByProp115Certified`, `transferredByOrganizationId`, `transferredByUnitId`, `transferredByTitleId`), but the current API route does not require or populate them.
+
+### Officer Handoff (`/handoff`)
+Role required: `FIELD`
+
+Effects:
+- Reassigns `currentOfficerId` to the receiving officer
+- Creates or updates an `IncidentOfficer` row for the receiving officer with:
+  - `role = RECEIVING`
+  - `handoffReceivedAt`
+  - `handoffReceivedFromId`
+
+Constraints:
+- Hold must exist and be `ACTIVE`
+- Receiving officer cannot already control the hold
+- Incident details must be complete before handoff:
+  - `addressLine1`, `city`, `state`
+  - `arrestedAt`, `encounteredVia`
+  - `cadNumber`, `caseNumber`, `supervisorBadgeNumber`
+- Receiving officer cannot already have a different active incident at the same facility
+- Capacity counters do not change
 
 ### Safety Check (`/safety-check`)
 No additional required fields (transitions `AWAITING_INTAKE → READY_FOR_INTAKE`).
@@ -281,16 +328,31 @@ Conditional:
 - If reason = `medical_issue`: `exitDestinationId` required
 - If reason = `other`: `otherReleaseReason` + `otherReleaseDestination` required
 
+Effects:
+- `sobered` → `RELEASED`
+- `medical_issue` → immediately records `RELEASED` and `EXITED`
+- `other` → immediately records `RELEASED` and `EXITED`
+
 ### Exit (`/exit`)
 Required (from `IN_CHAIR` or `RELEASED`):
 - `exitDestinationId` (FK to `DeflectionExitDestination`)
 - `exitHousingStatusId` (FK to `DeflectionExitHousingStatus`)
 - `exitConnectedToCare`: `YES`, `NO`, or `UNKNOWN`
-- `exitSFResident`: `YES`, `NO`, or `UNKNOWN`
+- `exitSFResident`: `YES`, `NO`, `UNKNOWN`, or `DECLINED_CONSENT`
 
-### Exit to Hospital / Exit to Jail (`/exit-to-hospital`, `/exit-to-jail`)
-Required:
-- `refusalReasonId` (FK to `DeflectionRefusalReason`)
+Note: `DECLINED_CONSENT` is stored as `UNKNOWN` in the database.
+
+### Exit to Jail (`/exit-to-jail`)
+Role required: `CUSTODY`
+
+No request body is currently required.
+
+Effects:
+- Sets `subjectStatus = EXITED`
+- Sets `exitDestinationId = jail`
+- Derives `refusalReasonId = medical_issue` internally via destination mapping
+
+Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReasonId = medical_issue` and `exitDestinationId = hospital`.
 
 ### Record Death (`/record-death`)
 - No additional fields beyond identifying the deflection
@@ -312,13 +374,15 @@ Constraints:
 
 ## User Roles
 
-Three roles govern which operations a user can perform:
+Operational roles for workflow transitions:
 
 | Role | Description | Key Permissions |
 |------|-------------|-----------------|
-| `FIELD` | Street outreach / field officers | Create incidents and deflections, mark arrived |
-| `CUSTODY` | Custody/detention staff | Transfer, safety check, release |
-| `CARE` | Medical/care staff | Admit, intake-complete, exit |
+| `FIELD` | Street outreach / field officers | Create incidents/holds, handoff holds, extend their pre-transfer holds, mark arrived/left |
+| `CUSTODY` | Custody/detention staff | Transfer, safety-check, release, exit-to-jail, property return, record death |
+| `CARE` | Medical/care staff | Admit, intake-complete, save exit details, final exit |
+
+Administrative roles also exist in code (`ORG_ADMIN`, `FACILITY_ADMIN`), but they are not the primary workflow actors for synthetic scenario generation.
 
 ---
 
@@ -328,8 +392,8 @@ Three roles govern which operations a user can perform:
 |-------|------|-------|
 | `firstName`, `lastName` | String? | Full name |
 | `dateOfBirth` | Date? | DOB |
-| `sex` | Enum? | `MALE`, `FEMALE`, `OTHER` |
-| `race` | Enum? | Standard race/ethnicity codes |
+| `sex` | Enum? | `MALE`, `FEMALE`, `OTHER`, `UNKNOWN` |
+| `race` | Enum? | `WHITE`, `BLACK`, `HISPANIC`, `ASIAN`, `OTHER`, `UNKNOWN` |
 | `dlNumber`, `dlState` | String? | Driver's license |
 | `addressLine1/2`, `city`, `state`, `postalCode` | String? | Home address |
 
@@ -345,7 +409,7 @@ Subjects can be created standalone or inline during deflection creation.
 ```
 1. Create incident (encounteredVia: ON_VIEW or DISPATCHED)
 2. Create deflection (facility OPEN_ACCEPTING, bedType with available > 0)
-   → subjectStatus: DETAINED, holdStatus: ACTIVE
+   → subjectStatus: DETAINED, holdStatus: ACTIVE, currentOfficerId = creator
 3. PATCH incident /arrived (5–30 min after creation)
    → subjectStatus: ONSITE_AWAITING_TRANSFER
 4. POST deflection /transfer (5–30 min after arrived)
@@ -360,7 +424,7 @@ Subjects can be created standalone or inline during deflection creation.
    → subjectStatus: RELEASED
 9. POST deflection /exit (15–60 min after release)
    → subjectStatus: EXITED, occupied-1, available+1
-   → holdStatus: COMPLETED
+   → hold status typically remains ACTIVE in the current codebase
 ```
 
 #### Scenario B: Cancelled / No Capacity Scenario
@@ -369,23 +433,23 @@ Subjects can be created standalone or inline during deflection creation.
 2. Create deflection → subjectStatus: DETAINED, holdStatus: ACTIVE
 3. DELETE deflection (cancel with reason)
    → holdStatus: CANCELLED, holds-1, available+1
-4. If no remaining active deflections and arrivedAt==null → incident auto-completes
+4. If no remaining active pre-transfer deflections and incident.arrivedAt==null → incident auto-completes
 ```
 
 #### Scenario C: Expired Hold
 ```
 1. Create incident + deflection
 2. No further actions taken within 1 hour
-3. Nightly job expires the hold → holdStatus: EXPIRED
+3. Nightly job expires the hold only if it is still `DETAINED` → holdStatus: EXPIRED
 4. Optionally: reopen hold → holdStatus: ACTIVE again
 ```
 
 #### Scenario D: Direct Hospital Exit
 ```
 1–5. Same as Scenario A steps 1–5 (up to READY_FOR_INTAKE)
-6. POST deflection /exit-to-hospital (with refusalReasonId)
+6. POST deflection /release with releaseReasonId="medical_issue" and exitDestinationId="hospital"
    → subjectStatus: EXITED, holds-1, available+1
-   → holdStatus: COMPLETED
+   → hold status typically remains ACTIVE in the current codebase
 ```
 
 #### Scenario E: Failed Intake
@@ -402,7 +466,40 @@ Subjects can be created standalone or inline during deflection creation.
 1–7. Same as Scenario A steps 1–7 (up to IN_CHAIR)
 8. POST deflection /record-death
    → subjectStatus: DEATH_IN_CUSTODY
-   → holdStatus: COMPLETED
+   → hold status typically remains ACTIVE in the current codebase
+```
+
+#### Scenario G: Originating Officer Hands Off Hold, Receiving Officer Completes Happy Path
+```
+1. Officer A creates incident and first deflection
+   → deflection.currentOfficerId = Officer A
+   → create IncidentOfficer(role=ARRESTING) for Officer A
+2. Officer A completes required incident details needed for handoff:
+   → addressLine1, city, state
+   → arrestedAt, encounteredVia
+   → cadNumber, caseNumber, supervisorBadgeNumber
+3. Officer B has no other active incident at the same facility
+4. Officer B POSTs deflection /handoff using Officer A's QR/manual code
+   → deflection.currentOfficerId = Officer B
+   → create/update IncidentOfficer(role=RECEIVING, handoffReceivedAt, handoffReceivedFromId=Officer A)
+5. Officer B PATCHes incident /arrived
+   → only Officer B's active holds move to ONSITE_AWAITING_TRANSFER
+   → Officer B's IncidentOfficer.arrivedAt is set
+6. POST deflection /transfer
+   → subjectStatus: AWAITING_INTAKE
+7. POST deflection /safety-check
+   → subjectStatus: READY_FOR_INTAKE
+8. POST deflection /admit
+   → subjectStatus: ADMITTED
+9. POST deflection /intake-complete with completed=true
+   → subjectStatus: IN_CHAIR, holds-1, occupied+1
+10. POST deflection /release with reason="sobered"
+    → subjectStatus: RELEASED
+11. POST deflection /exit
+    → subjectStatus: EXITED, occupied-1, available+1
+12. Officer B PATCHes incident /left after all active holds are resolved
+    → Officer B's IncidentOfficer.leftAt is set
+    → incident.completedAt is set when no active holds remain
 ```
 
 ---
@@ -453,6 +550,10 @@ incidentCreatedAt
 deflectionCreatedAt
   < deflectionExpiresAt (= createdAt + 1 hour, unless extended)
 
+handoffReceivedAt (if set)
+  >= deflectionCreatedAt
+  <= officerArrivedAt (if the receiving officer later arrives)
+
 arrestedAt (if set) ≤ incidentCreatedAt
 ```
 
@@ -479,7 +580,9 @@ arrestedAt (if set) ≤ incidentCreatedAt
 4. If `deflection.subjectId` is set, it must reference a valid `subject.id`
 5. Cancel/release/exit reason IDs must reference valid lookup table entries
 6. `transferredByOrganizationId`, `transferredByUnitId`, `transferredByTitleId` must reference valid org chart entries
-7. BedType capacity invariant must be maintained: `capacity = available + holds + occupied + unavailableOccupied + unavailableUnoccupied`
+7. If `currentOfficerId` is set, it must reference a valid FIELD user
+8. `IncidentOfficer` rows should exist for the arresting officer on incident creation and for any receiving officer after handoff
+9. BedType capacity invariant must be maintained: `capacity = available + holds + occupied + unavailableOccupied + unavailableUnoccupied`
 
 ---
 
