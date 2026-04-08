@@ -231,9 +231,7 @@ function Custody () {
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
   const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
-  const inChairCount = (inCustodyDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'IN_CHAIR').length;
-  const stillOnsiteCount = (releasedDeflections ?? []).filter((deflection) => deflection.subjectStatus === 'RELEASED').length;
-  const occupiedCount = inChairCount + stillOnsiteCount;
+  const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   useEffect(() => {
     if (!inCustodyDeflections) return;
