@@ -154,6 +154,7 @@ function Care () {
         );
       }
       setIntakeModalDeflection(null);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
     },
     onError: () => {
