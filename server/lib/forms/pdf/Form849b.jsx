@@ -4,6 +4,7 @@ import { join } from 'path';
 import { DrugTypeEnum } from '@prisma/client';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
+import { formatDateTime24 } from '../formUtils.js';
 
 export const metadata = {
   generatorType: 'pdf',
@@ -86,7 +87,7 @@ export const metadata = {
     return {
       cadNumber: incident?.cadNumber || '',
       caseNumber: incident?.caseNumber || '',
-      arrestedAt: incident?.arrestedAt?.toISOString() || null,
+      arrestedAt: formatDateTime24(incident?.arrestedAt?.toISOString()),
       arrestLocation,
       locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
       officerName,
@@ -95,12 +96,14 @@ export const metadata = {
       subjectFullName,
       subjectRace: subject?.race || '',
       subjectSex: subject?.sex || '',
-      subjectDOB: subject?.dateOfBirth?.toISOString() || null,
+      subjectDOB: subject?.dateOfBirth
+        ? `${String(subject.dateOfBirth.getUTCMonth() + 1).padStart(2, '0')}-${String(subject.dateOfBirth.getUTCDate()).padStart(2, '0')}-${subject.dateOfBirth.getUTCFullYear()}`
+        : null,
       subjectAddress,
       subjectZip: subject?.postalCode || '',
       subjectDL: subject?.driverLicense || '',
       subjectLocalId: subject?.localId || '',
-      subjectDrugType: subject?.drugType || null,
+      subjectDrugType: deflection.drugType || null,
       arrivedAtReset: incident?.arrivedAt?.toISOString() || null,
       transferredAt: deflection.transferredAt?.toISOString() || null,
       releasedAt: deflection.releasedAt.toISOString(),
@@ -134,6 +137,7 @@ export const metadata = {
       reportedTo: '', // TBC
 
       // Page info
+      prop115Years: '2',
       prop115Pages: '2',
 
       // Prop 115 certified - from user profile
