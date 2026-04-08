@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticate, build, nodemailerMock } from '#test/helper.js';
+import { authenticate, build } from '#test/helper.js';
 
 test('/api/invites', async (t) => {
   const app = await build(t);
@@ -16,7 +16,7 @@ test('/api/invites', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.ok(Array.isArray(data));
-      assert.deepStrictEqual(data.length, 2);
+      assert.deepStrictEqual(data.length, 3);
     });
   });
 
@@ -48,14 +48,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, null);
       assert.deepStrictEqual(data.prop115Certified, false);
 
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
-      const [mail] = sentMail;
-      assert.deepStrictEqual(mail.to, 'John Doe <john.doe@test.com>');
-      assert.ok(mail.html.includes('Welcome!'));
-      assert.ok(mail.html.includes(data.id));
-      assert.ok(mail.text.includes('Welcome!'));
-      assert.ok(mail.text.includes(data.id));
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('creates a new Invite with some fields', async (t) => {
@@ -86,14 +82,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, null);
       assert.deepStrictEqual(data.prop115Certified, false);
 
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
-      const [mail] = sentMail;
-      assert.deepStrictEqual(mail.to, 'John Doe <john.doe@test.com>');
-      assert.ok(mail.html.includes('Welcome!'));
-      assert.ok(mail.html.includes(data.id));
-      assert.ok(mail.text.includes('Welcome!'));
-      assert.ok(mail.text.includes(data.id));
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('creates a new Invite with all fields', async (t) => {
@@ -126,14 +118,10 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.titleId, 'sheriff');
       assert.deepStrictEqual(data.prop115Certified, true);
 
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
-      const [mail] = sentMail;
-      assert.deepStrictEqual(mail.to, 'John Doe <john.doe@test.com>');
-      assert.ok(mail.html.includes('Welcome!'));
-      assert.ok(mail.html.includes(data.id));
-      assert.ok(mail.text.includes('Welcome!'));
-      assert.ok(mail.text.includes(data.id));
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
   });
 
@@ -172,8 +160,10 @@ test('/api/invites', async (t) => {
       });
       assert.ok(createdInvite);
 
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, createdInvite.id);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
   });
 
@@ -204,8 +194,10 @@ test('/api/invites', async (t) => {
       const response = await app.inject().patch('/api/invites/7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de/resend').headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, '7d7c61a6-55ac-4bad-8c8c-5d3aaaa1c5de');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
 
     await t.test('returns gone for accepted/revoked invite', async (t) => {
@@ -214,6 +206,40 @@ test('/api/invites', async (t) => {
 
       response = await app.inject().patch('/api/invites/157d4be5-fd7d-4d08-b74e-2d3584062c8a/resend').headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.GONE);
+    });
+  });
+
+  await t.test('POST / (org admin)', async (t) => {
+    await t.test('allows org admin to create invite for their own org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser@test.com',
+          organizationId: 'sfso',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.CREATED);
+    });
+
+    await t.test('prevents org admin from creating invite for different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/invites',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'New',
+          lastName: 'User',
+          email: 'newuser2@test.com',
+          organizationId: 'sfpd',
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 

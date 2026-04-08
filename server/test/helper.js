@@ -29,6 +29,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const AppPath = path.join(__dirname, '..', 'app.js');
 
+// Disable pg-boss in tests — the plugin will decorate a no-op stub
+process.env.PGBOSS_ENABLED = 'false';
+
 // Dependency mocks for testing
 configureMailer(nodemailerMock);
 
@@ -50,10 +53,11 @@ async function buildPostgres (t) {
   // disable the ryuk cleanup container, cannot connect from the compose network
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
+  const testcontainersNetworkMode = process.env.TESTCONTAINERS_NETWORK_MODE;
   // extract current version of postgres image being used, start a new test container
   let dbContainer = new PostgreSqlContainer(compose.services.db.image);
-  if (!process.env.CI) {
-    dbContainer = dbContainer.withNetworkMode('care-connect');
+  if (testcontainersNetworkMode) {
+    dbContainer = dbContainer.withNetworkMode(testcontainersNetworkMode);
   }
   const startedDbContainer = await dbContainer.start();
   // set up the default template (template1) with the schema and fixtures
@@ -86,8 +90,8 @@ async function buildPostgres (t) {
   let storageContainer = new GenericContainer(compose.services.storage.image)
     .withEntrypoint(['minio', 'server', '/data'])
     .withExposedPorts(9000);
-  if (!process.env.CI) {
-    storageContainer = storageContainer.withNetworkMode('care-connect');
+  if (testcontainersNetworkMode) {
+    storageContainer = storageContainer.withNetworkMode(testcontainersNetworkMode);
   }
   const startedStorageContainer = await storageContainer.start();
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
@@ -160,9 +164,21 @@ async function buildPostgres (t) {
   }
   await recreateDb();
 
+  // Replace no-op jobs stub with spy for test assertions
+  const sentJobs = [];
+  app.backgroundJobs.send = async function (name, data, options) {
+    sentJobs.push({ name, data, options });
+  };
+  app.backgroundJobs._sent = sentJobs;
+  app.backgroundJobs.reset = () => { sentJobs.length = 0; };
+
   t.afterEach(async () => {
     // clear sent mail
     nodemailerMock.mock.reset();
+
+    // clear sent jobs
+    app.backgroundJobs.reset();
+
     // clear test assets (only if MinIO is initialized)
     try {
       await s3.deleteObjects('_test/');

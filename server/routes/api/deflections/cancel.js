@@ -4,6 +4,8 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -36,7 +38,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && !request.user.isAdmin) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -80,13 +82,18 @@ export default async function (fastify, opts) {
               propertyPhotos: true,
             },
           });
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const isInTransit = [
+            Deflection.SubjectStatus.DETAINED,
+            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+          ].includes(deflection.subjectStatus);
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
             capacity,
             unavailableUnoccupied,
             unavailableOccupied,
             occupied,
             holds: holds - 1,
+            inTransit: isInTransit ? Math.max(0, inTransit - 1) : inTransit,
             available: available + 1,
             updateMethod: 'API',
             updatedById: request.user.id,
@@ -104,14 +111,10 @@ export default async function (fastify, opts) {
             },
             data: updatedData,
           });
-          const activeDeflections = await tx.deflection.count({
-            where: {
-              incidentId: deflection.incidentId,
-              status: Deflection.HoldStatus.ACTIVE,
-            },
-          });
+          // prisma does not support lte on enums, so we use a raw query
+          const [{ activeDeflections }] = await tx.$queryRaw`SELECT COUNT(*) as "activeDeflections" FROM "Deflection" WHERE "incidentId" = ${deflection.incidentId} AND "status" = ${Deflection.HoldStatus.ACTIVE}::"HoldStatusEnum" AND "subjectStatus" <= ${Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER}::"SubjectStatusEnum"`;
           // if the user has not arrived yet, close the incident if there no more deflections
-          if (activeDeflections === 0) {
+          if (activeDeflections === BigInt(0)) {
             // note- using updateMany because update throws an error if no record matches
             await tx.incident.updateMany({
               where: {
@@ -128,6 +131,21 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      // Send email if cancelled by someone other than the creator
+      if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {
+        const [creator, facility] = await Promise.all([
+          fastify.prisma.user.findUnique({ where: { id: deflection.createdById } }),
+          fastify.prisma.facility.findUnique({ where: { id: deflection.facilityId } }),
+        ]);
+        if (creator && facility) {
+          await sendHoldCancelledEmails(
+            [{ ...deflection, createdBy: creator }],
+            facility.name,
+            request.user.id
+          );
+        }
+      }
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

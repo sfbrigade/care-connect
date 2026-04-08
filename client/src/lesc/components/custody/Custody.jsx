@@ -6,6 +6,7 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -14,7 +15,7 @@ import { formatTime } from '@/utils/format';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
@@ -25,16 +26,16 @@ const RELEASED_STATUSES = 'RELEASED,EXITED';
 const PRE_CUSTODY_TRANSFER_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update person details as needed before completing the safety check.' },
-  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake' },
-  { status: 'ADMITTED', label: 'In Medical Intake' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
+  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake', tooltip: 'Ready to start process of medical admission. Show the QR code to Connections staff.' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'Medical admission in process. Monitor status until person is admitted.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying sobering chairs. Start legal release when they are ready.' },
 ];
 
 const RELEASED_SECTIONS = [
-  { status: 'RELEASED', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'RELEASED', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 
 function groupByStatus (deflections) {
@@ -58,13 +59,26 @@ function groupReleasedByStatus (deflections) {
     );
   }
 
+  function isTransferredToHospitalWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'hospital' &&
+      !deflection?.releasedAt
+    );
+  }
+
   return {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
+      d => d.subjectStatus === 'EXITED' &&
+        !isTransferredToJailWithoutLegalRelease(d) &&
+        !isTransferredToHospitalWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
       d => isTransferredToJailWithoutLegalRelease(d)
+    ),
+    TRANSFERRED_TO_HOSPITAL: (deflections ?? []).filter(
+      d => isTransferredToHospitalWithoutLegalRelease(d)
     ),
   };
 }
@@ -268,13 +282,14 @@ function Custody () {
               { label: 'Not in custody', value: 'released' },
             ]}
           />
+          <FacilityStatusBanner />
           {tab === 'in-custody' && (
             <Stack gap='md'>
               {hasInCustody
                 ? (
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
-                    groupedDeflections={inCustodyGrouped}
+                    groupedItems={inCustodyGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
@@ -292,7 +307,7 @@ function Custody () {
                 ? (
                   <StatusAccordion
                     sections={RELEASED_SECTIONS}
-                    groupedDeflections={releasedGrouped}
+                    groupedItems={releasedGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
