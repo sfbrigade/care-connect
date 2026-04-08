@@ -11,7 +11,7 @@
  *   const filledBytes = await fillCoR(templatePdfBytes, data);
  */
 
-import { PDFDocument, PDFName, PDFBool } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFBool, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -62,15 +62,30 @@ export async function fillCoR (pdfBytes, data) {
     }
   }
 
-  // ── Signature field (cursive font) ──
+  // ── Signature: draw directly on page with cursive font ──
+  // We draw this as page content (not a form field) so the font is embedded
+  // and renders correctly on any system, regardless of installed fonts.
   if (data.signature) {
     const fontPath = join(process.cwd(), 'lib/forms/pdf/fonts/MeowScript-Regular.ttf');
     const fontBytes = await readFile(fontPath);
     const signatureFont = await pdfDoc.embedFont(fontBytes);
 
+    // Get the signature field's position and clear it
     const sigField = form.getTextField('Signature');
-    sigField.setText(data.signature);
-    sigField.updateAppearances(signatureFont);
+    const widgets = sigField.acroField.getWidgets();
+    const widget = widgets[0];
+    const rect = widget.getRectangle();
+    sigField.setText('');
+
+    // Draw the signature text at the same position on the page
+    const page = pdfDoc.getPage(0);
+    page.drawText(data.signature, {
+      x: rect.x,
+      y: rect.y + 4,
+      size: 16,
+      font: signatureFont,
+      color: rgb(0, 0, 0),
+    });
   }
 
   // ── Preserve the form's native fonts: let the viewer render appearances ──

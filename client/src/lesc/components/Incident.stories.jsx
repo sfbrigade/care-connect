@@ -18,9 +18,6 @@ export default {
     incident: {
       description: 'Incident object',
     },
-    editLink: {
-      description: 'Link for the "Edit" button',
-    },
   },
 };
 
@@ -40,7 +37,6 @@ export const Default = {
       encounteredVia: '',
       supervisorBadgeNumber: '',
     },
-    editLink: '/edit',
   },
 };
 
@@ -51,7 +47,7 @@ export const WithCadNumber = {
       cadNumber: '12345',
       caseNumber: 'CASE-12',
     },
-    editLink: '/edit',
+    onEditClick: () => console.log('Edit details clicked'),
   },
 };
 
@@ -65,7 +61,7 @@ export const WithAddress = {
       state: 'CA',
       postalCode: '12345',
     },
-    editLink: '/edit',
+    onEditClick: () => console.log('Edit details clicked'),
   },
 };
 
@@ -75,7 +71,7 @@ export const WithDate = {
       ...Default.args.incident,
       arrestedAt: '2022-01-01T12:34:56Z',
     },
-    editLink: '/edit',
+    onEditClick: () => console.log('Edit details clicked'),
   },
 };
 
@@ -92,7 +88,7 @@ export const WithCadNumberAddressDate = {
       postalCode: '12345',
       arrestedAt: '2022-01-01T12:34:56Z',
     },
-    editLink: '/edit',
+    onEditClick: () => console.log('Edit details clicked'),
   },
 };
 
@@ -111,6 +107,6 @@ export const Complete = {
       encounteredVia: 'ON_VIEW',
       supervisorBadgeNumber: '1234',
     },
-    editLink: '/edit',
+    onEditClick: () => console.log('Edit details clicked'),
   },
 };

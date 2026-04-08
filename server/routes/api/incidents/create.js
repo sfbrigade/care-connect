@@ -54,6 +54,19 @@ export default async function (fastify, opts) {
             updatedBy: true,
           },
         });
+        // Create IncidentOfficer record for the arresting officer
+        await tx.incidentOfficer.create({
+          data: {
+            incidentId: incident.id,
+            facilityId: data.facilityId,
+            officerId: request.user.id,
+            role: 'ARRESTING',
+            badgeNumber: request.user.badgeNumber,
+            organizationId: request.user.organizationId,
+            unitId: request.user.unitId,
+            titleId: request.user.titleId,
+          },
+        });
         if (bedTypeId) {
           // create the initial deflection/
           const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
@@ -64,6 +77,7 @@ export default async function (fastify, opts) {
                 facilityId: data.facilityId,
                 bedTypeId,
                 createdById: request.user.id,
+                currentOfficerId: request.user.id,
               }
             });
             const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;

@@ -16,6 +16,7 @@ export default async function (fastify) {
           incidentId: z.coerce.number().optional(),
           subjectId: z.string().uuid().optional(),
           active: z.enum(['true', 'false']).optional(),
+          handedOff: z.enum(['true']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
           subjectStatus: z.string().regex(new RegExp(`^(${Object.values(Deflection.SubjectStatus).join('|')})(,(${Object.values(Deflection.SubjectStatus).join('|')}))*$`)).optional(),
           page: z.coerce.number().optional(),
@@ -27,12 +28,17 @@ export default async function (fastify) {
       },
     },
     async function (request, reply) {
-      const { page = '1', perPage = '25', active, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
+      const { page = '1', perPage = '25', active, handedOff, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
       const where = {};
 
       await fastify.prisma.deflection.expire();
 
-      if (active !== undefined) {
+      if (handedOff === 'true') {
+        // Holds the user created but no longer controls (handed off to another officer)
+        where.createdById = request.user.id;
+        where.currentOfficerId = { not: request.user.id };
+        where.status = Deflection.HoldStatus.ACTIVE;
+      } else if (active !== undefined) {
         if (active === 'true') {
           where.status = Deflection.HoldStatus.ACTIVE;
         } else {
@@ -83,8 +89,24 @@ export default async function (fastify) {
         }
       }
 
-      if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId)) {
-        where.createdById = request.user.id;
+      if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId) && handedOff !== 'true') {
+        if (active === 'true') {
+          // Active holds: only show holds the user currently controls
+          where.currentOfficerId = request.user.id;
+        } else if (active === 'false') {
+          // History: show holds the user created OR currently controls
+          // This includes holds they created but handed off (still ACTIVE, but currentOfficerId !== them)
+          where.OR = [
+            { createdById: request.user.id },
+            { currentOfficerId: request.user.id },
+          ];
+        } else {
+          // No active filter: show everything the user is involved with
+          where.OR = [
+            { createdById: request.user.id },
+            { currentOfficerId: request.user.id },
+          ];
+        }
       }
 
       const options = {

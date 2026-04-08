@@ -10,6 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { IconArrowLeft } from '@tabler/icons-react';
+import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';
 
@@ -17,18 +18,19 @@ function LegalReleaseQuestions () {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const prefilledState = getPrefilledLegalReleaseState(searchParams);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const backTo = searchParams.get('from') === 'detail'
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReasonId, setReleaseReasonId] = useState(null);
+  const [releaseReasonId, setReleaseReasonId] = useState(prefilledState.releaseReasonId);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [exitDestinationId, setExitDestinationId] = useState(null);
+  const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
 
   const isMedicalRelease = releaseReasonId === 'medical_issue';
   const isOtherRelease = releaseReasonId === 'other';
