@@ -13,13 +13,13 @@ function Facility ({
   hasActiveHold,
   onArrivedClick,
   onLeftClick,
-  isPending,
+  isArrivalPending,
 }) {
   const { t } = useTranslation();
   const hasArrived = !!arrivedAt;
   const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
-  const isArrivedButtonDisabled = isPending || isClosed || !hasActiveHold;
+  const isArrivedButtonDisabled = isArrivalPending || isClosed || !hasActiveHold;
   const hasAddressParts = [
     facility.addressLine1,
     facility.addressLine2,
@@ -62,7 +62,7 @@ function Facility ({
               onClick={onArrivedClick}
               disabled={isArrivedButtonDisabled}
             >
-              {isPending ? <Loader size='sm' /> : "I've arrived"}
+              {isArrivalPending ? <Loader size='sm' /> : "I've arrived"}
             </Button>
           )}
           {hasArrived && !hasLeft && (

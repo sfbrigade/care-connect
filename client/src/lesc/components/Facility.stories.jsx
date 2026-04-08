@@ -34,6 +34,9 @@ export default {
       action: 'onArrivedClick',
       description: 'Callback for when the "I\'ve arrived" button is clicked',
     },
+    isArrivalPending: {
+      description: 'Whether the arrival/leave action is pending',
+    },
     onLeftClick: {
       action: 'onLeftClick',
       description: 'Callback for when the "I\'ve left" button is clicked',
