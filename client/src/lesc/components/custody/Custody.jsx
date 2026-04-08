@@ -89,7 +89,6 @@ function Custody () {
   const { showToast } = useToast();
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
-  const sectionScrolledRef = useRef(false);
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -115,7 +114,7 @@ function Custody () {
 
   useEffect(() => {
     // wait until data is loaded
-    if(!inCustodyDeflections && !releasedDeflections) return;
+    if (!inCustodyDeflections && !releasedDeflections) return;
 
     // define targets from session storage
     const scrollTarget = window.sessionStorage.getItem('custodyScrollTarget');
@@ -154,7 +153,6 @@ function Custody () {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
           window.sessionStorage.removeItem('custodyInCustodySectionTarget');
           window.sessionStorage.removeItem('custodyReleasedSectionTarget');
-          return;
         }
       }
     });
