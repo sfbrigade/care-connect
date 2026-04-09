@@ -45,18 +45,16 @@ describe('Care flow unit tests', () => {
     })).toBe(false);
   });
 
-  it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail / Transferred to hospital', () => {
+  it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
       { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
       { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: null },
-      { id: 4, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: null },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
     expect(grouped.EXITED_FACILITY.map(d => d.id)).toEqual([2]);
     expect(grouped.TRANSFERRED_TO_JAIL.map(d => d.id)).toEqual([3]);
-    expect(grouped.TRANSFERRED_TO_HOSPITAL.map(d => d.id)).toEqual([4]);
   });
 
   it('resolves cancel/back navigation in exit form based on entry source', () => {

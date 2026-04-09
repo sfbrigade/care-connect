@@ -289,7 +289,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, subjectStatus } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, subjectStatus } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -299,6 +299,9 @@ const Api = {
       }
       if (active !== undefined) {
         params.active = active;
+      }
+      if (handedOff) {
+        params.handedOff = handedOff;
       }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
@@ -330,6 +333,9 @@ const Api = {
         }
       });
     },
+    handoff (id) {
+      return instance.post(`/api/deflections/${id}/handoff`).catch(handleError);
+    },
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },
@@ -350,9 +356,6 @@ const Api = {
     },
     exitToJail (id) {
       return instance.post(`/api/deflections/${id}/exit-to-jail`).catch(handleError);
-    },
-    exitToHospital (id) {
-      return instance.post(`/api/deflections/${id}/exit-to-hospital`).catch(handleError);
     },
     recordDeath (id) {
       return instance.post(`/api/deflections/${id}/record-death`).catch(handleError);

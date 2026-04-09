@@ -6,6 +6,7 @@ import { Head } from '@unhead/react';
 import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
@@ -14,6 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
 import StatusAccordion from '@/components/StatusAccordion';
 
@@ -33,7 +35,6 @@ const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
   { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
-  { status: 'TRANSFERRED_TO_HOSPITAL', label: 'Transferred to hospital', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -61,6 +62,7 @@ function hasSavedOrPersistedExitDetails (deflection) {
 }
 
 function Care () {
+  const { user } = useAuthContext();
   const [tab, setTab] = useSessionState('care', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
@@ -84,6 +86,14 @@ function Care () {
     queryKey: ['deflections', facility.id, 'care-not-in-custody'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -115,6 +125,9 @@ function Care () {
     () => groupCareNotInCustodySections(notInCustodyDeflections),
     [notInCustodyDeflections]
   );
+  const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
+  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   function handleScanSuccess () {
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
@@ -141,6 +154,7 @@ function Care () {
         );
       }
       setIntakeModalDeflection(null);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
     },
     onError: () => {
@@ -155,6 +169,13 @@ function Care () {
       </Head>
       <Container pt='md' pb='xl'>
         <Stack gap='lg'>
+          <ChairAvailabilityCard
+            availableChairs={availableChairs}
+            inTransitCount={inTransitCount}
+            occupiedCount={occupiedCount}
+            actionLabel={user.roles?.includes('FACILITY_ADMIN') ? 'Manage capacity' : undefined}
+            onActionClick={() => navigate('/manage-capacity')}
+          />
           <SegmentedControl
             fullWidth
             value={tab}

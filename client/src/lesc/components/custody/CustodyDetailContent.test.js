@@ -263,4 +263,11 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
     expect(html).toContain('Behavior details');
   });
+
+  it('does not show exit to hospital in overflow actions for released status', () => {
+    const html = render({ subjectStatus: 'RELEASED' });
+
+    expect(html).not.toContain('Exit to hospital');
+    expect(html).not.toContain('Record exit to hospital');
+  });
 });
