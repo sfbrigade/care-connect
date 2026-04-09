@@ -493,23 +493,39 @@ model FacilityEligibility {
 
 model Subject {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// @pii
   firstName                    String?
+  /// @pii
   lastName                     String?
+  /// @pii
   middleInitial                String?
+  /// @pii
   dateOfBirth                  DateTime?               @db.Date
+  /// @pii
   sex                          SexEnum?
+  /// @pii
   race                         RaceEnum?
+  /// @pii
   driverLicense                String?
+  /// @pii
   addressLine1                 String?
+  /// @pii
   addressLine2                 String?
+  /// @pii
   city                         String?
+  /// @pii
   state                        String?
+  /// @pii
   postalCode                   String?
+  /// @pii
   localId                      String?
+  anonymizedAt                 DateTime?
   createdAt                    DateTime                @default(now())
   updatedAt                    DateTime                @updatedAt
 
   deflections                  Deflection[]
+
+  @@index([anonymizedAt])
 }
 
 model Deflection {

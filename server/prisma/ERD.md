@@ -398,6 +398,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String state "❓"
     String postalCode "❓"
     String localId "❓"
+    DateTime anonymizedAt "❓"
     DateTime createdAt 
     DateTime updatedAt 
     }
