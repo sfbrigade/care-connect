@@ -189,31 +189,27 @@ function ScanCodeModal ({
 
                     <Stack gap='sm'>
                       {codes.map((code, index) => (
-                        <Group key={index} gap='xs' wrap='nowrap' align='flex-start'>
-                          <TextInput
-                            style={{ flex: 1 }}
-                            placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
-                            value={code}
-                            onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
-                            inputMode='numeric'
-                            pattern='[0-9]*'
-                            maxLength={6}
-                            autoFocus={index === 0}
-                            error={errorMessages[index]}
-                          />
-                          {index > 0 && (
+                        <TextInput
+                          key={index}
+                          placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
+                          value={code}
+                          onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
+                          inputMode='numeric'
+                          pattern='[0-9]*'
+                          maxLength={6}
+                          autoFocus={index === 0}
+                          error={errorMessages[index]}
+                          rightSection={index > 0 && (
                             <ActionIcon
-                              variant='subtle'
+                              variant='light'
                               color='gray'
-                              size='lg'
-                              mt={4}
                               onClick={() => handleRemoveCodeField(index)}
                               aria-label='Remove code'
                             >
                               <IconX size={16} />
                             </ActionIcon>
                           )}
-                        </Group>
+                        />
                       ))}
                     </Stack>
 
