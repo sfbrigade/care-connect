@@ -6,6 +6,9 @@ import { build } from '#test/helper.js';
 import { PII_FIELDS } from '../../models/subject.js';
 
 test('anonymizeSubjects job', async (t) => {
+  delete process.env.DISABLE_ANONYMIZE_SUBJECTS;
+  t.after(() => { delete process.env.DISABLE_ANONYMIZE_SUBJECTS; });
+
   const app = await build(t);
   const { prisma } = app;
   const { default: anonymizeSubjects } = await import('../../jobs/anonymizeSubjects.js');
