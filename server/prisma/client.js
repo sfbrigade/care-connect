@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
+import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
 
 const prisma = new PrismaClient({
@@ -126,6 +127,36 @@ const prisma = new PrismaClient({
             });
           });
         }));
+      }
+    },
+    subject: {
+      async anonymize (now = new Date()) {
+        const cutoff = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+        const eligible = await prisma.$queryRaw`
+          SELECT s."id"
+          FROM "Subject" s
+          WHERE s."anonymizedAt" IS NULL
+            AND EXISTS (
+              SELECT 1 FROM "Deflection" d WHERE d."subjectId" = s."id"
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM "Deflection" d
+              WHERE d."subjectId" = s."id"
+                AND d."status" = 'ACTIVE'::"HoldStatusEnum"
+            )
+            AND (
+              SELECT MAX(d."updatedAt")
+              FROM "Deflection" d
+              WHERE d."subjectId" = s."id"
+            ) <= ${cutoff}
+        `;
+        if (eligible.length === 0) return;
+        const ids = eligible.map((row) => row.id);
+        const nulledPii = Object.fromEntries(PII_FIELDS.map((field) => [field, null]));
+        await prisma.subject.updateMany({
+          where: { id: { in: ids } },
+          data: { ...nulledPii, anonymizedAt: now },
+        });
       }
     },
     user: {
