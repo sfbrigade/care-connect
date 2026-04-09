@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Container, Group, Loader, Modal, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core';
+import { ActionIcon, Box, Button, Container, Group, Loader, Modal, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import classNames from 'classnames';
 
@@ -99,11 +99,16 @@ function ScanCodeModal ({
     setErrorMessages((prev) => [...prev, undefined]);
   }
 
+  function handleRemoveCodeField (index) {
+    setCodes((prev) => prev.filter((_, i) => i !== index));
+    setErrorMessages((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const trimmedCodes = codes.map((code) => code.trim());
   const hasAtLeastOneCode = trimmedCodes.some(Boolean);
   const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
-  const canSubmit = hasAtLeastOneCode && !hasAnyEmptyCodeField;
-  const canAddAnotherCode = manualEntryAllowMultiple && canSubmit;
+  const canSubmit = Boolean(trimmedCodes[0]);
+  const canAddAnotherCode = manualEntryAllowMultiple && hasAtLeastOneCode && !hasAnyEmptyCodeField;
   return (
     <Modal
       opened={opened}
@@ -184,17 +189,31 @@ function ScanCodeModal ({
 
                     <Stack gap='sm'>
                       {codes.map((code, index) => (
-                        <TextInput
-                          key={index}
-                          placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
-                          value={code}
-                          onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
-                          inputMode='numeric'
-                          pattern='[0-9]*'
-                          maxLength={6}
-                          autoFocus={index === 0}
-                          error={errorMessages[index]}
-                        />
+                        <Group key={index} gap='xs' wrap='nowrap' align='flex-start'>
+                          <TextInput
+                            style={{ flex: 1 }}
+                            placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
+                            value={code}
+                            onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
+                            inputMode='numeric'
+                            pattern='[0-9]*'
+                            maxLength={6}
+                            autoFocus={index === 0}
+                            error={errorMessages[index]}
+                          />
+                          {index > 0 && (
+                            <ActionIcon
+                              variant='subtle'
+                              color='gray'
+                              size='lg'
+                              mt={4}
+                              onClick={() => handleRemoveCodeField(index)}
+                              aria-label='Remove code'
+                            >
+                              <IconX size={16} />
+                            </ActionIcon>
+                          )}
+                        </Group>
                       ))}
                     </Stack>
 
