@@ -199,7 +199,7 @@ function ScanCodeModal ({
                           maxLength={6}
                           autoFocus={index === 0}
                           error={errorMessages[index]}
-                          rightSection={index > 0 && (
+                          rightSection={codes.length > 1 && (
                             <ActionIcon
                               variant='light'
                               color='gray'
