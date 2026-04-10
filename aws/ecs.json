@@ -326,7 +326,8 @@
                       "/",
                       {
                         "Ref": "BaseName"
-                      }
+                      },
+                      "?sslmode=no-verify"
                     ]
                   ]
                 }
