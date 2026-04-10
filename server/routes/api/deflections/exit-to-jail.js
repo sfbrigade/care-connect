@@ -84,7 +84,6 @@ export default async function (fastify, opts) {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitDestinationId: 'jail',
-<<<<<<< HEAD
             ...(shouldMarkPropertyReturned
               ? {
                   propertyReturned: true,
@@ -92,9 +91,7 @@ export default async function (fastify, opts) {
                   propertyNotReturnedOtherReason: null,
                 }
               : {}),
-=======
             refusalReasonId,
->>>>>>> dev
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -107,11 +104,8 @@ export default async function (fastify, opts) {
             exitedAt: now,
             exitedById: request.user.id,
             exitDestinationId: 'jail',
-<<<<<<< HEAD
             ...propertyReturnData,
-=======
             refusalReasonId,
->>>>>>> dev
             updatedAt: now,
           },
           include: {
@@ -122,7 +116,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        const releasesHold = [
+        const isHoldStatus = [
           Deflection.SubjectStatus.DETAINED,
           Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
           Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -135,8 +129,8 @@ export default async function (fastify, opts) {
           capacity,
           unavailableUnoccupied,
           unavailableOccupied,
-          occupied,
-          holds: releasesHold ? Math.max(0, holds - 1) : holds,
+          occupied: isHoldStatus ? occupied : Math.max(0, occupied - 1),
+          holds: isHoldStatus ? Math.max(0, holds - 1) : holds,
           available: available + 1,
           updateMethod: 'API',
           updatedById: request.user.id,
