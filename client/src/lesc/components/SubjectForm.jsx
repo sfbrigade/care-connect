@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { Accordion, Button, Chip, Collapse, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title, UnstyledButton } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
-import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
 import BooleanInput from '@/components/BooleanInput';
+import IdScanner from '@/components/IdScanner';
 import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -56,6 +56,9 @@ function SubjectForm () {
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
+  const [showMoreIdFields, setShowMoreIdFields] = useState(false);
+  const [showIdScanner, setShowIdScanner] = useState(isNew);
+  const [idScanned, setIdScanned] = useState(false);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -98,6 +101,9 @@ function SubjectForm () {
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
         setDobInput(normalized.dateOfBirth ?? '');
+        if (deflection.subject.driverLicense || deflection.subject.localId) {
+          setShowMoreIdFields(true);
+        }
         form.initialize(normalized);
         if (!isNew) {
           const errors = validateSubject({
@@ -206,6 +212,19 @@ function SubjectForm () {
     }
   }, [scrollToSection, form.initialized]);
 
+  function handleIdScanResult (data) {
+    setShowIdScanner(false);
+    setIdScanned(true);
+    if (data.firstName) form.setFieldValue('firstName', data.firstName);
+    if (data.lastName) form.setFieldValue('lastName', data.lastName);
+    if (data.middleInitial) form.setFieldValue('middleInitial', data.middleInitial);
+    if (data.dateOfBirth) {
+      setDobInput(data.dateOfBirth);
+      form.setFieldValue('dateOfBirth', data.dateOfBirth);
+    }
+    if (data.sex) form.setFieldValue('sex', data.sex);
+  }
+
   function handleCustodySubmit (data) {
     setPendingFormData(data);
     setShowFile647fModal(true);
@@ -238,180 +257,175 @@ function SubjectForm () {
         </Group>
 
         <Title order={2} mb='xs'>Person details</Title>
-        <Text c='dimmed' size='md' mb='xl'>Start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
-        <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
-            <Stack gap='xl'>
-              <TextInput
-                key={form.key('firstName')}
-                label={<>First name<span>*</span></>}
-                placeholder='Enter first name'
-                {...form.getInputProps('firstName')}
+        {isNew && showIdScanner && !isCustodyContext
+          ? (
+            <Stack gap='lg' mb='xl'>
+              <Text c='dimmed' size='md'>Scan the person's ID to auto-fill their details, or enter manually.</Text>
+              <IdScanner
+                onResult={handleIdScanResult}
+                onCancel={() => setShowIdScanner(false)}
               />
-              <TextInput
-                key={form.key('lastName')}
-                label={<>Last name<span>*</span></>}
-                placeholder='Enter last name'
-                {...form.getInputProps('lastName')}
-              />
-              <TextInput
-                key={form.key('middleInitial')}
-                label='Middle initial (optional)'
-                placeholder='Enter middle initial'
-                {...form.getInputProps('middleInitial')}
-              />
-              <TextInput
-                label={<>Date of birth<span>*</span></>}
-                type='text'
-                inputMode='numeric'
-                maxLength={10}
-                placeholder='MM/DD/YYYY'
-                {...form.getInputProps('dateOfBirth')}
-                value={dobInput}
-                onChange={(event) => {
-                  const formatted = formatInputDob(event.currentTarget.value);
-                  setDobInput(formatted);
-                  form.setFieldValue('dateOfBirth', formatted);
-                  if (!isCustodyContext) {
-                    scheduleAutoSave(form.getValues(), formatted);
-                  }
-                }}
-              />
-              <ChipInput
-                label={<>Sex<span>*</span></>}
-                options={['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => ({
-                  value: sex,
-                  label: t(`sex.${sex}`),
-                }))}
-                {...form.getInputProps('sex')}
-                key={form.key('sex')}
-              />
-              <ChipInput
-                label={<>Race<span>*</span></>}
-                options={['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => ({
-                  value: race,
-                  label: t(`race.${race}`),
-                }))}
-                {...form.getInputProps('race')}
-                key={form.key('race')}
-              />
-              <TextInput
-                key={form.key('driverLicense')}
-                label="Driver's license number (optional)"
-                placeholder='Enter license number'
-                {...form.getInputProps('driverLicense')}
-              />
-              <TextInput
-                key={form.key('localId')}
-                label='SF Number (optional)'
-                placeholder='Enter SF number'
-                {...form.getInputProps('localId')}
-              />
-              <Accordion variant='section' defaultValue={['address', 'narcotics', 'drug-use']}>
-                <Divider />
-                <Accordion.Item value='address'>
-                  <Accordion.Control>
-                    <Title order={3}>Home address</Title>
-                    <Text c='gray.5' size='sm'>Optional</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap='xl'>
-                      <AddressAutocomplete
-                        form={form}
-                        field='addressLine1'
-                        key={form.key('addressLine1')}
-                        placeholder='Enter street address line 1'
-                        label='Street address (optional)'
-                      />
-                      <TextInput
-                        key={form.key('addressLine2')}
-                        label='Street address (optional)'
-                        placeholder='Enter street address line 2'
-                        {...form.getInputProps('addressLine2')}
-                      />
-                      <TextInput
-                        key={form.key('city')}
-                        label='City (optional)'
-                        placeholder='Enter city'
-                        {...form.getInputProps('city')}
-                      />
-                      <TextInput
-                        key={form.key('state')}
-                        label='State (optional)'
-                        placeholder='Enter state'
-                        {...form.getInputProps('state')}
-                      />
-                      <TextInput
-                        key={form.key('postalCode')}
-                        label='ZIP code (optional)'
-                        placeholder='Enter ZIP code'
-                        {...form.getInputProps('postalCode')}
-                      />
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                {(isNew || isCustodyContext) && (
-                  <Accordion.Item value='narcotics' data-section='narcotics'>
-                    <Accordion.Control>
-                      <Title order={3}>Narcotics possession</Title>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap='xl'>
-                        <BooleanInput
-                          {...form.getInputProps('narcoticsSubstance')}
-                          key={form.key('narcoticsSubstance')}
-                          label={<>Possesses a controlled substance<span>*</span></>}
-                        />
-                        <BooleanInput
-                          {...form.getInputProps('narcoticsParaphernalia')}
-                          key={form.key('narcoticsParaphernalia')}
-                          label={<>Possesses narcotics paraphernalia<span>*</span></>}
-                        />
-                        <Divider />
-                        <Stack gap='xl' data-section='drug-use'>
-                          <Title order={3}>Substance use</Title>
-                          <Stack gap='xl'>
-                            <BooleanInput
-                              {...form.getInputProps('drugUseEvidence')}
-                              key={form.key('drugUseEvidence')}
-                              label={<>Evidence of substance use<span>*</span></>}
-                            />
-                            {showDrugTypeQuestion && (
-                              <Input.Wrapper label={<>Substance type<span>*</span></>}>
-                                <Chip.Group
-                                  key={form.key('drugType')}
-                                  {...form.getInputProps('drugType')}
-                                >
-                                  <Group gap='sm' mt='md'>
-                                    {DRUG_TYPE_OPTIONS.map((drugType) => (
-                                      <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
-                                    ))}
-                                  </Group>
-                                </Chip.Group>
-                              </Input.Wrapper>
-                            )}
+              <Button variant='subtle' color='gray' onClick={() => setShowIdScanner(false)}>
+                Enter details manually instead
+              </Button>
+            </Stack>
+            )
+          : (
+            <>
+              <Text c='dimmed' size='md' mb='xl'>
+                {idScanned ? 'Details filled from ID scan. Review and correct if needed.' : 'Start with what you know now.'}{' '}
+                Fields marked * must be completed before you can transfer custody.
+              </Text>
+              {isNew && !isCustodyContext && !showIdScanner && (
+                <Button variant='light' size='xs' mb='md' onClick={() => setShowIdScanner(true)}>
+                  Scan an ID instead
+                </Button>
+              )}
+            </>
+            )}
+        {!showIdScanner && (
+          <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
+            <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
+              <Stack gap='xl'>
+                <TextInput
+                  key={form.key('firstName')}
+                  label={<>First name<span>*</span></>}
+                  placeholder='Enter first name'
+                  {...form.getInputProps('firstName')}
+                />
+                <TextInput
+                  key={form.key('lastName')}
+                  label={<>Last name<span>*</span></>}
+                  placeholder='Enter last name'
+                  {...form.getInputProps('lastName')}
+                />
+                <TextInput
+                  key={form.key('middleInitial')}
+                  label='Middle initial (optional)'
+                  placeholder='Enter middle initial'
+                  {...form.getInputProps('middleInitial')}
+                />
+                <TextInput
+                  label={<>Date of birth<span>*</span></>}
+                  type='text'
+                  inputMode='numeric'
+                  maxLength={10}
+                  placeholder='MM/DD/YYYY'
+                  {...form.getInputProps('dateOfBirth')}
+                  value={dobInput}
+                  onChange={(event) => {
+                    const formatted = formatInputDob(event.currentTarget.value);
+                    setDobInput(formatted);
+                    form.setFieldValue('dateOfBirth', formatted);
+                    if (!isCustodyContext) {
+                      scheduleAutoSave(form.getValues(), formatted);
+                    }
+                  }}
+                />
+                <ChipInput
+                  label={<>Sex<span>*</span></>}
+                  options={['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'].map((sex) => ({
+                    value: sex,
+                    label: t(`sex.${sex}`),
+                  }))}
+                  {...form.getInputProps('sex')}
+                  key={form.key('sex')}
+                />
+                <ChipInput
+                  label={<>Race<span>*</span></>}
+                  options={['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'].map((race) => ({
+                    value: race,
+                    label: t(`race.${race}`),
+                  }))}
+                  {...form.getInputProps('race')}
+                  key={form.key('race')}
+                />
+                <UnstyledButton onClick={() => setShowMoreIdFields(v => !v)}>
+                  <Group gap='xs'>
+                    <Text size='sm' c='dimmed'>More ID fields</Text>
+                    {showMoreIdFields ? <IconChevronUp size={14} color='gray' /> : <IconChevronDown size={14} color='gray' />}
+                  </Group>
+                </UnstyledButton>
+                <Collapse in={showMoreIdFields}>
+                  <Stack gap='xl'>
+                    <TextInput
+                      key={form.key('driverLicense')}
+                      label="Driver's license number (optional)"
+                      placeholder='Enter license number'
+                      {...form.getInputProps('driverLicense')}
+                    />
+                    <TextInput
+                      key={form.key('localId')}
+                      label='SF Number (optional)'
+                      placeholder='Enter SF number'
+                      {...form.getInputProps('localId')}
+                    />
+                  </Stack>
+                </Collapse>
+                <Accordion variant='section' defaultValue={['narcotics', 'drug-use']}>
+                  {(isNew || isCustodyContext) && (
+                    <Accordion.Item value='narcotics' data-section='narcotics'>
+                      <Accordion.Control>
+                        <Title order={3}>Narcotics possession</Title>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap='xl'>
+                          <BooleanInput
+                            {...form.getInputProps('narcoticsSubstance')}
+                            key={form.key('narcoticsSubstance')}
+                            label={<>Possesses a controlled substance<span>*</span></>}
+                          />
+                          <BooleanInput
+                            {...form.getInputProps('narcoticsParaphernalia')}
+                            key={form.key('narcoticsParaphernalia')}
+                            label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                          />
+                          <Divider />
+                          <Stack gap='xl' data-section='drug-use'>
+                            <Title order={3}>Substance use</Title>
+                            <Stack gap='xl'>
+                              <BooleanInput
+                                {...form.getInputProps('drugUseEvidence')}
+                                key={form.key('drugUseEvidence')}
+                                label={<>Evidence of substance use<span>*</span></>}
+                              />
+                              {showDrugTypeQuestion && (
+                                <Input.Wrapper label={<>Substance type<span>*</span></>}>
+                                  <Chip.Group
+                                    key={form.key('drugType')}
+                                    {...form.getInputProps('drugType')}
+                                  >
+                                    <Group gap='sm' mt='md'>
+                                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                                      ))}
+                                    </Group>
+                                  </Chip.Group>
+                                </Input.Wrapper>
+                              )}
+                            </Stack>
                           </Stack>
                         </Stack>
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                )}
-              </Accordion>
-              {isCustodyContext
-                ? (
-                  <Group>
-                    <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
-                    <Button type='submit'>Save changes</Button>
-                  </Group>
-                  )
-                : (
-                  <Button type='submit'>
-                    {isNew ? 'Next: behavioral observations' : 'Save person details'}
-                  </Button>
+                      </Accordion.Panel>
+                    </Accordion.Item>
                   )}
-            </Stack>
-          </Fieldset>
-        </form>
+                </Accordion>
+                {isCustodyContext
+                  ? (
+                    <Group>
+                      <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
+                      <Button type='submit'>Save changes</Button>
+                    </Group>
+                    )
+                  : (
+                    <Button type='submit'>
+                      {isNew ? 'Next: behavioral observations' : 'Save person details'}
+                    </Button>
+                    )}
+              </Stack>
+            </Fieldset>
+          </form>
+        )}
       </Container>
       {isCustodyContext && (
         <File647fModal

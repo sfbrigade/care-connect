@@ -510,6 +510,17 @@ const Api = {
       },
     },
   },
+  ai: {
+    parseId (image, mediaType) {
+      return instance.post('/api/ai/parse-id', { image, mediaType });
+    },
+    transcribe (audio, mediaType) {
+      return instance.post('/api/ai/transcribe', { audio, mediaType });
+    },
+    analyzeNarrative (text, categories) {
+      return instance.post('/api/ai/analyze-narrative', { text, categories });
+    },
+  },
   propertyPhotos: {
     create (data) {
       return instance.post('/api/property-photos', data).catch(handleError);

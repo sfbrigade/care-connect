@@ -25,8 +25,11 @@
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.86.1",
     "@aws-sdk/client-geo-places": "^3.1000.0",
     "@aws-sdk/client-s3": "^3.893.0",
+    "@aws-sdk/client-transcribe": "^3.1027.0",
+    "@aws-sdk/client-transcribe-streaming": "^3.1028.0",
     "@aws-sdk/cloudfront-signer": "^3.893.0",
     "@aws-sdk/s3-request-presigner": "^3.893.0",
     "@fastify/autoload": "^6.3.1",
