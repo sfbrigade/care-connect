@@ -8,8 +8,8 @@ const CARE_EMAIL = 'care@careconnectsf.org';
 
 // Test subject details
 const SUBJECT = {
-  firstName: 'Test',
-  lastName: 'Person',
+  firstName: 'Playwright',
+  lastName: 'Testsubject',
 };
 
 let deflectionId;
@@ -29,56 +29,41 @@ test.describe('Happy Path: Full Lifecycle', () => {
     await login(page, SFPD_EMAIL, PASSWORD);
     await expect(page).toHaveURL(/\/holds/);
 
-    // Click "Hold a chair" — should navigate to incident form since no active incident
+    // Wait for all data to load before interacting
+    await page.waitForLoadState('networkidle');
+
+    // Click "Hold a chair" — global-setup completed all incidents, so this creates a new one
     const holdBtn = page.getByTestId('hold-a-chair-btn');
     await expect(holdBtn).toBeEnabled({ timeout: 5000 });
     await holdBtn.click();
     await expect(page).toHaveURL(/\/incident/, { timeout: 5000 });
 
-    // Wait for form to initialize — address fields may already be expanded (geolocation auto-filled)
+    // Wait for form to initialize
     const addressLine1 = page.getByTestId('incident-address-line1');
     const arrestLocation = page.getByTestId('incident-arrest-location');
-
-    console.log('[incident] waiting for address fields or arrest location...');
-    const addressVisible = await addressLine1.isVisible().catch(() => false);
-    const locationVisible = await arrestLocation.isVisible().catch(() => false);
-    console.log(`[incident] addressLine1 visible: ${addressVisible}, arrestLocation visible: ${locationVisible}`);
 
     await Promise.race([
       addressLine1.waitFor({ state: 'visible', timeout: 10000 }),
       arrestLocation.waitFor({ state: 'visible', timeout: 10000 }),
     ]).catch(() => {});
-    console.log('everything should be visible')
 
-    const addressVisibleAfter = await addressLine1.isVisible().catch(() => false);
-    const locationVisibleAfter = await arrestLocation.isVisible().catch(() => false);
-    console.log(`[incident] AFTER WAIT — addressLine1 visible: ${addressVisibleAfter}, arrestLocation visible: ${locationVisibleAfter}`);
-
-    // If collapsed, click to expand
-    if (locationVisibleAfter) {
-      // Wait for the form to be enabled (geolocation initialization complete)
-      console.log('[incident] waiting for arrest location to be enabled...');
+    // If collapsed, focus to expand
+    if (await arrestLocation.isVisible().catch(() => false)) {
       await expect(arrestLocation).toBeEnabled({ timeout: 15000 });
-      console.log('[incident] enabled, focusing to expand...');
       await arrestLocation.focus();
-      console.log('[incident] focused, waiting for address fields...');
       await addressLine1.waitFor({ state: 'visible', timeout: 5000 });
-      console.log('[incident] address fields expanded');
     }
 
-    console.log('[incident] filling address...');
+    // Fill incident form
     await addressLine1.fill('100 Main St');
     await page.getByTestId('incident-city').fill('San Francisco');
     await page.getByTestId('incident-state').fill('CA');
-    console.log('[incident] address filled');
-
-    await page.getByTestId('incident-cad').fill('TESTCAD001');
-    await page.getByTestId('incident-case').fill('TESTCASE001');
+    await page.getByTestId('incident-cad').fill('TC001');
+    await page.getByTestId('incident-case').fill('CS001');
     await page.getByTestId('incident-star').fill('9999');
-
-    // Select "Encountered via"
     await page.getByText('On view').click();
 
+    // Submit — "Create incident & hold"
     await expect(page.getByTestId('incident-submit-btn')).toBeEnabled({ timeout: 3000 });
     await page.getByTestId('incident-submit-btn').click();
 
@@ -224,7 +209,8 @@ test.describe('Happy Path: Full Lifecycle', () => {
     await expect(page).toHaveURL(/\/legal-release/, { timeout: 5000 });
 
     // Select "Can care for themselves" release reason
-    await page.getByTestId('release-reason-sobered').click();
+    // Mantine Chip testid is on the hidden input — click the visible label sibling
+    await page.getByTestId('release-reason-sobered').locator('..').locator('label').click();
 
     // Confirm release
     await page.getByTestId('release-confirm-btn').click();
@@ -242,7 +228,7 @@ test.describe('Happy Path: Full Lifecycle', () => {
     const { PDFDocument } = await import('pdf-lib');
 
     const response = await page.request.get(
-      `http://localhost:3000/api/forms/849b/pdf/${deflectionId}`
+      `http://localhost:3333/api/forms/849b/pdf/${deflectionId}`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -250,8 +236,8 @@ test.describe('Happy Path: Full Lifecycle', () => {
     const doc = await PDFDocument.load(pdfBytes);
     const form = doc.getForm();
 
-    expect(form.getTextField('INCIDENT NUMBER').getText()).toBe('TESTCASE001');
-    expect(form.getTextField('CAD NUMBER').getText()).toBe('TESTCAD001');
+    expect(form.getTextField('INCIDENT NUMBER').getText()).toBe('CS001');
+    expect(form.getTextField('CAD NUMBER').getText()).toBe('TC001');
     expect(form.getTextField('NAME LAST FIRST MIDDLE').getText()).toContain(SUBJECT.lastName);
   });
 
@@ -260,7 +246,7 @@ test.describe('Happy Path: Full Lifecycle', () => {
     expect(deflectionId).toBeTruthy();
 
     const response = await page.request.get(
-      `http://localhost:3000/api/forms/cert/pdf/${deflectionId}`
+      `http://localhost:3333/api/forms/cert/pdf/${deflectionId}`
     );
     expect(response.ok()).toBeTruthy();
     expect(response.headers()['content-type']).toBe('application/pdf');

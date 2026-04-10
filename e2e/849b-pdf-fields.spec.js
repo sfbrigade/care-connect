@@ -5,9 +5,10 @@ import { apiLogin } from './helpers.js';
 const ADMIN_EMAIL = 'admin@careconnectsf.org';
 const ADMIN_PASSWORD = 'abcd1234';
 
-// Deflection 8 has: caseNumber, cadNumber, drugType (HALLUCINOGENS),
-// narcoticsSubstance, releaseNarrative, subject with name/DOB/race/sex
-const DEFLECTION_ID = 8;
+// The PDF test deflection is seeded with caseNumber 'CS849B', drugType HALLUCINOGENS,
+// and rich subject/incident data for verifying all 849b form fields.
+// It's the last deflection created in testDeflections.js (Swilly Willy — RELEASED).
+const DEFLECTION_ID = 7;
 
 test.describe('849(b) PDF field verification', () => {
   let pdfForm;
@@ -17,7 +18,7 @@ test.describe('849(b) PDF field verification', () => {
     await apiLogin(page, ADMIN_EMAIL, ADMIN_PASSWORD);
 
     const response = await page.request.get(
-      `http://localhost:3000/api/forms/849b/pdf/${DEFLECTION_ID}`
+      `http://localhost:3333/api/forms/849b/pdf/${DEFLECTION_ID}`
     );
     expect(response.ok()).toBeTruthy();
 
@@ -39,11 +40,11 @@ test.describe('849(b) PDF field verification', () => {
   // ── Header fields ──
 
   test('incident number uses case number', () => {
-    expect(getFieldText('INCIDENT NUMBER')).toBe('34');
+    expect(getFieldText('INCIDENT NUMBER')).toBe('CS849B');
   });
 
   test('CAD number', () => {
-    expect(getFieldText('CAD NUMBER')).toBe('13');
+    expect(getFieldText('CAD NUMBER')).toBe('CAD849B');
   });
 
   // ── Incident type and codes — conditional on drug type ──
@@ -115,8 +116,8 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('CODE')).toBe('D');
   });
 
-  test('subject name (last, first)', () => {
-    expect(getFieldText('NAME LAST FIRST MIDDLE')).toBe('Willy, Swilly');
+  test('subject name (last, first, middle)', () => {
+    expect(getFieldText('NAME LAST FIRST MIDDLE')).toBe('Willy, Swilly, Q');
   });
 
   test('subject race', () => {
@@ -129,17 +130,25 @@ test.describe('849(b) PDF field verification', () => {
 
   test('subject DOB is formatted MM-DD-YYYY', () => {
     const dob = getFieldText('DOBAGE');
-    // Should be MM-DD-YYYY, not ISO 8601
     expect(dob).not.toContain('T');
     expect(dob).toMatch(/^\d{2}-\d{2}-\d{4}$/);
+    expect(dob).toBe('10-01-2001');
+  });
+
+  test('subject address', () => {
+    expect(getFieldText('RESIDENCE ADDRESSCITY IF NOT SAN FRANCISCO')).toBe('123 Test St, San Francisco, CA');
+  });
+
+  test('subject driver license', () => {
+    expect(getFieldText('ID NO SOCSECOPLICFBICII')).toBe('D1234567');
   });
 
   // ── Narrative ──
 
   test('narrative uses release narrative', () => {
     const narrative = getFieldText('PAGE');
-    expect(narrative).toContain('Incident number: 34');
-    expect(narrative).toContain('Cad number: 13');
+    expect(narrative).toContain('Incident number: CS849B');
+    expect(narrative).toContain('Cad number: CAD849B');
     expect(narrative).toContain('Subject was brought to RESET');
   });
 
