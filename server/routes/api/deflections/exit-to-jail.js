@@ -10,14 +10,22 @@ const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.ADMITTED,
   Deflection.SubjectStatus.FAILED_INTAKE,
+  Deflection.SubjectStatus.IN_CHAIR,
 ]);
+
+function hasAssociatedProperty (deflection) {
+  const hasPropertyVolume = deflection?.property && deflection.property !== 'NONE';
+  const hasPropertyDescription = Boolean(deflection?.propertyDetails?.trim());
+  const hasPropertyPhotos = (deflection?.propertyPhotos?.length ?? 0) > 0;
+  return hasPropertyVolume || hasPropertyDescription || hasPropertyPhotos;
+}
 
 export default async function (fastify, opts) {
   fastify.post('/:id/exit-to-jail',
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, or FAILED_INTAKE without legal release.',
+        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, or IN_CHAIR without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -46,6 +54,9 @@ export default async function (fastify, opts) {
 
         deflection = await tx.deflection.findUnique({
           where: { id },
+          include: {
+            propertyPhotos: true,
+          },
         });
 
         if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
@@ -55,12 +66,29 @@ export default async function (fastify, opts) {
         const now = new Date();
 
         const previousSubjectStatus = deflection.subjectStatus;
+        const shouldMarkPropertyReturned = hasAssociatedProperty(deflection);
+        const propertyReturnData = shouldMarkPropertyReturned
+          ? {
+              propertyReturned: true,
+              propertyNotReturnedReason: null,
+              propertyNotReturnedOtherReason: null,
+              propertyReturnedAt: now,
+              propertyReturnedById: request.user.id,
+            }
+          : {};
 
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitDestinationId: 'jail',
+            ...(shouldMarkPropertyReturned
+              ? {
+                  propertyReturned: true,
+                  propertyNotReturnedReason: null,
+                  propertyNotReturnedOtherReason: null,
+                }
+              : {}),
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -73,6 +101,7 @@ export default async function (fastify, opts) {
             exitedAt: now,
             exitedById: request.user.id,
             exitDestinationId: 'jail',
+            ...propertyReturnData,
             updatedAt: now,
           },
           include: {
