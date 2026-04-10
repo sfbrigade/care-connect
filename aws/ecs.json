@@ -14,14 +14,6 @@
       "Type": "Number",
       "Description": "The rate limit for geocoding in milliseconds"
     },
-    "OpenrouteserviceApiKey": {
-      "Type": "String",
-      "Description": "The API key for Openrouteservice"
-    },
-    "OpenrouteserviceBaseUrl": {
-      "Type": "String",
-      "Description": "The base URL for Openrouteservice"
-    },
     "PosthogKey": {
       "Type": "String",
       "Description": "The API key for PostHog"
@@ -127,7 +119,7 @@
         ]
       }
     },
-    "TaskDefinition": {
+    "WebTaskDefinition": {
       "Type": "AWS::ECS::TaskDefinition",
       "Properties": {
         "Family": {
@@ -343,18 +335,6 @@
                 }
               },
               {
-                "Name": "OPENROUTESERVICE_API_KEY",
-                "Value": {
-                  "Ref": "OpenrouteserviceApiKey"
-                }
-              },
-              {
-                "Name": "OPENROUTESERVICE_BASE_URL",
-                "Value": {
-                  "Ref": "OpenrouteserviceBaseUrl"
-                }
-              },
-              {
                 "Name": "SESSION_SECRET",
                 "Value": {
                   "Ref": "SessionSecret"
@@ -433,7 +413,7 @@
         "EnableExecuteCommand": true,
         "ServiceName": "web",
         "TaskDefinition": {
-          "Ref": "TaskDefinition"
+          "Ref": "WebTaskDefinition"
         },
         "LaunchType": "FARGATE",
         "LoadBalancers": [
