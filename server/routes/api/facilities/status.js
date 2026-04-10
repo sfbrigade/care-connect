@@ -10,7 +10,7 @@ import { sendHoldCancelledEmails, sendFacilityReopenedEmails } from '#lib/holdNo
 export default async function (fastify, opts) {
   fastify.post('/:id/status',
     {
-      onRequest: fastify.requireCare,
+      onRequest: fastify.requireFacilityAdmin,
       schema: {
         description: 'Update a facility\'s status (admin only).',
         params: z.object({

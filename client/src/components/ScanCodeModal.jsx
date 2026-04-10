@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActionIcon, Box, Button, Container, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconArrowLeft, IconX } from '@tabler/icons-react';
+import { Box, Button, Container, Group, Loader, Modal, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconX } from '@tabler/icons-react';
+import classNames from 'classnames';
 
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import QRScanner from '@/components/QRScanner';
-import { sanitizeManualCodeInput } from './scanCodeModalUtils';
+
+import classes from './ScanCodeModal.module.css';
 
 function ScanCodeModal ({
   opened,
@@ -25,22 +27,27 @@ function ScanCodeModal ({
   const [isLoading, setIsLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
   const [codes, setCodes] = useState(['']);
+  const [scanAccepted, setScanAccepted] = useState(false);
+  const [errorMessages, setErrorMessages] = useState([]);
 
   useEffect(() => {
     if (!opened) return;
     setIsLoading(false);
     setManualEntry(false);
     setCodes(['']);
+    setScanAccepted(false);
+    setErrorMessages([]);
   }, [opened]);
 
-  async function handleScan (text) {
+  async function handleScan (text, forQrCamera = false) {
     await onScan(text);
+    if (forQrCamera) setScanAccepted(true);
   }
 
   async function handleManualScan (text) {
     setIsLoading(true);
     try {
-      await onScan(text);
+      await handleScan(text);
       handleClose();
     } catch {
       setIsLoading(false);
@@ -54,10 +61,13 @@ function ScanCodeModal ({
 
     if (manualEntryAllowMultiple && onManualSubmitCodes) {
       setIsLoading(true);
-      try {
-        await onManualSubmitCodes(trimmedCodes);
+      const results = await onManualSubmitCodes(trimmedCodes);
+      const failed = results.filter((r) => r.error);
+      if (failed.length === 0) {
         handleClose();
-      } catch {
+      } else {
+        setCodes(failed.map((r) => r.code));
+        setErrorMessages(failed.map((r) => r.error));
         setIsLoading(false);
       }
       return;
@@ -70,6 +80,8 @@ function ScanCodeModal ({
     setIsLoading(false);
     setManualEntry(false);
     setCodes(['']);
+    setScanAccepted(false);
+    setErrorMessages([]);
     onClose();
   }
 
@@ -78,12 +90,13 @@ function ScanCodeModal ({
   }
 
   function handleCodeChange (index, value) {
-    const sanitizedValue = sanitizeManualCodeInput(value);
-    setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? sanitizedValue : code)));
+    setCodes((prev) => prev.map((code, codeIndex) => (codeIndex === index ? value : code)));
+    setErrorMessages((prev) => prev.map((msg, i) => (i === index ? undefined : msg)));
   }
 
   function handleAddCodeField () {
     setCodes((prev) => [...prev, '']);
+    setErrorMessages((prev) => [...prev, undefined]);
   }
 
   const trimmedCodes = codes.map((code) => code.trim());
@@ -91,7 +104,6 @@ function ScanCodeModal ({
   const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
   const canSubmit = hasAtLeastOneCode && !hasAnyEmptyCodeField;
   const canAddAnotherCode = manualEntryAllowMultiple && canSubmit;
-
   return (
     <Modal
       opened={opened}
@@ -103,7 +115,11 @@ function ScanCodeModal ({
       styles={{
         content: {
           background: 'var(--mantine-color-gray-0)',
-        }
+          overflow: 'visible',
+        },
+        body: {
+          overflow: 'visible',
+        },
       }}
     >
       {isLoading && (
@@ -113,117 +129,122 @@ function ScanCodeModal ({
         </Stack>
       )}
 
-      {!isLoading && manualEntry && (
-        <>
-          <Header>
-            <Group w='100%' justify='space-between'>
-              <IconButtonLink icon={IconArrowLeft} onClick={() => setManualEntry(false)} />
-              <IconButtonLink icon={IconX} onClick={handleClose} />
-            </Group>
-          </Header>
-          <Container pt='80px'>
-            <form onSubmit={handleManualSubmit}>
-              <Stack gap='xl'>
-                {manualEntryAllowMultiple
-                  ? (
-                    <Box>
-                      <Text size='xl' c='dimmed'>
-                        {manualEntryLabel || 'Enter transfer code'}
-                      </Text>
-                      <Title order={3}>
-                        {manualEntryDescription || 'If the QR code does not work, ask the officer for the transfer code.'}
-                      </Title>
-                    </Box>
-                    )
-                  : <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>}
+      {!isLoading && (
+        <form onSubmit={handleManualSubmit}>
+          <Box className={classNames(classes.scanRoot, { [classes['scanRoot--scan']]: !manualEntry })}>
+            {!manualEntry && (
+              <QRScanner
+                onScanSuccess={(text) => handleScan(text, true)}
+                autoStart
+                fullScreen
+                prompt={prompt}
+                _debugScanPhase={_debugScanPhase}
+              />
+            )}
+            <Header className={classes.scanHeader}>
+              <Group justify='flex-end' w='100%' mt='xl'>
+                <IconButtonLink
+                  variant={manualEntry ? undefined : 'primary'}
+                  color={manualEntry ? undefined : 'dark.5'}
+                  icon={IconX}
+                  onClick={handleClose}
+                />
+              </Group>
+            </Header>
+            <Stack gap='xl' className={classes.scanControlsOverlay}>
+              <SegmentedControl
+                classNames={{
+                  root: classes.segmentedControlRoot,
+                  indicator: classes.segmentedControlIndicator,
+                  label: classes.segmentedControlLabel,
+                }}
+                size='lg'
+                value={String(manualEntry)}
+                onChange={(value) => setManualEntry(value === 'true')}
+                data={[
+                  { value: 'false', label: 'Scan QR code' },
+                  { value: 'true', label: 'Type code' },
+                ]}
+              />
+              {manualEntry && (
+                <Container>
+                  <Stack gap='xl'>
+                    {manualEntryAllowMultiple
+                      ? (
+                        <Box>
+                          <Text size='xl' c='dimmed'>
+                            {manualEntryLabel || 'Enter transfer code'}
+                          </Text>
+                          <Title order={3}>
+                            {manualEntryDescription || 'If the QR code does not work, ask the officer for the transfer code.'}
+                          </Title>
+                        </Box>
+                        )
+                      : <Title order={3}>{manualEntryTitle || 'Enter Code'}</Title>}
 
-                <Stack gap='sm'>
-                  {codes.map((code, index) => (
-                    <TextInput
-                      key={index}
-                      placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
-                      value={code}
-                      onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
-                      inputMode='numeric'
-                      pattern='[0-9]*'
-                      maxLength={6}
-                      autoFocus={index === 0}
-                    />
-                  ))}
-                </Stack>
+                    <Stack gap='sm'>
+                      {codes.map((code, index) => (
+                        <TextInput
+                          key={index}
+                          placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
+                          value={code}
+                          onChange={(e) => handleCodeChange(index, e.currentTarget.value)}
+                          inputMode='numeric'
+                          pattern='[0-9]*'
+                          maxLength={6}
+                          autoFocus={index === 0}
+                          error={errorMessages[index]}
+                        />
+                      ))}
+                    </Stack>
 
-                <Group gap='sm'>
-                  {manualEntryAllowMultiple && (
-                    <Button
-                      variant='secondary'
-                      onClick={handleAddCodeField}
-                      disabled={!canAddAnotherCode}
-                    >
-                      {manualEntryAddButtonLabel || '+ Transfer code'}
-                    </Button>
-                  )}
+                    <Group gap='sm'>
+                      {manualEntryAllowMultiple && (
+                        <Button
+                          variant='secondary'
+                          onClick={handleAddCodeField}
+                          disabled={!canAddAnotherCode}
+                        >
+                          {manualEntryAddButtonLabel || '+ Transfer code'}
+                        </Button>
+                      )}
+                    </Group>
+                  </Stack>
+                </Container>
+              )}
+            </Stack>
+            {!manualEntry && (
+              <Box className={classes.scanFooter}>
+                {prompt && (
+                  <Text c='white' ta='center' fw={500} size='lg' maw={300} mx='auto'>
+                    {prompt}
+                  </Text>
+                )}
+              </Box>
+            )}
+            <Box className={classes.scanDoneButton}>
+              {manualEntry
+                ? (
                   <Button
                     type='submit'
-                    variant='primary'
                     disabled={!canSubmit}
                   >
                     Submit
                   </Button>
-                </Group>
-              </Stack>
-            </form>
-          </Container>
-        </>
-      )}
-
-      {!isLoading && !manualEntry && (
-        <Box pos='relative' h='100dvh' w='100%' bg='black'>
-          <QRScanner
-            onScanSuccess={(text) => handleScan(text)}
-            autoStart
-            fullScreen
-            prompt={prompt}
-            _debugScanPhase={_debugScanPhase}
-          />
-
-          <Stack
-            pos='absolute'
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            justify='space-between'
-            align='center'
-            p='xl'
-            style={{ zIndex: 10, pointerEvents: 'none' }}
-          >
-            <Group justify='flex-end' w='100%' style={{ pointerEvents: 'auto' }}>
-              <ActionIcon
-                variant='white'
-                color='dark'
-                size='xl'
-                radius='xl'
-                onClick={handleClose}
-              >
-                <IconX size={24} />
-              </ActionIcon>
-            </Group>
-
-            <div />
-
-            <Stack align='center' gap='lg' w='100%' maw={400} style={{ pointerEvents: 'auto' }}>
-              <Button
-                variant='outline'
-                color='white'
-                size='lg'
-                radius='xl'
-                onClick={() => setManualEntry(true)}
-              >
-                Enter code manually
-              </Button>
-            </Stack>
-          </Stack>
-        </Box>
+                  )
+                : (
+                  <Button
+                    size='lg'
+                    radius='xl'
+                    disabled={!scanAccepted}
+                    onClick={handleClose}
+                  >
+                    Done
+                  </Button>
+                  )}
+            </Box>
+          </Box>
+        </form>
       )}
     </Modal>
   );

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
 
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -64,6 +65,7 @@ export default async function (fastify, opts) {
         }
 
         const now = new Date();
+        const refusalReasonId = refusalReasonIdFromExitDestination('jail');
 
         const previousSubjectStatus = deflection.subjectStatus;
         const shouldMarkPropertyReturned = hasAssociatedProperty(deflection);
@@ -82,6 +84,7 @@ export default async function (fastify, opts) {
             deflectionId: id,
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitDestinationId: 'jail',
+<<<<<<< HEAD
             ...(shouldMarkPropertyReturned
               ? {
                   propertyReturned: true,
@@ -89,6 +92,9 @@ export default async function (fastify, opts) {
                   propertyNotReturnedOtherReason: null,
                 }
               : {}),
+=======
+            refusalReasonId,
+>>>>>>> dev
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -101,7 +107,11 @@ export default async function (fastify, opts) {
             exitedAt: now,
             exitedById: request.user.id,
             exitDestinationId: 'jail',
+<<<<<<< HEAD
             ...propertyReturnData,
+=======
+            refusalReasonId,
+>>>>>>> dev
             updatedAt: now,
           },
           include: {
@@ -112,7 +122,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        const isHoldStatus = [
+        const releasesHold = [
           Deflection.SubjectStatus.DETAINED,
           Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
           Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -125,8 +135,8 @@ export default async function (fastify, opts) {
           capacity,
           unavailableUnoccupied,
           unavailableOccupied,
-          occupied: isHoldStatus ? occupied : Math.max(0, occupied - 1),
-          holds: isHoldStatus ? Math.max(0, holds - 1) : holds,
+          occupied,
+          holds: releasesHold ? Math.max(0, holds - 1) : holds,
           available: available + 1,
           updateMethod: 'API',
           updatedById: request.user.id,

@@ -48,7 +48,7 @@ describe('Care flow unit tests', () => {
   it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital' },
+      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
       { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: null },
     ]);
 

@@ -1,0 +1,227 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template to set up SES domain identify for sending emails, including an IAM user to be used for SMTP credentials",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "SESUserAccessKeyId": {
+      "Description": "Access Key ID for the user",
+      "Value": {
+        "Ref": "SESUserAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-ses-user-access-key-id"
+        }
+      }
+    },
+    "SESUserSecretAccessKeyARN": {
+      "Description": "ARN for the Secrets Manager secret containing the Secret Access Key for the user",
+      "Value": {
+        "Ref": "SESUserSecretAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-ses-user-secret-access-key-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "SESEmailIdentity": {
+      "Type": "AWS::SES::EmailIdentity",
+      "Properties": {
+        "EmailIdentity": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-domain"
+          }
+        },
+        "MailFromAttributes": {
+          "BehaviorOnMxFailure": "USE_DEFAULT_VALUE",
+          "MailFromDomain": {
+            "Fn::Join": [
+              ".",
+              [
+                "ses",
+                {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-domain"
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "SESRecordSetGroup": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-public-hosted-zone-id"
+          }
+        },
+        "RecordSets": [
+          {
+            "Name": {
+              "Fn::GetAtt": [
+                "SESEmailIdentity",
+                "DkimDNSTokenName1"
+              ]
+            },
+            "Type": "CNAME",
+            "TTL": "300",
+            "ResourceRecords": [
+              {
+                "Fn::GetAtt": [
+                  "SESEmailIdentity",
+                  "DkimDNSTokenValue1"
+                ]
+              }
+            ]
+          },
+          {
+            "Name": {
+              "Fn::GetAtt": [
+                "SESEmailIdentity",
+                "DkimDNSTokenName2"
+              ]
+            },
+            "Type": "CNAME",
+            "TTL": "300",
+            "ResourceRecords": [
+              {
+                "Fn::GetAtt": [
+                  "SESEmailIdentity",
+                  "DkimDNSTokenValue2"
+                ]
+              }
+            ]
+          },
+          {
+            "Name": {
+              "Fn::GetAtt": [
+                "SESEmailIdentity",
+                "DkimDNSTokenName3"
+              ]
+            },
+            "Type": "CNAME",
+            "TTL": "300",
+            "ResourceRecords": [
+              {
+                "Fn::GetAtt": [
+                  "SESEmailIdentity",
+                  "DkimDNSTokenValue3"
+                ]
+              }
+            ]
+          },
+          {
+            "Name": {
+              "Fn::Join": [
+                ".",
+                [
+                  "ses",
+                  {
+                    "Fn::ImportValue": {
+                      "Fn::Sub": "${BaseName}-domain"
+                    }
+                  }
+                ]
+              ]
+            },
+            "Type": "MX",
+            "TTL": "300",
+            "ResourceRecords": [
+              {
+                "Fn::Join": [
+                  ".",
+                  [
+                    "10 feedback-smtp",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "amazonaws.com"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "Name": {
+              "Fn::Join": [
+                ".",
+                [
+                  "ses",
+                  {
+                    "Fn::ImportValue": {
+                      "Fn::Sub": "${BaseName}-domain"
+                    }
+                  }
+                ]
+              ]
+            },
+            "Type": "TXT",
+            "TTL": "300",
+            "ResourceRecords": [
+              "\"v=spf1 include:amazonses.com ~all\""
+            ]
+          }
+        ]
+      }
+    },
+    "SESUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${BaseName}-ses-policy"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ses:SendRawEmail",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "UserName": {
+          "Fn::Sub": "${BaseName}-ses-user"
+        }
+      }
+    },
+    "SESUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Status": "Active",
+        "UserName": {
+          "Ref": "SESUser"
+        }
+      }
+    },
+    "SESUserSecretAccessKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/iam/user/${BaseName}-ses-user/secret-access-key"
+        },
+        "SecretString": {
+          "Fn::GetAtt": [
+            "SESUserAccessKey",
+            "SecretAccessKey"
+          ]
+        }
+      }
+    }
+  }
+}

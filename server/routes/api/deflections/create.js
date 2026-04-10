@@ -44,6 +44,7 @@ export default async function (fastify, opts) {
             data: {
               ...data,
               createdById: request.user.id,
+              currentOfficerId: request.user.id,
             },
             include: {
               subject: true,

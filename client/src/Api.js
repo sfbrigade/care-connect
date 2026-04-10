@@ -289,7 +289,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, subjectStatus } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, subjectStatus } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -299,6 +299,9 @@ const Api = {
       }
       if (active !== undefined) {
         params.active = active;
+      }
+      if (handedOff) {
+        params.handedOff = handedOff;
       }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
@@ -318,7 +321,20 @@ const Api = {
       return instance.put(`/api/deflections/${id}/subject`, data).catch(handleError);
     },
     transfer (id) {
-      return instance.post(`/api/deflections/${id}/transfer`).catch(handleError);
+      return instance.post(`/api/deflections/${id}/transfer`).catch(error => {
+        const status = error?.response?.status;
+        switch (status) {
+          case StatusCodes.NOT_FOUND:
+            throw { _form: 'This transfer code is not valid. Check the number and try again.' };
+          case StatusCodes.CONFLICT:
+            throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
+          default:
+            throw { _form: error.message };
+        }
+      });
+    },
+    handoff (id) {
+      return instance.post(`/api/deflections/${id}/handoff`).catch(handleError);
     },
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
@@ -455,6 +471,9 @@ const Api = {
     },
     update (id, data) {
       return instance.patch(`/api/organizations/${id}`, data).catch(handleError);
+    },
+    members (organizationId) {
+      return instance.get(`/api/organizations/${organizationId}/members`);
     },
     titles: {
       index (organizationId, page = 1) {
