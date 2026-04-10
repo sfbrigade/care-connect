@@ -68,7 +68,7 @@ export default async function (fastify) {
         (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
       ) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'This hold is not available for handoff. Ask the current officer to initiate a handoff from their Holds screen.' }],
+          errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
         });
       }
 
