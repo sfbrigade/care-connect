@@ -573,7 +573,7 @@ function Holds () {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
+          <Button data-testid='hold-a-chair-btn' onClick={onHoldClick} disabled={isHoldButtonDisabled}>
             Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
           </Button>
         </ActionFooter>

@@ -316,6 +316,7 @@ function Custody () {
       {tab === 'in-custody' && (
         <ActionFooter>
           <Button
+            data-testid='scan-code-btn'
             variant='secondary'
             leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
             onClick={() => setScanModalOpened(true)}

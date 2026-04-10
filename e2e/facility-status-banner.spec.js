@@ -96,8 +96,11 @@ test.describe('Facility Status Banner', () => {
     await page.evaluate(() => window.localStorage.removeItem('selectedFacility'));
     await page.goto('/');
     const resetButton = page.getByRole('button', { name: 'RESET' });
-    if (await resetButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    try {
+      await resetButton.waitFor({ state: 'visible', timeout: 3000 });
       await resetButton.click();
+    } catch {
+      // Facility already selected
     }
     await page.goto('/holds');
     await page.waitForLoadState('networkidle');

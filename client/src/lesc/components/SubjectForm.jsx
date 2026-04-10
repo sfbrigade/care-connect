@@ -243,12 +243,14 @@ function SubjectForm () {
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
+                data-testid='subject-first-name'
                 key={form.key('firstName')}
                 label={<>First name<span>*</span></>}
                 placeholder='Enter first name'
                 {...form.getInputProps('firstName')}
               />
               <TextInput
+                data-testid='subject-last-name'
                 key={form.key('lastName')}
                 label={<>Last name<span>*</span></>}
                 placeholder='Enter last name'
@@ -401,11 +403,11 @@ function SubjectForm () {
                 ? (
                   <Group>
                     <Button variant='light' color='red' onClick={() => navigate(`/custody/${id}`)}>Cancel</Button>
-                    <Button type='submit'>Save changes</Button>
+                    <Button data-testid='subject-save-btn' type='submit'>Save changes</Button>
                   </Group>
                   )
                 : (
-                  <Button type='submit'>
+                  <Button data-testid='subject-save-btn' type='submit'>
                     {isNew ? 'Next: behavioral observations' : 'Save person details'}
                   </Button>
                   )}

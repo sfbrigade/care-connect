@@ -55,6 +55,7 @@ function CompleteIntakeModal ({
             No, intake not completed
           </Button>
           <Button
+            data-testid='intake-confirm-btn'
             color='indigo'
             size='lg'
             radius='xl'

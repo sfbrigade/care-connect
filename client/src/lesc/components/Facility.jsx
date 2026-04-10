@@ -81,6 +81,7 @@ function Facility ({
         <Group gap='sm' justify='center' wrap='nowrap'>
           {(!hasArrived || hasLeft) && (
             <Button
+              data-testid='arrived-btn'
               size='lg'
               variant='secondary'
               onClick={onArrivedClick}
@@ -91,6 +92,7 @@ function Facility ({
           )}
           {hasArrived && !hasLeft && (
             <Button
+              data-testid='left-btn'
               size='lg'
               onClick={onLeftClick}
               disabled={hasActiveHold}

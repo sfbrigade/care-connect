@@ -185,6 +185,7 @@ function ScanCodeModal ({
                     <Stack gap='sm'>
                       {codes.map((code, index) => (
                         <TextInput
+                          data-testid='manual-code-input'
                           key={index}
                           placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
                           value={code}
@@ -226,6 +227,7 @@ function ScanCodeModal ({
               {manualEntry
                 ? (
                   <Button
+                    data-testid='manual-code-submit'
                     type='submit'
                     disabled={!canSubmit}
                   >

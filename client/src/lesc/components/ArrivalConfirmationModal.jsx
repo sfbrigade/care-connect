@@ -40,6 +40,7 @@ function ArrivalConfirmationModal ({
             Not yet
           </Button>
           <Button
+            data-testid='arrival-confirm-btn'
             onClick={() => onConfirm()}
             disabled={loading}
           >
