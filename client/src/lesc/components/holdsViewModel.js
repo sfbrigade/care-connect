@@ -1,12 +1,13 @@
 import { DateTime } from 'luxon';
 
 import { formatAddress } from '../../utils/format';
+import { isCustodyTransferredStatus } from './deflectionStatusChipUtils';
 
 export const SFPD_ACTIVE_SUBJECT_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 export const SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED';
 
-export function mergeHistoryDeflections (inactiveDeflections = [], postTransferActiveDeflections = []) {
-  const merged = [...inactiveDeflections, ...postTransferActiveDeflections];
+export function mergeHistoryDeflections (inactiveDeflections = [], postTransferActiveDeflections = [], handedOffDeflections = []) {
+  const merged = [...inactiveDeflections, ...postTransferActiveDeflections, ...handedOffDeflections];
   const byId = new Map();
   for (const deflection of merged) {
     byId.set(deflection.id, deflection);
@@ -18,8 +19,105 @@ export function shouldShowIncidentInActive (incident, deflections) {
   return !!incident && (deflections?.length ?? 0) > 0;
 }
 
+export function shouldShowTransferredHoldsPrompt (incident, deflections) {
+  return !!incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0;
+}
+
+export function getTransferredDeflectionsForIncident (deflections = [], incidentId, currentUserId) {
+  if (!incidentId) return [];
+
+  return deflections.filter((deflection) => {
+    if (deflection.incidentId !== incidentId) return false;
+    if (!isCustodyTransferredStatus(deflection.subjectStatus)) return false;
+    // Exclude holds that were handed off to a different officer
+    if (currentUserId && deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId) return false;
+    return true;
+  });
+}
+
+export function buildActiveHoldDisplayDeflections (activeDeflections = [], historyDeflections = [], incident, currentUserId) {
+  if (!incident?.id) return activeDeflections;
+
+  if ((activeDeflections?.length ?? 0) === 0) {
+    return activeDeflections;
+  }
+
+  const transferredDeflections = getTransferredDeflectionsForIncident(historyDeflections, incident.id, currentUserId);
+  const combinedDeflections = [...activeDeflections, ...transferredDeflections];
+  const byId = new Map();
+
+  for (const deflection of combinedDeflections) {
+    byId.set(deflection.id, deflection);
+  }
+
+  return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function buildHistoryDisplayDeflections (historyDeflections = [], incident, hasActiveHolds = false) {
+  if (!incident?.id || !hasActiveHolds) return historyDeflections;
+
+  return historyDeflections.filter((deflection) => !(
+    deflection.incidentId === incident.id &&
+    isCustodyTransferredStatus(deflection.subjectStatus)
+  ));
+}
+
 export function isInitialLoading (isFetching, data) {
   return !!isFetching && data === undefined;
+}
+
+export function getExpiredDeflectionsForIncident (deflections = [], incidentId) {
+  if (!incidentId) return [];
+
+  return deflections.filter((deflection) => (
+    deflection.incidentId === incidentId &&
+    deflection.status === 'EXPIRED'
+  ));
+}
+
+export function buildAutoCancelledHoldsMessage (count) {
+  if (count === 1) {
+    return '1 hold was auto-canceled because it expired.';
+  }
+
+  return `${count} holds were auto-canceled because they expired.`;
+}
+
+export function detectAutoCancelledExpiredHolds ({
+  previousIncidentId,
+  previousDeflectionIds = [],
+  currentDeflections = [],
+  historyDeflections = [],
+}) {
+  const incidentId = previousIncidentId ?? currentDeflections[0]?.incidentId;
+  if (!incidentId || previousDeflectionIds.length === 0) return null;
+
+  const currentDeflectionIds = new Set(currentDeflections.map((deflection) => deflection.id));
+  const removedDeflectionIds = previousDeflectionIds.filter((id) => !currentDeflectionIds.has(id));
+  if (removedDeflectionIds.length === 0) return null;
+
+  const removedDeflectionIdSet = new Set(removedDeflectionIds);
+  const expiredDeflections = getExpiredDeflectionsForIncident(historyDeflections, incidentId)
+    .filter((deflection) => removedDeflectionIdSet.has(deflection.id));
+
+  if (expiredDeflections.length === 0) return null;
+
+  return {
+    incidentId,
+    count: expiredDeflections.length,
+    allExpired: currentDeflectionIds.size === 0,
+  };
+}
+
+export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personName, facilityName }) {
+  if (allCancelled) {
+    return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
+  }
+  if (count === 1) {
+    const name = personName || 'this person';
+    return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
+  }
+  return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
 }
 
 function toMillis (value) {

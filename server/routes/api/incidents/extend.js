@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { getOfficerPermissions } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/extend',
@@ -29,18 +30,19 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+      if (!permissions.canExtend && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-
-      await fastify.prisma.deflection.expire();
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {
         deflections = await tx.deflection.findMany({
           where: {
             incidentId: id,
-            status: 'ACTIVE',
+            currentOfficerId: request.user.id,
+            status: Deflection.HoldStatus.ACTIVE,
+            subjectStatus: Deflection.SubjectStatus.DETAINED,
           },
         });
 

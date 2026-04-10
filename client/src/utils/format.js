@@ -20,15 +20,14 @@ function dateTime (date) {
 /**
  * Format time remaining until expiration
  * @param {string|Date} expiresAt - Expiration date/time
- * @returns {string} - Formatted string like "0:45", "2:30", or "Expired"
+ * @returns {string} - Formatted string like "45:00", "60:00", or "Expired"
  */
-export function formatTimeRemaining (expiresAt) {
+export function formatTimeRemaining (expiresAt, now = DateTime.now()) {
   const expires = dateTime(expiresAt);
-  const now = DateTime.now();
 
   if (expires < now) return 'Expired';
 
-  return expires.diff(now, ['hours', 'minutes']).toFormat('h:mm');
+  return expires.diff(now, ['minutes', 'seconds']).toFormat('m:ss');
 }
 
 /**
@@ -47,6 +46,18 @@ export function formatTimeUntil (expiresAt) {
  */
 export function formatTime (date) {
   return dateTime(date).toLocaleString(DateTime.TIME_SIMPLE);
+}
+
+/**
+ * Format a date/time as time-only if today, or date + time if a different day
+ * @param {string|Date} date - Date to format
+ * @param {DateTime} [now] - Current time (for testing)
+ * @returns {string} - Formatted string like "3:45 PM" or "03/25/2026 3:45 PM"
+ */
+export function formatSmartDateTime (date, now = DateTime.now()) {
+  const dt = dateTime(date);
+  const isToday = dt.hasSame(now, 'day');
+  return isToday ? dt.toLocaleString(DateTime.TIME_SIMPLE) : `${dt.toFormat('MM/dd/yyyy')} ${dt.toLocaleString(DateTime.TIME_SIMPLE)}`;
 }
 
 /**

@@ -1,26 +1,20 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
-import { Link } from 'react-router';
-import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 
-import { calculateAge } from '../../../utils/format';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
+import { releaseTiming } from '../../../utils/releaseTiming';
 import { shouldShowCareCardViewDetails } from './careFlowUtils';
 
 function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, hasExitDraft = false }) {
-  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
-
-  const subjectDetails = [];
-  if (deflection?.subject?.dateOfBirth) {
-    subjectDetails.push(`${calculateAge(deflection.subject.dateOfBirth)} y.o.`);
-  }
-  if (deflection?.subject?.sex) {
-    subjectDetails.push(t(`sex.${deflection.subject.sex}`));
-  }
+  const subjectDetails = useSubjectDetails(deflection?.subject);
 
   const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
   const isReleased = deflection.subjectStatus === 'RELEASED';
+  const releaseTimingChip = releaseTiming(deflection);
   const showViewDetails = shouldShowCareCardViewDetails(deflection);
 
   return (
@@ -37,7 +31,15 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
       }}
     >
       <Stack gap='lg'>
-        <Text size='md' c='gray.6'>Hold {displayId}</Text>
+        <Text size='md' c='gray.6'>
+          Hold {displayId}
+          {releaseTimingChip && (
+            <>
+              {' · '}
+              <Text span c={releaseTimingChip.tone === 'danger' ? 'red.6' : 'yellow.6'}>{releaseTimingChip.label}</Text>
+            </>
+          )}
+        </Text>
 
         <Box>
           <Title order={3}>{displayName}</Title>
@@ -50,13 +52,19 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
 
         <Group wrap='nowrap' justify='flex-end'>
           {showViewDetails && (
-            <Button role='button' component={Link} to={`/care/${deflection.id}`} size='md' variant='light' color='indigo'>View details</Button>
+            <Button
+              variant='secondary'
+              size='md'
+              onClick={() => navigate(`/care/${deflection.id}`)}
+            >
+              View details
+            </Button>
           )}
           {isInMedicalIntake && (
-            <Button size='md' color='indigo' onClick={onCompleteIntake}>Complete intake</Button>
+            <Button size='md' onClick={onCompleteIntake}>Complete intake</Button>
           )}
           {isReleased && (
-            <Button size='md' color='indigo' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
+            <Button size='md' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>
           )}
         </Group>
       </Stack>

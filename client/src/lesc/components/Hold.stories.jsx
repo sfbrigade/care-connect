@@ -24,6 +24,7 @@ const incident = {
   state: 'CA',
   arrestedAt: new Date().toISOString(),
   cadNumber: '123456789A',
+  caseNumber: 'CASE-42',
   supervisorBadgeNumber: '1234',
 };
 
@@ -40,6 +41,59 @@ const deflection = {
 export const Default = {
   args: {
     deflection,
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithName = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndDob = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        dateOfBirth: '2000-01-01',
+      },
+    },
+    onDetailsClick: fn(),
+  },
+};
+
+export const WithNameAndSex = {
+  args: {
+    incident,
+    deflection: {
+      ...deflection,
+      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+      subject: {
+        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+        firstName: 'John',
+        middleInitial: 'D',
+        lastName: 'Doe',
+        sex: 'MALE',
+      },
+    },
     onDetailsClick: fn(),
   },
 };

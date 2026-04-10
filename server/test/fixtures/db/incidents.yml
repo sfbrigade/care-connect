@@ -4,6 +4,7 @@ items:
   incident1:
     facility: '@lescFacility1'
     cadNumber: 'CAD-123'
+    caseNumber: 'CASE-123'
     encounteredVia: 'ON_VIEW'
     arrestedAt: <%= new Date().toISOString() %>
     createdBy: '@user2'
@@ -11,6 +12,7 @@ items:
   incident2:
     facility: '@lescFacility1'
     cadNumber: 'CAD-456'
+    caseNumber: 'CASE-456'
     encounteredVia: 'DISPATCHED'
     arrestedAt: <%= new Date().toISOString() %>
     createdBy: '@user4'
@@ -18,6 +20,7 @@ items:
   incident3:
     facility: '@lescFacility2'
     cadNumber: 'CAD-789'
+    caseNumber: 'CASE-789'
     encounteredVia: 'ON_VIEW'
     arrestedAt: <%= new Date().toISOString() %>
     createdBy: '@user4'

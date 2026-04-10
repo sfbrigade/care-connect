@@ -15,7 +15,6 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    ```
 
 2. Install Docker Desktop: https://www.docker.com/products/docker-desktop
-
    1. Windows users see notes below...
 
 3. Open a command-line shell, change into your repo directory, and execute these commands:
@@ -58,17 +57,14 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
    This will populate the database with a complete setup for development, including an admin user that you can use to log in to the web app.
 
    The development admin user credentials are:
-
    - Email: admin@careconnectsf.org
    - Password: abcd1234
 
    SFPD test user credentials are:
-
    - Email: sfpd@careconnectsf.org
    - Password: abcd1234
 
    SFSO test user credentials are:
-
    - Email: sfso@careconnectsf.org
    - Password: abcd1234
 
@@ -135,6 +131,38 @@ This project includes components with helpful developer tools, such as the follo
 
    Username and password are: minioadmin/minioadmin
 
+5. Background Jobs (pg-boss)
+
+   The server uses [pg-boss](https://github.com/timgit/pg-boss) for async background jobs, backed by the same PostgreSQL database. Jobs are enqueued from the Fastify server and processed by a separate worker process.
+
+   **How it works:**
+   - **Enqueuing:** Route handlers enqueue jobs via `fastify.jobs.send(queueName, data)`. For example, invite emails are enqueued as `'invite-email'` jobs when an invite is created, resent, or bulk-created.
+   - **Processing:** A standalone worker process (`server/worker.js`) picks up jobs and runs the corresponding handler. In development, the worker is started automatically via `Procfile.dev` with `--watch` for auto-reload.
+   - **Failure handling:** Queues are configured with retry limits and dead letter queues. Jobs that exhaust all retries are routed to a dead letter queue (e.g. `invite-email-dead-letter`) and logged with structured JSON for alerting.
+
+   **Key files:**
+
+   | File                         | Purpose                                                               |
+   | ---------------------------- | --------------------------------------------------------------------- |
+   | `server/lib/pgBoss.js`       | Shared factory for creating pg-boss instances                         |
+   | `server/plugins/pgBoss.js`   | Fastify plugin — decorates `fastify.jobs` with a `send()` method      |
+   | `server/worker.js`           | Standalone worker process — creates queues and registers job handlers |
+   | `server/jobs/inviteEmail.js` | Job handler for sending invite emails                                 |
+
+   **Adding a new job:**
+   1. Create a handler in `server/jobs/yourJob.js` that exports a default async function accepting `(data)`.
+   2. In `server/worker.js`, import the handler, create a queue with `boss.createQueue('your-job', { ... })`, and register it with `boss.work('your-job', handler)`. Add a dead letter queue if you want failure logging.
+   3. Enqueue from any route handler with `fastify.backgroundJobs.send('your-job', { ...payload })`.
+
+   **Testing:** The pg-boss plugin is disabled during tests (`PGBOSS_ENABLED=false` in the test helper), so the Fastify server won't attempt to connect to PostgreSQL for job queuing. Instead, the test helper spies on `app.backgroundJobs.send()` calls, which are captured in `app.backgroundJobs._sent` for assertions. Job handler functions (like `inviteEmail.js`) can be tested directly by passing a mock Prisma client.
+
+6. pg-boss Admin Dashboard
+
+   A web-based monitoring dashboard for pg-boss job queues. Browse queue status, inspect failed jobs,
+   and view performance metrics at:
+
+   http://localhost:8671
+
 ## Mobile Testing with ngrok
 
 Some features (like QR code scanning) require camera access, which browsers only allow over HTTPS. To test on a mobile device, you can use [ngrok](https://ngrok.com/) to create a public HTTPS tunnel to your local dev server.
@@ -166,7 +194,7 @@ CareConnect tooling lives inside this repository. After bringing up the Docker s
 
 1. **Geocode clinics**
 
-   Ensure `OPENROUTESERVICE_API_KEY` is defined in `server/.env`. Enter the server container and run the geocode command:
+   Ensure `AWS_LOCATION_ACCESS_KEY_ID` and `AWS_LOCATION_SECRET_ACCESS_KEY` are defined in `server/.env`. Enter the server container and run the geocode command:
 
    ```
    cd server
@@ -174,7 +202,6 @@ CareConnect tooling lives inside this repository. After bringing up the Docker s
    ```
 
    Common options:
-
    - `--dry-run` — log the proposed coordinates without saving
    - `--force` — overwrite existing latitude/longitude values
    - `--limit=10` — geocode only the first N facilities (useful for testing)
@@ -196,6 +223,19 @@ npm test
 
 To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the client through the server at: http://localhost:3000
 
+### Server-side form components
+
+PDF generation for forms (647(f), 849(b), Certificate of Release) uses React components that are
+compiled ahead of time by esbuild into `server/lib/forms/dist/`. This directory is gitignored.
+**The server will not start if this directory is empty.**
+
+`docker compose up` and `npm run dev` both build it automatically. If you ever start the server
+manually outside of those commands, run this first (from inside the container):
+
+```bash
+npm run build:forms -w server
+```
+
 ### Linting and Formatting
 
 To lint and format your code:
@@ -205,7 +245,6 @@ To lint and format your code:
 ## Shell Command Quick Reference
 
 - Every directory and file on your computer has a _path_ that describes its location in storage. Special path symbols include:
-
   - The current _working directory_ you are in: `.`
   - The _parent_ of the current working directory: `..`
   - Your _home_ directory: `~`

@@ -3,17 +3,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { IconScan } from '@tabler/icons-react';
 import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
+import ActionFooter from '@/components/ActionFooter';
+import FacilityStatusBanner from '@/components/FacilityStatusBanner';
+import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
@@ -24,13 +28,13 @@ const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake', description: 'Persons currently going through intake.' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently in a sobering chair. If legally released, you can start their exit process.' },
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
-  { status: 'STILL_ONSITE', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
@@ -58,6 +62,7 @@ function hasSavedOrPersistedExitDetails (deflection) {
 }
 
 function Care () {
+  const { user } = useAuthContext();
   const [tab, setTab] = useSessionState('care', 'in-custody');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [scanModalInstance, setScanModalInstance] = useState(0);
@@ -81,6 +86,14 @@ function Care () {
     queryKey: ['deflections', facility.id, 'care-not-in-custody'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -112,6 +125,9 @@ function Care () {
     () => groupCareNotInCustodySections(notInCustodyDeflections),
     [notInCustodyDeflections]
   );
+  const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
+  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   function handleScanSuccess () {
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
@@ -138,6 +154,7 @@ function Care () {
         );
       }
       setIntakeModalDeflection(null);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
     },
     onError: () => {
@@ -152,6 +169,13 @@ function Care () {
       </Head>
       <Container pt='md' pb='xl'>
         <Stack gap='lg'>
+          <ChairAvailabilityCard
+            availableChairs={availableChairs}
+            inTransitCount={inTransitCount}
+            occupiedCount={occupiedCount}
+            actionLabel={user.roles?.includes('FACILITY_ADMIN') ? 'Manage capacity' : undefined}
+            onActionClick={() => navigate('/manage-capacity')}
+          />
           <SegmentedControl
             fullWidth
             value={tab}
@@ -161,13 +185,13 @@ function Care () {
               { label: 'Not in custody', value: 'not-in-custody' },
             ]}
           />
-
+          <FacilityStatusBanner />
           {tab === 'in-custody' && (
             hasInCustody
               ? (
                 <StatusAccordion
                   sections={IN_CUSTODY_SECTIONS}
-                  groupedDeflections={groupedInCustody}
+                  groupedItems={groupedInCustody}
                   renderCard={(d) =>
                     <CareCard
                       key={d.id}
@@ -189,7 +213,7 @@ function Care () {
           {tab === 'not-in-custody' && (
             <StatusAccordion
               sections={NOT_IN_CUSTODY_SECTIONS}
-              groupedDeflections={groupedNotInCustody}
+              groupedItems={groupedNotInCustody}
               renderCard={(d) =>
                 <CareCard
                   key={d.id}
@@ -206,33 +230,18 @@ function Care () {
           )}
         </Stack>
       </Container>
-
-      <Box
-        className='action-footer-gradient'
-        pos='fixed'
-        left={0}
-        right={0}
-        bottom={0}
-        pt='md'
-        pb='xl'
-        style={{ zIndex: 10 }}
-      >
-        <Container>
-          <Button
-            variant='outline'
-            fullWidth
-            size='lg'
-            radius='xl'
-            leftSection={<IconScan size={20} />}
-            onClick={() => {
-              setScanModalInstance((prev) => prev + 1);
-              setScanModalOpened(true);
-            }}
-          >
-            Scan transfer code
-          </Button>
-        </Container>
-      </Box>
+      <ActionFooter>
+        <Button
+          variant='secondary'
+          leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+          onClick={() => {
+            setScanModalInstance((prev) => prev + 1);
+            setScanModalOpened(true);
+          }}
+        >
+          Scan transfer code
+        </Button>
+      </ActionFooter>
 
       {scanModalOpened && (
         <ScanAdmitCodeModal
@@ -257,7 +266,7 @@ function Care () {
         }}
       />
 
-      <Box h='104px' />
+      <Box h='120px' />
     </>
   );
 }

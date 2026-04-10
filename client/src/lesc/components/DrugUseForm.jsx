@@ -8,9 +8,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
+
+import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 
 const initialValues = {
   drugUseEvidence: null,
@@ -22,7 +25,6 @@ function DrugUseForm () {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const [isInitialized, setInitialized] = useState(false);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const { t } = useTranslation();
 
@@ -30,11 +32,11 @@ function DrugUseForm () {
     mode: 'uncontrolled',
     initialValues,
     transformValues: (values) => ({
-      drugUseEvidence: values.drugUseEvidence !== null ? values.drugUseEvidence === 'true' : null,
-      drugType: values.drugUseEvidence === 'true' ? values.drugType ?? null : null,
+      drugUseEvidence: values.drugUseEvidence,
+      drugType: values.drugUseEvidence ? values.drugType ?? null : null,
     }),
     onValuesChange: (values) => {
-      setShowDrugTypeQuestion(values.drugUseEvidence === 'true');
+      setShowDrugTypeQuestion(values.drugUseEvidence);
     }
   });
 
@@ -51,14 +53,12 @@ function DrugUseForm () {
   useEffect(() => {
     if (!isLoading) {
       if (deflection) {
-        form.setInitialValues({
-          drugUseEvidence: deflection.drugUseEvidence !== null ? JSON.stringify(deflection.drugUseEvidence) : null,
+        form.initialize({
+          drugUseEvidence: deflection.drugUseEvidence,
           drugType: deflection.drugType ?? null,
         });
-        setShowDrugTypeQuestion(deflection.drugUseEvidence === true);
-        form.reset();
+        setShowDrugTypeQuestion(deflection.drugUseEvidence);
       }
-      setInitialized(true);
     }
   }, [isLoading, deflection]);
 
@@ -79,7 +79,7 @@ function DrugUseForm () {
   return (
     <>
       <Head>
-        <title>Drug use details</title>
+        <title>Substance use details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -94,32 +94,25 @@ function DrugUseForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Drug use details</Title>
+        <Title order={2} mb='xs'>Substance use details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
-          <Fieldset disabled={!isInitialized || !onSubmitMutation.isIdle} variant='unstyled'>
+          <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Input.Wrapper label='Evidence of drug use'>
-                <Chip.Group
-                  key={form.key('drugUseEvidence')}
-                  {...form.getInputProps('drugUseEvidence')}
-                >
-                  <Group gap='sm' mt='md'>
-                    <Chip value='true'>Yes</Chip>
-                    <Chip value='false'>No</Chip>
-                  </Group>
-                </Chip.Group>
-              </Input.Wrapper>
+              <BooleanInput
+                {...form.getInputProps('drugUseEvidence')}
+                key={form.key('drugUseEvidence')}
+                label={<>Evidence of substance use<span>*</span></>}
+              />
               {showDrugTypeQuestion && (
-                <Input.Wrapper label='Drug type'>
+                <Input.Wrapper label={<>Substance type<span>*</span></>}>
                   <Chip.Group
                     key={form.key('drugType')}
                     {...form.getInputProps('drugType')}
                   >
                     <Group gap='sm' mt='md'>
-                      <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
-                      <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
-                      <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
-                      <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                      ))}
                     </Group>
                   </Chip.Group>
                 </Input.Wrapper>

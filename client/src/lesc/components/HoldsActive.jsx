@@ -1,72 +1,141 @@
 import { useNavigate } from 'react-router';
-import { Box, Button, Stack, Title, Text, Loader } from '@mantine/core';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Api from '@/Api';
-import Incident from './Incident';
+import { Box, Stack, Text, Loader } from '@mantine/core';
+
+import { formatTime } from '@/utils/format';
+import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
+
 import Hold from './Hold';
-import { useToast } from '@/components/ToastContext';
-import { isInitialLoading, shouldShowIncidentInActive } from './holdsViewModel';
+import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
+import IncidentGroup from './IncidentGroup';
+import { isInitialLoading, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
-function HoldsActive ({ incident, deflections, isFetchingDeflections, onCancelHoldClick }) {
+function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
+  return (
+    <Stack align='center' gap='lg' p='24px' w='100%'>
+      <Box
+        component='img'
+        data-testid='transferred-holds-checkerboard'
+        src={checkerboardEmptyState}
+        alt=''
+        w={160}
+        h={160}
+      />
+      <Text c='var(--mantine-color-text)' ta='center' size='xl' lh='md' w='100%'>
+        {title}
+      </Text>
+      {subtitle && (
+        <Text c='var(--mantine-color-text)' ta='center' size='xl' lh='md' w='100%'>
+          {subtitle}
+        </Text>
+      )}
+      {showUpdatedAt && updatedAtMs > 0 && (
+        <Text size='xs' c='gray.5' ta='center'>
+          Last updated: {formatTime(new Date(updatedAtMs))}
+        </Text>
+      )}
+    </Stack>
+  );
+}
+
+function HoldsActive ({
+  incident,
+  deflections,
+  isFetchingDeflections,
+  onCancelHoldClick,
+  onEditIncidentClick,
+  onHandoffClick,
+  onCancelIncidentClick,
+  autoCancelledNotice,
+  onDismissAutoCancelledNotice,
+  adminCancelledNotice,
+  onDismissAdminCancelledNotice,
+  updatedAtMs = 0,
+  holdsHighlighted = false,
+  currentUserId,
+}) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { showToast } = useToast();
-
-  const extendAllHoldsMutation = useMutation({
-    mutationFn: () => Api.incidents.extend(incident.id),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
-      showToast('All active holds have been reset to 60 minutes.', 'success');
-    },
-    onError: () => {
-      showToast('Couldn’t extend holds. Please try again.', 'error');
-    },
-  });
-
-  function onExtendAllClick () {
-    extendAllHoldsMutation.mutate();
-  }
 
   const hasDeflections = (deflections?.length ?? 0) > 0;
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
-  const showIncident = shouldShowIncidentInActive(incident, deflections);
+  const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
+  const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
+  const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
+  const showAllAdminCancelledState = !showInitialLoading && !hasDeflections && adminCancelledNotice?.allCancelled;
+  const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
+  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt && !showAllAdminCancelledState;
+  const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
 
   return (
     <>
-      {showIncident && (
-        <Incident incident={incident} editLink='/incident' />
+      {hasAdminCancelledHolds && (
+        <HoldsAutoCancelledNotice
+          message={adminCancelledNotice.message}
+          onClose={onDismissAdminCancelledNotice}
+        />
+      )}
+      {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
+        <HoldsAutoCancelledNotice
+          count={autoCancelledNotice.count}
+          onClose={onDismissAutoCancelledNotice}
+        />
       )}
       {showInitialLoading && (
         <Loader mx='auto' my='xl' size='lg' />
       )}
-      {!showInitialLoading && !hasDeflections && (
-        <>
-          <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
-          <Box align='center'>
-            <Title order={4}>You don't have any active holds</Title>
-            <Text size='md' c='dimmed'>New holds will show up here once you start them.</Text>
-          </Box>
-        </>
+      {!showInitialLoading && !hasDeflections && showTransferredHoldsPrompt && (
+        <CheckerboardEmptyState
+          title='All holds transferred.'
+          subtitle={'When you leave RESET, make sure to tap "I\'ve left".'}
+          updatedAtMs={updatedAtMs}
+          showUpdatedAt
+        />
+      )}
+      {showAllExpiredState && (
+        <CheckerboardEmptyState
+          title='All holds were auto-canceled after they expired. Check History for details.'
+        />
+      )}
+      {!showAllExpiredState && showNoActiveHoldsState && (
+        <CheckerboardEmptyState title='No active holds.' />
       )}
       {hasDeflections && (
         <>
-          <Stack gap='md'>
-            {deflections?.map((deflection) => (
-              <Hold
-                key={deflection.id}
-                incident={incident}
-                deflection={deflection}
-                onCancelClick={() => onCancelHoldClick(deflection)}
-                onDetailsClick={() => {
-                  navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                }}
-              />
-            ))}
-          </Stack>
-          {!incident?.arrivedAt && (
-            <Button disabled={extendAllHoldsMutation.isPending} variant='secondary' fullWidth onClick={onExtendAllClick}>
-              {extendAllHoldsMutation.isPending ? <Loader size='sm' /> : 'Extend all holds'}
-            </Button>
+          <IncidentGroup
+            incident={incident}
+            incidentId={incident?.id}
+            onEditClick={onEditIncidentClick}
+            onHandoffClick={onHandoffClick}
+            onCancelClick={onCancelIncidentClick}
+          >
+            {[...(deflections ?? [])]
+              .sort((a, b) => {
+                const aHandedOff = currentUserId && a.currentOfficerId && a.currentOfficerId !== currentUserId;
+                const bHandedOff = currentUserId && b.currentOfficerId && b.currentOfficerId !== currentUserId;
+                if (aHandedOff && !bHandedOff) return 1;
+                if (!aHandedOff && bHandedOff) return -1;
+                return 0;
+              })
+              .map((deflection) => {
+                const isHandedOff = !!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId;
+                return (
+                  <Hold
+                    key={deflection.id}
+                    incident={incident}
+                    deflection={deflection}
+                    highlighted={holdsHighlighted}
+                    isHandedOff={isHandedOff}
+                    onCancelClick={() => onCancelHoldClick(deflection)}
+                    onDetailsClick={() => {
+                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                    }}
+                  />
+                );
+              })}
+          </IncidentGroup>
+          {showUpdatedAt && (
+            <Text size='xs' c='gray.5' ta='center'>
+              Last updated: {formatTime(new Date(updatedAtMs))}
+            </Text>
           )}
         </>
       )}

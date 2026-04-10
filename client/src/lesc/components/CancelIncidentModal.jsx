@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActionIcon, Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, List, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 
+import IconButtonLink from '@/components/IconButtonLink';
+
 import CancelReasonSelector from './CancelReasonSelector';
-import classes from './CancelModal.module.css';
 
 function CancelIncidentModal ({
   opened,
@@ -43,9 +44,10 @@ function CancelIncidentModal ({
         <Stack gap='sm'>
           <Group justify='space-between' align='center' wrap='nowrap'>
             <Title order={4} style={{ flex: 1 }}>{title}</Title>
-            <ActionIcon onClick={onClose} bg='rgba(134, 142, 150, 0.1)' c='black' radius='xl' className={classes.closeIcon} w={40} h={40}>
-              <IconX size={20} />
-            </ActionIcon>
+            <IconButtonLink
+              icon={IconX}
+              onClick={onClose}
+            />
           </Group>
           {!requiresReason && (
             <Text size='sm' c='dimmed'>
@@ -86,7 +88,7 @@ function CancelIncidentModal ({
             stacked
           />
         </Stack>
-        <Group grow>
+        <Group grow preventGrowOverflow={false}>
           <Button
             variant='destructive'
             onClick={() => onConfirm(cancelReasonId)}

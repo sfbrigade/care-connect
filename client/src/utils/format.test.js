@@ -10,6 +10,7 @@ import {
   formatDob,
   formatInputDob,
   formatDateTime,
+  formatSmartDateTime,
 } from './format';
 
 describe('format utils', () => {
@@ -78,26 +79,22 @@ describe('format utils', () => {
       expect(formatTimeRemaining(expiresAt)).toBe('Expired');
     });
 
-    it('formats remaining time correctly (hours and minutes)', () => {
-      // 1 hour and 30 minutes from now
+    it('formats remaining time as m:ss (hours and minutes)', () => {
+      // 1 hour 30 minutes from now -> 90 minutes 0 seconds
       const expiresAt = DateTime.now().plus({ hours: 1, minutes: 30 }).toISO();
-      // Expected logic: expires.diff(now, ['hours', 'minutes']).toFormat('h:mm')
-      // 1 hour 30 mins -> "1:30"
-      expect(formatTimeRemaining(expiresAt)).toBe('1:30');
+      expect(formatTimeRemaining(expiresAt)).toBe('90:00');
     });
 
-    it('formats remaining time correctly (minutes only)', () => {
-      // 45 minutes from now
+    it('formats remaining time as m:ss (minutes only)', () => {
+      // 45 minutes from now -> 45:00
       const expiresAt = DateTime.now().plus({ minutes: 45 }).toISO();
-      // 0 hours, 45 mins -> "0:45"
-      expect(formatTimeRemaining(expiresAt)).toBe('0:45');
+      expect(formatTimeRemaining(expiresAt)).toBe('45:00');
     });
 
-    it('formats remaining time correctly (single digit minutes)', () => {
-      // 1 hour and 5 minutes from now
-      const expiresAt = DateTime.now().plus({ hours: 1, minutes: 5 }).toISO();
-      // 1 hour 05 mins -> "1:05"
-      expect(formatTimeRemaining(expiresAt)).toBe('1:05');
+    it('formats remaining time as m:ss (minutes and seconds)', () => {
+      // 9 minutes 30 seconds from now
+      const expiresAt = DateTime.now().plus({ minutes: 9, seconds: 30 }).toISO();
+      expect(formatTimeRemaining(expiresAt)).toBe('9:30');
     });
   });
 
@@ -199,6 +196,22 @@ describe('format utils', () => {
 
     it('returns TBD for null date', () => {
       expect(formatDateTime(null)).toBe('TBD');
+    });
+  });
+
+  describe('formatSmartDateTime', () => {
+    it('returns time only for today', () => {
+      const today = '2023-05-15T14:30:00.000Z';
+      const result = formatSmartDateTime(today);
+      expect(result).toMatch(/2:30\s?PM/);
+      expect(result).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it('returns date + time for a different day', () => {
+      const yesterday = '2023-05-14T14:30:00.000Z';
+      const result = formatSmartDateTime(yesterday);
+      expect(result).toMatch(/05\/14\/2023/);
+      expect(result).toMatch(/2:30\s?PM/);
     });
   });
 });

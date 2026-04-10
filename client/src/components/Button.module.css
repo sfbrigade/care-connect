@@ -35,29 +35,3 @@
 .label {
   font-weight: normal;
 }
-
-/* Keep action-footer buttons opaque while footer background remains translucent */
-:global(.action-footer-gradient) .root[data-variant='secondary'] {
-  background-color: var(--mantine-color-indigo-0);
-  &:hover {
-    background-color: var(--mantine-color-indigo-1);
-  }
-}
-
-:global(.action-footer-gradient) .root[data-variant='destructive'] {
-  background-color: var(--mantine-color-red-0);
-  &:hover {
-    background-color: var(--mantine-color-red-1);
-  }
-}
-
-:global(.action-footer-gradient) .root[data-variant='light'] {
-  background-color: var(--mantine-color-indigo-0);
-  &:hover {
-    background-color: var(--mantine-color-indigo-1);
-  }
-}
-
-:global(.action-footer-gradient) .root[data-variant='outline'] {
-  background-color: var(--mantine-color-white);
-}

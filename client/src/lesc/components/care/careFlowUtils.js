@@ -6,6 +6,14 @@ function isTransferredToJailWithoutLegalRelease (deflection) {
   );
 }
 
+function isTransferredToHospitalWithoutLegalRelease (deflection) {
+  return (
+    deflection?.subjectStatus === 'EXITED' &&
+    deflection?.exitDestinationId === 'hospital' &&
+    !deflection?.releasedAt
+  );
+}
+
 export function shouldShowCareCardViewDetails (deflection) {
   return deflection?.subjectStatus !== 'EXITED';
 }
@@ -23,10 +31,15 @@ export function groupCareNotInCustodySections (deflections = []) {
   return {
     STILL_ONSITE: deflections.filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: deflections.filter(
-      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
+      d => d.subjectStatus === 'EXITED' &&
+        !isTransferredToJailWithoutLegalRelease(d) &&
+        !isTransferredToHospitalWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: deflections.filter(
       d => isTransferredToJailWithoutLegalRelease(d)
+    ),
+    TRANSFERRED_TO_HOSPITAL: deflections.filter(
+      d => isTransferredToHospitalWithoutLegalRelease(d)
     ),
   };
 }
@@ -42,5 +55,22 @@ export function getCareExitSuccessPayload (deflectionId) {
     navigateTo: '/care?tab=not-in-custody',
     toastTitle: 'Exit recorded',
     toastBody: 'Person now appears in Exited facility under Not in custody (last 24 hours).',
+  };
+}
+
+export function getCareExitPrimaryActionState ({
+  isSectionTwoComplete,
+  physicalLeftFinal,
+  propertyReturnHandledConfirmed,
+  isSaving,
+}) {
+  return {
+    label: physicalLeftFinal
+      ? 'Confirm exit'
+      : 'Save exit details',
+    disabled: !isSectionTwoComplete ||
+      (physicalLeftFinal === null || physicalLeftFinal === undefined) ||
+      (!!physicalLeftFinal && !propertyReturnHandledConfirmed) ||
+      isSaving,
   };
 }

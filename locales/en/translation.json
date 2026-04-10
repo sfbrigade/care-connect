@@ -4,10 +4,17 @@
     "BED": "Bed"
   },
   "drugType": {
-    "INTOXICATING_LIQUOR": "Intoxicating liquor",
-    "DRUG": "Drug",
-    "TOLUENE": "Toluene",
-    "COMBINATION": "Combination"
+    "CNS_DEPRESSANTS": "CNS Depressants",
+    "CNS_STIMULANTS": "CNS Stimulants",
+    "HALLUCINOGENS": "Hallucinogens",
+    "DISSOCIATIVE_ANESTHETICS": "Dissociative Anesthetics",
+    "NARCOTIC_ANALGESICS": "Narcotic Analgesics",
+    "INHALANTS": "Inhalants",
+    "CANNABIS": "Cannabis"
+  },
+  "encounteredVia": {
+    "ON_VIEW": "On View",
+    "DISPATCHED": "Dispatched"
   },
   "facility": {
     "status": {
@@ -39,6 +46,11 @@
     "MALE": "Male",
     "FEMALE": "Female",
     "OTHER": "Other",
+    "UNKNOWN": "Unknown"
+  },
+  "ternary": {
+    "YES": "Yes",
+    "NO": "No",
     "UNKNOWN": "Unknown"
   }
 }

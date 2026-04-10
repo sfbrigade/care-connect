@@ -2,8 +2,39 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import { fileURLToPath, URL } from 'node:url';
+import fs from 'fs';
+import path from 'path';
 
 // https://vite.dev/config/
+
+// Custom plugin to load CSS files as text strings (matching esbuild --loader:.css=text)
+function cssAsText () {
+  return {
+    name: 'css-as-text',
+    enforce: 'pre', // Run before Vite's built-in CSS handling
+    resolveId (source, importer) {
+      // If importing a CSS file from server/lib/forms, mark it with a special query
+      if (importer && source.endsWith('.css')) {
+        const normalizedImporter = importer.replace(/\\/g, '/');
+        if (normalizedImporter.includes('server/lib/forms')) {
+          // Resolve the full path
+          const importerDir = path.dirname(importer.split('?')[0]);
+          const resolvedPath = path.resolve(importerDir, source);
+          return resolvedPath + '?raw-text';
+        }
+      }
+    },
+    load (id) {
+      // Handle CSS files marked with ?raw-text query
+      if (id.includes('?raw-text')) {
+        const filePath = id.split('?')[0];
+        this.addWatchFile(filePath);
+        const code = fs.readFileSync(filePath, 'utf-8');
+        return `export default ${JSON.stringify(code)}`;
+      }
+    }
+  };
+}
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig(({ command, ssrBuild, mode }) => {
@@ -11,7 +42,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
   const isSSRBuild = ssrBuild === true || (command === 'build' && process.argv.includes('--ssr'));
 
   return {
-    plugins: [react()],
+    plugins: [react(), cssAsText()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -48,7 +79,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       allowedHosts: true,
       proxy: {
         '^/api|/static-data|/locales': {
-          target: 'http://localhost:3000',
+          target: 'http://127.0.0.1:3000',
           changeOrigin: false,
         }
       }
@@ -79,7 +110,11 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
             environment: 'jsdom',
             setupFiles: ['./src/test/setupTests.js'],
             include: ['**/*.test.jsx'],
-            exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**']
+            exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**'],
+            alias: {
+              '@': fileURLToPath(new URL('./src', import.meta.url)),
+              components: fileURLToPath(new URL('./src/components', import.meta.url))
+            },
           }
         }
       ]
