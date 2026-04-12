@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
-import { PDFDocument } from 'pdf-lib';
 import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
+import { generateFormPdfBuffer } from '#lib/forms/generate.js';
 
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -96,56 +96,14 @@ export default async function (fastify, _opts) {
         }
 
         const data = form.transformData(result.deflection);
-        let pdfBuffer;
+        const isDevMode = process.env.NODE_ENV !== 'production';
 
-        if (form.generatorType === 'pdf') {
-          // Cache-bust in development
-          const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
-          const { metadata } = await import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`);
-          pdfBuffer = await metadata.generatePdf(data, request.user);
-        } else {
-          // Default: jsx generator type (React + Chromium)
-          const cacheBust = process.env.NODE_ENV !== 'production' ? `?t=${Date.now()}` : '';
-          const [{ renderFormToHtml, renderToPdf }, { default: FormComponent }] = await Promise.all([
-            import('#lib/pdf.js'),
-            import(`../../../lib/forms/dist/${form.componentName}.js${cacheBust}`),
-          ]);
-
-          const html = await renderFormToHtml(FormComponent, data, { title: form.title });
-
-          pdfBuffer = await Promise.race([
-            renderToPdf(html),
-            new Promise((_resolve, reject) =>
-              setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
-            ),
-          ]);
-        }
-
-        // For the cert form, append narcotics notice as page 2 if narcotics/paraphernalia were seized
-        if (formId === 'cert' && (data.narcoticsSubstance || data.narcoticsParaphernalia)) {
-          const [{ renderFormToHtml, renderToPdf: renderNotice }, { default: FormNarcoticsNotice }] = await Promise.all([
-            import('#lib/pdf.js'),
-            import('../../../lib/forms/dist/FormNarcoticsNotice.js'),
-          ]);
-
-          const noticeData = {
-            date: data.releaseDateFormatted,
-            cadNumber: data.cadNumber,
-            substanceSeized: data.narcoticsSubstance === true,
-            paraphernaliaSeized: data.narcoticsParaphernalia === true,
-          };
-
-          const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
-          const noticeBytes = await renderNotice(noticeHtml);
-
-          const certDoc = await PDFDocument.load(pdfBuffer);
-          const noticeDoc = await PDFDocument.load(noticeBytes);
-          const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
-          for (const page of copiedPages) {
-            certDoc.addPage(page);
-          }
-          pdfBuffer = Buffer.from(await certDoc.save());
-        }
+        const pdfBuffer = await Promise.race([
+          generateFormPdfBuffer(form, data, request.user, { cacheBust: isDevMode }),
+          new Promise((_resolve, reject) =>
+            setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
+          ),
+        ]);
 
         const filename = form.downloadFilename(deflectionId);
         return reply

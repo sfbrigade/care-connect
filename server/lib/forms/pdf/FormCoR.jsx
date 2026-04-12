@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { PDFDocument } from 'pdf-lib';
+import { renderFormToHtml, renderToPdf } from '#lib/pdf.js';
+import FormNarcoticsNotice from '../jsx/FormNarcoticsNotice.jsx';
 import { fillCoR } from './fillCoR.js';
 import { formatDateParts, formatTime, formatDateOnly } from '../formUtils.js';
 
@@ -120,7 +123,29 @@ export const metadata = {
       signature: `${deflectionData.deputyName} #${deflectionData.deputyBadge}`,
     };
 
-    return fillCoR(templateBytes, formData);
+    let pdfBytes = await fillCoR(templateBytes, formData);
+
+    if (deflectionData.narcoticsSubstance || deflectionData.narcoticsParaphernalia) {
+      const noticeData = {
+        date: deflectionData.releaseDateFormatted,
+        cadNumber: deflectionData.cadNumber,
+        substanceSeized: deflectionData.narcoticsSubstance === true,
+        paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
+      };
+
+      const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
+      const noticeBytes = await renderToPdf(noticeHtml);
+
+      const certDoc = await PDFDocument.load(pdfBytes);
+      const noticeDoc = await PDFDocument.load(noticeBytes);
+      const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
+      for (const page of copiedPages) {
+        certDoc.addPage(page);
+      }
+      pdfBytes = await certDoc.save();
+    }
+
+    return pdfBytes;
   },
 };
 
