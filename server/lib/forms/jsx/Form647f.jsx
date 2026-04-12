@@ -1,6 +1,7 @@
 import React from 'react';
 import { z } from 'zod';
 import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase } from '../formUtils.js';
+import { generateJsxPdf } from '../generate.js';
 import { Header, Row, SectionHeader } from './formComponents.jsx';
 
 /*
@@ -145,6 +146,10 @@ export const metadata = {
       facilityName: facility?.name || '',
       facilityAddress,
     };
+  },
+
+  async generatePdf (formData) {
+    return generateJsxPdf(Form647f, formData, 'SFPD 647(f) Report');
   },
 };
 

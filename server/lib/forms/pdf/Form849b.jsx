@@ -7,8 +7,6 @@ import { build849bReleaseNarrative } from './releaseNarrative.js';
 import { formatDateTime24 } from '../formUtils.js';
 
 export const metadata = {
-  generatorType: 'pdf',
-
   canGenerate (deflection) {
     return deflection.releasedAt
       ? true

@@ -8,8 +8,6 @@ import { fillCoR } from './fillCoR.js';
 import { formatDateParts, formatTime, formatDateOnly } from '../formUtils.js';
 
 export const metadata = {
-  generatorType: 'pdf',
-
   canGenerate (deflection) {
     return deflection.releasedAt
       ? true
