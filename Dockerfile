@@ -35,4 +35,4 @@ RUN npm install && \
     npm run build -w server
 
 # Set up default command
-CMD ["./node_modules/.bin/pm2-runtime", "npm", "--", "start", "-w", "server"]
+CMD ["./node_modules/.bin/pm2-runtime", "-n", "web", "npm", "--", "start", "-w", "server"]

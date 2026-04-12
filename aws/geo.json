@@ -1,0 +1,89 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "IAM User account and credentials for accessing AWS Location services",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "LocationUserAccessKeyId": {
+      "Description": "Access Key ID for the user",
+      "Value": {
+        "Ref": "LocationUserAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-location-user-access-key-id"
+        }
+      }
+    },
+    "LocationUserSecretAccessKeyARN": {
+      "Description": "ARN for the Secrets Manager secret containing the Secret Access Key for the user",
+      "Value": {
+        "Ref": "LocationUserSecretAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-location-user-secret-access-key-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "LocationUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${BaseName}-location-policy"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": [
+                    "geo-places:Suggest",
+                    "geo-places:ReverseGeocode",
+                    "geo-places:Geocode"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "UserName": {
+          "Fn::Sub": "${BaseName}-location-user"
+        }
+      }
+    },
+    "LocationUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Status": "Active",
+        "UserName": {
+          "Ref": "LocationUser"
+        }
+      }
+    },
+    "LocationUserSecretAccessKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/iam/user/${BaseName}-location-user/secret-access-key"
+        },
+        "SecretString": {
+          "Fn::GetAtt": [
+            "LocationUserAccessKey",
+            "SecretAccessKey"
+          ]
+        }
+      }
+    }
+  }
+}
