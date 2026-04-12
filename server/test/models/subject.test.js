@@ -33,8 +33,6 @@ test('PII_FIELDS matches @pii annotations in schema.prisma', async () => {
   assert.deepStrictEqual(
     annotatedFields.sort(),
     [...PII_FIELDS].sort(),
-    `@pii annotations in schema.prisma do not match PII_FIELDS constant.\n` +
-    `In schema but not in PII_FIELDS: ${annotatedFields.filter(f => !PII_FIELDS.includes(f)).join(', ') || 'none'}\n` +
-    `In PII_FIELDS but not in schema: ${PII_FIELDS.filter(f => !annotatedFields.includes(f)).join(', ') || 'none'}`
+    `@pii annotations in schema.prisma do not match PII_FIELDS constant.\nIn schema but not in PII_FIELDS: ${annotatedFields.filter(f => !PII_FIELDS.includes(f)).join(', ') || 'none'}\nIn PII_FIELDS but not in schema: ${PII_FIELDS.filter(f => !annotatedFields.includes(f)).join(', ') || 'none'}`
   );
 });

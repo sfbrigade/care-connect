@@ -60,7 +60,7 @@ test('anonymizeSubjects job', async (t) => {
     const { subject, deflection } = await createSubjectWithDeflection();
 
     await prisma.$executeRawUnsafe(
-      `UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2`,
+      'UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2',
       DateTime.now().minus({ hours: 73 }).toJSDate(),
       deflection.id
     );
@@ -98,7 +98,7 @@ test('anonymizeSubjects job', async (t) => {
     const { subject, deflection } = await createSubjectWithDeflection();
 
     await prisma.$executeRawUnsafe(
-      `UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2`,
+      'UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2',
       DateTime.now().minus({ hours: 73 }).toJSDate(),
       deflection.id
     );
@@ -138,7 +138,7 @@ test('anonymizeSubjects job', async (t) => {
       },
     });
     await prisma.$executeRawUnsafe(
-      `UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2`,
+      'UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2',
       DateTime.now().minus({ hours: 73 }).toJSDate(),
       d1.id
     );
