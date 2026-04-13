@@ -4,7 +4,7 @@ import { metadata as f647f } from 'care-connect-server/lib/forms/647f/metadata.j
 import Form647f from 'care-connect-server/lib/forms/647f/Form647f.jsx';
 
 export default {
-  cert:   { ...cert,  component: null },
+  cert: { ...cert, component: null },
   '849b': { ...f849b, component: null },
   '647f': { ...f647f, component: Form647f },
 };

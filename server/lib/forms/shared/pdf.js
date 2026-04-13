@@ -23,7 +23,7 @@ function getChromiumExecutable () {
 // Always re-import with a cache-busting timestamp so that changes to the compiled
 // dist files (e.g. from build:forms:watch) are picked up without a server restart.
 async function getFormContainer () {
-  const mod = await import(`./forms/dist/FormContainer.js?t=${Date.now()}`);
+  const mod = await import(`../dist/FormContainer.js?t=${Date.now()}`);
   return mod.default;
 }
 

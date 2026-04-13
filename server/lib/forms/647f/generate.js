@@ -1,3 +1,5 @@
+import { metadata } from './metadata.js';
+
 function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
@@ -53,7 +55,7 @@ function transformData (deflection) {
 export async function generatePdf (deflection) {
   const formData = transformData(deflection);
   const { default: Form647f } = await import('#lib/forms/dist/Form647f.js');
-  const { renderFormToHtml, renderToPdf } = await import('#lib/pdf.js');
-  const html = await renderFormToHtml(Form647f, formData, { title: 'SFPD 647(f) Report' });
+  const { renderFormToHtml, renderToPdf } = await import('#lib/forms/shared/pdf.js');
+  const html = await renderFormToHtml(Form647f, formData, { title: metadata.title });
   return Buffer.from(await renderToPdf(html));
 }

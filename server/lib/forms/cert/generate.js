@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
-import { renderFormToHtml, renderToPdf } from '#lib/pdf.js';
+import { renderFormToHtml, renderToPdf } from '#lib/forms/shared/pdf.js';
 import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 

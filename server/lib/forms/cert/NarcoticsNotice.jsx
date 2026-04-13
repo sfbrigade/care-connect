@@ -1,5 +1,4 @@
 import React from 'react';
-import { formatDateOnly } from '../shared/formUtils.js';
 
 const pageCSS = `
   .form-container .page.form-narcotics-notice {
