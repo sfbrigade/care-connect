@@ -316,10 +316,10 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Selected observations</Text>
-                    {deflection?.deflectionDetails?.length
+                    <Text c='dimmed'>Arrestable behavior</Text>
+                    {deflection?.behaviorAdditions
                       ? (
-                        <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorAdditions}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
@@ -329,14 +329,6 @@ function Deflection () {
                       <Text c={deflection.volunteeredToReset ? 'teal.6' : 'red.6'}>{deflection.volunteeredToReset ? 'Yes' : 'No'}</Text>
                     </Box>
                   )}
-                  <Box>
-                    <Text c='dimmed'>647(f) narrative</Text>
-                    {deflection?.behavior
-                      ? (
-                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>
-                        )
-                      : (<Text c='red.6'>Incomplete</Text>)}
-                  </Box>
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>

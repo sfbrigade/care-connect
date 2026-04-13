@@ -198,6 +198,7 @@ function DeflectionForm () {
               <Stack gap='xs'>
                 <Textarea
                   label='Arrestable behavior'
+                  withAsterisk
                   key={form.key('behaviorAdditions')}
                   autosize
                   minRows={4}
