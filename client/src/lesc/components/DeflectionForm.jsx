@@ -175,7 +175,7 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Behavioral observations</Title>
-        <Text c='dimmed' size='md' mb='xl'>Describe what you observed.</Text>
+        <Text c='dimmed' size='md' mb='xl'>Describe the behaviors you observed.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
