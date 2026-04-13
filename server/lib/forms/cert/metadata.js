@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { PDFDocument } from 'pdf-lib';
-import { renderFormToHtml, renderToPdf } from '#lib/pdf.js';
-import FormNarcoticsNotice from '../jsx/FormNarcoticsNotice.jsx';
-import { fillCoR } from './fillCoR.js';
-import { formatDateParts, formatTime, formatDateOnly } from '../formUtils.js';
+import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 
 export const metadata = {
+  title: 'Certificate of Release',
+  generateLabel: 'Generate Certificate of Release',
+  description: (name) => `SF Sheriff's Dept Certificate of Release for ${name}`,
+  downloadFilename: (id) => `cert-${id}.pdf`,
+
   canGenerate (deflection) {
     return deflection.releasedAt
       ? true
@@ -96,61 +95,4 @@ export const metadata = {
       releaseDateFormatted: formatDateOnly(deflection.releasedAt.toISOString()),
     };
   },
-
-  async generatePdf (deflectionData, user) {
-    const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/FormCoR.pdf');
-    const templateBytes = await readFile(templatePath);
-
-    const deputyPrint = [deflectionData.deputyTitle, deflectionData.deputyName, deflectionData.deputyBadge]
-      .filter(Boolean)
-      .join(' ');
-
-    const formData = {
-      subjectName: deflectionData.subjectName,
-      subjectName2: deflectionData.subjectName,
-      detentionMonth: deflectionData.detentionMonth,
-      detentionDate: deflectionData.detentionDate,
-      detentionYear: deflectionData.detentionYear,
-      detentionTime: deflectionData.detentionTime,
-      releaseMonth: deflectionData.releaseMonth,
-      releaseDate: deflectionData.releaseDate,
-      releaseYear: deflectionData.releaseYear,
-      releaseTime: deflectionData.releaseTime,
-      deputyPrint,
-      unitIdentifier: deflectionData.unitIdentifier,
-      signature: `${deflectionData.deputyName} #${deflectionData.deputyBadge}`,
-    };
-
-    let pdfBytes = await fillCoR(templateBytes, formData);
-
-    if (deflectionData.narcoticsSubstance || deflectionData.narcoticsParaphernalia) {
-      const noticeData = {
-        date: deflectionData.releaseDateFormatted,
-        cadNumber: deflectionData.cadNumber,
-        substanceSeized: deflectionData.narcoticsSubstance === true,
-        paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
-      };
-
-      const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
-      const noticeBytes = await renderToPdf(noticeHtml);
-
-      const certDoc = await PDFDocument.load(pdfBytes);
-      const noticeDoc = await PDFDocument.load(noticeBytes);
-      const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
-      for (const page of copiedPages) {
-        certDoc.addPage(page);
-      }
-      pdfBytes = await certDoc.save();
-    }
-
-    return pdfBytes;
-  },
 };
-
-export default function FormCoR () {
-  return (
-    <div style={{ textAlign: 'center', padding: '1rem', fontWeight: 'bold' }}>
-      No HTML preview available for the Certificate of Release.
-    </div>
-  );
-}

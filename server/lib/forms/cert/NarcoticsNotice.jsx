@@ -1,6 +1,5 @@
 import React from 'react';
-import { z } from 'zod';
-import { formatDateOnly } from '../formUtils.js';
+import { formatDateOnly } from '../shared/formUtils.js';
 
 const pageCSS = `
   .form-container .page.form-narcotics-notice {
@@ -56,42 +55,7 @@ const pageCSS = `
   }
 `;
 
-export const metadata = {
-  canGenerate (deflection) {
-    if (!deflection.releasedAt) {
-      return { message: 'The Narcotics Notice can only be generated after the subject has been released.' };
-    }
-    if (!deflection.narcoticsSubstance && !deflection.narcoticsParaphernalia) {
-      return { message: 'The Narcotics Notice is only required when narcotics or paraphernalia were seized.' };
-    }
-    return true;
-  },
-
-  deflectionInclude: {
-    subject: true,
-    incident: true,
-  },
-
-  dataSchema: z.object({
-    date: z.string(),
-    cadNumber: z.string(),
-    substanceSeized: z.boolean(),
-    paraphernaliaSeized: z.boolean(),
-    drugType: z.string().nullable(),
-  }),
-
-  transformData (deflection) {
-    return {
-      date: formatDateOnly(deflection.releasedAt.toISOString()),
-      cadNumber: deflection.incident?.cadNumber || '',
-      substanceSeized: deflection.narcoticsSubstance === true,
-      paraphernaliaSeized: deflection.narcoticsParaphernalia === true,
-      drugType: deflection.drugType || null,
-    };
-  },
-};
-
-export default function FormNarcoticsNotice ({ data = {} }) {
+export default function NarcoticsNotice ({ data = {} }) {
   const {
     date = '',
     cadNumber = '',

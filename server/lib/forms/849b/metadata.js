@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { DrugTypeEnum } from '@prisma/client';
-import { fill849b } from './fill849b.js';
-import { build849bReleaseNarrative } from './releaseNarrative.js';
-import { formatDateTime24 } from '../formUtils.js';
+import { formatDateTime24 } from '../shared/formUtils.js';
 
 export const metadata = {
+  title: 'SFSO 849(b) Report',
+  generateLabel: 'Generate SFSO 849(b) Report',
+  description: (name) => `SFSO 849(b) Report for ${name}`,
+  downloadFilename: (id) => `849b-report-${id}.pdf`,
+
   canGenerate (deflection) {
     return deflection.releasedAt
       ? true
@@ -110,95 +110,4 @@ export const metadata = {
       releaseNarrative: deflection.releaseNarrative || null,
     };
   },
-
-  async generatePdf (deflectionData, user) {
-    const templatePath = join(process.cwd(), 'lib/forms/pdf/templates/Form849b.pdf');
-    const templateBytes = await readFile(templatePath);
-    const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.CNS_DEPRESSANTS;
-
-    // Map deflection data to 849b form fields
-    const formData = {
-      // Header fields
-      incidentNumber: deflectionData.caseNumber,
-      cadNumber: deflectionData.cadNumber,
-
-      // Incident fields
-      primaryIncidentType: isDrugTypeCNSDepressants
-        ? 'Alcohol, Under Influence in Public Place, Investigative Detention'
-        : 'Drugs, Under Influence in a Public Place, Investigative Detention',
-      occurrenceDateTime: deflectionData.arrestedAt,
-      reportedDateTime: deflectionData.arrestedAt,
-      additionalIncidentTypes: '', // TBC
-      location: deflectionData.arrestLocation,
-      premiseType: '',
-      locationSentTo: deflectionData.locationSentTo,
-      reportedTo: '', // TBC
-
-      // Page info
-      prop115Years: '2',
-      prop115Pages: '2',
-
-      // Prop 115 certified - from user profile
-      prop115Certified: user?.prop115Certified ?? false,
-
-      // Deputy fields - from user profile (not incident creator)
-      reportingDeputy: user ? `${user.firstName} ${user.lastName}` : '',
-      star: user?.badgeNumber || '',
-      divisionUnit: user?.unit?.name || '',
-      supervisorApproval: '',
-      watch: '',
-      assignTo: '',
-      assignedBy: '',
-      copiesTo: '',
-
-      // Subject fields
-      suspectStatus: 'known',
-      subject: {
-        code: 'D',
-        name: deflectionData.subjectName,
-        race: deflectionData.subjectRace,
-        sex: deflectionData.subjectSex,
-        dob: deflectionData.subjectDOB,
-        residenceAddress: deflectionData.subjectAddress,
-        residenceZip: deflectionData.subjectZip,
-        contactPhone: '',
-        idNumber: deflectionData.subjectDL,
-        sfNumber: deflectionData.subjectLocalId,
-        knownAlias: '',
-        height: '',
-        weight: '',
-        hair: '',
-        eyes: '',
-        businessAddress: '',
-        businessZip: '',
-        businessPhone: '',
-        email: '',
-      },
-
-      // Report type - Supp. checked per requirements
-      reportType: 'supplemental',
-
-      // Incident codes based on drug type
-      incidentCodes: isDrugTypeCNSDepressants
-        ? ['19090', '64085']
-        : ['19095', '64085'],
-
-      narrative: deflectionData.releaseNarrative || build849bReleaseNarrative({
-        caseNumber: deflectionData.caseNumber,
-        cadNumber: deflectionData.cadNumber,
-        behavior: deflectionData.behavior,
-      }),
-    };
-
-    return fill849b(templateBytes, formData);
-  },
 };
-
-// Default export for consistency with other forms, though not used for PDF generation
-export default function Form849b () {
-  return (
-    <div style={{ textAlign: 'center', padding: '1rem', fontWeight: 'bold' }}>
-      No HTML preview available for form 849(b).
-    </div>
-  );
-}

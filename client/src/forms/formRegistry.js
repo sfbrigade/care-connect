@@ -1,13 +1,10 @@
-import Form647f from 'care-connect-server/lib/forms/jsx/Form647f.jsx';
-import { FORM_REGISTRY as sharedForms } from '@care-connect/shared/forms';
+import { metadata as cert } from 'care-connect-server/lib/forms/cert/metadata.js';
+import { metadata as f849b } from 'care-connect-server/lib/forms/849b/metadata.js';
+import { metadata as f647f } from 'care-connect-server/lib/forms/647f/metadata.js';
+import Form647f from 'care-connect-server/lib/forms/647f/Form647f.jsx';
 
-// Maps form IDs to their React components (for in-browser preview).
-// All other metadata (title, labels, filenames) comes from the shared registry.
-// Forms using pdf-lib (cert, 849b) don't have HTML preview components.
-const components = {
-  '647f': Form647f,
+export default {
+  cert:   { ...cert,  component: null },
+  '849b': { ...f849b, component: null },
+  '647f': { ...f647f, component: Form647f },
 };
-
-export default Object.fromEntries(
-  Object.entries(sharedForms).map(([id, meta]) => [id, { ...meta, component: components[id] }])
-);
