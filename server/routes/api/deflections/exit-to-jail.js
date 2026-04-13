@@ -82,7 +82,6 @@ export default async function (fastify, opts) {
           include: {
             subject: true,
             exitDestination: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });
