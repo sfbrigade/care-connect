@@ -43,7 +43,6 @@ S3_KEY="transcribe-vocabulary/${VOCAB_NAME}.txt"
 S3_URI="s3://${S3_BUCKET}/${S3_KEY}"
 
 # Use Transcribe-specific credentials if available, otherwise fall back to default AWS config
-export_args=()
 if [ -n "${AWS_TRANSCRIBE_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_TRANSCRIBE_SECRET_ACCESS_KEY:-}" ]; then
   export AWS_ACCESS_KEY_ID="$AWS_TRANSCRIBE_ACCESS_KEY_ID"
   export AWS_SECRET_ACCESS_KEY="$AWS_TRANSCRIBE_SECRET_ACCESS_KEY"
