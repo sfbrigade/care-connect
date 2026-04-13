@@ -323,12 +323,6 @@ function Deflection () {
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
-                  {deflection?.volunteeredToReset !== null && deflection?.volunteeredToReset !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Person volunteered to be taken to RESET</Text>
-                      <Text c={deflection.volunteeredToReset ? 'teal.6' : 'red.6'}>{deflection.volunteeredToReset ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>

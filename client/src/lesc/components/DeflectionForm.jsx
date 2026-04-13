@@ -9,7 +9,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import AudioRecorder from '@/components/AudioRecorder';
-import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
@@ -19,7 +18,6 @@ const initialValues = {
   behaviorNarrative: '',
   drugType: null,
   drugUseEvidence: null,
-  volunteeredToReset: null,
 };
 
 function DeflectionForm () {
@@ -35,7 +33,6 @@ function DeflectionForm () {
   const [narrativeContext, setNarrativeContext] = useState({
     drugType: null,
     drugUseEvidence: null,
-    volunteeredToReset: null,
   });
   const [recorderBusy, setRecorderBusy] = useState(false);
 
@@ -56,7 +53,6 @@ function DeflectionForm () {
       setNarrativeContext({
         drugType: values.drugType ?? null,
         drugUseEvidence: values.drugUseEvidence ?? null,
-        volunteeredToReset: values.volunteeredToReset ?? null,
       });
       if (form.initialized) {
         scheduleAutoSave(values);
@@ -71,12 +67,10 @@ function DeflectionForm () {
           behaviorNarrative: deflection.behaviorNarrative,
           drugType: deflection.drugType,
           drugUseEvidence: deflection.drugUseEvidence,
-          volunteeredToReset: deflection.volunteeredToReset,
         });
         setNarrativeContext({
           drugType: normalized.drugType,
           drugUseEvidence: normalized.drugUseEvidence,
-          volunteeredToReset: normalized.volunteeredToReset,
         });
         form.initialize(normalized);
       }
@@ -88,18 +82,16 @@ function DeflectionForm () {
       incident,
       drugType: narrativeContext.drugType,
       drugUseEvidence: narrativeContext.drugUseEvidence,
-      volunteeredToReset: narrativeContext.volunteeredToReset,
     });
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset]);
+  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence]);
 
   function normalizeFormValues (values) {
     return {
       behaviorNarrative: values.behaviorNarrative ?? '',
       drugType: values.drugType ?? null,
       drugUseEvidence: values.drugUseEvidence ?? null,
-      volunteeredToReset: values.volunteeredToReset ?? null,
     };
   }
 
@@ -107,7 +99,6 @@ function DeflectionForm () {
     return buildDeflectionUpdatePayload({
       generatedNarrative: generatedNarrativeValue,
       behaviorNarrative: values.behaviorNarrative ?? '',
-      volunteeredToReset: values.volunteeredToReset,
     });
   }
 
@@ -212,12 +203,6 @@ function DeflectionForm () {
                   disabled={isLoading || onSubmitMutation.isPending}
                 />
               </Stack>
-              <BooleanInput
-                {...form.getInputProps('volunteeredToReset')}
-                key={form.key('volunteeredToReset')}
-                label='Person volunteered to be taken to RESET'
-                description='Optional'
-              />
               <Button type='submit' mb='xl' disabled={recorderBusy}>
                 {isNew ? 'Next: Personal property' : 'Save behavioral observations'}
               </Button>

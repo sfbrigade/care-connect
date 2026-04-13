@@ -9,16 +9,15 @@ export function composeBehavior (generatedNarrative, behaviorNarrative) {
   return generated || additions || '';
 }
 
-export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative, deflectionDetails, volunteeredToReset }) {
-  const normalizedBehaviorAdditions = (behaviorNarrative || '').trim();
+export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative, deflectionDetails }) {
+  const normalizedBehaviorNarrative = (behaviorNarrative || '').trim();
   return {
-    behavior: composeBehavior(generatedNarrative, normalizedBehaviorAdditions),
-    behaviorNarrative: normalizedBehaviorAdditions || null,
+    behavior: composeBehavior(generatedNarrative, normalizedBehaviorNarrative),
+    behaviorNarrative: normalizedBehaviorNarrative || null,
     ...(deflectionDetails && {
       deflectionDetails: [...(deflectionDetails ?? [])]
         .map((detailId) => detailId)
         .sort((a, b) => String(a).localeCompare(String(b))),
     }),
-    volunteeredToReset,
   };
 }

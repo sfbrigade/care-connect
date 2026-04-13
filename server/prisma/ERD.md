@@ -412,7 +412,6 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
-    Boolean volunteeredToReset "❓"
     Boolean drugUseEvidence "❓"
     DrugTypeEnum drugType "❓"
     String behavior "❓"

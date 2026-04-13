@@ -525,7 +525,6 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
-  volunteeredToReset           Boolean?
   drugUseEvidence              Boolean?
   drugType                     DrugTypeEnum?
   behavior                     String?

@@ -41,7 +41,7 @@ function formatIncidentDateTime (arrestedAt) {
   };
 }
 
-export function buildDeflectionNarrative ({ incident, drugUseEvidence, drugType, volunteeredToReset } = {}) {
+export function buildDeflectionNarrative ({ incident, drugUseEvidence, drugType } = {}) {
   const address = formatAddress(incident ?? {}) || DETAILS_MISSING;
   const { date, time } = formatIncidentDateTime(incident?.arrestedAt);
   const lines = [
@@ -53,12 +53,6 @@ export function buildDeflectionNarrative ({ incident, drugUseEvidence, drugType,
   }
 
   lines.push('Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.');
-
-  if (volunteeredToReset === true) {
-    lines.push('Person volunteered to be taken to RESET.');
-  } else if (volunteeredToReset === false) {
-    lines.push('Person did not volunteer to be taken to RESET.');
-  }
 
   return lines.join('\n');
 }
