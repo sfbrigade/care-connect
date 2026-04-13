@@ -50,9 +50,9 @@ const NarcoticsSchema = z.object({
   narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
 });
 
-const DeflectionDetailsSchema = z.object({
-  deflectionDetails: z.array(z.object({})).check(z.minLength(1, ERROR_SELECT_ONE)),
+const BehaviorSchema = z.object({
   behavior: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  behaviorNarrative: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
 });
 
 const PropertySchema = z.object({
@@ -65,7 +65,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     ...NarcoticsSchema.shape,
     drugUseEvidence: z.literal(false),
     drugType: z.nullable(z.optional(DrugTypeSchema)),
-    ...DeflectionDetailsSchema.shape,
+    ...BehaviorSchema.shape,
     ...PropertySchema.shape,
   }),
   z.object({
@@ -73,7 +73,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     ...NarcoticsSchema.shape,
     drugUseEvidence: z.literal(true),
     drugType: DrugTypeSchema,
-    ...DeflectionDetailsSchema.shape,
+    ...BehaviorSchema.shape,
     ...PropertySchema.shape,
   }),
 ], ERROR_SELECT_ONE);
@@ -100,10 +100,10 @@ export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
 
-export const validateDeflectionDetails = zod4Resolver(DeflectionDetailsSchema);
+export const validateBehavior = zod4Resolver(BehaviorSchema);
 
-export const isValidDeflectionDetails = (obj) => {
-  return !!DeflectionDetailsSchema.safeParse(obj)?.success;
+export const isValidBehavior = (obj) => {
+  return !!BehaviorSchema.safeParse(obj)?.success;
 };
 
 export const validateProperty = zod4Resolver(PropertySchema);

@@ -69,7 +69,6 @@ export default async function (fastify, opts) {
         where: { id },
         include: {
           subject: true,
-          deflectionDetails: true,
           propertyPhotos: true,
         },
       });
@@ -118,7 +117,6 @@ export default async function (fastify, opts) {
           },
           include: {
             subject: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });

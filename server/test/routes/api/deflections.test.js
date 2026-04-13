@@ -163,30 +163,21 @@ test('/api/deflections', async (t) => {
     await t.test('updates deflection details', async () => {
       const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
-        behaviorAdditions: 'Additional details from officer.',
-        deflectionDetails: ['unable_to_stand', 'confused'],
-        volunteeredToReset: true,
+        behaviorNarrative: 'Additional details from officer.',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
-      assert.deepStrictEqual(data.behaviorAdditions, 'Additional details from officer.');
-      assert.deepStrictEqual(data.deflectionDetails.length, 2);
-      assert.deepStrictEqual(data.volunteeredToReset, true);
+      assert.deepStrictEqual(data.behaviorNarrative, 'Additional details from officer.');
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
         where: { id: 4 },
-        include: {
-          deflectionDetails: true,
-        },
       });
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
-      assert.deepStrictEqual(deflection.behaviorAdditions, 'Additional details from officer.');
-      assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
-      assert.deepStrictEqual(deflection.volunteeredToReset, true);
+      assert.deepStrictEqual(deflection.behaviorNarrative, 'Additional details from officer.');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {

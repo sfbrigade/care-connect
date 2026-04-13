@@ -17,7 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDrugUse, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDrugUse, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -316,31 +316,17 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Selected observations</Text>
-                    {deflection?.deflectionDetails?.length
+                    <Text c='dimmed'>Arrestable behavior</Text>
+                    {deflection?.behaviorNarrative
                       ? (
-                        <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                        )
-                      : (<Text c='red.6'>Incomplete</Text>)}
-                  </Box>
-                  {deflection?.volunteeredToReset !== null && deflection?.volunteeredToReset !== undefined && (
-                    <Box>
-                      <Text c='dimmed'>Person volunteered to be taken to RESET</Text>
-                      <Text c={deflection.volunteeredToReset ? 'teal.6' : 'red.6'}>{deflection.volunteeredToReset ? 'Yes' : 'No'}</Text>
-                    </Box>
-                  )}
-                  <Box>
-                    <Text c='dimmed'>647(f) narrative</Text>
-                    {deflection?.behavior
-                      ? (
-                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorNarrative}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidDeflectionDetails(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>

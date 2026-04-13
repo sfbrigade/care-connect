@@ -368,12 +368,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
-                      {!!deflection?.deflectionDetails?.length && (
-                        <Box>
-                          <Text c='dimmed'>Selected observations</Text>
-                          <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                        </Box>
-                      )}
                       {!!deflection?.behavior && (
                         <Box>
                           <Text c='dimmed'>647(f) narrative</Text>
