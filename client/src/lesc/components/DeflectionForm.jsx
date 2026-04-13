@@ -187,6 +187,11 @@ function DeflectionForm () {
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <Stack gap='xs'>
+                <AudioRecorder
+                  onResult={handleTranscriptionResult}
+                  onBusyChange={setRecorderBusy}
+                  disabled={isLoading || onSubmitMutation.isPending}
+                />
                 <Textarea
                   label='Arrestable behavior'
                   withAsterisk
@@ -197,11 +202,6 @@ function DeflectionForm () {
                   placeholder='e.g. "Individual was stumbling and unable to stand on their own. Strong smell of alcohol. Found lying on the sidewalk near Market St..."'
                 />
                 <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
-                <AudioRecorder
-                  onResult={handleTranscriptionResult}
-                  onBusyChange={setRecorderBusy}
-                  disabled={isLoading || onSubmitMutation.isPending}
-                />
               </Stack>
               <Button type='submit' mb='xl' disabled={recorderBusy}>
                 {isNew ? 'Next: Personal property' : 'Save behavioral observations'}

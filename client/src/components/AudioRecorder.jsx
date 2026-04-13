@@ -105,10 +105,19 @@ function AudioRecorder ({ onResult, onBusyChange, disabled }) {
 
   if (processing) {
     return (
-      <Group gap='xs'>
-        <Loader size='sm' />
-        <Text size='sm' c='dimmed'>Transcribing...</Text>
-      </Group>
+      <>
+        <Group gap='xs'>
+          <Button
+            variant='light'
+            color='gray'
+            leftSection={<Loader size={16} />}
+            disabled
+          >
+            Transcribing...
+          </Button>
+        </Group>
+        {error && <Text c='red' size='sm' mt='xs'>{error}</Text>}
+      </>
     );
   }
 
