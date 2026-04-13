@@ -562,6 +562,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Int deflectionId 
     String formId 
     String file 
+    String sourceDataHash "❓"
     DateTime createdAt 
     String createdById 
     DateTime updatedAt 

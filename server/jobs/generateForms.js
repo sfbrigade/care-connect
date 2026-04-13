@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { PDFDocument } from 'pdf-lib';
 import prisma from '#prisma/client.js';
 import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
@@ -25,11 +26,28 @@ export default async function generateForms (data, prismaClient = prisma) {
 
   const user = await prismaClient.user.findUnique({ where: { id: userId } });
 
+  const skippedFormIds = [];
+
   for (const [formId, form] of Object.entries(forms)) {
     const check = form.canGenerate(deflection);
     if (check !== true) continue;
 
     const formData = form.transformData(deflection);
+
+    const dataHash = formId === '647f'
+      ? createHash('sha256').update(JSON.stringify(formData)).digest('hex')
+      : undefined;
+
+    if (dataHash) {
+      const existing = await prismaClient.deflectionDocument.findUnique({
+        where: { deflectionId_formId: { deflectionId, formId } },
+      });
+      if (existing?.sourceDataHash === dataHash) {
+        skippedFormIds.push(formId);
+        continue;
+      }
+    }
+
     let pdfBuffer;
 
     if (form.generatorType === 'pdf') {
@@ -76,7 +94,7 @@ export default async function generateForms (data, prismaClient = prisma) {
       const assetHandler = doc.setAsset('file', filename, { buffer: pdfBuffer });
       await prismaClient.deflectionDocument.update({
         where: { id: existing.id },
-        data: { file: filename, updatedById: userId },
+        data: { file: filename, updatedById: userId, ...(dataHash && { sourceDataHash: dataHash }) },
       });
       await assetHandler();
     } else {
@@ -89,9 +107,12 @@ export default async function generateForms (data, prismaClient = prisma) {
           file: filename,
           createdById: userId,
           updatedById: userId,
+          ...(dataHash && { sourceDataHash: dataHash }),
         },
       });
       await assetHandler({ id: record.id });
     }
   }
+
+  return skippedFormIds;
 }
