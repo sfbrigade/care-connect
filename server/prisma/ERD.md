@@ -416,7 +416,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     Boolean drugUseEvidence "❓"
     DrugTypeEnum drugType "❓"
     String behavior "❓"
-    String behaviorAdditions "❓"
+    String behaviorNarrative "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"

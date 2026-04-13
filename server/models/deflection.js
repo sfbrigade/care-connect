@@ -18,7 +18,7 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  behaviorAdditions: z.string().nullable(),
+  behaviorNarrative: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
   volunteeredToReset: z.boolean().nullable(),

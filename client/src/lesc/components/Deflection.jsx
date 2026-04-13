@@ -317,9 +317,9 @@ function Deflection () {
                 <Stack gap='sm'>
                   <Box>
                     <Text c='dimmed'>Arrestable behavior</Text>
-                    {deflection?.behaviorAdditions
+                    {deflection?.behaviorNarrative
                       ? (
-                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorAdditions}</Text>
+                        <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorNarrative}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>

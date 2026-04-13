@@ -1,6 +1,6 @@
-export function composeBehavior (generatedNarrative, behaviorAdditions) {
+export function composeBehavior (generatedNarrative, behaviorNarrative) {
   const generated = (generatedNarrative || '').trim();
-  const additions = (behaviorAdditions || '').trim();
+  const additions = (behaviorNarrative || '').trim();
 
   if (generated && additions) {
     return `${generated}\n\n${additions}`;
@@ -9,11 +9,11 @@ export function composeBehavior (generatedNarrative, behaviorAdditions) {
   return generated || additions || '';
 }
 
-export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAdditions, deflectionDetails, volunteeredToReset }) {
-  const normalizedBehaviorAdditions = (behaviorAdditions || '').trim();
+export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative, deflectionDetails, volunteeredToReset }) {
+  const normalizedBehaviorAdditions = (behaviorNarrative || '').trim();
   return {
     behavior: composeBehavior(generatedNarrative, normalizedBehaviorAdditions),
-    behaviorAdditions: normalizedBehaviorAdditions || null,
+    behaviorNarrative: normalizedBehaviorAdditions || null,
     ...(deflectionDetails && {
       deflectionDetails: [...(deflectionDetails ?? [])]
         .map((detailId) => detailId)

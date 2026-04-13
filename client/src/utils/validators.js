@@ -52,7 +52,7 @@ const NarcoticsSchema = z.object({
 
 const DeflectionDetailsSchema = z.object({
   behavior: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
-  behaviorAdditions: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  behaviorNarrative: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
 });
 
 const PropertySchema = z.object({

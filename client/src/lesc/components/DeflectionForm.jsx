@@ -16,7 +16,7 @@ import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
 
 const initialValues = {
-  behaviorAdditions: '',
+  behaviorNarrative: '',
   drugType: null,
   drugUseEvidence: null,
   volunteeredToReset: null,
@@ -68,7 +68,7 @@ function DeflectionForm () {
     if (!isLoading && !form.initialized) {
       if (deflection) {
         const normalized = normalizeFormValues({
-          behaviorAdditions: deflection.behaviorAdditions,
+          behaviorNarrative: deflection.behaviorNarrative,
           drugType: deflection.drugType,
           drugUseEvidence: deflection.drugUseEvidence,
           volunteeredToReset: deflection.volunteeredToReset,
@@ -96,7 +96,7 @@ function DeflectionForm () {
 
   function normalizeFormValues (values) {
     return {
-      behaviorAdditions: values.behaviorAdditions ?? '',
+      behaviorNarrative: values.behaviorNarrative ?? '',
       drugType: values.drugType ?? null,
       drugUseEvidence: values.drugUseEvidence ?? null,
       volunteeredToReset: values.volunteeredToReset ?? null,
@@ -106,7 +106,7 @@ function DeflectionForm () {
   function buildUpdatePayload (values, generatedNarrativeValue = generatedNarrative) {
     return buildDeflectionUpdatePayload({
       generatedNarrative: generatedNarrativeValue,
-      behaviorAdditions: values.behaviorAdditions ?? '',
+      behaviorNarrative: values.behaviorNarrative ?? '',
       volunteeredToReset: values.volunteeredToReset,
     });
   }
@@ -148,9 +148,9 @@ function DeflectionForm () {
   });
 
   function handleTranscriptionResult (text) {
-    const current = form.getValues().behaviorAdditions ?? '';
+    const current = form.getValues().behaviorNarrative ?? '';
     const newText = current ? `${current} ${text}` : text;
-    form.setFieldValue('behaviorAdditions', newText);
+    form.setFieldValue('behaviorNarrative', newText);
   }
 
   let header;
@@ -199,10 +199,10 @@ function DeflectionForm () {
                 <Textarea
                   label='Arrestable behavior'
                   withAsterisk
-                  key={form.key('behaviorAdditions')}
+                  key={form.key('behaviorNarrative')}
                   autosize
                   minRows={4}
-                  {...form.getInputProps('behaviorAdditions')}
+                  {...form.getInputProps('behaviorNarrative')}
                   placeholder='e.g. "Individual was stumbling and unable to stand on their own. Strong smell of alcohol. Found lying on the sidewalk near Market St..."'
                 />
                 <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>

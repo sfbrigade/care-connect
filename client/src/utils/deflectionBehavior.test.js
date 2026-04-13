@@ -19,19 +19,19 @@ describe('deflectionBehavior', () => {
   it('persists additions-only narrative when no observations are selected', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: '',
-      behaviorAdditions: 'Additional context only.',
+      behaviorNarrative: 'Additional context only.',
       deflectionDetails: [],
     });
 
     expect(payload.behavior).toBe('Additional context only.');
-    expect(payload.behaviorAdditions).toBe('Additional context only.');
+    expect(payload.behaviorNarrative).toBe('Additional context only.');
   });
 
   it('regenerates base narrative and keeps additions appended', () => {
     const additions = 'Subject required two-person assist to ambulate.';
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Officer observed poor hand-eye coordination.',
-      behaviorAdditions: additions,
+      behaviorNarrative: additions,
       deflectionDetails: ['b'],
     });
 
@@ -45,13 +45,13 @@ describe('deflectionBehavior', () => {
   it('creates payload with behavior and sorted deflection details', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Generated text',
-      behaviorAdditions: 'Manual additions',
+      behaviorNarrative: 'Manual additions',
       deflectionDetails: ['10', '2', '1'],
     });
 
     expect(payload).toEqual({
       behavior: ['Generated text', '', 'Manual additions'].join('\n'),
-      behaviorAdditions: 'Manual additions',
+      behaviorNarrative: 'Manual additions',
       deflectionDetails: ['1', '10', '2'],
     });
   });
@@ -59,13 +59,13 @@ describe('deflectionBehavior', () => {
   it('stores manual additions as null when textarea is empty', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Generated text',
-      behaviorAdditions: '   ',
+      behaviorNarrative: '   ',
       deflectionDetails: ['a'],
     });
 
     expect(payload).toEqual({
       behavior: 'Generated text',
-      behaviorAdditions: null,
+      behaviorNarrative: null,
       deflectionDetails: ['a'],
     });
   });
