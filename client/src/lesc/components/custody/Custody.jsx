@@ -320,7 +320,7 @@ function Custody () {
             leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
             onClick={() => setScanModalOpened(true)}
           >
-            Scan transfer code
+            Take custody
           </Button>
         </ActionFooter>
       )}
