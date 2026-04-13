@@ -1,14 +1,13 @@
 import prisma from '#prisma/client.js';
-import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
+import { FORMS } from '#lib/forms/index.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 
 export default async function generateForms (data, prismaClient = prisma) {
   const { deflectionId, userId, formIds } = data;
 
-  const allForms = await getFormMetadata();
   const forms = formIds
-    ? Object.fromEntries(Object.entries(allForms).filter(([id]) => formIds.includes(id)))
-    : allForms;
+    ? Object.fromEntries(Object.entries(FORMS).filter(([id]) => formIds.includes(id)))
+    : FORMS;
 
   const deflection = await prismaClient.deflection.findUnique({
     where: { id: deflectionId },

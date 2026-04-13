@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
-import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
+import { FORMS } from '#lib/forms/index.js';
 
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -37,38 +37,7 @@ function sendError (reply, result) {
 // ---------------------------------------------------------------------------
 
 export default async function (fastify, _opts) {
-  const forms = await getFormMetadata();
-
-  for (const [formId, form] of Object.entries(forms)) {
-    // --- JSON data endpoint ---
-    fastify.get(
-      `/${formId}/data/:deflectionId`,
-      {
-        onRequest: fastify.requireUser,
-        schema: {
-          description: `Return form data for a ${form.title} as JSON`,
-          params: paramsSchema,
-          response: {
-            [StatusCodes.OK]: form.dataSchema,
-            ...errorResponses,
-          },
-        },
-      },
-      async function (request, reply) {
-        const { deflectionId } = request.params;
-        const result = await fetchDeflection(fastify, deflectionId, form.deflectionInclude);
-
-        if (result.error) return sendError(reply, result);
-
-        const check = form.canGenerate(result.deflection);
-        if (check !== true) {
-          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
-        }
-
-        return form.transformData(result.deflection);
-      }
-    );
-
+  for (const [formId, form] of Object.entries(FORMS)) {
     // --- PDF generation endpoint ---
     fastify.get(
       `/${formId}/pdf/:deflectionId`,

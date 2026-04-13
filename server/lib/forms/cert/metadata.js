@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 export const metadata = {
   title: 'Certificate of Release',
   generateLabel: 'Generate Certificate of Release',
@@ -36,25 +34,4 @@ export const metadata = {
       },
     },
   },
-
 };
-
-export const dataSchema = z.object({
-  subjectName: z.string(),
-  detentionMonth: z.string(),
-  detentionDate: z.string(),
-  detentionYear: z.string(),
-  detentionTime: z.string(),
-  releaseMonth: z.string(),
-  releaseDate: z.string(),
-  releaseYear: z.string(),
-  releaseTime: z.string(),
-  deputyTitle: z.string(),
-  deputyName: z.string(),
-  deputyBadge: z.string(),
-  unitIdentifier: z.string(),
-  narcoticsSubstance: z.boolean().nullable(),
-  narcoticsParaphernalia: z.boolean().nullable(),
-  cadNumber: z.string(),
-  releaseDateFormatted: z.string(),
-});

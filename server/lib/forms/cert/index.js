@@ -1,2 +1,4 @@
-export { metadata } from './metadata.js';
-export { generatePdf } from './generate.js';
+import { metadata } from './metadata.js';
+import { generatePdf } from './generate.js';
+
+export default { ...metadata, generatePdf };
