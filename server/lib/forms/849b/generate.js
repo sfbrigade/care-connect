@@ -1,10 +1,70 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { DrugTypeEnum } from '@prisma/client';
+import { formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 
-export async function generatePdf (deflectionData, user) {
+function transformData (deflection) {
+  const incident = deflection.incident;
+  const subject = deflection.subject;
+
+  let subjectName = '';
+  let subjectFullName = '';
+  if (subject) {
+    subjectName = [subject.lastName, subject.firstName, subject.middleInitial]
+      .filter(Boolean)
+      .join(', ');
+    subjectFullName = [subject.firstName, subject.middleInitial, subject.lastName]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  const incidentCreator = incident?.createdBy;
+  const officerName = incidentCreator
+    ? `${incidentCreator.firstName} ${incidentCreator.lastName}`
+    : '';
+  const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
+
+  const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
+    .filter(Boolean)
+    .join(', ');
+
+  const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
+    .filter(Boolean)
+    .join(', ');
+
+  return {
+    cadNumber: incident?.cadNumber || '',
+    caseNumber: incident?.caseNumber || '',
+    arrestedAt: formatDateTime24(incident?.arrestedAt?.toISOString()),
+    arrestLocation,
+    locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
+    officerName,
+    officerBadge,
+    subjectName,
+    subjectFullName,
+    subjectRace: subject?.race || '',
+    subjectSex: subject?.sex || '',
+    subjectDOB: subject?.dateOfBirth
+      ? `${String(subject.dateOfBirth.getUTCMonth() + 1).padStart(2, '0')}-${String(subject.dateOfBirth.getUTCDate()).padStart(2, '0')}-${subject.dateOfBirth.getUTCFullYear()}`
+      : null,
+    subjectAddress,
+    subjectZip: subject?.postalCode || '',
+    subjectDL: subject?.driverLicense || '',
+    subjectLocalId: subject?.localId || '',
+    subjectDrugType: deflection.drugType || null,
+    arrivedAtReset: incident?.arrivedAt?.toISOString() || null,
+    transferredAt: deflection.transferredAt?.toISOString() || null,
+    releasedAt: deflection.releasedAt.toISOString(),
+    releaseReason: deflection.releaseReason?.name || '',
+    behavior: deflection.behavior || null,
+    releaseNarrative: deflection.releaseNarrative || null,
+  };
+}
+
+export async function generatePdf (deflection, user) {
+  const deflectionData = transformData(deflection);
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
   const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.CNS_DEPRESSANTS;

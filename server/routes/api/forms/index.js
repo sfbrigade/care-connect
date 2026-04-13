@@ -94,10 +94,8 @@ export default async function (fastify, _opts) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
         }
 
-        const data = form.transformData(result.deflection);
-
         const pdfBuffer = await Promise.race([
-          form.generatePdf(data, request.user),
+          form.generatePdf(result.deflection, request.user),
           new Promise((_resolve, reject) =>
             setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
           ),

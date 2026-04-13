@@ -2,9 +2,49 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { renderFormToHtml, renderToPdf } from '#lib/pdf.js';
+import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 
-export async function generatePdf (deflectionData, user) {
+function transformData (deflection) {
+  const subject = deflection.subject;
+  const subjectName = subject
+    ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
+    : '';
+
+  const deputy = deflection.releasedBy || deflection.createdBy;
+  const deputyTitle = deputy?.title?.name || '';
+  const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
+  const deputyBadge = deputy?.badgeNumber || '';
+  const unitIdentifier = deflection.incident?.createdByUnit?.name ||
+    deputy?.unit?.name ||
+    '';
+
+  const detention = formatDateParts(deflection.createdAt?.toISOString());
+  const release = formatDateParts(deflection.releasedAt.toISOString());
+
+  return {
+    subjectName,
+    detentionMonth: detention.month,
+    detentionDate: detention.date,
+    detentionYear: detention.year,
+    detentionTime: formatTime(deflection.createdAt?.toISOString()),
+    releaseMonth: release.month,
+    releaseDate: release.date,
+    releaseYear: release.year,
+    releaseTime: formatTime(deflection.releasedAt.toISOString()),
+    deputyTitle,
+    deputyName,
+    deputyBadge,
+    unitIdentifier,
+    narcoticsSubstance: deflection.narcoticsSubstance,
+    narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+    cadNumber: deflection.incident?.cadNumber || '',
+    releaseDateFormatted: formatDateOnly(deflection.releasedAt.toISOString()),
+  };
+}
+
+export async function generatePdf (deflection, user) {
+  const deflectionData = transformData(deflection);
   const templatePath = join(process.cwd(), 'lib/forms/cert/template.pdf');
   const templateBytes = await readFile(templatePath);
 

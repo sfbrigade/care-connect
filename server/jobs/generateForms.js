@@ -28,8 +28,7 @@ export default async function generateForms (data, prismaClient = prisma) {
     const check = form.canGenerate(deflection);
     if (check !== true) continue;
 
-    const formData = form.transformData(deflection);
-    const pdfBuffer = await form.generatePdf(formData, user);
+    const pdfBuffer = await form.generatePdf(deflection, user);
 
     const filename = form.downloadFilename(deflectionId);
 
