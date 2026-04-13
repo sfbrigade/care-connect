@@ -37,7 +37,6 @@ function DeflectionForm () {
     drugUseEvidence: null,
     volunteeredToReset: null,
   });
-  const [behaviorText, setBehaviorText] = useState('');
   const [recorderBusy, setRecorderBusy] = useState(false);
 
   const { data: incident } = useQuery({
@@ -59,7 +58,6 @@ function DeflectionForm () {
         drugUseEvidence: values.drugUseEvidence ?? null,
         volunteeredToReset: values.volunteeredToReset ?? null,
       });
-      setBehaviorText((values.behaviorAdditions ?? '').trim());
       if (form.initialized) {
         scheduleAutoSave(values);
       }
@@ -88,14 +86,13 @@ function DeflectionForm () {
   useEffect(() => {
     const nextGeneratedNarrative = buildDeflectionNarrative({
       incident,
-      behaviorText,
       drugType: narrativeContext.drugType,
       drugUseEvidence: narrativeContext.drugUseEvidence,
       volunteeredToReset: narrativeContext.volunteeredToReset,
     });
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset, behaviorText]);
+  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset]);
 
   function normalizeFormValues (values) {
     return {
