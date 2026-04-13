@@ -97,7 +97,7 @@ export default async function (fastify, _opts) {
         const data = form.transformData(result.deflection);
 
         const pdfBuffer = await Promise.race([
-          form.generatePdf(data, request.user).then((bytes) => Buffer.from(bytes)),
+          form.generatePdf(data, request.user),
           new Promise((_resolve, reject) =>
             setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
           ),

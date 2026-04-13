@@ -51,5 +51,5 @@ export async function generatePdf (deflectionData, user) {
     pdfBytes = await certDoc.save();
   }
 
-  return pdfBytes;
+  return Buffer.from(pdfBytes);
 }

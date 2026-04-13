@@ -83,5 +83,5 @@ export async function generatePdf (deflectionData, user) {
     }),
   };
 
-  return fill849b(templateBytes, formData);
+  return Buffer.from(await fill849b(templateBytes, formData));
 }
