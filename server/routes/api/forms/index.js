@@ -1,7 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
-import { generateFormPdfBuffer } from '#lib/forms/generate.js';
 
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -98,7 +97,7 @@ export default async function (fastify, _opts) {
         const data = form.transformData(result.deflection);
 
         const pdfBuffer = await Promise.race([
-          generateFormPdfBuffer(form, data, request.user),
+          form.generatePdf(data, request.user).then((bytes) => Buffer.from(bytes)),
           new Promise((_resolve, reject) =>
             setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
           ),

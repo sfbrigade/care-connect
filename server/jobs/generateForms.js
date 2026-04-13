@@ -1,6 +1,5 @@
 import prisma from '#prisma/client.js';
 import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
-import { generateFormPdfBuffer } from '#lib/forms/generate.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 
 export default async function generateForms (data, prismaClient = prisma) {
@@ -30,7 +29,7 @@ export default async function generateForms (data, prismaClient = prisma) {
     if (check !== true) continue;
 
     const formData = form.transformData(deflection);
-    const pdfBuffer = await generateFormPdfBuffer(form, formData, user);
+    const pdfBuffer = Buffer.from(await form.generatePdf(formData, user));
 
     const filename = form.downloadFilename(deflectionId);
 
