@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import AudioRecorder from '@/components/AudioRecorder';
 import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
@@ -16,7 +17,6 @@ import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
 
 const initialValues = {
   behaviorAdditions: '',
-  deflectionDetails: [],
   drugType: null,
   drugUseEvidence: null,
   volunteeredToReset: null,
@@ -30,7 +30,6 @@ function DeflectionForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const autoSaveTimerRef = useRef(null);
-  const lastDetailSelectionKeyRef = useRef('');
   const generatedNarrativeRef = useRef('');
   const [generatedNarrative, setGeneratedNarrative] = useState('');
   const [narrativeContext, setNarrativeContext] = useState({
@@ -38,7 +37,8 @@ function DeflectionForm () {
     drugUseEvidence: null,
     volunteeredToReset: null,
   });
-  const [category, setCategory] = useState(null);
+  const [behaviorText, setBehaviorText] = useState('');
+  const [recorderBusy, setRecorderBusy] = useState(false);
 
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
@@ -50,14 +50,6 @@ function DeflectionForm () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const { data: deflectionDetailCategories } = useQuery({
-    queryKey: ['deflections', 'detail-categories'],
-    queryFn: () => Api.deflections.detailCategories.index({ include: 'deflectionDetails' }).then(response => response.data),
-  });
-
-  const [selectedDetails, setSelectedDetails] = useState([]);
-  const [detailCategoryCounts, setDetailCategoryCounts] = useState({});
-
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
@@ -67,11 +59,7 @@ function DeflectionForm () {
         drugUseEvidence: values.drugUseEvidence ?? null,
         volunteeredToReset: values.volunteeredToReset ?? null,
       });
-      const nextDetailSelectionKey = getDetailSelectionKey(values.deflectionDetails);
-      if (nextDetailSelectionKey !== lastDetailSelectionKeyRef.current) {
-        lastDetailSelectionKeyRef.current = nextDetailSelectionKey;
-        countValues(values);
-      }
+      setBehaviorText((values.behaviorAdditions ?? '').trim());
       if (form.initialized) {
         scheduleAutoSave(values);
       }
@@ -83,7 +71,6 @@ function DeflectionForm () {
       if (deflection) {
         const normalized = normalizeFormValues({
           behaviorAdditions: deflection.behaviorAdditions,
-          deflectionDetails: deflection.deflectionDetails?.map(detail => detail.id) ?? [],
           drugType: deflection.drugType,
           drugUseEvidence: deflection.drugUseEvidence,
           volunteeredToReset: deflection.volunteeredToReset,
@@ -99,54 +86,20 @@ function DeflectionForm () {
   }, [isLoading, deflection, form.initialized]);
 
   useEffect(() => {
-    if (!deflectionDetailCategories) {
-      return;
-    }
-    countValues(form.getValues());
-  }, [deflectionDetailCategories]);
-
-  useEffect(() => {
-    let nextGeneratedNarrative = '';
-    if (selectedDetails.length > 0) {
-      nextGeneratedNarrative = buildDeflectionNarrative({
-        incident,
-        observedBehaviorNames: selectedDetails.map(detail => detail?.name),
-        drugType: narrativeContext.drugType,
-        drugUseEvidence: narrativeContext.drugUseEvidence,
-        volunteeredToReset: narrativeContext.volunteeredToReset,
-      });
-    }
+    const nextGeneratedNarrative = buildDeflectionNarrative({
+      incident,
+      behaviorText,
+      drugType: narrativeContext.drugType,
+      drugUseEvidence: narrativeContext.drugUseEvidence,
+      volunteeredToReset: narrativeContext.volunteeredToReset,
+    });
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset, selectedDetails]);
-
-  function countValues (values) {
-    const newSelectedDetails = [];
-    const newDetailCategoryCounts = {};
-    for (const detailId of values.deflectionDetails) {
-      const category = deflectionDetailCategories?.find(category => category.deflectionDetails?.some(detail => detail.id === detailId));
-      if (category) {
-        newDetailCategoryCounts[category.id] = (newDetailCategoryCounts[category.id] ?? 0) + 1;
-        newSelectedDetails.push(category.deflectionDetails?.find(detail => detail.id === detailId));
-      }
-    }
-    setSelectedDetails(newSelectedDetails);
-    setDetailCategoryCounts(newDetailCategoryCounts);
-  }
-
-  function getDetailSelectionKey (deflectionDetails = []) {
-    return [...deflectionDetails]
-      .map(detailId => String(detailId))
-      .sort((a, b) => a.localeCompare(b))
-      .join('|');
-  }
+  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence, narrativeContext.volunteeredToReset, behaviorText]);
 
   function normalizeFormValues (values) {
     return {
       behaviorAdditions: values.behaviorAdditions ?? '',
-      deflectionDetails: [...(values.deflectionDetails ?? [])]
-        .map((detailId) => detailId)
-        .sort((a, b) => String(a).localeCompare(String(b))),
       drugType: values.drugType ?? null,
       drugUseEvidence: values.drugUseEvidence ?? null,
       volunteeredToReset: values.volunteeredToReset ?? null,
@@ -157,7 +110,6 @@ function DeflectionForm () {
     return buildDeflectionUpdatePayload({
       generatedNarrative: generatedNarrativeValue,
       behaviorAdditions: values.behaviorAdditions ?? '',
-      deflectionDetails: values.deflectionDetails,
       volunteeredToReset: values.volunteeredToReset,
     });
   }
@@ -185,7 +137,7 @@ function DeflectionForm () {
 
   const autoSaveMutation = useMutation({
     mutationFn: (data) => Api.deflections.update(id, data),
-    onSuccess: async (response, variables) => {
+    onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
     },
   });
@@ -197,6 +149,12 @@ function DeflectionForm () {
       navigate(isNew ? `/holds/${id}/property?isNew=true` : `/holds/${id}`);
     },
   });
+
+  function handleTranscriptionResult (text) {
+    const current = form.getValues().behaviorAdditions ?? '';
+    const newText = current ? `${current} ${text}` : text;
+    form.setFieldValue('behaviorAdditions', newText);
+  }
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -229,7 +187,7 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
         <Title order={2} mb='xs'>Behavioral observations</Title>
-        <Text c='dimmed' size='md' mb='xl'>Select the behaviors you observed that support the arrest.</Text>
+        <Text c='dimmed' size='md' mb='xl'>Describe what you observed.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
@@ -240,60 +198,29 @@ function DeflectionForm () {
         >
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Chip.Group
-                key={form.key('deflectionDetails')}
-                {...form.getInputProps('deflectionDetails')}
-                multiple
-              >
-                <Accordion value={category} onChange={setCategory}>
-                  {deflectionDetailCategories?.map(category => (
-                    <Accordion.Item key={category.id} value={category.id}>
-                      <Accordion.Control><Text size='lg' fw={detailCategoryCounts[category.id] > 0 ? '600' : 'normal'}>{category.name}{detailCategoryCounts[category.id] > 0 && ` (${detailCategoryCounts[category.id]})`}</Text></Accordion.Control>
-                      <Accordion.Panel>
-                        <Group gap='sm'>
-                          {category.deflectionDetails?.map(detail => (
-                            <Chip
-                              key={detail.id}
-                              value={detail.id}
-                              size='lg'
-                            >
-                              {detail.name}
-                            </Chip>
-                          ))}
-                        </Group>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-                </Accordion>
-              </Chip.Group>
-              {selectedDetails.length > 0 && (
-                <Input.Wrapper label='Selected observations'>
-                  <Text>
-                    {selectedDetails.map(detail => detail.name).join('; ')}
-                  </Text>
-                  <Button variant='destructive' size='md' mt='md' onClick={() => form.setValues({ deflectionDetails: [] })}>Clear all</Button>
-                </Input.Wrapper>
-              )}
+              <Stack gap='xs'>
+                <Textarea
+                  label='Arrestable behavior'
+                  key={form.key('behaviorAdditions')}
+                  autosize
+                  minRows={4}
+                  {...form.getInputProps('behaviorAdditions')}
+                  placeholder='e.g. "Individual was stumbling and unable to stand on their own. Strong smell of alcohol. Found lying on the sidewalk near Market St..."'
+                />
+                <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
+                <AudioRecorder
+                  onResult={handleTranscriptionResult}
+                  onBusyChange={setRecorderBusy}
+                  disabled={isLoading || onSubmitMutation.isPending}
+                />
+              </Stack>
               <BooleanInput
                 {...form.getInputProps('volunteeredToReset')}
                 key={form.key('volunteeredToReset')}
                 label='Person volunteered to be taken to RESET'
                 description='Optional'
               />
-              <Input.Wrapper label='647(f) narrative'>
-                <Text size='md' mb='xs' c='dimmed'>This text is auto-generated and will be inserted in the 647(f). Add to it using the form below.</Text>
-                <Text c={(isNew || !!generatedNarrative) ? undefined : 'red.6'} style={{ whiteSpace: 'pre-wrap' }}>
-                  {generatedNarrative || 'Select from observations above to generate narrative text.'}
-                </Text>
-              </Input.Wrapper>
-              <Textarea
-                label='Add to 647(f) narrative (optional)'
-                key={form.key('behaviorAdditions')}
-                autosize
-                {...form.getInputProps('behaviorAdditions')}
-                placeholder='e.g. “Person was unable to stand without assistance and repeatedly stepped into traffic…”'
-              />
-              <Button type='submit' mb='xl'>
+              <Button type='submit' mb='xl' disabled={recorderBusy}>
                 {isNew ? 'Next: Personal property' : 'Save behavioral observations'}
               </Button>
             </Stack>

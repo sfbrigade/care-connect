@@ -517,7 +517,12 @@ const Api = {
     delete (id) {
       return instance.delete(`/api/property-photos/${id}`).catch(handleError);
     },
-  }
+  },
+  ai: {
+    transcribe (audio, mediaType) {
+      return instance.post('/api/ai/transcribe', { audio, mediaType });
+    },
+  },
 };
 
 export default Api;

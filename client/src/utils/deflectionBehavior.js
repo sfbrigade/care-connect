@@ -14,9 +14,11 @@ export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorAddi
   return {
     behavior: composeBehavior(generatedNarrative, normalizedBehaviorAdditions),
     behaviorAdditions: normalizedBehaviorAdditions || null,
-    deflectionDetails: [...(deflectionDetails ?? [])]
-      .map((detailId) => detailId)
-      .sort((a, b) => String(a).localeCompare(String(b))),
+    ...(deflectionDetails && {
+      deflectionDetails: [...(deflectionDetails ?? [])]
+        .map((detailId) => detailId)
+        .sort((a, b) => String(a).localeCompare(String(b))),
+    }),
     volunteeredToReset,
   };
 }

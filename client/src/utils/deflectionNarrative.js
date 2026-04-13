@@ -41,10 +41,11 @@ function formatIncidentDateTime (arrestedAt) {
   };
 }
 
-export function buildDeflectionNarrative ({ incident, observedBehaviorNames, drugUseEvidence, drugType, volunteeredToReset } = {}) {
+export function buildDeflectionNarrative ({ incident, observedBehaviorNames, behaviorText, drugUseEvidence, drugType, volunteeredToReset } = {}) {
   const address = formatAddress(incident ?? {}) || DETAILS_MISSING;
   const { date, time } = formatIncidentDateTime(incident?.arrestedAt);
-  const behaviors = (observedBehaviorNames ?? []).filter(Boolean).join('; ') || DETAILS_MISSING;
+  const text = (behaviorText || '').trim();
+  const behaviors = text || (observedBehaviorNames ?? []).filter(Boolean).join('; ') || DETAILS_MISSING;
   const lines = [
     `Officer encountered this individual at ${address} on ${date} at ${time}.`,
     `Officer observed the following behaviors: ${behaviors}.`,
