@@ -93,7 +93,12 @@ function AudioRecorder ({ onResult, onBusyChange, disabled }) {
       const base64 = int16ToBase64(pcmData);
 
       const response = await Api.ai.transcribe(base64, 'audio/pcm');
-      onResult(response.data.text);
+      const text = (response.data.text || '').trim();
+      if (!text) {
+        setError('Unable to transribe audio. Try again, or enter the details manually.');
+        return;
+      }
+      onResult(text);
       setError(null);
     } catch {
       setError('Transcription failed. Try again.');
