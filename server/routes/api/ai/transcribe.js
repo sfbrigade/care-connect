@@ -28,6 +28,7 @@ export default async function (fastify) {
   fastify.post('/transcribe',
     {
       onRequest: fastify.requireUser,
+      bodyLimit: 10 * 1024 * 1024, // 10MB — base64 audio can be large
       schema: {
         description: 'Transcribe audio to text using AWS Transcribe Streaming.',
         body: z.object({
