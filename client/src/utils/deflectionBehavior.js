@@ -9,15 +9,10 @@ export function composeBehavior (generatedNarrative, behaviorNarrative) {
   return generated || additions || '';
 }
 
-export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative, deflectionDetails }) {
+export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative }) {
   const normalizedBehaviorNarrative = (behaviorNarrative || '').trim();
   return {
     behavior: composeBehavior(generatedNarrative, normalizedBehaviorNarrative),
     behaviorNarrative: normalizedBehaviorNarrative || null,
-    ...(deflectionDetails && {
-      deflectionDetails: [...(deflectionDetails ?? [])]
-        .map((detailId) => detailId)
-        .sort((a, b) => String(a).localeCompare(String(b))),
-    }),
   };
 }
