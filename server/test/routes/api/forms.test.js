@@ -4,13 +4,12 @@ import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
 
-// Mock PDF generation before any imports reach the real #lib/pdf.js —
+// Mock PDF generation before any imports reach the real renderReactForm.js —
 // avoids needing Chromium in CI and keeps assertions focused on route wiring.
 // The actual renderToPdf rendering is an E2E / deployment smoke-test concern.
-mock.module('#lib/forms/shared/pdf.js', {
+mock.module('#lib/forms/shared/renderReactForm.js', {
   namedExports: {
-    renderFormToHtml: async () => '<html/>',
-    renderToPdf: async () => Buffer.from('%PDF-mock'),
+    renderFormToPdf: async () => Buffer.from('%PDF-mock'),
   },
 });
 

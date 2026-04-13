@@ -37,6 +37,11 @@ async function getFormContainer () {
  * @param {object} [options] - Additional options
  * @param {string} [options.title] - Document title for PDF metadata
  */
+export async function renderFormToPdf (FormComponent, data, options = {}) {
+  const html = await renderFormToHtml(FormComponent, data, options);
+  return renderToPdf(html, options);
+}
+
 export async function renderFormToHtml (FormComponent, data, options = {}) {
   const FormContainer = await getFormContainer();
   const element = React.createElement(

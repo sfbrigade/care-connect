@@ -55,7 +55,6 @@ function transformData (deflection) {
 export async function generatePdf (deflection) {
   const formData = transformData(deflection);
   const { default: Form647f } = await import('#lib/forms/dist/Form647f.js');
-  const { renderFormToHtml, renderToPdf } = await import('#lib/forms/shared/pdf.js');
-  const html = await renderFormToHtml(Form647f, formData, { title: metadata.title });
-  return Buffer.from(await renderToPdf(html));
+  const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
+  return Buffer.from(await renderFormToPdf(Form647f, formData, { title: metadata.title }));
 }

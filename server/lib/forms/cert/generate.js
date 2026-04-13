@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
-import { renderFormToHtml, renderToPdf } from '#lib/forms/shared/pdf.js';
+import { renderFormToPdf } from '#lib/forms/shared/renderReactForm.js';
 import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 
@@ -79,8 +79,7 @@ export async function generatePdf (deflection, user) {
       paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
     };
 
-    const noticeHtml = await renderFormToHtml(NarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
-    const noticeBytes = await renderToPdf(noticeHtml);
+    const noticeBytes = await renderFormToPdf(NarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
 
     const certDoc = await PDFDocument.load(pdfBytes);
     const noticeDoc = await PDFDocument.load(noticeBytes);
