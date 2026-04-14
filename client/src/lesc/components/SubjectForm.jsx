@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconScan } from '@tabler/icons-react';
 import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import AddressAutocomplete from '@/components/AddressAutocomplete';
 import Api from '@/Api';
 import BooleanInput from '@/components/BooleanInput';
 import ChipInput from '@/components/ChipInput';
+import IdScanner from '@/components/IdScanner';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
@@ -56,6 +57,7 @@ function SubjectForm () {
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
+  const [scannerOpened, setScannerOpened] = useState(false);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -206,6 +208,28 @@ function SubjectForm () {
     }
   }, [scrollToSection, form.initialized]);
 
+  function handleIdScanResult (data) {
+    setScannerOpened(false);
+    if (data.firstName) form.setFieldValue('firstName', data.firstName);
+    if (data.lastName) form.setFieldValue('lastName', data.lastName);
+    if (data.middleInitial) form.setFieldValue('middleInitial', data.middleInitial);
+    if (data.dateOfBirth) {
+      setDobInput(data.dateOfBirth);
+      form.setFieldValue('dateOfBirth', data.dateOfBirth);
+    }
+    if (data.sex) form.setFieldValue('sex', data.sex);
+    if (data.documentType === 'DRIVERS_LICENSE' && data.documentNumber) {
+      form.setFieldValue('driverLicense', data.documentNumber);
+    }
+    if (data.addressLine1) form.setFieldValue('addressLine1', data.addressLine1);
+    if (data.city) form.setFieldValue('city', data.city);
+    if (data.state) form.setFieldValue('state', data.state);
+    if (data.postalCode) form.setFieldValue('postalCode', data.postalCode);
+    if (!isCustodyContext) {
+      scheduleAutoSave(form.getValues(), data.dateOfBirth || dobInput);
+    }
+  }
+
   function handleCustodySubmit (data) {
     setPendingFormData(data);
     setShowFile647fModal(true);
@@ -238,7 +262,20 @@ function SubjectForm () {
         </Group>
 
         <Title order={2} mb='xs'>Person details</Title>
-        <Text c='dimmed' size='md' mb='xl'>Start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
+        <Text c='dimmed' size='md' mb='md'>Scan an ID to fill details faster, or enter them manually.</Text>
+        <Button
+          variant='light'
+          leftSection={<IconScan size={18} />}
+          onClick={() => setScannerOpened(true)}
+          mb='xl'
+        >
+          Scan ID
+        </Button>
+        <IdScanner
+          opened={scannerOpened}
+          onResult={handleIdScanResult}
+          onClose={() => setScannerOpened(false)}
+        />
         <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
