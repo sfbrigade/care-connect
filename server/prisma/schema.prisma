@@ -745,6 +745,7 @@ model DeflectionDocument {
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
   deflectionId                 Int
   formId                       String
+  /// @pii-asset — S3 object contains subject PII; deleted on anonymization
   file                         String
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
@@ -760,6 +761,7 @@ model PropertyPhoto {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
   deflectionId                 Int
+  /// @pii-asset — S3 object may identify subject; deleted on anonymization
   file                         String
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
