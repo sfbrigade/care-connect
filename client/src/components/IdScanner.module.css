@@ -64,3 +64,12 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
 }
+
+.processingBanner {
+  position: absolute;
+  /* The preview image is contain-fitted with aspect-ratio 1.586 and centered vertically.
+     Its rendered height is (100vw - 48px) / 1.586, so its bottom edge is at 50% + half that. */
+  top: calc(50% + (100vw - 48px) / 1.586 / 2 + 32px);
+  inset-inline: 0;
+  z-index: 20;
+}

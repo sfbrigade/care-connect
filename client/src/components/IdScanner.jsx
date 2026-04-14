@@ -177,10 +177,10 @@ function IdScanner ({ opened, onResult, onClose }) {
         </div>
       )}
 
-      {/* Processing overlay while extracting details */}
+      {/* Processing indicator — shown below the preview image */}
       {processing && (
-        <div className={classes.processingOverlay}>
-          <Group gap='xs'>
+        <div className={classes.processingBanner}>
+          <Group gap='xs' justify='center'>
             <Loader size='sm' color='teal' />
             <Text c='teal.4' fw={600}>Extracting details…</Text>
           </Group>
@@ -197,10 +197,7 @@ function IdScanner ({ opened, onResult, onClose }) {
             onClick={handleClose}
           />
         </Group>
-        <Stack gap={4} mt='md' align='center'>
-          <Text c='white' size='lg' fw={600}>Place the ID inside the frame</Text>
-          <Text c='gray.5' size='sm'>The image will not be saved</Text>
-        </Stack>
+        <Text c='white' size='lg' fw={600} ta='center' mt='md'>Place the ID inside the frame</Text>
       </div>
 
       {/* Footer with action buttons */}
