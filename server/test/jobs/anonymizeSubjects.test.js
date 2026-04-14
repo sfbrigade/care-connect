@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { DateTime } from 'luxon';
 
-import { build } from '#test/helper.js';
+import { build, assetExists } from '#test/helper.js';
+import s3 from '#lib/s3.js';
 import { PII_FIELDS } from '../../models/subject.js';
 
 test('anonymizeSubjects job', async (t) => {
@@ -159,5 +160,50 @@ test('anonymizeSubjects job', async (t) => {
     const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
     assert.strictEqual(updated.anonymizedAt, null, 'should not anonymize — most recent deflection is within 72 hours');
     assert.strictEqual(updated.firstName, 'Jane');
+  });
+
+  await t.test('deletes S3 documents and property photos for anonymized subjects', async () => {
+    const { subject, deflection } = await createSubjectWithDeflection();
+
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2',
+      DateTime.now().minus({ hours: 73 }).toJSDate(),
+      deflection.id
+    );
+
+    const user = await prisma.user.findFirst();
+    const doc = await prisma.deflectionDocument.create({
+      data: {
+        deflectionId: deflection.id,
+        formId: '647f',
+        file: 'test.pdf',
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+    const photo = await prisma.propertyPhoto.create({
+      data: {
+        deflectionId: deflection.id,
+        file: 'photo.jpg',
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+
+    const docKey = `deflection_documents/${doc.id}/file/test.pdf`;
+    const photoKey = `property_photos/${photo.id}/file/photo.jpg`;
+    await s3.putObject(docKey, Buffer.from('fake pdf'));
+    await s3.putObject(photoKey, Buffer.from('fake photo'));
+
+    assert.ok(await assetExists(docKey), 'document should exist before anonymization');
+    assert.ok(await assetExists(photoKey), 'photo should exist before anonymization');
+
+    await anonymizeSubjects({}, prisma);
+
+    assert.ok(!(await assetExists(docKey)), 'document should be deleted after anonymization');
+    assert.ok(!(await assetExists(photoKey)), 'photo should be deleted after anonymization');
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.ok(updated.anonymizedAt, 'subject should be anonymized');
   });
 });

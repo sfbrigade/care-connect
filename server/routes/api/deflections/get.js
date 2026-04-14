@@ -37,7 +37,7 @@ export default async function (fastify, opts) {
         },
       });
 
-      if (!deflection) {
+      if (!deflection || deflection.subject?.anonymizedAt) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection not found' });
       }
       if (!canReadDeflection(request.user, deflection)) {

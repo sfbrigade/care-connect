@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import Deflection from '#models/deflection.js';
 import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
+import s3 from '#lib/s3.js';
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
@@ -153,6 +154,20 @@ const prisma = new PrismaClient({
         `;
         if (eligible.length === 0) return;
         const ids = eligible.map((row) => row.id);
+
+        const deflections = await prisma.deflection.findMany({
+          where: { subjectId: { in: ids } },
+          select: {
+            deflectionDocuments: { select: { id: true } },
+            propertyPhotos: { select: { id: true } },
+          },
+        });
+        const s3Deletions = deflections.flatMap((d) => [
+          ...d.deflectionDocuments.map((doc) => s3.deleteObjects(`deflection_documents/${doc.id}`)),
+          ...d.propertyPhotos.map((photo) => s3.deleteObjects(`property_photos/${photo.id}`)),
+        ]);
+        await Promise.all(s3Deletions);
+
         const nulledPii = Object.fromEntries(PII_FIELDS.map((field) => [field, null]));
         await prisma.subject.updateMany({
           where: { id: { in: ids } },
