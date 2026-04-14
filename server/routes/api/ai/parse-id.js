@@ -72,7 +72,7 @@ export default async function (fastify) {
         accept: 'application/json',
         body: JSON.stringify({
           anthropic_version: 'bedrock-2023-05-31',
-          max_tokens: 256,
+          max_tokens: 512,
           messages: [
             {
               role: 'user',
