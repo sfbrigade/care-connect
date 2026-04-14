@@ -29,7 +29,9 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { page = '1', perPage = '25', active, handedOff, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
-      const where = {};
+      const where = {
+        subject: { anonymizedAt: null },
+      };
 
       await fastify.prisma.deflection.expire();
 
@@ -43,7 +45,7 @@ export default async function (fastify) {
           where.status = Deflection.HoldStatus.ACTIVE;
         } else {
           where.status = { not: Deflection.HoldStatus.ACTIVE };
-          where.subject = { isNot: null };
+          where.subject = { isNot: null, anonymizedAt: null };
         }
       }
 
