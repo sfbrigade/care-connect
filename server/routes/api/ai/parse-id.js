@@ -61,9 +61,6 @@ export default async function (fastify) {
       },
     },
     async function (request, reply) {
-      // TODO: remove — temporary forced error for UI testing
-      throw new Error('Forced 500 for UI testing');
-
       const { image, mediaType } = request.body;
 
       request.log.info(`ParseId: received image, mediaType=${mediaType}`);

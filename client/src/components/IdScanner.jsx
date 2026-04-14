@@ -118,7 +118,12 @@ function IdScanner ({ opened, onResult, onClose }) {
 
     try {
       const response = await Api.ai.parseId(base64, 'image/jpeg');
-      onResult(response.data);
+      const data = response.data;
+      const hasAnyField = Object.values(data).some((v) => v != null);
+      if (!hasAnyField) {
+        throw new Error('empty');
+      }
+      onResult(data);
       handleClose();
     } catch {
       setError('Couldn\u2019t read the ID');
