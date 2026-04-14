@@ -267,7 +267,7 @@ function Custody () {
             onChange={setTab}
             data={[
               { label: 'In Custody', value: 'in-custody' },
-              { label: 'Not in custody', value: 'released' },
+              { label: 'Legally released', value: 'released' },
             ]}
           />
           <FacilityStatusBanner />
