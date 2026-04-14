@@ -41,7 +41,7 @@ function ExitToJailModal ({
             <br />
             &bull; This person will move to &quot;Transferred to jail&quot; for 24 hours.
             <br />
-            &bull; They will be removed from in-custody lists and only appear under Not in custody.
+            &bull; They will be removed from in-custody lists and only appear under 'Legally released'.
             <br />
             &bull; Their property record will be marked as returned.
           </Text>
