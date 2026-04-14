@@ -199,8 +199,7 @@ test('/api/forms', async (t) => {
 
   // ---------------------------------------------------------------------------
   // /pdf endpoint tests — Chromium mocked, verifies route wiring only.
-  // canGenerate() guards are exercised here too; the 422 cases confirm that
-  // the PDF route respects the same preconditions as the /data route.
+  // canGenerate() guards are exercised for each form.
   // ---------------------------------------------------------------------------
 
   await t.test('GET /647f/pdf/:deflectionId', async (t) => {
@@ -233,7 +232,7 @@ test('/api/forms', async (t) => {
   });
 
   await t.test('GET /cert/pdf/:deflectionId', async (t) => {
-    // canGenerate() requires releasedAt — mirrors /data precondition check.
+    // canGenerate() requires releasedAt to be set.
 
     await t.test('returns a PDF with correct headers for a released deflection', async () => {
       const response = await app.inject()
@@ -262,7 +261,7 @@ test('/api/forms', async (t) => {
   });
 
   await t.test('GET /849b/pdf/:deflectionId', async (t) => {
-    // canGenerate() requires releasedAt — mirrors /data precondition check.
+    // canGenerate() requires releasedAt to be set.
 
     await t.test('returns a PDF with correct headers for a released deflection', async () => {
       const response = await app.inject()
