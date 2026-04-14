@@ -42,7 +42,7 @@ export async function renderFormToPdf (FormComponent, data, options = {}) {
   return renderToPdf(html, options);
 }
 
-export async function renderFormToHtml (FormComponent, data, options = {}) {
+async function renderFormToHtml (FormComponent, data, options = {}) {
   const FormContainer = await getFormContainer();
   const element = React.createElement(
     FormContainer,
@@ -62,7 +62,7 @@ export async function renderFormToHtml (FormComponent, data, options = {}) {
  * @param {boolean} [options.printBackground=true] - Include background colours/images
  * @returns {Promise<Buffer>} PDF binary
  */
-export async function renderToPdf (html, options = {}) {
+async function renderToPdf (html, options = {}) {
   const executablePath = getChromiumExecutable();
 
   const browser = await puppeteer.launch({

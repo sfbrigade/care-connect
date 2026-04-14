@@ -1,6 +1,5 @@
 export const metadata = {
   title: 'Certificate of Release',
-  generateLabel: 'Generate Certificate of Release',
   description: (name) => `SF Sheriff's Dept Certificate of Release for ${name}`,
   downloadFilename: (id) => `cert-${id}.pdf`,
 

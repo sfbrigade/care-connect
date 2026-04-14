@@ -1,6 +1,5 @@
 export const metadata = {
   title: 'SFSO 849(b) Report',
-  generateLabel: 'Generate SFSO 849(b) Report',
   description: (name) => `SFSO 849(b) Report for ${name}`,
   downloadFilename: (id) => `849b-report-${id}.pdf`,
 

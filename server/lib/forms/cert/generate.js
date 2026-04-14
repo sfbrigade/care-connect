@@ -1,7 +1,6 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
-import { renderFormToPdf } from '#lib/forms/shared/renderReactForm.js';
 import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 
@@ -72,6 +71,7 @@ export async function generatePdf (deflection, user) {
 
   if (deflectionData.narcoticsSubstance || deflectionData.narcoticsParaphernalia) {
     const { default: NarcoticsNotice } = await import('#lib/forms/dist/NarcoticsNotice.js');
+    const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
     const noticeData = {
       date: deflectionData.releaseDateFormatted,
       cadNumber: deflectionData.cadNumber,
