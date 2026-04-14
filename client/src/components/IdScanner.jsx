@@ -197,7 +197,9 @@ function IdScanner ({ opened, onResult, onClose }) {
             onClick={handleClose}
           />
         </Group>
-        <Text c='white' size='lg' fw={600} ta='center' mt='md'>Place the ID inside the frame</Text>
+        {cameraActive && !capturedImage && (
+          <Text c='white' size='lg' fw={600} ta='center' mt='md'>Place the ID inside the frame</Text>
+        )}
       </div>
 
       {/* Footer with action buttons */}
