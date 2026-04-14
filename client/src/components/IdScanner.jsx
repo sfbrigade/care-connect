@@ -211,6 +211,8 @@ function IdScanner ({ opened, onResult, onClose }) {
         )}
 
         {capturedImage && !processing && (
+          <Stack gap='xs' align='center'>
+          <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
           <Group grow w='100%'>
             <Button
               variant='light'
@@ -224,6 +226,7 @@ function IdScanner ({ opened, onResult, onClose }) {
               Use photo
             </Button>
           </Group>
+          </Stack>
         )}
       </div>
 
