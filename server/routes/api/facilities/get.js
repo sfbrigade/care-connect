@@ -6,6 +6,7 @@ import Facility from '#models/facility.js';
 export default async function (fastify, opts) {
   fastify.get('/:id',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Get single facility details',
         params: z.object({
