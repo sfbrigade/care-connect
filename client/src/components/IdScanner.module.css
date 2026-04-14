@@ -27,7 +27,7 @@
  */
 .viewfinder {
   position: absolute;
-  inset-inline: 24px;
+  inset-inline: 16px; /* mirrored in capture() as INSET */
   top: 50%;
   transform: translateY(-60%);
   aspect-ratio: 1.586;

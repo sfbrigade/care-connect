@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IconRefresh, IconX } from '@tabler/icons-react';
+import { IconCamera, IconFaceIdError, IconKeyboard, IconRefresh, IconX } from '@tabler/icons-react';
 import { Button, Group, Loader, Stack, Text } from '@mantine/core';
 
 import Api from '@/Api';
@@ -34,7 +34,6 @@ function IdScanner ({ opened, onResult, onClose }) {
   }, [opened]);
 
   async function startCamera () {
-    setError(null);
     setCapturedImage(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -86,7 +85,7 @@ function IdScanner ({ opened, onResult, onClose }) {
     }
 
     // Viewfinder rect in display coordinates (matches CSS: inset-inline 24px, top 50%, translateY(-60%), aspect-ratio 1.586)
-    const INSET = 24;
+    const INSET = 16; // mirrored in IdScanner.module.css as .viewfinder inset-inline
     const ASPECT = 1.586;
     const vfDisplayW = displayW - INSET * 2;
     const vfDisplayH = vfDisplayW / ASPECT;
@@ -122,7 +121,7 @@ function IdScanner ({ opened, onResult, onClose }) {
       onResult(response.data);
       handleClose();
     } catch {
-      setError('Could not read ID. Try again with better lighting.');
+      setError('Couldn\u2019t read the ID');
       setCapturedImage(null);
       startCamera();
     } finally {
@@ -146,9 +145,11 @@ function IdScanner ({ opened, onResult, onClose }) {
 
   if (!opened) return null;
 
+  const showLiveCamera = cameraActive && !capturedImage;
+
   return (
     <div className={classes.root}>
-      {/* Camera feed or captured image — fills the entire background */}
+      {/* Camera feed — fills the entire background */}
       {cameraActive && !capturedImage && (
         <video
           ref={videoRef}
@@ -158,17 +159,19 @@ function IdScanner ({ opened, onResult, onClose }) {
           className={classes.video}
         />
       )}
+
+      {/* Captured preview — overlays the video */}
       {capturedImage && (
         <img src={capturedImage} alt='Captured ID' className={classes.preview} />
       )}
 
-      {/* Viewfinder cutout overlay — only shown during live camera */}
-      {cameraActive && !capturedImage && (
+      {/* Viewfinder cutout overlay — only shown during live camera without error */}
+      {showLiveCamera && (
         <div className={classes.viewfinder} />
       )}
 
       {/* Loading state while camera starts */}
-      {!cameraActive && !capturedImage && (
+      {!cameraActive && !capturedImage && !error && (
         <div className={classes.processingOverlay}>
           <Stack align='center' gap='md'>
             <Loader size='lg' color='white' />
@@ -187,6 +190,16 @@ function IdScanner ({ opened, onResult, onClose }) {
         </div>
       )}
 
+      {/* Error banner — shown below where the preview was */}
+      {error && showLiveCamera && (
+        <div className={classes.processingBanner}>
+          <Group gap='xs' justify='center'>
+            <IconFaceIdError size={20} color='var(--mantine-color-red-4)' />
+            <Text c='red.4' fw={600}>{error}</Text>
+          </Group>
+        </div>
+      )}
+
       {/* Header */}
       <div className={classes.header}>
         <Group justify='flex-end'>
@@ -197,38 +210,56 @@ function IdScanner ({ opened, onResult, onClose }) {
             onClick={handleClose}
           />
         </Group>
-        {cameraActive && !capturedImage && (
+        {showLiveCamera && !error && (
           <Text c='white' size='lg' fw={600} ta='center' mt='md'>Place the ID inside the frame</Text>
         )}
       </div>
 
       {/* Footer with action buttons */}
       <div className={classes.footer}>
-        {error && <Text c='red.4' size='sm' ta='center' mb='sm'>{error}</Text>}
-
-        {!capturedImage && cameraActive && (
-          <Button size='lg' fullWidth onClick={capture}>
+        {showLiveCamera && !error && (
+          <Button size='lg' fullWidth leftSection={<IconCamera size={18} />} onClick={capture}>
             Capture
           </Button>
         )}
 
         {capturedImage && !processing && (
           <Stack gap='xs' align='center'>
-          <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
+            <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
+            <Group grow w='100%'>
+              <Button
+                variant='light'
+                size='lg'
+                leftSection={<IconRefresh size={18} />}
+                onClick={retake}
+              >
+                Retake
+              </Button>
+              <Button size='lg' onClick={submitCapture}>
+                Use photo
+              </Button>
+            </Group>
+          </Stack>
+        )}
+
+        {error && showLiveCamera && (
           <Group grow w='100%'>
+            <Button
+              size='lg'
+              leftSection={<IconCamera size={18} />}
+              onClick={() => { setError(null); capture(); }}
+            >
+              Try again
+            </Button>
             <Button
               variant='light'
               size='lg'
-              leftSection={<IconRefresh size={18} />}
-              onClick={retake}
+              leftSection={<IconKeyboard size={18} />}
+              onClick={handleClose}
             >
-              Retake
-            </Button>
-            <Button size='lg' onClick={submitCapture}>
-              Use photo
+              Enter manually
             </Button>
           </Group>
-          </Stack>
         )}
       </div>
 

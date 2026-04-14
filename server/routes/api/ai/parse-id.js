@@ -25,10 +25,14 @@ Return ONLY valid JSON with these exact keys:
   "lastName": string or null — the LAST/FAMILY/SURNAME exactly as printed,
   "middleInitial": string or null — just the letter, no period,
   "dateOfBirth": string in "MM/DD/YYYY" format or null — read the date exactly as printed,
-  "sex": "MALE" or "FEMALE" or "OTHER" or "UNKNOWN" or null
+  "sex": "MALE" or "FEMALE" or "OTHER" or "UNKNOWN" or null,
+  "addressLine1": string or null — street address (e.g. "123 MAIN ST APT 4") exactly as printed,
+  "city": string or null — city name exactly as printed,
+  "state": string or null — two-letter state abbreviation (e.g. "CA", "NY"),
+  "postalCode": string or null — ZIP code exactly as printed
 }
 
-IMPORTANT: Transcribe names EXACTLY as printed. Do not substitute similar-looking names. If you see "SAAD", write "SAAD", not "SHAUN". If a field is not visible or legible, use null. Return only the JSON object, no other text.`;
+IMPORTANT: Transcribe names and addresses EXACTLY as printed. Do not substitute similar-looking names. If you see "SAAD", write "SAAD", not "SHAUN". If a field is not visible or legible, use null. Return only the JSON object, no other text.`;
 
 export default async function (fastify) {
   fastify.post('/parse-id',
@@ -48,11 +52,18 @@ export default async function (fastify) {
             middleInitial: z.string().nullable(),
             dateOfBirth: z.string().nullable(),
             sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN']).nullable(),
+            addressLine1: z.string().nullable(),
+            city: z.string().nullable(),
+            state: z.string().nullable(),
+            postalCode: z.string().nullable(),
           }),
         },
       },
     },
     async function (request, reply) {
+      // TODO: remove — temporary forced error for UI testing
+      throw new Error('Forced 500 for UI testing');
+
       const { image, mediaType } = request.body;
 
       request.log.info(`ParseId: received image, mediaType=${mediaType}`);
@@ -105,6 +116,10 @@ export default async function (fastify) {
         middleInitial: parsed.middleInitial ?? null,
         dateOfBirth: parsed.dateOfBirth ?? null,
         sex: parsed.sex ?? null,
+        addressLine1: parsed.addressLine1 ?? null,
+        city: parsed.city ?? null,
+        state: parsed.state ?? null,
+        postalCode: parsed.postalCode ?? null,
       });
     });
 }
