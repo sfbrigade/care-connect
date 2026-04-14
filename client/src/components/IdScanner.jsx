@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IconArrowLeft, IconRefresh, IconX } from '@tabler/icons-react';
-import { Box, Button, Group, Image, Loader, Modal, Stack, Text } from '@mantine/core';
+import { IconRefresh, IconX } from '@tabler/icons-react';
+import { Button, Group, Loader, Stack, Text } from '@mantine/core';
 
 import Api from '@/Api';
+import IconButtonLink from '@/components/IconButtonLink';
+
+import classes from './IdScanner.module.css';
 
 function IdScanner ({ opened, onResult, onClose }) {
   const canvasRef = useRef(null);
@@ -63,21 +66,40 @@ function IdScanner ({ opened, onResult, onClose }) {
 
     const displayW = video.clientWidth;
     const displayH = video.clientHeight;
+    const videoW = video.videoWidth;
+    const videoH = video.videoHeight;
     const displayAspect = displayW / displayH;
-    const videoAspect = video.videoWidth / video.videoHeight;
+    const videoAspect = videoW / videoH;
 
-    let cropX = 0;
-    let cropY = 0;
-    let cropW = video.videoWidth;
-    let cropH = video.videoHeight;
+    // Compute the visible region of the video (object-fit: cover crops the overflow)
+    let visX = 0;
+    let visY = 0;
+    let visW = videoW;
+    let visH = videoH;
 
     if (videoAspect > displayAspect) {
-      cropW = video.videoHeight * displayAspect;
-      cropX = (video.videoWidth - cropW) / 2;
+      visW = videoH * displayAspect;
+      visX = (videoW - visW) / 2;
     } else {
-      cropH = video.videoWidth / displayAspect;
-      cropY = (video.videoHeight - cropH) / 2;
+      visH = videoW / displayAspect;
+      visY = (videoH - visH) / 2;
     }
+
+    // Viewfinder rect in display coordinates (matches CSS: inset-inline 24px, top 50%, translateY(-60%), aspect-ratio 1.586)
+    const INSET = 24;
+    const ASPECT = 1.586;
+    const vfDisplayW = displayW - INSET * 2;
+    const vfDisplayH = vfDisplayW / ASPECT;
+    const vfDisplayX = INSET;
+    const vfDisplayY = displayH / 2 - vfDisplayH * 0.6;
+
+    // Map viewfinder display coordinates to video source coordinates
+    const scaleX = visW / displayW;
+    const scaleY = visH / displayH;
+    const cropX = visX + vfDisplayX * scaleX;
+    const cropY = visY + vfDisplayY * scaleY;
+    const cropW = vfDisplayW * scaleX;
+    const cropH = vfDisplayH * scaleY;
 
     canvas.width = cropW;
     canvas.height = cropH;
@@ -125,111 +147,91 @@ function IdScanner ({ opened, onResult, onClose }) {
   if (!opened) return null;
 
   return (
-    <Modal
-      opened={opened}
-      onClose={handleClose}
-      fullScreen
-      withCloseButton={false}
-      padding={0}
-      closeOnClickOutside={false}
-      styles={{
-        content: {
-          background: '#000',
-        },
-        body: {
-          height: '100dvh',
-          display: 'flex',
-          flexDirection: 'column',
-        },
-      }}
-    >
-      <Box px='md' pt='xl' pb='sm'>
-        <Group justify='space-between'>
-          <Button variant='subtle' c='white' p={0} onClick={handleClose}>
-            <IconArrowLeft size={24} />
-          </Button>
-          <Button variant='subtle' c='white' p={0} onClick={handleClose}>
-            <IconX size={24} />
-          </Button>
+    <div className={classes.root}>
+      {/* Camera feed or captured image — fills the entire background */}
+      {cameraActive && !capturedImage && (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={classes.video}
+        />
+      )}
+      {capturedImage && (
+        <img src={capturedImage} alt='Captured ID' className={classes.preview} />
+      )}
+
+      {/* Viewfinder cutout overlay — only shown during live camera */}
+      {cameraActive && !capturedImage && (
+        <div className={classes.viewfinder} />
+      )}
+
+      {/* Loading state while camera starts */}
+      {!cameraActive && !capturedImage && (
+        <div className={classes.processingOverlay}>
+          <Stack align='center' gap='md'>
+            <Loader size='lg' color='white' />
+            <Text c='gray.5'>Starting camera...</Text>
+          </Stack>
+        </div>
+      )}
+
+      {/* Processing overlay while extracting details */}
+      {processing && (
+        <div className={classes.processingOverlay}>
+          <Group gap='xs'>
+            <Loader size='sm' color='teal' />
+            <Text c='teal.4' fw={600}>Extracting details…</Text>
+          </Group>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className={classes.header}>
+        <Group justify='flex-end'>
+          <IconButtonLink
+            variant='primary'
+            color='dark.5'
+            icon={IconX}
+            onClick={handleClose}
+          />
         </Group>
         <Stack gap={4} mt='md' align='center'>
           <Text c='white' size='lg' fw={600}>Place the ID inside the frame</Text>
           <Text c='gray.5' size='sm'>The image will not be saved</Text>
         </Stack>
-      </Box>
+      </div>
 
-      <Box style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-        {cameraActive && !capturedImage && (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        )}
-        {capturedImage && (
-          <Box pos='relative' w='100%' h='100%' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Image src={capturedImage} alt='Captured ID' style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            {processing && (
-              <Box
-                pos='absolute'
-                top={0}
-                left={0}
-                right={0}
-                bottom={0}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}
-              >
-                <Group gap='xs'>
-                  <Loader size='sm' color='teal' />
-                  <Text c='teal.4' fw={600}>Extracting details</Text>
-                </Group>
-              </Box>
-            )}
-          </Box>
-        )}
-        {!cameraActive && !capturedImage && (
-          <Stack align='center' gap='md'>
-            <Loader size='lg' color='white' />
-            <Text c='gray.5'>Starting camera...</Text>
-          </Stack>
-        )}
-      </Box>
-
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-      <Box px='md' pb='xl' pt='sm'>
+      {/* Footer with action buttons */}
+      <div className={classes.footer}>
         {error && <Text c='red.4' size='sm' ta='center' mb='sm'>{error}</Text>}
 
         {!capturedImage && cameraActive && (
-          <Stack gap='xs' align='center'>
-            <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
-            <Button size='lg' fullWidth onClick={capture}>
-              Capture
-            </Button>
-          </Stack>
+          <Button size='lg' fullWidth onClick={capture}>
+            Capture
+          </Button>
         )}
 
         {capturedImage && !processing && (
-          <Stack gap='xs' align='center'>
-            <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
-            <Group grow w='100%'>
-              <Button
-                variant='light'
-                size='lg'
-                leftSection={<IconRefresh size={18} />}
-                onClick={retake}
-              >
-                Retake
-              </Button>
-              <Button size='lg' onClick={submitCapture}>
-                Use photo
-              </Button>
-            </Group>
-          </Stack>
+          <Group grow w='100%'>
+            <Button
+              variant='light'
+              size='lg'
+              leftSection={<IconRefresh size={18} />}
+              onClick={retake}
+            >
+              Retake
+            </Button>
+            <Button size='lg' onClick={submitCapture}>
+              Use photo
+            </Button>
+          </Group>
         )}
-      </Box>
-    </Modal>
+      </div>
+
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+    </div>
   );
 }
 

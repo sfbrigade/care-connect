@@ -1,0 +1,66 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--mantine-color-black);
+}
+
+.video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/*
+ * Viewfinder cutout — the inner box is transparent and a massive box-shadow
+ * darkens everything outside it (same technique as QRScanner).
+ */
+.viewfinder {
+  position: absolute;
+  inset-inline: 24px;
+  top: 50%;
+  transform: translateY(-60%);
+  aspect-ratio: 1.586;
+  border-radius: var(--mantine-radius-lg);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.header {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  z-index: 20;
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-md) var(--mantine-spacing-sm);
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 20;
+  padding: var(--mantine-spacing-sm) var(--mantine-spacing-md) var(--mantine-spacing-xl);
+  /* gradient so buttons are readable against any camera background */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 60%, transparent);
+}
+
+.processingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
