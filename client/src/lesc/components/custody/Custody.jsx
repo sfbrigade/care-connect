@@ -266,7 +266,7 @@ function Custody () {
             value={tab}
             onChange={setTab}
             data={[
-              { label: 'In Custody', value: 'in-custody' },
+              { label: 'In custody', value: 'in-custody' },
               { label: 'Legally released', value: 'released' },
             ]}
           />
