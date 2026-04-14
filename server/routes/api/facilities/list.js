@@ -6,7 +6,6 @@ import Facility from '#models/facility.js';
 export default async function (fastify, opts) {
   fastify.get('/',
     {
-      onRequest: fastify.requireUser,
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
         querystring: z.object({
