@@ -68,6 +68,63 @@ test('/api/forms', async (t) => {
         .get(`/api/forms/647f/data/${unreleasedDeflection.id}`);
       assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
     });
+
+    await t.test('prefers the arresting officer badge number from IncidentOfficer records', async () => {
+      const deflection = await app.prisma.deflection.findFirst({
+        where: { releasedAt: null },
+        include: { incident: true },
+      });
+      assert.ok(deflection?.incident, 'fixture: an unreleased deflection with incident must exist');
+
+      await app.prisma.incident.update({
+        where: { id: deflection.incident.id },
+        data: {
+          createdByBadgeNumber: null,
+        },
+      });
+
+      await app.prisma.incidentOfficer.create({
+        data: {
+          incidentId: deflection.incident.id,
+          facilityId: deflection.facilityId,
+          officerId: deflection.incident.createdById,
+          role: 'ARRESTING',
+          badgeNumber: '4321',
+          organizationId: 'sfpd',
+        },
+      });
+
+      const response = await app.inject()
+        .get(`/api/forms/647f/data/${deflection.id}`)
+        .headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.officerBadge, '4321');
+    });
+
+    await t.test('includes the supervising sergeant star number from the incident', async () => {
+      const deflection = await app.prisma.deflection.findFirst({
+        where: { releasedAt: null },
+        include: { incident: true },
+      });
+      assert.ok(deflection?.incident, 'fixture: an unreleased deflection with incident must exist');
+
+      await app.prisma.incident.update({
+        where: { id: deflection.incident.id },
+        data: {
+          supervisorBadgeNumber: '9876',
+        },
+      });
+
+      const response = await app.inject()
+        .get(`/api/forms/647f/data/${deflection.id}`)
+        .headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.supervisorBadgeNumber, '9876');
+    });
   });
 
   await t.test('GET /cert/data/:deflectionId', async (t) => {
