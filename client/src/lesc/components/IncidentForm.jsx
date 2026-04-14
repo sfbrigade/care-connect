@@ -134,7 +134,7 @@ function IncidentForm () {
 
   function LocationButton () {
     return (
-      <ActionIcon onClick={getLocation} variant='transparent'>
+      <ActionIcon onClick={getLocation} variant='transparent' aria-label='Use current location'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
       </ActionIcon>
     );

@@ -123,7 +123,7 @@ function EditUserProfilePage () {
             </Fieldset>
           </form>
           <Text size='sm' ta='center' c='gray.5'>
-            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org'>careconnect@sfgov.org</Anchor>
+            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>
         </Stack>
       </Container>

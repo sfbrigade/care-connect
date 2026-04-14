@@ -13,6 +13,13 @@ function Pagination ({ page, lastPage, otherParams = {} }) {
         component: Link,
         to: `?${new URLSearchParams({ ...otherParams, page })}`,
       })}
+      getItemAriaLabel={(page) => {
+        if (page === 'first') return 'First page';
+        if (page === 'last') return 'Last page';
+        if (page === 'next') return 'Next page';
+        if (page === 'prev') return 'Previous page';
+        return `Page ${page}`;
+      }}
     >
       <Group gap={7} mt='xl'>
         <MPagination.First component={Link} to={`?${new URLSearchParams({ ...otherParams, page: 1 })}`} />
