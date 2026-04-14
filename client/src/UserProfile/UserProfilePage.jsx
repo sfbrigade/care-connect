@@ -42,7 +42,7 @@ function UserProfilePage () {
               <Stack gap='sm'>
                 <Group justify='space-between'>
                   <Title order={3}>Position details</Title>
-                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' />
+                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' aria-label='Edit position details' />
                 </Group>
                 <Box>
                   <Text size='md' c='gray.6'>Star number</Text>

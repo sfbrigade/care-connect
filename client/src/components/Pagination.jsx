@@ -22,11 +22,11 @@ function Pagination ({ page, lastPage, otherParams = {} }) {
       }}
     >
       <Group gap={7} mt='xl'>
-        <MPagination.First component={Link} to={`?${new URLSearchParams({ ...otherParams, page: 1 })}`} />
-        <MPagination.Previous component={Link} to={`?${new URLSearchParams({ ...otherParams, page: Math.max(1, page - 1) })}`} />
+        <MPagination.First aria-label='First page' component={Link} to={`?${new URLSearchParams({ ...otherParams, page: 1 })}`} />
+        <MPagination.Previous aria-label='Previous page' component={Link} to={`?${new URLSearchParams({ ...otherParams, page: Math.max(1, page - 1) })}`} />
         <MPagination.Items />
-        <MPagination.Next component={Link} to={`?${new URLSearchParams({ ...otherParams, page: Math.min(lastPage, page + 1) })}`} />
-        <MPagination.Last component={Link} to={`?${new URLSearchParams({ ...otherParams, page: lastPage })}`} />
+        <MPagination.Next aria-label='Next page' component={Link} to={`?${new URLSearchParams({ ...otherParams, page: Math.min(lastPage, page + 1) })}`} />
+        <MPagination.Last aria-label='Last page' component={Link} to={`?${new URLSearchParams({ ...otherParams, page: lastPage })}`} />
       </Group>
     </MPagination.Root>
   );
