@@ -513,6 +513,9 @@ const Api = {
     transcribe (audio, mediaType) {
       return instance.post('/api/ai/transcribe', { audio, mediaType });
     },
+    parseId (image, mediaType) {
+      return instance.post('/api/ai/parse-id', { image, mediaType });
+    },
   },
 };
 
