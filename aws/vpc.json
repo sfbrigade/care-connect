@@ -1,0 +1,536 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template to set up a VPC with subnets, route tables, and an Elastic IP along with a Route 53 public hosted zone for a domain pointing to the Elastic IP",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    },
+    "Domain": {
+      "Description": "Domain to create a hosted zone for",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "VPCId": {
+      "Description": "ID of the VPC",
+      "Value": {
+        "Ref": "VPC"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-vpc-id"
+        }
+      }
+    },
+    "PublicSubnetAZ0Id": {
+      "Description": "ID of the public subnet in availability zone 0",
+      "Value": {
+        "Ref": "PublicSubnetAZ0"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-subnet-az0-id"
+        }
+      }
+    },
+    "PublicSubnetAZ1Id": {
+      "Description": "ID of the public subnet in availability zone 1",
+      "Value": {
+        "Ref": "PublicSubnetAZ1"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-subnet-az1-id"
+        }
+      }
+    },
+    "PrivateSubnetAZ0Id": {
+      "Description": "ID of the private subnet in availability zone 0",
+      "Value": {
+        "Ref": "PrivateSubnetAZ0"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-private-subnet-az0-id"
+        }
+      }
+    },
+    "PrivateSubnetAZ1Id": {
+      "Description": "ID of the private subnet in availability zone 1",
+      "Value": {
+        "Ref": "PrivateSubnetAZ1"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-private-subnet-az1-id"
+        }
+      }
+    },
+    "ElasticIP0AllocationId": {
+      "Description": "Elastic IP 0 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "ElasticIP0",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-0-allocation-id"
+        }
+      }
+    },
+    "ElasticIP1AllocationId": {
+      "Description": "Elastic IP 1 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "ElasticIP1",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-1-allocation-id"
+        }
+      }
+    },
+    "ElasticIP0PublicIP": {
+      "Description": "Public IP address of the Elastic IP 0",
+      "Value": {
+        "Fn::GetAtt": [
+          "ElasticIP0",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-0-public-ip"
+        }
+      }
+    },
+    "ElasticIP1PublicIP": {
+      "Description": "Public IP address of the Elastic IP 1",
+      "Value": {
+        "Fn::GetAtt": [
+          "ElasticIP1",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-elastic-ip-1-public-ip"
+        }
+      }
+    },
+    "NatElasticIP0AllocationId": {
+      "Description": "Elastic IP 0 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP0",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-0-allocation-id"
+        }
+      }
+    },
+    "NatElasticIP1AllocationId": {
+      "Description": "Elastic IP 1 allocation ID",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP1",
+          "AllocationId"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-1-allocation-id"
+        }
+      }
+    },
+    "NatElasticIP0PublicIP": {
+      "Description": "Public IP address of the Elastic IP 0",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP0",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-0-public-ip"
+        }
+      }
+    },
+    "NatElasticIP1PublicIP": {
+      "Description": "Public IP address of the Elastic IP 1",
+      "Value": {
+        "Fn::GetAtt": [
+          "NatElasticIP1",
+          "PublicIp"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nat-elastic-ip-1-public-ip"
+        }
+      }
+    },
+    "PublicHostedZoneId": {
+      "Description": "ID of the public hosted zone",
+      "Value": {
+        "Ref": "PublicHostedZone"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-hosted-zone-id"
+        }
+      }
+    },
+    "PublicHostedZoneNameServers": {
+      "Description": "Name servers for the public hosted zone",
+      "Value": {
+        "Fn::Join": [
+          ", ",
+          {
+            "Fn::GetAtt": [
+              "PublicHostedZone",
+              "NameServers"
+            ]
+          }
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-public-hosted-zone-name-servers"
+        }
+      }
+    },
+    "Domain": {
+      "Description": "The original domain name specified in the parameters",
+      "Value": {
+        "Ref": "Domain"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-domain"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "172.31.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "InstanceTenancy": "default"
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "VPCInternetGatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "ElasticIP0": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
+    "ElasticIP1": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
+    "NatElasticIP0": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
+    "NatElasticIP1": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      },
+      "DependsOn": "VPC"
+    },
+    "NatGateway0": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAZ0"
+        },
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "NatElasticIP0",
+            "AllocationId"
+          ]
+        }
+      }
+    },
+    "NatGateway1": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAZ1"
+        },
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "NatElasticIP1",
+            "AllocationId"
+          ]
+        }
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PrivateRouteTable0": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PrivateRouteTable1": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        }
+      }
+    },
+    "PublicSubnetAZ0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "172.31.0.0/20",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "PublicSubnetAZ1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "172.31.16.0/20",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "PrivateSubnetAZ0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "172.31.32.0/20",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "PrivateSubnetAZ1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": "172.31.48.0/20",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      },
+      "DependsOn": "VPCInternetGatewayAttachment"
+    },
+    "PublicSubnetRouteTableAssociationAZ0": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAZ0"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociationAZ1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnetAZ1"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "PrivateRoute0": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable0"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NatGateway0"
+        }
+      }
+    },
+    "PrivateRoute1": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable1"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NatGateway1"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociationAZ0": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnetAZ0"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable0"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociationAZ1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateSubnetAZ1"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable1"
+        }
+      }
+    },
+    "PublicHostedZone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": {
+          "Ref": "Domain"
+        }
+      }
+    },
+    "DomainRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "PublicHostedZone"
+        },
+        "Name": {
+          "Ref": "Domain"
+        },
+        "Type": "A",
+        "TTL": "300",
+        "ResourceRecords": [
+          {
+            "Ref": "ElasticIP0"
+          },
+          {
+            "Ref": "ElasticIP1"
+          }
+        ]
+      }
+    },
+    "WildcardDomainRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "PublicHostedZone"
+        },
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              "*",
+              {
+                "Ref": "Domain"
+              }
+            ]
+          ]
+        },
+        "Type": "A",
+        "TTL": "300",
+        "ResourceRecords": [
+          {
+            "Ref": "ElasticIP0"
+          },
+          {
+            "Ref": "ElasticIP1"
+          }
+        ]
+      }
+    }
+  }
+}

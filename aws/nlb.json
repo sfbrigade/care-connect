@@ -1,0 +1,355 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploy a network load balancer with static IPs in front of an application load balancer handling SSL termination and redirects.",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "ApplicationLoadBalancerSecurityGroupId": {
+      "Description": "The ID of the application load balancer security group",
+      "Value": {
+        "Ref": "ApplicationLoadBalancerSecurityGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb-security-group-id"
+        }
+      }
+    },
+    "ApplicationLoadBalancerTargetGroupArn": {
+      "Description": "The ARN of the application load balancer target group",
+      "Value": {
+        "Ref": "ApplicationLoadBalancerTargetGroup"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb-target-group-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "SSLCertificate": {
+      "Type": "AWS::CertificateManager::Certificate",
+      "Properties": {
+        "DomainName": {
+          "Fn::Join": [
+            ".",
+            [
+              "*",
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${BaseName}-domain"
+                }
+              }
+            ]
+          ]
+        },
+        "SubjectAlternativeNames": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${BaseName}-domain"
+            }
+          }
+        ],
+        "ValidationMethod": "DNS",
+        "DomainValidationOptions": [
+          {
+            "DomainName": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-domain"
+              }
+            },
+            "HostedZoneId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-public-hosted-zone-id"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "ApplicationLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb"
+        },
+        "Scheme": "internal",
+        "Type": "application",
+        "SecurityGroups": [
+          {
+            "Ref": "ApplicationLoadBalancerSecurityGroup"
+          }
+        ],
+        "SubnetMappings": [
+          {
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-private-subnet-az0-id"
+              }
+            }
+          },
+          {
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-private-subnet-az1-id"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "ApplicationLoadBalancerTargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-alb-target-group"
+        },
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      }
+    },
+    "ApplicationLoadBalancerListener80": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "ApplicationLoadBalancer"
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "redirect",
+            "RedirectConfig": {
+              "Protocol": "HTTPS",
+              "Host": "#{host}",
+              "Port": 443,
+              "Path": "/#{path}",
+              "Query": "#{query}",
+              "StatusCode": "HTTP_301"
+            }
+          }
+        ]
+      }
+    },
+    "ApplicationLoadBalancerListener443": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "ApplicationLoadBalancer"
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09",
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "SSLCertificate"
+            }
+          }
+        ],
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "ApplicationLoadBalancerTargetGroup"
+            }
+          }
+        ]
+      }
+    },
+    "ApplicationLoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the application load balancer",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        },
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443
+          }
+        ]
+      }
+    },
+    "NetworkLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nlb"
+        },
+        "Scheme": "internet-facing",
+        "Type": "network",
+        "SecurityGroups": [
+          {
+            "Ref": "NetworkLoadBalancerSecurityGroup"
+          }
+        ],
+        "SubnetMappings": [
+          {
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-public-subnet-az0-id"
+              }
+            },
+            "AllocationId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-elastic-ip-0-allocation-id"
+              }
+            }
+          },
+          {
+            "SubnetId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-public-subnet-az1-id"
+              }
+            },
+            "AllocationId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-elastic-ip-1-allocation-id"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "NetworkLoadBalancerTargetGroup80": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nlb-target-group-80"
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "ApplicationLoadBalancer"
+            },
+            "Port": 80
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      },
+      "DependsOn": [
+        "ApplicationLoadBalancer",
+        "ApplicationLoadBalancerListener80"
+      ]
+    },
+    "NetworkLoadBalancerListener80": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "NetworkLoadBalancer"
+        },
+        "Port": 80,
+        "Protocol": "TCP",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "NetworkLoadBalancerTargetGroup80"
+            }
+          }
+        ]
+      }
+    },
+    "NetworkLoadBalancerTargetGroup443": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-nlb-target-group-443"
+        },
+        "Port": 443,
+        "Protocol": "TCP",
+        "TargetType": "alb",
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "ApplicationLoadBalancer"
+            },
+            "Port": 443
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      },
+      "DependsOn": [
+        "ApplicationLoadBalancer",
+        "ApplicationLoadBalancerListener443"
+      ]
+    },
+    "NetworkLoadBalancerListener443": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "NetworkLoadBalancer"
+        },
+        "Port": 443,
+        "Protocol": "TCP",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "NetworkLoadBalancerTargetGroup443"
+            }
+          }
+        ]
+      }
+    },
+    "NetworkLoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for the network load balancer",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        },
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443
+          }
+        ]
+      }
+    }
+  }
+}

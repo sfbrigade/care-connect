@@ -1,7 +1,8 @@
 import { PostHog } from 'posthog-node';
 
-const apiKey = process.env.POSTHOG_API_KEY;
-const host = process.env.POSTHOG_HOST || 'https://app.posthog.com';
+// Note: Posthog uses the same write-only token for both client and server
+const apiKey = process.env.VITE_POSTHOG_KEY;
+const host = process.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
 
 let client = null;
 
