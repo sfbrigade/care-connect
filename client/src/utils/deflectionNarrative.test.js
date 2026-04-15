@@ -33,12 +33,12 @@ describe('deflectionNarrative', () => {
         arrestedAt: '2026-02-12T23:53:00Z',
       },
       drugUseEvidence: true,
-      drugType: 'CNS_DEPRESSANTS',
+      drugType: 'ALCOHOL',
     });
 
     expect(narrative).toBe([
       'Officer encountered this individual at 1455 Market St on 2/12/2026 at 11:53 PM.',
-      'Officer observed that drugs were recently used: CNS Depressants.',
+      'Officer observed that drugs were recently used: Alcohol.',
       'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
     ].join('\n'));
   });

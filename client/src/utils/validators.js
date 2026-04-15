@@ -100,6 +100,14 @@ export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
 
+const SubstanceSchema = z.intersection(NarcoticsSchema, DrugUseSchema);
+
+export const validateSubstance = zod4Resolver(SubstanceSchema);
+
+export const isValidSubstance = (obj) => {
+  return !!SubstanceSchema.safeParse(obj)?.success;
+};
+
 export const validateBehavior = zod4Resolver(BehaviorSchema);
 
 export const isValidBehavior = (obj) => {

@@ -272,7 +272,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>{isValidNarcotics(deflection) ? 'Edit narcotics' : 'Finish narcotics'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>{isValidNarcotics(deflection) ? 'Edit narcotics' : 'Finish narcotics'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -302,7 +302,7 @@ function Deflection () {
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>
                       {drugUseComplete ? 'Edit substance use' : 'Finish substance use'}
                     </Button>
                   </Group>

@@ -17,6 +17,7 @@ import DeflectionForm from '../components/DeflectionForm';
 import PropertyForm from '../components/PropertyForm';
 import NarcoticsForm from '../components/NarcoticsForm';
 import DrugUseForm from '../components/DrugUseForm';
+import SubstanceForm from '../components/SubstanceForm';
 import ManageCapacity from '../components/ManageCapacity/ManageCapacity';
 import FormPage from '@/forms/FormPage';
 import FormPreview from '@/forms/FormPreview';
@@ -27,6 +28,7 @@ function LESCRoutes () {
 
   return (
     <Routes>
+      <Route path='holds/:id/substance' element={<SubstanceForm />} />
       <Route path='holds/:id/deflection' element={<DeflectionForm />} />
       <Route path='holds/:id/narcotics' element={<NarcoticsForm />} />
       <Route path='holds/:id/drug-use' element={<DrugUseForm />} />

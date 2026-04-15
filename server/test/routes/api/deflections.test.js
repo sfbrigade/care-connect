@@ -760,7 +760,7 @@ test('/api/deflections', async (t) => {
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
         drugUseEvidence: true,
-        drugType: 'INHALANTS',
+        drugType: 'ALCOHOL',
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -778,7 +778,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
       assert.deepStrictEqual(data.drugUseEvidence, true);
-      assert.deepStrictEqual(data.drugType, 'INHALANTS');
+      assert.deepStrictEqual(data.drugType, 'ALCOHOL');
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -801,7 +801,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
       assert.deepStrictEqual(deflection.drugUseEvidence, true);
-      assert.deepStrictEqual(deflection.drugType, 'INHALANTS');
+      assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -819,7 +819,7 @@ test('/api/deflections', async (t) => {
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
         drugUseEvidence: false,
-        drugType: 'CANNABIS',
+        drugType: 'HEROIN',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);

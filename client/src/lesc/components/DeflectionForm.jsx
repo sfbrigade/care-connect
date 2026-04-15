@@ -160,11 +160,11 @@ function DeflectionForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`} />
           <Group gap='xs'>
             {header}
             {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>2 of 3</Text>}
+            {isNew && <Text c='dimmed' size='lg'>3/4</Text>}
           </Group>
         </Group>
       </Header>

@@ -10,10 +10,7 @@ function formatDrugType (drugType) {
     return DETAILS_MISSING;
   }
 
-  return drugType
-    .split('_')
-    .map((part) => (/^[A-Z]+$/.test(part) && part.length <= 3) ? part : `${part.charAt(0)}${part.slice(1).toLowerCase()}`)
-    .join(' ');
+  return drugType.charAt(0) + drugType.slice(1).toLowerCase();
 }
 
 function formatIncidentDateTime (arrestedAt) {

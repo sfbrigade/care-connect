@@ -58,6 +58,7 @@ function SubjectForm () {
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const [scannerOpened, setScannerOpened] = useState(false);
+  const [optionalOpen, setOptionalOpen] = useState([]);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -176,7 +177,7 @@ function SubjectForm () {
         showToast('Changes saved.', 'success');
         navigate(`/custody/${id}`);
       } else {
-        navigate(isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`);
+        navigate(isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`);
       }
     },
     onError: () => {
@@ -222,6 +223,9 @@ function SubjectForm () {
     if (data.city) form.setFieldValue('city', data.city);
     if (data.state) form.setFieldValue('state', data.state);
     if (data.postalCode) form.setFieldValue('postalCode', data.postalCode);
+    if (data.addressLine1 || data.city || data.state || data.postalCode) {
+      setOptionalOpen(['optional']);
+    }
     if (!isCustodyContext) {
       scheduleAutoSave(form.getValues(), data.dateOfBirth || dobInput);
     }
@@ -239,7 +243,7 @@ function SubjectForm () {
   return (
     <>
       <Head>
-        <title>Person details</title>
+        <title>Personal details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -247,7 +251,7 @@ function SubjectForm () {
           <Group gap='xs'>
             {header}
             {!!header && isNew && !isCustodyContext && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && !isCustodyContext && <Text c='dimmed' size='lg'>Step 1 of 3</Text>}
+            {isNew && !isCustodyContext && <Text c='dimmed' size='lg'>1/4</Text>}
           </Group>
         </Group>
       </Header>
@@ -258,7 +262,7 @@ function SubjectForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
 
-        <Title order={2} mb='xs'>Person details</Title>
+        <Title order={2} mb='xs'>Personal details</Title>
         <Text c='dimmed' size='md' mb='md'>Scan an ID to fill details faster, or enter them manually.</Text>
         <Button
           variant='light'
@@ -329,108 +333,112 @@ function SubjectForm () {
                 {...form.getInputProps('race')}
                 key={form.key('race')}
               />
-              <TextInput
-                key={form.key('driverLicense')}
-                label="Driver's license number (optional)"
-                placeholder='Enter license number'
-                {...form.getInputProps('driverLicense')}
-              />
-              <TextInput
-                key={form.key('localId')}
-                label='SF Number (optional)'
-                placeholder='Enter SF number'
-                {...form.getInputProps('localId')}
-              />
-              <Accordion variant='section' defaultValue={['address', 'narcotics', 'drug-use']}>
-                <Divider />
-                <Accordion.Item value='address'>
+              <Divider />
+              <Accordion variant='section' value={optionalOpen} onChange={setOptionalOpen} multiple>
+                <Accordion.Item value='optional'>
                   <Accordion.Control>
-                    <Title order={3}>Home address</Title>
-                    <Text c='gray.5' size='sm'>Optional</Text>
+                    <Title order={3}>Optional details</Title>
+                    <Text c='gray.5' size='sm'>ID numbers and address</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='xl'>
+                      <TextInput
+                        key={form.key('driverLicense')}
+                        label="Driver's license number"
+                        placeholder='Enter license number'
+                        {...form.getInputProps('driverLicense')}
+                      />
+                      <TextInput
+                        key={form.key('localId')}
+                        label='SF Number'
+                        placeholder='Enter SF number'
+                        {...form.getInputProps('localId')}
+                      />
                       <AddressAutocomplete
                         form={form}
                         field='addressLine1'
                         key={form.key('addressLine1')}
                         placeholder='Enter street address line 1'
-                        label='Street address (optional)'
+                        label='Street address'
                       />
                       <TextInput
                         key={form.key('addressLine2')}
-                        label='Street address (optional)'
+                        label='Street address'
                         placeholder='Enter street address line 2'
                         {...form.getInputProps('addressLine2')}
                       />
                       <TextInput
                         key={form.key('city')}
-                        label='City (optional)'
+                        label='City'
                         placeholder='Enter city'
                         {...form.getInputProps('city')}
                       />
                       <TextInput
                         key={form.key('state')}
-                        label='State (optional)'
+                        label='State'
                         placeholder='Enter state'
                         {...form.getInputProps('state')}
                       />
                       <TextInput
                         key={form.key('postalCode')}
-                        label='ZIP code (optional)'
+                        label='ZIP code'
                         placeholder='Enter ZIP code'
                         {...form.getInputProps('postalCode')}
                       />
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                {(isNew || isCustodyContext) && (
-                  <Accordion.Item value='narcotics' data-section='narcotics'>
-                    <Accordion.Control>
-                      <Title order={3}>Narcotics possession</Title>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap='xl'>
-                        <BooleanInput
-                          {...form.getInputProps('narcoticsSubstance')}
-                          key={form.key('narcoticsSubstance')}
-                          label={<>Possesses a controlled substance<span>*</span></>}
-                        />
-                        <BooleanInput
-                          {...form.getInputProps('narcoticsParaphernalia')}
-                          key={form.key('narcoticsParaphernalia')}
-                          label={<>Possesses narcotics paraphernalia<span>*</span></>}
-                        />
-                        <Divider />
-                        <Stack gap='xl' data-section='drug-use'>
-                          <Title order={3}>Substance use</Title>
-                          <Stack gap='xl'>
-                            <BooleanInput
-                              {...form.getInputProps('drugUseEvidence')}
-                              key={form.key('drugUseEvidence')}
-                              label={<>Evidence of substance use<span>*</span></>}
-                            />
-                            {showDrugTypeQuestion && (
-                              <Input.Wrapper label={<>Substance type<span>*</span></>}>
-                                <Chip.Group
-                                  key={form.key('drugType')}
-                                  {...form.getInputProps('drugType')}
-                                >
-                                  <Group gap='sm' mt='md'>
-                                    {DRUG_TYPE_OPTIONS.map((drugType) => (
-                                      <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
-                                    ))}
-                                  </Group>
-                                </Chip.Group>
-                              </Input.Wrapper>
-                            )}
+              </Accordion>
+              {isCustodyContext && (
+                <>
+                  <Accordion variant='section' defaultValue={['narcotics']}>
+                    <Accordion.Item value='narcotics' data-section='narcotics'>
+                      <Accordion.Control>
+                        <Title order={3}>Narcotics possession</Title>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap='xl'>
+                          <BooleanInput
+                            {...form.getInputProps('narcoticsSubstance')}
+                            key={form.key('narcoticsSubstance')}
+                            label={<>Possesses a controlled substance<span>*</span></>}
+                          />
+                          <BooleanInput
+                            {...form.getInputProps('narcoticsParaphernalia')}
+                            key={form.key('narcoticsParaphernalia')}
+                            label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                          />
+                          <Divider />
+                          <Stack gap='xl' data-section='drug-use'>
+                            <Title order={3}>Substance use</Title>
+                            <Stack gap='xl'>
+                              <BooleanInput
+                                {...form.getInputProps('drugUseEvidence')}
+                                key={form.key('drugUseEvidence')}
+                                label={<>Evidence of substance use<span>*</span></>}
+                              />
+                              {showDrugTypeQuestion && (
+                                <Input.Wrapper label={<>Substance type<span>*</span></>}>
+                                  <Chip.Group
+                                    key={form.key('drugType')}
+                                    {...form.getInputProps('drugType')}
+                                  >
+                                    <Group gap='sm' mt='md'>
+                                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                                      ))}
+                                    </Group>
+                                  </Chip.Group>
+                                </Input.Wrapper>
+                              )}
+                            </Stack>
                           </Stack>
                         </Stack>
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                )}
-              </Accordion>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
+                </>
+              )}
               {isCustodyContext
                 ? (
                   <Group>
@@ -440,7 +448,7 @@ function SubjectForm () {
                   )
                 : (
                   <Button type='submit'>
-                    {isNew ? 'Next: behavioral observations' : 'Save person details'}
+                    {isNew ? 'Next: Substance details' : 'Save person details'}
                   </Button>
                   )}
             </Stack>
