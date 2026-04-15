@@ -1,4 +1,5 @@
 import { zod4Resolver } from 'mantine-form-zod-resolver';
+import { DateTime } from 'luxon';
 import * as z from 'zod/mini';
 
 import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
@@ -6,6 +7,8 @@ import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
+const ERROR_DOB_YEAR = 'Enter date of birth with a 4-digit year';
+const ERROR_DOB_INVALID = 'Enter a valid date as MM/DD/YYYY';
 
 function hasMinimumAlphanumericChars (value, minimum) {
   const alphanumericCount = String(value ?? '').match(/[0-9a-z]/gi)?.length ?? 0;
@@ -89,6 +92,40 @@ export const isValidIncident = (obj) => {
 };
 
 export const validateSubject = zod4Resolver(SubjectSchema);
+
+export function getDateOfBirthInputError (value, { allowPartial = false } = {}) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const digits = normalized.replace(/\D/g, '');
+  if (digits.length < 8) {
+    return allowPartial ? null : ERROR_DOB_YEAR;
+  }
+
+  const parsed = DateTime.fromFormat(normalized, 'MM/dd/yyyy', { zone: 'local' });
+  if (!parsed.isValid) {
+    return ERROR_DOB_INVALID;
+  }
+
+  return null;
+}
+
+export function validateSubjectFormValues (values, dobInput = values?.dateOfBirth) {
+  const parsedDob = DateTime.fromFormat(String(dobInput ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+  const errors = validateSubject({
+    ...values,
+    dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
+  });
+
+  const dateOfBirthError = getDateOfBirthInputError(dobInput);
+  if (dateOfBirthError) {
+    errors.dateOfBirth = dateOfBirthError;
+  }
+
+  return errors;
+}
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;

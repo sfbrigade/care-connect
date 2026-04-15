@@ -17,7 +17,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { validateSubject } from '@/utils/validators';
+import { getDateOfBirthInputError, validateSubjectFormValues } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -62,11 +62,6 @@ function SubjectForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: (values) => ({
-      ...values,
-      drugType: values.drugUseEvidence ? values.drugType ?? null : null,
-      dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
-    }),
     onValuesChange: (values) => {
       setShowDrugTypeQuestion(values.drugUseEvidence);
       if (form.initialized && !isCustodyContext) {
@@ -100,10 +95,7 @@ function SubjectForm () {
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubject({
-            ...normalized,
-            dateOfBirth: deflection.subject.dateOfBirth,
-          });
+          const errors = validateSubjectFormValues(normalized, normalized.dateOfBirth);
           form.setErrors(errors);
         }
       } else {
@@ -130,11 +122,59 @@ function SubjectForm () {
   function buildAutoSavePayload (values, dobString) {
     const normalized = normalizeValues(values);
     const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+    const payload = {
+      ...normalized,
+      drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
+    };
+
+    const dobValue = String(dobString ?? '').trim();
+    if (!dobValue) {
+      payload.dateOfBirth = null;
+    } else if (parsedDob.isValid) {
+      payload.dateOfBirth = parsedDob.toISO();
+    }
+
+    return payload;
+  }
+
+  function buildSubmitPayload (values, dobString) {
+    const normalized = normalizeValues(values);
+    const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
     return {
       ...normalized,
       drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
       dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
     };
+  }
+
+  function validateForm (values, dobString = dobInput) {
+    const errors = validateSubjectFormValues(values, dobString);
+    form.setErrors(errors);
+    return errors;
+  }
+
+  function setDateOfBirthError (message) {
+    if (message) {
+      form.setFieldError('dateOfBirth', message);
+      return;
+    }
+
+    form.clearFieldError('dateOfBirth');
+  }
+
+  async function submitForm (values) {
+    const errors = validateForm(values);
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    const payload = buildSubmitPayload(values, dobInput);
+    if (isCustodyContext) {
+      handleCustodySubmit(payload);
+      return;
+    }
+
+    await onSubmitMutation.mutateAsync(payload);
   }
 
   function scheduleAutoSave (values, dobString) {
@@ -239,7 +279,7 @@ function SubjectForm () {
 
         <Title order={2} mb='xs'>Person details</Title>
         <Text c='dimmed' size='md' mb='xl'>Start with what you know now. Fields marked * must be completed before you can transfer custody.</Text>
-        <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit(submitForm)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
@@ -272,9 +312,14 @@ function SubjectForm () {
                   const formatted = formatInputDob(event.currentTarget.value);
                   setDobInput(formatted);
                   form.setFieldValue('dateOfBirth', formatted);
+                  const dateOfBirthError = getDateOfBirthInputError(formatted, { allowPartial: true });
+                  setDateOfBirthError(dateOfBirthError);
                   if (!isCustodyContext) {
                     scheduleAutoSave(form.getValues(), formatted);
                   }
+                }}
+                onBlur={() => {
+                  setDateOfBirthError(getDateOfBirthInputError(dobInput));
                 }}
               />
               <ChipInput
