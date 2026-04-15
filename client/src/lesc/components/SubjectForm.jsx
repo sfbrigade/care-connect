@@ -389,45 +389,39 @@ function SubjectForm () {
                   <Accordion variant='section' defaultValue={['narcotics']}>
                     <Accordion.Item value='narcotics' data-section='narcotics'>
                       <Accordion.Control>
-                        <Title order={3}>Narcotics possession</Title>
+                        <Title order={3}>Substance details</Title>
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap='xl'>
                           <BooleanInput
                             {...form.getInputProps('narcoticsSubstance')}
                             key={form.key('narcoticsSubstance')}
-                            label={<>Possesses a controlled substance<span>*</span></>}
+                            label={<>Controlled substance found<span>*</span></>}
                           />
                           <BooleanInput
                             {...form.getInputProps('narcoticsParaphernalia')}
                             key={form.key('narcoticsParaphernalia')}
-                            label={<>Possesses narcotics paraphernalia<span>*</span></>}
+                            label={<>Paraphernalia found<span>*</span></>}
                           />
-                          <Divider />
-                          <Stack gap='xl' data-section='drug-use'>
-                            <Title order={3}>Substance use</Title>
-                            <Stack gap='xl'>
-                              <BooleanInput
-                                {...form.getInputProps('drugUseEvidence')}
-                                key={form.key('drugUseEvidence')}
-                                label={<>Evidence of substance use<span>*</span></>}
-                              />
-                              {showDrugTypeQuestion && (
-                                <Input.Wrapper label={<>Substance type<span>*</span></>}>
-                                  <Chip.Group
-                                    key={form.key('drugType')}
-                                    {...form.getInputProps('drugType')}
-                                  >
-                                    <Group gap='sm' mt='md'>
-                                      {DRUG_TYPE_OPTIONS.map((drugType) => (
-                                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
-                                      ))}
-                                    </Group>
-                                  </Chip.Group>
-                                </Input.Wrapper>
-                              )}
-                            </Stack>
-                          </Stack>
+                          <BooleanInput
+                            {...form.getInputProps('drugUseEvidence')}
+                            key={form.key('drugUseEvidence')}
+                            label={<>Signs of substance use<span>*</span></>}
+                          />
+                          {showDrugTypeQuestion && (
+                            <Input.Wrapper label={<>Substance used<span>*</span></>}>
+                              <Chip.Group
+                                key={form.key('drugType')}
+                                {...form.getInputProps('drugType')}
+                              >
+                                <Group gap='sm' mt='md'>
+                                  {DRUG_TYPE_OPTIONS.map((drugType) => (
+                                    <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                                  ))}
+                                </Group>
+                              </Chip.Group>
+                            </Input.Wrapper>
+                          )}
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
