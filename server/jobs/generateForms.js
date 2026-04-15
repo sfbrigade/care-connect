@@ -9,21 +9,15 @@ export default async function generateForms (data, prismaClient = prisma) {
     ? Object.fromEntries(Object.entries(FORMS).filter(([id]) => formIds.includes(id)))
     : FORMS;
 
-  const deflection = await prismaClient.deflection.findUnique({
-    where: { id: deflectionId },
-    include: {
-      subject: true,
-      incident: { include: { createdBy: { include: { organization: true, unit: true, title: true } } } },
-      facility: true,
-      releaseReason: true,
-      deflectionDetails: true,
-    },
-  });
-  if (!deflection) return;
-
   const user = await prismaClient.user.findUnique({ where: { id: userId } });
 
   for (const [formId, form] of Object.entries(forms)) {
+    const deflection = await prismaClient.deflection.findUnique({
+      where: { id: deflectionId },
+      include: form.deflectionInclude,
+    });
+    if (!deflection) return;
+
     const check = form.canGenerate(deflection);
     if (check !== true) continue;
 

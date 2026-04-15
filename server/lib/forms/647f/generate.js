@@ -3,7 +3,8 @@ import { metadata } from './metadata.js';
 function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
-  const officer = incident?.createdBy || deflection.createdBy;
+  const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
+  const officer = arrestingOfficerRecord?.officer || incident?.createdBy || deflection.createdBy;
 
   const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
     .filter(Boolean)
@@ -16,9 +17,9 @@ function transformData (deflection) {
   const officerName = officer
     ? `${officer.firstName} ${officer.lastName}`
     : '';
-  const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
-  const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
-  const agency = officer?.organization?.name || '';
+  const officerBadge = arrestingOfficerRecord?.badgeNumber || incident?.createdByBadgeNumber || officer?.badgeNumber || '';
+  const officerUnit = arrestingOfficerRecord?.unit?.name || incident?.createdByUnit?.name || officer?.unit?.name || '';
+  const agency = arrestingOfficerRecord?.organization?.name || officer?.organization?.name || '';
 
   const facility = deflection.facility;
   const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]
@@ -42,6 +43,7 @@ function transformData (deflection) {
     arrestLocation,
     officerUnit,
     officerBadge,
+    supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
     agency,
     charge: '647(f) RWS',
     justification: deflection.behavior || '',

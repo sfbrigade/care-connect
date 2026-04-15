@@ -17,6 +17,18 @@ export const metadata = {
             unit: true,
           },
         },
+        incidentOfficers: {
+          include: {
+            officer: {
+              include: {
+                organization: true,
+                unit: true,
+              },
+            },
+            organization: true,
+            unit: true,
+          },
+        },
       },
     },
     facility: true,
