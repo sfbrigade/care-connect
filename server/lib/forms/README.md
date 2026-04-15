@@ -43,7 +43,6 @@ Each form's `index.js` exports a single default object with the following fields
 | Field | Type | Description |
 |---|---|---|
 | `title` | `string` | Display name |
-| `generateLabel` | `string` | Button label in the UI |
 | `description` | `(name: string) => string` | Short description shown in the UI |
 | `downloadFilename` | `(id: number) => string` | Suggested filename for download |
 | `canGenerate` | `(deflection) => true \| { message }` | Returns `true` if the form can be generated, or an object with a user-facing `message` if not |
@@ -55,7 +54,7 @@ Each form's `index.js` exports a single default object with the following fields
 ## Adding a new form
 
 1. Create a new folder `lib/forms/<id>/`.
-2. Add `metadata.js` exporting a `metadata` object with all fields above except `generatePdf`.
+2. Add `metadata.js` exporting a `metadata` object with all fields above except `generatePdf` (i.e. `title`, `description`, `downloadFilename`, `canGenerate`, `deflectionInclude`).
 3. Add `generate.js` exporting `generatePdf(deflection, user)`.
    - For fillable PDFs: use `pdf-lib` to fill a `template.pdf` in the same folder.
    - For React forms: write a JSX component, add it as an esbuild entry point in `server/esbuild.forms.js`, then call `renderFormToPdf` from `shared/renderReactForm.js`.

@@ -7,7 +7,6 @@ const options = {
     'lib/forms/647f/Form647f.jsx',
     'lib/forms/cert/NarcoticsNotice.jsx',
     'lib/forms/shared/FormContainer.jsx',
-    'lib/forms/shared/formComponents.jsx',
   ],
   outdir: 'lib/forms/dist',
   entryNames: '[name]',
