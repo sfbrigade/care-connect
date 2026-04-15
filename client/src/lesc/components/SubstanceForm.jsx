@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';

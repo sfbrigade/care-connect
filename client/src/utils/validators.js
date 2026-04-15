@@ -34,17 +34,6 @@ const SubjectSchema = z.object({
 
 const DrugTypeSchema = z.enum(DRUG_TYPE_OPTIONS, ERROR_SELECT_ONE);
 
-const DrugUseSchema = z.union([
-  z.object({
-    drugUseEvidence: z.literal(false),
-    drugType: z.nullable(z.optional(DrugTypeSchema)),
-  }),
-  z.object({
-    drugUseEvidence: z.literal(true),
-    drugType: DrugTypeSchema,
-  }),
-], ERROR_SELECT_ONE);
-
 const NarcoticsSchema = z.object({
   narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
   narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
