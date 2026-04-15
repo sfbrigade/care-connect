@@ -955,7 +955,7 @@ export default async function main (prisma) {
         admittedAt: tAdmit,
         admittedById: careUser.id,
         exitedAt: tExit,
-        exitedById: careUser.id,
+        exitedById: isJailExit ? custodyUser.id : careUser.id,
         ...(isJailExit
           ? {
               refusalReasonId: refusalReason?.id ?? null,
