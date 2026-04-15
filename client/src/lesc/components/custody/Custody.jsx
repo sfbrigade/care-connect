@@ -135,7 +135,6 @@ function Custody () {
     // handle card highlighting (state update)
     if (highlightTarget) {
       setHighlightedId(highlightTarget);
-      window.sessionStorage.removeItem('custodyHighlightTarget');
     }
 
     window.requestAnimationFrame(() => {
@@ -150,6 +149,8 @@ function Custody () {
           if (!isVisible) {
             el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
           }
+          // cleanup only after successfully finding the element
+          window.sessionStorage.removeItem('custodyHighlightTarget');
           window.sessionStorage.removeItem('custodyScrollTarget');
           return;
         }
