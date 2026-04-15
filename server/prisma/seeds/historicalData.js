@@ -361,6 +361,7 @@ export default async function main (prisma) {
   let holdsAdded = 0;
   let inTransitAdded = 0;
   let occupiedAdded = 0;
+  let inProgressIdx = 0;
 
   for (let idx = 0; idx < scenarios.length; idx++) {
     const { type, daysAgoMin, daysAgoMax } = scenarios[idx];
@@ -370,7 +371,8 @@ export default async function main (prisma) {
     const isInProgress = type.startsWith('in_progress_');
     if (isInProgress) {
       // In-progress: created within last 1-4 hours, spaced to avoid overlap
-      base = addHrs(new Date(), -(1 + idx * 0.5));
+      base = addHrs(new Date(), -(1 + inProgressIdx * 0.5));
+      inProgressIdx++;
     } else {
       base = randomPastTime(daysAgoMin, daysAgoMax);
     }
