@@ -466,7 +466,7 @@ export default async function main (prisma) {
       const exitDest = pick(allExitDests) ?? exitDestStreet;
       const housingStatus = pick(allHousingStatuses) ?? housingStatusUnknown;
       const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
-      const tHandoff = addMins(base, randInt(10, Math.max(11, arrivedDelta - 1)));
+      const tHandoff = addMins(base, randInt(1, Math.max(2, arrivedDelta - 2)));
       const incident = await prisma.incident.create({
         data: {
           ...makeIncidentData(facility.id, fieldUser, base, null, null, tExit, idx),
