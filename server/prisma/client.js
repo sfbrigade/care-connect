@@ -4,6 +4,17 @@ import { v4 as uuid } from 'uuid';
 import Deflection from '#models/deflection.js';
 import User from '#models/user.js';
 
+function getIncidentAutoCloseThresholdMinutes () {
+  const defaultMinutes = 30;
+
+  if (process.env.NODE_ENV === 'production') {
+    return defaultMinutes;
+  }
+
+  const override = Number.parseInt(process.env.DEV_INCIDENT_AUTO_CLOSE_MINUTES ?? '', 10);
+  return Number.isFinite(override) && override >= 0 ? override : defaultMinutes;
+}
+
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
 }).$extends({
@@ -126,6 +137,114 @@ const prisma = new PrismaClient({
             });
           });
         }));
+      }
+    },
+    incident: {
+      async autoCloseAfterFinalHold (now = new Date()) {
+        await prisma.user.findOrCreateBatchUser();
+
+        const thresholdMinutes = getIncidentAutoCloseThresholdMinutes();
+        const cutoffTime = new Date(now.getTime() - (thresholdMinutes * 60 * 1000));
+        const candidateIncidents = await prisma.incident.findMany({
+          where: {
+            arrivedAt: { not: null },
+            leftAt: null,
+            completedAt: null,
+            deflections: {
+              some: {
+                OR: [
+                  { transferredAt: { lte: cutoffTime } },
+                  { cancelledAt: { lte: cutoffTime } },
+                ],
+              },
+            },
+          },
+          select: {
+            id: true,
+            facilityId: true,
+          },
+        });
+
+        return Promise.all(candidateIncidents.map(({ id, facilityId }) => prisma.$transaction(async (tx) => {
+          const lockedIncidents = await tx.$queryRaw`
+            SELECT "id", "facilityId", "leftAt", "completedAt"
+            FROM "Incident"
+            WHERE "id" = ${id} AND "facilityId" = ${facilityId}::uuid
+            FOR UPDATE
+          `;
+          const incident = lockedIncidents[0];
+
+          if (!incident || incident.leftAt || incident.completedAt) {
+            return null;
+          }
+
+          const remainingActiveHolds = await tx.deflection.count({
+            where: {
+              incidentId: id,
+              status: Deflection.HoldStatus.ACTIVE,
+              subjectStatus: { in: [Deflection.SubjectStatus.DETAINED, Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER] },
+            },
+          });
+
+          if (remainingActiveHolds > 0) {
+            return null;
+          }
+
+          const deflections = await tx.deflection.findMany({
+            where: { incidentId: id },
+            select: {
+              transferredAt: true,
+              cancelledAt: true,
+            },
+          });
+
+          let lastTransferredAt = null;
+          let lastCancelledAt = null;
+          for (const deflection of deflections) {
+            if (deflection.transferredAt && (!lastTransferredAt || deflection.transferredAt > lastTransferredAt)) {
+              lastTransferredAt = deflection.transferredAt;
+            }
+            if (deflection.cancelledAt && (!lastCancelledAt || deflection.cancelledAt > lastCancelledAt)) {
+              lastCancelledAt = deflection.cancelledAt;
+            }
+          }
+
+          const lastFinalizedAt = [lastTransferredAt, lastCancelledAt]
+            .filter(Boolean)
+            .sort((a, b) => b.getTime() - a.getTime())[0];
+
+          if (!lastFinalizedAt || lastFinalizedAt > cutoffTime) {
+            return null;
+          }
+
+          // Prefer the final hold's custody-transfer time for "I've left".
+          // If the final transition was a cancellation with no transfer timestamp,
+          // fall back to that cancellation time so the incident can still close.
+          const leftAt = lastTransferredAt && (!lastCancelledAt || lastTransferredAt >= lastCancelledAt)
+            ? lastTransferredAt
+            : lastCancelledAt;
+
+          await tx.incidentOfficer.updateMany({
+            where: {
+              incidentId: id,
+              facilityId,
+              leftAt: null,
+            },
+            data: { leftAt },
+          });
+
+          await tx.incident.update({
+            where: { id },
+            data: {
+              leftAt,
+              completedAt: now,
+              updatedAt: now,
+              updatedById: User.BATCH_USER_ID,
+            },
+          });
+
+          return { id, facilityId, leftAt };
+        })));
       }
     },
     user: {

@@ -79,4 +79,53 @@ test('expireHolds job', async (t) => {
     });
     assert.strictEqual(updated.status, 'ACTIVE');
   });
+
+  await t.test('auto-closes arrived incidents after the final hold transfer ages past 30 minutes', async () => {
+    const user = await prisma.user.findFirst();
+    const transferredAt = DateTime.now().minus({ minutes: 31 }).toJSDate();
+
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId,
+        encounteredVia: 'ON_VIEW',
+        createdById: user.id,
+        updatedById: user.id,
+        arrivedAt: DateTime.now().minus({ hours: 1 }).toJSDate(),
+      },
+    });
+
+    await prisma.incidentOfficer.create({
+      data: {
+        incidentId: incident.id,
+        facilityId,
+        officerId: user.id,
+        role: 'ARRESTING',
+        arrivedAt: DateTime.now().minus({ hours: 1 }).toJSDate(),
+      },
+    });
+
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId,
+        bedTypeId,
+        createdById: user.id,
+        currentOfficerId: user.id,
+        subjectStatus: 'AWAITING_INTAKE',
+        transferredAt,
+        status: 'ACTIVE',
+      },
+    });
+
+    await expireHolds({}, prisma);
+
+    const [updatedIncident, officerRecord] = await Promise.all([
+      prisma.incident.findUnique({ where: { id: incident.id } }),
+      prisma.incidentOfficer.findFirst({ where: { incidentId: incident.id, officerId: user.id } }),
+    ]);
+
+    assert.strictEqual(updatedIncident.leftAt.toISOString(), transferredAt.toISOString());
+    assert.ok(updatedIncident.completedAt);
+    assert.strictEqual(officerRecord.leftAt.toISOString(), transferredAt.toISOString());
+  });
 });

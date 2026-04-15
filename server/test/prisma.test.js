@@ -7,12 +7,12 @@ import { build } from '#test/helper.js';
 test('Prisma Client Extensions', async (t) => {
   const app = await build(t);
   const { prisma } = app;
+  const facilityId = '6d123d8f-edd5-4d14-9220-0508eb30b47b';
+  const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
 
   await t.test('deflection.expire()', async (t) => {
     // Helper to create a test incident with a specified number of deflections
     const createIncidentWithDeflections = async (count) => {
-      const facilityId = '6d123d8f-edd5-4d14-9220-0508eb30b47b'; // Existing facility from fixtures
-      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76'; // Existing bedType from fixtures
       const user = await prisma.user.findFirst();
 
       const incident = await prisma.incident.create({
@@ -111,6 +111,124 @@ test('Prisma Client Extensions', async (t) => {
       // 5. Incident should now be closed
       updatedIncident = await prisma.incident.findUnique({ where: { id: incident.id } });
       assert.ok(updatedIncident.completedAt);
+    });
+  });
+
+  await t.test('incident.autoCloseAfterFinalHold()', async (t) => {
+    const user = await prisma.user.findFirst();
+
+    const createArrivedIncident = async () => {
+      const arrivedAt = DateTime.now().minus({ hours: 1 }).toJSDate();
+      const incident = await prisma.incident.create({
+        data: {
+          facilityId,
+          encounteredVia: 'ON_VIEW',
+          createdById: user.id,
+          updatedById: user.id,
+          arrivedAt,
+        },
+      });
+
+      await prisma.incidentOfficer.create({
+        data: {
+          incidentId: incident.id,
+          facilityId,
+          officerId: user.id,
+          role: 'ARRESTING',
+          arrivedAt,
+        },
+      });
+
+      return incident;
+    };
+
+    await t.test('closes arrived incident 30 minutes after last transfer and stamps left time from transfer', async () => {
+      const now = DateTime.fromISO('2026-04-14T18:00:00.000Z');
+      const transferredAt = now.minus({ minutes: 31 }).toJSDate();
+      const incident = await createArrivedIncident();
+
+      await prisma.deflection.create({
+        data: {
+          incidentId: incident.id,
+          facilityId,
+          bedTypeId,
+          createdById: user.id,
+          currentOfficerId: user.id,
+          subjectStatus: 'AWAITING_INTAKE',
+          transferredAt,
+          status: 'ACTIVE',
+        },
+      });
+
+      await prisma.incident.autoCloseAfterFinalHold(now.toJSDate());
+
+      const [updatedIncident, officerRecord] = await Promise.all([
+        prisma.incident.findUnique({ where: { id: incident.id } }),
+        prisma.incidentOfficer.findFirst({ where: { incidentId: incident.id, officerId: user.id } }),
+      ]);
+
+      assert.strictEqual(updatedIncident.leftAt.toISOString(), transferredAt.toISOString());
+      assert.strictEqual(updatedIncident.completedAt.toISOString(), now.toJSDate().toISOString());
+      assert.strictEqual(officerRecord.leftAt.toISOString(), transferredAt.toISOString());
+    });
+
+    await t.test('does not close arrived incident before 30 minutes have elapsed', async () => {
+      const now = DateTime.fromISO('2026-04-14T18:00:00.000Z');
+      const transferredAt = now.minus({ minutes: 29 }).toJSDate();
+      const incident = await createArrivedIncident();
+
+      await prisma.deflection.create({
+        data: {
+          incidentId: incident.id,
+          facilityId,
+          bedTypeId,
+          createdById: user.id,
+          currentOfficerId: user.id,
+          subjectStatus: 'AWAITING_INTAKE',
+          transferredAt,
+          status: 'ACTIVE',
+        },
+      });
+
+      await prisma.incident.autoCloseAfterFinalHold(now.toJSDate());
+
+      const [updatedIncident, officerRecord] = await Promise.all([
+        prisma.incident.findUnique({ where: { id: incident.id } }),
+        prisma.incidentOfficer.findFirst({ where: { incidentId: incident.id, officerId: user.id } }),
+      ]);
+
+      assert.strictEqual(updatedIncident.leftAt, null);
+      assert.strictEqual(updatedIncident.completedAt, null);
+      assert.strictEqual(officerRecord.leftAt, null);
+    });
+
+    await t.test('falls back to cancellation time when the last hold was canceled without a transfer', async () => {
+      const now = DateTime.fromISO('2026-04-14T18:00:00.000Z');
+      const cancelledAt = now.minus({ minutes: 35 }).toJSDate();
+      const incident = await createArrivedIncident();
+
+      await prisma.deflection.create({
+        data: {
+          incidentId: incident.id,
+          facilityId,
+          bedTypeId,
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'CANCELLED',
+          cancelledAt,
+        },
+      });
+
+      await prisma.incident.autoCloseAfterFinalHold(now.toJSDate());
+
+      const [updatedIncident, officerRecord] = await Promise.all([
+        prisma.incident.findUnique({ where: { id: incident.id } }),
+        prisma.incidentOfficer.findFirst({ where: { incidentId: incident.id, officerId: user.id } }),
+      ]);
+
+      assert.strictEqual(updatedIncident.leftAt.toISOString(), cancelledAt.toISOString());
+      assert.strictEqual(updatedIncident.completedAt.toISOString(), now.toJSDate().toISOString());
+      assert.strictEqual(officerRecord.leftAt.toISOString(), cancelledAt.toISOString());
     });
   });
 });
