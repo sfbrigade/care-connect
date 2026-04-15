@@ -621,9 +621,9 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
+        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonMedical?.id, updatedAt: tHospital, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          releaseReasonId: releaseReasonMedical?.id,
           exitDestinationId: exitDestHospital?.id,
           updatedAt: tHospital,
           updatedById: custodyUser.id
@@ -714,9 +714,9 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
+        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonMedical?.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          releaseReasonId: releaseReasonMedical?.id,
           exitDestinationId: exitDestHospital?.id,
           updatedAt: tRelease,
           updatedById: custodyUser.id
