@@ -43,6 +43,18 @@ export const metadata = {
             unit: true,
           },
         },
+        incidentOfficers: {
+          include: {
+            officer: {
+              include: {
+                organization: true,
+                unit: true,
+              },
+            },
+            organization: true,
+            unit: true,
+          },
+        },
       },
     },
     facility: true,
@@ -71,6 +83,7 @@ export const metadata = {
     arrestLocation: z.string(),
     officerUnit: z.string(),
     officerBadge: z.string(),
+    supervisorBadgeNumber: z.string(),
     agency: z.string(),
     charge: z.string(),
     justification: z.string(),
@@ -83,7 +96,8 @@ export const metadata = {
   transformData (deflection) {
     const subject = deflection.subject;
     const incident = deflection.incident;
-    const officer = incident?.createdBy || deflection.createdBy;
+    const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
+    const officer = arrestingOfficerRecord?.officer || incident?.createdBy || deflection.createdBy;
 
     const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
       .filter(Boolean)
@@ -96,9 +110,9 @@ export const metadata = {
     const officerName = officer
       ? `${officer.firstName} ${officer.lastName}`
       : '';
-    const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
-    const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
-    const agency = officer?.organization?.name || '';
+    const officerBadge = arrestingOfficerRecord?.badgeNumber || incident?.createdByBadgeNumber || officer?.badgeNumber || '';
+    const officerUnit = arrestingOfficerRecord?.unit?.name || incident?.createdByUnit?.name || officer?.unit?.name || '';
+    const agency = arrestingOfficerRecord?.organization?.name || officer?.organization?.name || '';
 
     const facility = deflection.facility;
     const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]
@@ -122,6 +136,7 @@ export const metadata = {
       arrestLocation,
       officerUnit,
       officerBadge,
+      supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
       agency,
       charge: '647(f) RWS',
       justification: deflection.behavior || '',
@@ -150,6 +165,7 @@ export default function Form647f ({ data = {} }) {
     arrestLocation = '',
     officerUnit = '',
     officerBadge = '',
+    supervisorBadgeNumber = '',
     agency = '',
     charge = '',
     justification = '',
@@ -196,6 +212,7 @@ export default function Form647f ({ data = {} }) {
             <Row label='Location Arrested' value={arrestLocation} required />
             <Row label='Unit' value={officerUnit} required />
             <Row label='Badge Number / Star Number' value={officerBadge} required />
+            <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} required />
             <Row label='Agency' value={agency} required />
             <Row label='Charge' value={charge || '647(f) RWS'} required />
 
