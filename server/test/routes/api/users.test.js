@@ -320,6 +320,53 @@ test('/api/users', async (t) => {
       data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(data.unitId, null);
     });
+
+    await t.test('creates and assigns a manually entered unit when one does not exist', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        unitName: 'Car 42'
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.unitId, 'car_42');
+      assert.deepStrictEqual(data.unit.name, 'Car 42');
+
+      const unit = await prisma.unit.findUnique({
+        where: {
+          unitId: {
+            id: 'car_42',
+            organizationId: 'sfpd',
+          },
+        },
+      });
+      assert.ok(unit);
+      assert.deepStrictEqual(unit.name, 'Car 42');
+
+      const user = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.deepStrictEqual(user.unitId, 'car_42');
+    });
+
+    await t.test('reuses an existing unit when a matching name is entered manually', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        unitName: 'option 1'
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.unitId, 'option-1');
+      assert.deepStrictEqual(data.unit.name, 'Option 1');
+
+      const matchingUnits = await prisma.unit.findMany({
+        where: {
+          organizationId: 'sfpd',
+          name: {
+            equals: 'Option 1',
+            mode: 'insensitive',
+          },
+        },
+      });
+      assert.deepStrictEqual(matchingUnits.length, 1);
+    });
   });
 
   await t.test('PATCH /:id (org admin)', async (t) => {

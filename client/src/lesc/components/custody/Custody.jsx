@@ -235,8 +235,8 @@ function Custody () {
             value={tab}
             onChange={setTab}
             data={[
-              { label: 'In Custody', value: 'in-custody' },
-              { label: 'Not in custody', value: 'released' },
+              { label: 'In custody', value: 'in-custody' },
+              { label: 'Legally released', value: 'released' },
             ]}
           />
           <FacilityStatusBanner />
@@ -289,7 +289,7 @@ function Custody () {
             leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
             onClick={() => setScanModalOpened(true)}
           >
-            Scan transfer code
+            Take custody
           </Button>
         </ActionFooter>
       )}
