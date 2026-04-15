@@ -4,16 +4,8 @@ import _ from 'lodash';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 
+import slugifyUnitId from '#lib/slugifyUnitId.js';
 import User from '#models/user.js';
-
-function slugify (value) {
-  return (value || '')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
 
 async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) {
   const trimmedUnitName = unitName?.trim();
@@ -36,7 +28,7 @@ async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) 
     return existingUnit.id;
   }
 
-  const baseId = slugify(trimmedUnitName) || crypto.randomUUID();
+  const baseId = slugifyUnitId(trimmedUnitName) || crypto.randomUUID();
   let nextUnitId = baseId;
   let suffix = 2;
 
