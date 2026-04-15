@@ -58,7 +58,6 @@ function SubjectForm () {
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const [scannerOpened, setScannerOpened] = useState(false);
-  const [optionalOpen, setOptionalOpen] = useState([]);
   const { showToast } = useToast();
   const autoSaveTimerRef = useRef(null);
 
@@ -223,9 +222,6 @@ function SubjectForm () {
     if (data.city) form.setFieldValue('city', data.city);
     if (data.state) form.setFieldValue('state', data.state);
     if (data.postalCode) form.setFieldValue('postalCode', data.postalCode);
-    if (data.addressLine1 || data.city || data.state || data.postalCode) {
-      setOptionalOpen(['optional']);
-    }
     if (!isCustodyContext) {
       scheduleAutoSave(form.getValues(), data.dateOfBirth || dobInput);
     }
@@ -333,7 +329,7 @@ function SubjectForm () {
                 key={form.key('race')}
               />
               <Divider />
-              <Accordion variant='section' value={optionalOpen} onChange={setOptionalOpen} multiple>
+              <Accordion variant='section' defaultValue={[]}>
                 <Accordion.Item value='optional'>
                   <Accordion.Control>
                     <Title order={3}>Optional details</Title>
