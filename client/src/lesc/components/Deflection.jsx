@@ -170,7 +170,7 @@ function Deflection () {
         <title>Details</title>
       </Head>
       <Header>
-        <IconButtonLink icon={IconArrowLeft} to='/holds' />
+        <IconButtonLink icon={IconArrowLeft} to='/holds' aria-label='Go back' />
       </Header>
       <Container>
         <Stack gap='xl'>

@@ -83,7 +83,7 @@ function DrugUseForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={`/holds/${id}`} />
+          <IconButtonLink icon={IconArrowLeft} to={`/holds/${id}`} aria-label='Go back' />
           {onSubmitMutation.isPending && <Text c='dimmed' size='lg'>Saving...</Text>}
           {onSubmitMutation.isSuccess && <Text c='teal.6' size='lg'>Changes saved</Text>}
         </Group>

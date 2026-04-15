@@ -16,7 +16,7 @@ function UserProfilePage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/' />
+          <IconButtonLink icon={IconArrowLeft} to='/' aria-label='Go back' />
         </Group>
       </Header>
       <Container>

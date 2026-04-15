@@ -214,7 +214,7 @@ function DeflectionForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} aria-label='Go back' />
           <Group gap='xs'>
             {header}
             {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}

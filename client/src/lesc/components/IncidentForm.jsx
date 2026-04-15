@@ -221,7 +221,7 @@ function IncidentForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          <IconButtonLink icon={IconArrowLeft} to='/holds' aria-label='Go back' />
           {onSubmitMutation.isPending && (
             <Text c='dimmed' size='lg'>
               Saving...

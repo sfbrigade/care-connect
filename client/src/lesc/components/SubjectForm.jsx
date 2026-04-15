@@ -222,7 +222,7 @@ function SubjectForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} />
+          <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} aria-label='Go back' />
           <Group gap='xs'>
             {header}
             {!!header && isNew && !isCustodyContext && <Text c='gray.5' size='lg'>•</Text>}

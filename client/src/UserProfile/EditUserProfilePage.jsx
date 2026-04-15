@@ -77,7 +77,7 @@ function EditUserProfilePage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/profile' />
+          <IconButtonLink icon={IconArrowLeft} to='/profile' aria-label='Go back' />
         </Group>
       </Header>
       <Container>
