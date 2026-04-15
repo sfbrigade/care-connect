@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -147,16 +147,12 @@ function SubstanceForm () {
   return (
     <>
       <Head>
-        <title>Substance-related details</title>
+        <title>Substance details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
-          <Group gap='xs'>
-            {header}
-            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>2/4</Text>}
-          </Group>
+          {header}
         </Group>
       </Header>
       <Container>
@@ -165,7 +161,10 @@ function SubstanceForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Substance-related details</Title>
+        <Group gap='sm' mb='xs' align='center'>
+          <Title order={2}>Substance details</Title>
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>2/4</Badge>}
+        </Group>
         <Text c='dimmed' size='md' mb='xl'>Record what was found and any signs of use.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
@@ -180,38 +179,25 @@ function SubstanceForm () {
                 key={form.key('narcoticsParaphernalia')}
                 label={<>Paraphernalia found<span>*</span></>}
               />
-              <Divider />
-              <Accordion variant='section' defaultValue={[]}>
-                <Accordion.Item value='drug-use'>
-                  <Accordion.Control>
-                    <Title order={3}>Optional details</Title>
-                    <Text c='gray.5' size='sm'>Signs of use and substance type</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap='xl'>
-                      <BooleanInput
-                        {...form.getInputProps('drugUseEvidence')}
-                        key={form.key('drugUseEvidence')}
-                        label={<>Signs of substance use<span>*</span></>}
-                      />
-                      {showDrugTypeQuestion && (
-                        <Input.Wrapper label={<>Substance used<span>*</span></>}>
-                          <Chip.Group
-                            key={form.key('drugType')}
-                            {...form.getInputProps('drugType')}
-                          >
-                            <Group gap='sm' mt='md'>
-                              {DRUG_TYPE_OPTIONS.map((drugType) => (
-                                <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
-                              ))}
-                            </Group>
-                          </Chip.Group>
-                        </Input.Wrapper>
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
+              <BooleanInput
+                {...form.getInputProps('drugUseEvidence')}
+                key={form.key('drugUseEvidence')}
+                label={<>Signs of substance use<span>*</span></>}
+              />
+              {showDrugTypeQuestion && (
+                <Input.Wrapper label={<>Substance used<span>*</span></>}>
+                  <Chip.Group
+                    key={form.key('drugType')}
+                    {...form.getInputProps('drugType')}
+                  >
+                    <Group gap='sm' mt='md'>
+                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                      ))}
+                    </Group>
+                  </Chip.Group>
+                </Input.Wrapper>
+              )}
               <Button type='submit' mb='xl'>
                 {isNew ? 'Next: Behavioral observations' : 'Save substance details'}
               </Button>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Accordion, Anchor, Box, Button, CloseButton, Container, Divider, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Anchor, Badge, Box, Button, CloseButton, Container, Divider, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -178,11 +178,7 @@ function PropertyForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-          <Group gap='xs'>
-            {header}
-            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>4/4</Text>}
-          </Group>
+          {header}
         </Group>
       </Header>
       <Container>
@@ -191,7 +187,10 @@ function PropertyForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Personal property</Title>
+        <Group gap='sm' mb='xs' align='center'>
+          <Title order={2}>Personal property</Title>
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>4/4</Badge>}
+        </Group>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>

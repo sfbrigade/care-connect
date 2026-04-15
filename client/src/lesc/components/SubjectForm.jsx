@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconScan } from '@tabler/icons-react';
-import { Accordion, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Accordion, Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -248,11 +248,7 @@ function SubjectForm () {
       <Header>
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} />
-          <Group gap='xs'>
-            {header}
-            {!!header && isNew && !isCustodyContext && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && !isCustodyContext && <Text c='dimmed' size='lg'>1/4</Text>}
-          </Group>
+          {header}
         </Group>
       </Header>
       <Container>
@@ -262,7 +258,10 @@ function SubjectForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
 
-        <Title order={2} mb='xs'>Personal details</Title>
+        <Group gap='sm' mb='xs' align='center'>
+          <Title order={2}>Personal details</Title>
+          {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/4</Badge>}
+        </Group>
         <Text c='dimmed' size='md' mb='md'>Scan an ID to fill details faster, or enter them manually.</Text>
         <Button
           variant='light'
@@ -294,7 +293,7 @@ function SubjectForm () {
               />
               <TextInput
                 key={form.key('middleInitial')}
-                label='Middle initial (optional)'
+                label='Middle initial'
                 placeholder='Enter middle initial'
                 {...form.getInputProps('middleInitial')}
               />
