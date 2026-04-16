@@ -32,10 +32,11 @@ function weightedPick (items) {
 
 // Random timestamp in the past, spread across daylight hours
 function randomPastTime (daysAgoMin, daysAgoMax) {
-  const now = Date.now();
-  const base = now - randInt(daysAgoMin, daysAgoMax) * 86_400_000;
-  const d = new Date(base);
-  d.setHours(randInt(6, 23), randInt(0, 59), randInt(0, 59), 0);
+  const now = new Date();
+  const daysAgo = randInt(daysAgoMin, daysAgoMax);
+  const d = new Date(now.getTime() - daysAgo * 86_400_000);
+  const maxHour = daysAgo === 0 ? Math.max(now.getHours() - 1, 6) : 23;
+  d.setHours(randInt(6, maxHour), randInt(0, 59), randInt(0, 59), 0);
   return d;
 }
 
