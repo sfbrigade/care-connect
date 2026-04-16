@@ -217,7 +217,7 @@ DETAINED
                                          EXITED
 
 Direct Exit Paths (bypass release):
-  AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, IN_CHAIR
+  AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE
     └─ [/exit-to-jail] ────────────────────────────────────→ EXITED without release
 
 Release Short-Circuit (auto-exit on certain release reasons):
