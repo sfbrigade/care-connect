@@ -951,8 +951,6 @@ export default async function main (prisma) {
         subjectId: subject.id,
         ...transferData(custodyUser, sfsoUnit, tTransfer),
         subjectStatus: 'EXITED',
-        admittedAt: tAdmit,
-        admittedById: careUser.id,
         exitedAt: tExit,
         exitedById: careUser.id,
         ...(isJailExit
@@ -961,6 +959,8 @@ export default async function main (prisma) {
               exitDestinationId: recentExitDest?.id ?? 'jail',
             }
           : {
+              admittedAt: tAdmit,
+              admittedById: careUser.id,
               releasedAt: tRelease,
               releasedById: custodyUser.id,
               releaseReasonId: recentReleaseReason?.id,
@@ -974,9 +974,11 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
-        { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
       ];
+      if (!isJailExit) {
+        updateSteps.push({ subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id });
+        updateSteps.push({ subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id });
+      }
       if (isJailExit) {
         updateSteps.push({
           subjectStatus: 'EXITED',
