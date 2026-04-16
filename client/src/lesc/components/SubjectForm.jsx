@@ -218,6 +218,9 @@ function SubjectForm () {
       form.setFieldValue('dateOfBirth', data.dateOfBirth);
     }
     if (data.sex) form.setFieldValue('sex', data.sex);
+    if (data.documentType === 'DRIVERS_LICENSE' && data.documentNumber) {
+      form.setFieldValue('driverLicense', data.documentNumber);
+    }
     if (data.addressLine1) form.setFieldValue('addressLine1', data.addressLine1);
     if (data.city) form.setFieldValue('city', data.city);
     if (data.state) form.setFieldValue('state', data.state);
