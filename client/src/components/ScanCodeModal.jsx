@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Container, Group, Loader, Modal, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core';
+import { ActionIcon, Box, Button, Container, Group, Loader, Modal, SegmentedControl, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import classNames from 'classnames';
 
@@ -99,11 +99,16 @@ function ScanCodeModal ({
     setErrorMessages((prev) => [...prev, undefined]);
   }
 
+  function handleRemoveCodeField (index) {
+    setCodes((prev) => prev.filter((_, i) => i !== index));
+    setErrorMessages((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const trimmedCodes = codes.map((code) => code.trim());
   const hasAtLeastOneCode = trimmedCodes.some(Boolean);
   const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
-  const canSubmit = hasAtLeastOneCode && !hasAnyEmptyCodeField;
-  const canAddAnotherCode = manualEntryAllowMultiple && canSubmit;
+  const canSubmit = Boolean(trimmedCodes[0]);
+  const canAddAnotherCode = manualEntryAllowMultiple && hasAtLeastOneCode && !hasAnyEmptyCodeField;
   return (
     <Modal
       opened={opened}
@@ -195,6 +200,16 @@ function ScanCodeModal ({
                           maxLength={6}
                           autoFocus={index === 0}
                           error={errorMessages[index]}
+                          rightSection={codes.length > 1 && (
+                            <ActionIcon
+                              variant='light'
+                              color='gray'
+                              onClick={() => handleRemoveCodeField(index)}
+                              aria-label='Remove code'
+                            >
+                              <IconX size={16} />
+                            </ActionIcon>
+                          )}
                         />
                       ))}
                     </Stack>

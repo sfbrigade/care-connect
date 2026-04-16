@@ -182,7 +182,7 @@ function Care () {
             onChange={setTab}
             data={[
               { label: 'In custody', value: 'in-custody' },
-              { label: 'Not in custody', value: 'not-in-custody' },
+              { label: 'Legally released', value: 'not-in-custody' },
             ]}
           />
           <FacilityStatusBanner />

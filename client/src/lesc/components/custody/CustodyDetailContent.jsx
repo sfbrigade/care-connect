@@ -136,7 +136,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Legally released".');
       navigate('/custody?tab=released');
     },
     onError: () => {
