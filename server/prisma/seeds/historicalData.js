@@ -32,10 +32,11 @@ function weightedPick (items) {
 
 // Random timestamp in the past, spread across daylight hours
 function randomPastTime (daysAgoMin, daysAgoMax) {
-  const now = Date.now();
-  const base = now - randInt(daysAgoMin, daysAgoMax) * 86_400_000;
-  const d = new Date(base);
-  d.setHours(randInt(6, 23), randInt(0, 59), randInt(0, 59), 0);
+  const now = new Date();
+  const daysAgo = randInt(daysAgoMin, daysAgoMax);
+  const d = new Date(now.getTime() - daysAgo * 86_400_000);
+  const maxHour = daysAgo === 0 ? Math.max(now.getHours() - 1, 6) : 23;
+  d.setHours(randInt(6, maxHour), randInt(0, 59), randInt(0, 59), 0);
   return d;
 }
 
@@ -361,7 +362,6 @@ export default async function main (prisma) {
   let holdsAdded = 0;
   let inTransitAdded = 0;
   let occupiedAdded = 0;
-  let inProgressIdx = 0;
 
   for (let idx = 0; idx < scenarios.length; idx++) {
     const { type, daysAgoMin, daysAgoMax } = scenarios[idx];
@@ -371,8 +371,7 @@ export default async function main (prisma) {
     const isInProgress = type.startsWith('in_progress_');
     if (isInProgress) {
       // In-progress: created within last 1-4 hours, spaced to avoid overlap
-      base = addHrs(new Date(), -(1 + inProgressIdx * 0.5));
-      inProgressIdx++;
+      base = addHrs(new Date(), -(1 + idx * 0.5));
     } else {
       base = randomPastTime(daysAgoMin, daysAgoMax);
     }
@@ -466,7 +465,7 @@ export default async function main (prisma) {
       const exitDest = pick(allExitDests) ?? exitDestStreet;
       const housingStatus = pick(allHousingStatuses) ?? housingStatusUnknown;
       const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
-      const tHandoff = addMins(base, randInt(1, Math.max(2, arrivedDelta - 2)));
+      const tHandoff = addMins(base, randInt(10, Math.max(11, arrivedDelta - 1)));
       const incident = await prisma.incident.create({
         data: {
           ...makeIncidentData(facility.id, fieldUser, base, null, null, tExit, idx),
@@ -621,9 +620,9 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonMedical?.id, updatedAt: tHospital, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
+          releaseReasonId: releaseReasonMedical?.id,
           exitDestinationId: exitDestHospital?.id,
           updatedAt: tHospital,
           updatedById: custodyUser.id
@@ -714,9 +713,9 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonMedical?.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
+          releaseReasonId: releaseReasonMedical?.id,
           exitDestinationId: exitDestHospital?.id,
           updatedAt: tRelease,
           updatedById: custodyUser.id
@@ -952,16 +951,16 @@ export default async function main (prisma) {
         subjectId: subject.id,
         ...transferData(custodyUser, sfsoUnit, tTransfer),
         subjectStatus: 'EXITED',
-        admittedAt: tAdmit,
-        admittedById: careUser.id,
         exitedAt: tExit,
-        exitedById: isJailExit ? custodyUser.id : careUser.id,
+        exitedById: careUser.id,
         ...(isJailExit
           ? {
               refusalReasonId: refusalReason?.id ?? null,
               exitDestinationId: recentExitDest?.id ?? 'jail',
             }
           : {
+              admittedAt: tAdmit,
+              admittedById: careUser.id,
               releasedAt: tRelease,
               releasedById: custodyUser.id,
               releaseReasonId: recentReleaseReason?.id,
@@ -975,9 +974,11 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
-        { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
       ];
+      if (!isJailExit) {
+        updateSteps.push({ subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id });
+        updateSteps.push({ subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id });
+      }
       if (isJailExit) {
         updateSteps.push({
           subjectStatus: 'EXITED',
