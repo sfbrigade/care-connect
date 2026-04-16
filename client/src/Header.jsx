@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
-  IconBug,
+  IconSend,
   IconHome,
   IconAddressBook,
   IconLogout,
@@ -61,7 +61,7 @@ function Header ({ opened, close, toggle, logout }) {
                   Profile
                 </Menu.Item>
                 <Menu.Item
-                  leftSection={<IconBug size={20} color='var(--mantine-color-gray-5)' />}
+                  leftSection={<IconSend size={20} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/feedback'
                   onClick={close}
