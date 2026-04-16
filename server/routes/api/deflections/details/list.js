@@ -15,9 +15,14 @@ export default async function (fastify) {
       },
     },
     async function (request, reply) {
+      const isAdmin = request.isAdmin;
+
       const records = await fastify.prisma.DeflectionDetail.findMany({
         orderBy: { name: 'asc' },
+        where: isAdmin ? undefined : { deletedAt: null }
+
       });
+      console.log(records);
       return reply.send(records);
     });
 }

@@ -49,9 +49,9 @@ function AdminDeflectionDetailsList () {
               </Table.Tr>
             )}
             {!isLoading && details?.map((detail) => (
-              <Table.Tr  key={detail.id}>
-                <Table.Td style = {detail.deletedById != null?{textDecoration:"line-through"}:""}>{detail.id}</Table.Td>
-                <Table.Td style = {detail.deletedById != null?{textDecoration:"line-through"}:""}>{detail.name}</Table.Td>
+              <Table.Tr key={detail.id}>
+                <Table.Td style={detail.deletedById != null ? { textDecoration: 'line-through' } : ''}>{detail.id}</Table.Td>
+                <Table.Td style={detail.deletedById != null ? { textDecoration: 'line-through' } : ''}>{detail.name}</Table.Td>
                 <Table.Td>
                   <Anchor component={Link} to={`${detail.id}`}>Edit</Anchor>
                 </Table.Td>

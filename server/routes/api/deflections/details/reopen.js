@@ -1,30 +1,30 @@
-import {StatusCodes} from 'http-status-codes';
-import {z} from 'zod';
+import { StatusCodes } from 'http-status-codes';
+import { z } from 'zod';
 
 export default async function (fastify) {
-    fastify.patch('/reopen/:id',
-        {
-            onRequest: fastify.requireAdmin,
-            schema: {
-                description: 'Reopens a deflection detail',
-                params: z.object({
-                    id: z.string()
-                }),
-            },
+  fastify.patch('/reopen/:id',
+    {
+      onRequest: fastify.requireAdmin,
+      schema: {
+        description: 'Reopens a deflection detail',
+        params: z.object({
+          id: z.string()
+        }),
+      },
+    },
+    async function (request, reply) {
+      const { id } = request.params;
+      const updated = await fastify.prisma.DeflectionDetail.update({
+        where: { id },
+        data: {
+          deletedById: null,
+          deletedAt: null
         },
-        async function (request, reply) {
-            const {id} = request.params;
-            const updated = await fastify.prisma.DeflectionDetail.update({
-                where: {id},
-                data: {
-                    deletedById: null,
-                    deletedAt: null
-                },
-            });
-            if (!updated) {
-                return reply.code(StatusCodes.NOT_FOUND).send({error: 'Deflection detail category not found'});
-            }
+      });
+      if (!updated) {
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection detail not found' });
+      }
 
-            return reply.code(StatusCodes.NO_CONTENT).send();
-        });
+      return reply.code(StatusCodes.NO_CONTENT).send();
+    });
 }
