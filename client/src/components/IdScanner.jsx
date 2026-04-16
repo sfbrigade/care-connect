@@ -126,7 +126,7 @@ function IdScanner ({ opened, onResult, onClose }) {
       onResult(data);
       handleClose();
     } catch {
-      setError('Couldn\u2019t read the ID');
+      setError('Couldn\u2019t read the ID.');
       setCapturedImage(null);
       startCamera();
     } finally {
@@ -248,23 +248,15 @@ function IdScanner ({ opened, onResult, onClose }) {
         )}
 
         {error && showLiveCamera && (
-          <Group grow w='100%'>
-            <Button
-              size='lg'
-              leftSection={<IconCamera size={18} />}
-              onClick={() => { setError(null); capture(); }}
-            >
-              Try again
+          <Stack gap='xl' align='center'>
+            <Group gap={6} onClick={handleClose} style={{ cursor: 'pointer' }}>
+              <IconKeyboard size={16} color='var(--mantine-color-gray-2)' />
+              <Text c='gray.2' size='sm' fw={500}>Enter manually</Text>
+            </Group>
+            <Button size='lg' fullWidth leftSection={<IconCamera size={18} />} onClick={() => { setError(null); capture(); }}>
+              Capture
             </Button>
-            <Button
-              variant='light'
-              size='lg'
-              leftSection={<IconKeyboard size={18} />}
-              onClick={handleClose}
-            >
-              Enter manually
-            </Button>
-          </Group>
+          </Stack>
         )}
       </div>
 
