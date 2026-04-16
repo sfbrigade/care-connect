@@ -229,7 +229,7 @@ function IdScanner ({ opened, onResult, onClose }) {
         )}
 
         {capturedImage && !processing && (
-          <Stack gap='xs' align='center'>
+          <Stack gap='lg' align='center'>
             <Text c='gray.5' size='sm'>Is the photo clear enough to use?</Text>
             <Group grow w='100%'>
               <Button
