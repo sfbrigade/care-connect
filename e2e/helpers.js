@@ -75,7 +75,7 @@ export async function login (page, email, password) {
 
   // Handle unit selector if it appears (first login for SFPD/SFSO users)
   if (page.url().includes('/units')) {
-    const unitInput = page.getByPlaceholder('Start typing a unit name');
+    const unitInput = page.getByPlaceholder('Type unit name');
     await unitInput.waitFor({ state: 'visible', timeout: 5000 });
     await unitInput.click();
     const option = page.getByRole('option').first();
