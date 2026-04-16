@@ -11,6 +11,7 @@ import User from './user.js';
 
 const IncidentAttributesSchema = z.object({
   cadNumber: z.string().nullable(),
+  caseNumber: z.string().nullable(),
   addressLine1: z.string().nullable(),
   addressLine2: z.string().nullable(),
   city: z.string().nullable(),
@@ -49,6 +50,26 @@ const IncidentResponseSchema = IncidentCreateSchema.extend({
   updatedBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),
   deflections: z.array(Deflection.ResponseSchema).optional(),
+  incidentOfficers: z.array(z.object({
+    id: z.string().uuid(),
+    officerId: z.string().uuid(),
+    role: z.enum(['ARRESTING', 'RECEIVING']),
+    arrivedAt: z.coerce.date().nullable(),
+    leftAt: z.coerce.date().nullable(),
+    handoffReceivedAt: z.coerce.date().nullable(),
+  })).optional(),
+  permissions: z.object({
+    isCreator: z.boolean(),
+    canExtend: z.boolean(),
+    canArrive: z.boolean(),
+    canLeave: z.boolean(),
+    canCancelIncident: z.boolean(),
+    canEditIncident: z.boolean(),
+    canCreateHold: z.boolean(),
+    canHandoff: z.boolean(),
+    incidentDetailsComplete: z.boolean(),
+  }).optional(),
+  totalActiveHolds: z.number().optional(),
 });
 
 export class Incident extends Base {

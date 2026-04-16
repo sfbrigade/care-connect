@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Anchor, Box, Button, CloseButton, Container, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,7 @@ const initialValues = {
   property: '',
   propertyDetails: '',
 };
+const maxPropertyPhotos = 5;
 
 function PropertyForm () {
   const navigate = useNavigate();
@@ -94,8 +95,9 @@ function PropertyForm () {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
     const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
     if (cachedDeflections) {
-      const updatedDeflections = [...cachedDeflections];
-      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
+      const updatedDeflections = cachedDeflections.map(deflection => (
+        deflection.id === id ? updatedDeflection : deflection
+      ));
       queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
     }
   }
@@ -120,43 +122,44 @@ function PropertyForm () {
     onSuccess: async (response) => {
       const cachedDeflection = queryClient.getQueryData(['deflections', id]);
       if (cachedDeflection) {
-        cachedDeflection.propertyPhotos = [...(cachedDeflection.propertyPhotos ?? []), response.data];
-        queryClient.setQueryData(['deflections', id], cachedDeflection);
-      }
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = cachedDeflection;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+        const updatedDeflection = {
+          ...cachedDeflection,
+          propertyPhotos: [...(cachedDeflection.propertyPhotos ?? []), response.data],
+        };
+        await updateDeflectionCache(updatedDeflection);
       }
     },
   });
 
   const deletePhotoMutation = useMutation({
     mutationFn: (propertyPhotoId) => Api.propertyPhotos.delete(propertyPhotoId),
-    onSuccess: async (response, propertyPhotoId) => {
+    onSuccess: async (_response, propertyPhotoId) => {
       const cachedDeflection = queryClient.getQueryData(['deflections', id]);
       if (cachedDeflection) {
-        cachedDeflection.propertyPhotos = cachedDeflection.propertyPhotos.filter(propertyPhoto => propertyPhoto.id !== propertyPhotoId);
-        queryClient.setQueryData(['deflections', id], cachedDeflection);
-      }
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = [...cachedDeflections];
-        updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = cachedDeflection;
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
+        const updatedDeflection = {
+          ...cachedDeflection,
+          propertyPhotos: (cachedDeflection.propertyPhotos ?? []).filter(propertyPhoto => propertyPhoto.id !== propertyPhotoId),
+        };
+        await updateDeflectionCache(updatedDeflection);
       }
     },
   });
 
-  function onChangePhoto (photoId, file) {
-    if (!photoId && file) {
+  function onAllUploaded (files) {
+    const photoCount = deflection?.propertyPhotos?.length ?? 0;
+    if (photoCount >= maxPropertyPhotos) {
+      return;
+    }
+    for (const file of files) {
       uploadPhotoMutation.mutate(file);
     }
-    if (photoId && !file) {
-      deletePhotoMutation.mutate(photoId);
-    }
   }
+
+  function onRemovePhoto (photoId) {
+    deletePhotoMutation.mutate(photoId);
+  }
+
+  const propertyPhotos = deflection?.propertyPhotos ?? [];
 
   let header;
   if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
@@ -210,38 +213,48 @@ function PropertyForm () {
                   <Anchor href={`tel:${facility?.phone}`}>Call {facility?.name}</Anchor>
                 </Group>
               )}
-              {!!deflection?.propertyPhotos?.length && (
-                <Group gap='xs'>
-                  {deflection.propertyPhotos.map(photo => (
-                    <PhotoInput
-                      key={photo.id}
-                      label='Photo'
-                      id='file'
-                      name='file'
-                      value={photo.file}
-                      valueUrl={photo.fileUrl}
-                      onChange={(file) => onChangePhoto(photo.id, file)}
-                    >
-                      <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
-                    </PhotoInput>
+              <PhotoInput
+                key={`property-photo-uploader-${propertyPhotos.length}`}
+                label='Photos (optional)'
+                id='file'
+                onAllUploaded={onAllUploaded}
+                maxPhotos={maxPropertyPhotos}
+                photoCount={propertyPhotos.length}
+              >
+                <Button variant='secondary' size='md' mt='md' loading={uploadPhotoMutation.isPending}>Take or upload photo</Button>
+              </PhotoInput>
+              {!!propertyPhotos.length && (
+                <Group gap='md' align='flex-start'>
+                  {propertyPhotos.map((photo, index) => (
+                    <Stack key={photo.id} gap='xs'>
+                      <Box pos='relative' w={180} h={180}>
+                        <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
+                        <CloseButton
+                          aria-label={`Remove property photo ${index + 1}`}
+                          variant='filled'
+                          size='md'
+                          pos='absolute'
+                          top={8}
+                          right={8}
+                          bg='gray.0'
+                          c='red.7'
+                          style={{ zIndex: 1 }}
+                          onClick={() => onRemovePhoto(photo.id)}
+                          disabled={deletePhotoMutation.isPending}
+                        />
+                      </Box>
+                    </Stack>
                   ))}
                 </Group>
               )}
-              {!deflection?.propertyPhotos?.length && (
-                <PhotoInput
-                  label='Photo'
-                  id='file'
-                  name='file'
-                  onChange={(file) => onChangePhoto(null, file)}
-                >
-                  <Button variant='secondary' size='md' mt='md'>Take or upload photo</Button>
-                </PhotoInput>
-              )}
+              <Text size='sm' c='dimmed'>
+                {propertyPhotos.length} photos uploaded (max. {maxPropertyPhotos} photos)
+              </Text>
               <Textarea
                 key={form.key('propertyDetails')}
                 {...form.getInputProps('propertyDetails')}
-                label='Description'
-                placeholder='E.g., black backpack with clothing and toiletries.'
+                label='Description (optional)'
+                placeholder='e.g., black backpack with clothing and toiletries.'
               />
               <Button type='submit' mb='xl'>
                 {isNew ? 'Save details' : 'Save property'}

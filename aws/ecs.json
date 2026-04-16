@@ -1,0 +1,877 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Deploy a simple ECS Fargate service with a specified image.",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    },
+    "ImageURL": {
+      "Type": "String",
+      "Description": "The URL of the Docker image (e.g., your-ecr-repo-url/image:tag)"
+    },
+    "GeocodeRateLimitMs": {
+      "Type": "Number",
+      "Description": "The rate limit for geocoding in milliseconds"
+    },
+    "PosthogKey": {
+      "Type": "String",
+      "Description": "The API key for PostHog"
+    },
+    "PosthogHost": {
+      "Type": "String",
+      "Description": "The host for PostHog"
+    },
+    "SessionSecret": {
+      "Type": "String",
+      "Description": "The session secret for the application"
+    },
+    "SiteTitle": {
+      "Type": "String",
+      "Description": "The title of the site"
+    }
+  },
+  "Outputs": {},
+  "Resources": {
+    "ECSCluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": {
+          "Fn::Sub": "${BaseName}-ecs-cluster"
+        },
+        "CapacityProviders": [
+          "FARGATE"
+        ]
+      }
+    },
+    "TaskRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "TaskRolePolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ssmmessages:CreateControlChannel",
+                    "ssmmessages:CreateDataChannel",
+                    "ssmmessages:OpenControlChannel",
+                    "ssmmessages:OpenDataChannel"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "TaskExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "TaskExecutionRolePolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WebTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": {
+          "Fn::Sub": "${BaseName}-ecs-task-definition"
+        },
+        "Cpu": "2048",
+        "Memory": "4096",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "TaskExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "TaskRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "web",
+            "Image": {
+              "Ref": "ImageURL"
+            },
+            "Environment": [
+              {
+                "Name": "AWS_LOCATION_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-location-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-location-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_S3_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bucket-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_S3_BUCKET",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bucket"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_S3_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_S3_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-bucket-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_SES_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-ses-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SES_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_SES_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-ses-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "BASE_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DATABASE_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "postgresql://",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "{{resolve:secretsmanager:",
+                            {
+                              "Fn::ImportValue": {
+                                "Fn::Sub": "${BaseName}-db-master-user-password-secret-arn"
+                              }
+                            },
+                            ":SecretString:username}}"
+                          ]
+                        ]
+                      },
+                      ":",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "{{resolve:secretsmanager:",
+                            {
+                              "Fn::ImportValue": {
+                                "Fn::Sub": "${BaseName}-db-master-user-password-secret-arn"
+                              }
+                            },
+                            ":SecretString:password}}"
+                          ]
+                        ]
+                      },
+                      "@",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-db-endpoint"
+                        }
+                      },
+                      ":",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-db-port"
+                        }
+                      },
+                      "/",
+                      {
+                        "Ref": "BaseName"
+                      },
+                      "?sslmode=no-verify"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "FASTIFY_ADDRESS",
+                "Value": "0.0.0.0"
+              },
+              {
+                "Name": "GEOCODE_RATE_LIMIT_MS",
+                "Value": {
+                  "Ref": "GeocodeRateLimitMs"
+                }
+              },
+              {
+                "Name": "SESSION_SECRET",
+                "Value": {
+                  "Ref": "SessionSecret"
+                }
+              },
+              {
+                "Name": "SMTP_ENABLED",
+                "Value": "true"
+              },
+              {
+                "Name": "SMTP_FROM_EMAIL_ADDRESS",
+                "Value": {
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_KEY",
+                "Value": {
+                  "Ref": "PosthogKey"
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_HOST",
+                "Value": {
+                  "Ref": "PosthogHost"
+                }
+              },
+              {
+                "Name": "VITE_SITE_TITLE",
+                "Value": {
+                  "Ref": "SiteTitle"
+                }
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-create-group": "true",
+                "awslogs-group": {
+                  "Fn::Sub": "awslogs-web"
+                },
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": {
+                  "Fn::Sub": "awslogs-web"
+                }
+              }
+            },
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "WebService": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "ECSCluster"
+        },
+        "EnableExecuteCommand": true,
+        "ServiceName": "web",
+        "TaskDefinition": {
+          "Ref": "WebTaskDefinition"
+        },
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "TargetGroupArn": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-alb-target-group-arn"
+              }
+            },
+            "ContainerName": "web",
+            "ContainerPort": 3000
+          }
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${BaseName}-private-subnet-az0-id"
+                }
+              },
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${BaseName}-private-subnet-az1-id"
+                }
+              }
+            ],
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WebServiceSecurityGroup",
+                  "GroupId"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "WebServiceSecurityGroup"
+      ]
+    },
+    "WebServiceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ECS service",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        },
+        "SecurityGroupIngress": [
+          {
+            "SourceSecurityGroupId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${BaseName}-alb-security-group-id"
+              }
+            },
+            "IpProtocol": "tcp",
+            "FromPort": 3000,
+            "ToPort": 3000
+          }
+        ]
+      }
+    },
+    "WebServiceScalableTarget": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 4,
+        "MinCapacity": 1,
+        "ResourceId": {
+          "Fn::Join": [
+            "/",
+            [
+              "service",
+              {
+                "Ref": "ECSCluster"
+              },
+              {
+                "Fn::GetAtt": [
+                  "WebService",
+                  "Name"
+                ]
+              }
+            ]
+          ]
+        },
+        "RoleARN": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+        },
+        "ServiceNamespace": "ecs",
+        "ScalableDimension": "ecs:service:DesiredCount"
+      }
+    },
+    "WebServiceScalingPolicy": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyName": "CpuUtilizationScalingPolicy",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "WebServiceScalableTarget"
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "TargetValue": 60.0,
+          "ScaleInCooldown": 120,
+          "ScaleOutCooldown": 60,
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+          }
+        }
+      }
+    },
+    "WorkerTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": {
+          "Fn::Sub": "${BaseName}-ecs-task-definition"
+        },
+        "Cpu": "2048",
+        "Memory": "4096",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "TaskExecutionRole",
+            "Arn"
+          ]
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "TaskRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "worker",
+            "Command": [
+              "./node_modules/.bin/pm2-runtime",
+              "-n",
+              "worker",
+              "npm",
+              "--",
+              "run",
+              "worker",
+              "-w",
+              "server"
+            ],
+            "Image": {
+              "Ref": "ImageURL"
+            },
+            "Environment": [
+              {
+                "Name": "AWS_LOCATION_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-location-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-location-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_LOCATION_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_S3_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bucket-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_S3_BUCKET",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bucket"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_S3_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_S3_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-bucket-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_SES_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-ses-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SES_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_SES_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-ses-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "BASE_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "DATABASE_URL",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "postgresql://",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "{{resolve:secretsmanager:",
+                            {
+                              "Fn::ImportValue": {
+                                "Fn::Sub": "${BaseName}-db-master-user-password-secret-arn"
+                              }
+                            },
+                            ":SecretString:username}}"
+                          ]
+                        ]
+                      },
+                      ":",
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "{{resolve:secretsmanager:",
+                            {
+                              "Fn::ImportValue": {
+                                "Fn::Sub": "${BaseName}-db-master-user-password-secret-arn"
+                              }
+                            },
+                            ":SecretString:password}}"
+                          ]
+                        ]
+                      },
+                      "@",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-db-endpoint"
+                        }
+                      },
+                      ":",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-db-port"
+                        }
+                      },
+                      "/",
+                      {
+                        "Ref": "BaseName"
+                      },
+                      "?sslmode=no-verify"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "FASTIFY_ADDRESS",
+                "Value": "0.0.0.0"
+              },
+              {
+                "Name": "GEOCODE_RATE_LIMIT_MS",
+                "Value": {
+                  "Ref": "GeocodeRateLimitMs"
+                }
+              },
+              {
+                "Name": "SESSION_SECRET",
+                "Value": {
+                  "Ref": "SessionSecret"
+                }
+              },
+              {
+                "Name": "SMTP_ENABLED",
+                "Value": "true"
+              },
+              {
+                "Name": "SMTP_FROM_EMAIL_ADDRESS",
+                "Value": {
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_KEY",
+                "Value": {
+                  "Ref": "PosthogKey"
+                }
+              },
+              {
+                "Name": "VITE_POSTHOG_HOST",
+                "Value": {
+                  "Ref": "PosthogHost"
+                }
+              },
+              {
+                "Name": "VITE_SITE_TITLE",
+                "Value": {
+                  "Ref": "SiteTitle"
+                }
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-create-group": "true",
+                "awslogs-group": "awslogs-worker",
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                },
+                "awslogs-stream-prefix": "awslogs-worker"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "WorkerService": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "ECSCluster"
+        },
+        "EnableExecuteCommand": true,
+        "ServiceName": "worker",
+        "TaskDefinition": {
+          "Ref": "WorkerTaskDefinition"
+        },
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${BaseName}-private-subnet-az0-id"
+                }
+              },
+              {
+                "Fn::ImportValue": {
+                  "Fn::Sub": "${BaseName}-private-subnet-az1-id"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "WorkerServiceScalableTarget": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 1,
+        "MinCapacity": 1,
+        "ResourceId": {
+          "Fn::Join": [
+            "/",
+            [
+              "service",
+              {
+                "Ref": "ECSCluster"
+              },
+              {
+                "Fn::GetAtt": [
+                  "WorkerService",
+                  "Name"
+                ]
+              }
+            ]
+          ]
+        },
+        "RoleARN": {
+          "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+        },
+        "ServiceNamespace": "ecs",
+        "ScalableDimension": "ecs:service:DesiredCount"
+      }
+    }
+  }
+}

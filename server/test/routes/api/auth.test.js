@@ -43,6 +43,7 @@ test('/api/auth', async (t) => {
         createdAt,
         updatedAt,
         deactivatedAt: null,
+        deletedAt: null,
       });
     });
 
@@ -216,6 +217,7 @@ test('/api/auth', async (t) => {
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         deactivatedAt: null,
+        deletedAt: null,
       });
     });
   });

@@ -48,7 +48,7 @@ describe('Care flow unit tests', () => {
   it('groups not-in-custody records into Still onsite / Exited facility / Transferred to jail', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital' },
+      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
       { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: null },
     ]);
 
@@ -101,7 +101,7 @@ describe('Care flow unit tests', () => {
       highlightTarget: '901',
       navigateTo: '/care?tab=not-in-custody',
       toastTitle: 'Exit recorded',
-      toastBody: 'Person now appears in Exited facility under Not in custody (last 24 hours).',
+      toastBody: 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).',
     });
   });
 

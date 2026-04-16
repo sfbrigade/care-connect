@@ -13,11 +13,11 @@ import CancelHoldModal from './CancelHoldModal';
 import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
+import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { generate647fTransferFormPDF } from '@/utils/pdfGenerator';
-import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidNarcotics, isValidDrugUse, isValidDeflectionDetails, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -39,16 +39,17 @@ function Deflection () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const { data: activeDeflections, isFetching: isFetchingActiveDeflections } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true }).then(response => response.data),
-    enabled: !!incident,
-  });
-
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
   const incidentAddress = formatAddress(incident ?? {});
   const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
+  const drugUseComplete = deflection
+    ? isValidDrugUse({
+      drugUseEvidence: deflection.drugUseEvidence,
+      drugType: deflection.drugType ?? null,
+    })
+    : false;
   const isCustodyTransferred = [
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',
@@ -134,14 +135,16 @@ function Deflection () {
     },
   });
 
-  const activeHoldsCount = activeDeflections?.length;
-  const isLastActiveDetailedHold =
+  const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
+  const activeHoldsCount = incident?.totalActiveHolds ?? 0;
+  const shouldCancelIncidentWithHold =
+    canCancelIncident &&
     !!deflection?.subjectId &&
     deflection?.status === 'ACTIVE' &&
     activeHoldsCount === 1;
 
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (isLastActiveDetailedHold && incident?.id) {
+    if (shouldCancelIncidentWithHold && incident?.id) {
       await cancelIncidentMutation.mutateAsync({
         incidentId: incident.id,
         cancelReasonId,
@@ -154,16 +157,11 @@ function Deflection () {
     });
   }
 
+  const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
+
   function on647fClick () {
-    try {
-      const doc = generate647fTransferFormPDF(deflection, facility);
-      // Open PDF in browser
-      doc.output('dataurlnewwindow');
-      showToast('647(f) Transfer Form opened in new window', 'success');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      showToast('Failed to generate PDF', 'error');
-    }
+    const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -194,7 +192,7 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER' && (
+          {(doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
@@ -241,7 +239,9 @@ function Deflection () {
             )}
             {canEditHoldDetails && (
               <Group mt='md'>
-                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>{isValidSubject(deflection?.subject) ? 'Edit details' : 'Finish details'}</Button>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>
+                  {subjectDetailsComplete ? 'Edit details' : 'Finish details'}
+                </Button>
               </Group>
             )}
           </Stack>
@@ -257,7 +257,7 @@ function Deflection () {
                     <Text c='dimmed'>Controlled substance</Text>
                     {(deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined)
                       ? (
-                        <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                        <Text>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
@@ -265,7 +265,7 @@ function Deflection () {
                     <Text c='dimmed'>Paraphernalia</Text>
                     {(deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined)
                       ? (
-                        <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                        <Text>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
@@ -279,35 +279,39 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='drug-use'>
               <Accordion.Control>
-                <Title order={3}>Drug use</Title>
+                <Title order={3}>Substance use</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
-                  {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
-                    ? (
-                      <Box>
-                        <Text c='dimmed'>Evidence of drug use</Text>
-                        <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
-                      </Box>
-                      )
-                    : (<Text c='dimmed'>No drug use details recorded</Text>)}
-                  {deflection?.drugUseEvidence === true && !!deflection?.drugType && (
+                  <Box>
+                    <Text c='dimmed'>Evidence of substance use</Text>
+                    {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
+                      ? (
+                        <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                  {deflection?.drugUseEvidence === true && (
                     <Box>
-                      <Text c='dimmed'>Drug type</Text>
-                      <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                      <Text c='dimmed'>Substance type</Text>
+                      {deflection?.drugType
+                        ? <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                        : <Text c='red.6'>Incomplete</Text>}
                     </Box>
                   )}
                 </Stack>
                 {canEditHoldDetails && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>Edit drug use</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>
+                      {drugUseComplete ? 'Edit substance use' : 'Finish substance use'}
+                    </Button>
                   </Group>
                 )}
               </Accordion.Panel>
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
+                <Title order={3}>Behavioral observations</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -326,7 +330,7 @@ function Deflection () {
                     </Box>
                   )}
                   <Box>
-                    <Text c='dimmed'>Narrative (arrestable behavior)</Text>
+                    <Text c='dimmed'>647(f) narrative</Text>
                     {deflection?.behavior
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection?.behavior}</Text>
@@ -422,6 +426,14 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
+                    <Text c='dimmed'>Case number</Text>
+                    {incident?.caseNumber
+                      ? (
+                        <Text>{incident?.caseNumber}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                  <Box>
                     <Text c='dimmed'>Supervising Sergeant's Star Number</Text>
                     {incident?.supervisorBadgeNumber
                       ? (
@@ -441,48 +453,34 @@ function Deflection () {
         </Stack>
       </Container>
       {showActionFooter && (
-        <Box
-          className='action-footer-gradient'
-          pos='fixed'
-          left={0}
-          right={0}
-          bottom={0}
-          pt='md'
-          pb='xl'
-          style={{ zIndex: 10 }}
-        >
-          <Container>
-            <Group justify='center' gap='sm' wrap='nowrap'>
-              <Button
-                onClick={() => setShowCancelModal(true)}
-                variant='destructive'
-                disabled={isFetchingActiveDeflections}
-              >
-                Cancel hold
-              </Button>
-              {showFinishDetailsFooter && (
-                <Button
-                  onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
-                  color='indigo'
-                >
-                  Finish details
-                </Button>
-              )}
-            </Group>
-          </Container>
-        </Box>
+        <ActionFooter>
+          <Button
+            onClick={() => setShowCancelModal(true)}
+            variant='destructive'
+            disabled={!incident}
+          >
+            Cancel hold
+          </Button>
+          {showFinishDetailsFooter && (
+            <Button
+              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+            >
+              Finish details
+            </Button>
+          )}
+        </ActionFooter>
       )}
-      {showActionFooter && <Box h='104px' />}
-      {!!deflection && showCancelModal && (!isLastActiveDetailedHold) && (
+      {showActionFooter && <Box h='120px' />}
+      {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
         <CancelHoldModal
           deflection={deflection}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
-          loading={cancelDeflectionMutation.isPending || isFetchingActiveDeflections}
+          loading={cancelDeflectionMutation.isPending}
         />
       )}
-      {!!deflection && showCancelModal && isLastActiveDetailedHold && (
+      {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
         <CancelIncidentModal
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}

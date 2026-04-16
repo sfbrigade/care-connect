@@ -1,0 +1,42 @@
+import inviteEmail from '../../jobs/inviteEmail.js';
+import expireHolds from '../../jobs/expireHolds.js';
+import generateForms from '../../jobs/generateForms.js';
+import formsEmail from '../../jobs/formsEmail.js';
+import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL } from './queueNames.js';
+
+const queues = [
+  {
+    name: QUEUE_INVITE_EMAIL,
+    options: { retryLimit: 3, retryBackoff: true },
+    handler: async ([job]) => inviteEmail(job.data),
+    deadLetterData: (data) => ({ inviteId: data?.inviteId }),
+  },
+  {
+    name: QUEUE_EXPIRE_HOLDS,
+    options: { retryLimit: 1 },
+    handler: async ([job]) => expireHolds(job.data),
+    cron: '* * * * *',
+  },
+  {
+    name: QUEUE_GENERATE_FORMS,
+    options: { retryLimit: 3, retryBackoff: true },
+    handler: async ([job], { send }) => {
+      await generateForms(job.data);
+      if (job.data.emailTemplate) {
+        await send(QUEUE_FORMS_EMAIL, {
+          deflectionId: job.data.deflectionId,
+          formIds: job.data.formIds,
+          template: job.data.emailTemplate,
+        });
+      }
+    },
+    deadLetterData: (data) => ({ deflectionId: data?.deflectionId }),
+  },
+  {
+    name: QUEUE_FORMS_EMAIL,
+    options: { retryLimit: 3, retryBackoff: true },
+    handler: async ([job]) => formsEmail(job.data),
+    deadLetterData: (data) => ({ deflectionId: data?.deflectionId }),
+  },
+];
+export default queues;

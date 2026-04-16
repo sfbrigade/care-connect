@@ -1,48 +1,36 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Anchor, Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
+import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { IconArrowLeft } from '@tabler/icons-react';
+import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';
-
-function formatNarrativeDate (value) {
-  if (!value) return '[Arrest date & time]';
-  const jsDate = new Date(value);
-  if (Number.isNaN(jsDate.getTime())) return '[Arrest date & time]';
-  const dt = DateTime.fromJSDate(jsDate);
-  if (!dt.isValid) return '[Arrest date & time]';
-  return dt.toLocaleString(DateTime.DATETIME_MED);
-}
-
-function buildDefaultNarrative (deflection) {
-  const arrestDate = formatNarrativeDate(deflection?.createdAt);
-  return `Person was brought to RESET at ${arrestDate} because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention at [Release date & time].`;
-}
 
 function LegalReleaseQuestions () {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const prefilledState = getPrefilledLegalReleaseState(searchParams);
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const backTo = searchParams.get('from') === 'detail'
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReasonId, setReleaseReasonId] = useState(null);
+  const [releaseReasonId, setReleaseReasonId] = useState(prefilledState.releaseReasonId);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [exitDestinationId, setExitDestinationId] = useState(null);
+  const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
 
   const isMedicalRelease = releaseReasonId === 'medical_issue';
   const isOtherRelease = releaseReasonId === 'other';
@@ -53,17 +41,27 @@ function LegalReleaseQuestions () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const narrativeText = useMemo(() => {
-    if (!deflection) return '';
-    return deflection.behavior || buildDefaultNarrative(deflection);
-  }, [deflection]);
+  const incidentQuery = useQuery({
+    queryKey: ['incidents', deflection?.incidentId],
+    queryFn: () => Api.incidents.get(deflection.incidentId).then(response => response.data),
+    enabled: !!deflection?.incidentId,
+  });
+  const incident = incidentQuery.data;
+
+  const narrativeText = useEnsureReleaseNarrative({
+    deflection,
+    incident,
+    incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
+  });
 
   useEffect(() => {
-    setNarrativeDraft(narrativeText);
-  }, [narrativeText]);
+    if (!isEditingNarrative) {
+      setNarrativeDraft(narrativeText);
+    }
+  }, [narrativeText, isEditingNarrative]);
 
   const saveNarrativeMutation = useMutation({
-    mutationFn: () => Api.deflections.update(id, { behavior: narrativeDraft }),
+    mutationFn: () => Api.deflections.update(id, { releaseNarrative: narrativeDraft.trim() || null }),
     onSuccess: () => {
       setIsEditingNarrative(false);
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
@@ -89,7 +87,7 @@ function LegalReleaseQuestions () {
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       if (isExitRelease) {
-        showToast('Exit recorded', 'success', 4000, 'Person now appears in Exited facility under Not in custody (last 24 hours).');
+        showToast('Exit recorded', 'success', 4000, 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).');
         navigate(backTo);
         return;
       }
@@ -98,6 +96,8 @@ function LegalReleaseQuestions () {
         title: 'Person legally released',
         body: '849(b) record finalized. Please print the release certificate.',
       }));
+      window.sessionStorage.setItem('_session-custody', 'released');
+      window.sessionStorage.setItem('custodyHighlightTarget', String(id));
       navigate('/custody');
     },
     onError: (error) => {
@@ -135,7 +135,7 @@ function LegalReleaseQuestions () {
 
           <Stack gap='xs'>
             <Text size='md' fz='md' c='dimmed'>849(b) narrative</Text>
-            {!isEditingNarrative && <Text size='md' fz='md'>{narrativeText}</Text>}
+            {!isEditingNarrative && <Text size='md' fz='md' style={{ whiteSpace: 'pre-wrap' }}>{narrativeText}</Text>}
             {isEditingNarrative && (
               <Textarea
                 value={narrativeDraft}
@@ -171,7 +171,7 @@ function LegalReleaseQuestions () {
             <Input.Wrapper label='Release reason' required>
               <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                 <Group gap='sm'>
-                  <Chip value='sobered'>Sobered</Chip>
+                  <Chip value='sobered'>Can care for themselves</Chip>
                   <Chip value='medical_issue'>Medical issue</Chip>
                   <Chip value='other'>Other (please specify)</Chip>
                 </Group>

@@ -11,6 +11,7 @@ function buildIncident (overrides = {}) {
     arrestedAt: '2026-03-04T10:00:00.000Z',
     encounteredVia: 'ON_VIEW',
     cadNumber: 'CAD-1234',
+    caseNumber: 'CN-42',
     supervisorBadgeNumber: '1234',
     ...overrides,
   };
@@ -31,6 +32,8 @@ function buildDeflection (overrides = {}) {
     },
     narcoticsSubstance: false,
     narcoticsParaphernalia: false,
+    drugUseEvidence: false,
+    drugType: null,
     deflectionDetails: [{}],
     behavior: 'Observed unsafe behavior',
     property: 'NONE',
@@ -42,6 +45,30 @@ describe('getSfpdDeflectionStatusChip', () => {
   it('returns Details incomplete when incident or subject details are incomplete', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection({ subject: { firstName: 'Only' } }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when case number lacks 2 alphanumeric characters', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection(),
+      incident: buildIncident({ caseNumber: '-' }),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when substance use evidence is unanswered', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ drugUseEvidence: null }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when substance type is missing after yes', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ drugUseEvidence: true, drugType: null }),
       incident: buildIncident(),
     });
     expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });

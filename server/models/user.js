@@ -39,7 +39,7 @@ const UserRegisterSchema = UserAttributesSchema.extend({
 const UserResponseSchema = UserAttributesSchema.extend({
   id: z.string().uuid(),
   picture: z.string().nullable(),
-  pictureUrl: z.string().nullable(),
+  pictureUrl: z.string().nullable().optional(),
   isAdmin: z.boolean(),
   organization: Organization.ResponseSchema.nullable().optional(),
   title: Title.ResponseSchema.nullable().optional(),
@@ -47,13 +47,16 @@ const UserResponseSchema = UserAttributesSchema.extend({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   deactivatedAt: z.coerce.date().nullable(),
+  deletedAt: z.coerce.date().nullable(),
 });
 
 const UserUpdateSchema = UserAttributesSchema.extend({
+  unitName: z.string().trim().min(1).optional(),
   password: UserPasswordSchema.or(z.literal('')),
   picture: z.string().nullable(),
   isAdmin: z.boolean(),
   deactivatedAt: z.coerce.date().nullable(),
+  deletedAt: z.coerce.date().nullable(),
 }).partial();
 
 export class User extends Base {
@@ -79,6 +82,18 @@ export class User extends Base {
 
   get isCare () {
     return this.roles?.includes(User.Role.CARE) ?? false;
+  }
+
+  get isOrgAdmin () {
+    return this.roles.includes('ORG_ADMIN');
+  }
+
+  get isFacilityAdmin () {
+    return this.roles?.includes(User.Role.FACILITY_ADMIN) ?? false;
+  }
+
+  get isDeleted () {
+    return !!this.deletedAt;
   }
 
   get pictureUrl () {

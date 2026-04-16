@@ -1,0 +1,25 @@
+import { PostHog } from 'posthog-node';
+
+// Note: Posthog uses the same write-only token for both client and server
+const apiKey = process.env.VITE_POSTHOG_KEY;
+const host = process.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
+
+let client = null;
+
+if (apiKey) {
+  client = new PostHog(apiKey, { host });
+}
+
+export function captureEvent (event, properties = {}) {
+  if (!client) return;
+  client.capture({
+    distinctId: 'care-connect-worker',
+    event,
+    properties,
+  });
+}
+
+export async function shutdown () {
+  if (!client) return;
+  await client.shutdown();
+}

@@ -13,6 +13,8 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useFacilityContext } from '@/FacilityContext';
 
+import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
+
 const initialValues = {
   drugUseEvidence: null,
   drugType: null,
@@ -77,7 +79,7 @@ function DrugUseForm () {
   return (
     <>
       <Head>
-        <title>Drug use details</title>
+        <title>Substance use details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -92,26 +94,25 @@ function DrugUseForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Drug use details</Title>
+        <Title order={2} mb='xs'>Substance use details</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <BooleanInput
                 {...form.getInputProps('drugUseEvidence')}
                 key={form.key('drugUseEvidence')}
-                label='Evidence of drug use'
+                label={<>Evidence of substance use<span>*</span></>}
               />
               {showDrugTypeQuestion && (
-                <Input.Wrapper label='Drug type'>
+                <Input.Wrapper label={<>Substance type<span>*</span></>}>
                   <Chip.Group
                     key={form.key('drugType')}
                     {...form.getInputProps('drugType')}
                   >
                     <Group gap='sm' mt='md'>
-                      <Chip value='INTOXICATING_LIQUOR'>{t('drugType.INTOXICATING_LIQUOR')}</Chip>
-                      <Chip value='DRUG'>{t('drugType.DRUG')}</Chip>
-                      <Chip value='TOLUENE'>{t('drugType.TOLUENE')}</Chip>
-                      <Chip value='COMBINATION'>{t('drugType.COMBINATION')}</Chip>
+                      {DRUG_TYPE_OPTIONS.map((drugType) => (
+                        <Chip key={drugType} value={drugType}>{t(`drugType.${drugType}`)}</Chip>
+                      ))}
                     </Group>
                   </Chip.Group>
                 </Input.Wrapper>

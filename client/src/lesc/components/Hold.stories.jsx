@@ -24,6 +24,7 @@ const incident = {
   state: 'CA',
   arrestedAt: new Date().toISOString(),
   cadNumber: '123456789A',
+  caseNumber: 'CASE-42',
   supervisorBadgeNumber: '1234',
 };
 
@@ -189,7 +190,7 @@ export const CancelledWithSomeDetails = {
       ...WithSomeSubjectDetails.args.deflection,
       status: 'CANCELLED',
       cancelledAt: new Date().toISOString(),
-      cancelReasonId: 'facility_emergency',
+      cancelReasonId: 'staffing_shortage',
     },
   }
 };

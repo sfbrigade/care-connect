@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Incident from '#models/incident.js';
+import { getOfficerPermissions } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/left',
@@ -28,20 +29,44 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (incident.createdById !== request.user.id && !request.user.isAdmin) {
+      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
+      if (!permissions.canLeave && !request.user.isAdmin) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      await fastify.prisma.deflection.expire();
-
       await fastify.prisma.$transaction(async (tx) => {
         const now = new Date();
+
+        // Update leftAt on the officer's IncidentOfficer record
+        await tx.incidentOfficer.updateMany({
+          where: {
+            incidentId: id,
+            facilityId: incident.facilityId,
+            officerId: request.user.id,
+          },
+          data: { leftAt: now },
+        });
+
+        // Only complete the incident if no officers still have active holds
+        const remainingActiveHolds = await tx.deflection.count({
+          where: { incidentId: id, status: 'ACTIVE' },
+        });
+
+        const updateData = { updatedById: request.user.id };
+        if (incident.createdById === request.user.id) {
+          updateData.leftAt = now;
+        }
+        if (remainingActiveHolds === 0) {
+          updateData.completedAt = now;
+        }
+
         incident = await tx.incident.update({
           where: { id },
-          data: {
-            leftAt: now,
-            completedAt: now,
-            updatedById: request.user.id,
+          data: updateData,
+          include: {
+            incidentOfficers: {
+              where: { officerId: request.user.id },
+            },
           },
         });
       });

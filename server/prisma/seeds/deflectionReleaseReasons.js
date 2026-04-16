@@ -12,7 +12,7 @@ export default async function main (prisma) {
   const deflectionReleaseReasons = [
     {
       id: 'sobered',
-      name: 'Sobered',
+      name: 'Can care for themselves',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },

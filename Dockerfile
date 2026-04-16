@@ -13,8 +13,11 @@ RUN apt update -y && \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc && \
     sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
     apt update -y && \
-    apt install -y postgresql-client-17 && \
+    apt install -y postgresql-client-17 chromium --no-install-recommends && \
     apt clean
+
+# Set Chromium path for puppeteer-core
+ENV CHROMIUM_PATH=/usr/bin/chromium
 
 # update path to include any installed node module executables
 RUN echo "export PATH=./node_modules/.bin:\$PATH\n" >> /root/.bashrc
@@ -26,10 +29,10 @@ RUN mkdir -p $APP_HOME
 ADD . $APP_HOME
 WORKDIR $APP_HOME
 
-# Install dependencies, build client app, generate server prisma client
+# Install dependencies, build client app, build server (Prisma client + forms dist)
 RUN npm install && \
     npm run build -w client && \
-    npm run prisma:generate -w server
+    npm run build -w server
 
 # Set up default command
-CMD ["./node_modules/.bin/pm2-runtime", "npm", "--", "start", "-w", "server"]
+CMD ["./node_modules/.bin/pm2-runtime", "-n", "web", "npm", "--", "start", "-w", "server"]

@@ -59,11 +59,18 @@ profile*
 
 # project specific
 .env
-.env.local
+.env.*
 data
+server/tmp
 *.pem
 *.zip
+
+# Ignore AI settings
+.claude
 
 # Ignore implementation plans
 implementation_plans/
 pr-body.md
+
+# Agents
+.claude

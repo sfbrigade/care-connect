@@ -3,7 +3,7 @@ connectedFields: ['createdBy', 'updatedBy']
 items:
   deflection_release_reason_sobered:
     id: 'sobered'
-    name: 'Sobered'
+    name: 'Can care for themselves'
     createdBy: '@user1'
     updatedBy: '@user1'
   deflection_release_reason_medical_issue:
