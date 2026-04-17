@@ -63,7 +63,6 @@ function Deflection () {
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const canEditHoldDetails = !isExpiredAutoCancelled;
   const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
@@ -237,7 +236,7 @@ function Deflection () {
                 <Text>{address}</Text>
               </Box>
             )}
-            {canEditHoldDetails && (
+            {isActionableActiveHold && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>
                   {subjectDetailsComplete ? 'Edit details' : 'Finish details'}
@@ -270,7 +269,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/narcotics`)}>{isValidNarcotics(deflection) ? 'Edit narcotics' : 'Finish narcotics'}</Button>
                   </Group>
@@ -300,7 +299,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/drug-use`)}>
                       {drugUseComplete ? 'Edit substance use' : 'Finish substance use'}
@@ -338,7 +337,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidDeflectionDetails(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
                   </Group>
@@ -379,7 +378,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>{isValidProperty(deflection) ? 'Edit property' : 'Finish property'}</Button>
                   </Group>
@@ -442,7 +441,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate('/incident')}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
                   </Group>
