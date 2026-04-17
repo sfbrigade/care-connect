@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Badge, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -160,12 +160,8 @@ function DeflectionForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
-          <Group gap='xs'>
-            {header}
-            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>2 of 3</Text>}
-          </Group>
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`} />
+          {header}
         </Group>
       </Header>
       <Container>
@@ -174,7 +170,10 @@ function DeflectionForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Behavioral observations</Title>
+        <Group gap='sm' mb='xs' align='center'>
+          <Title order={2}>Behavioral observations</Title>
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
+        </Group>
         <Text c='dimmed' size='md' mb='xl'>Describe the behaviors you observed.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
