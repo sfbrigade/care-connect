@@ -6,7 +6,7 @@
 #
 # Prerequisites:
 #   - AWS CLI installed and configured
-#   - IAM permissions: s3:PutObject, transcribe:CreateVocabulary,
+#   - IAM permissions: s3:GetObject, s3:PutObject, transcribe:CreateVocabulary,
 #     transcribe:UpdateVocabulary, transcribe:GetVocabulary
 #
 # Usage:
@@ -24,7 +24,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-VOCAB_FILE="$ROOT_DIR/server/static-data/transcribe-vocabulary.txt"
+VOCAB_FILE="$SCRIPT_DIR/transcribe-vocabulary.txt"
 ENV_FILE="$ROOT_DIR/server/.env"
 
 # Load env vars from server/.env if it exists
