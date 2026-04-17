@@ -134,9 +134,9 @@ function makeDeflectionBase (facilityId, bedTypeId, fieldUser, baseTime) {
     drugUseEvidence: hasDrug,
     drugType: hasDrug
       ? weightedPick([
-        { v: 'CNS_DEPRESSANTS', w: 40 }, { v: 'CNS_STIMULANTS', w: 30 },
-        { v: 'NARCOTIC_ANALGESICS', w: 20 }, { v: 'HALLUCINOGENS', w: 5 },
-        { v: 'CANNABIS', w: 5 },
+        { v: 'FENTANYL', w: 40 }, { v: 'ALCOHOL', w: 30 },
+        { v: 'HEROIN', w: 20 }, { v: 'COCAINE', w: 5 },
+        { v: 'METH', w: 5 },
       ])
       : null,
     behavior: pick(BEHAVIORS),
