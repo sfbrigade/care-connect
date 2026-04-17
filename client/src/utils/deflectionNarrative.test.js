@@ -48,7 +48,7 @@ describe('deflectionNarrative', () => {
     expect(narrative).toBe([
       'Officer encountered this individual at 1455 Market St on 2/12/2026 at 11:53 PM.',
       'Officer observed the following behaviors: fumbling for ID or belongings.',
-      'Officer observed that drugs were recently used: CNS Depressants.',
+      'Officer suspected person used intoxicants: CNS Depressants.',
       'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
       'Person volunteered to be taken to RESET.',
     ].join('\n'));
