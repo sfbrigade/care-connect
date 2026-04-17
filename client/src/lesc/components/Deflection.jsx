@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconAlarm } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlarm, IconFileText } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -191,7 +191,7 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {(doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
+          {!isCustodyTransferred && (doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
@@ -469,7 +469,12 @@ function Deflection () {
           )}
         </ActionFooter>
       )}
-      {showActionFooter && <Box h='120px' />}
+      {isCustodyTransferred && doc647f && (
+        <ActionFooter>
+          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Print 647(f) form</Button>
+        </ActionFooter>
+      )}
+      {(showActionFooter || (isCustodyTransferred && doc647f)) && <Box h='120px' />}
       {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
         <CancelHoldModal
           deflection={deflection}

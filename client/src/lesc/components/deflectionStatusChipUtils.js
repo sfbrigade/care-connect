@@ -39,7 +39,7 @@ export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateT
   }
 
   if (isCustodyTransferredStatus(deflection.subjectStatus)) {
-    return { label: 'Custody transferred', tone: 'info' };
+    return { label: 'Custody transferred', tone: 'success' };
   }
 
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(incident);

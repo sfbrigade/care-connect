@@ -95,7 +95,7 @@ describe('getSfpdDeflectionStatusChip', () => {
       deflection: buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }),
       incident: buildIncident(),
     });
-    expect(chip).toEqual({ label: 'Custody transferred', tone: 'info' });
+    expect(chip).toEqual({ label: 'Custody transferred', tone: 'success' });
   });
 
   it('returns Canceled when hold is cancelled', () => {
