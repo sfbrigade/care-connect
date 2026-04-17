@@ -186,7 +186,7 @@ export const CancelledWithSomeDetails = {
       ...WithSomeSubjectDetails.args.deflection,
       status: 'CANCELLED',
       cancelledAt: new Date().toISOString(),
-      cancelReasonId: 'facility_emergency',
+      cancelReasonId: 'staffing_shortage',
     },
   }
 };

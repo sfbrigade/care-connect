@@ -49,7 +49,7 @@ export function buildDeflectionNarrative ({ incident, drugUseEvidence, drugType 
   ];
 
   if (drugUseEvidence === true) {
-    lines.push(drugType ? `Officer observed that drugs were recently used: ${formatDrugType(drugType)}.` : DRUG_USE_DETAILS_MISSING);
+    lines.push(drugType ? `Officer suspected person used intoxicants: ${formatDrugType(drugType)}.` : DRUG_USE_DETAILS_MISSING);
   }
 
   lines.push('Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.');

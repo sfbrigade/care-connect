@@ -6,7 +6,7 @@
 #
 # Prerequisites:
 #   - AWS CLI installed and configured
-#   - IAM permissions: s3:PutObject, transcribe:CreateVocabulary,
+#   - IAM permissions: s3:GetObject, s3:PutObject, transcribe:CreateVocabulary,
 #     transcribe:UpdateVocabulary, transcribe:GetVocabulary
 #
 # Usage:
@@ -24,28 +24,40 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-VOCAB_FILE="$ROOT_DIR/server/static-data/transcribe-vocabulary.txt"
+VOCAB_FILE="$SCRIPT_DIR/transcribe-vocabulary.txt"
 ENV_FILE="$ROOT_DIR/server/.env"
 
-# Load env vars from server/.env if it exists
-if [ -f "$ENV_FILE" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
-  set +a
-fi
+# check if invoked with an argument
+if [ -n "${1:-}" ]; then
+  echo "Reading from CloudFormation stacks with base name $1"
 
-# Configuration
-REGION="${AWS_TRANSCRIBE_REGION:-us-west-2}"
-VOCAB_NAME="${AWS_TRANSCRIBE_VOCABULARY_NAME:-care-connect-vocabulary}"
-S3_BUCKET="${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}"
-S3_KEY="transcribe-vocabulary/${VOCAB_NAME}.txt"
-S3_URI="s3://${S3_BUCKET}/${S3_KEY}"
+  BASE_NAME=$1
+  REGION=`aws configure get region`
+  VOCAB_NAME=`aws cloudformation describe-stacks --stack-name ${BASE_NAME}-transcribe --query 'Stacks[0].Outputs[?OutputKey==\`TranscribeCustomVocabularyName\`].OutputValue' --output text`
+  S3_BUCKET=`aws cloudformation describe-stacks --stack-name ${BASE_NAME}-s3 --query 'Stacks[0].Outputs[?OutputKey==\`BucketName\`].OutputValue' --output text`
+  S3_KEY="transcribe-vocabulary/${VOCAB_NAME}.txt"
+  S3_URI="s3://${S3_BUCKET}/${S3_KEY}"
+else
+  # Load env vars from server/.env if it exists
+  if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+  fi
 
-# Use Transcribe-specific credentials if available, otherwise fall back to default AWS config
-if [ -n "${AWS_TRANSCRIBE_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_TRANSCRIBE_SECRET_ACCESS_KEY:-}" ]; then
-  export AWS_ACCESS_KEY_ID="$AWS_TRANSCRIBE_ACCESS_KEY_ID"
-  export AWS_SECRET_ACCESS_KEY="$AWS_TRANSCRIBE_SECRET_ACCESS_KEY"
+  # Configuration
+  REGION="${AWS_TRANSCRIBE_REGION:-us-west-2}"
+  VOCAB_NAME="${AWS_TRANSCRIBE_VOCABULARY_NAME:-care-connect-vocabulary}"
+  S3_BUCKET="${AWS_S3_BUCKET:?AWS_S3_BUCKET is required}"
+  S3_KEY="transcribe-vocabulary/${VOCAB_NAME}.txt"
+  S3_URI="s3://${S3_BUCKET}/${S3_KEY}"
+
+  # Use Transcribe-specific credentials if available, otherwise fall back to default AWS config
+  if [ -n "${AWS_TRANSCRIBE_ACCESS_KEY_ID:-}" ] && [ -n "${AWS_TRANSCRIBE_SECRET_ACCESS_KEY:-}" ]; then
+    export AWS_ACCESS_KEY_ID="$AWS_TRANSCRIBE_ACCESS_KEY_ID"
+    export AWS_SECRET_ACCESS_KEY="$AWS_TRANSCRIBE_SECRET_ACCESS_KEY"
+  fi
 fi
 
 if [ ! -f "$VOCAB_FILE" ]; then

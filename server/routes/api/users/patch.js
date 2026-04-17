@@ -1,9 +1,60 @@
 import { errorCodes } from 'fastify';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 
+import slugifyUnitId from '#lib/slugifyUnitId.js';
 import User from '#models/user.js';
+
+async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) {
+  const trimmedUnitName = unitName?.trim();
+
+  if (!trimmedUnitName || unitId) {
+    return unitId;
+  }
+
+  const existingUnit = await tx.unit.findFirst({
+    where: {
+      organizationId,
+      name: {
+        equals: trimmedUnitName,
+        mode: 'insensitive',
+      },
+    },
+  });
+
+  if (existingUnit) {
+    return existingUnit.id;
+  }
+
+  const baseId = slugifyUnitId(trimmedUnitName) || crypto.randomUUID();
+  let nextUnitId = baseId;
+  let suffix = 2;
+
+  while (await tx.unit.findUnique({
+    where: {
+      unitId: {
+        id: nextUnitId,
+        organizationId,
+      },
+    },
+  })) {
+    nextUnitId = `${baseId}_${suffix}`;
+    suffix++;
+  }
+
+  const createdUnit = await tx.unit.create({
+    data: {
+      id: nextUnitId,
+      name: trimmedUnitName,
+      organizationId,
+      createdById: userId,
+    },
+  });
+
+  return createdUnit.id;
+}
 
 export default async function (fastify, opts) {
   fastify.patch('/:id',
@@ -77,7 +128,7 @@ export default async function (fastify, opts) {
       }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
-      const updateData = _.omit(request.body, ['password', 'picture']);
+      const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
@@ -101,6 +152,16 @@ export default async function (fastify, opts) {
       // update picture
       const pictureHandler = user.setAsset('picture', picture);
       await fastify.prisma.$transaction(async (tx) => {
+        if (request.body.unitName && data.organizationId) {
+          data.unitId = await resolveUnitId(tx, {
+            organizationId: data.organizationId,
+            userId: request.user.id,
+            unitId: data.unitId,
+            unitName: request.body.unitName,
+          });
+          user.changes.add('unitId');
+        }
+
         data = await tx.user.update({
           where: { id },
           include: {
