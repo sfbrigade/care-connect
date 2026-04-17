@@ -185,7 +185,7 @@ function DeflectionForm () {
         >
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
-              <Stack gap='xs'>
+              <Stack gap='lg'>
                 <AudioRecorder
                   onResult={handleTranscriptionResult}
                   onBusyChange={setRecorderBusy}

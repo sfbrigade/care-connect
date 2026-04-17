@@ -164,6 +164,7 @@ function IncidentForm () {
         ['facilities', facility.id, 'active-incident'],
         response.data
       );
+      window.sessionStorage.setItem('_session-holds', 'active');
       navigate('/holds');
     },
     onError: () => {

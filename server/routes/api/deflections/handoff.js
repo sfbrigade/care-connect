@@ -61,6 +61,17 @@ export default async function (fastify) {
         });
       }
 
+      // Handoff ready gate: current owner must have initiated handoff recently
+      const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
+      if (
+        !deflection.handoffReadyAt ||
+        (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
+      ) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
+        });
+      }
+
       // Receiving officer must not have an active incident on a DIFFERENT incident
       const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
       if (existingIncident && existingIncident.id !== deflection.incidentId) {
@@ -79,6 +90,7 @@ export default async function (fastify) {
           where: { id },
           data: {
             currentOfficerId: receivingOfficerId,
+            handoffReadyAt: null,
             updatedAt: now,
           },
           include: {
