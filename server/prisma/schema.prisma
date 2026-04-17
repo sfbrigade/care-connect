@@ -588,6 +588,7 @@ model Deflection {
   exitHousingStatusId          String?
   exitConnectedToCare          TernaryEnum?
   exitSFResident               TernaryEnum?
+  handoffReadyAt               DateTime?
   updatedAt                    DateTime                @updatedAt
 
   deflectionDetails            DeflectionDetail[]
