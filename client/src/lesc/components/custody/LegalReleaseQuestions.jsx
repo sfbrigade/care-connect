@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
+import useSatisfactionSurvey from '../../../hooks/useSatisfactionSurvey';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
@@ -31,6 +32,10 @@ function LegalReleaseQuestions () {
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
   const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
+
+  const { navigateWithOptionalSurvey, satisfactionSurveyModal } = useSatisfactionSurvey(navigate, id, {
+    surveySource: 'legal_release',
+  });
 
   const isMedicalRelease = releaseReasonId === 'medical_issue';
   const isOtherRelease = releaseReasonId === 'other';
@@ -88,7 +93,7 @@ function LegalReleaseQuestions () {
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       if (isExitRelease) {
         showToast('Exit recorded', 'success', 4000, 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).');
-        navigate(backTo);
+        navigateWithOptionalSurvey(backTo);
         return;
       }
       window.sessionStorage.setItem(RELEASE_TOAST_KEY, JSON.stringify({
@@ -98,7 +103,7 @@ function LegalReleaseQuestions () {
       }));
       window.sessionStorage.setItem('_session-custody', 'released');
       window.sessionStorage.setItem('custodyHighlightTarget', String(id));
-      navigate('/custody');
+      navigateWithOptionalSurvey('/custody');
     },
     onError: (error) => {
       const status = error?.response?.status;
@@ -245,6 +250,7 @@ function LegalReleaseQuestions () {
           <Box h={8} />
         </Stack>
       </Container>
+      {satisfactionSurveyModal}
     </>
   );
 }

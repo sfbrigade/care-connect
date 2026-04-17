@@ -13,6 +13,7 @@ import ActionFooter from '@/components/ActionFooter';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
+import useSatisfactionSurvey from '@/hooks/useSatisfactionSurvey';
 import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
@@ -124,6 +125,17 @@ function Holds () {
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? [], handedOffDeflections ?? []);
   const displayActiveDeflections = buildActiveHoldDisplayDeflections(deflections ?? [], historyDeflections, incident, user?.id);
   const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, incident, (deflections?.length ?? 0) > 0);
+
+  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(
+    navigate,
+    deflections?.[0]?.id ?? incident?.id ?? '',
+    {
+      surveySource: 'holds_ive_left',
+      surveyModalProps: {
+        satisfactionQuestionLabel: 'How satisfied are you with your experience at the facility today?',
+      },
+    }
+  );
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
@@ -270,6 +282,8 @@ function Holds () {
       const facilityName = facility?.name ?? 'RESET';
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
       queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
+      const surveyContextId = deflections?.[0]?.id ?? incident?.id;
+      scheduleOptionalSurveyWithoutNavigation(surveyContextId);
     }
   });
 
@@ -606,6 +620,7 @@ function Holds () {
           }}
         />
       )}
+      {satisfactionSurveyModal}
     </>
   );
 }
