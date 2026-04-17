@@ -336,6 +336,9 @@ const Api = {
     handoff (id) {
       return instance.post(`/api/deflections/${id}/handoff`).catch(handleError);
     },
+    initiateHandoff (active) {
+      return instance.post('/api/deflections/initiate-handoff', { active }).catch(handleError);
+    },
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },

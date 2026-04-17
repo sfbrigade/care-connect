@@ -457,6 +457,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
     TernaryEnum exitSFResident "❓"
+    DateTime handoffReadyAt "❓"
     DateTime updatedAt 
     }
   
