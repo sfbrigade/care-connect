@@ -1,0 +1,195 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "S3 Bucket and User account and credentials for file storage",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "BucketName": {
+      "Description": "Name of the bucket",
+      "Value": {
+        "Ref": "Bucket"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-bucket"
+        }
+      }
+    },
+    "BucketUserAccessKeyId": {
+      "Description": "Access Key ID for the user",
+      "Value": {
+        "Ref": "BucketUserAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-bucket-user-access-key-id"
+        }
+      }
+    },
+    "BucketUserSecretAccessKeyARN": {
+      "Description": "ARN for the Secrets Manager secret containing the Secret Access Key for the user",
+      "Value": {
+        "Ref": "BucketUserSecretAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-bucket-user-secret-access-key-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedHeaders": [
+                "*"
+              ],
+              "AllowedMethods": [
+                "GET",
+                "PUT"
+              ],
+              "AllowedOrigins": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://*.",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "DeleteOrphanUploadsRule",
+              "Prefix": "uploads/",
+              "Status": "Enabled",
+              "ExpirationInDays": 1
+            }
+          ]
+        },
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "BucketOwnerEnforced"
+            }
+          ]
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": "TRUE",
+          "BlockPublicPolicy": "TRUE",
+          "IgnorePublicAcls": "TRUE",
+          "RestrictPublicBuckets": "TRUE"
+        }
+      },
+      "DeletionPolicy": "Delete"
+    },
+    "BucketUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${BaseName}-bucket-policy"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "Bucket"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "Bucket"
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "UserName": {
+          "Fn::Sub": "${BaseName}-bucket-user"
+        }
+      }
+    },
+    "BucketUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Status": "Active",
+        "UserName": {
+          "Ref": "BucketUser"
+        }
+      }
+    },
+    "BucketUserSecretAccessKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/iam/user/${BaseName}-bucket-user/secret-access-key"
+        },
+        "SecretString": {
+          "Fn::GetAtt": [
+            "BucketUserAccessKey",
+            "SecretAccessKey"
+          ]
+        }
+      }
+    }
+  }
+}
