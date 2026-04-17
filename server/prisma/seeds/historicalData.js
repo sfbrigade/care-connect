@@ -560,6 +560,7 @@ export default async function main (prisma) {
         officer: fieldUser,
         role: 'ARRESTING',
         arrivedAt: tArrived,
+        leftAt: addMins(tCancel, randInt(1, 15))
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -1053,6 +1054,7 @@ export default async function main (prisma) {
         officer: fieldUser,
         role: 'ARRESTING',
         arrivedAt: tOnsite,
+        leftAt: addMins(tTrans, randInt(1, 15))
       });
       await prisma.deflection.create({
         data: {
@@ -1076,6 +1078,7 @@ export default async function main (prisma) {
         officer: fieldUser,
         role: 'ARRESTING',
         arrivedAt: tOnsite,
+        leftAt: addMins(tTrans, randInt(1, 15))
       });
       await prisma.deflection.create({
         data: {
@@ -1100,6 +1103,7 @@ export default async function main (prisma) {
         officer: fieldUser,
         role: 'ARRESTING',
         arrivedAt: tOnsite,
+        leftAt: addMins(tTrans, randInt(1, 15))
       });
       await prisma.deflection.create({
         data: {
