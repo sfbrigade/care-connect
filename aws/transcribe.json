@@ -72,25 +72,12 @@
                               "Fn::Sub": "${BaseName}-bucket"
                             }
                           },
-                          "/*"
-                        ]
-                      ]
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          "arn:aws:s3:::",
-                          {
-                            "Fn::ImportValue": {
-                              "Fn::Sub": "${BaseName}-bucket"
-                            }
-                          }
+                          "/transcribe-vocabulary/*"
                         ]
                       ]
                     }
                   ]
-                }                
+                }
               ]
             }
           }
