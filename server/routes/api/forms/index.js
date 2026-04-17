@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
-import { FORM_REGISTRY as sharedForms } from '@care-connect/shared/forms';
+import { PDFDocument } from 'pdf-lib';
+import { getFormMetadata } from '#lib/forms/getFormMetadata.js';
 
 const RENDER_TIMEOUT_MS = 20_000;
 
@@ -37,16 +38,7 @@ function sendError (reply, result) {
 // ---------------------------------------------------------------------------
 
 export default async function (fastify, _opts) {
-  // Load each form's metadata from its compiled file at startup.
-  // Shared metadata (title, downloadFilename) is merged first; form-file
-  // metadata (deflectionInclude, dataSchema, transformData, etc.) is merged
-  // on top and can override shared values if needed.
-  // Note: every form file must export canGenerate(deflection) in its metadata.
-  const forms = {};
-  for (const [formId, { componentName, ...sharedMeta }] of Object.entries(sharedForms)) {
-    const { metadata } = await import(`#lib/forms/dist/${componentName}.js`);
-    forms[formId] = { componentName, ...sharedMeta, ...metadata };
-  }
+  const forms = await getFormMetadata();
 
   for (const [formId, form] of Object.entries(forms)) {
     // --- JSON data endpoint ---
@@ -127,6 +119,32 @@ export default async function (fastify, _opts) {
               setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
             ),
           ]);
+        }
+
+        // For the cert form, append narcotics notice as page 2 if narcotics/paraphernalia were seized
+        if (formId === 'cert' && (data.narcoticsSubstance || data.narcoticsParaphernalia)) {
+          const [{ renderFormToHtml, renderToPdf: renderNotice }, { default: FormNarcoticsNotice }] = await Promise.all([
+            import('#lib/pdf.js'),
+            import('../../../lib/forms/dist/FormNarcoticsNotice.js'),
+          ]);
+
+          const noticeData = {
+            date: data.releaseDateFormatted,
+            cadNumber: data.cadNumber,
+            substanceSeized: data.narcoticsSubstance === true,
+            paraphernaliaSeized: data.narcoticsParaphernalia === true,
+          };
+
+          const noticeHtml = await renderFormToHtml(FormNarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
+          const noticeBytes = await renderNotice(noticeHtml);
+
+          const certDoc = await PDFDocument.load(pdfBuffer);
+          const noticeDoc = await PDFDocument.load(noticeBytes);
+          const copiedPages = await certDoc.copyPages(noticeDoc, noticeDoc.getPageIndices());
+          for (const page of copiedPages) {
+            certDoc.addPage(page);
+          }
+          pdfBuffer = Buffer.from(await certDoc.save());
         }
 
         const filename = form.downloadFilename(deflectionId);

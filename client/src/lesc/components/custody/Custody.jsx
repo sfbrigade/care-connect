@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
+
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
@@ -12,8 +13,9 @@ import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 
+import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
-import StatusAccordion from '../StatusAccordion';
+import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
@@ -23,16 +25,16 @@ const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMI
 const RELEASED_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', description: 'Update person details as needed before completing the safety check.' },
-  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake' },
-  { status: 'ADMITTED', label: 'In Medical Intake' },
-  { status: 'IN_CHAIR', label: 'In-chair' },
+  { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
+  { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake', tooltip: 'Ready to start process of medical admission. Show the QR code to Connections staff.' },
+  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'Medical admission in process. Monitor status until person is admitted.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying sobering chairs. Start legal release when they are ready.' },
 ];
 
 const RELEASED_SECTIONS = [
-  { status: 'RELEASED', label: 'Still onsite' },
-  { status: 'EXITED_FACILITY', label: 'Exited facility', description: 'In the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', description: 'Exited without legal release. Visible for 24 hours.' },
+  { status: 'RELEASED', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
 ];
 
 function groupByStatus (deflections) {
@@ -56,13 +58,26 @@ function groupReleasedByStatus (deflections) {
     );
   }
 
+  function isTransferredToHospitalWithoutLegalRelease (deflection) {
+    return (
+      deflection?.subjectStatus === 'EXITED' &&
+      deflection?.exitDestinationId === 'hospital' &&
+      !deflection?.releasedAt
+    );
+  }
+
   return {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
-      d => d.subjectStatus === 'EXITED' && !isTransferredToJailWithoutLegalRelease(d)
+      d => d.subjectStatus === 'EXITED' &&
+        !isTransferredToJailWithoutLegalRelease(d) &&
+        !isTransferredToHospitalWithoutLegalRelease(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
       d => isTransferredToJailWithoutLegalRelease(d)
+    ),
+    TRANSFERRED_TO_HOSPITAL: (deflections ?? []).filter(
+      d => isTransferredToHospitalWithoutLegalRelease(d)
     ),
   };
 }
@@ -91,6 +106,14 @@ function Custody () {
     queryKey: ['deflections', facility.id, 'released'],
     queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
     refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
+  const { data: bedTypes } = useQuery({
+    queryKey: ['facilities', facility.id, 'bed-types'],
+    queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
@@ -206,6 +229,9 @@ function Custody () {
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
+  const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
+  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   useEffect(() => {
     if (!inCustodyDeflections) return;
@@ -230,13 +256,18 @@ function Custody () {
       </Head>
       <Container pt='md'>
         <Stack gap='xl'>
+          <ChairAvailabilityCard
+            availableChairs={availableChairs}
+            inTransitCount={inTransitCount}
+            occupiedCount={occupiedCount}
+          />
           <SegmentedControl
             fullWidth
             value={tab}
             onChange={setTab}
             data={[
-              { label: 'In Custody', value: 'in-custody' },
-              { label: 'Not in custody', value: 'released' },
+              { label: 'In custody', value: 'in-custody' },
+              { label: 'Legally released', value: 'released' },
             ]}
           />
           <FacilityStatusBanner />
@@ -246,7 +277,7 @@ function Custody () {
                 ? (
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
-                    groupedDeflections={inCustodyGrouped}
+                    groupedItems={inCustodyGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
@@ -264,7 +295,7 @@ function Custody () {
                 ? (
                   <StatusAccordion
                     sections={RELEASED_SECTIONS}
-                    groupedDeflections={releasedGrouped}
+                    groupedItems={releasedGrouped}
                     renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
                   />
                   )
@@ -289,7 +320,7 @@ function Custody () {
             leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
             onClick={() => setScanModalOpened(true)}
           >
-            Scan transfer code
+            Take custody
           </Button>
         </ActionFooter>
       )}

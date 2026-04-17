@@ -3,11 +3,12 @@ import { z } from 'zod';
 
 import BedType from '#models/bedType.js';
 import Deflection from '#models/deflection.js';
+import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:bedTypeId',
     {
-      onRequest: fastify.requireCare,
+      onRequest: fastify.requireFacilityAdmin,
       schema: {
         description: 'Update a bed type record.',
         params: z.object({
@@ -52,6 +53,7 @@ export default async function (fastify, opts) {
       }
 
       let bedType;
+      let cancelledHolds = [];
       await fastify.prisma.$transaction(async (tx) => {
         // refetch with lock
         bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
@@ -72,6 +74,10 @@ export default async function (fastify, opts) {
               facilityId,
               status: Deflection.HoldStatus.ACTIVE,
               subjectStatus: Deflection.SubjectStatus.DETAINED,
+            },
+            include: {
+              createdBy: true,
+              subject: true,
             },
             orderBy: { createdAt: 'desc' }, // LIFO: newest first
             take: holdsToCancel,
@@ -127,6 +133,8 @@ export default async function (fastify, opts) {
               });
             }
           }
+
+          cancelledHolds = inTransitHolds;
 
           // Adjust holds count and recalculate available
           nextData.holds -= inTransitHolds.length;
@@ -187,6 +195,14 @@ export default async function (fastify, opts) {
           },
         });
       });
+
+      // Send email notifications for auto-cancelled holds
+      if (cancelledHolds.length > 0) {
+        const facility = await fastify.prisma.facility.findUnique({ where: { id: facilityId } });
+        if (facility) {
+          await sendHoldCancelledEmails(cancelledHolds, facility.name, userId);
+        }
+      }
 
       return reply.send(bedType);
     });

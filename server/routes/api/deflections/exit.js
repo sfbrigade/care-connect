@@ -73,10 +73,7 @@ export default async function (fastify, opts) {
       }
 
       await fastify.prisma.$transaction(async (tx) => {
-        const shouldReleaseBed = deflection.subjectStatus === Deflection.SubjectStatus.IN_CHAIR;
-        const bedType = shouldReleaseBed
-          ? await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId)
-          : null;
+        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId);
 
         deflection = await tx.deflection.findUnique({
           where: { id },
@@ -119,32 +116,30 @@ export default async function (fastify, opts) {
           },
         });
 
-        if (shouldReleaseBed) {
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-          const updatedData = {
-            capacity,
-            unavailableUnoccupied,
-            unavailableOccupied,
-            occupied: occupied - 1,
-            holds,
-            available: available + 1,
-            updateMethod: 'API',
-            updatedById: request.user.id,
-          };
+        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+        const updatedData = {
+          capacity,
+          unavailableUnoccupied,
+          unavailableOccupied,
+          occupied: occupied - 1,
+          holds,
+          available: available + 1,
+          updateMethod: 'API',
+          updatedById: request.user.id,
+        };
 
-          await tx.bedTypeUpdate.create({
-            data: {
-              ...updatedData,
-              bedTypeId: deflection.bedTypeId,
-              facilityId: deflection.facilityId,
-            },
-          });
+        await tx.bedTypeUpdate.create({
+          data: {
+            ...updatedData,
+            bedTypeId: deflection.bedTypeId,
+            facilityId: deflection.facilityId,
+          },
+        });
 
-          await tx.bedType.update({
-            where: { id: deflection.bedTypeId },
-            data: updatedData,
-          });
-        }
+        await tx.bedType.update({
+          where: { id: deflection.bedTypeId },
+          data: updatedData,
+        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

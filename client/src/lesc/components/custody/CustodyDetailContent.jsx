@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck } from '@tabler/icons-react';
+import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
@@ -28,6 +29,7 @@ import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
@@ -56,6 +58,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const canExitToHospitalViaRelease = HOSPITAL_RELEASE_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
   const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
     viewerMode,
     isCustody,
@@ -67,6 +70,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+
+  function navigateToHospitalReleaseFlow () {
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
+  }
 
   useEffect(() => {
     if (isCareView || !deflection?.id) return;
@@ -129,7 +136,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under Not in custody.');
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Legally released".');
       navigate('/custody?tab=released');
     },
     onError: () => {
@@ -172,22 +179,30 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
 
-  const { data: incident } = useQuery({
+  const incidentQuery = useQuery({
     queryKey: ['incidents', deflection?.incidentId],
     queryFn: () => Api.incidents.get(deflection.incidentId).then(response => response.data),
     enabled: !!deflection?.incidentId,
   });
+  const incident = incidentQuery.data;
   const incidentAddress = formatAddress(incident ?? {});
+  const resolvedReleaseNarrative = useEnsureReleaseNarrative({
+    deflection,
+    incident,
+    incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
+  });
 
   useEffect(() => {
-    setReleaseNarrative(deflection?.releaseNarrative ?? '');
-    setIsEditingReleaseNarrative(false);
-  }, [deflection?.releaseNarrative]);
+    if (!isEditingReleaseNarrative) {
+      setReleaseNarrative(resolvedReleaseNarrative);
+    }
+  }, [resolvedReleaseNarrative, isEditingReleaseNarrative]);
 
   const saveReleaseNarrativeMutation = useMutation({
     mutationFn: () => Api.deflections.update(deflection.id, { releaseNarrative: releaseNarrative.trim() || null }),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', String(deflection.id)], response.data);
+      queryClient.setQueryData(['deflections', deflection.id], response.data);
       setIsEditingReleaseNarrative(false);
       showToast('849(b) narrative saved', 'success');
     },
@@ -196,16 +211,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
-  function open849bPdf () {
-    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
-  }
+  const doc849b = deflection?.deflectionDocuments?.find(d => d.formId === '849b');
+  const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
 
-  function onReleaseNarrativeButtonClick () {
-    if (!isEditingReleaseNarrative) {
-      setIsEditingReleaseNarrative(true);
-      return;
-    }
-    saveReleaseNarrativeMutation.mutate();
+  function open849bPdf () {
+    const url = doc849b?.fileUrl || `/api/forms/849b/pdf/${deflection.id}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -245,7 +256,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             <Stack gap='sm' align='center'>
               <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
                 <Stack gap='md' align='center'>
-                  <LockedQRCode value={transferUrl} locked={!isReadyForIntake} />
+                  <LockedQRCode value={transferUrl} variant={!isReadyForIntake ? 'locked' : undefined} />
                   <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
                   {isAwaitingSafetyCheck && (
                     <Text size='sm' c='dimmed' ta='center'>QR locked — finish Safety check to enable.</Text>
@@ -468,18 +479,40 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                               mt='xs'
                             />
                             )
-                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{releaseNarrative}</Text>}
+                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
                       </Box>
-                      <Group>
-                        <Button
-                          variant='secondary'
-                          size='md'
-                          onClick={onReleaseNarrativeButtonClick}
-                          loading={saveReleaseNarrativeMutation.isPending}
-                        >
-                          Edit
-                        </Button>
-                      </Group>
+                      {!isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => setIsEditingReleaseNarrative(true)}
+                          >
+                            Edit
+                          </Button>
+                        </Group>
+                      )}
+                      {isEditingReleaseNarrative && (
+                        <Group>
+                          <Button
+                            variant='secondary'
+                            size='md'
+                            onClick={() => {
+                              setReleaseNarrative(resolvedReleaseNarrative);
+                              setIsEditingReleaseNarrative(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size='md'
+                            onClick={() => saveReleaseNarrativeMutation.mutate()}
+                            loading={saveReleaseNarrativeMutation.isPending}
+                          >
+                            Save narrative
+                          </Button>
+                        </Group>
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -538,6 +571,14 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   >
                     Exit to jail
                   </Menu.Item>
+                  {canExitToHospitalViaRelease && (
+                    <Menu.Item
+                      leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                      onClick={navigateToHospitalReleaseFlow}
+                    >
+                      Exit to hospital
+                    </Menu.Item>
+                  )}
                   <Menu.Item
                     leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setRecordDeathModalOpened(true)}
@@ -593,6 +634,14 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         >
                           Record exit to jail
                         </Menu.Item>
+                        {canExitToHospitalViaRelease && (
+                          <Menu.Item
+                            leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={navigateToHospitalReleaseFlow}
+                          >
+                            Record exit to hospital
+                          </Menu.Item>
+                        )}
                         <Menu.Item
                           leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setRecordDeathModalOpened(true)}
@@ -613,7 +662,8 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        window.open(`/api/forms/cert/pdf/${deflection.id}`, '_blank');
+                        const url = docCert?.fileUrl || `/api/forms/cert/pdf/${deflection.id}`;
+                        window.open(url, '_blank');
                       }
                     }}
                     loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}

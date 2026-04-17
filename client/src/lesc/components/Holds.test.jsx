@@ -14,6 +14,7 @@ const {
   mockActiveIncident,
   mockDeflectionsList,
   mockIncidentLeft,
+  mockIncidentExtend,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
@@ -21,6 +22,7 @@ const {
   mockActiveIncident: vi.fn(),
   mockDeflectionsList: vi.fn(),
   mockIncidentLeft: vi.fn(),
+  mockIncidentExtend: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -50,6 +52,7 @@ vi.mock('@/Api', () => ({
     },
     incidents: {
       left: mockIncidentLeft,
+      extend: mockIncidentExtend,
     },
   },
 }));
@@ -66,6 +69,11 @@ vi.mock('@/FacilityContext', () => ({
       id: 1,
       name: 'RESET',
       status: 'OPEN',
+      addressLine1: '444 6th St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+      phone: null,
       bedTypes: [{ id: 99, available: 2, type: 'CHAIR' }],
     },
   }),
@@ -116,6 +124,18 @@ beforeEach(() => {
       leftAt: null,
       addressLine1: '1001 Polk St',
       createdById: 1,
+      permissions: {
+        isCreator: true,
+        canExtend: true,
+        canArrive: false,
+        canLeave: true,
+        canCancelIncident: true,
+        canEditIncident: true,
+        canCreateHold: true,
+        canHandoff: true,
+        incidentDetailsComplete: true,
+      },
+      totalActiveHolds: 1,
     },
   });
   mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
@@ -136,6 +156,9 @@ beforeEach(() => {
       leftAt: '2026-03-14T16:35:00.000Z',
     },
   });
+  mockIncidentExtend.mockResolvedValue({
+    data: [],
+  });
 });
 
 afterEach(() => {
@@ -143,6 +166,15 @@ afterEach(() => {
 });
 
 describe('Holds', () => {
+  it('shows centered facility contact details without the facility name in the header', async () => {
+    renderHolds();
+
+    expect(await screen.findByRole('heading', { name: /2 .*available/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '444 6th St' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '(415) 555-7890' })).toBeInTheDocument();
+    expect(screen.queryByText('RESET')).not.toBeInTheDocument();
+  });
+
   it('shows the departure toast after tapping "I\'ve left"', async () => {
     renderHolds();
 
@@ -159,6 +191,77 @@ describe('Holds', () => {
         4000,
         expect.stringMatching(/Departed at/)
       );
+    });
+  });
+
+  it('extends active holds from the footer overflow menu', async () => {
+    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
+      if (incidentId === 55 && active === true) {
+        return Promise.resolve({
+          data: [{
+            id: 88,
+            incidentId: 55,
+            subjectId: 'subject-1',
+            status: 'ACTIVE',
+            subjectStatus: 'DETAINED',
+          }],
+        });
+      }
+      if (facilityId === 1 && active === false) {
+        return Promise.resolve({ data: [] });
+      }
+      if (facilityId === 1 && active === true && subjectStatus) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderHolds();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+    fireEvent.click(await screen.findByText('Extend active holds'));
+
+    await waitFor(() => {
+      expect(mockIncidentExtend).toHaveBeenCalledWith(55);
+    });
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith(
+        'All active holds have been reset to 60 minutes.',
+        'success'
+      );
+    });
+  });
+
+  it('navigates to incident details from the incident overflow menu', async () => {
+    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
+      if (incidentId === 55 && active === true) {
+        return Promise.resolve({
+          data: [{
+            id: 88,
+            incidentId: 55,
+            subjectId: 'subject-1',
+            status: 'ACTIVE',
+            subjectStatus: 'DETAINED',
+          }],
+        });
+      }
+      if (facilityId === 1 && active === false) {
+        return Promise.resolve({ data: [] });
+      }
+      if (facilityId === 1 && active === true && subjectStatus) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderHolds();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Incident actions' }));
+    fireEvent.click(await screen.findByText('Edit details'));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/incident');
     });
   });
 });

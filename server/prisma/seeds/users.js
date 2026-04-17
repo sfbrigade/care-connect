@@ -14,12 +14,21 @@ export default async function main (prisma) {
       badgeNumber: '1234',
     },
     {
+      email: 'sfpd2@careconnectsf.org',
+      firstName: 'SFPD2',
+      lastName: 'User',
+      isAdmin: false,
+      organizationId: 'sfpd',
+      roles: ['FIELD'],
+      badgeNumber: '4321',
+    },
+    {
       email: 'sfso@careconnectsf.org',
       firstName: 'SFSO',
       lastName: 'User',
       isAdmin: false,
       organizationId: 'sfso',
-      roles: ['CUSTODY'],
+      roles: ['CUSTODY', 'ORG_ADMIN'],
       badgeNumber: '5678',
     },
     {
@@ -28,7 +37,7 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'connections',
-      roles: ['CARE'],
+      roles: ['CARE', 'FACILITY_ADMIN'],
     },
   ];
 

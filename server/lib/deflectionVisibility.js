@@ -14,7 +14,7 @@ export function canReadDeflection (user, deflection) {
   if (!user) return false;
   if (user.isAdmin) return true;
   if (user.isCustody || user.isCare) return true;
-  return deflection?.createdById === user.id;
+  return deflection?.createdById === user.id || deflection?.currentOfficerId === user.id;
 }
 
 function redactSubjectForCare (subject) {

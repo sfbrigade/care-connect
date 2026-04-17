@@ -1,17 +1,15 @@
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
-import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 
 import Api from '../../../Api';
 import { useFacilityContext } from '../../../FacilityContext';
 import { useToast } from '../../../components/ToastContext';
-import { calculateAge } from '../../../utils/format';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { releaseTiming } from '../../../utils/releaseTiming';
 
 function CustodyCard ({ deflection, highlighted }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
@@ -19,14 +17,7 @@ function CustodyCard ({ deflection, highlighted }) {
 
   const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
-
-  const subjectDetails = [];
-  if (deflection?.subject?.dateOfBirth) {
-    subjectDetails.push(`${calculateAge(deflection.subject.dateOfBirth)} y.o.`);
-  }
-  if (deflection?.subject?.sex) {
-    subjectDetails.push(t(`sex.${deflection.subject.sex}`));
-  }
+  const subjectDetails = useSubjectDetails(deflection?.subject);
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
   const isInChair = deflection.subjectStatus === 'IN_CHAIR';
@@ -97,6 +88,7 @@ function CustodyCard ({ deflection, highlighted }) {
           {showViewDetails && (
             <Button
               variant='secondary'
+              size='md'
               onClick={() => {
                 window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
                 navigate(`/custody/${deflection.id}`);
@@ -107,10 +99,11 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showMarkComplete && (
             <Button
+              size='md'
               onClick={() => safetyCheckMutation.mutate()}
               loading={safetyCheckMutation.isPending}
             >
-              Safety checked
+              Mark complete
             </Button>
           )}
           {showLegalRelease && (
@@ -123,6 +116,7 @@ function CustodyCard ({ deflection, highlighted }) {
           )}
           {showStartRelease && (
             <Button
+              size='md'
               onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
             >
               Start release

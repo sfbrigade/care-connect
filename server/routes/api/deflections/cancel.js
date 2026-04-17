@@ -4,6 +4,8 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
+import { canModifyDeflection } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -36,7 +38,7 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.createdById !== request.user.id && !request.user.isAdmin) {
+      if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -129,6 +131,21 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      // Send email if cancelled by someone other than the creator
+      if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {
+        const [creator, facility] = await Promise.all([
+          fastify.prisma.user.findUnique({ where: { id: deflection.createdById } }),
+          fastify.prisma.facility.findUnique({ where: { id: deflection.facilityId } }),
+        ]);
+        if (creator && facility) {
+          await sendHoldCancelledEmails(
+            [{ ...deflection, createdBy: creator }],
+            facility.name,
+            request.user.id
+          );
+        }
+      }
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

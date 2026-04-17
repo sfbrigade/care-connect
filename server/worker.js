@@ -25,7 +25,10 @@ for (const queue of queues) {
     deadLetter,
   });
 
-  await boss.work(queue.name, queue.handler);
+  await boss.work(queue.name, async ([job]) => {
+    const send = (name, data, opts) => boss.send(name, data, opts);
+    return queue.handler([job], { send });
+  });
 
   await boss.work(deadLetter, async ([job]) => {
     const jobData = queue.deadLetterData ? queue.deadLetterData(job.data) : job.data;
