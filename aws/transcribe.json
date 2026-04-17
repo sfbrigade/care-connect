@@ -5,6 +5,11 @@
     "BaseName": {
       "Description": "Base name for the stack",
       "Type": "String"
+    },
+    "CustomVocabularyName": {
+      "Description": "Name of custom vocabulary",
+      "Type": "String",
+      "Default": "care-connect-vocabulary"
     }
   },
   "Outputs": {
@@ -27,6 +32,17 @@
       "Export": {
         "Name": {
           "Fn::Sub": "${BaseName}-transcribe-user-secret-access-key-arn"
+        }
+      }
+    },
+    "TranscribeCustomVocabularyName": {
+      "Description": "ARN for the custom vocabulary",
+      "Value": {
+        "Ref": "CustomVocabularyName"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-transcribe-custom-vocabulary-name"
         }
       }
     }
@@ -72,7 +88,11 @@
                               "Fn::Sub": "${BaseName}-bucket"
                             }
                           },
-                          "/transcribe-vocabulary/*"
+                          "/transcribe-vocabulary/",
+                          {
+                            "Ref": "CustomVocabularyName"
+                          },
+                          ".txt"
                         ]
                       ]
                     }
