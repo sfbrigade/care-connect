@@ -134,12 +134,8 @@ export const WithAllDetails = {
       },
       narcoticsSubstance: false,
       narcoticsParaphernalia: false,
-      deflectionDetails: [
-        {
-          id: 'unable_to_care_for_basic_needs'
-        }
-      ],
       behavior: 'This is the narrative',
+      behaviorNarrative: 'This is the narrative',
       property: 'NONE',
     },
     onDetailsClick: fn(),
@@ -190,7 +186,7 @@ export const CancelledWithSomeDetails = {
       ...WithSomeSubjectDetails.args.deflection,
       status: 'CANCELLED',
       cancelledAt: new Date().toISOString(),
-      cancelReasonId: 'facility_emergency',
+      cancelReasonId: 'staffing_shortage',
     },
   }
 };

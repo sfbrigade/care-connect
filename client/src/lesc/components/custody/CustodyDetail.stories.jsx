@@ -31,10 +31,6 @@ const fullDeflection = {
   property: 'BACKPACK',
   propertyDetails: 'One backpack, one sleeping bag',
   propertyPhotos: [],
-  deflectionDetails: [
-    { id: '1', name: 'Unable to care for basic needs' },
-    { id: '2', name: 'Signs of substance use' },
-  ],
   subject: fullSubject,
 };
 
@@ -55,7 +51,7 @@ export const MinimalDetails = {
       property: null,
       propertyDetails: null,
       propertyPhotos: [],
-      deflectionDetails: [],
+
       subject: {
         id: 'abc12345-866a-40b3-8b6a-068e716a02db',
         firstName: 'Jane',
@@ -76,7 +72,7 @@ export const NoSubject = {
       property: null,
       propertyDetails: null,
       propertyPhotos: [],
-      deflectionDetails: [],
+
       subject: null,
     },
   },
