@@ -67,7 +67,7 @@ export async function generatePdf (deflection, user) {
   const deflectionData = transformData(deflection);
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
-  const isDrugTypeCNSDepressants = deflectionData.subjectDrugType === DrugTypeEnum.CNS_DEPRESSANTS;
+  const isDrugTypeAlcohol = deflectionData.subjectDrugType === DrugTypeEnum.ALCOHOL;
 
   // Map deflection data to 849b form fields
   const formData = {
@@ -76,7 +76,7 @@ export async function generatePdf (deflection, user) {
     cadNumber: deflectionData.cadNumber,
 
     // Incident fields
-    primaryIncidentType: isDrugTypeCNSDepressants
+    primaryIncidentType: isDrugTypeAlcohol
       ? 'Alcohol, Under Influence in Public Place, Investigative Detention'
       : 'Drugs, Under Influence in a Public Place, Investigative Detention',
     occurrenceDateTime: deflectionData.arrestedAt,
@@ -132,7 +132,7 @@ export async function generatePdf (deflection, user) {
     reportType: 'supplemental',
 
     // Incident codes based on drug type
-    incidentCodes: isDrugTypeCNSDepressants
+    incidentCodes: isDrugTypeAlcohol
       ? ['19090', '64085']
       : ['19095', '64085'],
 
