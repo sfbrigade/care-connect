@@ -4,10 +4,10 @@ import * as assert from 'node:assert';
 import { build } from '#test/helper.js';
 
 // Mock PDF generation to avoid needing Chromium locally
-mock.module('#lib/pdf.js', {
+mock.module('#lib/forms/shared/renderReactForm.js', {
   namedExports: {
     renderFormToHtml: async () => '<html/>',
-    renderToPdf: async () => Buffer.from('%PDF-mock'),
+    renderFormToPdf: async () => Buffer.from('%PDF-mock'),
   },
 });
 
