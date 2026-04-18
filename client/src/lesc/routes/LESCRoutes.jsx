@@ -18,7 +18,6 @@ import PropertyForm from '../components/PropertyForm';
 import SubstanceForm from '../components/SubstanceForm';
 import ManageCapacity from '../components/ManageCapacity/ManageCapacity';
 import FormPage from '@/forms/FormPage';
-import FormPreview from '@/forms/FormPreview';
 
 function LESCRoutes () {
   const { user } = useAuthContext();
@@ -44,7 +43,6 @@ function LESCRoutes () {
       <Route path='care' element={<Care />} />
       <Route path='manage-capacity' element={<ManageCapacity />} />
       <Route path='forms/:formId/:deflectionId' element={<FormPage />} />
-      <Route path='forms/preview/:formId/:deflectionId' element={<FormPreview />} />
       <Route path='' element={<Navigate to={defaultPath} />} />
     </Routes>
   );
