@@ -151,6 +151,37 @@
             },
             "Environment": [
               {
+                "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bedrock-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_BEDROCK_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-bedrock-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_BEDROCK_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
                 "Name": "AWS_LOCATION_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -249,6 +280,45 @@
                       "}}"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-transcribe-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-transcribe-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_VOCABULARY_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-transcribe-custom-vocabulary-name"
+                  }
                 }
               },
               {
@@ -570,6 +640,37 @@
             },
             "Environment": [
               {
+                "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-bedrock-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_BEDROCK_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-bedrock-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_BEDROCK_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
                 "Name": "AWS_LOCATION_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -668,6 +769,45 @@
                       "}}"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-transcribe-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-transcribe-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_TRANSCRIBE_VOCABULARY_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-transcribe-custom-vocabulary-name"
+                  }
                 }
               },
               {

@@ -101,7 +101,7 @@ describe('Care flow unit tests', () => {
       highlightTarget: '901',
       navigateTo: '/care?tab=not-in-custody',
       toastTitle: 'Exit recorded',
-      toastBody: 'Person now appears in Exited facility under Not in custody (last 24 hours).',
+      toastBody: 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).',
     });
   });
 

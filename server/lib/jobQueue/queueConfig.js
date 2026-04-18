@@ -21,13 +21,16 @@ const queues = [
     name: QUEUE_GENERATE_FORMS,
     options: { retryLimit: 3, retryBackoff: true },
     handler: async ([job], { send }) => {
-      await generateForms(job.data);
+      const skippedFormIds = await generateForms(job.data) || [];
       if (job.data.emailTemplate) {
-        await send(QUEUE_FORMS_EMAIL, {
-          deflectionId: job.data.deflectionId,
-          formIds: job.data.formIds,
-          template: job.data.emailTemplate,
-        });
+        const emailFormIds = job.data.formIds.filter((id) => !skippedFormIds.includes(id));
+        if (emailFormIds.length > 0) {
+          await send(QUEUE_FORMS_EMAIL, {
+            deflectionId: job.data.deflectionId,
+            formIds: emailFormIds,
+            template: job.data.emailTemplate,
+          });
+        }
       }
     },
     deadLetterData: (data) => ({ deflectionId: data?.deflectionId }),
