@@ -452,15 +452,6 @@ const Api = {
         return instance.delete(`/api/deflections/exit-housing-statuses/${id}`).catch(handleError);
       },
     },
-    detailCategories: {
-      index ({ include } = {}) {
-        const params = {};
-        if (include) {
-          params.include = include;
-        }
-        return instance.get('/api/deflections/detail-categories', { params });
-      },
-    },
   },
   serviceTypes: {
     list () {
@@ -549,7 +540,15 @@ const Api = {
     delete (id) {
       return instance.delete(`/api/property-photos/${id}`).catch(handleError);
     },
-  }
+  },
+  ai: {
+    transcribe (audio, mediaType) {
+      return instance.post('/api/ai/transcribe', { audio, mediaType });
+    },
+    parseId (image, mediaType) {
+      return instance.post('/api/ai/parse-id', { image, mediaType });
+    },
+  },
 };
 
 export default Api;

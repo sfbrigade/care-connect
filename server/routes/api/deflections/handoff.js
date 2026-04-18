@@ -95,7 +95,6 @@ export default async function (fastify) {
           },
           include: {
             subject: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });

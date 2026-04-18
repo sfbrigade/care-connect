@@ -91,13 +91,13 @@ enum PropertyNotReturnedReasonEnum{
 }
 
 enum DrugTypeEnum {
-  CNS_DEPRESSANTS
-  CNS_STIMULANTS
-  HALLUCINOGENS
-  DISSOCIATIVE_ANESTHETICS
-  NARCOTIC_ANALGESICS
-  INHALANTS
-  CANNABIS
+  ALCOHOL
+  HEROIN
+  FENTANYL
+  COCAINE
+  METH
+  MEDS
+  OTHER
 }
 
 enum EncounteredViaEnum {
@@ -239,10 +239,6 @@ model User {
   bedTypeUpdatesCreated        BedTypeUpdate[]
   deflectionCancelReasonsCreated DeflectionCancelReason[] @relation("CreatedBy")
   deflectionCancelReasonsUpdated DeflectionCancelReason[] @relation("UpdatedBy")
-  deflectionDetailCategoriesCreated DeflectionDetailCategory[] @relation("CreatedBy")
-  deflectionDetailCategoriesUpdated DeflectionDetailCategory[] @relation("UpdatedBy")
-  deflectionDetailsCreated     DeflectionDetail[]      @relation("CreatedBy")
-  deflectionDetailsUpdated     DeflectionDetail[]      @relation("UpdatedBy")
   deflectionReleaseReasonsCreated DeflectionReleaseReason[] @relation("CreatedBy")
   deflectionReleaseReasonsUpdated DeflectionReleaseReason[] @relation("UpdatedBy")
   deflectionRefusalReasonsCreated DeflectionRefusalReason[] @relation("CreatedBy")
@@ -530,11 +526,10 @@ model Deflection {
   subjectStatus                SubjectStatusEnum       @default(DETAINED)
   narcoticsSubstance           Boolean?
   narcoticsParaphernalia       Boolean?
-  volunteeredToReset           Boolean?
   drugUseEvidence              Boolean?
   drugType                     DrugTypeEnum?
   behavior                     String?
-  behaviorAdditions            String?
+  behaviorNarrative            String?
   property                     PropertyEnum?
   propertyDetails              String?
   propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
@@ -596,38 +591,9 @@ model Deflection {
   handoffReadyAt               DateTime?
   updatedAt                    DateTime                @updatedAt
 
-  deflectionDetails            DeflectionDetail[]
   deflectionUpdates            DeflectionUpdate[]
   deflectionDocuments          DeflectionDocument[]
   propertyPhotos               PropertyPhoto[]
-}
-
-model DeflectionDetailCategory {
-  id                           String                  @id
-  name                         String
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  createdAt                    DateTime                @default(now())
-  updatedBy                    User?                   @relation("UpdatedBy", fields: [updatedById], references: [id])
-  updatedById                  String?                 @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-
-  deflectionDetails            DeflectionDetail[]
-}
-
-model DeflectionDetail {
-  id                           String                  @id
-  deflectionDetailCategoryId   String
-  deflectionDetailCategory     DeflectionDetailCategory @relation(fields: [deflectionDetailCategoryId], references: [id])
-  name                         String
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  createdAt                    DateTime                @default(now())
-  updatedBy                    User?                   @relation("UpdatedBy", fields: [updatedById], references: [id])
-  updatedById                  String?                 @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-
-  deflections                  Deflection[]
 }
 
 model DeflectionUpdate {

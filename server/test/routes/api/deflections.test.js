@@ -163,30 +163,21 @@ test('/api/deflections', async (t) => {
     await t.test('updates deflection details', async () => {
       const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
-        behaviorAdditions: 'Additional details from officer.',
-        deflectionDetails: ['unable_to_stand', 'confused'],
-        volunteeredToReset: true,
+        behaviorNarrative: 'Additional details from officer.',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
-      assert.deepStrictEqual(data.behaviorAdditions, 'Additional details from officer.');
-      assert.deepStrictEqual(data.deflectionDetails.length, 2);
-      assert.deepStrictEqual(data.volunteeredToReset, true);
+      assert.deepStrictEqual(data.behaviorNarrative, 'Additional details from officer.');
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
         where: { id: 4 },
-        include: {
-          deflectionDetails: true,
-        },
       });
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
-      assert.deepStrictEqual(deflection.behaviorAdditions, 'Additional details from officer.');
-      assert.deepStrictEqual(deflection.deflectionDetails.length, 2);
-      assert.deepStrictEqual(deflection.volunteeredToReset, true);
+      assert.deepStrictEqual(deflection.behaviorNarrative, 'Additional details from officer.');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
@@ -839,7 +830,7 @@ test('/api/deflections', async (t) => {
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
         drugUseEvidence: true,
-        drugType: 'INHALANTS',
+        drugType: 'ALCOHOL',
       }).headers(anotherUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -857,7 +848,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
       assert.deepStrictEqual(data.drugUseEvidence, true);
-      assert.deepStrictEqual(data.drugType, 'INHALANTS');
+      assert.deepStrictEqual(data.drugType, 'ALCOHOL');
 
       const { subjectId } = data;
       const subject = await prisma.subject.findUnique({
@@ -880,7 +871,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.narcoticsSubstance, false);
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
       assert.deepStrictEqual(deflection.drugUseEvidence, true);
-      assert.deepStrictEqual(deflection.drugType, 'INHALANTS');
+      assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -898,7 +889,7 @@ test('/api/deflections', async (t) => {
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
         drugUseEvidence: false,
-        drugType: 'CANNABIS',
+        drugType: 'HEROIN',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);

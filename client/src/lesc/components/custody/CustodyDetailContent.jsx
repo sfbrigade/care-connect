@@ -36,7 +36,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
-  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['narcotics', 'deflection', 'property', 'incident', 'release-narrative']);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -338,22 +338,34 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 onChange={setCustodyAccordionValues}
               >
                 <Divider />
-                <Accordion.Item value='narcotics'>
+                <Accordion.Item value='substance'>
                   <Accordion.Control>
-                    <Title order={3}>Narcotics</Title>
+                    <Title order={3}>Substance details</Title>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
                       {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
                         <Box>
-                          <Text c='dimmed'>Controlled substance</Text>
+                          <Text c='dimmed'>Controlled substance found</Text>
                           <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
                       {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
                         <Box>
-                          <Text c='dimmed'>Paraphernalia</Text>
+                          <Text c='dimmed'>Paraphernalia found</Text>
                           <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      {deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined && (
+                        <Box>
+                          <Text c='dimmed'>Signs of substance use</Text>
+                          <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                        </Box>
+                      )}
+                      {deflection?.drugUseEvidence === true && deflection?.drugType && (
+                        <Box>
+                          <Text c='dimmed'>Substance used</Text>
+                          <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}
                       <Group mt='sm'>
@@ -368,12 +380,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
-                      {!!deflection?.deflectionDetails?.length && (
-                        <Box>
-                          <Text c='dimmed'>Selected observations</Text>
-                          <Text>{deflection?.deflectionDetails?.map(detail => detail.name).join('; ')}</Text>
-                        </Box>
-                      )}
                       {!!deflection?.behavior && (
                         <Box>
                           <Text c='dimmed'>647(f) narrative</Text>

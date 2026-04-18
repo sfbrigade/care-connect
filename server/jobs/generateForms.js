@@ -18,7 +18,6 @@ export default async function generateForms (data, prismaClient = prisma) {
       incident: { include: { createdBy: { include: { organization: true, unit: true, title: true } } } },
       facility: true,
       releaseReason: true,
-      deflectionDetails: true,
     },
   });
   if (!deflection) return;
