@@ -87,7 +87,7 @@ function LegalReleaseQuestions () {
       queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       if (isExitRelease) {
-        showToast('Exit recorded', 'success', 4000, 'Person now appears in Exited facility under Legally released (last 24 hours).');
+        showToast('Exit recorded', 'success', 4000, 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).');
         navigate(backTo);
         return;
       }

@@ -3,8 +3,7 @@
   "version": "6.0.0",
   "workspaces": [
     "client",
-    "server",
-    "shared"
+    "server"
   ],
   "scripts": {
     "build": "npm run build --workspace client && npm run build --workspace server",
