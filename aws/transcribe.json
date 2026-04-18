@@ -1,0 +1,134 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "IAM User account and credentials for accessing AWS Transcribe services",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    },
+    "CustomVocabularyName": {
+      "Description": "Name of custom vocabulary",
+      "Type": "String",
+      "Default": "care-connect-vocabulary"
+    }
+  },
+  "Outputs": {
+    "TranscribeUserAccessKeyId": {
+      "Description": "Access Key ID for the user",
+      "Value": {
+        "Ref": "TranscribeUserAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-transcribe-user-access-key-id"
+        }
+      }
+    },
+    "TranscribeUserSecretAccessKeyARN": {
+      "Description": "ARN for the Secrets Manager secret containing the Secret Access Key for the user",
+      "Value": {
+        "Ref": "TranscribeUserSecretAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-transcribe-user-secret-access-key-arn"
+        }
+      }
+    },
+    "TranscribeCustomVocabularyName": {
+      "Description": "ARN for the custom vocabulary",
+      "Value": {
+        "Ref": "CustomVocabularyName"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-transcribe-custom-vocabulary-name"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "TranscribeUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${BaseName}-transcribe-policy"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": [
+                    "transcribe:StartStreamTranscription",
+                    "transcribe:CreateVocabulary",
+                    "transcribe:UpdateVocabulary",
+                    "transcribe:GetVocabulary"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "VisualEditor1",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Fn::ImportValue": {
+                              "Fn::Sub": "${BaseName}-bucket"
+                            }
+                          },
+                          "/transcribe-vocabulary/",
+                          {
+                            "Ref": "CustomVocabularyName"
+                          },
+                          ".txt"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "UserName": {
+          "Fn::Sub": "${BaseName}-transcribe-user"
+        }
+      }
+    },
+    "TranscribeUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Status": "Active",
+        "UserName": {
+          "Ref": "TranscribeUser"
+        }
+      }
+    },
+    "TranscribeUserSecretAccessKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/iam/user/${BaseName}-transcribe-user/secret-access-key"
+        },
+        "SecretString": {
+          "Fn::GetAtt": [
+            "TranscribeUserAccessKey",
+            "SecretAccessKey"
+          ]
+        }
+      }
+    }
+  }
+}
