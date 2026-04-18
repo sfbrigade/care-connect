@@ -29,11 +29,11 @@ export default async function generateForms (data, prismaClient = prisma) {
     }
 
     const deflectionData = form.transformData(deflection);
-    const dataHash = createHash('sha256').update(JSON.stringify(deflectionData)).digest('hex');
+    const dataHash = formId === '647f' ? createHash('sha256').update(JSON.stringify(deflectionData)).digest('hex') : null;
     const existing = await prismaClient.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId, formId } },
     });
-    if (existing?.sourceDataHash === dataHash) {
+    if (dataHash && existing?.sourceDataHash === dataHash) {
       skippedFormIds.push(formId);
       continue;
     }
