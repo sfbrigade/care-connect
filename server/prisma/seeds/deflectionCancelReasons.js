@@ -35,8 +35,8 @@ export default async function main (prisma) {
       updatedById: adminUser.id,
     },
     {
-      id: 'facility_emergency',
-      name: 'Facility Emergency',
+      id: 'staffing_shortage',
+      name: 'Staffing shortage',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },

@@ -68,6 +68,17 @@ function HandoffScreen () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
 
+  useEffect(() => {
+    Api.deflections.initiateHandoff(true);
+    const interval = setInterval(() => {
+      Api.deflections.initiateHandoff(true);
+    }, 60_000);
+    return () => {
+      clearInterval(interval);
+      Api.deflections.initiateHandoff(false);
+    };
+  }, []);
+
   const { data: incident } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(r => r.data),
