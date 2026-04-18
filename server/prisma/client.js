@@ -34,7 +34,11 @@ const prisma = new PrismaClient({
     },
     deflection: {
       async expire (now = new Date()) {
-        await prisma.user.findOrCreateBatchUser();
+        try {
+          await prisma.user.findOrCreateBatchUser();
+        } catch {
+          // noop- can throw error if multiple processes calling at the same time
+        }
         const bedTypeIds = (await prisma.deflection.findMany({
           distinct: ['bedTypeId'],
           select: {

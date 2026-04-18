@@ -52,7 +52,6 @@ export default async function (fastify, opts) {
           include: {
             subject: true,
             cancelReason: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });
@@ -78,7 +77,6 @@ export default async function (fastify, opts) {
             include: {
               subject: true,
               cancelReason: true,
-              deflectionDetails: true,
               propertyPhotos: true,
             },
           });

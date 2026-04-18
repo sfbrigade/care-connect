@@ -7,6 +7,7 @@ import User from './user.js';
 const DeflectionDocumentAttributesSchema = z.object({
   formId: z.string(),
   file: z.string().nullable(),
+  sourceDataHash: z.string().nullable().optional(),
 });
 
 const DeflectionDocumentCreateSchema = DeflectionDocumentAttributesSchema.extend({

@@ -44,6 +44,7 @@ export default async function (fastify, opts) {
 
   fastify.get('/',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Returns a paginated list of feedback entries.',
         querystring: z.object({

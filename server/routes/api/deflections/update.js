@@ -38,19 +38,12 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      if (data.deflectionDetails) {
-        data.deflectionDetails = {
-          set: data.deflectionDetails.map((detailId) => ({ id: detailId })),
-        };
-      }
-
       const updated = await fastify.prisma.deflection.update({
         where: { id },
         data,
         include: {
           subject: true,
           cancelReason: true,
-          deflectionDetails: true,
           propertyPhotos: true,
         },
       });
