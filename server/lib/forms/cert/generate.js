@@ -4,7 +4,7 @@ import { PDFDocument } from 'pdf-lib';
 import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 
-function transformData (deflection) {
+export function transformData (deflection) {
   const subject = deflection.subject;
   const subjectName = subject
     ? [subject.firstName, subject.middleInitial, subject.lastName].filter(Boolean).join(' ')
@@ -42,8 +42,7 @@ function transformData (deflection) {
   };
 }
 
-export async function generatePdf (deflection, user) {
-  const deflectionData = transformData(deflection);
+export async function generatePdf (deflectionData, user) {
   const templatePath = join(process.cwd(), 'lib/forms/cert/template.pdf');
   const templateBytes = await readFile(templatePath);
 

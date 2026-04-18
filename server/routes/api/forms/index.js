@@ -66,7 +66,7 @@ export default async function (fastify, _opts) {
         // note: on timeout the generatePdf promise (and any Chromium process it
         // launched) continues running in the background until it resolves or rejects.
         const pdfBuffer = await Promise.race([
-          form.generatePdf(result.deflection, request.user),
+          form.generatePdf(form.transformData(result.deflection), request.user),
           new Promise((_resolve, reject) =>
             setTimeout(() => reject(new Error('PDF generation timed out')), RENDER_TIMEOUT_MS)
           ),

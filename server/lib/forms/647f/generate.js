@@ -1,6 +1,6 @@
 import { metadata } from './metadata.js';
 
-function transformData (deflection) {
+export function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
   const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
@@ -54,9 +54,8 @@ function transformData (deflection) {
   };
 }
 
-export async function generatePdf (deflection) {
-  const formData = transformData(deflection);
+export async function generatePdf (deflectionData) {
   const { default: Form647f } = await import('#lib/forms/dist/Form647f.js');
   const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
-  return Buffer.from(await renderFormToPdf(Form647f, formData, { title: metadata.title }));
+  return Buffer.from(await renderFormToPdf(Form647f, deflectionData, { title: metadata.title }));
 }

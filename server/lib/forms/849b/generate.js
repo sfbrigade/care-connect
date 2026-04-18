@@ -5,7 +5,7 @@ import { formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 
-function transformData (deflection) {
+export function transformData (deflection) {
   const incident = deflection.incident;
   const subject = deflection.subject;
 
@@ -63,8 +63,7 @@ function transformData (deflection) {
   };
 }
 
-export async function generatePdf (deflection, user) {
-  const deflectionData = transformData(deflection);
+export async function generatePdf (deflectionData, user) {
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
   const isDrugTypeAlcohol = deflectionData.subjectDrugType === DrugTypeEnum.ALCOHOL;

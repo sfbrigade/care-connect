@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import prisma from '#prisma/client.js';
 import { FORMS } from '#lib/forms/index.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
@@ -11,6 +13,8 @@ export default async function generateForms (data, prismaClient = prisma) {
 
   const user = await prismaClient.user.findUnique({ where: { id: userId }, include: { unit: true } });
 
+  const skippedFormIds = [];
+
   for (const [formId, form] of Object.entries(forms)) {
     const deflection = await prismaClient.deflection.findUnique({
       where: { id: deflectionId },
@@ -19,22 +23,31 @@ export default async function generateForms (data, prismaClient = prisma) {
     if (!deflection) return;
 
     const check = form.canGenerate(deflection);
-    if (check !== true) continue;
+    if (check !== true) {
+      skippedFormIds.push(formId);
+      continue;
+    }
 
-    const pdfBuffer = await form.generatePdf(deflection, user);
-
-    const filename = form.downloadFilename(deflectionId);
-
+    const deflectionData = form.transformData(deflection);
+    const dataHash = formId === '647f' ? createHash('sha256').update(JSON.stringify(deflectionData)).digest('hex') : null;
     const existing = await prismaClient.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId, formId } },
     });
+    if (dataHash && existing?.sourceDataHash === dataHash) {
+      skippedFormIds.push(formId);
+      continue;
+    }
+
+    const pdfBuffer = await form.generatePdf(deflectionData, user);
+
+    const filename = form.downloadFilename(deflectionId);
 
     if (existing) {
       const doc = new DeflectionDocument(existing);
       const assetHandler = doc.setAsset('file', filename, { buffer: pdfBuffer });
       await prismaClient.deflectionDocument.update({
         where: { id: existing.id },
-        data: { file: filename, updatedById: userId },
+        data: { file: filename, updatedById: userId, ...(dataHash && { sourceDataHash: dataHash }) },
       });
       await assetHandler();
     } else {
@@ -47,9 +60,12 @@ export default async function generateForms (data, prismaClient = prisma) {
           file: filename,
           createdById: userId,
           updatedById: userId,
+          ...(dataHash && { sourceDataHash: dataHash }),
         },
       });
       await assetHandler({ id: record.id });
     }
   }
+
+  return skippedFormIds;
 }
