@@ -134,13 +134,12 @@ function makeDeflectionBase (facilityId, bedTypeId, fieldUser, baseTime) {
     drugUseEvidence: hasDrug,
     drugType: hasDrug
       ? weightedPick([
-        { v: 'CNS_DEPRESSANTS', w: 40 }, { v: 'CNS_STIMULANTS', w: 30 },
-        { v: 'NARCOTIC_ANALGESICS', w: 20 }, { v: 'HALLUCINOGENS', w: 5 },
-        { v: 'CANNABIS', w: 5 },
+        { v: 'FENTANYL', w: 40 }, { v: 'ALCOHOL', w: 30 },
+        { v: 'HEROIN', w: 20 }, { v: 'COCAINE', w: 5 },
+        { v: 'METH', w: 5 },
       ])
       : null,
     behavior: pick(BEHAVIORS),
-    behaviorAdditions: rng() > 0.7 ? 'Difficulty maintaining balance' : null,
     property: weightedPick([
       { v: 'NONE', w: 40 }, { v: 'SMALL', w: 35 },
       { v: 'MEDIUM', w: 20 }, { v: 'LARGE', w: 5 },
@@ -284,7 +283,6 @@ export default async function main (prisma) {
 
   const exitDestinations = await prisma.deflectionExitDestination.findMany();
   const exitHousingStatuses = await prisma.deflectionExitHousingStatus.findMany();
-  const deflectionDetails = await prisma.deflectionDetail.findMany();
 
   const exitDestStreet = exitDestinations.find(d => d.id === 'street');
   const exitDestHome = exitDestinations.find(d => d.id === 'home');
@@ -393,11 +391,6 @@ export default async function main (prisma) {
     const tRelease = addMins(tIntake, inCustodyDuration);
     const tExit = addMins(tRelease, exitDelta);
 
-    // Pick optional deflection detail
-    const detail = deflectionDetails.length > 0 && rng() > 0.5
-      ? { connect: { id: pick(deflectionDetails).id } }
-      : undefined;
-
     // ── Create subject (most scenarios); ~30% of historical scenarios reuse a repeat subject ──
     let subject = null;
     if (type !== 'expired') {
@@ -441,7 +434,6 @@ export default async function main (prisma) {
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonSobered.id,
           ...exitFields,
-          ...(detail ? { deflectionDetails: detail } : {}),
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -501,8 +493,7 @@ export default async function main (prisma) {
           releasedAt: tRelease,
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonSobered.id,
-          ...exitFields,
-          ...(detail ? { deflectionDetails: detail } : {}),
+          ...exitFields
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [

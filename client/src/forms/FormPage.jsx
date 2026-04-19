@@ -136,12 +136,7 @@ export default function FormPage () {
           <Group justify='space-between' align='center'>
             <Group gap='sm'>
               <IconFileTypePdf size={24} />
-              <div>
-                <Text fw={500}>{formInfo.generateLabel}</Text>
-                <Text size='sm' c='dimmed'>
-                  {formInfo.description(subjectName)}
-                </Text>
-              </div>
+              <Text fw={500}>{formInfo.description(subjectName)}</Text>
             </Group>
             <Group>
               <Button

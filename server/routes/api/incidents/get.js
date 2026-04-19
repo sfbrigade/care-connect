@@ -7,6 +7,7 @@ import User from '#models/user.js';
 export default async function (fastify, opts) {
   fastify.get('/:id',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Get single incident details',
         params: z.object({

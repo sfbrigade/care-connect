@@ -34,8 +34,8 @@ function buildDeflection (overrides = {}) {
     narcoticsParaphernalia: false,
     drugUseEvidence: false,
     drugType: null,
-    deflectionDetails: [{}],
     behavior: 'Observed unsafe behavior',
+    behaviorNarrative: 'Observed unsafe behavior',
     property: 'NONE',
     ...overrides,
   };

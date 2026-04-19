@@ -1,0 +1,87 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "IAM User account and credentials for accessing AWS Bedrock services",
+  "Parameters": {
+    "BaseName": {
+      "Description": "Base name for the stack",
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "BedrockUserAccessKeyId": {
+      "Description": "Access Key ID for the user",
+      "Value": {
+        "Ref": "BedrockUserAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-bedrock-user-access-key-id"
+        }
+      }
+    },
+    "BedrockUserSecretAccessKeyARN": {
+      "Description": "ARN for the Secrets Manager secret containing the Secret Access Key for the user",
+      "Value": {
+        "Ref": "BedrockUserSecretAccessKey"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-bedrock-user-secret-access-key-arn"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "BedrockUser": {
+      "Type": "AWS::IAM::User",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${BaseName}-bedrock-policy"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": [
+                    "bedrock:InvokeModel"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "UserName": {
+          "Fn::Sub": "${BaseName}-bedrock-user"
+        }
+      }
+    },
+    "BedrockUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Status": "Active",
+        "UserName": {
+          "Ref": "BedrockUser"
+        }
+      }
+    },
+    "BedrockUserSecretAccessKey": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "/iam/user/${BaseName}-bedrock-user/secret-access-key"
+        },
+        "SecretString": {
+          "Fn::GetAtt": [
+            "BedrockUserAccessKey",
+            "SecretAccessKey"
+          ]
+        }
+      }
+    }
+  }
+}
