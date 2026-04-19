@@ -203,6 +203,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DateTime deletedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
+    Boolean mfaEnabled 
     String mfaCode "❓"
     String mfaToken "❓"
     DateTime mfaExpiresAt "❓"

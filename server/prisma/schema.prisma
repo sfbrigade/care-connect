@@ -222,6 +222,7 @@ model User {
   deletedAt                    DateTime?
   passwordResetToken           String?                 @unique @db.Uuid
   passwordResetExpiresAt       DateTime?
+  mfaEnabled                   Boolean                 @default(true)
   mfaCode                      String?
   mfaToken                     String?                 @unique @db.Uuid
   mfaExpiresAt                 DateTime?

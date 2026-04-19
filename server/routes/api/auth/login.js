@@ -60,6 +60,12 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
+      // Users with MFA disabled skip the challenge entirely
+      if (!user.mfaEnabled) {
+        request.session.set('userId', user.id);
+        return reply.send(user);
+      }
+
       // Generate MFA code and token
       const mfaCode = generateMfaCode();
       const mfaToken = crypto.randomUUID();
