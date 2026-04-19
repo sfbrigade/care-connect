@@ -255,6 +255,11 @@ Two Playwright scripts run [axe-core](https://github.com/dequelabs/axe-core) aga
 Both scripts assume:
 - Docker is running (`docker compose up -d`) — the test setup resets the database to its seed state before each run
 - The dev server is reachable at http://localhost:3333
+- Playwright's Chromium browser is installed locally — this is a one-time setup per machine, not tracked in `package.json` because Playwright installs browsers into a user-level cache rather than `node_modules`. Run:
+
+  ```
+  npx playwright install chromium
+  ```
 
 After each run, a JSON report is written to `e2e/accessibility-report.json` or `e2e/accessibility-report-deep.json` summarizing all violations found, including any that were excluded from the pass/fail gate.
 
