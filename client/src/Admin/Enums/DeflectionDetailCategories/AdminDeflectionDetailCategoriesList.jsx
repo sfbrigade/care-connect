@@ -48,8 +48,8 @@ function AdminDeflectionDetailCategoriesList () {
               </Table.Tr>}
             {!isLoading && detailCategories?.map((reason) => (
               <Table.Tr key={reason.id}>
-                <Table.Td>{reason.id}</Table.Td>
-                <Table.Td>{reason.name}</Table.Td>
+                <Table.Td style={reason.deletedById != null ? { textDecoration: 'line-through' } : ''}>{reason.id}</Table.Td>
+                <Table.Td style={reason.deletedById != null ? { textDecoration: 'line-through' } : ''}>{reason.name}</Table.Td>
                 <Table.Td>
                   <Anchor component={Link} to={`${reason.id}`}>Edit</Anchor>
                 </Table.Td>

@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import DeflectionDetail from '#models/deflectionDetail.js';
 
-export default async function (fastify, opts) {
+export default async function (fastify) {
   fastify.post('/',
     {
       onRequest: fastify.requireAdmin,
@@ -24,7 +24,6 @@ export default async function (fastify, opts) {
           updatedById: userId,
         },
       });
-
       return reply.code(StatusCodes.CREATED).send(record);
     });
 }

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import DeflectionDetailCategory from '#models/deflectionDetailCategory.js';
 
-export default async function (fastify, opts) {
+export default async function (fastify) {
   fastify.get('/',
     {
       onRequest: fastify.requireUser,
@@ -18,18 +18,12 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const include = request.query.include?.split(',');
+      const isAdmin = request.isAdmin;
 
       const records = await fastify.prisma.deflectionDetailCategory.findMany({
-        where: {
-          deletedAt: null,
-        },
+        where: isAdmin ? { deletedAt: null } : undefined,
         orderBy: { name: 'asc' },
-        include: {
-          deflectionDetails: !!include?.includes('deflectionDetails'),
-        },
       });
-
       return reply.send(records);
     });
 }

@@ -13,6 +13,7 @@ function AdminDeflectionDetailsList () {
       return response.data;
     },
   });
+
   return (
     <>
       <Head>

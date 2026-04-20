@@ -28,7 +28,6 @@ function parseLinkHeader (response) {
     const urls = {};
     let m;
     while ((m = linkRe.exec(link)) !== null) {
-      const url = m[1];
       urls[m[2]] = url;
     }
     return urls;
@@ -432,6 +431,9 @@ const Api = {
       },
       update (id, data) {
         return instance.patch(`/api/deflections/detail-categories/${id}`, data).catch(handleError);
+      },
+      reopen (id) {
+        return instance.patch(`/api/deflections/detail-categories/reopen/${id}`).catch(handleError);
       },
       delete (id) {
         return instance.delete(`/api/deflections/detail-categories/${id}`).catch(handleError);

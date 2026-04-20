@@ -1,20 +1,20 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import DeflectionDetail from '#models/deflectionDetail.js';
+import DeflectionDetailCategory from '#models/deflectionDetailCategory.js';
 
 export default async function (fastify) {
   fastify.patch('/:id',
     {
       onRequest: fastify.requireAdmin,
       schema: {
-        description: 'Update a deflection detail (admin only).',
+        description: 'Update a deflection detail category (admin only).',
         params: z.object({
           id: z.string(),
         }),
-        body: DeflectionDetail.UpdateSchema,
+        body: DeflectionDetailCategory.UpdateSchema,
         response: {
-          [StatusCodes.OK]: DeflectionDetail.ResponseSchema,
+          [StatusCodes.OK]: DeflectionDetailCategory.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.object({
             error: z.string(),
           }),
@@ -25,14 +25,14 @@ export default async function (fastify) {
       const { id } = request.params;
       const data = request.body;
       const { id: userId } = request.user;
-      const record = await fastify.prisma.deflectionDetail.findUnique({
+      const record = await fastify.prisma.deflectionDetailCategory.findUnique({
         where: { id },
       });
       if (!record) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection detail not found' });
+        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection detail category not found' });
       }
 
-      const updated = await fastify.prisma.deflectionDetail.update({
+      const updated = await fastify.prisma.deflectionDetailCategory.update({
         where: { id },
         data: {
           ...data,

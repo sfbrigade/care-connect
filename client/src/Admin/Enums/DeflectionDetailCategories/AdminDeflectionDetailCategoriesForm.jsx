@@ -76,6 +76,16 @@ function AdminDeflectionDetailCategoriesForm () {
     }
   }
 
+  const reopenMutation = useMutation({
+    mutationFn: () => Api.deflections.detailCategories.reopen(categoryId),
+    onSuccess: () => {
+      navigate(
+        '/admin/enums/deflection-details-categories'
+      );
+    },
+    onError: (errors) => form.setErrors(errors),
+  });
+
   return (
     <>
       <Head>
@@ -114,23 +124,33 @@ function AdminDeflectionDetailCategoriesForm () {
                 >
                   Cancel
                 </Button>
-                {!isNew && (
-                  <Button
-                    color='red'
-                    variant='light'
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isPending || onSubmitMutation.isPending}
-                  >
-                    Delete
-                  </Button>
+                {(response?.data.deletedById === null) && (
+                  <>
+                    <Button
+                      color='red'
+                      variant='light'
+                      onClick={handleDelete}
+                      disabled={deleteMutation.isPending || onSubmitMutation.isPending}
+                    >
+                      Delete
+                    </Button>
+                  </>
                 )}
+                {(response?.data.deletedById != null) &&
+                  <Button
+                    variant='light' onClick={() => reopenMutation.mutate()}
+                    disabled={onSubmitMutation.isPending}
+                  >
+                    Reopen
+                  </Button>}
               </Group>
             </Stack>
           </Fieldset>
         </form>
       </Container>
     </>
-  );
+  )
+  ;
 }
 
 export default AdminDeflectionDetailCategoriesForm;

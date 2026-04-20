@@ -144,14 +144,8 @@ function AdminDeflectionDetailForm () {
                   Cancel
                 </Button>
 
-                {!isNew && (
+                {(response?.data.deletedById === null) && (
                   <>
-                    <Button
-                      variant='light' onClick={() => reopenMutation.mutate()}
-                      disabled={onSubmitMutation.isPending}
-                    >
-                      Reopen
-                    </Button>
                     <Button
                       color='red'
                       variant='light'
@@ -160,9 +154,15 @@ function AdminDeflectionDetailForm () {
                     >
                       Delete
                     </Button>
-
                   </>
                 )}
+                {(response?.data.deletedById != null) &&
+                  <Button
+                    variant='light' onClick={() => reopenMutation.mutate()}
+                    disabled={onSubmitMutation.isPending}
+                  >
+                    Reopen
+                  </Button>}
               </Group>
             </Stack>
           </Fieldset>

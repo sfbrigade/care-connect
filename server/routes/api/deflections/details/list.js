@@ -19,10 +19,9 @@ export default async function (fastify) {
 
       const records = await fastify.prisma.DeflectionDetail.findMany({
         orderBy: { name: 'asc' },
-        where: isAdmin ? undefined : { deletedAt: null }
+        where: isAdmin ? { deletedAt: null } : undefined
 
       });
-      console.log(records);
       return reply.send(records);
     });
 }
