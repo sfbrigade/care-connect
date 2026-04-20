@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import Base from './base.js';
 import DeflectionCancelReason from './deflectionCancelReason.js';
-import DeflectionDetail from './deflectionDetail.js';
 import DeflectionDocument from './deflectionDocument.js';
 import DeflectionExitDestination from './deflectionExitDestination.js';
 import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
@@ -18,15 +17,13 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  behaviorAdditions: z.string().nullable(),
+  behaviorNarrative: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
-  volunteeredToReset: z.boolean().nullable(),
   drugUseEvidence: z.boolean().nullable(),
   drugType: z.enum(Object.values(DrugTypeEnum)).catch(null).nullable(),
   property: z.enum(Object.values(PropertyEnum)).catch(null).nullable(),
   propertyDetails: z.string().nullable(),
-  deflectionDetails: z.array(z.string()),
   releaseNarrative: z.string().nullable(),
 });
 
@@ -44,7 +41,6 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
-  deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
   deflectionDocuments: z.array(DeflectionDocument.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   propertyReturned: z.boolean().nullable().optional(),

@@ -10,10 +10,7 @@ function formatDrugType (drugType) {
     return DETAILS_MISSING;
   }
 
-  return drugType
-    .split('_')
-    .map((part) => (/^[A-Z]+$/.test(part) && part.length <= 3) ? part : `${part.charAt(0)}${part.slice(1).toLowerCase()}`)
-    .join(' ');
+  return drugType.charAt(0) + drugType.slice(1).toLowerCase();
 }
 
 function formatIncidentDateTime (arrestedAt) {
@@ -41,13 +38,11 @@ function formatIncidentDateTime (arrestedAt) {
   };
 }
 
-export function buildDeflectionNarrative ({ incident, observedBehaviorNames, drugUseEvidence, drugType, volunteeredToReset } = {}) {
+export function buildDeflectionNarrative ({ incident, drugUseEvidence, drugType } = {}) {
   const address = formatAddress(incident ?? {}) || DETAILS_MISSING;
   const { date, time } = formatIncidentDateTime(incident?.arrestedAt);
-  const behaviors = (observedBehaviorNames ?? []).filter(Boolean).join('; ') || DETAILS_MISSING;
   const lines = [
     `Officer encountered this individual at ${address} on ${date} at ${time}.`,
-    `Officer observed the following behaviors: ${behaviors}.`,
   ];
 
   if (drugUseEvidence === true) {
@@ -55,12 +50,6 @@ export function buildDeflectionNarrative ({ incident, observedBehaviorNames, dru
   }
 
   lines.push('Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.');
-
-  if (volunteeredToReset === true) {
-    lines.push('Person volunteered to be taken to RESET.');
-  } else if (volunteeredToReset === false) {
-    lines.push('Person did not volunteer to be taken to RESET.');
-  }
 
   return lines.join('\n');
 }
