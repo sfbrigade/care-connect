@@ -9,7 +9,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react';
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';
@@ -130,7 +130,7 @@ function LegalReleaseQuestions () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={3}>Review the 849(b) and choose a release reason. After you confirm, it&apos;s sent to SFSO supervisors and can&apos;t be changed.</Title>
+            <Title order={3}>Review the 849(b) and choose a release reason.</Title>
           </Stack>
 
           <Stack gap='xs'>
@@ -216,6 +216,15 @@ function LegalReleaseQuestions () {
               </>
             )}
           </Stack>
+
+          <Group gap='sm' align='flex-start' wrap='nowrap'>
+            <Box pt={2} c='indigo.6'>
+              <IconAlertCircle size={24} />
+            </Box>
+            <Text size='md'>
+              When you confirm release, the 849(b) will be sent to SFSO supervisors
+            </Text>
+          </Group>
 
           <Group>
             <Button variant='destructive' onClick={() => navigate(backTo)}>
