@@ -131,9 +131,6 @@ function Holds () {
     deflections?.[0]?.id ?? incident?.id ?? '',
     {
       surveySource: 'holds_ive_left',
-      surveyModalProps: {
-        satisfactionQuestionLabel: 'How satisfied are you with your experience at the facility today?',
-      },
     }
   );
 

@@ -2,19 +2,22 @@ import { useCallback, useEffect, useState } from 'react';
 
 import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '@/lesc/components/custody/SatisfactionSurveyModal';
 
+/** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
+export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
+
 /**
  * After a SFSO legal release or SFPD leaves facility, either navigates immediately or waits 3s
  * and opens the satisfaction survey modal, then optionally navigates.
  */
-function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_release', surveyModalProps = {} } = {}) {
+function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_release' } = {}) {
   const shouldShowSatisfactionSurvey = isSatisfactionSurveyEnabled();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null);
+  const [staySurveyScheduled, setStaySurveyScheduled] = useState(false);
   const [activeSurveyContextId, setActiveSurveyContextId] = useState(deflectionId);
 
   useEffect(() => {
     let surveyTimeoutId;
-    if (pendingAction && shouldShowSatisfactionSurvey) {
+    if (staySurveyScheduled && shouldShowSatisfactionSurvey) {
       surveyTimeoutId = window.setTimeout(() => {
         setIsSurveyModalOpen(true);
       }, 3000);
@@ -25,16 +28,22 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
         window.clearTimeout(surveyTimeoutId);
       }
     };
-  }, [pendingAction, shouldShowSatisfactionSurvey]);
+  }, [staySurveyScheduled, shouldShowSatisfactionSurvey]);
 
   const navigateWithOptionalSurvey = useCallback((path) => {
     if (shouldShowSatisfactionSurvey) {
-      setActiveSurveyContextId(deflectionId);
-      setPendingAction({ type: 'navigate', path });
+      navigate(path, {
+        state: {
+          [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
+            deflectionId,
+            surveySource,
+          },
+        },
+      });
       return;
     }
     navigate(path);
-  }, [navigate, shouldShowSatisfactionSurvey, deflectionId]);
+  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, surveySource]);
 
   /**
    * Show the delayed survey without navigating afterward (e.g. after "I've left" on Holds).
@@ -43,19 +52,14 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
   const scheduleOptionalSurveyWithoutNavigation = useCallback((contextId) => {
     if (shouldShowSatisfactionSurvey) {
       setActiveSurveyContextId(contextId ?? deflectionId);
-      setPendingAction({ type: 'stay' });
+      setStaySurveyScheduled(true);
     }
   }, [shouldShowSatisfactionSurvey, deflectionId]);
 
   const closeSurveyAndContinue = useCallback(() => {
     setIsSurveyModalOpen(false);
-    setPendingAction((current) => {
-      if (current?.type === 'navigate') {
-        navigate(current.path);
-      }
-      return null;
-    });
-  }, [navigate]);
+    setStaySurveyScheduled(false);
+  }, []);
 
   const satisfactionSurveyModal = (
     <SatisfactionSurveyModal
@@ -63,7 +67,6 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
       deflectionId={activeSurveyContextId}
       source={surveySource}
       onFinished={closeSurveyAndContinue}
-      {...surveyModalProps}
     />
   );
 
