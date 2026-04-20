@@ -933,6 +933,21 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.drugUseEvidence, false);
       assert.deepStrictEqual(deflection.drugType, null);
     });
+
+    await t.test('returns 404 when the subject has been anonymized', async () => {
+      const deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
+      await prisma.subject.update({
+        where: { id: deflection.subjectId },
+        data: { anonymizedAt: new Date() },
+      });
+
+      const response = await app.inject().put('/api/deflections/4/subject').payload({
+        firstName: 'Anon',
+        lastName: 'Ymous',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
   });
 
   await t.test('DELETE /:id', async (t) => {
