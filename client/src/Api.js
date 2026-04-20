@@ -28,6 +28,7 @@ function parseLinkHeader (response) {
     const urls = {};
     let m;
     while ((m = linkRe.exec(link)) !== null) {
+      const url = m[1];
       urls[m[2]] = url;
     }
     return urls;
