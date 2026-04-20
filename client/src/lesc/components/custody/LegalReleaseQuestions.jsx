@@ -130,7 +130,7 @@ function LegalReleaseQuestions () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={3}>Review the 849(b) and choose a release reason.</Title>
+            <Title order={3}>Review the 849(b) before continuing.</Title>
           </Stack>
 
           <Stack gap='xs'>
