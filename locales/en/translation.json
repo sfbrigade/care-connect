@@ -4,13 +4,13 @@
     "BED": "Bed"
   },
   "drugType": {
-    "CNS_DEPRESSANTS": "CNS Depressants",
-    "CNS_STIMULANTS": "CNS Stimulants",
-    "HALLUCINOGENS": "Hallucinogens",
-    "DISSOCIATIVE_ANESTHETICS": "Dissociative Anesthetics",
-    "NARCOTIC_ANALGESICS": "Narcotic Analgesics",
-    "INHALANTS": "Inhalants",
-    "CANNABIS": "Cannabis"
+    "ALCOHOL": "Alcohol",
+    "HEROIN": "Heroin",
+    "FENTANYL": "Fentanyl",
+    "COCAINE": "Cocaine",
+    "METH": "Meth",
+    "MEDS": "Meds",
+    "OTHER": "Other"
   },
   "encounteredVia": {
     "ON_VIEW": "On View",

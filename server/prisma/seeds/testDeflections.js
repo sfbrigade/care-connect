@@ -85,8 +85,6 @@ export default async function main (prisma) {
     return;
   }
 
-  const detail = await prisma.deflectionDetail.findFirst();
-
   let holdsCount = 0;
   let occupiedCount = 0;
   let incident;
@@ -148,7 +146,6 @@ export default async function main (prisma) {
         ...(subjectStatus === 'EXITED'
           ? { exitedAt: now, exitedById: sfsoUser.id }
           : {}),
-        ...(detail ? { deflectionDetails: { connect: { id: detail.id } } } : {}),
       },
     });
 
