@@ -17,8 +17,8 @@ import NotFound from './NotFound';
 import UserProfileRoutes from './UserProfile/UserProfileRoutes';
 import ManageUsersPage from './ManageUsers/ManageUsersPage';
 
-import DIDORoutes from './dido/routes/DIDORoutes';
-import LESCRoutes from './lesc/routes/LESCRoutes';
+const DIDORoutes = lazy(() => import('./dido/routes/DIDORoutes'));
+const LESCRoutes = lazy(() => import('./lesc/routes/LESCRoutes'));
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 
 function AppRoutes () {
@@ -48,8 +48,24 @@ function AppRoutes () {
                   </Suspense>
                 }
               />
-              {!facility && <Route path='/*' element={<DIDORoutes />} />}
-              {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
+              {!facility && (
+                <Route
+                  path='/*' element={
+                    <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                      <DIDORoutes />
+                    </Suspense>
+                  }
+                />
+              )}
+              {facility?.type === 'LESC' && (
+                <Route
+                  path='/*' element={
+                    <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                      <LESCRoutes />
+                    </Suspense>
+                  }
+                />
+              )}
               <Route path='/*' element={<NotFound />} />
             </Routes>
           </AppRedirects>
