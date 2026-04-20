@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { Anchor, Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -9,7 +9,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowBackUp, IconArrowLeft, IconCheck } from '@tabler/icons-react';
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';
@@ -27,6 +27,7 @@ function LegalReleaseQuestions () {
 
   const [releaseReasonId, setReleaseReasonId] = useState(prefilledState.releaseReasonId);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
+  const [hasReviewedNarrative, setHasReviewedNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
@@ -130,118 +131,165 @@ function LegalReleaseQuestions () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={3}>Review the 849(b) and choose a release reason. After you confirm, it&apos;s sent to SFSO supervisors and can&apos;t be changed.</Title>
+            <Title order={3}>Review the 849(b) before continuing.</Title>
           </Stack>
 
-          <Stack gap='xs'>
-            <Text size='md' fz='md' c='dimmed'>849(b) narrative</Text>
-            {!isEditingNarrative && <Text size='md' fz='md' style={{ whiteSpace: 'pre-wrap' }}>{narrativeText}</Text>}
-            {isEditingNarrative && (
-              <Textarea
-                value={narrativeDraft}
-                onChange={(event) => setNarrativeDraft(event.currentTarget.value)}
-                minRows={6}
-                autosize
-              />
-            )}
-            {!isEditingNarrative && (
-              <Anchor onClick={() => setIsEditingNarrative(true)}>
-                Edit narrative
-              </Anchor>
-            )}
-            {isEditingNarrative && (
+          <Box bg='gray.1' p='md' radius='md'>
+            <Stack gap='md'>
+              <Stack gap={0}>
+                <Text size='md' fz='md' c='dimmed'>849(b) narrative</Text>
+                {!isEditingNarrative && <Text size='md' fz='md' style={{ whiteSpace: 'pre-wrap' }}>{narrativeText}</Text>}
+                {isEditingNarrative && (
+                  <Textarea
+                    value={narrativeDraft}
+                    onChange={(event) => setNarrativeDraft(event.currentTarget.value)}
+                    minRows={6}
+                    autosize
+                  />
+                )}
+              </Stack>
+
+              {!isEditingNarrative && (
+                !hasReviewedNarrative
+                  ? (
+                    <Stack gap='xs' align='flex-start'>
+                      <Button radius='xl' onClick={() => setHasReviewedNarrative(true)}>
+                        Mark as reviewed
+                      </Button>
+                      <Button variant='subtle' color='indigo' radius='xl' onClick={() => setIsEditingNarrative(true)}>
+                        Edit narrative
+                      </Button>
+                    </Stack>
+                    )
+                  : (
+                    <Group gap='xs'>
+                      <Button
+                        variant='secondary'
+                        radius='xl'
+                        leftSection={<IconCheck size={20} />}
+                        disabled
+                      >
+                        Reviewed
+                      </Button>
+                      <Button
+                        variant='subtle'
+                        color='indigo'
+                        radius='xl'
+                        leftSection={<IconArrowBackUp size={20} />}
+                        onClick={() => setHasReviewedNarrative(false)}
+                      >
+                        Undo review
+                      </Button>
+                    </Group>
+                    )
+              )}
+
+              {isEditingNarrative && (
+                <Group>
+                  <Button
+                    variant='secondary'
+                    onClick={() => {
+                      setNarrativeDraft(narrativeText);
+                      setIsEditingNarrative(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={() => saveNarrativeMutation.mutate()} loading={saveNarrativeMutation.isPending}>
+                    Save narrative
+                  </Button>
+                </Group>
+              )}
+            </Stack>
+          </Box>
+
+          {hasReviewedNarrative && (
+            <>
+              <Stack gap='xl'>
+                <Title order={3}>Choose a release reason.</Title>
+                <Input.Wrapper label='Release reason' required>
+                  <Box mt='md'>
+                    <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
+                      <Stack gap='sm' align='flex-start'>
+                        <Chip value='sobered'>Can care for themselves</Chip>
+                        <Chip value='medical_issue'>Medical issue</Chip>
+                        <Chip value='other'>Other (please specify)</Chip>
+                      </Stack>
+                    </Chip.Group>
+                  </Box>
+                </Input.Wrapper>
+                {isMedicalRelease && (
+                  <>
+                    <Text size='md' c='dimmed'>
+                      This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
+                    </Text>
+                    <Input.Wrapper label='Exit destination' required>
+                      <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
+                        <Group gap='sm'>
+                          <Chip value='hospital'>Hospital</Chip>
+                          <Chip value='other'>Other</Chip>
+                        </Group>
+                      </Chip.Group>
+                    </Input.Wrapper>
+                  </>
+                )}
+                {isOtherRelease && (
+                  <>
+                    <Textarea
+                      label='Other release reason'
+                      required
+                      value={otherReason}
+                      onChange={(event) => setOtherReason(event.currentTarget.value)}
+                      minRows={1}
+                      placeholder='For example: Facility emergency'
+                    />
+                    <Textarea
+                      label='Other release destination'
+                      required
+                      value={otherDestination}
+                      onChange={(event) => setOtherDestination(event.currentTarget.value)}
+                      minRows={1}
+                      placeholder='For example: Alternate care site'
+                    />
+                    <Text size='md' c='dimmed'>
+                      For &ldquo;Other&rdquo;, add a reason and destination. This release will also mark the person as exited from RESET.
+                    </Text>
+                  </>
+                )}
+              </Stack>
+
+              <Group gap='md' wrap='nowrap' align='flex-start'>
+                <IconAlertCircle size={24} color='var(--mantine-color-indigo-6)' stroke={1.75} />
+                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO supervisors.</Text>
+              </Group>
+
               <Group>
-                <Button
-                  variant='secondary'
-                  onClick={() => {
-                    setNarrativeDraft(narrativeText);
-                    setIsEditingNarrative(false);
-                  }}
-                >
+                <Button variant='destructive' onClick={() => navigate(backTo)}>
                   Cancel
                 </Button>
-                <Button onClick={() => saveNarrativeMutation.mutate()} loading={saveNarrativeMutation.isPending}>
-                  Save narrative
+                <Button
+                  onClick={() => {
+                    if (isEditingNarrative) {
+                      saveNarrativeMutation.mutate(undefined, {
+                        onSuccess: () => releaseMutation.mutate(),
+                      });
+                      return;
+                    }
+                    releaseMutation.mutate();
+                  }}
+                  loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
+                  disabled={
+                    !releaseReasonId ||
+                    (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
+                    (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
+                    (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
+                  }
+                >
+                  {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}
                 </Button>
               </Group>
-            )}
-          </Stack>
-
-          <Stack gap='xl'>
-            <Input.Wrapper label='Release reason' required>
-              <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
-                <Group gap='sm'>
-                  <Chip value='sobered'>Can care for themselves</Chip>
-                  <Chip value='medical_issue'>Medical issue</Chip>
-                  <Chip value='other'>Other (please specify)</Chip>
-                </Group>
-              </Chip.Group>
-            </Input.Wrapper>
-            {isMedicalRelease && (
-              <>
-                <Text size='md' c='dimmed'>
-                  This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
-                </Text>
-                <Input.Wrapper label='Exit destination' required>
-                  <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
-                    <Group gap='sm'>
-                      <Chip value='hospital'>Hospital</Chip>
-                      <Chip value='other'>Other</Chip>
-                    </Group>
-                  </Chip.Group>
-                </Input.Wrapper>
-              </>
-            )}
-            {isOtherRelease && (
-              <>
-                <Textarea
-                  label='Other release reason'
-                  required
-                  value={otherReason}
-                  onChange={(event) => setOtherReason(event.currentTarget.value)}
-                  minRows={1}
-                  placeholder='For example: Facility emergency'
-                />
-                <Textarea
-                  label='Other release destination'
-                  required
-                  value={otherDestination}
-                  onChange={(event) => setOtherDestination(event.currentTarget.value)}
-                  minRows={1}
-                  placeholder='For example: Alternate care site'
-                />
-                <Text size='md' c='dimmed'>
-                  For &ldquo;Other&rdquo;, add a reason and destination. This release will also mark the person as exited from RESET.
-                </Text>
-              </>
-            )}
-          </Stack>
-
-          <Group>
-            <Button variant='destructive' onClick={() => navigate(backTo)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (isEditingNarrative) {
-                  saveNarrativeMutation.mutate(undefined, {
-                    onSuccess: () => releaseMutation.mutate(),
-                  });
-                  return;
-                }
-                releaseMutation.mutate();
-              }}
-              loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
-              disabled={
-                !releaseReasonId ||
-                (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
-                (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
-              }
-            >
-              {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}
-            </Button>
-          </Group>
+            </>
+          )}
           <Box h={8} />
         </Stack>
       </Container>
