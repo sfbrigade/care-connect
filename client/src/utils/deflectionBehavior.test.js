@@ -16,57 +16,39 @@ describe('deflectionBehavior', () => {
     ].join('\n'));
   });
 
-  it('persists additions-only narrative when no observations are selected', () => {
+  it('persists narrative-only when no generated text exists', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: '',
-      behaviorAdditions: 'Additional context only.',
-      deflectionDetails: [],
+      behaviorNarrative: 'Additional context only.',
     });
 
     expect(payload.behavior).toBe('Additional context only.');
-    expect(payload.behaviorAdditions).toBe('Additional context only.');
+    expect(payload.behaviorNarrative).toBe('Additional context only.');
   });
 
-  it('regenerates base narrative and keeps additions appended', () => {
-    const additions = 'Subject required two-person assist to ambulate.';
+  it('appends officer narrative to generated text', () => {
+    const narrative = 'Subject required two-person assist to ambulate.';
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Officer observed poor hand-eye coordination.',
-      behaviorAdditions: additions,
-      deflectionDetails: ['b'],
+      behaviorNarrative: narrative,
     });
 
     expect(payload.behavior).toBe([
       'Officer observed poor hand-eye coordination.',
       '',
-      additions,
+      narrative,
     ].join('\n'));
   });
 
-  it('creates payload with behavior and sorted deflection details', () => {
+  it('stores behaviorNarrative as null when textarea is empty', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Generated text',
-      behaviorAdditions: 'Manual additions',
-      deflectionDetails: ['10', '2', '1'],
-    });
-
-    expect(payload).toEqual({
-      behavior: ['Generated text', '', 'Manual additions'].join('\n'),
-      behaviorAdditions: 'Manual additions',
-      deflectionDetails: ['1', '10', '2'],
-    });
-  });
-
-  it('stores manual additions as null when textarea is empty', () => {
-    const payload = buildDeflectionUpdatePayload({
-      generatedNarrative: 'Generated text',
-      behaviorAdditions: '   ',
-      deflectionDetails: ['a'],
+      behaviorNarrative: '   ',
     });
 
     expect(payload).toEqual({
       behavior: 'Generated text',
-      behaviorAdditions: null,
-      deflectionDetails: ['a'],
+      behaviorNarrative: null,
     });
   });
 });
