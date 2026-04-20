@@ -99,7 +99,7 @@ describe('LegalReleaseQuestions', () => {
   it('shows the SFSO supervisor notice above the release actions', async () => {
     renderPage();
 
-    expect(await screen.findByText('When you confirm release, the 849(b) will be sent to SFSO .')).toBeInTheDocument();
+    expect(await screen.findByText(/When you confirm release, the 849\(b\) will be sent to SFSO supervisors\./i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm release' })).toBeDisabled();
   });

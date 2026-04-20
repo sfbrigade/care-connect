@@ -222,7 +222,7 @@ function LegalReleaseQuestions () {
               <IconAlertCircle size={24} />
             </Box>
             <Text size='md'>
-              When you confirm release, the 849(b) will be sent to SFSO supervisors
+              When you confirm release, the 849(b) will be sent to SFSO supervisors.
             </Text>
           </Group>
 
