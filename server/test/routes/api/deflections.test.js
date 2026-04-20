@@ -936,6 +936,56 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('DELETE /:id', async (t) => {
+    await t.test('blocks hospital cancellation when hold details are incomplete', async () => {
+      const response = await app.inject().delete('/api/deflections/4?cancelReasonId=hospital').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'SFPD policy requires person details to be completed before a medical-related cancelation');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('queues 647f generation when a completed hold is cancelled for hospital', async () => {
+      await prisma.incident.update({
+        where: { id: 1 },
+        data: {
+          addressLine1: '100 Main St',
+          city: 'San Francisco',
+          state: 'CA',
+          supervisorBadgeNumber: '1234',
+        },
+      });
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: {
+          narcoticsSubstance: false,
+          narcoticsParaphernalia: false,
+          drugUseEvidence: false,
+          drugType: null,
+          behavior: 'Subject was unable to care for self.',
+          behaviorNarrative: 'Additional narrative.',
+          property: 'NONE',
+        },
+      });
+
+      const response = await app.inject().delete('/api/deflections/4?cancelReasonId=hospital').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, 'CANCELLED');
+      assert.deepStrictEqual(data.cancelReasonId, 'hospital');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 4,
+        userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        formIds: ['647f'],
+        emailTemplate: 'transfer-form',
+      });
+    });
+
     await t.test('cancels the deflection', async () => {
       await prisma.deflection.expire();
 

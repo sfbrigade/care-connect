@@ -103,6 +103,14 @@ function Deflection () {
       showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
       navigate('/holds');
     },
+    onError: (error) => {
+      const message = error?.response?.data?.error;
+      if (error?.response?.status === 422 && message) {
+        showToast(message, 'error');
+        return;
+      }
+      showToast('We couldn’t cancel the hold', 'error', 4000, 'Something went wrong. Try again later.');
+    },
   });
 
   const cancelIncidentMutation = useMutation({
@@ -130,6 +138,11 @@ function Deflection () {
 
       if (isNetworkError) {
         showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      if (error?.response?.status === 422 && error?.response?.data?.error) {
+        showToast(error.response.data.error, 'error');
         return;
       }
 
