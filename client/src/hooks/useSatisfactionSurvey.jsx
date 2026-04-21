@@ -20,7 +20,7 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
     if (staySurveyScheduled && shouldShowSatisfactionSurvey) {
       surveyTimeoutId = window.setTimeout(() => {
         setIsSurveyModalOpen(true);
-      }, 3000);
+      }, 1000);
     }
 
     return () => {

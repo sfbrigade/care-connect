@@ -73,6 +73,7 @@ function SatisfactionSurveyModal ({
             ...(improvementTrimmed ? { improvementSuggestions: improvementTrimmed } : {}),
           },
         });
+        showToast('Thank you. Your feedback helps us improve your experience.', 'success');
       } catch (err) {
         console.error(err);
         showToast('Feedback could not be saved. You can try again later.', 'error');
