@@ -146,20 +146,20 @@ function IncidentForm () {
       isEditing
         ? Api.incidents.update(incidentId, formData)
         : Api.incidents.create(formData, {
-          bedTypeId: searchParams.get(‘bedTypeId’),
+          bedTypeId: searchParams.get('bedTypeId'),
         }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: [‘facilities’, facility.id, ‘bed-types’],
+        queryKey: ['facilities', facility.id, 'bed-types'],
       });
       await queryClient.invalidateQueries({
-        queryKey: [‘facilities’, facility.id, ‘my-holds’],
+        queryKey: ['facilities', facility.id, 'my-holds'],
       });
-      window.sessionStorage.setItem(‘_session-holds’, ‘active’);
-      navigate(‘/holds’);
+      window.sessionStorage.setItem('_session-holds', 'active');
+      navigate('/holds');
     },
     onError: () => {
-      showToast(‘We couldn\’t save the incident’, ‘error’, 4000, ‘Something went wrong. Try again later.’);
+      showToast('We couldn\'t save the incident', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
 

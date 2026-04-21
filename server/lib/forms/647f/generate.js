@@ -3,8 +3,7 @@ import { metadata } from './metadata.js';
 export function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
-  const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
-  const officer = arrestingOfficerRecord?.officer || incident?.createdBy || deflection.createdBy;
+  const officer = incident?.createdBy || deflection.createdBy;
 
   const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
     .filter(Boolean)
@@ -17,9 +16,9 @@ export function transformData (deflection) {
   const officerName = officer
     ? `${officer.firstName} ${officer.lastName}`
     : '';
-  const officerBadge = arrestingOfficerRecord?.badgeNumber || incident?.createdByBadgeNumber || officer?.badgeNumber || '';
-  const officerUnit = arrestingOfficerRecord?.unit?.name || incident?.createdByUnit?.name || officer?.unit?.name || '';
-  const agency = arrestingOfficerRecord?.organization?.name || officer?.organization?.name || '';
+  const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
+  const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
+  const agency = officer?.organization?.name || '';
 
   const facility = deflection.facility;
   const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]

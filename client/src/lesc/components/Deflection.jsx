@@ -85,11 +85,11 @@ function Deflection () {
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [‘facilities’, facility.id, ‘my-holds’] });
-      queryClient.invalidateQueries({ queryKey: [‘facilities’, facility.id, ‘bed-types’] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       setShowCancelModal(false);
-      showToast(‘Hold cancelled’, ‘success’, 4000, `You cancelled the hold for ${name}.`);
-      navigate(‘/holds’);
+      showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
+      navigate('/holds');
     },
   });
 

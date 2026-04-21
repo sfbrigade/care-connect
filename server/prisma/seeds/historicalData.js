@@ -100,7 +100,7 @@ function makeSubject () {
   };
 }
 
-function makeIncidentData (facilityId, fieldUser, baseTime, arrivedAt, leftAt, completedAt, idx) {
+function makeIncidentData (facilityId, fieldUser, baseTime, _arrivedAt, _leftAt, _completedAt, idx) {
   const addr = pick(SF_ADDRESSES);
   return {
     facilityId,
@@ -113,9 +113,6 @@ function makeIncidentData (facilityId, fieldUser, baseTime, arrivedAt, leftAt, c
     caseNumber: `SF-2026-${String(50000 + idx).slice(1)}`,
     supervisorBadgeNumber: String(1000 + randInt(0, 8999)),
     createdByBadgeNumber: fieldUser.badgeNumber ?? String(1000 + randInt(0, 8999)),
-    arrivedAt: arrivedAt ?? null,
-    leftAt: leftAt ?? null,
-    completedAt: completedAt ?? null,
     createdById: fieldUser.id,
     createdByOrganizationId: fieldUser.organizationId,
     updatedById: fieldUser.id,
@@ -180,36 +177,6 @@ function exitData (careUser, exitDestId, housingStatusId, t) {
     ]),
     subjectStatus: 'EXITED',
   };
-}
-
-async function createIncidentOfficer (prisma, {
-  incidentId,
-  facilityId,
-  officer,
-  role,
-  arrivedAt = null,
-  leftAt = null,
-  handoffReceivedAt = null,
-  handoffReceivedFromId = null,
-}) {
-  if (!officer) return;
-  await prisma.incidentOfficer.create({
-    data: {
-      incidentId,
-      facilityId,
-      officerId: officer.id,
-      role,
-      arrivedAt,
-      leftAt,
-      handoffReceivedAt,
-      handoffReceivedFromId,
-      badgeNumber: officer.badgeNumber ?? null,
-      organizationId: officer.organizationId ?? null,
-      unitId: officer.unitId ?? null,
-      titleId: officer.titleId ?? null,
-      createdAt: handoffReceivedAt ?? arrivedAt ?? leftAt ?? new Date(),
-    },
-  });
 }
 
 // Creates DeflectionUpdate audit rows for each state transition in a scenario.
@@ -413,14 +380,6 @@ export default async function main (prisma) {
           ...(isSentinel ? { cadNumber: 'HIST-SENTINEL' } : {}),
         },
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tExit,
-      });
       const deflection = await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -464,22 +423,6 @@ export default async function main (prisma) {
           ...(isSentinel ? { cadNumber: 'HIST-SENTINEL' } : {}),
         },
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser2,
-        role: 'RECEIVING',
-        arrivedAt: tArrived,
-        leftAt: tExit,
-        handoffReceivedAt: tHandoff,
-        handoffReceivedFromId: fieldUser.id,
-      });
       const deflection = await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -513,25 +456,11 @@ export default async function main (prisma) {
           updatedById: careUser.id
         },
       ]);
-      await prisma.incident.update({
-        where: { id: incident.id },
-        data: {
-          arrivedAt: tArrived,
-          leftAt: tExit,
-          completedAt: tExit,
-        },
-      });
     } else if (type === 'cancelled_early') {
       const tCancel = addMins(base, randInt(5, 60));
       const cancelReason = pick(cancelReasons);
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, null, null, tCancel, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -553,14 +482,6 @@ export default async function main (prisma) {
       const cancelReason = pick(cancelReasons);
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, null, tCancel, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: addMins(tCancel, randInt(1, 15))
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -584,14 +505,6 @@ export default async function main (prisma) {
       const tHospital = addMins(tSafetyCheck, randInt(5, 30));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tHospital, tHospital, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tHospital,
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -626,14 +539,6 @@ export default async function main (prisma) {
       const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tExit, tExit, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tExit,
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -674,14 +579,6 @@ export default async function main (prisma) {
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tRelease, tRelease, idx),
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tRelease,
-      });
       const deflection = await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -719,14 +616,6 @@ export default async function main (prisma) {
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tJail, tJail, idx),
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tJail,
-      });
       const deflection = await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -756,14 +645,6 @@ export default async function main (prisma) {
       const tJail = addMins(tTransfer, randInt(15, 60));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tJail, tJail, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tJail,
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -795,12 +676,6 @@ export default async function main (prisma) {
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, null, null, tExpiry, idx),
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-      });
       const deflection = await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -818,14 +693,6 @@ export default async function main (prisma) {
       const tDeath = addMins(tIntake, randInt(30, 180));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tDeath, tDeath, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tDeath,
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -857,14 +724,6 @@ export default async function main (prisma) {
       const tDeath = addMins(tRelease, randInt(15, 90));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tDeath, tDeath, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tDeath,
       });
       const deflection = await prisma.deflection.create({
         data: {
@@ -927,14 +786,6 @@ export default async function main (prisma) {
 
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tExit, tExit, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tArrived,
-        leftAt: tExit,
       });
 
       const deflectionPayload = {
@@ -1002,12 +853,6 @@ export default async function main (prisma) {
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, null, null, null, idx),
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-      });
       await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -1023,13 +868,6 @@ export default async function main (prisma) {
       const tOnsite = addMins(base, randInt(10, 20));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tOnsite, null, null, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tOnsite,
       });
       await prisma.deflection.create({
         data: {
@@ -1048,14 +886,6 @@ export default async function main (prisma) {
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tOnsite, null, null, idx),
       });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tOnsite,
-        leftAt: addMins(tTrans, randInt(1, 15))
-      });
       await prisma.deflection.create({
         data: {
           ...makeDeflectionBase(facility.id, bedType.id, fieldUser, base),
@@ -1071,14 +901,6 @@ export default async function main (prisma) {
       const tTrans = addMins(tOnsite, randInt(5, 15));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tOnsite, null, null, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tOnsite,
-        leftAt: addMins(tTrans, randInt(1, 15))
       });
       await prisma.deflection.create({
         data: {
@@ -1096,14 +918,6 @@ export default async function main (prisma) {
       const tAdm = addMins(tTrans, randInt(10, 35));
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tOnsite, null, null, idx),
-      });
-      await createIncidentOfficer(prisma, {
-        incidentId: incident.id,
-        facilityId: facility.id,
-        officer: fieldUser,
-        role: 'ARRESTING',
-        arrivedAt: tOnsite,
-        leftAt: addMins(tTrans, randInt(1, 15))
       });
       await prisma.deflection.create({
         data: {

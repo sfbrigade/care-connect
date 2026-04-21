@@ -129,11 +129,6 @@ enum RoleEnum {
   FACILITY_ADMIN
 }
 
-enum IncidentOfficerRoleEnum {
-  ARRESTING
-  RECEIVING
-}
-
 enum SubjectStatusEnum {
   DETAINED
   ONSITE_AWAITING_TRANSFER
@@ -157,13 +152,12 @@ model Organization {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  deflections      Deflection[]
-  incidentOfficers IncidentOfficer[]
-  incidents        Incident[]
-  invites          Invite[]
-  titles           Title[]
-  units            Unit[]
-  users            User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  invites     Invite[]
+  titles      Title[]
+  units       Unit[]
+  users       User[]
 }
 
 model Unit {
@@ -176,10 +170,9 @@ model Unit {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  deflections      Deflection[]
-  incidentOfficers IncidentOfficer[]
-  incidents        Incident[]
-  users            User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  users       User[]
 
   @@id(name: "unitId", [id, organizationId])
 }
@@ -194,11 +187,10 @@ model Title {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  deflections      Deflection[]
-  incidentOfficers IncidentOfficer[]
-  incidents        Incident[]
-  invites          Invite[]
-  users            User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  invites     Invite[]
+  users       User[]
 
   @@id(name: "titleId", [id, organizationId])
 }
@@ -260,8 +252,6 @@ model User {
   facilityCheckIns                     FacilityCheckIn[]             @relation("FacilityCheckIns")
   handoffsFrom                         Handoff[]                     @relation("HandoffFrom")
   handoffsTo                           Handoff[]                     @relation("HandoffTo")
-  incidentOfficers                     IncidentOfficer[]             @relation("IncidentOfficer")
-  incidentOfficersHandedOff            IncidentOfficer[]             @relation("HandoffReceivedFrom")
   incidentsCreated                     Incident[]                    @relation("CreatedBy")
   incidentsUpdated                     Incident[]                    @relation("UpdatedBy")
   invitesCreated                       Invite[]                      @relation("CreatedBy")
@@ -731,9 +721,6 @@ model Incident {
   id                      Int                 @unique @default(autoincrement())
   facilityId              String              @db.Uuid
   facility                Facility            @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  arrivedAt               DateTime?
-  leftAt                  DateTime?
-  completedAt             DateTime?
   addressLine1            String?
   addressLine2            String?
   city                    String?
@@ -760,38 +747,11 @@ model Incident {
   updatedBy               User                @relation("UpdatedBy", fields: [updatedById], references: [id])
   updatedById             String              @db.Uuid
 
-  deflections      Deflection[]
-  incidentOfficers IncidentOfficer[]
+  deflections Deflection[]
 
   @@id([id, facilityId])
   @@index([cadNumber])
   @@index([caseNumber])
-}
-
-model IncidentOfficer {
-  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  incident              Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
-  incidentId            Int
-  facilityId            String                  @db.Uuid
-  officer               User                    @relation("IncidentOfficer", fields: [officerId], references: [id])
-  officerId             String                  @db.Uuid
-  role                  IncidentOfficerRoleEnum
-  arrivedAt             DateTime?
-  leftAt                DateTime?
-  handoffReceivedAt     DateTime?
-  handoffReceivedFrom   User?                   @relation("HandoffReceivedFrom", fields: [handoffReceivedFromId], references: [id])
-  handoffReceivedFromId String?                 @db.Uuid
-  badgeNumber           String?
-  organization          Organization?           @relation(fields: [organizationId], references: [id])
-  organizationId        String?
-  unit                  Unit?                   @relation(fields: [organizationId, unitId], references: [organizationId, id])
-  unitId                String?
-  title                 Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
-  titleId               String?
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-
-  @@unique([incidentId, facilityId, officerId])
 }
 
 model Feedback {

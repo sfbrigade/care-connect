@@ -120,18 +120,6 @@ export default async function (fastify, opts) {
                 status: Deflection.HoldStatus.ACTIVE,
               },
             });
-            if (activeDeflections === 0) {
-              await tx.incident.updateMany({
-                where: {
-                  id: hold.incidentId,
-                  arrivedAt: null,
-                },
-                data: {
-                  completedAt: now,
-                  updatedById: userId,
-                },
-              });
-            }
           }
 
           cancelledHolds = inTransitHolds;

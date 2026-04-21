@@ -264,7 +264,7 @@ function Holds () {
       setHoldsHighlighted(true);
     },
     onError: () => {
-      showToast('Couldn't extend holds. Please try again.', 'error');
+      showToast('Couldn\'t extend holds. Please try again.', 'error');
     },
   });
 
