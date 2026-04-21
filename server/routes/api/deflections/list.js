@@ -91,8 +91,11 @@ export default async function (fastify) {
 
       if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId) && handedOff !== 'true') {
         if (active === 'true') {
-          // Active holds: only show holds the user currently controls
-          where.currentOfficerId = request.user.id;
+          // Active holds: show holds the user currently controls OR created
+          where.OR = [
+            { currentOfficerId: request.user.id },
+            { createdById: request.user.id },
+          ];
         } else if (active === 'false') {
           // History: show holds the user created OR currently controls
           // This includes holds they created but handed off (still ACTIVE, but currentOfficerId !== them)
