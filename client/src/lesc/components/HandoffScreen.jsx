@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Button, Card, Container, Group, Stack, Text, Title } from '@mantine/core';
@@ -63,11 +63,17 @@ function HandoffHoldCard ({ deflection, isHandedOff }) {
   );
 }
 
+function formatIncidentSubtitle (incident) {
+  const address = [incident.addressLine1, incident.addressLine2].filter(Boolean).join(', ');
+  const time = incident.arrestedAt ? formatSmartDateTime(incident.arrestedAt) : 'Time unavailable';
+  return `${address || 'Address unavailable'} • ${time}`;
+}
+
 function HandoffScreen () {
   const navigate = useNavigate();
   const { facility } = useFacilityContext();
-  const [handedOffIds, setHandedOffIds] = useState(new Set());
-  const initialHoldIdsRef = useRef(null);
+  const seenIncidentsRef = useRef(new Map());
+  const seenDeflectionsRef = useRef(new Map());
 
   useEffect(() => {
     Api.deflections.initiateHandoff(true);
@@ -88,64 +94,55 @@ function HandoffScreen () {
     refetchOnMount: 'always',
   });
 
-  // Flatten all active deflections from all incidents
-  const currentDeflections = (myHolds?.incidents ?? []).flatMap(inc => inc.deflections);
-
-  // Track which holds have been handed off (disappeared from the response)
+  // Cache incidents and deflections as we see them so a handed-off hold's card
+  // (and its incident header) stays rendered after it disappears from the response.
   useEffect(() => {
-    if (!currentDeflections.length && !initialHoldIdsRef.current) return;
-
-    const currentIds = new Set(currentDeflections.map(d => d.id));
-
-    if (!initialHoldIdsRef.current) {
-      initialHoldIdsRef.current = currentIds;
-      return;
-    }
-
-    // Any ID that was in the initial set but is no longer in the response has been handed off
-    const newlyHandedOff = new Set(handedOffIds);
-    for (const id of initialHoldIdsRef.current) {
-      if (!currentIds.has(id)) {
-        newlyHandedOff.add(id);
+    if (!myHolds?.incidents) return;
+    for (const inc of myHolds.incidents) {
+      if (!seenIncidentsRef.current.has(inc.id)) {
+        seenIncidentsRef.current.set(inc.id, inc);
+      }
+      for (const d of inc.deflections) {
+        if (!seenDeflectionsRef.current.has(d.id)) {
+          seenDeflectionsRef.current.set(d.id, { deflection: d, incidentId: inc.id });
+        }
       }
     }
-    if (newlyHandedOff.size !== handedOffIds.size) {
-      setHandedOffIds(newlyHandedOff);
+  }, [myHolds]);
+
+  // IDs of holds this officer currently still controls
+  const currentIds = new Set(
+    (myHolds?.incidents ?? []).flatMap(inc => inc.deflections.map(d => d.id))
+  );
+
+  // Build incident-grouped display:
+  //   - current holds come from myHolds (fresh data)
+  //   - handed-off holds are supplemented from the cached snapshot
+  const groupsMap = new Map();
+  for (const inc of (myHolds?.incidents ?? [])) {
+    if (!groupsMap.has(inc.id)) {
+      groupsMap.set(inc.id, { incident: inc, deflections: [] });
     }
-  }, [currentDeflections]);
+    for (const d of inc.deflections) {
+      groupsMap.get(inc.id).deflections.push(d);
+    }
+  }
+  for (const [deflId, { deflection, incidentId }] of seenDeflectionsRef.current) {
+    if (currentIds.has(deflId)) continue;
+    const incident = seenIncidentsRef.current.get(incidentId);
+    if (!incident) continue;
+    if (!groupsMap.has(incidentId)) {
+      groupsMap.set(incidentId, { incident, deflections: [] });
+    }
+    groupsMap.get(incidentId).deflections.push(deflection);
+  }
+  const groups = [...groupsMap.values()];
 
-  // Redirect when all holds have been handed off
-  const allHandedOff = initialHoldIdsRef.current &&
-    initialHoldIdsRef.current.size > 0 &&
-    currentDeflections.length === 0 &&
-    handedOffIds.size > 0;
-
+  // Redirect when everything we had at first has been handed off
+  const allHandedOff = seenDeflectionsRef.current.size > 0 && currentIds.size === 0;
   useEffect(() => {
     if (allHandedOff) navigate('/holds');
   }, [allHandedOff, navigate]);
-
-  // Build the display list: current holds + handed-off holds (from initial snapshot)
-  const handedOffDeflections = initialHoldIdsRef.current
-    ? [...initialHoldIdsRef.current]
-      .filter(id => handedOffIds.has(id))
-      .map(id => ({ id, _handedOff: true }))
-    : [];
-
-  // We don't have full deflection data for handed-off holds anymore,
-  // so we store the initial deflections for display
-  const initialDeflectionsRef = useRef(new Map());
-  useEffect(() => {
-    for (const d of currentDeflections) {
-      if (!initialDeflectionsRef.current.has(d.id)) {
-        initialDeflectionsRef.current.set(d.id, d);
-      }
-    }
-  }, [currentDeflections]);
-
-  const allDisplayDeflections = [
-    ...currentDeflections,
-    ...[...handedOffIds].map(id => initialDeflectionsRef.current.get(id)).filter(Boolean),
-  ];
 
   return (
     <>
@@ -172,13 +169,21 @@ function HandoffScreen () {
             </Title>
           </Stack>
 
-          <Stack gap='md'>
-            {allDisplayDeflections.map((deflection) => (
-              <HandoffHoldCard
-                key={deflection.id}
-                deflection={deflection}
-                isHandedOff={handedOffIds.has(deflection.id)}
-              />
+          <Stack gap='xl'>
+            {groups.map(({ incident, deflections }) => (
+              <Stack key={incident.id} gap='md'>
+                <Stack gap={4}>
+                  <Text size='md'>Incident {incident.id}</Text>
+                  <Text size='md' c='dimmed'>{formatIncidentSubtitle(incident)}</Text>
+                </Stack>
+                {deflections.map(deflection => (
+                  <HandoffHoldCard
+                    key={deflection.id}
+                    deflection={deflection}
+                    isHandedOff={!currentIds.has(deflection.id)}
+                  />
+                ))}
+              </Stack>
             ))}
           </Stack>
         </Stack>
