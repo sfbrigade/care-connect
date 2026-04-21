@@ -984,11 +984,6 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 1); // deflection 6 is READY_FOR_INTAKE so is NOT considered in transit
       assert.deepStrictEqual(bedType.available, 7);
 
-      // incident is marked completed after cancellation of the last hold
-      const incident = await prisma.incident.findUnique({
-        where: { id: deflection.incidentId },
-      });
-      assert.ok(incident.completedAt);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {

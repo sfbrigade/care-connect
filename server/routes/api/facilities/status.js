@@ -133,7 +133,6 @@ export default async function (fastify, opts) {
               where: { id: hold.bedTypeId },
               data: bedTypeData,
             });
-
           }
         }
       });
