@@ -192,6 +192,15 @@ const Api = {
     activeIncident (id) {
       return instance.get(`/api/facilities/${id}/active-incident`);
     },
+    myHolds (id) {
+      return instance.get(`/api/facilities/${id}/my-holds`);
+    },
+    arrived (id) {
+      return instance.post(`/api/facilities/${id}/arrived`);
+    },
+    left (id) {
+      return instance.post(`/api/facilities/${id}/left`);
+    },
     updateStatus (id, data) {
       return instance.post(`/api/facilities/${id}/status`, data).catch(handleError);
     },
@@ -371,6 +380,9 @@ const Api = {
     },
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
+    },
+    extend (deflectionIds) {
+      return instance.patch('/api/deflections/extend', { deflectionIds }).catch(handleError);
     },
     cancelReasons: {
       index () {

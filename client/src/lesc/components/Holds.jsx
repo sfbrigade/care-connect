@@ -17,16 +17,13 @@ import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
-import CancelIncidentModal from './CancelIncidentModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import ScanHandoffCodeModal from './ScanHandoffCodeModal';
 import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import {
-  SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
-  buildActiveHoldDisplayDeflections,
   buildAdminCancelledHoldsMessage,
   buildHistoryDisplayDeflections,
   detectAutoCancelledExpiredHolds,
@@ -61,23 +58,17 @@ function Holds () {
     refetchOnMount: 'always',
   });
 
-  const { data: incident, dataUpdatedAt: incidentUpdatedAt } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
+  const { data: myHolds, dataUpdatedAt: myHoldsUpdatedAt } = useQuery({
+    queryKey: ['facilities', facility.id, 'my-holds'],
+    queryFn: () => Api.facilities.myHolds(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
+    refetchInterval: 3000,
   });
 
-  const { data: deflections, isFetching: isFetchingDeflections, dataUpdatedAt: deflectionsUpdatedAt } = useQuery({
-    queryKey: ['deflections', incident?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: incident.id, active: true, subjectStatus: SFPD_ACTIVE_SUBJECT_STATUSES }).then(response => response.data),
-    enabled: !!incident,
-    refetchInterval: 3000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
-  });
+  // Flatten all deflections from all incidents for convenience
+  const allActiveDeflections = (myHolds?.incidents ?? []).flatMap(inc => inc.deflections);
 
   const {
     data: inactiveDeflections,
@@ -122,56 +113,45 @@ function Holds () {
   });
 
   const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? [], handedOffDeflections ?? []);
-  const displayActiveDeflections = buildActiveHoldDisplayDeflections(deflections ?? [], historyDeflections, incident, user?.id);
-  const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, incident, (deflections?.length ?? 0) > 0);
+  const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, null, allActiveDeflections.length > 0);
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
   const autoCancelledNotice = parseAutoCancelledNoticeState(autoCancelledNoticeState);
   const [adminCancelledNoticeState, setAdminCancelledNoticeState] = useSessionState('holds-admin-cancelled-notice', '');
   const adminCancelledNotice = parseAutoCancelledNoticeState(adminCancelledNoticeState);
-  const previousActiveIncidentIdRef = useRef(null);
   const previousActiveDeflectionIdsRef = useRef([]);
   const pendingAutoCancelledCheckRef = useRef(null);
 
-  const lastSyncedAtMs = Math.max(incidentUpdatedAt ?? 0, deflectionsUpdatedAt ?? 0);
+  const lastSyncedAtMs = myHoldsUpdatedAt ?? 0;
 
   useEffect(() => {
-    const currentDeflectionIds = (deflections ?? []).map((deflection) => deflection.id);
+    const currentDeflectionIds = allActiveDeflections.map((deflection) => deflection.id);
     const removedDeflectionIds = previousActiveDeflectionIdsRef.current
       .filter((id) => !currentDeflectionIds.includes(id));
 
-    if (removedDeflectionIds.length > 0 && previousActiveIncidentIdRef.current) {
+    if (removedDeflectionIds.length > 0) {
       pendingAutoCancelledCheckRef.current = {
-        incidentId: previousActiveIncidentIdRef.current,
         deflectionIds: removedDeflectionIds,
       };
     }
 
     const pendingCheck = pendingAutoCancelledCheckRef.current;
     const detectedNotice = detectAutoCancelledExpiredHolds({
-      previousIncidentId: pendingCheck?.incidentId,
       previousDeflectionIds: pendingCheck?.deflectionIds ?? [],
-      currentDeflections: deflections ?? [],
+      currentDeflections: allActiveDeflections,
       historyDeflections,
     });
 
     if (detectedNotice) {
       setAutoCancelledNoticeState(JSON.stringify(detectedNotice));
       pendingAutoCancelledCheckRef.current = null;
-    } else if (autoCancelledNotice && incident?.id && autoCancelledNotice.incidentId !== incident.id) {
-      setAutoCancelledNoticeState('');
-    } else if (adminCancelledNotice && incident?.id && adminCancelledNotice.incidentId !== incident.id) {
-      setAdminCancelledNoticeState('');
     } else if (pendingCheck) {
       const matchedHistoryDeflectionCount = historyDeflections
-        .filter((deflection) => (
-          deflection.incidentId === pendingCheck.incidentId &&
-          pendingCheck.deflectionIds.includes(deflection.id)
-        ))
+        .filter((deflection) => pendingCheck.deflectionIds.includes(deflection.id))
         .length;
 
-      if (matchedHistoryDeflectionCount === pendingCheck.deflectionIds.length || (incident?.id && incident.id !== pendingCheck.incidentId)) {
+      if (matchedHistoryDeflectionCount === pendingCheck.deflectionIds.length) {
         pendingAutoCancelledCheckRef.current = null;
       }
     }
@@ -203,7 +183,6 @@ function Holds () {
               facilityName: facility?.name || 'Facility',
             });
             setAdminCancelledNoticeState(JSON.stringify({
-              incidentId: previousActiveIncidentIdRef.current,
               count: adminCancelled.length,
               allCancelled,
               message,
@@ -215,15 +194,11 @@ function Holds () {
       })();
     }
 
-    if (incident?.id) {
-      previousActiveIncidentIdRef.current = incident.id;
-    }
     previousActiveDeflectionIdsRef.current = currentDeflectionIds;
   }, [
     autoCancelledNotice,
-    deflections,
+    allActiveDeflections.length,
     historyDeflections,
-    incident?.id,
     setAutoCancelledNoticeState,
     setAdminCancelledNoticeState,
     adminCancelledNotice,
@@ -240,10 +215,9 @@ function Holds () {
   }
 
   const markArrivedMutation = useMutation({
-    mutationFn: (id) => Api.incidents.arrived(id),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data.deflections);
+    mutationFn: () => Api.facilities.arrived(facility.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
     },
   });
 
@@ -253,9 +227,7 @@ function Holds () {
 
   function onConfirmArrival () {
     setShowArrivalConfirmationModal(false);
-    if (incident?.id) {
-      markArrivedMutation.mutate(incident.id);
-    }
+    markArrivedMutation.mutate();
   }
 
   function onCloseArrivalConfirmationModal () {
@@ -263,43 +235,36 @@ function Holds () {
   }
 
   const markLeftMutation = useMutation({
-    mutationFn: (id) => Api.incidents.left(id),
-    onSuccess: (response) => {
-      const officerRecord = response?.data?.incidentOfficers?.[0];
-      const leftAt = officerRecord?.leftAt ?? response?.data?.leftAt;
+    mutationFn: () => Api.facilities.left(facility.id),
+    onSuccess: () => {
       const facilityName = facility?.name ?? 'RESET';
-      showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-    }
+      showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(new Date())}`);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+    },
   });
 
   function onLeftClick () {
-    if (incident?.id) {
-      markLeftMutation.mutate(incident.id);
-    }
+    markLeftMutation.mutate();
   }
 
   const createDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.create(data),
-    onSuccess: (response) => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], [response.data, ...cachedDeflections]);
-      }
-      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       setTab('active');
     },
   });
 
   const extendAllHoldsMutation = useMutation({
-    mutationFn: (id) => Api.incidents.extend(id),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
+    mutationFn: (deflectionIds) => Api.deflections.extend(deflectionIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
       showToast('All active holds have been reset to 60 minutes.', 'success');
       setHoldsHighlighted(true);
     },
     onError: () => {
-      showToast('Couldn’t extend holds. Please try again.', 'error');
+      showToast('Couldn't extend holds. Please try again.', 'error');
     },
   });
 
@@ -310,12 +275,12 @@ function Holds () {
     } else {
       // TODO
     }
-    if (!incident) {
+    if (!myHolds?.activeIncidentId) {
       navigate(`/incident${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`);
     } else {
       createDeflectionMutation.mutate({
         facilityId: facility.id,
-        incidentId: incident.id,
+        incidentId: myHolds.activeIncidentId,
         bedTypeId,
       });
     }
@@ -328,68 +293,12 @@ function Holds () {
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
     onSuccess: () => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== selectedDeflection.id);
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
-          queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-        }
-      }
-      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       onCloseCancelModal();
       showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
     },
   });
-
-  const cancelIncidentMutation = useMutation({
-    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, cancelReasonId ? { cancelReasonId } : undefined),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['facilities', facility.id, 'bed-types'],
-        }),
-        queryClient.setQueryData(
-          ['facilities', facility.id, 'active-incident'],
-          null
-        ),
-        queryClient.removeQueries({
-          queryKey: ['deflections', incident?.id, 'active'],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['deflections', facility.id, 'inactive'],
-        }),
-      ]);
-
-      onCloseCancelModal();
-      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
-    },
-    onError: (error) => {
-      // Axios-specific: errors with no `response` property did not receive a server response
-      const isNetworkError = !error?.response;
-
-      if (isNetworkError) {
-        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
-        return;
-      }
-
-      showToast('We couldn\'t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
-    },
-  });
-
-  const permissions = incident?.permissions ?? { isCreator: true, canCreateHold: true, canHandoff: false };
-
-  const isLastHoldOnIncident = (incident?.totalActiveHolds ?? 0) <= 1;
-  const incidentContainsOnlyEmptyHolds = deflections
-    ? deflections.every(deflection => !deflection.subjectId)
-    : false; // Default false to avoid triggering auto-cancel in a loading/error state
-
-  const shouldCancelIncidentWithHold =
-    permissions.canCancelIncident &&
-    !!selectedDeflection &&
-    isLastHoldOnIncident &&
-    !selectedDeflection?.subjectId &&
-    incidentContainsOnlyEmptyHolds;
 
   function onCancelHoldClick (deflection) {
     setSelectedDeflection(deflection);
@@ -403,25 +312,9 @@ function Holds () {
   }, [holdsHighlighted]);
 
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (shouldCancelIncidentWithHold && incident?.id) {
-      await cancelIncidentMutation.mutateAsync({
-        id: incident.id,
-      });
-      return;
-    }
-
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
-  }
-
-  async function onCancelIncidentConfirmed (cancelReasonId) {
-    if (incident?.id) {
-      await cancelIncidentMutation.mutateAsync({
-        id: incident.id,
-        cancelReasonId,
-      });
-    }
   }
 
   function onCloseCancelModal () {
@@ -429,13 +322,8 @@ function Holds () {
     setShowCancelModal(false);
   }
 
-  function onOpenCancelIncidentModal () {
-    setSelectedDeflection();
-    setShowCancelModal(true);
-  }
-
-  function onEditIncidentClick () {
-    navigate('/incident');
+  function onEditIncidentClick (incidentId) {
+    navigate(`/incident/${incidentId}`);
   }
 
   function onHandoffClick () {
@@ -443,8 +331,11 @@ function Holds () {
   }
 
   function onExtendActiveHoldsClick () {
-    if (incident?.id) {
-      extendAllHoldsMutation.mutate(incident.id);
+    const detainedIds = allActiveDeflections
+      .filter(d => d.subjectStatus === 'DETAINED')
+      .map(d => d.id);
+    if (detainedIds.length > 0) {
+      extendAllHoldsMutation.mutate(detainedIds);
     }
   }
 
@@ -452,23 +343,15 @@ function Holds () {
   const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
   const isClosed = facility.status === 'CLOSED';
   const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
-  const myOfficerRecord = incident?.incidentOfficers?.[0];
-  const myArrivedAt = myOfficerRecord ? myOfficerRecord.arrivedAt : incident?.arrivedAt;
-  const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
-  const hasArrived = !!myArrivedAt;
-  const hasLeft = !!myLeftAt;
   const isArrivalPending = markArrivedMutation.isPending || markLeftMutation.isPending;
   const isHoldButtonDisabled = (
-    !permissions.canCreateHold ||
+    !myHolds?.canCreateHold ||
     isArrivalPending ||
     createDeflectionMutation.isPending ||
     isClosed ||
     isFull ||
-    !primaryBedType ||
-    (hasArrived && !hasLeft)
+    !primaryBedType
   );
-  const showExtendActiveHoldsAction = (displayActiveDeflections?.length ?? 0) > 0;
-  const incidentHasDetailedHolds = !!displayActiveDeflections?.some(deflection => deflection.subjectId);
 
   return (
     <>
@@ -480,9 +363,8 @@ function Holds () {
           <Facility
             facility={facility}
             bedTypes={bedTypes ?? facility.bedTypes}
-            arrivedAt={myArrivedAt}
-            leftAt={myLeftAt}
-            hasActiveHold={(deflections?.length ?? 0) > 0}
+            canArrive={myHolds?.canArrive}
+            canLeave={myHolds?.canLeave}
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             isArrivalPending={isArrivalPending}
@@ -499,13 +381,10 @@ function Holds () {
           <FacilityStatusBanner />
           {tab === 'active' && (
             <HoldsActive
-              incident={incident}
-              deflections={displayActiveDeflections}
-              isFetchingDeflections={isFetchingDeflections}
+              incidents={myHolds?.incidents ?? []}
               onCancelHoldClick={onCancelHoldClick}
-              onEditIncidentClick={permissions.canEditIncident ? onEditIncidentClick : undefined}
-              onHandoffClick={permissions.canHandoff ? onHandoffClick : undefined}
-              onCancelIncidentClick={permissions.canCancelIncident ? onOpenCancelIncidentModal : undefined}
+              onEditIncidentClick={onEditIncidentClick}
+              onHandoffClick={onHandoffClick}
               autoCancelledNotice={autoCancelledNotice}
               onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
               adminCancelledNotice={adminCancelledNotice}
@@ -519,8 +398,7 @@ function Holds () {
             <HoldsHistory
               deflections={displayHistoryDeflections}
               isFetchingDeflections={isFetchingInactiveDeflections || isFetchingPostTransferActiveDeflections}
-              incident={incident}
-              hasActiveHolds={(deflections?.length ?? 0) > 0}
+              hasActiveHolds={allActiveDeflections.length > 0}
               currentUserId={user?.id}
             />
           )}
@@ -537,8 +415,7 @@ function Holds () {
           opened={showCancelModal}
           onClose={onCloseCancelModal}
           onConfirm={onCancelHoldConfirmed}
-          lastHoldWillCancelIncident={shouldCancelIncidentWithHold}
-          loading={cancelDeflectionMutation.isPending || cancelIncidentMutation.isPending}
+          loading={cancelDeflectionMutation.isPending}
         />
       )}
       {showActionFooter && (
@@ -557,7 +434,7 @@ function Holds () {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-              {showExtendActiveHoldsAction && (
+              {myHolds?.canExtend && (
                 <Menu.Item
                   leftSection={<IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />}
                   onClick={onExtendActiveHoldsClick}
@@ -587,22 +464,13 @@ function Holds () {
         onConfirm={onConfirmArrival}
         loading={markArrivedMutation.isPending}
       />
-      {!selectedDeflection && incident && (
-        <CancelIncidentModal
-          opened={showCancelModal}
-          onClose={onCloseCancelModal}
-          onConfirm={onCancelIncidentConfirmed}
-          requiresReason={incidentHasDetailedHolds}
-          loading={cancelIncidentMutation.isPending}
-        />
-      )}
       {scanHandoffModalOpened && (
         <ScanHandoffCodeModal
           opened={scanHandoffModalOpened}
           onClose={() => setScanHandoffModalOpened(false)}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['deflections'] });
-            queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'active-incident'] });
+            queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
             setTab('active');
           }}
         />
