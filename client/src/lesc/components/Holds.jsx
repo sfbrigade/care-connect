@@ -295,7 +295,7 @@ function Holds () {
     mutationFn: (id) => Api.incidents.extend(id),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
-      showToast('All active holds have been reset to 60 minutes.', 'success');
+      showToast('All active holds have been reset to 90 minutes.', 'success');
       setHoldsHighlighted(true);
     },
     onError: () => {

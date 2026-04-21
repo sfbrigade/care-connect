@@ -227,7 +227,7 @@ describe('Holds', () => {
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
-        'All active holds have been reset to 60 minutes.',
+        'All active holds have been reset to 90 minutes.',
         'success'
       );
     });

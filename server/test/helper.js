@@ -66,7 +66,7 @@ async function buildPostgres (t) {
   const TEMPLATE_DATABASE_URL = templateDbUrl.toString();
   // run the migrations
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
-  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
+  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema "${schemaPath}"`, {
     cwd: path.join(__dirname, '..'),
   });
   const prisma = new PrismaClient({
