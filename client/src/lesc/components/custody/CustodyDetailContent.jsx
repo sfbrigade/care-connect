@@ -70,6 +70,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+  const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
@@ -174,7 +175,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
-  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
+  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
@@ -301,7 +302,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {deflection?.subject?.sex && (
               <Box>
-                <Text c='dimmed'>{isCareView ? 'Gender' : 'Sex'}</Text>
+                <Text c='dimmed'>Sex</Text>
                 <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
               </Box>
             )}
@@ -311,7 +312,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{t(`race.${deflection.subject.race}`)}</Text>
               </Box>
             )}
-            {!isCareView && deflection?.subject?.driverLicense && (
+            {deflection?.subject?.driverLicense && (
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
                 <Text>{deflection.subject.driverLicense}</Text>
@@ -328,7 +329,30 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
             )}
+            {isCareView && (
+              <Group mt='md'>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/care/${deflection?.id}/subject`)}>Edit</Button>
+              </Group>
+            )}
           </Stack>
+          {isCareView && hasDrugUseEvidence && (
+            <>
+              <Divider />
+              <Stack gap='sm'>
+                <Title order={3}>Substance-related details</Title>
+                <Box>
+                  <Text c='dimmed'>Signs of substance use</Text>
+                  <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                </Box>
+                {deflection.drugUseEvidence === true && deflection?.drugType && (
+                  <Box>
+                    <Text c='dimmed'>Substance used (suspected)</Text>
+                    <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                  </Box>
+                )}
+              </Stack>
+            </>
+          )}
           {!isCareView && (
             <>
               <Accordion
@@ -340,31 +364,31 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Divider />
                 <Accordion.Item value='substance'>
                   <Accordion.Control>
-                    <Title order={3}>Substance details</Title>
+                    <Title order={3}>Substance-related details</Title>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
                       {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
                         <Box>
                           <Text c='dimmed'>Controlled substance found</Text>
-                          <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
                       {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
                         <Box>
                           <Text c='dimmed'>Paraphernalia found</Text>
-                          <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
-                      {deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined && (
+                      {hasDrugUseEvidence && (
                         <Box>
                           <Text c='dimmed'>Signs of substance use</Text>
-                          <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
                       {deflection?.drugUseEvidence === true && deflection?.drugType && (
                         <Box>
-                          <Text c='dimmed'>Substance used</Text>
+                          <Text c='dimmed'>Substance used (suspected)</Text>
                           <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}

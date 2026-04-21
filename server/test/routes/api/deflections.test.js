@@ -6,8 +6,6 @@ import { authenticate, build } from '#test/helper.js';
 
 function assertCareSubjectRedaction (subject) {
   assert.ok(subject);
-  assert.strictEqual(subject.middleInitial, null);
-  assert.strictEqual(subject.driverLicense, null);
   assert.strictEqual(subject.addressLine1, null);
   assert.strictEqual(subject.addressLine2, null);
   assert.strictEqual(subject.city, null);
@@ -113,9 +111,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.length, 1);
       assert.deepStrictEqual(data[0].subject.firstName, 'Test');
       assert.deepStrictEqual(data[0].subject.lastName, 'Client3');
+      assert.deepStrictEqual(data[0].subject.middleInitial, 'T');
       assert.ok(data[0].subject.dateOfBirth);
       assert.deepStrictEqual(data[0].subject.sex, 'FEMALE');
       assert.deepStrictEqual(data[0].subject.race, 'HISPANIC');
+      assert.deepStrictEqual(data[0].subject.driverLicense, 'DL789');
       assertCareSubjectRedaction(data[0].subject);
     });
 
@@ -148,8 +148,10 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subject.firstName, 'Test');
       assert.deepStrictEqual(data.subject.lastName, 'Client');
+      assert.deepStrictEqual(data.subject.middleInitial, 'T');
       assert.deepStrictEqual(data.subject.sex, 'MALE');
       assert.deepStrictEqual(data.subject.race, 'WHITE');
+      assert.deepStrictEqual(data.subject.driverLicense, 'DL123');
       assertCareSubjectRedaction(data.subject);
     });
 
@@ -932,6 +934,75 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
       assert.deepStrictEqual(deflection.drugUseEvidence, false);
       assert.deepStrictEqual(deflection.drugType, null);
+    });
+
+    await t.test('allows care users to update only care-editable personal details', async () => {
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: {
+          narcoticsSubstance: true,
+          narcoticsParaphernalia: true,
+          drugUseEvidence: true,
+          drugType: 'ALCOHOL',
+        },
+      });
+
+      const existingSubject = await prisma.subject.findUnique({
+        where: { id: 'a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5' },
+      });
+
+      const response = await app.inject().put('/api/deflections/4/subject').payload({
+        firstName: 'Care',
+        lastName: 'Edited',
+        middleInitial: 'Q',
+        dateOfBirth: '1991-06-15',
+        sex: 'OTHER',
+        race: 'OTHER',
+        driverLicense: 'DL-CARE',
+        addressLine1: 'Should Not Change',
+        localId: 'SHOULD-NOT-CHANGE',
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        drugType: 'HEROIN',
+      }).headers(careUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subject.firstName, 'Care');
+      assert.deepStrictEqual(data.subject.lastName, 'Edited');
+      assert.deepStrictEqual(data.subject.middleInitial, 'Q');
+      assert.deepStrictEqual(data.subject.dateOfBirth, '1991-06-15T00:00:00.000Z');
+      assert.deepStrictEqual(data.subject.sex, 'OTHER');
+      assert.deepStrictEqual(data.subject.race, 'OTHER');
+      assert.deepStrictEqual(data.subject.driverLicense, 'DL-CARE');
+      assert.deepStrictEqual(data.subject.addressLine1, null);
+      assert.deepStrictEqual(data.subject.localId, null);
+      assert.deepStrictEqual(data.narcoticsSubstance, true);
+      assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, true);
+      assert.deepStrictEqual(data.drugType, 'ALCOHOL');
+
+      const subject = await prisma.subject.findUnique({
+        where: { id: 'a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5' },
+      });
+      assert.deepStrictEqual(subject.firstName, 'Care');
+      assert.deepStrictEqual(subject.lastName, 'Edited');
+      assert.deepStrictEqual(subject.middleInitial, 'Q');
+      assert.deepStrictEqual(subject.dateOfBirth, new Date('1991-06-15T00:00:00.000Z'));
+      assert.deepStrictEqual(subject.sex, 'OTHER');
+      assert.deepStrictEqual(subject.race, 'OTHER');
+      assert.deepStrictEqual(subject.driverLicense, 'DL-CARE');
+      assert.deepStrictEqual(subject.addressLine1, existingSubject.addressLine1);
+      assert.deepStrictEqual(subject.localId, existingSubject.localId);
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 4 },
+      });
+      assert.deepStrictEqual(deflection.narcoticsSubstance, true);
+      assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, true);
+      assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
     });
   });
 
