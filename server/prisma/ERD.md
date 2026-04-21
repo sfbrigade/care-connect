@@ -16,6 +16,15 @@ UNKNOWN UNKNOWN
     
 
 
+        SFResidentEnum {
+            YES YES
+NO NO
+UNKNOWN UNKNOWN
+DECLINED_CONSENT DECLINED_CONSENT
+        }
+    
+
+
         FacilityTypeEnum {
             DIDO DIDO
 LESC LESC
@@ -456,7 +465,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
-    TernaryEnum exitSFResident "❓"
+    SFResidentEnum exitSFResident "❓"
     DateTime handoffReadyAt "❓"
     DateTime updatedAt 
     }
@@ -480,7 +489,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
-    TernaryEnum exitSFResident "❓"
+    SFResidentEnum exitSFResident "❓"
     DateTime updatedAt 
     String updatedById 
     }
@@ -762,7 +771,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "DeflectionExitDestination" : "exitDestination"
     "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
-    "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "Deflection" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionUpdate" : ""
     "Deflection" o{--}o "DeflectionDocument" : ""
     "Deflection" o{--}o "PropertyPhoto" : ""
@@ -776,7 +785,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
-    "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "DeflectionUpdate" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
     "DeflectionCancelReason" o|--|| "User" : "createdBy"
     "DeflectionCancelReason" o|--|| "User" : "updatedBy"

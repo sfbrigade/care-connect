@@ -1077,7 +1077,7 @@ test('/api/deflections', async (t) => {
         .payload({
           exitDestinationId: 'home',
           exitHousingStatusId: 'permanent',
-          exitSFResident: 'UNKNOWN',
+          exitSFResident: 'DECLINED_CONSENT',
           exitConnectedToCare: 'YES',
         });
 
@@ -1087,7 +1087,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(data.exitDestinationId, 'home');
       assert.strictEqual(data.exitHousingStatusId, 'permanent');
-      assert.strictEqual(data.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(data.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       // Should not set exitedAt/exitedById
       assert.strictEqual(data.exitedAt, null);
@@ -1098,7 +1098,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(dbDeflection.exitDestinationId, 'home');
       assert.strictEqual(dbDeflection.exitHousingStatusId, 'permanent');
-      assert.strictEqual(dbDeflection.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(dbDeflection.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
 
       // Verify deflection update history
@@ -1107,7 +1107,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.subjectStatus, null); // Hasn't changed
       assert.strictEqual(lastUpdate.exitDestinationId, 'home');
       assert.strictEqual(lastUpdate.exitHousingStatusId, 'permanent');
-      assert.strictEqual(lastUpdate.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(lastUpdate.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
     });
 
