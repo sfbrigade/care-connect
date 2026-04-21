@@ -162,7 +162,7 @@ test('anonymizeSubjects job', async (t) => {
     assert.strictEqual(updated.firstName, 'Jane');
   });
 
-  await t.test('deletes S3 documents and property photos for anonymized subjects', async () => {
+  await t.test('clears file references and deletes S3 objects for anonymized subjects', async () => {
     const { subject, deflection } = await createSubjectWithDeflection();
 
     await prisma.$executeRawUnsafe(
@@ -200,8 +200,15 @@ test('anonymizeSubjects job', async (t) => {
 
     await anonymizeSubjects({}, prisma);
 
-    assert.ok(!(await assetExists(docKey)), 'document should be deleted after anonymization');
-    assert.ok(!(await assetExists(photoKey)), 'photo should be deleted after anonymization');
+    assert.ok(!(await assetExists(docKey)), 'document should be deleted from S3 after anonymization');
+    assert.ok(!(await assetExists(photoKey)), 'photo should be deleted from S3 after anonymization');
+
+    const remainingDoc = await prisma.deflectionDocument.findUnique({ where: { id: doc.id } });
+    const remainingPhoto = await prisma.propertyPhoto.findUnique({ where: { id: photo.id } });
+    assert.ok(remainingDoc, 'document DB row should be kept after anonymization');
+    assert.ok(remainingPhoto, 'photo DB row should be kept after anonymization');
+    assert.strictEqual(remainingDoc.file, null, 'document file reference should be cleared');
+    assert.strictEqual(remainingPhoto.file, null, 'photo file reference should be cleared');
 
     const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
     assert.ok(updated.anonymizedAt, 'subject should be anonymized');

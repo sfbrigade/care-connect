@@ -2,9 +2,10 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
+import DeflectionDocument from '#models/deflectionDocument.js';
+import PropertyPhoto from '#models/propertyPhoto.js';
 import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
-import s3 from '#lib/s3.js';
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
@@ -159,18 +160,25 @@ const prisma = new PrismaClient({
         if (eligible.length === 0) return;
         const ids = eligible.map((row) => row.id);
 
-        const deflections = await prisma.deflection.findMany({
-          where: { subjectId: { in: ids } },
-          select: {
-            deflectionDocuments: { select: { id: true } },
-            propertyPhotos: { select: { id: true } },
-          },
+        const documents = await prisma.deflectionDocument.findMany({
+          where: { deflection: { subjectId: { in: ids } }, file: { not: null } },
         });
-        const s3Deletions = deflections.flatMap((d) => [
-          ...d.deflectionDocuments.map((doc) => s3.deleteObjects(`deflection_documents/${doc.id}`)),
-          ...d.propertyPhotos.map((photo) => s3.deleteObjects(`property_photos/${photo.id}`)),
+        const photos = await prisma.propertyPhoto.findMany({
+          where: { deflection: { subjectId: { in: ids } }, file: { not: null } },
+        });
+
+        await Promise.all([
+          ...documents.map(async (doc) => {
+            const handler = new DeflectionDocument(doc).setAsset('file', null);
+            await prisma.deflectionDocument.update({ where: { id: doc.id }, data: { file: null } });
+            await handler?.();
+          }),
+          ...photos.map(async (photo) => {
+            const handler = new PropertyPhoto(photo).setAsset('file', null);
+            await prisma.propertyPhoto.update({ where: { id: photo.id }, data: { file: null } });
+            await handler?.();
+          }),
         ]);
-        await Promise.all(s3Deletions);
 
         const nulledPii = Object.fromEntries(PII_FIELDS.map((field) => [field, null]));
         await prisma.subject.updateMany({

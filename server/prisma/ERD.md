@@ -541,7 +541,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String id "🗝️"
     Int deflectionId 
     String formId 
-    String file 
+    String file "❓"
     String sourceDataHash "❓"
     DateTime createdAt 
     String createdById 
@@ -553,7 +553,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
-    String file 
+    String file "❓"
     DateTime createdAt 
     String createdById 
     DateTime updatedAt 
