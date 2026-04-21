@@ -1,4 +1,4 @@
-import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Button, Card, Group, Loader, Stack, Title } from '@mantine/core';
 import { IconAlertTriangle, IconTallymark1 } from '@tabler/icons-react';
 import { inflect } from 'inflection';
 import { useTranslation } from 'react-i18next';

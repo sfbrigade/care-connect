@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Box, Stack, Text, Loader } from '@mantine/core';
+import { Box, Stack, Text } from '@mantine/core';
 
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';

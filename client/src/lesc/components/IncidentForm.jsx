@@ -64,7 +64,6 @@ function IncidentForm () {
   const addressRef = useRef();
   const isEditing = !!incidentId;
 
-
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
