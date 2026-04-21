@@ -27,13 +27,19 @@ import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
+import SafetyCheckResultModal from './SafetyCheckResultModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
+function isNetworkError (error) {
+  return !error?.response || window.navigator?.onLine === false;
+}
+
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
+  const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
@@ -102,12 +108,18 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
+      setSafetyCheckResultModalOpened(false);
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
-    onError: () => {
+    onError: (error) => {
+      setSafetyCheckResultModalOpened(false);
+      if (isNetworkError(error)) {
+        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
+        return;
+      }
       showToast('Safety check not saved. Please try again.', 'error');
     },
   });
@@ -660,7 +672,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   <Button
                     onClick={() => {
                       if (isAwaitingSafetyCheck) {
-                        safetyCheckMutation.mutate();
+                        setSafetyCheckResultModalOpened(true);
                         return;
                       }
                       if (showPrimaryStartLegalRelease) {
@@ -672,10 +684,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         window.open(url, '_blank');
                       }
                     }}
-                    loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Complete safety check'
+                      ? 'Record result'
                       : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
@@ -691,6 +702,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setRecordDeathModalOpened(false)}
         onConfirm={() => recordDeathMutation.mutate()}
         loading={recordDeathMutation.isPending}
+      />
+      <SafetyCheckResultModal
+        opened={safetyCheckResultModalOpened}
+        onClose={() => setSafetyCheckResultModalOpened(false)}
+        loading={safetyCheckMutation.isPending}
+        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmFailed={() => {
+          setSafetyCheckResultModalOpened(false);
+          setExitToJailModalOpened(true);
+        }}
       />
       <ExitToJailModal
         opened={exitToJailModalOpened}

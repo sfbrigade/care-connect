@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         get: vi.fn(async () => ({ data: incident })),
       },
       deflections: {
+        exitToJail: vi.fn(async () => ({ data: {} })),
         safetyCheck: vi.fn(async () => ({ data: {} })),
         release: vi.fn(async () => ({ data: {} })),
         update: vi.fn(async (id, payload) => ({ data: { id, ...payload } })),
@@ -268,5 +269,14 @@ describe('CustodyDetailContent', () => {
 
     expect(html).not.toContain('Exit to hospital');
     expect(html).not.toContain('Record exit to hospital');
+  });
+
+  it('renders Record result as the safety check footer action', () => {
+    const html = render({ subjectStatus: 'AWAITING_INTAKE' });
+
+    expect(html).toContain('Record result');
+    expect(html).toContain('Record safety check result');
+    expect(html).toContain('Passed safety check');
+    expect(html).toContain('Failed safety check');
   });
 });
