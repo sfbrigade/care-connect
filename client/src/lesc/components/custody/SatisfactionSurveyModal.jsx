@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { ActionIcon, Box, Button, Group, Input, Modal, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
 import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX } from '@tabler/icons-react';
 
+import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
+
 export const SATISFACTION_SURVEY_FLAG_KEY = 'satisfactionSurveyEnabled';
 export const SATISFACTION_SURVEY_RESPONSES_KEY = 'satisfactionSurveyResponses';
 
@@ -45,18 +48,37 @@ function SatisfactionSurveyModal ({
   onFinished,
   source = 'legal_release',
 }) {
+  const { showToast } = useToast();
   const [surveyStep, setSurveyStep] = useState(0);
   const [surveyAnswers, setSurveyAnswers] = useState(INITIAL_ANSWERS);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!opened) return;
     setSurveyStep(0);
     setSurveyAnswers(INITIAL_ANSWERS);
+    setSubmitting(false);
   }, [opened]);
 
-  const finish = (didCompleteSurvey) => {
-    if (didCompleteSurvey) {
-      // TODO: Trigger the survey API call here
+  const finish = async (didCompleteSurvey) => {
+    if (didCompleteSurvey && deflectionId != null) {
+      const improvementTrimmed = surveyAnswers.improvementSuggestions.trim();
+      try {
+        setSubmitting(true);
+        await Api.deflections.submitSatisfactionSurvey(deflectionId, {
+          source,
+          answers: {
+            careConnectRating: surveyAnswers.careConnectRating,
+            resetFacilityFeedback: surveyAnswers.resetFacilityFeedback.trim(),
+            ...(improvementTrimmed ? { improvementSuggestions: improvementTrimmed } : {}),
+          },
+        });
+      } catch (err) {
+        console.error(err);
+        showToast('Feedback could not be saved. You can try again later.', 'error');
+      } finally {
+        setSubmitting(false);
+      }
     }
     onFinished();
   };
@@ -178,7 +200,10 @@ function SatisfactionSurveyModal ({
           )}
           {surveyStep === 1 && (
             <Button
-              onClick={() => finish(true)}
+              loading={submitting}
+              onClick={async () => {
+                await finish(true);
+              }}
             >
               Share feedback
             </Button>

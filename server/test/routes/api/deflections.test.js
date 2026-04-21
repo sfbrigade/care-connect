@@ -159,6 +159,117 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/satisfaction-survey', async (t) => {
+    const validPayload = {
+      source: 'legal_release',
+      answers: {
+        careConnectRating: 'good',
+        resetFacilityFeedback: 'Staff were helpful.',
+      },
+    };
+
+    await t.test('creates a survey when the user can read the deflection', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload(validPayload);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      assert.ok(data.id);
+      assert.ok(data.createdAt);
+
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.ok(row);
+      assert.deepStrictEqual(row.source, 'legal_release');
+      assert.deepStrictEqual(row.careConnectRating, 'good');
+      assert.deepStrictEqual(row.resetFacilityFeedback, 'Staff were helpful.');
+      assert.strictEqual(row.improvementSuggestions, null);
+    });
+
+    await t.test('allows custody users who can read the facility hold', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(custodyUserHeaders)
+        .payload({
+          ...validPayload,
+          source: 'holds_ive_left',
+          answers: {
+            ...validPayload.answers,
+            careConnectRating: 'neutral',
+            improvementSuggestions: 'More signage.',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.deepStrictEqual(row.source, 'holds_ive_left');
+      assert.deepStrictEqual(row.careConnectRating, 'neutral');
+      assert.deepStrictEqual(row.improvementSuggestions, 'More signage.');
+    });
+
+    await t.test('requires authentication', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .payload(validPayload);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('returns 403 when the user cannot read the deflection', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(anotherUserHeaders)
+        .payload(validPayload);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('returns 404 for an unknown deflection id', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/999999/satisfaction-survey')
+        .headers(userHeaders)
+        .payload(validPayload);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+
+    await t.test('returns 422 for invalid careConnectRating', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          source: 'legal_release',
+          answers: {
+            careConnectRating: 'great',
+            resetFacilityFeedback: 'ok',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when resetFacilityFeedback is empty', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          source: 'legal_release',
+          answers: {
+            careConnectRating: 'bad',
+            resetFacilityFeedback: '   ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+  });
+
   await t.test('PATCH /:id', async (t) => {
     await t.test('updates deflection details', async () => {
       const response = await app.inject().patch('/api/deflections/4').payload({

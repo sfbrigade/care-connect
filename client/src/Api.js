@@ -369,6 +369,9 @@ const Api = {
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
     },
+    submitSatisfactionSurvey (id, body) {
+      return instance.post(`/api/deflections/${id}/satisfaction-survey`, body).catch(handleError);
+    },
     cancelReasons: {
       index () {
         return instance.get('/api/deflections/cancel-reasons');

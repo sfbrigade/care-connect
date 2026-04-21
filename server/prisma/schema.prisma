@@ -740,6 +740,18 @@ model DeflectionDocument {
   @@unique([deflectionId, formId])
 }
 
+model SatisfactionSurvey {
+  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source                 String
+  careConnectRating      String
+  improvementSuggestions String?
+  resetFacilityFeedback  String
+  createdAt              DateTime   @default(now())
+
+  @@index([createdAt])
+  @@map("SatisfactionSurvey")
+}
+
 model PropertyPhoto {
   id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)

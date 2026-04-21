@@ -569,6 +569,16 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
+  "SatisfactionSurvey" {
+    String id "🗝️"
+    String source 
+    String careConnectRating 
+    String improvementSuggestions "❓"
+    String resetFacilityFeedback 
+    DateTime createdAt 
+    }
+  
+
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
