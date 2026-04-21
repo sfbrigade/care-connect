@@ -70,7 +70,7 @@ test('PATCH /api/deflections/extend', async (t) => {
     assert.deepStrictEqual(
       unchanged.expiresAt.getTime(),
       before.expiresAt.getTime(),
-      'other officer\'s hold should not be touched',
+      'other officer\'s hold should not be touched'
     );
     assert.deepStrictEqual(unchanged.extensionCount, before.extensionCount);
   });
