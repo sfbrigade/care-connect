@@ -137,7 +137,8 @@ const prisma = new PrismaClient({
     },
     subject: {
       async anonymize (now = new Date()) {
-        const hours = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS) || 72;
+        const parsed = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS);
+        const hours = Number.isFinite(parsed) ? parsed : 72;
         const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
         const eligible = await prisma.$queryRaw`
           SELECT s."id"
