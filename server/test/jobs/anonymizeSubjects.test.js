@@ -50,7 +50,8 @@ test('anonymizeSubjects job', async (t) => {
       bedTypeId,
       subjectId: subject.id,
       createdById: user.id,
-      status: 'EXPIRED',
+      status: 'ACTIVE',
+      subjectStatus: 'EXITED',
       ...overrides,
     };
     const deflection = await prisma.deflection.create({ data: deflectionData });
@@ -76,13 +77,32 @@ test('anonymizeSubjects job', async (t) => {
   });
 
   await t.test('skips subject with an active deflection', async () => {
-    const { subject } = await createSubjectWithDeflection({ status: 'ACTIVE' });
+    const { subject } = await createSubjectWithDeflection({ status: 'ACTIVE', subjectStatus: 'DETAINED' });
 
     await anonymizeSubjects({}, prisma);
 
     const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
     assert.strictEqual(updated.anonymizedAt, null);
     assert.strictEqual(updated.firstName, 'John');
+  });
+
+  await t.test('anonymizes subject whose deflection is ACTIVE but subject has exited (terminal subjectStatus)', async () => {
+    const { subject, deflection } = await createSubjectWithDeflection({
+      status: 'ACTIVE',
+      subjectStatus: 'EXITED',
+    });
+
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Deflection" SET "updatedAt" = $1 WHERE "id" = $2',
+      DateTime.now().minus({ hours: 73 }).toJSDate(),
+      deflection.id
+    );
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.ok(updated.anonymizedAt, 'ACTIVE deflection in terminal subjectStatus should not block anonymization');
+    assert.strictEqual(updated.firstName, null);
   });
 
   await t.test('skips subject within 72-hour window', async () => {
@@ -160,6 +180,35 @@ test('anonymizeSubjects job', async (t) => {
     const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
     assert.strictEqual(updated.anonymizedAt, null, 'should not anonymize — most recent deflection is within 72 hours');
     assert.strictEqual(updated.firstName, 'Jane');
+  });
+
+  await t.test('anonymizes subject with no deflections whose createdAt is past the cutoff', async () => {
+    const subject = await prisma.subject.create({
+      data: { firstName: 'No', lastName: 'Deflection' },
+    });
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Subject" SET "createdAt" = $1 WHERE "id" = $2::uuid',
+      DateTime.now().minus({ hours: 73 }).toJSDate(),
+      subject.id
+    );
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.ok(updated.anonymizedAt, 'subject without deflections should be anonymized past cutoff');
+    assert.strictEqual(updated.firstName, null);
+  });
+
+  await t.test('skips recently-created subject with no deflections', async () => {
+    const subject = await prisma.subject.create({
+      data: { firstName: 'Fresh', lastName: 'Subject' },
+    });
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.strictEqual(updated.anonymizedAt, null);
+    assert.strictEqual(updated.firstName, 'Fresh');
   });
 
   await t.test('clears file references and deletes S3 objects for anonymized subjects', async () => {

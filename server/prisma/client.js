@@ -143,18 +143,15 @@ const prisma = new PrismaClient({
           SELECT s."id"
           FROM "Subject" s
           WHERE s."anonymizedAt" IS NULL
-            AND EXISTS (
-              SELECT 1 FROM "Deflection" d WHERE d."subjectId" = s."id"
-            )
             AND NOT EXISTS (
               SELECT 1 FROM "Deflection" d
               WHERE d."subjectId" = s."id"
                 AND d."status" = 'ACTIVE'::"HoldStatusEnum"
+                AND d."subjectStatus" NOT IN ('EXITED'::"SubjectStatusEnum", 'DEATH_IN_FACILITY'::"SubjectStatusEnum", 'DEATH_IN_CUSTODY'::"SubjectStatusEnum")
             )
-            AND (
-              SELECT MAX(d."updatedAt")
-              FROM "Deflection" d
-              WHERE d."subjectId" = s."id"
+            AND COALESCE(
+              (SELECT MAX(d."updatedAt") FROM "Deflection" d WHERE d."subjectId" = s."id"),
+              s."createdAt"
             ) <= ${cutoff}
         `;
         if (eligible.length === 0) return;

@@ -121,7 +121,6 @@ export default async function main (prisma) {
     }
 
     const now = new Date();
-    const isActive = !['RELEASED', 'EXITED'].includes(subjectStatus);
     const deflection = await prisma.deflection.create({
       data: {
         facilityId: facility.id,
@@ -129,7 +128,7 @@ export default async function main (prisma) {
         bedTypeId: bedType.id,
         subjectId: subject.id,
         subjectStatus,
-        status: isActive ? 'ACTIVE' : 'COMPLETED',
+        status: 'ACTIVE',
         createdById: sfpdUser.id,
         narcoticsSubstance: i % 2 === 0,
         narcoticsParaphernalia: false,
