@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Button, Group, Input, Modal, Radio, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
-import { IconMoodSad, IconMoodSmile, IconMoodEmpty } from '@tabler/icons-react';
+import { ActionIcon, Box, Button, Group, Input, Modal, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
+import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX } from '@tabler/icons-react';
 
 export const SATISFACTION_SURVEY_FLAG_KEY = 'satisfactionSurveyEnabled';
 export const SATISFACTION_SURVEY_RESPONSES_KEY = 'satisfactionSurveyResponses';
 
 const INITIAL_ANSWERS = {
-  overallSatisfaction: '',
-  feltHeard: '',
-  additionalFeedback: '',
+  careConnectRating: '',
+  improvementSuggestions: '',
+  resetFacilityFeedback: '',
 };
 
 const SATISFACTION_OPTIONS = [
@@ -44,8 +44,6 @@ function SatisfactionSurveyModal ({
   deflectionId,
   onFinished,
   source = 'legal_release',
-  careConnectionQuestionLabel = 'How&apos;s your CareConnect app experience?',
-  resetQuestionLabel = 'How can we improve operations at the RESET facility?',
 }) {
   const [surveyStep, setSurveyStep] = useState(0);
   const [surveyAnswers, setSurveyAnswers] = useState(INITIAL_ANSWERS);
@@ -67,32 +65,61 @@ function SatisfactionSurveyModal ({
     <Modal
       opened={opened}
       onClose={() => finish(false)}
-      title='Quick satisfaction survey'
+      title={null}
       centered
       withCloseButton={false}
     >
       <Stack gap='md'>
-        <Text size='sm' c='dimmed'>Question {surveyStep + 1} of 3</Text>
+        <Group justify='space-between' align='center' wrap='nowrap'>
+          <Text size='sm' c='dimmed'>{surveyStep + 1} of 2</Text>
+          <ActionIcon
+            type='button'
+            onClick={() => finish(false)}
+            variant='transparent'
+            flex='none'
+            aria-label='Close survey'
+            styles={{
+              root: {
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                backgroundColor: '#f1f3f5',
+                '&:hover': {
+                  backgroundColor: '#e9ecef',
+                },
+              },
+            }}
+          >
+            <IconX size={20} stroke={2.25} color='#868e96' />
+          </ActionIcon>
+        </Group>
         {surveyStep === 0 && (
-          <Input.Wrapper label={careConnectionQuestionLabel}>
-            <Group mt='xs' justify='center'>
+          <Input.Wrapper size='xl' label='How&apos;s your CareConnect app experience?'>
+            <Group mt='lg' grow gap='xs'>
               {SATISFACTION_OPTIONS.map((option) => {
-                const isSelected = surveyAnswers.overallSatisfaction === option.value;
+                const isSelected = surveyAnswers.careConnectRating === option.value;
 
                 return (
                   <UnstyledButton
                     key={option.value}
-                    onClick={() => setSurveyAnswers((prev) => ({ ...prev, overallSatisfaction: option.value }))}
+                    onClick={() => setSurveyAnswers((prev) => ({ ...prev, careConnectRating: option.value }))}
                     aria-label={option.label}
-                    style={{
-                      border: isSelected ? '2px solid #228be6' : '2px solid transparent',
-                      borderRadius: '12px',
-                      backgroundColor: isSelected ? '#e7f5ff' : 'transparent',
-                      padding: '8px 12px',
-                    }}
+                    style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
                   >
-                    <Stack gap={4} align='center'>
-                      <option.Icon size={32} stroke={1.8} color={isSelected ? '#228be6' : '#868e96'} />
+                    <Stack gap={10} align='center'>
+                      <Box
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 54,
+                          height: 54,
+                          borderRadius: '50%',
+                          backgroundColor: isSelected ? '#e7f5ff' : '#f1f3f5',
+                        }}
+                      >
+                        <option.Icon size={32} stroke={1.8} color={isSelected ? '#228be6' : '#868e96'} />
+                      </Box>
                       <Text size='sm' c={isSelected ? 'blue.7' : 'dimmed'}>{option.label}</Text>
                     </Stack>
                   </UnstyledButton>
@@ -101,62 +128,61 @@ function SatisfactionSurveyModal ({
             </Group>
           </Input.Wrapper>
         )}
-        {surveyStep === 1 && (
-          <Input.Wrapper label={resetQuestionLabel}>
-            <Radio.Group
-              value={surveyAnswers.feltHeard}
-              onChange={(value) => setSurveyAnswers((prev) => ({ ...prev, feltHeard: value }))}
-            >
-              <Stack gap='xs' mt='xs'>
-                <Radio value='yes' label='Yes' />
-                <Radio value='somewhat' label='Somewhat' />
-                <Radio value='no' label='No' />
-              </Stack>
-            </Radio.Group>
+        {surveyAnswers.careConnectRating === 'bad' && (
+          <Input.Wrapper size='md' mt='xl' label='What can we do to improve your experience with CareConnect?'>
+            <Group mt='sm' grow gap='xs'>
+              <Textarea
+                placeholder='Share your thoughts...'
+                value={surveyAnswers.improvementSuggestions}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setSurveyAnswers((prev) => ({ ...prev, improvementSuggestions: value }));
+                }}
+              />
+            </Group>
           </Input.Wrapper>
         )}
-        {surveyStep === 2 && (
-          <Textarea
-            label='Any additional feedback? (optional)'
-            value={surveyAnswers.additionalFeedback}
-            onChange={(event) => setSurveyAnswers((prev) => ({ ...prev, additionalFeedback: event.currentTarget.value }))}
-            minRows={3}
-          />
+        {surveyStep === 1 && (
+          <Input.Wrapper size='xl' label='How can we improve operations at the RESET facility?'>
+            <Textarea
+              placeholder='Share your thoughts...'
+              mt='lg'
+              value={surveyAnswers.resetFacilityFeedback}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setSurveyAnswers((prev) => ({ ...prev, resetFacilityFeedback: value }));
+              }}
+              minRows={3}
+              styles={{
+                input: {
+                  '&::placeholder': {
+                    fontSize: 'var(--mantine-font-size-xs)',
+                    color: 'var(--mantine-color-dimmed)',
+                  },
+                },
+              }}
+            />
+          </Input.Wrapper>
         )}
-        <Group justify='space-between' mt='sm'>
-          <Button
-            variant='secondary'
-            onClick={() => finish(false)}
-          >
-            Skip
-          </Button>
-          <Group>
+        <Group justify='flex-start' mt='sm'>
+          {surveyStep < 1 && (
             <Button
-              variant='secondary'
-              onClick={() => setSurveyStep((prev) => Math.max(prev - 1, 0))}
-              disabled={surveyStep === 0}
+              onClick={() => setSurveyStep((prev) => prev + 1)}
+              disabled={
+                (surveyStep === 0 && !surveyAnswers.careConnectRating) ||
+                (surveyStep === 1 && !surveyAnswers.resetFacilityFeedback)
+              }
             >
-              Back
+              Next
             </Button>
-            {surveyStep < 2 && (
-              <Button
-                onClick={() => setSurveyStep((prev) => prev + 1)}
-                disabled={
-                  (surveyStep === 0 && !surveyAnswers.overallSatisfaction) ||
-                  (surveyStep === 1 && !surveyAnswers.feltHeard)
-                }
-              >
-                Next
-              </Button>
-            )}
-            {surveyStep === 2 && (
-              <Button
-                onClick={() => finish(true)}
-              >
-                Submit
-              </Button>
-            )}
-          </Group>
+          )}
+          {surveyStep === 1 && (
+            <Button
+              onClick={() => finish(true)}
+            >
+              Share feedback
+            </Button>
+          )}
         </Group>
       </Stack>
     </Modal>
