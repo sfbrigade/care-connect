@@ -15,6 +15,7 @@ const {
   mockDeflectionsList,
   mockIncidentLeft,
   mockIncidentExtend,
+  mockIncidentCreate,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
@@ -23,6 +24,7 @@ const {
   mockDeflectionsList: vi.fn(),
   mockIncidentLeft: vi.fn(),
   mockIncidentExtend: vi.fn(),
+  mockIncidentCreate: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -51,6 +53,7 @@ vi.mock('@/Api', () => ({
       list: mockDeflectionsList,
     },
     incidents: {
+      create: mockIncidentCreate,
       left: mockIncidentLeft,
       extend: mockIncidentExtend,
     },
@@ -159,6 +162,24 @@ beforeEach(() => {
   mockIncidentExtend.mockResolvedValue({
     data: [],
   });
+  mockIncidentCreate.mockResolvedValue({
+    data: {
+      id: 56,
+      facilityId: 1,
+      permissions: {
+        isCreator: true,
+        canExtend: true,
+        canArrive: true,
+        canLeave: false,
+        canCancelIncident: true,
+        canEditIncident: true,
+        canCreateHold: true,
+        canHandoff: false,
+        incidentDetailsComplete: false,
+      },
+      totalActiveHolds: 1,
+    },
+  });
 });
 
 afterEach(() => {
@@ -229,6 +250,82 @@ describe('Holds', () => {
       expect(mockShowToast).toHaveBeenCalledWith(
         'All active holds have been reset to 60 minutes.',
         'success'
+      );
+    });
+  });
+
+  it('places the first hold without navigating to incident details', async () => {
+    mockActiveIncident.mockResolvedValue({ data: null });
+
+    renderHolds();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Hold a bedtype\.chair/i }));
+
+    await waitFor(() => {
+      expect(mockIncidentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          facilityId: 1,
+          cadNumber: null,
+          caseNumber: null,
+          arrestedAt: expect.any(String),
+        }),
+        { bedTypeId: 99 }
+      );
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/incident'));
+  });
+
+  it('routes first add-details tap through incident confirmation when incident details are incomplete', async () => {
+    mockActiveIncident.mockResolvedValue({
+      data: {
+        id: 55,
+        arrivedAt: null,
+        leftAt: null,
+        addressLine1: null,
+        createdById: 1,
+        permissions: {
+          isCreator: true,
+          canExtend: true,
+          canArrive: true,
+          canLeave: false,
+          canCancelIncident: true,
+          canEditIncident: true,
+          canCreateHold: true,
+          canHandoff: false,
+          incidentDetailsComplete: false,
+        },
+        totalActiveHolds: 1,
+      },
+    });
+    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
+      if (incidentId === 55 && active === true) {
+        return Promise.resolve({
+          data: [{
+            id: 88,
+            incidentId: 55,
+            subjectId: null,
+            status: 'ACTIVE',
+            subjectStatus: 'DETAINED',
+          }],
+        });
+      }
+      if (facilityId === 1 && active === false) {
+        return Promise.resolve({ data: [] });
+      }
+      if (facilityId === 1 && active === true && subjectStatus) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderHolds();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Details' }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        `/incident?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
       );
     });
   });

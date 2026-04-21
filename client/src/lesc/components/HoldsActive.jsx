@@ -52,6 +52,7 @@ function HoldsActive ({
   updatedAtMs = 0,
   holdsHighlighted = false,
   currentUserId,
+  incidentDetailsComplete = false,
 }) {
   const navigate = useNavigate();
 
@@ -126,7 +127,18 @@ function HoldsActive ({
                     isHandedOff={isHandedOff}
                     onCancelClick={() => onCancelHoldClick(deflection)}
                     onDetailsClick={() => {
-                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                      if (deflection.subjectId) {
+                        navigate(`/holds/${deflection.id}`);
+                        return;
+                      }
+
+                      const subjectPath = `/holds/${deflection.id}/subject?isNew=true`;
+                      if (incidentDetailsComplete) {
+                        navigate(subjectPath);
+                        return;
+                      }
+
+                      navigate(`/incident?next=${encodeURIComponent(subjectPath)}`);
                     }}
                   />
                 );

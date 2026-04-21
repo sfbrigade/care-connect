@@ -14,6 +14,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
+import { isValidIncident } from '@/utils/validators';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import CancelHoldModal from './CancelHoldModal';
@@ -32,6 +33,24 @@ import {
   detectAutoCancelledExpiredHolds,
   mergeHistoryDeflections,
 } from './holdsViewModel';
+
+function buildBlankIncident (facilityId) {
+  return {
+    facilityId,
+    cadNumber: null,
+    caseNumber: null,
+    encounteredVia: null,
+    addressLine1: null,
+    addressLine2: null,
+    city: null,
+    state: null,
+    postalCode: null,
+    latitude: null,
+    longitude: null,
+    arrestedAt: DateTime.now().toISO(),
+    supervisorBadgeNumber: null,
+  };
+}
 
 function parseAutoCancelledNoticeState (value) {
   if (!value) return null;
@@ -291,6 +310,19 @@ function Holds () {
     },
   });
 
+  const createIncidentMutation = useMutation({
+    mutationFn: ({ bedTypeId }) => Api.incidents.create(buildBlankIncident(facility.id), { bedTypeId }),
+    onSuccess: async (response) => {
+      await queryClient.setQueryData(['facilities', facility.id, 'active-incident'], response.data);
+      await queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
+      await queryClient.invalidateQueries({ queryKey: ['deflections', response.data.id, 'active'] });
+      setTab('active');
+    },
+    onError: () => {
+      showToast('We couldn’t place the hold', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
   const extendAllHoldsMutation = useMutation({
     mutationFn: (id) => Api.incidents.extend(id),
     onSuccess: (response) => {
@@ -305,13 +337,14 @@ function Holds () {
 
   function onHoldClick () {
     let bedTypeId;
-    if (bedTypes?.length === 1) {
-      bedTypeId = bedTypes[0].id;
+    const availableBedTypes = bedTypes ?? facility.bedTypes;
+    if (availableBedTypes?.length === 1) {
+      bedTypeId = availableBedTypes[0].id;
     } else {
       // TODO
     }
     if (!incident) {
-      navigate(`/incident${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`);
+      createIncidentMutation.mutate({ bedTypeId });
     } else {
       createDeflectionMutation.mutate({
         facilityId: facility.id,
@@ -462,6 +495,7 @@ function Holds () {
     !permissions.canCreateHold ||
     isArrivalPending ||
     createDeflectionMutation.isPending ||
+    createIncidentMutation.isPending ||
     isClosed ||
     isFull ||
     !primaryBedType ||
@@ -469,6 +503,7 @@ function Holds () {
   );
   const showExtendActiveHoldsAction = (displayActiveDeflections?.length ?? 0) > 0;
   const incidentHasDetailedHolds = !!displayActiveDeflections?.some(deflection => deflection.subjectId);
+  const incidentDetailsComplete = incident?.permissions?.incidentDetailsComplete ?? isValidIncident(incident);
 
   return (
     <>
@@ -513,6 +548,7 @@ function Holds () {
               updatedAtMs={lastSyncedAtMs}
               holdsHighlighted={holdsHighlighted}
               currentUserId={user?.id}
+              incidentDetailsComplete={incidentDetailsComplete}
             />
           )}
           {tab === 'history' && (
