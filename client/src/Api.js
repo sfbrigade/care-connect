@@ -189,9 +189,6 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
-    activeIncident (id) {
-      return instance.get(`/api/facilities/${id}/active-incident`);
-    },
     myHolds (id) {
       return instance.get(`/api/facilities/${id}/my-holds`);
     },
@@ -283,18 +280,6 @@ const Api = {
     },
     update (id, data) {
       return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
-    },
-    arrived (id) {
-      return instance.patch(`/api/incidents/${id}/arrived`).catch(handleError);
-    },
-    left (id) {
-      return instance.patch(`/api/incidents/${id}/left`).catch(handleError);
-    },
-    extend (id) {
-      return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
-    },
-    cancel (id, { cancelReasonId } = {}) {
-      return instance.delete(`/api/incidents/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`).catch(handleError);
     },
   },
   deflections: {
