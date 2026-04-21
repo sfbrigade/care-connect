@@ -2,7 +2,7 @@
 // between our tests.
 
 import util from 'node:util';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import helper from 'fastify-cli/helper.js';
 import path from 'node:path';
@@ -11,7 +11,7 @@ import YAML from 'yaml';
 import { StatusCodes } from 'http-status-codes';
 import * as nodemailerMock from 'nodemailer-mock';
 
-import { GenericContainer } from 'testcontainers';
+import { GenericContainer, Wait } from 'testcontainers';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import {
   Builder,
@@ -54,20 +54,53 @@ async function buildPostgres (t) {
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
   const testcontainersNetworkMode = process.env.TESTCONTAINERS_NETWORK_MODE;
+  const useNetworkAliases = Boolean(testcontainersNetworkMode);
+  const aliasSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   // extract current version of postgres image being used, start a new test container
-  let dbContainer = new PostgreSqlContainer(compose.services.db.image);
-  if (testcontainersNetworkMode) {
-    dbContainer = dbContainer.withNetworkMode(testcontainersNetworkMode);
-  }
+  const dbUsername = 'test';
+  const dbPassword = 'test';
+  const dbName = 'test';
+  const dbPort = 5432;
+  const dbAlias = `care-connect-test-db-${aliasSuffix}`;
+  const dbContainer = useNetworkAliases
+    ? new GenericContainer(compose.services.db.image)
+      .withNetworkMode(testcontainersNetworkMode)
+      .withNetworkAliases(dbAlias)
+      .withEnvironment({
+        POSTGRES_DB: dbName,
+        POSTGRES_USER: dbUsername,
+        POSTGRES_PASSWORD: dbPassword,
+      })
+      .withHealthCheck({
+        test: [
+          'CMD-SHELL',
+          `PGPASSWORD=${dbPassword} pg_isready --host localhost --username ${dbUsername} --dbname ${dbName}`,
+        ],
+        interval: 250,
+        timeout: 1000,
+        retries: 1000,
+      })
+      .withWaitStrategy(Wait.forHealthCheck())
+      .withStartupTimeout(120_000)
+    : new PostgreSqlContainer(compose.services.db.image);
   const startedDbContainer = await dbContainer.start();
+  const dbHost = useNetworkAliases ? dbAlias : startedDbContainer.getHost();
+  const dbMappedPort = useNetworkAliases ? dbPort : startedDbContainer.getPort();
+  const getDbUrl = (database) => {
+    const url = new URL(`postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbMappedPort}/${database}`);
+    url.searchParams.set('connection_limit', '1');
+    return url;
+  };
   // set up the default template (template1) with the schema and fixtures
-  const templateDbUrl = new URL(`postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`);
-  templateDbUrl.searchParams.set('connection_limit', '1');
-  const TEMPLATE_DATABASE_URL = templateDbUrl.toString();
+  const TEMPLATE_DATABASE_URL = getDbUrl('template1').toString();
   // run the migrations
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
-  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema ${schemaPath}`, {
+  await util.promisify(execFile)('npx', ['prisma', 'db', 'push', '--schema', schemaPath], {
     cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      DATABASE_URL: TEMPLATE_DATABASE_URL,
+    },
   });
   const prisma = new PrismaClient({
     datasourceUrl: TEMPLATE_DATABASE_URL,
@@ -83,22 +116,30 @@ async function buildPostgres (t) {
   }
   await prisma.$disconnect();
   // configure test database url
-  process.env.DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/${startedDbContainer.getDatabase()}`;
+  process.env.DATABASE_URL = getDbUrl(dbName).toString();
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
   // set up a new storage container
+  const storageAlias = `care-connect-test-storage-${aliasSuffix}`;
   let storageContainer = new GenericContainer(compose.services.storage.image)
-    .withEntrypoint(['minio', 'server', '/data'])
-    .withExposedPorts(9000);
-  if (testcontainersNetworkMode) {
-    storageContainer = storageContainer.withNetworkMode(testcontainersNetworkMode);
+    .withEntrypoint(['minio', 'server', '/data']);
+  if (useNetworkAliases) {
+    storageContainer = storageContainer
+      .withNetworkMode(testcontainersNetworkMode)
+      .withNetworkAliases(storageAlias)
+      .withStartupTimeout(120_000);
+  } else {
+    storageContainer = storageContainer
+      .withExposedPorts(9000);
   }
   const startedStorageContainer = await storageContainer.start();
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
   process.env.AWS_S3_SECRET_ACCESS_KEY = 'minioadmin';
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
-  process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
+  process.env.AWS_S3_ENDPOINT = useNetworkAliases
+    ? `http://${storageAlias}:9000`
+    : `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
 
   // Reset S3 client to ensure it uses the new environment variables
   s3.reset();
@@ -153,7 +194,6 @@ async function buildPostgres (t) {
     await app.prisma.$disconnect();
     const templatePrisma = new PrismaClient({ datasourceUrl: TEMPLATE_DATABASE_URL });
     await templatePrisma.$connect();
-    const dbName = startedDbContainer.getDatabase();
     // Quote database name to handle special characters and ensure proper SQL escaping
     await templatePrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     await templatePrisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
