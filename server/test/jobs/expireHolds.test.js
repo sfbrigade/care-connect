@@ -42,7 +42,6 @@ test('expireHolds job', async (t) => {
       where: { id: deflection.id },
     });
     assert.strictEqual(updated.status, 'EXPIRED');
-
   });
 
   await t.test('does not expire holds that are not yet past expiresAt', async () => {

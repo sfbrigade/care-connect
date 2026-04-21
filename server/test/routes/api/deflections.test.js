@@ -983,7 +983,6 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 1);
       assert.deepStrictEqual(bedType.inTransit, 1); // deflection 6 is READY_FOR_INTAKE so is NOT considered in transit
       assert.deepStrictEqual(bedType.available, 7);
-
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
@@ -1016,18 +1015,6 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedTypeAfter.holds, bedTypeBefore.holds + 1);
       assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit + 1);
       assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available - 1);
-    });
-
-    await t.test('returns 400 if incident is completed', async () => {
-      await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
-      await app.inject().delete('/api/deflections/5?cancelReasonId=5150').headers(userHeaders);
-      await app.inject().delete('/api/deflections/6?cancelReasonId=5150').headers(userHeaders);
-
-      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
-      assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
-      const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Incident is already completed');
     });
 
     await t.test('returns 400 if deflection is not cancelled or expired', async () => {

@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
-import { DateTime } from 'luxon';
 
 import { authenticate, build } from '#test/helper.js';
 
@@ -9,7 +8,6 @@ test('/api/incidents', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
-  const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new incident', async () => {
