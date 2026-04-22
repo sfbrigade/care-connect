@@ -108,7 +108,7 @@ function EditUserProfilePage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/profile' />
+          <IconButtonLink icon={IconArrowLeft} to='/profile' aria-label='Go back' />
         </Group>
       </Header>
       <Container>
@@ -158,7 +158,7 @@ function EditUserProfilePage () {
             </Fieldset>
           </form>
           <Text size='sm' ta='center' c='gray.5'>
-            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org'>careconnect@sfgov.org</Anchor>
+            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>
         </Stack>
       </Container>

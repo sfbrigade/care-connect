@@ -11,9 +11,15 @@
     "dev:client": "node scripts/setup-env.js && npm run dev -w client -- --host --port 3333",
     "lint": "npm run lint --workspaces",
     "lint:check": "npm run lint:check --workspaces",
-    "test": "npm test --workspaces"
+    "test": "npm test --workspaces",
+    "test:e2e": "npx playwright test",
+    "test:e2e:watch": "SLOW_MO=500 npx playwright test --headed",
+    "test:a11y": "npx playwright test accessibility-audit.spec.js",
+    "test:a11y:deep": "npx playwright test accessibility-audit-deep.spec.js"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@playwright/test": "^1.58.2",
     "foreman": "^3.0.1",
     "prisma-erd-generator": "^2.3.0"
   }
