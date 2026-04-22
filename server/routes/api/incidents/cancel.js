@@ -1,5 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import {
+  hasCompleteHospitalCancellationDetails,
+  HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
+  HOSPITAL_CANCEL_REASON_ID,
+  isHospitalCancellation647fEligible,
+} from '#lib/hospitalCancellation647f.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -55,15 +62,41 @@ export default async function (fastify, opts) {
       }
 
       try {
+        const hospitalCancellationDeflectionIds = [];
+
         await fastify.prisma.$transaction(async (tx) => {
           const deflections = await tx.deflection.findMany({
             where: { incidentId: id },
+            include: {
+              subject: true,
+              incident: true,
+            },
           });
+          const activeDeflections = deflections.filter((deflection) => deflection.status === 'ACTIVE');
+          const hospitalEligibleDeflections = activeDeflections.filter(isHospitalCancellation647fEligible);
 
           const hasHoldsWithDetails = deflections.some((deflection) => Boolean(deflection.subjectId));
 
           if (hasHoldsWithDetails && !cancelReasonId) {
             throw new Error('CANCEL_REASON_REQUIRED');
+          }
+
+          if (cancelReasonId === HOSPITAL_CANCEL_REASON_ID) {
+            const incompleteHospitalCancellation = hospitalEligibleDeflections.some((deflection) =>
+              deflection.subjectId && !hasCompleteHospitalCancellationDetails(deflection)
+            );
+
+            if (incompleteHospitalCancellation) {
+              throw new Error('HOSPITAL_CANCELLATION_DETAILS_INCOMPLETE');
+            }
+          }
+
+          if (cancelReasonId === HOSPITAL_CANCEL_REASON_ID) {
+            hospitalCancellationDeflectionIds.push(
+              ...hospitalEligibleDeflections
+                .filter((deflection) => Boolean(deflection.subjectId))
+                .map((deflection) => deflection.id)
+            );
           }
 
           const bedTypeIds = [...new Set(deflections.map((deflection) => deflection.bedTypeId))];
@@ -164,10 +197,27 @@ export default async function (fastify, opts) {
             },
           });
         });
+
+        if (cancelReasonId === HOSPITAL_CANCEL_REASON_ID) {
+          await Promise.all(hospitalCancellationDeflectionIds.map((deflectionId) =>
+            fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+              deflectionId,
+              userId: request.user.id,
+              formIds: ['647f'],
+              emailTemplate: 'transfer-form',
+            })
+          ));
+        }
       } catch (error) {
         if (error.message === 'CANCEL_REASON_REQUIRED') {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
             error: 'A cancellation reason is required when the incident contains holds with subject details.',
+          });
+        }
+
+        if (error.message === 'HOSPITAL_CANCELLATION_DETAILS_INCOMPLETE') {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            error: HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
           });
         }
 
