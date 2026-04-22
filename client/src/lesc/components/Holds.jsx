@@ -450,15 +450,13 @@ function Holds () {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-              {myHolds?.canExtend && (
-                <Menu.Item
-                  leftSection={<IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />}
-                  onClick={onExtendActiveHoldsClick}
-                  disabled={extendAllHoldsMutation.isPending}
-                >
-                  Extend active holds
-                </Menu.Item>
-              )}
+              <Menu.Item
+                leftSection={<IconAlarmPlus size={18} color='var(--mantine-color-gray-5)' />}
+                onClick={onExtendActiveHoldsClick}
+                disabled={!myHolds?.canExtend || extendAllHoldsMutation.isPending}
+              >
+                Extend active holds
+              </Menu.Item>
               <Menu.Item
                 leftSection={<IconScan size={18} color='var(--mantine-color-gray-5)' />}
                 onClick={() => setScanHandoffModalOpened(true)}
