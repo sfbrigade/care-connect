@@ -22,7 +22,7 @@ function File647fModal ({
         <Stack gap='sm'>
           <Group justify='space-between' align='flex-start' wrap='nowrap'>
             <Title order={4}>Save changes?</Title>
-            <ActionIcon onClick={onClose} variant='subtle' c='black' radius='xl' size='lg' flex='none'>
+            <ActionIcon onClick={onClose} variant='subtle' c='black' radius='xl' size='lg' flex='none' aria-label='Close'>
               <IconX size={18} />
             </ActionIcon>
           </Group>
