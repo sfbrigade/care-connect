@@ -21,6 +21,7 @@ test('/api/deflections', async (t) => {
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
+  const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
 
@@ -100,6 +101,39 @@ test('/api/deflections', async (t) => {
 
       assert.ok(Array.isArray(data));
       assert.deepStrictEqual(data.length, 0);
+    });
+
+    await t.test('handoff receiver sees holds in history after they no longer own them', async () => {
+      // Simulate: deflection4 was originally user2's. A handoff moves it to fielduser1.
+      // Then fielduser1 taps "I've left" which clears currentOfficerId.
+      // Without the Handoff OR clause, the list would filter by createdById=fielduser1 OR currentOfficerId=fielduser1 —
+      // neither matches — and fielduser1 would lose the hold from their History.
+      const FIELDUSER1_ID = '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d';
+      await prisma.handoff.create({
+        data: {
+          deflectionId: 4,
+          fromOfficerId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5', // user2
+          toOfficerId: FIELDUSER1_ID,
+        },
+      });
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: { currentOfficerId: null },
+      });
+
+      const response = await app.inject()
+        .get('/api/deflections')
+        .headers(cleanFieldHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const ids = JSON.parse(response.body).map(d => d.id);
+      assert.ok(ids.includes(4), `expected fielduser1 to see deflection 4 in history, got ${JSON.stringify(ids)}`);
+
+      // Cleanup
+      await prisma.handoff.deleteMany({ where: { deflectionId: 4 } });
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: { currentOfficerId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
+      });
     });
 
     await t.test('active=true + subjectStatus filter: ownership OR does not clobber the subjectStatus OR', async () => {

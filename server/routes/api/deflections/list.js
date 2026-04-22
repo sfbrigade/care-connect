@@ -95,9 +95,11 @@ export default async function (fastify) {
       }
 
       if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId) && handedOff !== 'true') {
+        // A deflection is "mine" if I currently own it, created it, or ever received it via handoff.
         addOrGroup([
           { currentOfficerId: request.user.id },
           { createdById: request.user.id },
+          { handoffs: { some: { toOfficerId: request.user.id } } },
         ]);
       }
 
