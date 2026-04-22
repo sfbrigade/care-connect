@@ -113,7 +113,7 @@ export default function FormPage () {
   return (
     <Container size='lg' py='xl'>
       <Group mb='lg'>
-        <ActionIcon variant='subtle' onClick={() => navigate(-1)} size='lg'>
+        <ActionIcon variant='subtle' onClick={() => navigate(-1)} size='lg' aria-label='Go back'>
           <IconArrowLeft />
         </ActionIcon>
         <div>

@@ -38,7 +38,7 @@ function ManageCapacity () {
         <title>Manage capacity</title>
       </Head>
       <Stack>
-        <IconButtonLink icon={IconArrowLeft} to='/' />
+        <IconButtonLink icon={IconArrowLeft} to='/' aria-label='Go back' />
 
         <div>
           <Text c='dimmed' size='sm'>Manage capacity</Text>

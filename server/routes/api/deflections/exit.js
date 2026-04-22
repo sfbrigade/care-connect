@@ -87,6 +87,7 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
+            status: Deflection.HoldStatus.COMPLETED,
             subjectStatus: Deflection.SubjectStatus.EXITED,
             exitDestinationId,
             exitHousingStatusId,
@@ -100,7 +101,9 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
+            status: Deflection.HoldStatus.COMPLETED,
             subjectStatus: Deflection.SubjectStatus.EXITED,
+            completedAt: now,
             exitedAt: now,
             exitedById: request.user.id,
             exitDestinationId,

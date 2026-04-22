@@ -48,6 +48,7 @@ export default function Form647f ({ data = {} }) {
     agency = '',
     charge = '',
     justification = '',
+    hospitalCancellationReleaseNarrative = '',
     substanceFound = false,
     paraphernaliaFound = false,
     deflectionId = '',
@@ -59,7 +60,7 @@ export default function Form647f ({ data = {} }) {
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
 
-  const narrative = [justification, narcoticsStatement]
+  const narrative = [justification, narcoticsStatement, hospitalCancellationReleaseNarrative]
     .filter(Boolean)
     .join('\n\n');
 
