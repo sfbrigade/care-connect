@@ -363,6 +363,7 @@ function Holds () {
           <Facility
             facility={facility}
             bedTypes={bedTypes ?? facility.bedTypes}
+            atFacility={myHolds?.atFacility}
             canArrive={myHolds?.canArrive}
             canLeave={myHolds?.canLeave}
             onArrivedClick={onArrivedClick}

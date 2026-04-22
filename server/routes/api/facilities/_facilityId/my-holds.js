@@ -16,6 +16,7 @@ const IncidentWithPermissionsSchema = Incident.ResponseSchema.extend({
 });
 
 const MyHoldsResponseSchema = z.object({
+  atFacility: z.boolean(),
   canArrive: z.boolean(),
   canLeave: z.boolean(),
   canExtend: z.boolean(),
@@ -124,6 +125,7 @@ export default async function (fastify) {
       }
 
       return reply.send({
+        atFacility,
         canArrive: hasPreTransferHolds && !atFacility,
         canLeave: atFacility && !hasPreTransferHolds,
         canExtend: hasDETAINEDHolds,

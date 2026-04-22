@@ -7,6 +7,7 @@ import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/F
 function Facility ({
   facility,
   bedTypes,
+  atFacility,
   canArrive,
   canLeave,
   onArrivedClick,
@@ -17,6 +18,7 @@ function Facility ({
   const placeholderPhone = '(415) 555-7890';
   const isClosed = facility.status === 'CLOSED';
   const isArrivedButtonDisabled = isArrivalPending || isClosed || !canArrive;
+  const isLeftButtonDisabled = isArrivalPending || !canLeave;
   const hasAddressParts = [
     facility.addressLine1,
     facility.addressLine2,
@@ -75,7 +77,7 @@ function Facility ({
           )}
         </Stack>
         <Group gap='sm' justify='center' wrap='nowrap'>
-          {canArrive && (
+          {!atFacility && (
             <Button
               size='lg'
               variant='secondary'
@@ -85,10 +87,11 @@ function Facility ({
               {isArrivalPending ? <Loader size='sm' /> : "I've arrived"}
             </Button>
           )}
-          {canLeave && (
+          {atFacility && (
             <Button
               size='lg'
               onClick={onLeftClick}
+              disabled={isLeftButtonDisabled}
             >
               I've left
             </Button>

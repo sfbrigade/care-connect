@@ -92,6 +92,7 @@ vi.mock('@unhead/react', () => ({
 }));
 
 const mockMyHoldsData = {
+  atFacility: true,
   canArrive: false,
   canLeave: true,
   canExtend: true,
