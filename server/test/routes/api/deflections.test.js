@@ -102,6 +102,19 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.length, 0);
     });
 
+    await t.test('active=true + subjectStatus filter: ownership OR does not clobber the subjectStatus OR', async () => {
+      // user2 owns four active holds across subjectStatus DETAINED (4, 5), READY_FOR_INTAKE (6), RELEASED (7).
+      // Asking for only the post-transfer ones must exclude the DETAINED holds — a regression test for the
+      // bug where where.OR was assigned twice (once for subjectStatus=EXITED handling, once for ownership).
+      const response = await app.inject()
+        .get('/api/deflections?active=true&subjectStatus=READY_FOR_INTAKE,RELEASED,EXITED')
+        .headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      const ids = data.map(d => d.id).sort();
+      assert.deepStrictEqual(ids, [6, 7]);
+    });
+
     await t.test('redacts restricted subject fields for care users', async () => {
       const response = await app.inject()
         .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=READY_FOR_INTAKE')
