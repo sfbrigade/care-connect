@@ -212,6 +212,15 @@ describe('holdsViewModel', () => {
     expect(result).toBe(new Date('2026-02-27T12:00:00.000Z').getTime());
   });
 
+  it('ignores expiresAt (a future deadline) when calculating hold activity recency', () => {
+    const result = getDeflectionActivityMs(deflection({
+      updatedAt: '2026-02-27T09:00:00.000Z',
+      cancelledAt: '2026-02-27T09:00:00.000Z',
+      expiresAt: '2026-02-27T15:00:00.000Z',
+    }));
+    expect(result).toBe(new Date('2026-02-27T09:00:00.000Z').getTime());
+  });
+
   describe('buildAdminCancelledHoldsMessage', () => {
     it('builds single hold message with person name', () => {
       expect(buildAdminCancelledHoldsMessage({

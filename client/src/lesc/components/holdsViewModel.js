@@ -127,6 +127,8 @@ function toMillis (value) {
 }
 
 export function getDeflectionActivityMs (deflection) {
+  // Only timestamps that represent events that actually happened.
+  // expiresAt is a scheduled future deadline, not activity, so excluded.
   return Math.max(
     toMillis(deflection?.updatedAt),
     toMillis(deflection?.cancelledAt),
@@ -134,7 +136,6 @@ export function getDeflectionActivityMs (deflection) {
     toMillis(deflection?.releasedAt),
     toMillis(deflection?.admittedAt),
     toMillis(deflection?.transferredAt),
-    toMillis(deflection?.expiresAt),
     toMillis(deflection?.createdAt)
   );
 }
