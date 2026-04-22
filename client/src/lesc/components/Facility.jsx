@@ -1,6 +1,7 @@
-import { Alert, Anchor, Button, Card, Group, Loader, Stack, Title } from '@mantine/core';
+import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { IconAlertTriangle, IconTallymark1 } from '@tabler/icons-react';
 import { inflect } from 'inflection';
+import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/FacilityAddressLinkFromParts';
 
@@ -8,6 +9,7 @@ function Facility ({
   facility,
   bedTypes,
   atFacility,
+  arrivedAt,
   canArrive,
   canLeave,
   onArrivedClick,
@@ -97,6 +99,11 @@ function Facility ({
             </Button>
           )}
         </Group>
+        {atFacility && arrivedAt && (
+          <Text align='center' size='md' c='gray.5'>
+            Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}
+          </Text>
+        )}
       </Stack>
     </Card>
   );

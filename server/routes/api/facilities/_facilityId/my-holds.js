@@ -17,6 +17,7 @@ const IncidentWithPermissionsSchema = Incident.ResponseSchema.extend({
 
 const MyHoldsResponseSchema = z.object({
   atFacility: z.boolean(),
+  arrivedAt: z.coerce.date().nullable(),
   canArrive: z.boolean(),
   canLeave: z.boolean(),
   canExtend: z.boolean(),
@@ -72,16 +73,15 @@ export default async function (fastify) {
         orderBy: { createdAt: 'desc' },
       });
 
-      // atFacility: does this officer have ANY active hold (any subjectStatus)
-      // where they are currentOfficer and arrivedAt is set?
-      const atFacility = await fastify.prisma.deflection.count({
-        where: {
-          facilityId,
-          currentOfficerId: officerId,
-          status: 'ACTIVE',
-          arrivedAt: { not: null },
-        },
-      }) > 0;
+      // Presence: the most recent FacilityCheckIn for this (officer, facility)
+      // is the source of truth. ARRIVAL → at facility; DEPARTURE (or no rows) → not.
+      // ARRIVAL and DEPARTURE rows strictly alternate for a given user+facility.
+      const lastCheckIn = await fastify.prisma.facilityCheckIn.findFirst({
+        where: { userId: officerId, facilityId },
+        orderBy: { timestamp: 'desc' },
+      });
+      const atFacility = lastCheckIn?.eventType === 'ARRIVAL';
+      const arrivedAt = atFacility ? lastCheckIn.timestamp : null;
 
       // Group deflections by incident
       const incidentMap = new Map();
@@ -126,6 +126,7 @@ export default async function (fastify) {
 
       return reply.send({
         atFacility,
+        arrivedAt,
         canArrive: hasPreTransferHolds && !atFacility,
         canLeave: atFacility && !hasPreTransferHolds,
         canExtend: hasDETAINEDHolds,

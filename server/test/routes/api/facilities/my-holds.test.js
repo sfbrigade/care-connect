@@ -68,22 +68,27 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
     assert.deepStrictEqual(after.incidents[0].canHandoff, true);
   });
 
-  await t.test('with pre-transfer holds and not arrived: atFacility false, canArrive + canExtend + canCreateHold true, canLeave false', async () => {
+  await t.test('with pre-transfer holds and not arrived: atFacility false, arrivedAt null, canArrive + canExtend + canCreateHold true, canLeave false', async () => {
     const body = await getBody(userHeaders);
     assert.deepStrictEqual(body.atFacility, false);
+    assert.deepStrictEqual(body.arrivedAt, null);
     assert.deepStrictEqual(body.canArrive, true);
     assert.deepStrictEqual(body.canLeave, false);
     assert.deepStrictEqual(body.canExtend, true);
     assert.deepStrictEqual(body.canCreateHold, true);
   });
 
-  await t.test('after arriving: atFacility flips true; canArrive / canCreateHold / canExtend all false; canLeave still false (pre-transfer holds remain)', async () => {
+  await t.test('after arriving: atFacility true, arrivedAt populated; canArrive / canCreateHold / canExtend all false; canLeave still false (pre-transfer holds remain)', async () => {
+    const before = Date.now();
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
 
     const body = await getBody(userHeaders);
     assert.deepStrictEqual(body.atFacility, true);
+    assert.ok(body.arrivedAt, 'arrivedAt should be populated');
+    const arrivedAtMs = new Date(body.arrivedAt).getTime();
+    assert.ok(arrivedAtMs >= before && arrivedAtMs <= Date.now(), 'arrivedAt should fall within the request window');
     assert.deepStrictEqual(body.canArrive, false);
     assert.deepStrictEqual(body.canCreateHold, false);
     // All pre-transfer holds are now ONSITE_AWAITING_TRANSFER (no DETAINED remaining).
@@ -106,9 +111,23 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
     const body = await getBody(userHeaders);
     assert.deepStrictEqual(body.incidents.length, 0, 'no pre-transfer holds means no incident groups');
     assert.deepStrictEqual(body.atFacility, true);
+    assert.ok(body.arrivedAt, 'arrivedAt should still be populated');
     assert.deepStrictEqual(body.canLeave, true);
     assert.deepStrictEqual(body.canArrive, false);
     assert.deepStrictEqual(body.canCreateHold, false);
+  });
+
+  await t.test('after leaving: atFacility flips back to false, arrivedAt null', async () => {
+    await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+    await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/left`)
+      .headers(userHeaders);
+
+    const body = await getBody(userHeaders);
+    assert.deepStrictEqual(body.atFacility, false);
+    assert.deepStrictEqual(body.arrivedAt, null);
   });
 
   await t.test('empty response and permissive flags when caller has no holds anywhere', async () => {
@@ -116,6 +135,7 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
     assert.deepStrictEqual(body.incidents.length, 0);
     assert.deepStrictEqual(body.activeIncidentId, null);
     assert.deepStrictEqual(body.atFacility, false);
+    assert.deepStrictEqual(body.arrivedAt, null);
     assert.deepStrictEqual(body.canArrive, false);
     assert.deepStrictEqual(body.canLeave, false);
     assert.deepStrictEqual(body.canExtend, false);
