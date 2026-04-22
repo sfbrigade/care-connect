@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconAlarm } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlarm, IconFileText } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -17,7 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidSubstance, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -65,7 +65,6 @@ function Deflection () {
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const canEditHoldDetails = !isExpiredAutoCancelled;
   const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
@@ -194,7 +193,7 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {(doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
+          {!isCustodyTransferred && (doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
@@ -239,7 +238,7 @@ function Deflection () {
                 <Text>{address}</Text>
               </Box>
             )}
-            {canEditHoldDetails && (
+            {isActionableActiveHold && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>
                   {subjectDetailsComplete ? 'Edit details' : 'Finish details'}
@@ -271,6 +270,20 @@ function Deflection () {
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
+                </Stack>
+                {isActionableActiveHold && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>{isValidNarcotics(deflection) ? 'Edit narcotics' : 'Finish narcotics'}</Button>
+                  </Group>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value='drug-use'>
+              <Accordion.Control>
+                <Title order={3}>Substance use</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
                   <Box>
                     <Text c='dimmed'>Signs of substance use</Text>
                     {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
@@ -288,7 +301,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>
                       {substanceComplete ? 'Edit substance details' : 'Finish substance details'}
@@ -312,7 +325,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
                   </Group>
@@ -353,7 +366,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>{isValidProperty(deflection) ? 'Edit property' : 'Finish property'}</Button>
                   </Group>
@@ -416,7 +429,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate('/incident')}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
                   </Group>
@@ -444,7 +457,12 @@ function Deflection () {
           )}
         </ActionFooter>
       )}
-      {showActionFooter && <Box h='120px' />}
+      {isCustodyTransferred && doc647f && (
+        <ActionFooter>
+          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Print 647(f) form</Button>
+        </ActionFooter>
+      )}
+      {(showActionFooter || (isCustodyTransferred && doc647f)) && <Box h='120px' />}
       {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
         <CancelHoldModal
           deflection={deflection}
