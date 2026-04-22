@@ -16,7 +16,7 @@ function UserProfilePage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/' />
+          <IconButtonLink icon={IconArrowLeft} to='/' aria-label='Go back' />
         </Group>
       </Header>
       <Container>
@@ -42,7 +42,7 @@ function UserProfilePage () {
               <Stack gap='sm'>
                 <Group justify='space-between'>
                   <Title order={3}>Position details</Title>
-                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' />
+                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' aria-label='Edit position details' />
                 </Group>
                 <Box>
                   <Text size='md' c='gray.6'>Star number</Text>
@@ -68,7 +68,7 @@ function UserProfilePage () {
             </>
           )}
           <Text size='sm' ta='center' c='gray.5'>
-            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org'>careconnect@sfgov.org</Anchor>
+            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>
         </Stack>
       </Container>

@@ -1,5 +1,44 @@
 import { execSync } from 'child_process';
 
+const ALLOWED_DB_HOSTS = ['localhost', '127.0.0.1', 'db'];
+const SAFETY_ERROR_PREFIX = 'Refusing to reset DB';
+
+function assertSafeToReset () {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`${SAFETY_ERROR_PREFIX}: NODE_ENV=production`);
+  }
+
+  let dbUrl;
+  try {
+    dbUrl = execSync(
+      "docker compose exec -T server bash -c 'echo $DATABASE_URL'",
+      { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] },
+    ).trim();
+  } catch {
+    throw new Error(`${SAFETY_ERROR_PREFIX}: could not read DATABASE_URL from server container`);
+  }
+
+  if (!dbUrl) {
+    throw new Error(`${SAFETY_ERROR_PREFIX}: DATABASE_URL is empty in server container`);
+  }
+
+  let hostname;
+  try {
+    hostname = new URL(dbUrl).hostname;
+  } catch {
+    throw new Error(`${SAFETY_ERROR_PREFIX}: could not parse DATABASE_URL`);
+  }
+
+  if (!ALLOWED_DB_HOSTS.includes(hostname)) {
+    throw new Error(
+      `${SAFETY_ERROR_PREFIX}: DATABASE_URL host "${hostname}" is not in the allowlist ` +
+      `(${ALLOWED_DB_HOSTS.join(', ')}).`,
+    );
+  }
+
+  console.log(`DB safety check passed — will reset local dev DB at host "${hostname}".`);
+}
+
 export default async function globalSetup () {
   try {
     const result = execSync('docker compose ps --format json', { encoding: 'utf-8' });
@@ -23,6 +62,9 @@ export default async function globalSetup () {
       }
     }
 
+    // Safety check must pass before the destructive reset runs
+    assertSafeToReset();
+
     // Reset database to clean seed state before running tests
     console.log('Resetting database...');
     execSync('docker compose exec -T server bash -c "cd server && npx prisma migrate reset --force"', {
@@ -37,6 +79,9 @@ export default async function globalSetup () {
       '\\""', { stdio: 'inherit', timeout: 30000 });
     console.log('Database reset complete.');
   } catch (error) {
+    if (error.message?.startsWith(SAFETY_ERROR_PREFIX)) {
+      throw error;
+    }
     if (error.message?.includes('Server did not become ready')) {
       throw error;
     }

@@ -240,7 +240,7 @@ function Care () {
             setScanModalOpened(true);
           }}
         >
-          Scan transfer code
+          Begin a medical intake
         </Button>
       </ActionFooter>
 

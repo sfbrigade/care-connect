@@ -11,7 +11,6 @@ import seedUnits from './seeds/units.js';
 import seedBedTypeUnavailableReasons from './seeds/bedTypeUnavailableReasons.js';
 import seedFacilityStatusReasons from './seeds/facilityStatusReasons.js';
 import seedDeflectionCancelReasons from './seeds/deflectionCancelReasons.js';
-import seedDeflectionDetails from './seeds/deflectionDetails.js';
 import seedDeflectionExitDestinations from './seeds/deflectionExitDestinations.js';
 import seedDeflectionExitHousingStatuses from './seeds/deflectionExitHousingStatuses.js';
 import seedDeflectionReleaseReasons from './seeds/deflectionReleaseReasons.js';
@@ -37,7 +36,6 @@ try {
   await seedBedTypeUnavailableReasons(prisma);
   await seedFacilityStatusReasons(prisma);
   await seedDeflectionCancelReasons(prisma);
-  await seedDeflectionDetails(prisma);
   await seedDeflectionExitDestinations(prisma);
   await seedDeflectionExitHousingStatuses(prisma);
   await seedDeflectionReleaseReasons(prisma);

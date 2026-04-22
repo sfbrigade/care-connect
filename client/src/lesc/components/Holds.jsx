@@ -287,6 +287,7 @@ function Holds () {
         queryClient.setQueryData(['deflections', incident?.id, 'active'], [response.data, ...cachedDeflections]);
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+      setTab('active');
     },
   });
 

@@ -153,6 +153,7 @@ function ScanCodeModal ({
                   color={manualEntry ? undefined : 'dark.5'}
                   icon={IconX}
                   onClick={handleClose}
+                  aria-label='Close'
                 />
               </Group>
             </Header>

@@ -134,7 +134,7 @@ function IncidentForm () {
 
   function LocationButton () {
     return (
-      <ActionIcon onClick={getLocation} variant='transparent'>
+      <ActionIcon onClick={getLocation} variant='transparent' aria-label='Use current location'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
       </ActionIcon>
     );
@@ -164,6 +164,7 @@ function IncidentForm () {
         ['facilities', facility.id, 'active-incident'],
         response.data
       );
+      window.sessionStorage.setItem('_session-holds', 'active');
       navigate('/holds');
     },
     onError: () => {
@@ -221,7 +222,7 @@ function IncidentForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          <IconButtonLink icon={IconArrowLeft} to='/holds' aria-label='Go back' />
           {onSubmitMutation.isPending && (
             <Text c='dimmed' size='lg'>
               Saving...

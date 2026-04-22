@@ -23,7 +23,7 @@ function CompleteIntakeModal ({
       <Stack gap='xl'>
         <Stack gap='sm'>
           <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <Title order={4}>Confirm medical intake</Title>
+            <Title order={4}>Update intake status</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -39,7 +39,7 @@ function CompleteIntakeModal ({
             </ActionIcon>
           </Group>
           <Text size='sm' c='dimmed'>
-            Were you able to complete the full medical intake for this person? If not, the person will return to Sheriff&apos;s review for release or exit.
+            Were you able to complete the full medical intake for this person? If not, person will be returned to Deputy's custody for further handling - this is irreversible.
           </Text>
         </Stack>
 
@@ -52,7 +52,7 @@ function CompleteIntakeModal ({
             onClick={onConfirmNotCompleted}
             loading={loading}
           >
-            No, intake not completed
+            Failed intake - return to Deputy
           </Button>
           <Button
             data-testid='intake-confirm-btn'
