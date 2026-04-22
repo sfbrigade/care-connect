@@ -186,7 +186,7 @@ test.describe('Happy Path: Full Lifecycle', () => {
 
     // Find the person's card and click "Complete intake" directly from the list
     const personCard = page.locator('.mantine-Card-root', { hasText: SUBJECT.lastName }).first();
-    await personCard.getByRole('button', { name: /Complete intake/i }).click();
+    await personCard.getByTestId('update-intake-status-btn').click();
 
     // Confirm in modal
     await page.getByTestId('intake-confirm-btn').click();

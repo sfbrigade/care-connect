@@ -199,8 +199,8 @@ export default async function main (prisma) {
       currentOfficerId: sfpdUser.id,
       narcoticsSubstance: true,
       narcoticsParaphernalia: true,
-      drugType: 'HALLUCINOGENS',
-      behavior: 'Officer encountered this individual at 100 Market St, San Francisco, CA. Officer observed the following behaviors: Disoriented to person/place/time. Officer observed that drugs were recently used: Hallucinogens.',
+      drugType: 'FENTANYL',
+      behavior: 'Officer encountered this individual at 100 Market St, San Francisco, CA. Officer observed the following behaviors: Disoriented to person/place/time. Officer observed that drugs were recently used: Fentanyl.',
       releaseNarrative: 'Incident number: CS849B\nCad number: CAD849B\nSubject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
       property: 'SMALL',
       transferredAt: pdfTestNow,
@@ -211,7 +211,6 @@ export default async function main (prisma) {
       releasedById: sfsoUser.id,
       releaseReasonId: releaseReason?.id || 'sobered',
       completedAt: pdfTestNow,
-      ...(detail ? { deflectionDetails: { connect: { id: detail.id } } } : {}),
     },
   });
 
