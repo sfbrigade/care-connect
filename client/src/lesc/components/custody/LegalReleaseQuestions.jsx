@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { Box, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Box, Card, Button, Chip, Container, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -134,7 +134,7 @@ function LegalReleaseQuestions () {
             <Title order={3}>Review the 849(b) before continuing.</Title>
           </Stack>
 
-          <Box bg='gray.1' p='md' radius='md'>
+          <Card bg='gray.1' p='md' radius='md'>
             <Stack gap='md'>
               <Stack gap={0}>
                 <Text size='md' fz='md' c='dimmed'>849(b) narrative</Text>
@@ -201,7 +201,7 @@ function LegalReleaseQuestions () {
                 </Group>
               )}
             </Stack>
-          </Box>
+          </Card>
 
           {hasReviewedNarrative && (
             <>
