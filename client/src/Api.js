@@ -99,6 +99,35 @@ const Api = {
           }
         });
     },
+    verifyCode (token, code) {
+      return instance.post('/api/auth/verify-code', { token, code })
+        .catch((error) => {
+          const status = error.response?.status;
+          const message = error.response?.data?.error;
+          switch (status) {
+            case StatusCodes.UNPROCESSABLE_ENTITY:
+              throw { code: message || 'That code is incorrect. Try again.' };
+            case StatusCodes.GONE:
+              throw { code: message || 'That code has expired. Request a new one.' };
+            case StatusCodes.TOO_MANY_REQUESTS:
+              throw { _form: message || 'Too many attempts. Please wait and try again.' };
+            case StatusCodes.NOT_FOUND:
+              throw { _form: 'Invalid verification session. Please log in again.' };
+            default:
+              throw { _form: 'Something went wrong. Please try again.' };
+          }
+        });
+    },
+    resendCode (token) {
+      return instance.post('/api/auth/resend-code', { token })
+        .catch((error) => {
+          const status = error.response?.status;
+          if (status === StatusCodes.TOO_MANY_REQUESTS) {
+            throw { _form: 'Please wait before requesting a new code.' };
+          }
+          throw { _form: 'Something went wrong. Please try again.' };
+        });
+    },
     logout () {
       return instance.delete('/api/auth/logout');
     },
@@ -336,6 +365,9 @@ const Api = {
     handoff (id) {
       return instance.post(`/api/deflections/${id}/handoff`).catch(handleError);
     },
+    initiateHandoff (active) {
+      return instance.post('/api/deflections/initiate-handoff', { active }).catch(handleError);
+    },
     safetyCheck (id) {
       return instance.post(`/api/deflections/${id}/safety-check`).catch(handleError);
     },
@@ -418,15 +450,6 @@ const Api = {
       },
       delete (id) {
         return instance.delete(`/api/deflections/exit-housing-statuses/${id}`).catch(handleError);
-      },
-    },
-    detailCategories: {
-      index ({ include } = {}) {
-        const params = {};
-        if (include) {
-          params.include = include;
-        }
-        return instance.get('/api/deflections/detail-categories', { params });
       },
     },
   },
@@ -517,7 +540,15 @@ const Api = {
     delete (id) {
       return instance.delete(`/api/property-photos/${id}`).catch(handleError);
     },
-  }
+  },
+  ai: {
+    transcribe (audio, mediaType) {
+      return instance.post('/api/ai/transcribe', { audio, mediaType });
+    },
+    parseId (image, mediaType) {
+      return instance.post('/api/ai/parse-id', { image, mediaType });
+    },
+  },
 };
 
 export default Api;

@@ -206,7 +206,6 @@ describe('CustodyDetailContent', () => {
     subjectStatus: 'READY_FOR_INTAKE',
     releaseNarrative: 'Initial narrative',
     behavior: 'Behavior details',
-    deflectionDetails: [{ name: 'Observation A' }],
     property: 'BACKPACK',
     propertyDetails: 'One backpack',
     propertyPhotos: [],

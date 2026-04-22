@@ -1,0 +1,152 @@
+Phrase	SoundsLike	IPA	DisplayAs
+# === Legal / Penal Codes ===
+six-forty-seven-f	six-forty-seven-eff		647(f)
+eight-forty-nine-b	eight-forty-nine-bee		849(b)
+five-one-fifty	five-one-fifty		5150
+P-C	pee-see		PC
+W-I-C	wick		WIC
+H-and-S	aitch-and-ess		H&S
+R-W-S	are-double-you-ess		RWS
+eleven-five-fifty	eleven-five-fifty		11550
+eleven-three-fifty	eleven-three-fifty		11350
+eleven-three-sixty-four	eleven-three-sixty-four		11364
+eleven-three-seventy-seven	eleven-three-seventy-seven		11377
+# === Organizations ===
+S-F-P-D	ess-eff-pee-dee		SFPD
+S-F-S-O	ess-eff-ess-oh		SFSO
+S-F-F-D	ess-eff-eff-dee		SFFD
+D-P-H	dee-pee-aitch		DPH
+# === Facilities ===
+RESET	ree-set		RESET
+L-E-S-C	ell-ee-ess-see		LESC
+D-I-D-O	dee-eye-dee-oh		DIDO
+Z-S-F-G	zee-ess-eff-jee		ZSFG
+S-F-General	ess-eff-general		SF General
+C-P-M-C	see-pee-em-see		CPMC
+U-C-S-F	you-see-ess-eff		UCSF
+# === SFPD Ranks ===
+sergeant	sar-jent		Sergeant
+lieutenant	loo-tenant		Lieutenant
+captain	cap-tin		Captain
+commander	com-man-der		Commander
+inspector	in-speck-tor		Inspector
+# === SFPD Units and Teams ===
+C-I-T	see-eye-tee		CIT
+S-I-T	ess-eye-tee		SIT
+H-O-T	hot		HOT
+S-C-R-T	ess-see-are-tee		SCRT
+C-A-R-T	cart		CART
+S-W-A-T	swat		SWAT
+D-R-E	dee-are-ee		DRE
+F-T-O	eff-tee-oh		FTO
+C-A-D	see-ay-dee		CAD
+B-W-C	bee-double-you-see		BWC
+# === SFPD District Stations ===
+Tenderloin	ten-der-loin		Tenderloin
+Bayview	bay-view		Bayview
+Ingleside	ing-uhl-side		Ingleside
+Taraval	tar-uh-val		Taraval
+# === Medical Abbreviations ===
+E-T-O-H	ee-tee-oh-aitch		ETOH
+G-C-S	jee-see-ess		GCS
+A-M-A	ay-em-ay		AMA
+A-M-S	ay-em-ess		AMS
+L-O-C	ell-oh-see		LOC
+E-M-S	ee-em-ess		EMS
+E-M-T	ee-em-tee		EMT
+B-A-C	bee-ay-see		BAC
+O-D	oh-dee		OD
+E-D	ee-dee		ED
+E-R	ee-are		ER
+B-P	bee-pee		BP
+D-O-B	dee-oh-bee		DOB
+H-G-N	aitch-jee-en		HGN
+P-B-T	pee-bee-tee		PBT
+F-S-T	eff-ess-tee		FST
+# === Drugs - Opioids ===
+fentanyl	fen-tuh-nil		fentanyl
+heroin	hair-oh-in		heroin
+oxycodone	ox-ee-ko-doan		oxycodone
+OxyContin	ox-ee-con-tin		OxyContin
+hydrocodone	high-dro-ko-doan		hydrocodone
+Percocet	per-ko-set		Percocet
+Vicodin	vik-oh-din		Vicodin
+Norco	nor-ko		Norco
+# === Drugs - Treatment/Reversal ===
+Narcan	nar-can		Narcan
+naloxone	nal-ox-own		naloxone
+Suboxone	sub-ox-own		Suboxone
+buprenorphine	bew-pren-or-feen		buprenorphine
+methadone	meth-uh-doan		methadone
+naltrexone	nal-trex-own		naltrexone
+Vivitrol	viv-ih-trawl		Vivitrol
+Subutex	sub-you-tex		Subutex
+# === Drugs - Stimulants ===
+methamphetamine	meth-am-fet-uh-meen		methamphetamine
+amphetamine	am-fet-uh-meen		amphetamine
+cocaine	ko-cane		cocaine
+# === Drugs - Depressants/Sedatives ===
+benzodiazepine	ben-zo-die-az-eh-peen		benzodiazepine
+Xanax	zan-ax		Xanax
+Klonopin	klon-oh-pin		Klonopin
+Ativan	at-ih-van		Ativan
+Valium	val-ee-um		Valium
+# === Drugs - Other ===
+P-C-P	pee-see-pee		PCP
+T-H-C	tee-aitch-see		THC
+C-B-D	see-bee-dee		CBD
+L-S-D	ell-ess-dee		LSD
+M-D-M-A	em-dee-em-ay		MDMA
+G-H-B	jee-aitch-bee		GHB
+psilocybin	sigh-loh-sigh-bin		psilocybin
+ketamine	ket-uh-meen		ketamine
+# === Drug Paraphernalia ===
+paraphernalia	pair-uh-fer-nail-yuh		paraphernalia
+syringe	sir-inj		syringe
+tourniquet	turn-ih-ket		tourniquet
+# === Medical/Behavioral Terms ===
+nystagmus	nih-stag-mus		nystagmus
+tachycardia	tack-ih-car-dee-uh		tachycardia
+bradycardia	brad-ih-car-dee-uh		bradycardia
+diaphoretic	die-uh-for-et-ick		diaphoretic
+mydriasis	mid-rye-uh-sis		mydriasis
+miosis	my-oh-sis		miosis
+cyanosis	sigh-uh-no-sis		cyanosis
+ataxic	uh-tax-ick		ataxic
+obtunded	ob-tun-ded		obtunded
+labile	lay-bile		labile
+bruxism	brux-iz-um		bruxism
+ptosis	toe-sis		ptosis
+edema	eh-dee-muh		edema
+emesis	em-eh-sis		emesis
+incontinence	in-con-tin-ence		incontinence
+# === San Francisco Neighborhoods (High-Priority Areas) ===
+SoMa	so-mah		SoMa
+Tenderloin	ten-der-loin		Tenderloin
+Civic-Center	siv-ick-center		Civic Center
+Mid-Market	mid-market		Mid-Market
+Chinatown	china-town		Chinatown
+Nob-Hill	nob-hill		Nob Hill
+Japantown	japan-town		Japantown
+Potrero-Hill	po-trer-oh-hill		Potrero Hill
+Bernal-Heights	ber-nal-heights		Bernal Heights
+Visitacion-Valley	viz-ih-tay-shun-valley		Visitacion Valley
+Dogpatch	dog-patch		Dogpatch
+Haight-Ashbury	hate-ash-berry		Haight-Ashbury
+Excelsior	ex-sell-see-or		Excelsior
+Hunters-Point	hunters-point		Hunters Point
+Duboce-Triangle	dew-boss-triangle		Duboce Triangle
+# === San Francisco Streets (High-Priority) ===
+Leavenworth	lev-en-worth		Leavenworth
+Divisadero	div-ih-sah-dare-oh		Divisadero
+Embarcadero	em-bar-kah-dare-oh		Embarcadero
+Cesar-Chavez	say-zar-shah-vez		Cesar Chavez
+Van-Ness	van-ness		Van Ness
+# === Legal Procedure Terms ===
+Mirandize	mih-ran-dize		Mirandize
+arraignment	uh-rain-ment		arraignment
+misdemeanor	mis-deh-mean-or		misdemeanor
+# === App-Specific Behavioral Observation Terms ===
+semi-conscious	semi-con-shus		semi-conscious
+incoherent	in-ko-hear-ent		incoherent
+unintelligible	un-in-tell-ih-juh-bull		unintelligible

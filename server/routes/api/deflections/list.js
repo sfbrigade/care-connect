@@ -120,7 +120,6 @@ export default async function (fastify) {
           cancelReason: true,
           releaseReason: true,
           refusalReason: true,
-          deflectionDetails: true,
           propertyPhotos: true,
         },
       };

@@ -29,7 +29,7 @@ function Header ({ opened, close, toggle, logout }) {
           {user &&
             <Menu position='bottom-end' width={280} onDismiss={close}>
               <Menu.Target>
-                <Burger opened={opened} onClick={toggle} />
+                <Burger opened={opened} onClick={toggle} aria-label={opened ? 'Close menu' : 'Open menu'} />
               </Menu.Target>
 
               <Menu.Dropdown>
