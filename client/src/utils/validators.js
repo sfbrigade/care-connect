@@ -98,7 +98,8 @@ export function getDateOfBirthInputError (value, { allowPartial = false } = {}) 
 }
 
 export function validateSubjectFormValues (values, dobInput = values?.dateOfBirth) {
-  const parsedDob = DateTime.fromFormat(String(dobInput ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+  const normalizedDob = String(dobInput ?? '').trim();
+  const parsedDob = DateTime.fromFormat(normalizedDob, 'MM/dd/yyyy', { zone: 'local' });
   const errors = validateSubject({
     ...values,
     dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
@@ -107,6 +108,8 @@ export function validateSubjectFormValues (values, dobInput = values?.dateOfBirt
   const dateOfBirthError = getDateOfBirthInputError(dobInput);
   if (dateOfBirthError) {
     errors.dateOfBirth = dateOfBirthError;
+  } else if (!normalizedDob) {
+    errors.dateOfBirth = ERROR_REQUIRED;
   }
 
   return errors;

@@ -30,4 +30,16 @@ describe('subject DOB validation', () => {
       dateOfBirth: 'Enter date of birth with a 4-digit year',
     });
   });
+
+  it('requires a DOB in subject form validation', () => {
+    expect(validateSubjectFormValues({
+      firstName: 'Alex',
+      lastName: 'Taylor',
+      dateOfBirth: '',
+      sex: 'MALE',
+      race: 'WHITE',
+    })).toEqual({
+      dateOfBirth: 'This field is required',
+    });
+  });
 });

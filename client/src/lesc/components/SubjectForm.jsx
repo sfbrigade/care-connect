@@ -134,6 +134,8 @@ function SubjectForm () {
       payload.dateOfBirth = null;
     } else if (parsedDob.isValid) {
       payload.dateOfBirth = parsedDob.toISO();
+    } else {
+      payload.dateOfBirth = null;
     }
 
     return payload;
@@ -183,6 +185,10 @@ function SubjectForm () {
     const normalized = normalizeValues(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
+    }
+    const parsedDob = DateTime.fromFormat(String(dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+    if (!parsedDob.isValid) {
+      return;
     }
     autoSaveTimerRef.current = setTimeout(() => {
       const payload = buildAutoSavePayload(values, dobString);
