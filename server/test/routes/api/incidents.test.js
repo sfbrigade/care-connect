@@ -334,6 +334,61 @@ test('/api/incidents', async (t) => {
       assert.ok(incidentStillExists);
     });
 
+    await t.test('blocks hospital cancellation when a detailed hold is incomplete', async () => {
+      const deleteResponse = await app.inject().delete('/api/incidents/1?cancelReasonId=hospital').headers(userHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const data = JSON.parse(deleteResponse.body);
+      assert.deepStrictEqual(data.error, 'SFPD policy requires person details to be completed before a medical-related cancelation');
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('queues 647f generation for completed detailed holds on hospital incident cancellation', async () => {
+      await prisma.incident.update({
+        where: { id: 1 },
+        data: {
+          addressLine1: '100 Main St',
+          city: 'San Francisco',
+          state: 'CA',
+          supervisorBadgeNumber: '1234',
+        },
+      });
+      await prisma.deflection.updateMany({
+        where: {
+          id: { in: [4, 5, 6] },
+        },
+        data: {
+          narcoticsSubstance: false,
+          narcoticsParaphernalia: false,
+          drugUseEvidence: false,
+          drugType: null,
+          behavior: 'Subject was unable to care for self.',
+          behaviorNarrative: 'Additional narrative.',
+          property: 'NONE',
+        },
+      });
+
+      const deleteResponse = await app.inject().delete('/api/incidents/1?cancelReasonId=hospital').headers(userHeaders);
+      assert.deepStrictEqual(deleteResponse.statusCode, StatusCodes.NO_CONTENT);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 3);
+      assert.deepStrictEqual(
+        app.backgroundJobs._sent.map((job) => job.name),
+        ['generate-forms', 'generate-forms', 'generate-forms']
+      );
+      const sentJobs = [...app.backgroundJobs._sent]
+        .map((job) => job.data)
+        .sort((a, b) => a.deflectionId - b.deflectionId);
+      assert.deepStrictEqual(
+        sentJobs,
+        [
+          { deflectionId: 4, userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5', formIds: ['647f'], emailTemplate: 'transfer-form' },
+          { deflectionId: 5, userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5', formIds: ['647f'], emailTemplate: 'transfer-form' },
+          { deflectionId: 6, userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5', formIds: ['647f'], emailTemplate: 'transfer-form' },
+        ]
+      );
+    });
+
     await t.test('cancels an incident with non-empty holds with a cancel reason', async () => {
       const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
       const createResponse = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
