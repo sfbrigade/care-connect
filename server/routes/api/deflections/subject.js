@@ -70,6 +70,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
+              incident: true,
               propertyPhotos: true,
             },
           });
@@ -85,6 +86,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
+              incident: true,
               propertyPhotos: true,
             },
           });
