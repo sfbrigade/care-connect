@@ -1,0 +1,14 @@
+<%- include('../_header.html.ejs') %>
+
+<p>Dear <%= firstName %>,</p>
+
+<p>Your verification code is:</p>
+
+<p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 16px 0;"><%= code %></p>
+
+<p>This code will expire in 10 minutes. If you did not attempt to log in, please ignore this email or contact
+  our support team if you have any concerns.</p>
+
+<p>Sincerely,<br />The <%= _layout.TITLE %> Team</p>
+
+<%- include('../_footer.html.ejs') %>

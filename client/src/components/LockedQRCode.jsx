@@ -8,7 +8,7 @@ function LockedQRCode ({ value, variant, size = 160 }) {
   return (
     <Box pos='relative'>
       <Box opacity={dimmed ? 0.1 : 1}>
-        <QRCodeSVG value={value} size={size} />
+        <QRCodeSVG value={value} size={size} title='Transfer QR code' />
       </Box>
       {variant === 'locked' && (
         <Group pos='absolute' w={size / 2} h={size / 2} bg='white' style={{ borderRadius: '50%' }} top={size / 4} left={size / 4} justify='center' align='center'>

@@ -160,7 +160,7 @@ function DeflectionForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`} />
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`} aria-label='Go back' />
           {header}
         </Group>
       </Header>
