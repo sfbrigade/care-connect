@@ -386,7 +386,7 @@ function Deflection () {
       {showActionFooter && <Box h='120px' />}
       {!!deflection && showCancelModal && (
         <CancelHoldModal
-          deflection={deflection}
+          deflections={[deflection]}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}

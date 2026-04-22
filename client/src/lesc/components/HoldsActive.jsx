@@ -91,6 +91,7 @@ function HoldsActive ({
               incidentId={incident.id}
               onEditClick={incident.canEdit ? () => onEditIncidentClick(incident.id) : undefined}
               onHandoffClick={incident.canHandoff ? onHandoffClick : undefined}
+              onCancelClick={incident.deflections?.length ? () => onCancelHoldClick(incident.deflections) : undefined}
             >
               {incident.deflections.map((deflection) => (
                 <Hold

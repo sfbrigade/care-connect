@@ -286,22 +286,36 @@ function Holds () {
     }
   }
 
-  const [selectedDeflection, setSelectedDeflection] = useState();
+  const [selectedDeflections, setSelectedDeflections] = useState([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showArrivalConfirmationModal, setShowArrivalConfirmationModal] = useState(false);
 
   const cancelDeflectionMutation = useMutation({
-    mutationFn: (data) => Api.deflections.cancel(selectedDeflection.id, data),
+    mutationFn: async ({ cancelReasonId }) => {
+      // Loop so a single reason can be applied across one-or-many holds.
+      for (const deflection of selectedDeflections) {
+        await Api.deflections.cancel(deflection.id, { cancelReasonId });
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
+      const count = selectedDeflections.length;
       onCloseCancelModal();
-      showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
+      showToast(
+        count > 1 ? `${count} holds cancelled` : 'Hold cancelled',
+        'success',
+        4000,
+        count > 1 ? `You cancelled ${count} holds.` : 'You cancelled the hold.'
+      );
     },
   });
 
-  function onCancelHoldClick (deflection) {
-    setSelectedDeflection(deflection);
+  function onCancelHoldClick (deflections) {
+    // Accept either a single deflection or an array.
+    const list = Array.isArray(deflections) ? deflections : [deflections];
+    if (list.length === 0) return;
+    setSelectedDeflections(list);
     setShowCancelModal(true);
   }
 
@@ -318,7 +332,7 @@ function Holds () {
   }
 
   function onCloseCancelModal () {
-    setSelectedDeflection();
+    setSelectedDeflections([]);
     setShowCancelModal(false);
   }
 
@@ -411,9 +425,9 @@ function Holds () {
           )}
         </Stack>
       </Container>
-      {selectedDeflection && (
+      {selectedDeflections.length > 0 && (
         <CancelHoldModal
-          deflection={selectedDeflection}
+          deflections={selectedDeflections}
           opened={showCancelModal}
           onClose={onCloseCancelModal}
           onConfirm={onCancelHoldConfirmed}
