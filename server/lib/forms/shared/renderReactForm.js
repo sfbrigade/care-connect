@@ -23,7 +23,7 @@ function getChromiumExecutable () {
 // Always re-import with a cache-busting timestamp so that changes to the compiled
 // dist files (e.g. from build:forms:watch) are picked up without a server restart.
 async function getFormContainer () {
-  const mod = await import(`./forms/dist/FormContainer.js?t=${Date.now()}`);
+  const mod = await import(`../dist/FormContainer.js?t=${Date.now()}`);
   return mod.default;
 }
 
@@ -37,7 +37,12 @@ async function getFormContainer () {
  * @param {object} [options] - Additional options
  * @param {string} [options.title] - Document title for PDF metadata
  */
-export async function renderFormToHtml (FormComponent, data, options = {}) {
+export async function renderFormToPdf (FormComponent, data, options = {}) {
+  const html = await renderFormToHtml(FormComponent, data, options);
+  return renderToPdf(html, options);
+}
+
+async function renderFormToHtml (FormComponent, data, options = {}) {
   const FormContainer = await getFormContainer();
   const element = React.createElement(
     FormContainer,
@@ -57,7 +62,7 @@ export async function renderFormToHtml (FormComponent, data, options = {}) {
  * @param {boolean} [options.printBackground=true] - Include background colours/images
  * @returns {Promise<Buffer>} PDF binary
  */
-export async function renderToPdf (html, options = {}) {
+async function renderToPdf (html, options = {}) {
   const executablePath = getChromiumExecutable();
 
   const browser = await puppeteer.launch({

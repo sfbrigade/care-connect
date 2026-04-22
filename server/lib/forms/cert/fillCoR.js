@@ -42,7 +42,7 @@ const TEXT = {
 /**
  * Fill a Certificate of Release PDF template with the given data.
  *
- * @param {Uint8Array|Buffer} pdfBytes  Raw bytes of FormCoR.pdf template.
+ * @param {Uint8Array|Buffer} pdfBytes  Raw bytes of template.pdf template.
  * @param {object}            data      Data object with keys matching TEXT mappings + `signature`.
  * @returns {Promise<Uint8Array>}       Filled PDF bytes, ready to write.
  */
@@ -66,7 +66,7 @@ export async function fillCoR (pdfBytes, data) {
   // We draw this as page content (not a form field) so the font is embedded
   // and renders correctly on any system, regardless of installed fonts.
   if (data.signature) {
-    const fontPath = join(process.cwd(), 'lib/forms/pdf/fonts/MeowScript-Regular.ttf');
+    const fontPath = join(process.cwd(), 'lib/forms/shared/fonts/MeowScript-Regular.ttf');
     const fontBytes = await readFile(fontPath);
     const signatureFont = await pdfDoc.embedFont(fontBytes);
 
