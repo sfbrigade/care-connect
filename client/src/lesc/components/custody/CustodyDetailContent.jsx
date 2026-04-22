@@ -222,7 +222,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   return (
     <>
       <Header>
-        <IconButtonLink icon={IconArrowLeft} to={backTo} />
+        <IconButtonLink icon={IconArrowLeft} to={backTo} aria-label='Go back' />
       </Header>
       <Container>
         <Stack gap='xl'>

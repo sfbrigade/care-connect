@@ -1,7 +1,13 @@
+import crypto from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import User from '#models/user.js';
+import mailer from '#lib/mailer.js';
+
+function generateMfaCode () {
+  return String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+}
 
 export default async function (fastify, opts) {
   fastify.post('/login',
@@ -13,17 +19,14 @@ export default async function (fastify, opts) {
           password: z.string(),
         }),
         response: {
-          [StatusCodes.OK]: User.ResponseSchema.meta({
-            description:
-              'Successfully authenticated. The response sets a cookie named `session` that should be sent in subsequent requests for authentication. This cookie will NOT appear in the web-based API tester infterface because it is an HttpOnly cookie that cannot be accessed by JavaScript.',
-            headers: {
-              'Set-Cookie': {
-                schema: {
-                  type: 'string',
-                },
-              },
-            },
-          }),
+          [StatusCodes.OK]: z.union([
+            User.ResponseSchema,
+            z.object({
+              mfaRequired: z.literal(true),
+              mfaToken: z.string().uuid(),
+              email: z.string(),
+            }),
+          ]),
           [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
         },
       },
@@ -31,6 +34,12 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { email, password } = request.body;
+
+      // If user already has a valid session, skip MFA
+      if (request.user) {
+        return reply.send(request.user);
+      }
+
       const data = await fastify.prisma.user.findUnique({
         where: { email },
         include: {
@@ -50,7 +59,45 @@ export default async function (fastify, opts) {
       if (!user.isActive) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      request.session.set('userId', user.id);
-      reply.send(user);
+
+      // Users with MFA disabled skip the challenge entirely
+      if (!user.mfaEnabled) {
+        request.session.set('userId', user.id);
+        return reply.send(user);
+      }
+
+      // Generate MFA code and token
+      const mfaCode = generateMfaCode();
+      const mfaToken = crypto.randomUUID();
+      const mfaExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      await fastify.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          mfaCode,
+          mfaToken,
+          mfaExpiresAt,
+          mfaAttempts: 0,
+          mfaLastSentAt: null,
+        },
+      });
+
+      // Send verification email
+      await mailer.send({
+        message: {
+          to: user.fullNameAndEmail,
+        },
+        template: 'verification-code',
+        locals: {
+          firstName: user.firstName,
+          code: mfaCode,
+        },
+      });
+
+      return reply.send({
+        mfaRequired: true,
+        mfaToken,
+        email: user.email,
+      });
     });
 }

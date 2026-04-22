@@ -47,6 +47,7 @@ function CancelIncidentModal ({
             <IconButtonLink
               icon={IconX}
               onClick={onClose}
+              aria-label='Close'
             />
           </Group>
           {!requiresReason && (

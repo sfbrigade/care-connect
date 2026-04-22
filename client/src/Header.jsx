@@ -28,11 +28,11 @@ function Header ({ opened, close, toggle, logout }) {
           </Box>
         </Link>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
-          <IconButtonLink icon={IconMessages} to='/feedback' />
+          <IconButtonLink icon={IconMessages} to='/feedback' aria-label='Feedback' />
           {user &&
             <Menu position='bottom-end' width={280} onDismiss={close}>
               <Menu.Target>
-                <Burger opened={opened} onClick={toggle} />
+                <Burger opened={opened} onClick={toggle} aria-label={opened ? 'Close menu' : 'Open menu'} />
               </Menu.Target>
 
               <Menu.Dropdown>

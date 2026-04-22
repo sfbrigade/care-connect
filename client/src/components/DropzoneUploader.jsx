@@ -109,7 +109,7 @@ function DropzoneUploader ({ className, children, id, maxPhotos, photoCount, onA
   return (
     <div className={className}>
       <div {...getRootProps()}>
-        <input {...getInputProps()} />
+        <input {...getInputProps({ 'aria-label': 'Upload file' })} />
         {children({ statuses, onRemove, rejectedFiles })}
       </div>
     </div>

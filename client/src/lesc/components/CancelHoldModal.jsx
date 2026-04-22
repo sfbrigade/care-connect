@@ -36,6 +36,7 @@ function CancelHoldModal ({
             <IconButtonLink
               icon={IconX}
               onClick={onClose}
+              aria-label='Close'
             />
           </Group>
           {!deflection.subjectId && !lastHoldWillCancelIncident && <Text size='sm' c='dimmed'>If you cancel this hold, it will be removed and the chair will become available again.</Text>}
