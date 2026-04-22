@@ -55,7 +55,6 @@ function HoldsActive ({
   const hasDeflections = allDeflections.length > 0;
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
   const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
-  const showAllExpiredState = !hasDeflections && autoCancelledNotice?.allExpired;
   const showAllAdminCancelledState = !hasDeflections && adminCancelledNotice?.allCancelled;
   const showNoActiveHoldsState = !hasDeflections && !showAllAdminCancelledState;
   const showUpdatedAt = updatedAtMs > 0 && hasDeflections;
@@ -68,18 +67,13 @@ function HoldsActive ({
           onClose={onDismissAdminCancelledNotice}
         />
       )}
-      {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
+      {hasExpiredAutoCancelledHolds && (
         <HoldsAutoCancelledNotice
           count={autoCancelledNotice.count}
           onClose={onDismissAutoCancelledNotice}
         />
       )}
-      {showAllExpiredState && (
-        <CheckerboardEmptyState
-          title='All holds were auto-canceled after they expired. Check History for details.'
-        />
-      )}
-      {!showAllExpiredState && showNoActiveHoldsState && (
+      {showNoActiveHoldsState && (
         <CheckerboardEmptyState title='No active holds.' />
       )}
       {hasDeflections && (
