@@ -9,6 +9,7 @@ export default async function main (prisma) {
       firstName: 'Admin',
       lastName: 'User',
       isAdmin: true,
+      mfaEnabled: false,
     },
   ];
 
