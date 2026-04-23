@@ -5,6 +5,7 @@ import { IconAlertCircle, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 
 function getBannerConfig (facilityName) {
   return {
@@ -29,7 +30,7 @@ function FacilityStatusBanner () {
     queryKey: ['facilities', facility?.id],
     queryFn: () => Api.facilities.get(facility.id).then(r => r.data),
     enabled: !!facility?.id,
-    refetchOnWindowFocus: true,
+    ...facilityLiveQueryOptions,
   });
 
   const currentFacility = freshFacility || facility;

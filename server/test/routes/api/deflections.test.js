@@ -6,8 +6,6 @@ import { authenticate, build } from '#test/helper.js';
 
 function assertCareSubjectRedaction (subject) {
   assert.ok(subject);
-  assert.strictEqual(subject.middleInitial, null);
-  assert.strictEqual(subject.driverLicense, null);
   assert.strictEqual(subject.addressLine1, null);
   assert.strictEqual(subject.addressLine2, null);
   assert.strictEqual(subject.city, null);
@@ -113,9 +111,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.length, 1);
       assert.deepStrictEqual(data[0].subject.firstName, 'Test');
       assert.deepStrictEqual(data[0].subject.lastName, 'Client3');
+      assert.deepStrictEqual(data[0].subject.middleInitial, 'T');
       assert.ok(data[0].subject.dateOfBirth);
       assert.deepStrictEqual(data[0].subject.sex, 'FEMALE');
       assert.deepStrictEqual(data[0].subject.race, 'HISPANIC');
+      assert.deepStrictEqual(data[0].subject.driverLicense, 'DL789');
       assertCareSubjectRedaction(data[0].subject);
     });
 
@@ -148,8 +148,10 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subject.firstName, 'Test');
       assert.deepStrictEqual(data.subject.lastName, 'Client');
+      assert.deepStrictEqual(data.subject.middleInitial, 'T');
       assert.deepStrictEqual(data.subject.sex, 'MALE');
       assert.deepStrictEqual(data.subject.race, 'WHITE');
+      assert.deepStrictEqual(data.subject.driverLicense, 'DL123');
       assertCareSubjectRedaction(data.subject);
     });
 
@@ -352,9 +354,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.status, 'COMPLETED');
       assert.deepStrictEqual(data.exitDestinationId, 'jail');
       assert.deepStrictEqual(data.refusalReasonId, 'aggressive_behavior');
       assert.ok(data.exitedAt);
+      assert.ok(data.completedAt);
       assert.ok(data.exitedById);
 
       const bedType = await prisma.bedType.findUnique({
@@ -398,9 +402,11 @@ test('/api/deflections', async (t) => {
 
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.status, 'COMPLETED');
       assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
       assert.deepStrictEqual(updatedDeflection.refusalReasonId, 'aggressive_behavior');
       assert.ok(updatedDeflection.exitedAt);
+      assert.ok(updatedDeflection.completedAt);
       assert.ok(updatedDeflection.exitedById);
       assert.strictEqual(updatedDeflection.releasedAt, null);
 
@@ -553,6 +559,7 @@ test('/api/deflections', async (t) => {
 
       const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: testDeflection.id } });
       const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
       assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
       assert.strictEqual(lastUpdate.exitDestinationId, 'jail');
       assert.strictEqual(lastUpdate.propertyReturned, true);
@@ -611,11 +618,15 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_CUSTODY');
+      assert.deepStrictEqual(data.status, 'COMPLETED');
       assert.deepStrictEqual(data.releaseReasonId, 'death_in_custody');
+      assert.ok(data.completedAt);
 
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_CUSTODY');
+      assert.deepStrictEqual(updatedDeflection.status, 'COMPLETED');
       assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death_in_custody');
+      assert.ok(updatedDeflection.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -652,11 +663,15 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'DEATH_IN_FACILITY');
+      assert.deepStrictEqual(data.status, 'COMPLETED');
       assert.deepStrictEqual(data.releaseReasonId, 'death_in_facility');
+      assert.ok(data.completedAt);
 
       const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
       assert.deepStrictEqual(updatedDeflection.subjectStatus, 'DEATH_IN_FACILITY');
+      assert.deepStrictEqual(updatedDeflection.status, 'COMPLETED');
       assert.deepStrictEqual(updatedDeflection.releaseReasonId, 'death_in_facility');
+      assert.ok(updatedDeflection.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -933,6 +948,75 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.drugUseEvidence, false);
       assert.deepStrictEqual(deflection.drugType, null);
     });
+
+    await t.test('allows care users to update only care-editable personal details', async () => {
+      await prisma.deflection.update({
+        where: { id: 4 },
+        data: {
+          narcoticsSubstance: true,
+          narcoticsParaphernalia: true,
+          drugUseEvidence: true,
+          drugType: 'ALCOHOL',
+        },
+      });
+
+      const existingSubject = await prisma.subject.findUnique({
+        where: { id: 'a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5' },
+      });
+
+      const response = await app.inject().put('/api/deflections/4/subject').payload({
+        firstName: 'Care',
+        lastName: 'Edited',
+        middleInitial: 'Q',
+        dateOfBirth: '1991-06-15',
+        sex: 'OTHER',
+        race: 'OTHER',
+        driverLicense: 'DL-CARE',
+        addressLine1: 'Should Not Change',
+        localId: 'SHOULD-NOT-CHANGE',
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        drugType: 'HEROIN',
+      }).headers(careUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subject.firstName, 'Care');
+      assert.deepStrictEqual(data.subject.lastName, 'Edited');
+      assert.deepStrictEqual(data.subject.middleInitial, 'Q');
+      assert.deepStrictEqual(data.subject.dateOfBirth, '1991-06-15T00:00:00.000Z');
+      assert.deepStrictEqual(data.subject.sex, 'OTHER');
+      assert.deepStrictEqual(data.subject.race, 'OTHER');
+      assert.deepStrictEqual(data.subject.driverLicense, 'DL-CARE');
+      assert.deepStrictEqual(data.subject.addressLine1, null);
+      assert.deepStrictEqual(data.subject.localId, null);
+      assert.deepStrictEqual(data.narcoticsSubstance, true);
+      assert.deepStrictEqual(data.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(data.drugUseEvidence, true);
+      assert.deepStrictEqual(data.drugType, 'ALCOHOL');
+
+      const subject = await prisma.subject.findUnique({
+        where: { id: 'a95b66ee-f5f3-4e59-87d8-b56afdfd7ab5' },
+      });
+      assert.deepStrictEqual(subject.firstName, 'Care');
+      assert.deepStrictEqual(subject.lastName, 'Edited');
+      assert.deepStrictEqual(subject.middleInitial, 'Q');
+      assert.deepStrictEqual(subject.dateOfBirth, new Date('1991-06-15T00:00:00.000Z'));
+      assert.deepStrictEqual(subject.sex, 'OTHER');
+      assert.deepStrictEqual(subject.race, 'OTHER');
+      assert.deepStrictEqual(subject.driverLicense, 'DL-CARE');
+      assert.deepStrictEqual(subject.addressLine1, existingSubject.addressLine1);
+      assert.deepStrictEqual(subject.localId, existingSubject.localId);
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 4 },
+      });
+      assert.deepStrictEqual(deflection.narcoticsSubstance, true);
+      assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
+      assert.deepStrictEqual(deflection.drugUseEvidence, true);
+      assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
+    });
   });
 
   await t.test('DELETE /:id', async (t) => {
@@ -1127,7 +1211,7 @@ test('/api/deflections', async (t) => {
         .payload({
           exitDestinationId: 'home',
           exitHousingStatusId: 'permanent',
-          exitSFResident: 'UNKNOWN',
+          exitSFResident: 'DECLINED_CONSENT',
           exitConnectedToCare: 'YES',
         });
 
@@ -1137,7 +1221,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(data.exitDestinationId, 'home');
       assert.strictEqual(data.exitHousingStatusId, 'permanent');
-      assert.strictEqual(data.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(data.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       // Should not set exitedAt/exitedById
       assert.strictEqual(data.exitedAt, null);
@@ -1148,7 +1232,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(dbDeflection.exitDestinationId, 'home');
       assert.strictEqual(dbDeflection.exitHousingStatusId, 'permanent');
-      assert.strictEqual(dbDeflection.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(dbDeflection.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
 
       // Verify deflection update history
@@ -1157,7 +1241,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.subjectStatus, null); // Hasn't changed
       assert.strictEqual(lastUpdate.exitDestinationId, 'home');
       assert.strictEqual(lastUpdate.exitHousingStatusId, 'permanent');
-      assert.strictEqual(lastUpdate.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(lastUpdate.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
     });
 
@@ -1231,26 +1315,31 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.exitDestinationId, 'home');
       assert.strictEqual(data.exitHousingStatusId, 'permanent');
       assert.strictEqual(data.exitSFResident, 'YES');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
+      assert.ok(data.completedAt);
       assert.ok(data.exitedAt);
       assert.ok(data.exitedById);
 
       // Verify DB state
       const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.strictEqual(dbDeflection.exitDestinationId, 'home');
       assert.strictEqual(dbDeflection.exitHousingStatusId, 'permanent');
       assert.strictEqual(dbDeflection.exitSFResident, 'YES');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
+      assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
       assert.ok(dbDeflection.exitedById);
 
       // Verify deflection update history
       const updates = await app.prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
       const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
       assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
       assert.strictEqual(lastUpdate.exitDestinationId, 'home');
       assert.strictEqual(lastUpdate.exitHousingStatusId, 'permanent');
@@ -1337,8 +1426,10 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReasonId, 'medical_issue');
       assert.strictEqual(data.exitDestinationId, 'hospital');
+      assert.ok(data.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -1379,8 +1470,10 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReasonId, 'medical_issue');
       assert.strictEqual(data.exitDestinationId, 'hospital');
+      assert.ok(data.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -1403,19 +1496,24 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'RELEASED');
+      assert.strictEqual(data.status, 'ACTIVE');
       assert.strictEqual(data.releaseReasonId, 'sobered');
       assert.ok(data.releasedAt);
       assert.ok(data.releasedById);
+      assert.strictEqual(data.completedAt, null);
 
       // Verify DB state
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
+      assert.strictEqual(dbDeflection.status, 'ACTIVE');
       assert.strictEqual(dbDeflection.releaseReasonId, 'sobered');
       assert.ok(dbDeflection.releasedAt);
+      assert.strictEqual(dbDeflection.completedAt, null);
 
       // Verify deflection update history
       const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
       const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, null);
       assert.strictEqual(lastUpdate.subjectStatus, 'RELEASED');
     });
 
@@ -1438,14 +1536,18 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReasonId, 'medical_issue');
       assert.strictEqual(data.exitDestinationId, 'hospital');
+      assert.ok(data.completedAt);
       assert.ok(data.releasedAt);
       assert.ok(data.exitedAt);
 
       // Verify DB state
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
     });
 
@@ -1469,9 +1571,11 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReasonId, 'other');
       assert.strictEqual(data.otherReleaseReason, 'Friend picked them up');
       assert.strictEqual(data.otherReleaseDestination, 'Home address');
+      assert.ok(data.completedAt);
     });
 
     await t.test('returns 422 if medical release misses exit destination', async () => {
