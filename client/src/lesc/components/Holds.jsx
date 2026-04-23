@@ -12,6 +12,7 @@ import { useAuthContext } from '@/AuthContext';
 import ActionFooter from '@/components/ActionFooter';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import useSessionState from '@/hooks/useSessionState';
 import { formatTime } from '@/utils/format';
 import { isValidIncident } from '@/utils/validators';
@@ -72,12 +73,16 @@ function Holds () {
   const [holdsHighlighted, setHoldsHighlighted] = useState(false);
   const [scanHandoffModalOpened, setScanHandoffModalOpened] = useState(false);
 
+  const { data: freshFacility } = useQuery({
+    queryKey: ['facilities', facility.id],
+    queryFn: () => Api.facilities.get(facility.id).then(response => response.data),
+    ...facilityLiveQueryOptions,
+  });
+
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
   const { data: incident, dataUpdatedAt: incidentUpdatedAt } = useQuery({
@@ -327,7 +332,7 @@ function Holds () {
     mutationFn: (id) => Api.incidents.extend(id),
     onSuccess: (response) => {
       queryClient.setQueryData(['deflections', incident?.id, 'active'], response.data);
-      showToast('All active holds have been reset to 60 minutes.', 'success');
+      showToast('All active holds have been reset to 90 minutes.', 'success');
       setHoldsHighlighted(true);
     },
     onError: () => {
@@ -373,6 +378,14 @@ function Holds () {
       onCloseCancelModal();
       showToast('Hold cancelled', 'success', 4000, 'You cancelled the hold.');
     },
+    onError: (error) => {
+      const message = error?.response?.data?.error;
+      if (error?.response?.status === 422 && message) {
+        showToast(message, 'error');
+        return;
+      }
+      showToast('We couldn’t cancel the hold', 'error', 4000, 'Something went wrong. Try again later.');
+    },
   });
 
   const cancelIncidentMutation = useMutation({
@@ -403,6 +416,11 @@ function Holds () {
 
       if (isNetworkError) {
         showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+        return;
+      }
+
+      if (error?.response?.status === 422 && error?.response?.data?.error) {
+        showToast(error.response.data.error, 'error');
         return;
       }
 
@@ -481,10 +499,12 @@ function Holds () {
     }
   }
 
+  const currentFacility = freshFacility ?? facility;
   const showActionFooter = true;
-  const primaryBedType = (bedTypes ?? facility.bedTypes)?.[0];
-  const isClosed = facility.status === 'CLOSED';
-  const isFull = ((bedTypes ?? facility.bedTypes)?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
+  const currentBedTypes = bedTypes ?? currentFacility.bedTypes;
+  const primaryBedType = currentBedTypes?.[0];
+  const isClosed = currentFacility.status === 'CLOSED';
+  const isFull = (currentBedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const myOfficerRecord = incident?.incidentOfficers?.[0];
   const myArrivedAt = myOfficerRecord ? myOfficerRecord.arrivedAt : incident?.arrivedAt;
   const myLeftAt = myOfficerRecord ? myOfficerRecord.leftAt : incident?.leftAt;
@@ -513,8 +533,8 @@ function Holds () {
       <Container>
         <Stack gap='xl'>
           <Facility
-            facility={facility}
-            bedTypes={bedTypes ?? facility.bedTypes}
+            facility={currentFacility}
+            bedTypes={currentBedTypes}
             arrivedAt={myArrivedAt}
             leftAt={myLeftAt}
             hasActiveHold={(deflections?.length ?? 0) > 0}

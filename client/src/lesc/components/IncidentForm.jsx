@@ -245,6 +245,11 @@ function IncidentForm () {
         return;
       }
 
+      if (error?.response?.status === 422 && error?.response?.data?.error) {
+        showToast(error.response.data.error, 'error');
+        return;
+      }
+
       showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
