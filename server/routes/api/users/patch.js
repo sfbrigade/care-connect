@@ -128,7 +128,7 @@ export default async function (fastify, opts) {
       }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
-      const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
+      const updateData = _.omit(request.body, ['password', 'picture', 'unitName', 'targetMode']);
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
