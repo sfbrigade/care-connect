@@ -152,6 +152,17 @@ export class User extends Base {
     });
     return count > 0;
   }
+
+  async hasOpenArrival (prisma) {
+    const count = await prisma.incidentOfficer.count({
+      where: {
+        officerId: this.id,
+        arrivedAt: { not: null },
+        leftAt: null,
+      },
+    });
+    return count > 0;
+  }
 }
 
 export default User;
