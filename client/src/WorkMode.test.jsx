@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router';
@@ -37,8 +37,12 @@ vi.mock('./Api', () => ({
   },
 }));
 
+const toastMocks = vi.hoisted(() => ({
+  showToast: vi.fn(),
+}));
+
 vi.mock('@/components/ToastContext', () => ({
-  useToast: () => ({ showToast: vi.fn() }),
+  useToast: () => ({ showToast: toastMocks.showToast }),
 }));
 
 function renderWorkMode (initialEntry = { pathname: '/work-mode', state: { from: '/holds' } }) {
@@ -56,7 +60,10 @@ function renderWorkMode (initialEntry = { pathname: '/work-mode', state: { from:
   );
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  toastMocks.showToast.mockClear();
+});
 
 describe('WorkMode — form', () => {
   it('renders both mode options and the unit picker', async () => {
@@ -83,8 +90,8 @@ describe('WorkMode — form', () => {
     const confirm = await screen.findByRole('button', { name: /Confirm/ });
     expect(confirm).toBeDisabled();
 
-    // Wait for the query to finish loading before typing (input is disabled while loading)
-    const input = await screen.findByLabelText(/Unit/, { selector: 'input:not([disabled])' });
+    const input = screen.getByLabelText(/Unit/, { selector: 'input' });
+    await waitFor(() => expect(input).not.toBeDisabled());
     await userEvent.type(input, 'K-9 Unit');
     expect(confirm).toBeEnabled();
   });

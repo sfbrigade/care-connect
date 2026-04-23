@@ -49,7 +49,7 @@ function WorkMode () {
   const initialMode = currentMode === 'FIELD' ? 'CUSTODY' : currentMode === 'CUSTODY' ? 'FIELD' : 'FIELD';
 
   const [mode, setMode] = useState(initialMode);
-  const [unitId, setUnitId] = useState();
+  const [unitId, setUnitId] = useState(null);
   const [unitName, setUnitName] = useState('');
   const [blockerOpen, setBlockerOpen] = useState(false);
 
@@ -139,7 +139,7 @@ function WorkMode () {
             clearable
             disabled={isLoading}
             rightSection={isLoading ? <Loader size='sm' /> : null}
-            nothingfound='No units found'
+            nothingFoundMessage='No units found'
           />
         </Stack>
 
