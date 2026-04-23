@@ -104,9 +104,9 @@ vi.mock('@mantine/core', async () => {
   const AccordionContext = createContext([]);
   const AccordionItemContext = createContext(null);
 
-  const Accordion = ({ defaultValue = [], children }) => createElement(
+  const Accordion = ({ defaultValue = [], value, children }) => createElement(
     AccordionContext.Provider,
-    { value: Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
+    { value: Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
     createElement('div', null, children)
   );
 
@@ -288,6 +288,24 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('drugType.ALCOHOL');
   });
 
+  it('shows behavioral observations after substance-related details in care personal details', () => {
+    const html = render(
+      {
+        subjectStatus: 'ADMITTED',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL',
+        behavior: 'Person was stumbling into traffic.',
+      },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Behavioral observations');
+    expect(html).toContain('Arrestable behavior');
+    expect(html).toContain('Person was stumbling into traffic.');
+    expect(html.indexOf('Substance-related details')).toBeLessThan(html.indexOf('Behavioral observations'));
+  });
+
   it('shows no drug use status without a drug type in care personal details', () => {
     const html = render(
       { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
@@ -298,5 +316,14 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Signs of substance use');
     expect(html).toContain('No');
     expect(html).not.toContain('Substance used (suspected)');
+  });
+
+  it('hides care behavioral observations when no arrestable behavior was recorded', () => {
+    const html = render(
+      { subjectStatus: 'ADMITTED', behavior: null },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).not.toContain('Arrestable behavior');
   });
 });
