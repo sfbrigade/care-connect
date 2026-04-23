@@ -13,6 +13,7 @@ import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import { formatTime } from '@/utils/format';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
@@ -94,9 +95,7 @@ function Care () {
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
   useEffect(() => {
@@ -239,7 +238,7 @@ function Care () {
             setScanModalOpened(true);
           }}
         >
-          Scan transfer code
+          Begin a medical intake
         </Button>
       </ActionFooter>
 

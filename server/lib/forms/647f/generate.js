@@ -1,4 +1,5 @@
 import { metadata } from './metadata.js';
+import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
 
 export function transformData (deflection) {
   const subject = deflection.subject;
@@ -47,6 +48,9 @@ export function transformData (deflection) {
     agency,
     charge: '647(f) RWS',
     justification: deflection.behavior || '',
+    hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
+      ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)
+      : '',
     substanceFound: deflection.narcoticsSubstance === true,
     paraphernaliaFound: deflection.narcoticsParaphernalia === true,
     facilityName: facility?.name || '',

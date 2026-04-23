@@ -54,7 +54,7 @@ function StatusAccordion ({ sections, groupedItems, defaultOpen, renderCard, ren
                 <Box onClick={(e) => e.stopPropagation()} mr='sm'>
                   <Popover width={250} withArrow radius='md' shadow='none'>
                     <Popover.Target>
-                      <ActionIcon variant='transparent' c='gray.5' size='md'>
+                      <ActionIcon variant='transparent' c='gray.5' size='md' aria-label={`Info: ${label}`}>
                         <IconInfoCircle size={22} />
                       </ActionIcon>
                     </Popover.Target>
