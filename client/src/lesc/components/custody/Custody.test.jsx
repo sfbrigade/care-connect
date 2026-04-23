@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
@@ -10,10 +10,14 @@ import Custody from './Custody';
 const {
   mockBedTypesIndex,
   mockDeflectionsList,
+  mockSessionStateValue,
+  mockSetSessionState,
   mockShowToast,
 } = vi.hoisted(() => ({
   mockBedTypesIndex: vi.fn(),
   mockDeflectionsList: vi.fn(),
+  mockSessionStateValue: { current: 'in-custody' },
+  mockSetSessionState: vi.fn(),
   mockShowToast: vi.fn(),
 }));
 
@@ -47,8 +51,20 @@ vi.mock('@/components/ToastContext', () => ({
 }));
 
 vi.mock('@/hooks/useSessionState', () => ({
-  default: () => ['in-custody', vi.fn()],
+  default: () => [mockSessionStateValue.current, mockSetSessionState],
 }));
+
+vi.mock('./ScanTransferCodeModal', async () => {
+  const React = await import('react');
+  return {
+    default: ({ onClose, onSuccess }) => React.createElement(
+      'div',
+      { role: 'dialog', 'aria-label': 'Scan transfer code' },
+      React.createElement('button', { type: 'button', onClick: onSuccess }, 'scan success'),
+      React.createElement('button', { type: 'button', onClick: onClose }, 'cancel scan')
+    ),
+  };
+});
 
 vi.mock('@unhead/react', () => ({
   Head: ({ children }) => <>{children}</>,
@@ -75,6 +91,7 @@ function renderCustody () {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockSessionStateValue.current = 'in-custody';
 
   mockBedTypesIndex.mockResolvedValue({
     data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],
@@ -124,5 +141,35 @@ describe('Custody', () => {
     expect(await screen.findByText('17 chairs available')).toBeInTheDocument();
     expect(screen.getByText('2 in transit')).toBeInTheDocument();
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
+  });
+
+  it('shows the Take custody button on the Legally released tab', async () => {
+    mockSessionStateValue.current = 'released';
+
+    renderCustody();
+
+    expect(await screen.findByRole('button', { name: /take custody/i })).toBeInTheDocument();
+  });
+
+  it('switches to In custody when transfer scan succeeds from the Legally released tab', async () => {
+    mockSessionStateValue.current = 'released';
+
+    renderCustody();
+
+    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
+    fireEvent.click(screen.getByRole('button', { name: /scan success/i }));
+
+    expect(mockSetSessionState).toHaveBeenCalledWith('in-custody');
+  });
+
+  it('leaves the user on the Legally released tab when transfer scan is canceled', async () => {
+    mockSessionStateValue.current = 'released';
+
+    renderCustody();
+
+    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cancel scan/i }));
+
+    expect(mockSetSessionState).not.toHaveBeenCalled();
   });
 });

@@ -119,6 +119,7 @@ function Custody () {
   });
 
   function handleScanSuccess () {
+    setTab('in-custody');
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
   }
 
@@ -312,17 +313,15 @@ function Custody () {
           )}
         </Stack>
       </Container>
-      {tab === 'in-custody' && (
-        <ActionFooter>
-          <Button
-            variant='secondary'
-            leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
-            onClick={() => setScanModalOpened(true)}
-          >
-            Take custody
-          </Button>
-        </ActionFooter>
-      )}
+      <ActionFooter>
+        <Button
+          variant='secondary'
+          leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+          onClick={() => setScanModalOpened(true)}
+        >
+          Take custody
+        </Button>
+      </ActionFooter>
       {scanModalOpened && (
         <ScanTransferCodeModal
           opened={scanModalOpened}
