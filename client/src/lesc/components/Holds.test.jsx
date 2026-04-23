@@ -14,6 +14,7 @@ const {
   mockMyHolds,
   mockDeflectionsList,
   mockFacilityLeft,
+  mockDeflectionCreate,
   mockDeflectionsExtend,
   mockIncidentCreate,
 } = vi.hoisted(() => ({
@@ -23,6 +24,7 @@ const {
   mockMyHolds: vi.fn(),
   mockDeflectionsList: vi.fn(),
   mockFacilityLeft: vi.fn(),
+  mockDeflectionCreate: vi.fn(),
   mockDeflectionsExtend: vi.fn(),
   mockIncidentCreate: vi.fn(),
 }));
@@ -52,6 +54,7 @@ vi.mock('@/Api', () => ({
     },
     deflections: {
       list: mockDeflectionsList,
+      create: mockDeflectionCreate,
       extend: mockDeflectionsExtend,
     },
     incidents: {
@@ -151,6 +154,15 @@ beforeEach(() => {
     data: {
       id: 56,
       facilityId: 1,
+    },
+  });
+  mockDeflectionCreate.mockResolvedValue({
+    data: {
+      id: 89,
+      incidentId: 55,
+      subjectId: null,
+      status: 'ACTIVE',
+      subjectStatus: 'DETAINED',
     },
   });
 });
@@ -302,6 +314,78 @@ describe('Holds', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
         `/incident/55?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
+      );
+    });
+  });
+
+  it('delays placing an additional hold and then shows a 90 minute success toast', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
+    });
+
+    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
+      if (incidentId === 55 && active === true) {
+        return Promise.resolve({
+          data: [{
+            id: 88,
+            incidentId: 55,
+            subjectId: 'subject-1',
+            status: 'ACTIVE',
+            subjectStatus: 'DETAINED',
+            subject: {
+              firstName: 'Jane',
+              lastName: 'Doe',
+            },
+          }],
+        });
+      }
+      if (facilityId === 1 && active === false) {
+        return Promise.resolve({ data: [] });
+      }
+      if (facilityId === 1 && active === true && subjectStatus) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderHolds();
+
+    expect(await screen.findByText('Hold 88')).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Hold a bedtype\.chair/i }));
+
+    expect(await screen.findByRole('button', { name: /Placing hold/i })).toBeInTheDocument();
+    expect(mockDeflectionCreate).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(mockDeflectionCreate).toHaveBeenCalledWith({
+        facilityId: 1,
+        incidentId: 55,
+        bedTypeId: 99,
+      });
+    }, { timeout: 3000 });
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith(
+        'Hold placed',
+        'success',
+        4000,
+        '1 bedtype.chair reserved. Hold expires in 90 minutes.'
       );
     });
   });
