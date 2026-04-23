@@ -682,5 +682,58 @@ test('/api/users', async (t) => {
 
       assert.equal(response.statusCode, StatusCodes.OK);
     });
+
+    await t.test('allows targetMode=FIELD even with active holds', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: dualUser.id,
+          currentOfficerId: dualUser.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const response = await app.inject()
+        .patch(`/api/users/${dualUser.id}`)
+        .payload({ targetMode: 'FIELD', unitName: 'K-9 Unit' })
+        .headers(headers);
+
+      assert.equal(response.statusCode, StatusCodes.OK);
+    });
+
+    await t.test('allows single-role FIELD user to submit targetMode=CUSTODY (guard is dual-role only)', async () => {
+      const headers = await authenticate(app, 'regular.user@test.com', 'test');
+      const fieldUser = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+
+      // Seed an active hold — the guard should NOT fire for a single-role user.
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: fieldUser.id,
+          currentOfficerId: fieldUser.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const response = await app.inject()
+        .patch(`/api/users/${fieldUser.id}`)
+        .payload({ targetMode: 'CUSTODY', unitName: 'Some Unit' })
+        .headers(headers);
+
+      assert.equal(response.statusCode, StatusCodes.OK);
+    });
   });
 });
