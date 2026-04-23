@@ -134,6 +134,7 @@ export const WithAllDetails = {
       },
       narcoticsSubstance: false,
       narcoticsParaphernalia: false,
+      chargeType: '647(f) RWS',
       behavior: 'This is the narrative',
       behaviorNarrative: 'This is the narrative',
       property: 'NONE',

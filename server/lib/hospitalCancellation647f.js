@@ -51,6 +51,7 @@ export function hasCompleteHospitalCancellationDetails (deflection) {
     ) &&
     String(deflection?.behavior ?? '').trim().length >= 2 &&
     String(deflection?.behaviorNarrative ?? '').trim().length >= 2 &&
+    Boolean(deflection?.chargeType) &&
     Boolean(deflection?.property)
   );
 

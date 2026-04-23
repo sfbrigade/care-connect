@@ -20,10 +20,12 @@ describe('deflectionBehavior', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: '',
       behaviorNarrative: 'Additional context only.',
+      chargeType: '11550 HS',
     });
 
     expect(payload.behavior).toBe('Additional context only.');
     expect(payload.behaviorNarrative).toBe('Additional context only.');
+    expect(payload.chargeType).toBe('11550 HS');
   });
 
   it('appends officer narrative to generated text', () => {
@@ -31,6 +33,7 @@ describe('deflectionBehavior', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Officer observed poor hand-eye coordination.',
       behaviorNarrative: narrative,
+      chargeType: '647(f) RWS',
     });
 
     expect(payload.behavior).toBe([
@@ -44,11 +47,13 @@ describe('deflectionBehavior', () => {
     const payload = buildDeflectionUpdatePayload({
       generatedNarrative: 'Generated text',
       behaviorNarrative: '   ',
+      chargeType: null,
     });
 
     expect(payload).toEqual({
       behavior: 'Generated text',
       behaviorNarrative: null,
+      chargeType: null,
     });
   });
 });

@@ -6,6 +6,7 @@ import { transformData } from '#lib/forms/647f/generate.js';
 test('647f hospital cancellation appends the release narrative', () => {
   const data = transformData({
     id: 42,
+    chargeType: '11550 HS',
     behavior: 'Subject was unable to care for themself.',
     narcoticsSubstance: false,
     narcoticsParaphernalia: true,
@@ -37,4 +38,5 @@ test('647f hospital cancellation appends the release narrative', () => {
     data.hospitalCancellationReleaseNarrative,
     'The person was released at 10:35 on 04/15/2025 due to a medical need and was transported to hospital.'
   );
+  assert.equal(data.charge, '11550 HS');
 });

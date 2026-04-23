@@ -538,6 +538,7 @@ model Deflection {
   drugType                     DrugTypeEnum?
   behavior                     String?
   behaviorNarrative            String?
+  chargeType                   String?
   property                     PropertyEnum?
   propertyDetails              String?
   propertyNotReturnedReason    PropertyNotReturnedReasonEnum?

@@ -18,6 +18,7 @@ import User from './user.js';
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
   behaviorNarrative: z.string().nullable(),
+  chargeType: z.enum(['11550 HS', '647(f) RWS']).nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
   drugUseEvidence: z.boolean().nullable(),

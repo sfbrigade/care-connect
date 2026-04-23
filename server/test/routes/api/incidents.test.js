@@ -362,6 +362,7 @@ test('/api/incidents', async (t) => {
           narcoticsParaphernalia: false,
           drugUseEvidence: false,
           drugType: null,
+          chargeType: '647(f) RWS',
           behavior: 'Subject was unable to care for self.',
           behaviorNarrative: 'Additional narrative.',
           property: 'NONE',

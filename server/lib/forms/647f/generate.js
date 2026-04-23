@@ -46,7 +46,7 @@ export function transformData (deflection) {
     officerBadge,
     supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
     agency,
-    charge: '647(f) RWS',
+    charge: deflection.chargeType || '647(f) RWS',
     justification: deflection.behavior || '',
     hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
       ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)

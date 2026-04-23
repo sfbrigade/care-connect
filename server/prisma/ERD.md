@@ -431,6 +431,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DrugTypeEnum drugType "❓"
     String behavior "❓"
     String behaviorNarrative "❓"
+    String chargeType "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
