@@ -84,13 +84,6 @@ export default async function (fastify) {
           });
         }
 
-        // Stale QR: custody moved since handoff was initiated
-        if (deflection.handoffFromOfficerId !== deflection.currentOfficerId) {
-          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
-          });
-        }
-
         const now = new Date();
         const previousOfficerId = deflection.currentOfficerId;
 
@@ -99,7 +92,6 @@ export default async function (fastify) {
           data: {
             currentOfficerId: receivingOfficerId,
             handoffReadyAt: null,
-            handoffFromOfficerId: null,
             updatedAt: now,
           },
           include: {
