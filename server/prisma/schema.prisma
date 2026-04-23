@@ -33,6 +33,13 @@ enum TernaryEnum {
   UNKNOWN
 }
 
+enum SFResidentEnum {
+  YES
+  NO
+  UNKNOWN
+  DECLINED_CONSENT
+}
+
 enum FacilityTypeEnum {
   DIDO
   LESC
@@ -588,7 +595,7 @@ model Deflection {
   exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
   exitHousingStatusId          String?
   exitConnectedToCare          TernaryEnum?
-  exitSFResident               TernaryEnum?
+  exitSFResident               SFResidentEnum?
   handoffReadyAt               DateTime?
   updatedAt                    DateTime                @updatedAt
 
@@ -621,7 +628,7 @@ model DeflectionUpdate {
   exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
   exitHousingStatusId          String?
   exitConnectedToCare          TernaryEnum?
-  exitSFResident               TernaryEnum?
+  exitSFResident               SFResidentEnum?
   updatedAt                    DateTime                @default(now())
   updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
   updatedById                  String                  @db.Uuid
