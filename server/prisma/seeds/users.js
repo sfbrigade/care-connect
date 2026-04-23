@@ -12,6 +12,7 @@ export default async function main (prisma) {
       organizationId: 'sfpd',
       roles: ['FIELD'],
       badgeNumber: '1234',
+      mfaEnabled: false,
     },
     {
       email: 'sfpd2@careconnectsf.org',
@@ -21,6 +22,7 @@ export default async function main (prisma) {
       organizationId: 'sfpd',
       roles: ['FIELD'],
       badgeNumber: '4321',
+      mfaEnabled: false,
     },
     {
       email: 'sfso@careconnectsf.org',
@@ -30,6 +32,7 @@ export default async function main (prisma) {
       organizationId: 'sfso',
       roles: ['CUSTODY', 'ORG_ADMIN'],
       badgeNumber: '5678',
+      mfaEnabled: false,
     },
     {
       email: 'care@careconnectsf.org',
@@ -38,6 +41,7 @@ export default async function main (prisma) {
       isAdmin: false,
       organizationId: 'connections',
       roles: ['CARE', 'FACILITY_ADMIN'],
+      mfaEnabled: false,
     },
   ];
 

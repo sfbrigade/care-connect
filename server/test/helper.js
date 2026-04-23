@@ -2,7 +2,7 @@
 // between our tests.
 
 import util from 'node:util';
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import helper from 'fastify-cli/helper.js';
 import path from 'node:path';
@@ -11,7 +11,7 @@ import YAML from 'yaml';
 import { StatusCodes } from 'http-status-codes';
 import * as nodemailerMock from 'nodemailer-mock';
 
-import { GenericContainer } from 'testcontainers';
+import { GenericContainer, Wait } from 'testcontainers';
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import {
   Builder,
@@ -28,6 +28,9 @@ import { configureMailer } from '#lib/mailer.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const AppPath = path.join(__dirname, '..', 'app.js');
+const POSTGRES_PORT = 5432;
+const MINIO_PORT = 9000;
+const TEST_CONTAINER_STARTUP_TIMEOUT_MS = Number(process.env.TESTCONTAINERS_STARTUP_TIMEOUT_MS ?? 120_000);
 
 // Disable pg-boss in tests — the plugin will decorate a no-op stub
 process.env.PGBOSS_ENABLED = 'false';
@@ -55,19 +58,19 @@ async function buildPostgres (t) {
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
   const testcontainersNetworkMode = process.env.TESTCONTAINERS_NETWORK_MODE;
   // extract current version of postgres image being used, start a new test container
-  let dbContainer = new PostgreSqlContainer(compose.services.db.image);
-  if (testcontainersNetworkMode) {
-    dbContainer = dbContainer.withNetworkMode(testcontainersNetworkMode);
-  }
-  const startedDbContainer = await dbContainer.start();
+  const startedDbContainer = await startDbContainer(compose.services.db.image, testcontainersNetworkMode);
   // set up the default template (template1) with the schema and fixtures
   const templateDbUrl = new URL(`postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`);
   templateDbUrl.searchParams.set('connection_limit', '1');
   const TEMPLATE_DATABASE_URL = templateDbUrl.toString();
   // run the migrations
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
-  await util.promisify(exec)(`DATABASE_URL=${TEMPLATE_DATABASE_URL} npx prisma db push --schema "${schemaPath}"`, {
+  await util.promisify(execFile)('npx', ['prisma', 'db', 'push', '--schema', schemaPath], {
     cwd: path.join(__dirname, '..'),
+    env: {
+      ...process.env,
+      DATABASE_URL: TEMPLATE_DATABASE_URL,
+    },
   });
   const prisma = new PrismaClient({
     datasourceUrl: TEMPLATE_DATABASE_URL,
@@ -87,18 +90,12 @@ async function buildPostgres (t) {
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
   // set up a new storage container
-  let storageContainer = new GenericContainer(compose.services.storage.image)
-    .withEntrypoint(['minio', 'server', '/data'])
-    .withExposedPorts(9000);
-  if (testcontainersNetworkMode) {
-    storageContainer = storageContainer.withNetworkMode(testcontainersNetworkMode);
-  }
-  const startedStorageContainer = await storageContainer.start();
+  const startedStorageContainer = await startStorageContainer(compose.services.storage.image, testcontainersNetworkMode);
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
   process.env.AWS_S3_SECRET_ACCESS_KEY = 'minioadmin';
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
-  process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
+  process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getPort()}`;
 
   // Reset S3 client to ensure it uses the new environment variables
   s3.reset();
@@ -202,17 +199,161 @@ async function buildPostgres (t) {
   return app;
 }
 
+async function startDbContainer (image, networkMode) {
+  if (!networkMode) {
+    return new StartedTestDbContainer(
+      await new PostgreSqlContainer(image)
+        .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+        .start()
+    );
+  }
+
+  const networkAlias = testContainerAlias('care-connect-test-db');
+  const container = await new GenericContainer(image)
+    .withEnvironment({
+      POSTGRES_DB: 'test',
+      POSTGRES_USER: 'test',
+      POSTGRES_PASSWORD: 'test',
+    })
+    .withHealthCheck({
+      test: [
+        'CMD-SHELL',
+        'PGPASSWORD=test pg_isready --host localhost --username test --dbname test',
+      ],
+      interval: 250,
+      timeout: 1000,
+      retries: 1000,
+    })
+    .withWaitStrategy(Wait.forHealthCheck())
+    .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+    .withNetworkMode(networkMode)
+    .withNetworkAliases(networkAlias)
+    .start();
+
+  return new StartedTestDbContainer(container, {
+    host: networkAlias,
+    port: POSTGRES_PORT,
+    database: 'test',
+    username: 'test',
+    password: 'test',
+  });
+}
+
+async function startStorageContainer (image, networkMode) {
+  if (!networkMode) {
+    return new StartedTestStorageContainer(
+      await new GenericContainer(image)
+        .withEntrypoint(['minio', 'server', '/data'])
+        .withExposedPorts(MINIO_PORT)
+        .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+        .start()
+    );
+  }
+
+  const networkAlias = testContainerAlias('care-connect-test-storage');
+  const container = await new GenericContainer(image)
+    .withEntrypoint(['minio', 'server', '/data'])
+    .withWaitStrategy(Wait.forLogMessage('API:'))
+    .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+    .withNetworkMode(networkMode)
+    .withNetworkAliases(networkAlias)
+    .start();
+
+  return new StartedTestStorageContainer(container, {
+    host: networkAlias,
+    port: MINIO_PORT,
+  });
+}
+
+class StartedTestDbContainer {
+  constructor (container, options = {}) {
+    this.container = container;
+    this.host = options.host ?? container.getHost();
+    this.port = options.port ?? container.getPort();
+    this.database = options.database ?? container.getDatabase();
+    this.username = options.username ?? container.getUsername();
+    this.password = options.password ?? container.getPassword();
+  }
+
+  getHost () {
+    return this.host;
+  }
+
+  getPort () {
+    return this.port;
+  }
+
+  getDatabase () {
+    return this.database;
+  }
+
+  getUsername () {
+    return this.username;
+  }
+
+  getPassword () {
+    return this.password;
+  }
+
+  stop () {
+    return this.container.stop();
+  }
+}
+
+class StartedTestStorageContainer {
+  constructor (container, options = {}) {
+    this.container = container;
+    this.host = options.host ?? container.getHost();
+    this.port = options.port ?? container.getMappedPort(MINIO_PORT);
+  }
+
+  getHost () {
+    return this.host;
+  }
+
+  getPort () {
+    return this.port;
+  }
+
+  stop () {
+    return this.container.stop();
+  }
+}
+
+function testContainerAlias (prefix) {
+  return `${prefix}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 async function authenticate (app, email, password) {
-  const response = await app.inject().post('/api/auth/login').payload({
+  const loginResponse = await app.inject().post('/api/auth/login').payload({
     email,
     password,
   });
-  if (!response.statusCode === StatusCodes.OK) {
-    throw new Error();
+  if (loginResponse.statusCode !== StatusCodes.OK) {
+    throw new Error(`Login failed with status ${loginResponse.statusCode}`);
   }
-  // send back headers needed to authenticate
+  const loginData = JSON.parse(loginResponse.body);
+
+  // Handle MFA flow
+  if (loginData.mfaRequired) {
+    const user = await app.prisma.user.findUnique({ where: { email } });
+    const verifyResponse = await app.inject().post('/api/auth/verify-code').payload({
+      token: loginData.mfaToken,
+      code: user.mfaCode,
+    });
+    if (verifyResponse.statusCode !== StatusCodes.OK) {
+      throw new Error(`MFA verification failed with status ${verifyResponse.statusCode}`);
+    }
+    return {
+      cookie: verifyResponse.headers['set-cookie']
+        ?.split(';')
+        .map((t) => t.trim())[0],
+    };
+  }
+
+  // No MFA (already has session)
   return {
-    cookie: response.headers['set-cookie']
+    cookie: loginResponse.headers['set-cookie']
       ?.split(';')
       .map((t) => t.trim())[0],
   };
