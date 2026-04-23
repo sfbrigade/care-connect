@@ -45,6 +45,51 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
+function normalizeIncidentFormValues (values) {
+  return {
+    ...initialValues,
+    ...values,
+    cadNumber: values?.cadNumber ?? '',
+    caseNumber: values?.caseNumber ?? '',
+    encounteredVia: values?.encounteredVia ?? '',
+    addressLine1: values?.addressLine1 ?? '',
+    addressLine2: values?.addressLine2 ?? '',
+    city: values?.city ?? '',
+    state: values?.state ?? '',
+    postalCode: values?.postalCode ?? '',
+    latitude: values?.latitude ?? '',
+    longitude: values?.longitude ?? '',
+    arrestedAt: values?.arrestedAt ?? '',
+    supervisorBadgeNumber: values?.supervisorBadgeNumber ?? '',
+  };
+}
+
+function emptyStringToNull (value) {
+  return value === '' ? null : value;
+}
+
+function buildIncidentPayload (values) {
+  const arrestedAt = DateTime.fromISO(values.arrestedAt, {
+    zone: 'local',
+  });
+
+  return {
+    ...values,
+    cadNumber: emptyStringToNull(values.cadNumber),
+    caseNumber: emptyStringToNull(values.caseNumber),
+    encounteredVia: emptyStringToNull(values.encounteredVia),
+    addressLine1: emptyStringToNull(values.addressLine1),
+    addressLine2: emptyStringToNull(values.addressLine2),
+    city: emptyStringToNull(values.city),
+    state: emptyStringToNull(values.state),
+    postalCode: emptyStringToNull(values.postalCode),
+    latitude: emptyStringToNull(values.latitude),
+    longitude: emptyStringToNull(values.longitude),
+    arrestedAt: arrestedAt.isValid ? arrestedAt.toISO() : null,
+    supervisorBadgeNumber: emptyStringToNull(values.supervisorBadgeNumber),
+  };
+}
+
 function normalizeCadNumber (value) {
   return String(value ?? '')
     .replace(/[^0-9a-z]/gi, '')
@@ -55,6 +100,9 @@ function IncidentForm () {
   const navigate = useNavigate();
   const { id: incidentId } = useParams();
   const [searchParams] = useSearchParams();
+  const initialNextPathRef = useRef(searchParams.get('next'));
+  const nextPath = initialNextPathRef.current;
+  const isConfirmIncidentFlow = !!nextPath;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
@@ -67,12 +115,7 @@ function IncidentForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: values => ({
-      ...values,
-      arrestedAt: DateTime.fromISO(values.arrestedAt, {
-        zone: 'local',
-      }).toISO(),
-    }),
+    transformValues: buildIncidentPayload,
   });
 
   const { data, isLoading } = useQuery({
@@ -89,11 +132,13 @@ function IncidentForm () {
           includeOffset: false,
           precision: 'seconds',
         });
-        form.initialize({
+        form.initialize(normalizeIncidentFormValues({
           ...data,
           arrestedAt,
-        });
-        form.setErrors(validateIncident(data));
+        }));
+        if (!isConfirmIncidentFlow) {
+          form.setErrors(validateIncident(data));
+        }
         setInitialized(true);
       }
     } else {
@@ -155,7 +200,7 @@ function IncidentForm () {
         queryKey: ['facilities', facility.id, 'my-holds'],
       });
       window.sessionStorage.setItem('_session-holds', 'active');
-      navigate('/holds');
+      navigate(nextPath || '/holds');
     },
     onError: () => {
       showToast('We couldn\'t save the incident', 'error', 4000, 'Something went wrong. Try again later.');
@@ -186,7 +231,7 @@ function IncidentForm () {
       </Header>
       <Container>
         <Text c='dimmed' size='xl'>
-          Start an incident
+          {isConfirmIncidentFlow ? 'First, confirm incident details' : 'Start an incident'}
         </Text>
         <Title order={3} mb='xl'>
           Enter these details once. They apply to all holds in this
@@ -353,7 +398,7 @@ function IncidentForm () {
                 </Text>
               </Stack>
               <Button type='submit' style={{ alignSelf: 'flex-start' }}>
-                {isEditing ? 'Save incident details' : 'Create incident & hold'}
+                {isConfirmIncidentFlow ? 'Continue to person details' : isEditing ? 'Save incident details' : 'Create incident & hold'}
               </Button>
             </Stack>
           </Fieldset>

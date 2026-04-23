@@ -31,6 +31,24 @@ import {
   mergeHistoryDeflections,
 } from './holdsViewModel';
 
+function buildBlankIncident (facilityId) {
+  return {
+    facilityId,
+    cadNumber: null,
+    caseNumber: null,
+    encounteredVia: null,
+    addressLine1: null,
+    addressLine2: null,
+    city: null,
+    state: null,
+    postalCode: null,
+    latitude: null,
+    longitude: null,
+    arrestedAt: DateTime.now().toISO(),
+    supervisorBadgeNumber: null,
+  };
+}
+
 function parseAutoCancelledNoticeState (value) {
   if (!value) return null;
 
@@ -261,6 +279,18 @@ function Holds () {
     },
   });
 
+  const createIncidentMutation = useMutation({
+    mutationFn: ({ bedTypeId }) => Api.incidents.create(buildBlankIncident(facility.id), { bedTypeId }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      await queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
+      setTab('active');
+    },
+    onError: () => {
+      showToast('We couldn\'t place the hold', 'error', 4000, 'Something went wrong. Try again later.');
+    },
+  });
+
   const extendAllHoldsMutation = useMutation({
     mutationFn: (deflectionIds) => Api.deflections.extend(deflectionIds),
     onSuccess: () => {
@@ -275,13 +305,14 @@ function Holds () {
 
   function onHoldClick () {
     let bedTypeId;
-    if (bedTypes?.length === 1) {
-      bedTypeId = bedTypes[0].id;
+    const availableBedTypes = bedTypes ?? facility.bedTypes;
+    if (availableBedTypes?.length === 1) {
+      bedTypeId = availableBedTypes[0].id;
     } else {
       // TODO
     }
     if (!myHolds?.activeIncidentId) {
-      navigate(`/incident${bedTypeId ? `?bedTypeId=${bedTypeId}` : ''}`);
+      createIncidentMutation.mutate({ bedTypeId });
     } else {
       createDeflectionMutation.mutate({
         facilityId: facility.id,
@@ -377,6 +408,7 @@ function Holds () {
     !myHolds?.canCreateHold ||
     isArrivalPending ||
     createDeflectionMutation.isPending ||
+    createIncidentMutation.isPending ||
     isClosed ||
     isFull ||
     !primaryBedType

@@ -4,6 +4,8 @@ import { Box, Stack, Text } from '@mantine/core';
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
+import { isValidIncident } from '@/utils/validators';
+
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import IncidentGroup from './IncidentGroup';
@@ -78,29 +80,43 @@ function HoldsActive ({
       )}
       {hasDeflections && (
         <>
-          {incidents.map((incident) => (
-            <IncidentGroup
-              key={incident.id}
-              incident={incident}
-              incidentId={incident.id}
-              onEditClick={incident.canEdit ? () => onEditIncidentClick(incident.id) : undefined}
-              onHandoffClick={incident.canHandoff ? onHandoffClick : undefined}
-              onCancelClick={incident.deflections?.length ? () => onCancelHoldClick(incident.deflections) : undefined}
-            >
-              {incident.deflections.map((deflection) => (
-                <Hold
-                  key={deflection.id}
-                  incident={incident}
-                  deflection={deflection}
-                  highlighted={holdsHighlighted}
-                  onCancelClick={() => onCancelHoldClick(deflection)}
-                  onDetailsClick={() => {
-                    navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
-                  }}
-                />
-              ))}
-            </IncidentGroup>
-          ))}
+          {incidents.map((incident) => {
+            const detailsComplete = isValidIncident(incident);
+            return (
+              <IncidentGroup
+                key={incident.id}
+                incident={incident}
+                incidentId={incident.id}
+                onEditClick={incident.canEdit ? () => onEditIncidentClick(incident.id) : undefined}
+                onHandoffClick={incident.canHandoff ? onHandoffClick : undefined}
+                onCancelClick={incident.deflections?.length ? () => onCancelHoldClick(incident.deflections) : undefined}
+              >
+                {incident.deflections.map((deflection) => (
+                  <Hold
+                    key={deflection.id}
+                    incident={incident}
+                    deflection={deflection}
+                    highlighted={holdsHighlighted}
+                    onCancelClick={() => onCancelHoldClick(deflection)}
+                    onDetailsClick={() => {
+                      if (deflection.subjectId) {
+                        navigate(`/holds/${deflection.id}`);
+                        return;
+                      }
+
+                      const subjectPath = `/holds/${deflection.id}/subject?isNew=true`;
+                      if (detailsComplete) {
+                        navigate(subjectPath);
+                        return;
+                      }
+
+                      navigate(`/incident?next=${encodeURIComponent(subjectPath)}`);
+                    }}
+                  />
+                ))}
+              </IncidentGroup>
+            );
+          })}
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}
