@@ -634,5 +634,53 @@ test('/api/users', async (t) => {
       const refreshed = await prisma.user.findUnique({ where: { id: dualUser.id } });
       assert.equal(refreshed.unitId, null);
     });
+
+    await t.test('blocks targetMode=CUSTODY when user has an open arrival (no active holds)', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+
+      await prisma.incidentOfficer.create({
+        data: {
+          officerId: dualUser.id,
+          incidentId: incident.id,
+          facilityId: incident.facilityId,
+          role: 'ARRESTING',
+          arrivedAt: new Date(),
+        },
+      });
+
+      const response = await app.inject()
+        .patch(`/api/users/${dualUser.id}`)
+        .payload({ targetMode: 'CUSTODY', unitName: 'RESET Intake' })
+        .headers(headers);
+
+      assert.equal(response.statusCode, StatusCodes.CONFLICT);
+      assert.equal(JSON.parse(response.body).code, 'ACTIVE_FIELD_WORK');
+    });
+
+    await t.test('allows targetMode=CUSTODY when prior arrival is closed (leftAt set)', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+
+      await prisma.incidentOfficer.create({
+        data: {
+          officerId: dualUser.id,
+          incidentId: incident.id,
+          facilityId: incident.facilityId,
+          role: 'ARRESTING',
+          arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
+          leftAt: new Date(),
+        },
+      });
+
+      const response = await app.inject()
+        .patch(`/api/users/${dualUser.id}`)
+        .payload({ targetMode: 'CUSTODY', unitName: 'RESET Intake' })
+        .headers(headers);
+
+      assert.equal(response.statusCode, StatusCodes.OK);
+    });
   });
 });
