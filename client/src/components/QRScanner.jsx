@@ -31,29 +31,27 @@ function isSecureContext () {
     window.location.hostname === '127.0.0.1';
 }
 
-/** Corner bracket color: white while scanning, green on success, red on error */
+/** Corner bracket color: white while scanning, green on success, red on error, yellow on duplicate */
 const VIEWFINDER_COLOR = {
   idle: 'var(--mantine-color-gray-3)',
   success: 'var(--mantine-color-teal-5)',
   error: 'var(--mantine-color-red-6)',
+  warning: 'var(--mantine-color-yellow-5)',
 };
 
 /** Full-screen overlay copy below the viewfinder after a scan is validated by the parent */
 const FULLSCREEN_SCAN_STATUS_TEXT = {
   success: 'Valid QR code. Person received.',
   error: 'Invalid QR code. Try again.',
+  warning: 'Already scanned.',
 };
 
-function Viewfinder ({ error = false, success = false }) {
+function Viewfinder ({ phase = 'idle' }) {
   const size = 240;
   const len = 50;
   const thickness = 8;
   const radius = 20;
-  const color = error
-    ? VIEWFINDER_COLOR.error
-    : success
-      ? VIEWFINDER_COLOR.success
-      : VIEWFINDER_COLOR.idle;
+  const color = VIEWFINDER_COLOR[phase];
 
   const corner = {
     position: 'absolute',
@@ -164,7 +162,15 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
 
       const onSuccess = async (decodedText) => {
         if (pendingRef.current) return;
-        if (fullScreen && lastScannedRef.current === decodedText) return;
+        if (fullScreen && lastScannedRef.current === decodedText) {
+          pendingRef.current = true;
+          setScanPhase('warning');
+          setTimeout(() => {
+            setScanPhase('idle');
+            pendingRef.current = false;
+          }, 1200);
+          return;
+        }
         pendingRef.current = true;
 
         if (fullScreen) {
@@ -183,7 +189,9 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           setTimeout(() => {
             setScanPhase('idle');
             pendingRef.current = false;
-            setTimeout(() => { lastScannedRef.current = null; }, 2000);
+            if (!succeeded) {
+              setTimeout(() => { lastScannedRef.current = null; }, 2000);
+            }
           }, succeeded ? 1200 : 800);
         } else {
           try {
@@ -359,27 +367,24 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           className={classes.fullScreen}
         />
         <div className={classes.promptViewfinderCenter}>
-          {displayPhase === 'idle' && <Viewfinder />}
-          {displayPhase === 'pending' && <Loader color='white' size='xl' />}
-          {displayPhase === 'success' && <Viewfinder success />}
-          {displayPhase === 'error' && <Viewfinder error />}
+          {displayPhase === 'pending'
+            ? <Loader color='white' size='xl' />
+            : <Viewfinder phase={displayPhase} />}
         </div>
         <Stack align='center' gap='xs' className={classes.promptBelowViewfinder}>
           <Center maw={300} mih='5.5rem' w='100%'>
-            {(displayPhase === 'success' || displayPhase === 'error') && (
+            {(displayPhase === 'success' || displayPhase === 'error' || displayPhase === 'warning') && (
               <Text
                 ta='center'
                 fw={500}
                 size='lg'
                 maw={300}
                 style={{
-                  color: displayPhase === 'success' ? VIEWFINDER_COLOR.success : VIEWFINDER_COLOR.error,
+                  color: VIEWFINDER_COLOR[displayPhase],
                 }}
                 className={classes.promptText}
               >
-                {displayPhase === 'success'
-                  ? FULLSCREEN_SCAN_STATUS_TEXT.success
-                  : FULLSCREEN_SCAN_STATUS_TEXT.error}
+                {FULLSCREEN_SCAN_STATUS_TEXT[displayPhase]}
               </Text>
             )}
           </Center>
