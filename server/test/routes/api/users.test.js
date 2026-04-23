@@ -409,4 +409,90 @@ test('/api/users', async (t) => {
       assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
+
+  await t.test('User.hasActiveHolds', async (t) => {
+    // field.noholds@test.com has no deflections in the seed fixtures
+    await t.test('returns false when the user has no deflections', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      assert.equal(await user.hasActiveHolds(prisma), false);
+    });
+
+    // regular.user@test.com already has ACTIVE/DETAINED deflections in seed fixtures
+    await t.test('returns true when user is currentOfficer on an ACTIVE, DETAINED deflection', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const user = new User(data);
+      assert.equal(await user.hasActiveHolds(prisma), true);
+    });
+
+    await t.test('returns true for ONSITE_AWAITING_TRANSFER', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'ACTIVE',
+          subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), true);
+    });
+
+    await t.test('returns false for AWAITING_INTAKE (already transferred)', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'ACTIVE',
+          subjectStatus: 'AWAITING_INTAKE',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), false);
+    });
+
+    await t.test('returns false when currentOfficer is a different user', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const other = await prisma.user.findUnique({ where: { email: 'another.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: other.id,
+          currentOfficerId: other.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), false);
+    });
+  });
+
+  await t.test('User.hasOpenArrival', async (t) => {
+    // tests added in Task 2
+  });
+
+  await t.test('User.hasActiveFieldWork', async (t) => {
+    // tests added in Task 3
+  });
+
+  await t.test('PATCH /api/users/:id — targetMode guard', async (t) => {
+    // tests added in Tasks 5–9
+  });
 });
