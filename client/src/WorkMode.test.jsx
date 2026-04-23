@@ -172,7 +172,7 @@ describe('WorkMode — blocker modal', () => {
     await userEvent.click(screen.getByRole('button', { name: /Confirm/ }));
 
     // Wait a tick then confirm the modal is absent
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.queryByText('Finish active field work first')).not.toBeInTheDocument();
   });
 });
@@ -196,7 +196,7 @@ describe('WorkMode — access guard', () => {
             <WorkModeReloaded />
           </MemoryRouter>
         </QueryClientProvider>
-      </MantineProvider>,
+      </MantineProvider>
     );
 
     // The form must NOT render.
