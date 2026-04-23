@@ -52,18 +52,21 @@ export default async function (fastify) {
           });
         }
 
+        // Incident details must be complete before handoff
         if (!isIncidentDetailsComplete(deflection.incident)) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
             errors: [{ path: '_form', message: 'Incident details must be complete before handing off.' }],
           });
         }
 
+        // Can't hand off to yourself
         if (deflection.currentOfficerId === receivingOfficerId) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
             errors: [{ path: '_form', message: 'You already control this hold.' }],
           });
         }
 
+        // Handoff ready gate: current owner must have initiated handoff recently
         if (
           !deflection.handoffReadyAt ||
           (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
@@ -73,6 +76,7 @@ export default async function (fastify) {
           });
         }
 
+        // Receiving officer must not have an active incident on a DIFFERENT incident
         const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
         if (existingIncident && existingIncident.id !== deflection.incidentId) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
