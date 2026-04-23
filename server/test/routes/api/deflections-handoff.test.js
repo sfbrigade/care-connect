@@ -62,7 +62,10 @@ test('/api/deflections/:id/handoff', async (t) => {
     // Owner must initiate handoff first
     await prisma.deflection.update({
       where: { id: deflection.id },
-      data: { handoffReadyAt: new Date() },
+      data: {
+        handoffReadyAt: new Date(),
+        handoffFromOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1',
+      },
     });
 
     const response = await app.inject()
@@ -75,8 +78,9 @@ test('/api/deflections/:id/handoff', async (t) => {
     const updated = await prisma.deflection.findUnique({ where: { id: deflection.id } });
     assert.deepStrictEqual(updated.currentOfficerId, '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d');
 
-    // Verify handoffReadyAt is cleared after successful handoff
+    // Verify handoff snapshot cleared after successful handoff
     assert.deepStrictEqual(updated.handoffReadyAt, null);
+    assert.deepStrictEqual(updated.handoffFromOfficerId, null);
 
     // Verify IncidentOfficer record created for receiving officer
     const officerRecord = await prisma.incidentOfficer.findFirst({
@@ -235,5 +239,128 @@ test('/api/deflections/:id/handoff', async (t) => {
 
     // Restore
     await makeIncidentComplete(2);
+  });
+
+  await t.test('QR is one-time use: replay after success is rejected', async () => {
+    await makeIncidentComplete(2);
+    await ensureIncidentOfficer(2);
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: {
+        handoffReadyAt: new Date(),
+        handoffFromOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1',
+      },
+    });
+
+    const first = await app.inject()
+      .post(`/api/deflections/${deflection.id}/handoff`)
+      .headers(cleanFieldHeaders);
+    assert.deepStrictEqual(first.statusCode, StatusCodes.OK);
+
+    const afterFirst = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    assert.deepStrictEqual(afterFirst.handoffReadyAt, null);
+    assert.deepStrictEqual(afterFirst.handoffFromOfficerId, null);
+
+    // Former owner rescans the same QR — must fail on the cleared handoffReadyAt
+    const replay = await app.inject()
+      .post(`/api/deflections/${deflection.id}/handoff`)
+      .headers(user4Headers);
+    assert.deepStrictEqual(replay.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    const body = JSON.parse(replay.body);
+    assert.ok(body.errors[0].message.includes('not available for handoff'));
+
+    // Cleanup
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1', handoffReadyAt: null, handoffFromOfficerId: null },
+    });
+    await prisma.incidentOfficer.deleteMany({
+      where: { incidentId: 2, officerId: '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d' },
+    });
+  });
+
+  await t.test('concurrent handoffs: only one succeeds, audit trail has exactly one row', async () => {
+    await makeIncidentComplete(2);
+    await ensureIncidentOfficer(2);
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: {
+        handoffReadyAt: new Date(),
+        handoffFromOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1',
+      },
+    });
+
+    const auditBefore = await prisma.deflectionUpdate.count({ where: { deflectionId: deflection.id } });
+
+    const [r1, r2] = await Promise.all([
+      app.inject().post(`/api/deflections/${deflection.id}/handoff`).headers(cleanFieldHeaders),
+      app.inject().post(`/api/deflections/${deflection.id}/handoff`).headers(cleanFieldHeaders),
+    ]);
+
+    const codes = [r1.statusCode, r2.statusCode].sort();
+    assert.deepStrictEqual(codes, [StatusCodes.OK, StatusCodes.UNPROCESSABLE_ENTITY]);
+
+    const auditAfter = await prisma.deflectionUpdate.count({ where: { deflectionId: deflection.id } });
+    assert.deepStrictEqual(auditAfter - auditBefore, 1);
+
+    const updated = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    assert.deepStrictEqual(updated.currentOfficerId, '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d');
+    assert.deepStrictEqual(updated.handoffReadyAt, null);
+    assert.deepStrictEqual(updated.handoffFromOfficerId, null);
+
+    // Cleanup
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1', handoffReadyAt: null, handoffFromOfficerId: null },
+    });
+    await prisma.incidentOfficer.deleteMany({
+      where: { incidentId: 2, officerId: '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d' },
+    });
+  });
+
+  await t.test('stale QR: from-officer snapshot no longer matches current owner', async () => {
+    await makeIncidentComplete(2);
+    await ensureIncidentOfficer(2);
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection);
+
+    const user2 = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+    assert.ok(user2);
+
+    // QR was issued while user4 was owner; custody has since moved to user2.
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: {
+        handoffReadyAt: new Date(),
+        handoffFromOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1',
+        currentOfficerId: user2.id,
+      },
+    });
+
+    const response = await app.inject()
+      .post(`/api/deflections/${deflection.id}/handoff`)
+      .headers(cleanFieldHeaders);
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    const body = JSON.parse(response.body);
+    assert.ok(body.errors[0].message.includes('not available for handoff'));
+
+    // Cleanup
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1', handoffReadyAt: null, handoffFromOfficerId: null },
+    });
   });
 });

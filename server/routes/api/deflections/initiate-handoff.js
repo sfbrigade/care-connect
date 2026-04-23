@@ -27,6 +27,7 @@ export default async function (fastify) {
         },
         data: {
           handoffReadyAt: active ? new Date() : null,
+          handoffFromOfficerId: active ? request.user.id : null,
         },
       });
 

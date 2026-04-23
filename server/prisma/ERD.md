@@ -464,6 +464,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     TernaryEnum exitConnectedToCare "❓"
     TernaryEnum exitSFResident "❓"
     DateTime handoffReadyAt "❓"
+    String handoffFromOfficerId "❓"
     DateTime updatedAt 
     }
   
@@ -673,6 +674,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
+    "User" o{--}o "Deflection" : ""
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
@@ -769,6 +771,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "Deflection" o|--|o "User" : "handoffFromOfficer"
     "Deflection" o{--}o "DeflectionUpdate" : ""
     "Deflection" o{--}o "DeflectionDocument" : ""
     "Deflection" o{--}o "PropertyPhoto" : ""

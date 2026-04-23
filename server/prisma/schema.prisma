@@ -251,6 +251,7 @@ model User {
   deflectionsCancelled         Deflection[]            @relation("CancelledBy")
   deflectionsCreated           Deflection[]            @relation("CreatedBy")
   deflectionsCurrentOfficer    Deflection[]            @relation("CurrentOfficer")
+  deflectionsHandoffFrom       Deflection[]            @relation("HandoffFromOfficer")
   deflectionsTransferred       Deflection[]            @relation("TransferredBy")
   deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
   deflectionsRejected          Deflection[]            @relation("RejectedBy")
@@ -590,6 +591,8 @@ model Deflection {
   exitConnectedToCare          TernaryEnum?
   exitSFResident               TernaryEnum?
   handoffReadyAt               DateTime?
+  handoffFromOfficer           User?                   @relation("HandoffFromOfficer", fields: [handoffFromOfficerId], references: [id])
+  handoffFromOfficerId         String?                 @db.Uuid
   updatedAt                    DateTime                @updatedAt
 
   deflectionUpdates            DeflectionUpdate[]

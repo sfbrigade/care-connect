@@ -6,6 +6,8 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { getActiveIncidentForOfficer, isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
 
+const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
+
 export default async function (fastify) {
   fastify.post('/:id/handoff',
     {
@@ -30,67 +32,70 @@ export default async function (fastify) {
       const { id } = request.params;
       const receivingOfficerId = request.user.id;
 
-      const deflection = await fastify.prisma.deflection.findUnique({
-        where: { id },
-        include: { incident: true },
-      });
-
-      if (!deflection) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'Handoff code not recognized. Check the code and try again.' }],
-        });
-      }
-
-      if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'This hold is no longer active.' }],
-        });
-      }
-
-      // Incident details must be complete before handoff
-      if (!isIncidentDetailsComplete(deflection.incident)) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'Incident details must be complete before handing off.' }],
-        });
-      }
-
-      // Can't hand off to yourself
-      if (deflection.currentOfficerId === receivingOfficerId) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'You already control this hold.' }],
-        });
-      }
-
-      // Handoff ready gate: current owner must have initiated handoff recently
-      const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
-      if (
-        !deflection.handoffReadyAt ||
-        (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
-      ) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
-        });
-      }
-
-      // Receiving officer must not have an active incident on a DIFFERENT incident
-      const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
-      if (existingIncident && existingIncident.id !== deflection.incidentId) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'You already have an active incident. Cannot accept a handoff.' }],
-        });
-      }
-
       let updatedDeflection;
       await fastify.prisma.$transaction(async (tx) => {
+        await fastify.prisma.deflection.findByIdForUpdate(tx, id);
+        const deflection = await tx.deflection.findUnique({
+          where: { id },
+          include: { incident: true, subject: true, propertyPhotos: true },
+        });
+
+        if (!deflection) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'Handoff code not recognized. Check the code and try again.' }],
+          });
+        }
+
+        if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'This hold is no longer active.' }],
+          });
+        }
+
+        if (!isIncidentDetailsComplete(deflection.incident)) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'Incident details must be complete before handing off.' }],
+          });
+        }
+
+        if (deflection.currentOfficerId === receivingOfficerId) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'You already control this hold.' }],
+          });
+        }
+
+        if (
+          !deflection.handoffReadyAt ||
+          (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
+        ) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
+          });
+        }
+
+        const existingIncident = await getActiveIncidentForOfficer(fastify.prisma, deflection.facilityId, receivingOfficerId);
+        if (existingIncident && existingIncident.id !== deflection.incidentId) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'You already have an active incident. Cannot accept a handoff.' }],
+          });
+        }
+
+        // Stale QR: custody moved since handoff was initiated
+        if (deflection.handoffFromOfficerId !== deflection.currentOfficerId) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
+          });
+        }
+
         const now = new Date();
         const previousOfficerId = deflection.currentOfficerId;
 
-        // Update the deflection's current officer
         updatedDeflection = await tx.deflection.update({
           where: { id },
           data: {
             currentOfficerId: receivingOfficerId,
             handoffReadyAt: null,
+            handoffFromOfficerId: null,
             updatedAt: now,
           },
           include: {
@@ -99,7 +104,6 @@ export default async function (fastify) {
           },
         });
 
-        // Create audit trail
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
@@ -109,7 +113,6 @@ export default async function (fastify) {
           },
         });
 
-        // Create or update IncidentOfficer record for receiving officer
         await tx.incidentOfficer.upsert({
           where: {
             incidentId_facilityId_officerId: {
@@ -138,6 +141,8 @@ export default async function (fastify) {
           },
         });
       });
+
+      if (!updatedDeflection) return;
 
       updatedDeflection.propertyPhotos = updatedDeflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
