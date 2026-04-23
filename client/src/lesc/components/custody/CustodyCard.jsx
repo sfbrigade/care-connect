@@ -80,7 +80,7 @@ function CustodyCard ({ deflection, highlighted }) {
         </Stack>
         {showQrCode && (
           <Stack align='center' gap='xs'>
-            <QRCodeSVG value={`${window.location.origin}/admit/${deflection.id}`} size={160} />
+            <QRCodeSVG value={`${window.location.origin}/admit/${deflection.id}`} size={160} title='Transfer QR code' />
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}

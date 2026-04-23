@@ -28,6 +28,9 @@ import { configureMailer } from '#lib/mailer.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const AppPath = path.join(__dirname, '..', 'app.js');
+const POSTGRES_PORT = 5432;
+const MINIO_PORT = 9000;
+const TEST_CONTAINER_STARTUP_TIMEOUT_MS = Number(process.env.TESTCONTAINERS_STARTUP_TIMEOUT_MS ?? 120_000);
 
 // Disable pg-boss in tests — the plugin will decorate a no-op stub
 process.env.PGBOSS_ENABLED = 'false';
@@ -54,45 +57,12 @@ async function buildPostgres (t) {
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true';
   const compose = YAML.parse(await fs.readFile(path.join(__dirname, '../..', 'compose.yml'), 'utf8'));
   const testcontainersNetworkMode = process.env.TESTCONTAINERS_NETWORK_MODE;
-  const useNetworkAliases = Boolean(testcontainersNetworkMode);
-  const aliasSuffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   // extract current version of postgres image being used, start a new test container
-  const dbUsername = 'test';
-  const dbPassword = 'test';
-  const dbName = 'test';
-  const dbPort = 5432;
-  const dbAlias = `care-connect-test-db-${aliasSuffix}`;
-  const dbContainer = useNetworkAliases
-    ? new GenericContainer(compose.services.db.image)
-      .withNetworkMode(testcontainersNetworkMode)
-      .withNetworkAliases(dbAlias)
-      .withEnvironment({
-        POSTGRES_DB: dbName,
-        POSTGRES_USER: dbUsername,
-        POSTGRES_PASSWORD: dbPassword,
-      })
-      .withHealthCheck({
-        test: [
-          'CMD-SHELL',
-          `PGPASSWORD=${dbPassword} pg_isready --host localhost --username ${dbUsername} --dbname ${dbName}`,
-        ],
-        interval: 250,
-        timeout: 1000,
-        retries: 1000,
-      })
-      .withWaitStrategy(Wait.forHealthCheck())
-      .withStartupTimeout(120_000)
-    : new PostgreSqlContainer(compose.services.db.image);
-  const startedDbContainer = await dbContainer.start();
-  const dbHost = useNetworkAliases ? dbAlias : startedDbContainer.getHost();
-  const dbMappedPort = useNetworkAliases ? dbPort : startedDbContainer.getPort();
-  const getDbUrl = (database) => {
-    const url = new URL(`postgresql://${dbUsername}:${dbPassword}@${dbHost}:${dbMappedPort}/${database}`);
-    url.searchParams.set('connection_limit', '1');
-    return url;
-  };
+  const startedDbContainer = await startDbContainer(compose.services.db.image, testcontainersNetworkMode);
   // set up the default template (template1) with the schema and fixtures
-  const TEMPLATE_DATABASE_URL = getDbUrl('template1').toString();
+  const templateDbUrl = new URL(`postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/template1`);
+  templateDbUrl.searchParams.set('connection_limit', '1');
+  const TEMPLATE_DATABASE_URL = templateDbUrl.toString();
   // run the migrations
   const schemaPath = path.join(__dirname, '..', 'prisma', 'schema.prisma');
   await util.promisify(execFile)('npx', ['prisma', 'db', 'push', '--schema', schemaPath], {
@@ -116,30 +86,16 @@ async function buildPostgres (t) {
   }
   await prisma.$disconnect();
   // configure test database url
-  process.env.DATABASE_URL = getDbUrl(dbName).toString();
+  process.env.DATABASE_URL = `postgresql://${startedDbContainer.getUsername()}:${startedDbContainer.getPassword()}@${startedDbContainer.getHost()}:${startedDbContainer.getPort()}/${startedDbContainer.getDatabase()}`;
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
   // set up a new storage container
-  const storageAlias = `care-connect-test-storage-${aliasSuffix}`;
-  let storageContainer = new GenericContainer(compose.services.storage.image)
-    .withEntrypoint(['minio', 'server', '/data']);
-  if (useNetworkAliases) {
-    storageContainer = storageContainer
-      .withNetworkMode(testcontainersNetworkMode)
-      .withNetworkAliases(storageAlias)
-      .withStartupTimeout(120_000);
-  } else {
-    storageContainer = storageContainer
-      .withExposedPorts(9000);
-  }
-  const startedStorageContainer = await storageContainer.start();
+  const startedStorageContainer = await startStorageContainer(compose.services.storage.image, testcontainersNetworkMode);
   process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
   process.env.AWS_S3_SECRET_ACCESS_KEY = 'minioadmin';
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
-  process.env.AWS_S3_ENDPOINT = useNetworkAliases
-    ? `http://${storageAlias}:9000`
-    : `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getMappedPort(9000)}`;
+  process.env.AWS_S3_ENDPOINT = `http://${startedStorageContainer.getHost()}:${startedStorageContainer.getPort()}`;
 
   // Reset S3 client to ensure it uses the new environment variables
   s3.reset();
@@ -194,6 +150,7 @@ async function buildPostgres (t) {
     await app.prisma.$disconnect();
     const templatePrisma = new PrismaClient({ datasourceUrl: TEMPLATE_DATABASE_URL });
     await templatePrisma.$connect();
+    const dbName = startedDbContainer.getDatabase();
     // Quote database name to handle special characters and ensure proper SQL escaping
     await templatePrisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     await templatePrisma.$executeRawUnsafe('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = \'template1\' AND pid <> pg_backend_pid();');
@@ -242,17 +199,161 @@ async function buildPostgres (t) {
   return app;
 }
 
+async function startDbContainer (image, networkMode) {
+  if (!networkMode) {
+    return new StartedTestDbContainer(
+      await new PostgreSqlContainer(image)
+        .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+        .start()
+    );
+  }
+
+  const networkAlias = testContainerAlias('care-connect-test-db');
+  const container = await new GenericContainer(image)
+    .withEnvironment({
+      POSTGRES_DB: 'test',
+      POSTGRES_USER: 'test',
+      POSTGRES_PASSWORD: 'test',
+    })
+    .withHealthCheck({
+      test: [
+        'CMD-SHELL',
+        'PGPASSWORD=test pg_isready --host localhost --username test --dbname test',
+      ],
+      interval: 250,
+      timeout: 1000,
+      retries: 1000,
+    })
+    .withWaitStrategy(Wait.forHealthCheck())
+    .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+    .withNetworkMode(networkMode)
+    .withNetworkAliases(networkAlias)
+    .start();
+
+  return new StartedTestDbContainer(container, {
+    host: networkAlias,
+    port: POSTGRES_PORT,
+    database: 'test',
+    username: 'test',
+    password: 'test',
+  });
+}
+
+async function startStorageContainer (image, networkMode) {
+  if (!networkMode) {
+    return new StartedTestStorageContainer(
+      await new GenericContainer(image)
+        .withEntrypoint(['minio', 'server', '/data'])
+        .withExposedPorts(MINIO_PORT)
+        .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+        .start()
+    );
+  }
+
+  const networkAlias = testContainerAlias('care-connect-test-storage');
+  const container = await new GenericContainer(image)
+    .withEntrypoint(['minio', 'server', '/data'])
+    .withWaitStrategy(Wait.forLogMessage('API:'))
+    .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
+    .withNetworkMode(networkMode)
+    .withNetworkAliases(networkAlias)
+    .start();
+
+  return new StartedTestStorageContainer(container, {
+    host: networkAlias,
+    port: MINIO_PORT,
+  });
+}
+
+class StartedTestDbContainer {
+  constructor (container, options = {}) {
+    this.container = container;
+    this.host = options.host ?? container.getHost();
+    this.port = options.port ?? container.getPort();
+    this.database = options.database ?? container.getDatabase();
+    this.username = options.username ?? container.getUsername();
+    this.password = options.password ?? container.getPassword();
+  }
+
+  getHost () {
+    return this.host;
+  }
+
+  getPort () {
+    return this.port;
+  }
+
+  getDatabase () {
+    return this.database;
+  }
+
+  getUsername () {
+    return this.username;
+  }
+
+  getPassword () {
+    return this.password;
+  }
+
+  stop () {
+    return this.container.stop();
+  }
+}
+
+class StartedTestStorageContainer {
+  constructor (container, options = {}) {
+    this.container = container;
+    this.host = options.host ?? container.getHost();
+    this.port = options.port ?? container.getMappedPort(MINIO_PORT);
+  }
+
+  getHost () {
+    return this.host;
+  }
+
+  getPort () {
+    return this.port;
+  }
+
+  stop () {
+    return this.container.stop();
+  }
+}
+
+function testContainerAlias (prefix) {
+  return `${prefix}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 async function authenticate (app, email, password) {
-  const response = await app.inject().post('/api/auth/login').payload({
+  const loginResponse = await app.inject().post('/api/auth/login').payload({
     email,
     password,
   });
-  if (!response.statusCode === StatusCodes.OK) {
-    throw new Error();
+  if (loginResponse.statusCode !== StatusCodes.OK) {
+    throw new Error(`Login failed with status ${loginResponse.statusCode}`);
   }
-  // send back headers needed to authenticate
+  const loginData = JSON.parse(loginResponse.body);
+
+  // Handle MFA flow
+  if (loginData.mfaRequired) {
+    const user = await app.prisma.user.findUnique({ where: { email } });
+    const verifyResponse = await app.inject().post('/api/auth/verify-code').payload({
+      token: loginData.mfaToken,
+      code: user.mfaCode,
+    });
+    if (verifyResponse.statusCode !== StatusCodes.OK) {
+      throw new Error(`MFA verification failed with status ${verifyResponse.statusCode}`);
+    }
+    return {
+      cookie: verifyResponse.headers['set-cookie']
+        ?.split(';')
+        .map((t) => t.trim())[0],
+    };
+  }
+
+  // No MFA (already has session)
   return {
-    cookie: response.headers['set-cookie']
+    cookie: loginResponse.headers['set-cookie']
       ?.split(';')
       .map((t) => t.trim())[0],
   };
