@@ -4,6 +4,7 @@ import {
   IconSend,
   IconHome,
   IconAddressBook,
+  IconArrowsLeftRight,
   IconLogout,
   IconUser
 } from '@tabler/icons-react';
@@ -15,6 +16,9 @@ function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
   const { user } = useAuthContext();
   const { isOrgAdmin } = useUserRole();
+
+  const canChangeWorkMode =
+    !!user?.roles?.includes('FIELD') && !!user?.roles?.includes('CUSTODY');
 
   return (
     <Container h='100%'>
@@ -60,6 +64,15 @@ function Header ({ opened, close, toggle, logout }) {
                 >
                   Profile
                 </Menu.Item>
+                {canChangeWorkMode && (
+                  <Menu.Item
+                    leftSection={<IconArrowsLeftRight size={18} />}
+                    component={Link}
+                    to='/work-mode'
+                  >
+                    Change work mode
+                  </Menu.Item>
+                )}
                 <Menu.Item
                   leftSection={<IconSend size={20} color='var(--mantine-color-gray-5)' />}
                   component={Link}
