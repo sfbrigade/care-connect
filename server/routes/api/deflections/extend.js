@@ -3,13 +3,14 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { holdExpiresAt } from '#lib/holds.js';
 
 export default async function (fastify) {
   fastify.patch('/extend',
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Extend active holds by 60 minutes. Accepts explicit hold IDs.',
+        description: 'Extend active holds. Accepts explicit hold IDs.',
         body: z.object({
           deflectionIds: z.array(z.number()).min(1),
         }),
@@ -38,7 +39,7 @@ export default async function (fastify) {
           return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'No eligible holds to extend' });
         }
 
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        const expiresAt = holdExpiresAt();
         const deflectionUpdates = deflections.map((deflection) => ({
           deflectionId: deflection.id,
           expiresAt,

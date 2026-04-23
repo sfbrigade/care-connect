@@ -13,7 +13,7 @@ test('PATCH /api/deflections/extend', async (t) => {
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
 
-  await t.test('extends caller-owned DETAINED holds by 60 minutes and increments extensionCount', async () => {
+  await t.test('extends caller-owned DETAINED holds by 90 minutes and increments extensionCount', async () => {
     const before = await prisma.deflection.findMany({
       where: { id: { in: [4, 5] } },
     });
@@ -28,12 +28,12 @@ test('PATCH /api/deflections/extend', async (t) => {
     const body = JSON.parse(response.body);
     assert.deepStrictEqual(body.length, 2);
 
-    const target = Date.now() + 60 * 60 * 1000;
+    const target = Date.now() + 90 * 60 * 1000;
     for (const d of body) {
       const prior = beforeById.get(d.id);
       assert.deepStrictEqual(d.extensionCount, prior.extensionCount + 1);
       const drift = Math.abs(new Date(d.expiresAt).getTime() - target);
-      assert.ok(drift < 5000, `expected expiresAt near +60min for deflection ${d.id}, drift=${drift}ms`);
+      assert.ok(drift < 5000, `expected expiresAt near +90min for deflection ${d.id}, drift=${drift}ms`);
     }
   });
 

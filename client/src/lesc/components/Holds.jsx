@@ -265,7 +265,7 @@ function Holds () {
     mutationFn: (deflectionIds) => Api.deflections.extend(deflectionIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
-      showToast('All active holds have been reset to 60 minutes.', 'success');
+      showToast('All active holds have been reset to 90 minutes.', 'success');
       setHoldsHighlighted(true);
     },
     onError: () => {
