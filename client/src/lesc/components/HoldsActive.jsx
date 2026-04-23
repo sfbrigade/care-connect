@@ -110,7 +110,7 @@ function HoldsActive ({
                         return;
                       }
 
-                      navigate(`/incident?next=${encodeURIComponent(subjectPath)}`);
+                      navigate(`/incident/${incident.id}?next=${encodeURIComponent(subjectPath)}`);
                     }}
                   />
                 ))}

@@ -301,7 +301,7 @@ describe('Holds', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
-        `/incident?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
+        `/incident/55?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
       );
     });
   });
