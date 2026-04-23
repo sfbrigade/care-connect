@@ -6,6 +6,13 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
+import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import {
+  hasCompleteHospitalCancellationDetails,
+  HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
+  HOSPITAL_CANCEL_REASON_ID,
+  isHospitalCancellation647fEligible,
+} from '#lib/hospitalCancellation647f.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -23,6 +30,9 @@ export default async function (fastify, opts) {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
           [StatusCodes.GONE]: z.null(),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({
+            error: z.string(),
+          }),
         },
       },
     },
@@ -40,6 +50,26 @@ export default async function (fastify, opts) {
 
       if (!canModifyDeflection(deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
+      }
+
+      if (cancelReasonId === HOSPITAL_CANCEL_REASON_ID) {
+        const detailedDeflection = await fastify.prisma.deflection.findUnique({
+          where: { id },
+          include: {
+            subject: true,
+            incident: true,
+          },
+        });
+
+        if (
+          detailedDeflection?.subjectId &&
+          isHospitalCancellation647fEligible(detailedDeflection) &&
+          !hasCompleteHospitalCancellationDetails(detailedDeflection)
+        ) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            error: HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
+          });
+        }
       }
 
       // create the update record for the cancellation
@@ -113,6 +143,19 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      if (
+        deflection.status === Deflection.HoldStatus.CANCELLED &&
+        deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID &&
+        isHospitalCancellation647fEligible({ ...deflection, status: Deflection.HoldStatus.ACTIVE })
+      ) {
+        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+          deflectionId: deflection.id,
+          userId: request.user.id,
+          formIds: ['647f'],
+          emailTemplate: 'transfer-form',
+        });
+      }
 
       // Send email if cancelled by someone other than the creator
       if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {

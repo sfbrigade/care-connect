@@ -6,7 +6,7 @@ describe('getCareStatusChip', () => {
   it('maps ADMITTED to In medical intake chip', () => {
     expect(getCareStatusChip({
       deflection: { subjectStatus: 'ADMITTED' },
-      careFooterState: { primaryLabel: 'Complete intake' },
+      careFooterState: { primaryLabel: 'Update intake status' },
     })).toEqual({ label: 'In medical intake', tone: 'info' });
   });
 

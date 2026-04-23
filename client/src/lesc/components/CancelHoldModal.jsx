@@ -63,6 +63,7 @@ function CancelHoldModal ({
             <IconButtonLink
               icon={IconX}
               onClick={onClose}
+              aria-label='Close'
             />
           </Group>
           {count > 1 && (
