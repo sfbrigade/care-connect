@@ -235,6 +235,65 @@ test('/api/incidents', async (t) => {
       const diff1 = expiresAt1.diff(ninetyMinutesLater, 'minutes').minutes;
       assert.ok(Math.abs(diff1) < 1, `Expected data[1].expiresAt to be close to ${ninetyMinutesLater.toISO()}, got ${expiresAt1.toISO()}`);
     });
+
+    await t.test('re-fetch under lock filters out deflections expired between candidate scan and lock', async () => {
+      const activeBefore = await prisma.deflection.findMany({
+        where: { incidentId: 1, status: 'ACTIVE', subjectStatus: 'DETAINED' },
+        orderBy: { id: 'asc' },
+      });
+      assert.ok(activeBefore.length >= 2, 'test setup expects at least 2 active deflections on incident 1');
+      const [toExpire, toExtend] = activeBefore;
+
+      // Simulate the deflection having been expired between extend's candidate scan
+      // and its lock acquisition. The re-fetch inside the tx should drop it.
+      await prisma.deflection.update({
+        where: { id: toExpire.id },
+        data: { status: 'EXPIRED' },
+      });
+
+      const response = await app.inject().patch('/api/incidents/1/extend').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.deepStrictEqual(data.length, 1, 'only the still-ACTIVE deflection should be returned');
+      assert.deepStrictEqual(data[0].id, toExtend.id);
+
+      // The EXPIRED deflection must not have been touched.
+      const expiredAfter = await prisma.deflection.findUnique({ where: { id: toExpire.id } });
+      assert.deepStrictEqual(expiredAfter.status, 'EXPIRED');
+      assert.deepStrictEqual(expiredAfter.expiresAt.toISOString(), toExpire.expiresAt.toISOString());
+      assert.deepStrictEqual(expiredAfter.extensionCount, toExpire.extensionCount);
+    });
+
+    await t.test('extend and expire race: no deflection ends up EXPIRED with a future expiresAt', async () => {
+      // Push incident 1's active deflections past their expiry so the expire job
+      // will want to mark them EXPIRED. Run extend and expire concurrently.
+      const pastExpiry = new Date(Date.now() - 60 * 1000);
+      await prisma.deflection.updateMany({
+        where: { incidentId: 1, status: 'ACTIVE' },
+        data: { expiresAt: pastExpiry },
+      });
+
+      const [extendResponse] = await Promise.all([
+        app.inject().patch('/api/incidents/1/extend').headers(userHeaders),
+        prisma.deflection.expire(),
+      ]);
+
+      assert.deepStrictEqual(extendResponse.statusCode, StatusCodes.OK);
+
+      // Invariant: no deflection can be both EXPIRED and have a future expiresAt.
+      // This holds regardless of which side of the race won.
+      const now = new Date();
+      const deflections = await prisma.deflection.findMany({ where: { incidentId: 1 } });
+      for (const deflection of deflections) {
+        if (deflection.status === 'EXPIRED') {
+          assert.ok(
+            deflection.expiresAt <= now,
+            `Deflection ${deflection.id} is EXPIRED but expiresAt (${deflection.expiresAt.toISOString()}) is in the future`
+          );
+        }
+      }
+    });
   });
 
   await t.test('DELETE /:id', async (t) => {
