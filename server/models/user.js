@@ -163,6 +163,10 @@ export class User extends Base {
     });
     return count > 0;
   }
+
+  async hasActiveFieldWork (prisma) {
+    return (await this.hasActiveHolds(prisma)) || (await this.hasOpenArrival(prisma));
+  }
 }
 
 export default User;

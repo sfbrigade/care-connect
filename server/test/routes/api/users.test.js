@@ -541,7 +541,46 @@ test('/api/users', async (t) => {
   });
 
   await t.test('User.hasActiveFieldWork', async (t) => {
-    // tests added in Task 3
+    await t.test('returns false when neither active holds nor open arrival', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      assert.equal(await user.hasActiveFieldWork(prisma), false);
+    });
+
+    await t.test('returns true when user has an active hold', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveFieldWork(prisma), true);
+    });
+
+    await t.test('returns true when user has an open arrival (no active holds)', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.incidentOfficer.create({
+        data: {
+          officerId: user.id,
+          incidentId: incident.id,
+          facilityId: incident.facilityId,
+          role: 'ARRESTING',
+          arrivedAt: new Date(),
+        },
+      });
+      assert.equal(await user.hasActiveFieldWork(prisma), true);
+    });
   });
 
   await t.test('PATCH /api/users/:id — targetMode guard', async (t) => {
