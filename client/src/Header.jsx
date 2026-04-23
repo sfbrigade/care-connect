@@ -1,4 +1,5 @@
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
+import { getWorkModeFromPath } from './utils/workMode';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
   IconSend,
@@ -19,13 +20,22 @@ function Header ({ opened, close, toggle, logout }) {
 
   const canChangeWorkMode = isField && isCustody;
 
+  const location = useLocation();
+  const workMode = canChangeWorkMode ? getWorkModeFromPath(location.pathname) : null;
+  const workModeLabel = workMode === 'FIELD' ? 'In the field' : workMode === 'CUSTODY' ? 'At RESET' : null;
+
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between' wrap='nowrap'>
         <Link to='/' onClick={close} style={{ minWidth: 0 }}>
           <Box>
             <Title order={3} c='black' truncate>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
-            {user?.unit && <Text size='sm' color='dimmed' truncate>{user.unit.name}</Text>}
+            {(workModeLabel || user?.unit?.name) && (
+              <Text size='sm' color='dimmed' truncate>
+                {workModeLabel && <>{workModeLabel}{user?.unit?.name ? ' | ' : ''}</>}
+                {user?.unit?.name}
+              </Text>
+            )}
           </Box>
         </Link>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>

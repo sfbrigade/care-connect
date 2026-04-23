@@ -68,3 +68,39 @@ describe('Header — Change work mode menu item', () => {
     expect(await screen.findByText('Change work mode')).toBeInTheDocument();
   });
 });
+
+describe('Header — mode label', () => {
+  it('shows "In the field" label on /holds for dual-role users', async () => {
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'K-9 Unit' } },
+      '/holds',
+    );
+    expect(await screen.findByText(/In the field/)).toBeInTheDocument();
+    expect(screen.getByText(/K-9 Unit/)).toBeInTheDocument();
+  });
+
+  it('shows "At RESET" label on /custody for dual-role users', async () => {
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'DEM' } },
+      '/custody',
+    );
+    expect(await screen.findByText(/At RESET/)).toBeInTheDocument();
+  });
+
+  it('omits mode label for single-role FIELD users', async () => {
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD'], unit: { name: 'K-9 Unit' } },
+      '/holds',
+    );
+    expect(screen.queryByText(/In the field/)).not.toBeInTheDocument();
+  });
+
+  it('omits mode label on mode-agnostic paths (e.g. /profile)', async () => {
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'K-9 Unit' } },
+      '/profile',
+    );
+    expect(screen.queryByText(/In the field/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/At RESET/)).not.toBeInTheDocument();
+  });
+});
