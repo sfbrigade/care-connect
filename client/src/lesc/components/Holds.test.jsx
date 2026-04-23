@@ -229,6 +229,12 @@ describe('Holds', () => {
     mockMyHolds.mockResolvedValue({
       data: {
         ...mockMyHoldsData,
+        atFacility: false,
+        arrivedAt: null,
+        canArrive: false,
+        canLeave: false,
+        canCreateHold: true,
+        canExtend: false,
         activeIncidentId: null,
         incidents: [],
       },
@@ -236,7 +242,12 @@ describe('Holds', () => {
 
     renderHolds();
 
-    fireEvent.click(await screen.findByRole('button', { name: /Hold a bedtype\.chair/i }));
+    // Wait for myHolds to load so activeIncidentId is null (not undefined from loading state)
+    await waitFor(() => expect(mockMyHolds).toHaveBeenCalled());
+
+    const holdButton = await screen.findByRole('button', { name: /Hold a bedtype\.chair/i });
+    await waitFor(() => expect(holdButton).not.toBeDisabled());
+    fireEvent.click(holdButton);
 
     await waitFor(() => {
       expect(mockIncidentCreate).toHaveBeenCalledWith(
