@@ -34,7 +34,7 @@ function renderHeader (user, pathname = '/') {
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[pathname]}>
-          <Header />
+          <Header opened={false} close={() => {}} toggle={() => {}} logout={() => {}} />
         </MemoryRouter>
       </QueryClientProvider>
     </MantineProvider>

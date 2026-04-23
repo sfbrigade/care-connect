@@ -15,10 +15,9 @@ import { useUserRole } from '@/hooks/useUserRole';
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
   const { user } = useAuthContext();
-  const { isOrgAdmin } = useUserRole();
+  const { isOrgAdmin, isField, isCustody } = useUserRole();
 
-  const canChangeWorkMode =
-    !!user?.roles?.includes('FIELD') && !!user?.roles?.includes('CUSTODY');
+  const canChangeWorkMode = isField && isCustody;
 
   return (
     <Container h='100%'>
@@ -66,9 +65,10 @@ function Header ({ opened, close, toggle, logout }) {
                 </Menu.Item>
                 {canChangeWorkMode && (
                   <Menu.Item
-                    leftSection={<IconArrowsLeftRight size={18} />}
+                    leftSection={<IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />}
                     component={Link}
                     to='/work-mode'
+                    onClick={close}
                   >
                     Change work mode
                   </Menu.Item>
