@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import ActionFooter from '@/components/ActionFooter';
+import SunburstLoader from '@/components/SunburstLoader';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
@@ -34,6 +35,13 @@ import {
   detectAutoCancelledExpiredHolds,
   mergeHistoryDeflections,
 } from './holdsViewModel';
+import classes from './Holds.module.css';
+
+const HOLD_PLACEMENT_DELAY_MS = 2000;
+
+function wait (ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
 
 function buildBlankIncident (facilityId) {
   return {
@@ -71,6 +79,7 @@ function Holds () {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [holdsHighlighted, setHoldsHighlighted] = useState(false);
+  const [isHoldPlacementDelayed, setIsHoldPlacementDelayed] = useState(false);
   const [scanHandoffModalOpened, setScanHandoffModalOpened] = useState(false);
 
   const { data: freshFacility } = useQuery({
@@ -85,7 +94,7 @@ function Holds () {
     ...facilityLiveQueryOptions,
   });
 
-  const { data: incident, dataUpdatedAt: incidentUpdatedAt } = useQuery({
+  const { data: incident, isLoading: isLoadingIncident, dataUpdatedAt: incidentUpdatedAt } = useQuery({
     queryKey: ['facilities', facility.id, 'active-incident'],
     queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
     refetchOnWindowFocus: true,
@@ -312,6 +321,17 @@ function Holds () {
       }
       queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
       setTab('active');
+      showToast(
+        'Hold placed',
+        'success',
+        4000,
+        `1 ${primaryBedTypeLabel} reserved. Hold expires in 90 minutes.`
+      );
+      setIsHoldPlacementDelayed(false);
+    },
+    onError: () => {
+      showToast('Couldn’t place hold', 'error', 4000, 'Please try again.');
+      setIsHoldPlacementDelayed(false);
     },
   });
 
@@ -340,7 +360,9 @@ function Holds () {
     },
   });
 
-  function onHoldClick () {
+  async function onHoldClick () {
+    if (isHoldPlacementDelayed || createDeflectionMutation.isPending) return;
+
     let bedTypeId;
     const availableBedTypes = bedTypes ?? facility.bedTypes;
     if (availableBedTypes?.length === 1) {
@@ -351,6 +373,9 @@ function Holds () {
     if (!incident) {
       createIncidentMutation.mutate({ bedTypeId });
     } else {
+      setIsHoldPlacementDelayed(true);
+      await wait(HOLD_PLACEMENT_DELAY_MS);
+
       createDeflectionMutation.mutate({
         facilityId: facility.id,
         incidentId: incident.id,
@@ -503,6 +528,7 @@ function Holds () {
   const showActionFooter = true;
   const currentBedTypes = bedTypes ?? currentFacility.bedTypes;
   const primaryBedType = currentBedTypes?.[0];
+  const primaryBedTypeLabel = primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed';
   const isClosed = currentFacility.status === 'CLOSED';
   const isFull = (currentBedTypes?.reduce((sum, bedType) => sum + bedType.available, 0) ?? 0) === 0;
   const myOfficerRecord = incident?.incidentOfficers?.[0];
@@ -513,7 +539,9 @@ function Holds () {
   const isArrivalPending = markArrivedMutation.isPending || markLeftMutation.isPending;
   const isHoldButtonDisabled = (
     !permissions.canCreateHold ||
+    isLoadingIncident ||
     isArrivalPending ||
+    isHoldPlacementDelayed ||
     createDeflectionMutation.isPending ||
     createIncidentMutation.isPending ||
     isClosed ||
@@ -630,8 +658,14 @@ function Holds () {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          <Button onClick={onHoldClick} disabled={isHoldButtonDisabled}>
-            Hold a {primaryBedType ? t(`bedType.${primaryBedType.type}`).toLocaleLowerCase() : 'bed'}
+          <Button
+            onClick={onHoldClick}
+            disabled={isHoldButtonDisabled && !isHoldPlacementDelayed}
+            aria-disabled={isHoldButtonDisabled}
+            leftSection={isHoldPlacementDelayed ? <SunburstLoader /> : undefined}
+            className={isHoldPlacementDelayed ? classes.holdPlacementDelayed : undefined}
+          >
+            {isHoldPlacementDelayed ? 'Placing hold...' : `Hold a ${primaryBedTypeLabel}`}
           </Button>
         </ActionFooter>
       )}
