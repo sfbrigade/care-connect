@@ -551,7 +551,7 @@ model Deflection {
   createdAt                    DateTime                @default(now())
   createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
   createdById                  String                  @db.Uuid
-  expiresAt                    DateTime                @default(dbgenerated("(now() + '01:00:00'::interval)"))
+  expiresAt                    DateTime                @default(dbgenerated("(now() + '01:30:00'::interval)"))
   completedAt                  DateTime?
   status                       HoldStatusEnum          @default(ACTIVE)
   extensionCount               Int                     @default(0)

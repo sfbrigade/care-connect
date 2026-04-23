@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import { holdExpiresAt } from '#lib/holds.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/reopen', {
@@ -96,7 +97,7 @@ export default async function (fastify, opts) {
         data: {
           deflectionId: id,
           status: Deflection.HoldStatus.ACTIVE,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          expiresAt: holdExpiresAt(),
           updatedById: request.user.id,
           updatedAt: new Date(),
         },
