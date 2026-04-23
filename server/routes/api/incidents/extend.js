@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { getOfficerPermissions } from '#lib/incidentPermissions.js';
+import { holdExpiresAt } from '#lib/holds.js';
 
 export default async function (fastify, opts) {
   fastify.patch('/:id/extend',
@@ -46,7 +47,7 @@ export default async function (fastify, opts) {
           },
         });
 
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        const expiresAt = holdExpiresAt();
         const deflectionUpdates = deflections.map((deflection) => ({
           deflectionId: deflection.id,
           expiresAt,

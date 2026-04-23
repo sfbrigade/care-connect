@@ -7,18 +7,18 @@ import { useFacilityContext } from './FacilityContext';
 import { useStaticContext } from './StaticContext';
 
 import Login from './Login';
-import UnitSelector from './UnitSelector';
 import PasswordsRoutes from './Passwords/PasswordsRoutes';
 import InvitesRoutes from './Invites/InvitesRoutes';
 import Register from './Register';
-import FeedbackViewer from './Feedback/FeedbackViewer';
-import FeedbackList from './Feedback/FeedbackList';
 import NotFound from './NotFound';
-import UserProfileRoutes from './UserProfile/UserProfileRoutes';
-import ManageUsersPage from './ManageUsers/ManageUsersPage';
 
-import DIDORoutes from './dido/routes/DIDORoutes';
-import LESCRoutes from './lesc/routes/LESCRoutes';
+const UnitSelector = lazy(() => import('./UnitSelector'));
+const FeedbackViewer = lazy(() => import('./Feedback/FeedbackViewer'));
+const FeedbackList = lazy(() => import('./Feedback/FeedbackList'));
+const UserProfileRoutes = lazy(() => import('./UserProfile/UserProfileRoutes'));
+const ManageUsersPage = lazy(() => import('./ManageUsers/ManageUsersPage'));
+const DIDORoutes = lazy(() => import('./dido/routes/DIDORoutes'));
+const LESCRoutes = lazy(() => import('./lesc/routes/LESCRoutes'));
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
 
 function AppRoutes () {
@@ -31,27 +31,23 @@ function AppRoutes () {
         path='*'
         element={
           <AppRedirects>
-            <Routes>
-              <Route path='/login' element={<Login />} />
-              <Route path='/units' element={<UnitSelector />} />
-              <Route path='/passwords/*' element={<PasswordsRoutes />} />
-              <Route path='/invites/*' element={<InvitesRoutes />} />
-              {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
-              <Route path='/feedback' element={<FeedbackViewer />} />
-              <Route path='/feedback/list' element={<FeedbackList />} />
-              <Route path='/profile/*' element={<UserProfileRoutes />} />
-              <Route path='/manage-users' element={<ManageUsersPage />} />
-              <Route
-                path='/admin/*' element={
-                  <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-                    <AdminRoutes />
-                  </Suspense>
-                }
-              />
-              {!facility && <Route path='/*' element={<DIDORoutes />} />}
-              {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
-              <Route path='/*' element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+              <Routes>
+                <Route path='/login' element={<Login />} />
+                <Route path='/units' element={<UnitSelector />} />
+                <Route path='/passwords/*' element={<PasswordsRoutes />} />
+                <Route path='/invites/*' element={<InvitesRoutes />} />
+                {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
+                <Route path='/feedback' element={<FeedbackViewer />} />
+                <Route path='/feedback/list' element={<FeedbackList />} />
+                <Route path='/profile/*' element={<UserProfileRoutes />} />
+                <Route path='/manage-users' element={<ManageUsersPage />} />
+                <Route path='/admin/*' element={<AdminRoutes />} />
+                {!facility && <Route path='/*' element={<DIDORoutes />} />}
+                {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
+                <Route path='/*' element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AppRedirects>
         }
       />

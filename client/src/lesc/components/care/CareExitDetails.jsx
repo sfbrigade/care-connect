@@ -134,7 +134,7 @@ function CareExitDetails () {
   return (
     <>
       <Header>
-        <IconButtonLink to={backTo} icon={IconArrowLeft} />
+        <IconButtonLink to={backTo} icon={IconArrowLeft} aria-label='Go back' />
       </Header>
       <Container py='xl'>
         <Stack gap='xl'>
