@@ -69,6 +69,10 @@ export default async function (fastify, opts) {
           [StatusCodes.OK]: User.ResponseSchema,
           [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.NOT_FOUND]: z.null(),
+          [StatusCodes.CONFLICT]: z.object({
+            code: z.literal('ACTIVE_FIELD_WORK'),
+            message: z.string(),
+          }),
         },
       },
       attachValidation: true,
