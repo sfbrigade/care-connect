@@ -735,5 +735,32 @@ test('/api/users', async (t) => {
 
       assert.equal(response.statusCode, StatusCodes.OK);
     });
+
+    await t.test('unit update without targetMode is not blocked by active holds', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: dualUser.id,
+          currentOfficerId: dualUser.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      // No targetMode — this is the existing UnitSelector flow.
+      const response = await app.inject()
+        .patch(`/api/users/${dualUser.id}`)
+        .payload({ unitName: 'Some Unit' })
+        .headers(headers);
+
+      assert.equal(response.statusCode, StatusCodes.OK);
+    });
   });
 });
