@@ -49,7 +49,7 @@ function ForgotPassword () {
       <Container mt='-4rem'>
         {!success && (
           <Stack>
-            <IconButtonLink icon={IconArrowLeft} to='/login' />
+            <IconButtonLink icon={IconArrowLeft} aria-label='Go back' to='/login' />
             <div>
               <Text c='dimmed' size='lg'>Forgot password</Text>
               <Title order={3}>Enter the email associated with your account. We'll send you a link to reset your password.</Title>
@@ -77,7 +77,7 @@ function ForgotPassword () {
         )}
         {success && (
           <Stack>
-            <IconButtonLink icon={IconArrowLeft} onClick={() => setSuccess(false)} />
+            <IconButtonLink icon={IconArrowLeft} aria-label='Go back' onClick={() => setSuccess(false)} />
             <div>
               <Text c='dimmed' size='lg'>Check your email</Text>
               <Title order={3}>We sent a password reset link to {form.getValues().email}.</Title>

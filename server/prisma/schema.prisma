@@ -229,6 +229,12 @@ model User {
   deletedAt                    DateTime?
   passwordResetToken           String?                 @unique @db.Uuid
   passwordResetExpiresAt       DateTime?
+  mfaEnabled                   Boolean                 @default(true)
+  mfaCode                      String?
+  mfaToken                     String?                 @unique @db.Uuid
+  mfaExpiresAt                 DateTime?
+  mfaAttempts                  Int                     @default(0)
+  mfaLastSentAt                DateTime?
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
   updatedAt                    DateTime                @updatedAt

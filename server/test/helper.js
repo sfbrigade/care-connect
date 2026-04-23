@@ -325,16 +325,35 @@ function testContainerAlias (prefix) {
 }
 
 async function authenticate (app, email, password) {
-  const response = await app.inject().post('/api/auth/login').payload({
+  const loginResponse = await app.inject().post('/api/auth/login').payload({
     email,
     password,
   });
-  if (!response.statusCode === StatusCodes.OK) {
-    throw new Error();
+  if (loginResponse.statusCode !== StatusCodes.OK) {
+    throw new Error(`Login failed with status ${loginResponse.statusCode}`);
   }
-  // send back headers needed to authenticate
+  const loginData = JSON.parse(loginResponse.body);
+
+  // Handle MFA flow
+  if (loginData.mfaRequired) {
+    const user = await app.prisma.user.findUnique({ where: { email } });
+    const verifyResponse = await app.inject().post('/api/auth/verify-code').payload({
+      token: loginData.mfaToken,
+      code: user.mfaCode,
+    });
+    if (verifyResponse.statusCode !== StatusCodes.OK) {
+      throw new Error(`MFA verification failed with status ${verifyResponse.statusCode}`);
+    }
+    return {
+      cookie: verifyResponse.headers['set-cookie']
+        ?.split(';')
+        .map((t) => t.trim())[0],
+    };
+  }
+
+  // No MFA (already has session)
   return {
-    cookie: response.headers['set-cookie']
+    cookie: loginResponse.headers['set-cookie']
       ?.split(';')
       .map((t) => t.trim())[0],
   };
