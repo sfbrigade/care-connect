@@ -203,6 +203,12 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DateTime deletedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
+    Boolean mfaEnabled 
+    String mfaCode "❓"
+    String mfaToken "❓"
+    DateTime mfaExpiresAt "❓"
+    Int mfaAttempts 
+    DateTime mfaLastSentAt "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
     DateTime updatedAt 

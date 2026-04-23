@@ -53,11 +53,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const isExited = deflection?.subjectStatus === 'EXITED';
+  const isPostRelease = isLegallyReleased || isExited;
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
-  const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const showPrimaryPrintCertificate = isPostRelease;
   const canExitToHospitalViaRelease = HOSPITAL_RELEASE_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
   const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
     viewerMode,
@@ -223,7 +224,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   return (
     <>
       <Header>
-        <IconButtonLink icon={IconArrowLeft} to={backTo} />
+        <IconButtonLink icon={IconArrowLeft} to={backTo} aria-label='Go back' />
       </Header>
       <Container>
         <Stack gap='xl'>
@@ -269,7 +270,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               )}
             </Stack>
           )}
-          {!isCareView && (isLegallyReleased || isExited) && (
+          {!isCareView && isPostRelease && (
             <Stack gap='xs' align='flex-start'>
               <Button
                 onClick={open849bPdf}
@@ -324,7 +325,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{address}</Text>
               </Box>
             )}
-            {!isCareView && (
+            {!isCareView && !isPostRelease && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
@@ -392,9 +393,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}
-                      <Group mt='sm'>
-                        <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
-                      </Group>
+                      {!isPostRelease && (
+                        <Group mt='sm'>
+                          <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
+                        </Group>
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -511,7 +514,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             )
                           : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
                       </Box>
-                      {!isEditingReleaseNarrative && (
+                      {!isEditingReleaseNarrative && !isPostRelease && (
                         <Group>
                           <Button
                             variant='secondary'

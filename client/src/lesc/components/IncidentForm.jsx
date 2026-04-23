@@ -134,7 +134,7 @@ function IncidentForm () {
 
   function LocationButton () {
     return (
-      <ActionIcon onClick={getLocation} variant='transparent'>
+      <ActionIcon onClick={getLocation} variant='transparent' aria-label='Use current location'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
       </ActionIcon>
     );
@@ -200,6 +200,11 @@ function IncidentForm () {
         return;
       }
 
+      if (error?.response?.status === 422 && error?.response?.data?.error) {
+        showToast(error.response.data.error, 'error');
+        return;
+      }
+
       showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
@@ -222,7 +227,7 @@ function IncidentForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          <IconButtonLink icon={IconArrowLeft} to='/holds' aria-label='Go back' />
           {onSubmitMutation.isPending && (
             <Text c='dimmed' size='lg'>
               Saving...
