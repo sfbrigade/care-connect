@@ -208,7 +208,11 @@ function DeflectionForm () {
                   />
                   <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
                 </Stack>
-                <Input.Wrapper label={<>Select a charge type<span>*</span></>}>
+                <Input.Wrapper
+                  label='Select a charge type'
+                  withAsterisk
+                  error={form.errors.chargeType}
+                >
                   <Chip.Group
                     key={form.key('chargeType')}
                     {...form.getInputProps('chargeType')}
