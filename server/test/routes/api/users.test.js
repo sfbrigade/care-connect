@@ -585,19 +585,20 @@ test('/api/users', async (t) => {
   });
 
   await t.test('PATCH /api/users/:id — targetMode guard', async (t) => {
-    await t.test('accepts targetMode in request body without persisting it', async () => {
+    await t.test('accepts targetMode in request body without persisting or mutating the user', async () => {
       const headers = await authenticate(app, 'dual.user@test.com', 'test');
-      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const before = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
 
       const response = await app.inject()
-        .patch(`/api/users/${dualUser.id}`)
+        .patch(`/api/users/${before.id}`)
         .payload({ targetMode: 'FIELD' })
         .headers(headers);
 
       assert.equal(response.statusCode, StatusCodes.OK);
-      // targetMode is a directive, not persisted — the user row should be unchanged.
-      const refreshed = await prisma.user.findUnique({ where: { id: dualUser.id } });
-      assert.equal('targetMode' in refreshed, false);
+
+      // targetMode is a directive, not a column. The row must be bit-for-bit unchanged.
+      const after = await prisma.user.findUnique({ where: { id: before.id } });
+      assert.deepEqual(after, before);
     });
   });
 });
