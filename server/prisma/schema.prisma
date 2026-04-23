@@ -33,6 +33,13 @@ enum TernaryEnum {
   UNKNOWN
 }
 
+enum SFResidentEnum {
+  YES
+  NO
+  UNKNOWN
+  DECLINED_CONSENT
+}
+
 enum FacilityTypeEnum {
   DIDO
   LESC
@@ -529,63 +536,63 @@ model Deflection {
   propertyDetails                String?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
-  propertyReturned               Boolean?
-  propertyReturnedAt             DateTime?
-  propertyReturnedBy             User?                          @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
-  propertyReturnedById           String?                        @db.Uuid
-  currentOfficer                 User?                          @relation("CurrentOfficer", fields: [currentOfficerId], references: [id])
-  currentOfficerId               String?                        @db.Uuid
-  createdAt                      DateTime                       @default(now())
-  createdBy                      User                           @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                    String                         @db.Uuid
-  expiresAt                      DateTime                       @default(dbgenerated("(now() + '01:00:00'::interval)"))
-  completedAt                    DateTime?
-  status                         HoldStatusEnum                 @default(ACTIVE)
-  extensionCount                 Int                            @default(0)
-  cancelReason                   DeflectionCancelReason?        @relation(fields: [cancelReasonId], references: [id])
-  cancelReasonId                 String?
-  cancelledAt                    DateTime?
-  cancelledBy                    User?                          @relation("CancelledBy", fields: [cancelledById], references: [id])
-  cancelledById                  String?                        @db.Uuid
-  transferredAt                  DateTime?
-  transferredBy                  User?                          @relation("TransferredBy", fields: [transferredById], references: [id])
-  transferredById                String?                        @db.Uuid
-  transferredByBadgeNumber       String?
-  transferredByProp115Certified  Boolean?
-  transferredByOrganizationId    String?
-  transferredByOrganization      Organization?                  @relation(fields: [transferredByOrganizationId], references: [id])
-  transferredByUnitId            String?
-  transferredByUnit              Unit?                          @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
-  transferredByTitleId           String?
-  transferredByTitle             Title?                         @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
-  admittedAt                     DateTime?
-  admittedBy                     User?                          @relation("AdmittedBy", fields: [admittedById], references: [id])
-  admittedById                   String?                        @db.Uuid
-  rejectedAt                     DateTime?
-  rejectedBy                     User?                          @relation("RejectedBy", fields: [rejectedById], references: [id])
-  rejectedById                   String?                        @db.Uuid
-  releasedAt                     DateTime?
-  releasedBy                     User?                          @relation("ReleasedBy", fields: [releasedById], references: [id])
-  releasedById                   String?                        @db.Uuid
-  releaseReason                  DeflectionReleaseReason?       @relation(fields: [releaseReasonId], references: [id])
-  releaseReasonId                String?
-  otherReleaseReason             String?
-  otherReleaseDestination        String?
-  releaseNarrative               String?
-  refusalReason                  DeflectionRefusalReason?       @relation(fields: [refusalReasonId], references: [id])
-  refusalReasonId                String?
-  exitedAt                       DateTime?
-  exitedBy                       User?                          @relation("ExitedBy", fields: [exitedById], references: [id])
-  exitedById                     String?                        @db.Uuid
-  exitDestination                DeflectionExitDestination?     @relation(fields: [exitDestinationId], references: [id])
-  exitDestinationId              String?
-  exitHousingStatus              DeflectionExitHousingStatus?   @relation(fields: [exitHousingStatusId], references: [id])
-  exitHousingStatusId            String?
-  exitConnectedToCare            TernaryEnum?
-  exitSFResident                 TernaryEnum?
-  arrivedAt                      DateTime?
-  handoffReadyAt                 DateTime?
-  updatedAt                      DateTime                       @updatedAt
+  propertyReturned             Boolean?
+  propertyReturnedAt           DateTime?
+  propertyReturnedBy           User?                   @relation("PropertyReturnedBy", fields: [propertyReturnedById], references: [id])
+  propertyReturnedById         String?                 @db.Uuid
+  currentOfficer               User?                   @relation("CurrentOfficer", fields: [currentOfficerId], references: [id])
+  currentOfficerId             String?                 @db.Uuid
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById                  String                  @db.Uuid
+  expiresAt                    DateTime                @default(dbgenerated("(now() + '01:00:00'::interval)"))
+  completedAt                  DateTime?
+  status                       HoldStatusEnum          @default(ACTIVE)
+  extensionCount               Int                     @default(0)
+  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId               String?
+  cancelledAt                  DateTime?
+  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id])
+  cancelledById                String?                 @db.Uuid
+  transferredAt                DateTime?
+  transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id])
+  transferredById              String?                 @db.Uuid
+  transferredByBadgeNumber     String?
+  transferredByProp115Certified Boolean?
+  transferredByOrganizationId  String?
+  transferredByOrganization    Organization?           @relation(fields: [transferredByOrganizationId], references: [id])
+  transferredByUnitId          String?
+  transferredByUnit            Unit?                   @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
+  transferredByTitleId         String?
+  transferredByTitle           Title?                  @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
+  admittedAt                   DateTime?
+  admittedBy                   User?                   @relation("AdmittedBy", fields: [admittedById], references: [id])
+  admittedById                 String?                 @db.Uuid
+  rejectedAt                   DateTime?
+  rejectedBy                   User?                   @relation("RejectedBy", fields: [rejectedById], references: [id])
+  rejectedById                 String?                 @db.Uuid
+  releasedAt                   DateTime?
+  releasedBy                   User?                   @relation("ReleasedBy", fields: [releasedById], references: [id])
+  releasedById                 String?                 @db.Uuid
+  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId              String?
+  otherReleaseReason           String?
+  otherReleaseDestination      String?
+  releaseNarrative             String?
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitedAt                     DateTime?
+  exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
+  exitedById                   String?                 @db.Uuid
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               SFResidentEnum?
+  arrivedAt                    DateTime?
+  handoffReadyAt               DateTime?
+  updatedAt                    DateTime                @updatedAt
 
   deflectionUpdates   DeflectionUpdate[]
   deflectionDocuments DeflectionDocument[]
@@ -610,17 +617,17 @@ model DeflectionUpdate {
   propertyReturned               Boolean?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
-  refusalReason                  DeflectionRefusalReason?       @relation(fields: [refusalReasonId], references: [id])
-  refusalReasonId                String?
-  exitDestination                DeflectionExitDestination?     @relation(fields: [exitDestinationId], references: [id])
-  exitDestinationId              String?
-  exitHousingStatus              DeflectionExitHousingStatus?   @relation(fields: [exitHousingStatusId], references: [id])
-  exitHousingStatusId            String?
-  exitConnectedToCare            TernaryEnum?
-  exitSFResident                 TernaryEnum?
-  updatedAt                      DateTime                       @default(now())
-  updatedBy                      User                           @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                    String                         @db.Uuid
+  refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
+  refusalReasonId              String?
+  exitDestination              DeflectionExitDestination? @relation(fields: [exitDestinationId], references: [id])
+  exitDestinationId            String?
+  exitHousingStatus            DeflectionExitHousingStatus? @relation(fields: [exitHousingStatusId], references: [id])
+  exitHousingStatusId          String?
+  exitConnectedToCare          TernaryEnum?
+  exitSFResident               SFResidentEnum?
+  updatedAt                    DateTime                @default(now())
+  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 }
 
 model DeflectionCancelReason {

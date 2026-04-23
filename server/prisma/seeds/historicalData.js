@@ -171,9 +171,8 @@ function exitData (careUser, exitDestId, housingStatusId, t) {
     exitConnectedToCare: weightedPick([
       { v: 'YES', w: 30 }, { v: 'NO', w: 50 }, { v: 'UNKNOWN', w: 20 },
     ]),
-    // Route input may include DECLINED_CONSENT, but the stored DB value is UNKNOWN.
     exitSFResident: weightedPick([
-      { v: 'YES', w: 50 }, { v: 'NO', w: 30 }, { v: 'UNKNOWN', w: 20 },
+      { v: 'YES', w: 45 }, { v: 'NO', w: 30 }, { v: 'UNKNOWN', w: 15 }, { v: 'DECLINED_CONSENT', w: 10 },
     ]),
     subjectStatus: 'EXITED',
   };

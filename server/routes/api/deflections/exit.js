@@ -1,28 +1,14 @@
 import { StatusCodes } from 'http-status-codes';
-import { TernaryEnum } from '@prisma/client';
+import { SFResidentEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
-const ResidencyEnum = z.enum([
-  'YES',
-  'NO',
-  'UNKNOWN',
-  'DECLINED_CONSENT',
-]);
+const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
-const ConnectionToCareEnum = z.enum([
-  'YES',
-  'NO',
-  'UNKNOWN',
-]);
-
-function toTernary (value) {
-  if (value === 'DECLINED_CONSENT') return TernaryEnum.UNKNOWN;
-  return value;
-}
+const ConnectionToCareEnum = z.enum(Object.values(TernaryEnum));
 
 const EXITABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
@@ -92,7 +78,7 @@ export default async function (fastify, opts) {
             exitDestinationId,
             exitHousingStatusId,
             exitConnectedToCare,
-            exitSFResident: toTernary(exitSFResident),
+            exitSFResident,
             updatedById: request.user.id,
             updatedAt: now,
           },
@@ -109,7 +95,7 @@ export default async function (fastify, opts) {
             exitDestinationId,
             exitHousingStatusId,
             exitConnectedToCare,
-            exitSFResident: toTernary(exitSFResident),
+            exitSFResident,
             updatedAt: now,
           },
           include: {

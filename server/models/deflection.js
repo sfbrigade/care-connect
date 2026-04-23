@@ -1,4 +1,4 @@
-import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -108,7 +108,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitHousingStatusId: z.string().nullable(),
   exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
-  exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
+  exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
   currentOfficerId: z.string().uuid().nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
@@ -123,6 +123,7 @@ export class Deflection extends Base {
   static HoldStatus = HoldStatusEnum;
   static SubjectStatus = SubjectStatusEnum;
   static Ternary = TernaryEnum;
+  static SFResident = SFResidentEnum;
   static PropertyNotReturnedReason = PropertyNotReturnedReasonEnum;
 
   constructor (data) {
