@@ -38,15 +38,16 @@ export default function Form647f ({ data = {} }) {
     subjectAddress = '',
     subjectDL = '',
     subjectLocalId = '',
-    cadNumber = '',
     arrestedAt = null,
-    officerName = '',
     arrestLocation = '',
-    officerUnit = '',
-    officerBadge = '',
-    supervisorBadgeNumber = '',
-    agency = '',
     charge = '',
+    cadNumber = '',
+    officerName = '',
+    officerBadge = '',
+    officerUnit = '',
+    agency = '',
+    supervisorBadgeNumber = '',
+    transferOfficerName = '',
     justification = '',
     hospitalCancellationReleaseNarrative = '',
     substanceFound = false,
@@ -86,15 +87,18 @@ export default function Form647f ({ data = {} }) {
             <Row label='Local ID / SF #' value={subjectLocalId} />
 
             <SectionHeader title='Arrest Information' />
-            <Row label='CAD Number' value={cadNumber} required />
             <Row label='Date/Time Arrested' value={formatDateTime24(arrestedAt)} required />
-            <Row label='Name of Transporting Officer' value={officerName} required />
             <Row label='Location Arrested' value={arrestLocation} required />
-            <Row label='Unit' value={officerUnit} required />
+            <Row label='Charge' value={charge || '647(f) RWS'} required />
+            <Row label='CAD Number' value={cadNumber} required />
+
+            <SectionHeader title='Officer Information' />
+            <Row label='Arresting Officer' value={officerName} required />
             <Row label='Badge Number / Star Number' value={officerBadge} required />
-            <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} required />
+            <Row label='Unit' value={officerUnit} required />
             <Row label='Agency' value={agency} required />
-            <Row label='Charge' value={charge} required />
+            <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} required />
+            <Row label='Officer Present at Custody Transfer' value={transferOfficerName} />
 
             <SectionHeader title='Additional Information' />
             <Row label='Hold ID' value={String(deflectionId)} />

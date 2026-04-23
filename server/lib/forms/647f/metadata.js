@@ -20,6 +20,7 @@ export const metadata = {
       },
     },
     facility: true,
+    transferredBy: true,
     createdBy: {
       include: {
         organization: true,

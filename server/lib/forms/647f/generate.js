@@ -5,7 +5,6 @@ import i18n from '#lib/i18n.js';
 export function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
-  const officer = incident?.createdBy || deflection.createdBy;
 
   const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
     .filter(Boolean)
@@ -15,12 +14,19 @@ export function transformData (deflection) {
     .filter(Boolean)
     .join(', ');
 
+  const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
+  const officer = arrestingOfficerRecord?.officer || incident?.createdBy || deflection.createdBy;
   const officerName = officer
     ? `${officer.firstName} ${officer.lastName}`
     : '';
   const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
   const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
   const agency = officer?.organization?.name || '';
+
+  const transferOfficer = deflection.transferredBy;
+  const transferOfficerName = transferOfficer
+    ? `${transferOfficer.firstName} ${transferOfficer.lastName}`
+    : '';
 
   const facility = deflection.facility;
   const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]
@@ -38,12 +44,14 @@ export function transformData (deflection) {
     subjectAddress,
     subjectDL: subject?.driverLicense || '',
     subjectLocalId: subject?.localId || '',
-    cadNumber: incident?.cadNumber || '',
     arrestedAt: incident?.arrestedAt?.toISOString() || null,
-    officerName,
     arrestLocation,
-    officerUnit,
+    charge: '647(f) RWS',
+    cadNumber: incident?.cadNumber || '',
+    officerName,
     officerBadge,
+    officerUnit,
+    agency,
     supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
     agency,
     charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
