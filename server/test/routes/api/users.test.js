@@ -19,16 +19,17 @@ test('/api/users', async (t) => {
         url: '/api/users'
       }).headers(adminHeaders);
       const data = JSON.parse(response.payload);
-      assert.deepStrictEqual(data.length, 9);
+      assert.deepStrictEqual(data.length, 10);
       assert.deepStrictEqual(data[0].email, 'admin.user@test.com');
       assert.deepStrictEqual(data[1].email, 'another.user@test.com');
       assert.deepStrictEqual(data[2].email, 'deactivated.user@test.com');
-      assert.deepStrictEqual(data[3].email, 'facilityadmin@test.com');
-      assert.deepStrictEqual(data[4].email, 'orgadmin@test.com');
-      assert.deepStrictEqual(data[5].email, 'regular.user@test.com');
-      assert.deepStrictEqual(data[6].email, 'careuser1@test.com');
-      assert.deepStrictEqual(data[7].email, 'sfsouser1@test.com');
-      assert.deepStrictEqual(data[8].email, 'field.noholds@test.com');
+      assert.deepStrictEqual(data[3].email, 'dual.user@test.com');
+      assert.deepStrictEqual(data[4].email, 'facilityadmin@test.com');
+      assert.deepStrictEqual(data[5].email, 'orgadmin@test.com');
+      assert.deepStrictEqual(data[6].email, 'regular.user@test.com');
+      assert.deepStrictEqual(data[7].email, 'careuser1@test.com');
+      assert.deepStrictEqual(data[8].email, 'sfsouser1@test.com');
+      assert.deepStrictEqual(data[9].email, 'field.noholds@test.com');
     });
   });
 
