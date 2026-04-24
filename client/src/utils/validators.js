@@ -45,8 +45,8 @@ const SubjectSchema = z.object({
     z.minLength(1, ERROR_REQUIRED),
     z.refine(
       (value) => DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
-      ERROR_DOB_INVALID,
-    ),
+      ERROR_DOB_INVALID
+    )
   ),
   sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
   race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
