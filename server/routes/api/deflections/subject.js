@@ -8,6 +8,16 @@ import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
+const CARE_EDITABLE_SUBJECT_FIELDS = [
+  'firstName',
+  'lastName',
+  'middleInitial',
+  'dateOfBirth',
+  'sex',
+  'race',
+  'driverLicense',
+];
+
 export default async function (fastify, opts) {
   fastify.put('/:id/subject',
     {
@@ -31,31 +41,47 @@ export default async function (fastify, opts) {
         where: { id },
         include: {
           subject: true,
-          deflectionDetails: true,
           propertyPhotos: true,
         },
       });
 
-      if (!deflection) {
+      if (!deflection || deflection.subject?.anonymizedAt) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!canModifyDeflection(deflection, request.user)) {
+      const canModifyFullDeflection = canModifyDeflection(deflection, request.user);
+      const isCareSubjectEdit = request.user.isCare && !canModifyFullDeflection;
+
+      if (!canModifyFullDeflection && !isCareSubjectEdit) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      const subjectData = { ...data };
-      delete subjectData.narcoticsSubstance;
-      delete subjectData.narcoticsParaphernalia;
-      delete subjectData.drugUseEvidence;
-      delete subjectData.drugType;
+      const subjectData = isCareSubjectEdit
+        ? Object.fromEntries(CARE_EDITABLE_SUBJECT_FIELDS
+          .filter(field => Object.hasOwn(data, field))
+          .map(field => [field, data[field]]))
+        : { ...data };
 
-      const deflectionData = {
-        narcoticsSubstance: data.narcoticsSubstance ?? null,
-        narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
-        drugUseEvidence: data.drugUseEvidence ?? null,
-        drugType: data.drugUseEvidence === true ? data.drugType ?? null : null,
-      };
+      if (!isCareSubjectEdit) {
+        delete subjectData.narcoticsSubstance;
+        delete subjectData.narcoticsParaphernalia;
+        delete subjectData.drugUseEvidence;
+        delete subjectData.drugType;
+      }
+
+      const deflectionData = isCareSubjectEdit
+        ? {
+            narcoticsSubstance: deflection.narcoticsSubstance,
+            narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+            drugUseEvidence: deflection.drugUseEvidence,
+            drugType: deflection.drugUseEvidence === true ? deflection.drugType ?? null : null,
+          }
+        : {
+            narcoticsSubstance: data.narcoticsSubstance ?? null,
+            narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
+            drugUseEvidence: data.drugUseEvidence ?? null,
+            drugType: data.drugUseEvidence === true ? data.drugType ?? null : null,
+          };
 
       await fastify.prisma.$transaction(async (tx) => {
         if (!deflection.subjectId) {
@@ -71,7 +97,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
-              deflectionDetails: true,
+              incident: true,
               propertyPhotos: true,
             },
           });
@@ -87,7 +113,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
-              deflectionDetails: true,
+              incident: true,
               propertyPhotos: true,
             },
           });

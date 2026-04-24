@@ -21,7 +21,7 @@ function buildDeflection (overrides = {}) {
   return {
     id: 1,
     status: 'ACTIVE',
-    subjectStatus: 'AWAITING_TRANSFER',
+    subjectStatus: 'DETAINED',
     expiresAt: '2099-03-04T12:00:00.000Z',
     subject: {
       firstName: 'John',
@@ -34,8 +34,8 @@ function buildDeflection (overrides = {}) {
     narcoticsParaphernalia: false,
     drugUseEvidence: false,
     drugType: null,
-    deflectionDetails: [{}],
     behavior: 'Observed unsafe behavior',
+    behaviorNarrative: 'Observed unsafe behavior',
     property: 'NONE',
     ...overrides,
   };
@@ -95,7 +95,7 @@ describe('getSfpdDeflectionStatusChip', () => {
       deflection: buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }),
       incident: buildIncident(),
     });
-    expect(chip).toEqual({ label: 'Custody transferred', tone: 'info' });
+    expect(chip).toEqual({ label: 'Custody transferred', tone: 'success' });
   });
 
   it('returns Canceled when hold is cancelled', () => {
@@ -106,7 +106,7 @@ describe('getSfpdDeflectionStatusChip', () => {
     expect(chip).toEqual({ label: 'Canceled', tone: 'danger' });
   });
 
-  it('returns Canceled after expiry when hold has expired before transfer', () => {
+  it('returns Canceled after expiry when hold has expired before arrival', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection({ expiresAt: '2026-03-04T10:00:00.000Z' }),
       incident: buildIncident(),

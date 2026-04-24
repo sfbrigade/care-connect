@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router';
-import { Box, Stack, Text, Loader } from '@mantine/core';
+import { Box, Stack, Text } from '@mantine/core';
 
 import { formatTime } from '@/utils/format';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
+import { isValidIncident } from '@/utils/validators';
+
 import Hold from './Hold';
 import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
 import IncidentGroup from './IncidentGroup';
-import { isInitialLoading, shouldShowTransferredHoldsPrompt } from './holdsViewModel';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
   return (
@@ -38,13 +39,10 @@ function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdated
 }
 
 function HoldsActive ({
-  incident,
-  deflections,
-  isFetchingDeflections,
+  incidents,
   onCancelHoldClick,
   onEditIncidentClick,
   onHandoffClick,
-  onCancelIncidentClick,
   autoCancelledNotice,
   onDismissAutoCancelledNotice,
   adminCancelledNotice,
@@ -55,15 +53,13 @@ function HoldsActive ({
 }) {
   const navigate = useNavigate();
 
-  const hasDeflections = (deflections?.length ?? 0) > 0;
-  const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
+  const allDeflections = incidents.flatMap(inc => inc.deflections);
+  const hasDeflections = allDeflections.length > 0;
   const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
   const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
-  const showAllExpiredState = !showInitialLoading && !hasDeflections && autoCancelledNotice?.allExpired;
-  const showAllAdminCancelledState = !showInitialLoading && !hasDeflections && adminCancelledNotice?.allCancelled;
-  const showTransferredHoldsPrompt = shouldShowTransferredHoldsPrompt(incident, deflections);
-  const showNoActiveHoldsState = !showInitialLoading && !hasDeflections && !showTransferredHoldsPrompt && !showAllAdminCancelledState;
-  const showUpdatedAt = updatedAtMs > 0 && (hasDeflections || showTransferredHoldsPrompt);
+  const showAllAdminCancelledState = !hasDeflections && adminCancelledNotice?.allCancelled;
+  const showNoActiveHoldsState = !hasDeflections && !showAllAdminCancelledState;
+  const showUpdatedAt = updatedAtMs > 0 && hasDeflections;
 
   return (
     <>
@@ -73,65 +69,54 @@ function HoldsActive ({
           onClose={onDismissAdminCancelledNotice}
         />
       )}
-      {hasExpiredAutoCancelledHolds && !autoCancelledNotice?.allExpired && (
+      {hasExpiredAutoCancelledHolds && (
         <HoldsAutoCancelledNotice
           count={autoCancelledNotice.count}
           onClose={onDismissAutoCancelledNotice}
         />
       )}
-      {showInitialLoading && (
-        <Loader mx='auto' my='xl' size='lg' />
-      )}
-      {!showInitialLoading && !hasDeflections && showTransferredHoldsPrompt && (
-        <CheckerboardEmptyState
-          title='All holds transferred.'
-          subtitle={'When you leave RESET, make sure to tap "I\'ve left".'}
-          updatedAtMs={updatedAtMs}
-          showUpdatedAt
-        />
-      )}
-      {showAllExpiredState && (
-        <CheckerboardEmptyState
-          title='All holds were auto-canceled after they expired. Check History for details.'
-        />
-      )}
-      {!showAllExpiredState && showNoActiveHoldsState && (
+      {showNoActiveHoldsState && (
         <CheckerboardEmptyState title='No active holds.' />
       )}
       {hasDeflections && (
         <>
-          <IncidentGroup
-            incident={incident}
-            incidentId={incident?.id}
-            onEditClick={onEditIncidentClick}
-            onHandoffClick={onHandoffClick}
-            onCancelClick={onCancelIncidentClick}
-          >
-            {[...(deflections ?? [])]
-              .sort((a, b) => {
-                const aHandedOff = currentUserId && a.currentOfficerId && a.currentOfficerId !== currentUserId;
-                const bHandedOff = currentUserId && b.currentOfficerId && b.currentOfficerId !== currentUserId;
-                if (aHandedOff && !bHandedOff) return 1;
-                if (!aHandedOff && bHandedOff) return -1;
-                return 0;
-              })
-              .map((deflection) => {
-                const isHandedOff = !!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId;
-                return (
+          {incidents.map((incident) => {
+            const detailsComplete = isValidIncident(incident);
+            return (
+              <IncidentGroup
+                key={incident.id}
+                incident={incident}
+                incidentId={incident.id}
+                onEditClick={incident.canEdit ? () => onEditIncidentClick(incident.id) : undefined}
+                onHandoffClick={incident.canHandoff ? onHandoffClick : undefined}
+                onCancelClick={incident.deflections?.length ? () => onCancelHoldClick(incident.deflections) : undefined}
+              >
+                {incident.deflections.map((deflection) => (
                   <Hold
                     key={deflection.id}
                     incident={incident}
                     deflection={deflection}
                     highlighted={holdsHighlighted}
-                    isHandedOff={isHandedOff}
                     onCancelClick={() => onCancelHoldClick(deflection)}
                     onDetailsClick={() => {
-                      navigate(deflection.subjectId ? `/holds/${deflection.id}` : `/holds/${deflection.id}/subject?isNew=true`);
+                      if (deflection.subjectId) {
+                        navigate(`/holds/${deflection.id}`);
+                        return;
+                      }
+
+                      const subjectPath = `/holds/${deflection.id}/subject?isNew=true`;
+                      if (detailsComplete) {
+                        navigate(subjectPath);
+                        return;
+                      }
+
+                      navigate(`/incident/${incident.id}?next=${encodeURIComponent(subjectPath)}`);
                     }}
                   />
-                );
-              })}
-          </IncidentGroup>
+                ))}
+              </IncidentGroup>
+            );
+          })}
           {showUpdatedAt && (
             <Text size='xs' c='gray.5' ta='center'>
               Last updated: {formatTime(new Date(updatedAtMs))}

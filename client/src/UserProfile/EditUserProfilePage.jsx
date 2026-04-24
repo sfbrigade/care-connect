@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Anchor, Button, Checkbox, Container, Fieldset, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
+import { useEffect, useState } from 'react';
+import { Anchor, Autocomplete, Button, Checkbox, Container, Fieldset, Group, Loader, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,8 @@ function EditUserProfilePage () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const [unitName, setUnitName] = useState('');
+  const [unitId, setUnitId] = useState('');
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -53,11 +55,40 @@ function EditUserProfilePage () {
         ...data,
         password: '',
       });
+      setUnitName(data.unit?.name || '');
+      setUnitId(data.unitId || '');
     }
   }, [data]);
 
+  const autocompleteData = units?.map((unit) => ({
+    value: unit.id,
+    label: unit.name,
+  })) || [];
+
+  function handleUnitChange (value) {
+    setUnitName(value);
+    const normalizedValue = value.trim().toLowerCase();
+    const selectedUnit = units?.find((unit) => unit.name.trim().toLowerCase() === normalizedValue);
+    const nextUnitId = selectedUnit?.id || '';
+    setUnitId(nextUnitId);
+    form.setFieldValue('unitId', nextUnitId);
+  }
+
   const onSubmitMutation = useMutation({
-    mutationFn: (values) => Api.users.update(userId, values),
+    mutationFn: (values) => {
+      const payload = {
+        badgeNumber: values.badgeNumber,
+        unitId,
+        unitName: unitName.trim(),
+      };
+
+      if (values.organizationId === 'sfso') {
+        payload.titleId = values.titleId;
+        payload.prop115Certified = values.prop115Certified;
+      }
+
+      return Api.users.update(userId, payload);
+    },
     onSuccess: (response) => {
       queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
@@ -77,7 +108,7 @@ function EditUserProfilePage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/profile' />
+          <IconButtonLink icon={IconArrowLeft} to='/profile' aria-label='Go back' />
         </Group>
       </Header>
       <Container>
@@ -101,11 +132,15 @@ function EditUserProfilePage () {
                   />
                 )}
                 {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
-                  <Select
-                    {...form.getInputProps('unitId')}
-                    key={form.key('unitId')}
+                  <Autocomplete
                     label='Unit'
-                    data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
+                    placeholder='Type unit name'
+                    data={autocompleteData}
+                    value={unitName}
+                    onChange={handleUnitChange}
+                    disabled={!form.getValues().organizationId}
+                    rightSection={units === undefined && form.getValues().organizationId ? <Loader size='sm' /> : null}
+                    nothingfound='No units found'
                   />
                 )}
                 {form.getValues().organizationId === 'sfso' && (
@@ -123,7 +158,7 @@ function EditUserProfilePage () {
             </Fieldset>
           </form>
           <Text size='sm' ta='center' c='gray.5'>
-            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org'>careconnect@sfgov.org</Anchor>
+            For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>
         </Stack>
       </Container>

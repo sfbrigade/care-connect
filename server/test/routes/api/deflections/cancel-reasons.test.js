@@ -19,15 +19,16 @@ test('/api/deflections/cancel-reasons', async (t) => {
       const reasons = JSON.parse(response.body);
 
       assert.ok(Array.isArray(reasons));
-      // From deflectionCancelReasons.yml there are 5 reasons
-      assert.ok(reasons.length >= 5);
+      // From deflectionCancelReasons.yml there are 6 reasons
+      assert.ok(reasons.length >= 6);
 
       const ids = reasons.map(r => r.id);
       assert.ok(ids.includes('5150'));
       assert.ok(ids.includes('jail'));
       assert.ok(ids.includes('hospital'));
+      assert.ok(ids.includes('no_chairs_available'));
       assert.ok(ids.includes('release_on_scene'));
-      assert.ok(ids.includes('facility_emergency'));
+      assert.ok(ids.includes('staffing_shortage'));
 
       // Check sorting by name
       const names = reasons.map(r => r.name);

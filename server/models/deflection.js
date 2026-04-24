@@ -1,9 +1,8 @@
-import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import DeflectionCancelReason from './deflectionCancelReason.js';
-import DeflectionDetail from './deflectionDetail.js';
 import DeflectionDocument from './deflectionDocument.js';
 import DeflectionExitDestination from './deflectionExitDestination.js';
 import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
@@ -18,15 +17,13 @@ import User from './user.js';
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
-  behaviorAdditions: z.string().nullable(),
+  behaviorNarrative: z.string().nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
-  volunteeredToReset: z.boolean().nullable(),
   drugUseEvidence: z.boolean().nullable(),
   drugType: z.enum(Object.values(DrugTypeEnum)).catch(null).nullable(),
   property: z.enum(Object.values(PropertyEnum)).catch(null).nullable(),
   propertyDetails: z.string().nullable(),
-  deflectionDetails: z.array(z.string()),
   releaseNarrative: z.string().nullable(),
 });
 
@@ -43,8 +40,24 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.number(),
   status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
+  incident: z.object({
+    id: z.number(),
+    addressLine1: z.string().nullable(),
+    addressLine2: z.string().nullable(),
+    city: z.string().nullable(),
+    state: z.string().nullable(),
+    postalCode: z.string().nullable(),
+    latitude: z.coerce.number().nullable(),
+    longitude: z.coerce.number().nullable(),
+    arrestedAt: z.coerce.date().catch(null).nullable(),
+    encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']).catch(null).nullable(),
+    cadNumber: z.string().nullable(),
+    caseNumber: z.string().nullable(),
+    supervisorBadgeNumber: z.string().nullable(),
+    createdById: z.string().uuid(),
+    createdAt: z.coerce.date(),
+  }).optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
-  deflectionDetails: z.array(DeflectionDetail.ResponseSchema).optional(),
   deflectionDocuments: z.array(DeflectionDocument.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   propertyReturned: z.boolean().nullable().optional(),
@@ -95,7 +108,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitHousingStatusId: z.string().nullable(),
   exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
-  exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
+  exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
   currentOfficerId: z.string().uuid().nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
@@ -110,6 +123,7 @@ export class Deflection extends Base {
   static HoldStatus = HoldStatusEnum;
   static SubjectStatus = SubjectStatusEnum;
   static Ternary = TernaryEnum;
+  static SFResident = SFResidentEnum;
   static PropertyNotReturnedReason = PropertyNotReturnedReasonEnum;
 
   constructor (data) {

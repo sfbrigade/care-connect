@@ -6,7 +6,7 @@ import { authenticate, build } from '#test/helper.js';
 
 test('/api/assets', async (t) => {
   const app = await build(t);
-  const userHeaders = authenticate(app, 'regular.user@test.com', 'test');
+  const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('returns signed upload url for the asset type', async () => {
@@ -23,7 +23,7 @@ test('/api/assets', async (t) => {
 
   await t.test('GET /*', async (t) => {
     await t.test('redirects to signed asset url', async () => {
-      const response = await app.inject().get('/api/assets/users/12345678-1234-5678-1234-567812345678/picture/12345678-1234-5678-1234-567812345678.jpeg');
+      const response = await app.inject().get('/api/assets/users/12345678-1234-5678-1234-567812345678/picture/12345678-1234-5678-1234-567812345678.jpeg').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.MOVED_TEMPORARILY);
       assert.ok(response.headers.location.includes('users/12345678-1234-5678-1234-567812345678/picture/12345678-1234-5678-1234-567812345678.jpeg'));
     });

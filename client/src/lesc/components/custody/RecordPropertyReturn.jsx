@@ -62,7 +62,7 @@ function RecordPropertyReturn () {
         <title>Record Property Return</title>
       </Head>
       <Header>
-        <IconButtonLink icon={IconArrowLeft} to={backTo} />
+        <IconButtonLink icon={IconArrowLeft} to={backTo} aria-label='Go back' />
       </Header>
       <Container>
         <Stack gap='xl'>

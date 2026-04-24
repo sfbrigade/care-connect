@@ -1,0 +1,26 @@
+#!/bin/bash
+
+read -p "Stack base name (lowercase, letters, numbers, hyphen only) [$1]: " BASE_NAME
+BASE_NAME=${BASE_NAME:-$1}
+read -p "Image URL [$2]: " IMAGE_URL
+IMAGE_URL=${IMAGE_URL:-$2}
+read -p "Environment [$3]: " ENVIRONMENT
+ENVIRONMENT=${ENVIRONMENT:-$3}
+
+set -a
+source ./.env.$ENVIRONMENT
+set +a
+
+echo "GEOCODE_RATE_LIMIT_MS: $GEOCODE_RATE_LIMIT_MS"
+echo "SESSION_SECRET: $SESSION_SECRET"
+echo "SMTP_FROM_EMAIL_ADDRESS: $SMTP_FROM_EMAIL_ADDRESS"
+echo "VITE_POSTHOG_KEY: $VITE_POSTHOG_KEY"
+echo "VITE_POSTHOG_HOST: $VITE_POSTHOG_HOST"
+echo "VITE_SITE_TITLE: $VITE_SITE_TITLE"
+
+read -p "Continue? [y/N]: " CONT
+if [[ "$CONT" != "y" ]]; then
+    exit 1
+fi
+
+aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name ${BASE_NAME}-ecs --template-body file://./ecs.json --parameters ParameterKey=BaseName,ParameterValue=$BASE_NAME ParameterKey=ImageURL,ParameterValue=$IMAGE_URL ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET ParameterKey=GeocodeRateLimitMs,ParameterValue=$GEOCODE_RATE_LIMIT_MS ParameterKey=SmtpFromEmailAddress,ParameterValue=$SMTP_FROM_EMAIL_ADDRESS ParameterKey=PosthogKey,ParameterValue=$VITE_POSTHOG_KEY ParameterKey=PosthogHost,ParameterValue=$VITE_POSTHOG_HOST "ParameterKey=SiteTitle,ParameterValue=$VITE_SITE_TITLE" --output text

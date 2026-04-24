@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import { fileURLToPath, URL } from 'node:url';
 import fs from 'fs';
@@ -36,6 +36,11 @@ function cssAsText () {
   };
 }
 
+const alias = {
+  '@': fileURLToPath(new URL('./src', import.meta.url)),
+  '@locales': fileURLToPath(new URL('../locales', import.meta.url)),
+};
+
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig(({ command, ssrBuild, mode }) => {
   // Check if this is an SSR build - ssrBuild should be true when building with --ssr flag
@@ -44,10 +49,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
   return {
     plugins: [react(), cssAsText()],
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-        components: fileURLToPath(new URL('./src/components', import.meta.url))
-      }
+      alias,
     },
     build: {
       rollupOptions: isSSRBuild
@@ -77,8 +79,14 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       strictPort: false,
       // Allow all hosts to connect- this is used only for development...
       allowedHosts: true,
+      fs: {
+        allow: [
+          searchForWorkspaceRoot(process.cwd()),
+          fileURLToPath(new URL('../locales', import.meta.url)),
+        ],
+      },
       proxy: {
-        '^/api|/static-data|/locales': {
+        '^/api|/static-data': {
           target: 'http://127.0.0.1:3000',
           changeOrigin: false,
         }
@@ -90,10 +98,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       maxWorkers: 2,
       minWorkers: 1,
       environment: 'node',
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-        components: fileURLToPath(new URL('./src/components', import.meta.url))
-      },
+      alias,
       projects: [
         {
           // Unit tests (Node.js environment)
@@ -111,10 +116,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
             setupFiles: ['./src/test/setupTests.js'],
             include: ['**/*.test.jsx'],
             exclude: ['**/*.stories.*', '**/node_modules/**', '**/.storybook/**'],
-            alias: {
-              '@': fileURLToPath(new URL('./src', import.meta.url)),
-              components: fileURLToPath(new URL('./src/components', import.meta.url))
-            },
+            alias,
           }
         }
       ]

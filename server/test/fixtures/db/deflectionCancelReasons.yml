@@ -21,8 +21,13 @@ items:
     name: 'Release on Scene'
     createdBy: '@user1'
     updatedBy: '@user1'
-  facility_emergency:
-    id: 'facility_emergency'
-    name: 'Facility Emergency'
+  no_chairs_available:
+    id: 'no_chairs_available'
+    name: 'No chairs available'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  staffing_shortage:
+    id: 'staffing_shortage'
+    name: 'Staffing shortage'
     createdBy: '@user1'
     updatedBy: '@user1'
