@@ -61,7 +61,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
             </Button>
           )}
           {isInMedicalIntake && (
-            <Button size='md' onClick={onCompleteIntake}>Update intake status</Button>
+            <Button size='md' data-testid='update-intake-status-btn' onClick={onCompleteIntake}>Update intake status</Button>
           )}
           {isReleased && (
             <Button size='md' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>

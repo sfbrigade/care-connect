@@ -16,6 +16,9 @@ export async function apiLogin (page, email, password) {
 }
 
 export async function login (page, email, password) {
+  // Clear any existing session so serial-mode tests don't carry an earlier user's cookie
+  // into this login — otherwise Login.jsx sees authContext.user and redirects away.
+  await page.context().clearCookies();
   await page.goto('/');
 
   // Wait for either RESET button or login form to appear
@@ -52,7 +55,7 @@ export async function login (page, email, password) {
 
   await loginEmailField.fill(email);
   await page.getByPlaceholder('Enter password').fill(password);
-  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByTestId('login-submit-btn').click();
 
   // After login, wait for final destination — handle facility selector or unit selector if they appear
   for (let i = 0; i < 5; i++) {

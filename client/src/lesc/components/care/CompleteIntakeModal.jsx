@@ -55,6 +55,7 @@ function CompleteIntakeModal ({
             Failed intake - return to Deputy
           </Button>
           <Button
+            data-testid='intake-confirm-btn'
             color='indigo'
             size='lg'
             radius='xl'

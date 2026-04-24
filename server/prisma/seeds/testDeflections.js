@@ -138,6 +138,79 @@ export default async function main (prisma) {
     console.log(`  Created deflection #${deflection.id} (${subjectData.firstName} ${subjectData.lastName}) — ${subjectStatus}`);
   }
 
+  // Create a rich deflection for PDF field verification tests (849b, cert)
+  const pdfTestSubject = await prisma.subject.create({
+    data: {
+      firstName: 'Swilly',
+      lastName: 'Willy',
+      middleInitial: 'Q',
+      dateOfBirth: new Date('2001-10-01'),
+      sex: 'MALE',
+      race: 'WHITE',
+      addressLine1: '123 Test St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+      driverLicense: 'D1234567',
+    },
+  });
+
+  const pdfTestIncident = await prisma.incident.create({
+    data: {
+      facilityId: facility.id,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+      arrestedAt: new Date(),
+      encounteredVia: 'ON_VIEW',
+      cadNumber: 'CAD849B',
+      caseNumber: 'CS849B',
+      supervisorBadgeNumber: '9999',
+      arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
+      leftAt: new Date(),
+      completedAt: new Date(),
+      createdById: sfpdUser.id,
+      createdByOrganizationId: sfpdUser.organizationId,
+      createdByBadgeNumber: sfpdUser.badgeNumber,
+      updatedById: sfpdUser.id,
+    },
+  });
+
+  const releaseReason = await prisma.deflectionReleaseReason.findFirst({
+    where: { id: 'sobered' },
+  });
+
+  const pdfTestNow = new Date();
+  const pdfTestDeflection = await prisma.deflection.create({
+    data: {
+      facilityId: facility.id,
+      incidentId: pdfTestIncident.id,
+      bedTypeId: bedType.id,
+      subjectId: pdfTestSubject.id,
+      subjectStatus: 'RELEASED',
+      status: 'COMPLETED',
+      createdById: sfpdUser.id,
+      currentOfficerId: sfpdUser.id,
+      narcoticsSubstance: true,
+      narcoticsParaphernalia: true,
+      drugType: 'FENTANYL',
+      behavior: 'Officer encountered this individual at 100 Market St, San Francisco, CA. Officer observed the following behaviors: Disoriented to person/place/time. Officer observed that drugs were recently used: Fentanyl.',
+      releaseNarrative: 'Incident number: CS849B\nCad number: CAD849B\nSubject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
+      property: 'SMALL',
+      transferredAt: pdfTestNow,
+      transferredById: sfsoUser.id,
+      admittedAt: pdfTestNow,
+      admittedById: sfsoUser.id,
+      releasedAt: pdfTestNow,
+      releasedById: sfsoUser.id,
+      releaseReasonId: releaseReason?.id || 'sobered',
+      completedAt: pdfTestNow,
+    },
+  });
+
+  console.log(`  Created PDF test deflection #${pdfTestDeflection.id} (Swilly Willy) — RELEASED (rich data for 849b/cert tests)`);
+
   // Update bed type counts to reflect seeded deflections
   if (holdsCount > 0 || occupiedCount > 0) {
     await prisma.bedType.update({

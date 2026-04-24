@@ -569,6 +569,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       {careFooterState.showFooter && (
         <ActionFooter>
           <Button
+            data-testid='complete-intake-btn'
             variant='secondary'
             onClick={() => {
               if (careFooterState.primaryAction === 'complete-intake') {
@@ -697,6 +698,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Menu>
                   )}
                   <Button
+                    data-testid={isAwaitingSafetyCheck ? 'safety-check-btn' : (showPrimaryPrintCertificate ? 'print-certificate-btn' : 'start-release-btn')}
                     onClick={() => {
                       if (isAwaitingSafetyCheck) {
                         setSafetyCheckResultModalOpened(true);

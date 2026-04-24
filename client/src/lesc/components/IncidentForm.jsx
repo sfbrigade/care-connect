@@ -245,6 +245,7 @@ function IncidentForm () {
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
+                  data-testid='incident-arrest-location'
                   label={
                     <>
                       Arrest location<span>*</span>
@@ -264,6 +265,7 @@ function IncidentForm () {
               {showAddressForm && (
                 <>
                   <AddressAutocomplete
+                    data-testid='incident-address-line1'
                     ref={addressRef}
                     form={form}
                     field='addressLine1'
@@ -283,6 +285,7 @@ function IncidentForm () {
                     label='Arrest address line 2'
                   />
                   <TextInput
+                    data-testid='incident-city'
                     key={form.key('city')}
                     {...form.getInputProps('city')}
                     label={
@@ -293,6 +296,7 @@ function IncidentForm () {
                   />
                   <Group wrap='nowrap'>
                     <TextInput
+                      data-testid='incident-state'
                       key={form.key('state')}
                       {...form.getInputProps('state')}
                       label={
@@ -323,6 +327,7 @@ function IncidentForm () {
                 onFocus={() => setShowAddressForm(false)}
               />
               <ChipInput
+                data-testid='incident-encountered-via'
                 {...form.getInputProps('encounteredVia')}
                 key={form.key('encounteredVia')}
                 label={<>Encountered via<span>*</span></>}
@@ -333,6 +338,7 @@ function IncidentForm () {
               />
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-cad'
                   key={form.key('cadNumber')}
                   {...cadNumberInputProps}
                   label={
@@ -362,6 +368,7 @@ function IncidentForm () {
               </Stack>
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-case'
                   key={form.key('caseNumber')}
                   {...form.getInputProps('caseNumber')}
                   label={
@@ -380,6 +387,7 @@ function IncidentForm () {
               </Stack>
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-star'
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
@@ -397,7 +405,7 @@ function IncidentForm () {
                   Add Star Number before custody transfer.
                 </Text>
               </Stack>
-              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
+              <Button data-testid='incident-submit-btn' type='submit' style={{ alignSelf: 'flex-start' }}>
                 {isConfirmIncidentFlow ? 'Continue to person details' : isEditing ? 'Save incident details' : 'Create incident & hold'}
               </Button>
             </Stack>
