@@ -518,6 +518,7 @@ function Holds () {
             </Menu.Dropdown>
           </Menu>
           <Button
+            data-testid='hold-a-chair-btn'
             onClick={onHoldClick}
             disabled={isHoldButtonDisabled && !isHoldPlacementDelayed}
             aria-disabled={isHoldButtonDisabled}

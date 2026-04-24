@@ -128,7 +128,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
             {canAddDetails && (
               <Group gap='sm' wrap='nowrap'>
                 <Button size='md' variant='destructive' onClick={onCancelClick}>Cancel</Button>
-                <Button size='md' onClick={onDetailsClick}>Add Details</Button>
+                <Button data-testid='add-details-btn' size='md' onClick={onDetailsClick}>Add Details</Button>
               </Group>
             )}
             {canFinishDetails && (
