@@ -50,7 +50,7 @@ function AdjustAvailability ({ facility, bedType, onCancel }) {
   const needsReason = hasCount && unavailableCount > 0;
   const hasReason = !!unavailableReasonId;
 
-  // Preview: how many holds would be cancelled
+  // Preview: how many holds would be canceled
   const newAvailable = hasCount
     ? bedType.capacity - unavailableCount - bedType.unavailableOccupied - bedType.occupied
     : null;

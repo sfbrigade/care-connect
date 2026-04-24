@@ -27,7 +27,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const subjectDetails = rawSubjectDetails.length > 0 ? rawSubjectDetails : ['Age and sex missing'];
 
   const isNew = !deflection?.subjectId;
-  const isCancelled = deflection.status === 'CANCELLED';
+  const isCanceled = deflection.status === 'CANCELED';
   const isExpiredStatus = deflection.status === 'EXPIRED';
   const expiresAt = deflection?.expiresAt;
   const isValid = isValidDeflection(deflection);
@@ -41,10 +41,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isExpired = isExpiredBeforeTransfer(deflection, now);
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
-  const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const canViewDetails = !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
-  const canFinishDetails = !isHandedOff && isActive && !isNew && !isValid && !isExpired && !isCancelled;
-  const canAddDetails = !isHandedOff && isActive && isNew && !isExpired && !isCancelled;
+  const hasIncompleteDetails = isActive && !isNew && !isValid && !isCanceled && !isExpired;
+  const canViewDetails = !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCanceled || isExpired || isCustodyTransferred);
+  const canFinishDetails = !isHandedOff && isActive && !isNew && !isValid && !isExpired && !isCanceled;
+  const canAddDetails = !isHandedOff && isActive && isNew && !isExpired && !isCanceled;
   const showFooter = !isHandedOff && (isActive || canViewDetails);
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
@@ -67,10 +67,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
                 <Text size='md' c='red.6'>Details incomplete</Text>
               </>
             )}
-            {isCancelled && (
+            {isCanceled && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='yellow.7'>Canceled at {formatTime(deflection?.cancelledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
+                <Text size='md' c='yellow.7'>Canceled at {formatTime(deflection?.canceledAt)}{cancelReasonLabel ? ` (${cancelReasonLabel})` : ''}</Text>
               </>
             )}
             {isExpired && (

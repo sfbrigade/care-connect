@@ -45,33 +45,33 @@ test('Hold cancellation edge cases', async (t) => {
     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
     const updated = JSON.parse(response.body);
 
-    // After expire: holds = 4. available = 10 - 7 - 0 - 0 - 4 = -1, so 1 hold cancelled.
+    // After expire: holds = 4. available = 10 - 7 - 0 - 0 - 4 = -1, so 1 hold canceled.
     // Final: holds = 3, available = 10 - 7 - 0 - 0 - 3 = 0
     assert.deepStrictEqual(updated.holds, 3);
     assert.deepStrictEqual(updated.inTransit, 2);
     assert.deepStrictEqual(updated.available, 0);
     assert.deepStrictEqual(updated.unavailableUnoccupied, 7);
 
-    // Verify the most recently created in-transit hold was cancelled (LIFO)
-    const cancelledHolds = await app.prisma.deflection.findMany({
+    // Verify the most recently created in-transit hold was canceled (LIFO)
+    const canceledHolds = await app.prisma.deflection.findMany({
       where: {
         bedTypeId: BED_TYPE_ID,
         facilityId: FACILITY_ID,
-        status: Deflection.HoldStatus.CANCELLED,
-        cancelledById: { not: null },
+        status: Deflection.HoldStatus.CANCELED,
+        canceledById: { not: null },
       },
       orderBy: { createdAt: 'desc' },
     });
-    assert.ok(cancelledHolds.length >= 1, 'Expected at least 1 auto-cancelled hold');
+    assert.ok(canceledHolds.length >= 1, 'Expected at least 1 auto-canceled hold');
 
     // Verify deflectionUpdate audit record was created
     const cancelUpdate = await app.prisma.deflectionUpdate.findFirst({
       where: {
-        deflectionId: cancelledHolds[0].id,
-        status: Deflection.HoldStatus.CANCELLED,
+        deflectionId: canceledHolds[0].id,
+        status: Deflection.HoldStatus.CANCELED,
       },
     });
-    assert.ok(cancelUpdate, 'Expected deflectionUpdate audit record for auto-cancelled hold');
+    assert.ok(cancelUpdate, 'Expected deflectionUpdate audit record for auto-canceled hold');
   });
 
   await t.test('POST facility status CLOSED: cancels all active in-transit holds', async () => {
@@ -100,7 +100,7 @@ test('Hold cancellation edge cases', async (t) => {
     const data = JSON.parse(response.body);
     assert.deepStrictEqual(data.status, Facility.Status.CLOSED);
 
-    // All in-transit holds should now be cancelled
+    // All in-transit holds should now be canceled
     const inTransitAfter = await app.prisma.deflection.count({
       where: {
         facilityId: FACILITY_ID,
@@ -108,9 +108,9 @@ test('Hold cancellation edge cases', async (t) => {
         subjectStatus: Deflection.SubjectStatus.DETAINED,
       },
     });
-    assert.deepStrictEqual(inTransitAfter, 0, 'All in-transit holds should be cancelled after facility closure');
+    assert.deepStrictEqual(inTransitAfter, 0, 'All in-transit holds should be canceled after facility closure');
 
-    // Non-in-transit active holds (e.g., READY_FOR_INTAKE) should NOT be cancelled
+    // Non-in-transit active holds (e.g., READY_FOR_INTAKE) should NOT be canceled
     const nonTransitActive = await app.prisma.deflection.count({
       where: {
         facilityId: FACILITY_ID,
@@ -124,7 +124,7 @@ test('Hold cancellation edge cases', async (t) => {
     const bedType = await app.prisma.bedType.findUnique({
       where: { id: BED_TYPE_ID },
     });
-    // holds should have decreased by the number of in-transit holds cancelled
+    // holds should have decreased by the number of in-transit holds canceled
     assert.ok(bedType.holds < inTransitBefore + bedType.holds, 'Bed type holds should have decreased');
     assert.deepStrictEqual(bedType.inTransit, 0, 'Bed type in-transit should be 0');
   });

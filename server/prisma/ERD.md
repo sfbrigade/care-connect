@@ -72,7 +72,7 @@ OTHER OTHER
 
         HoldStatusEnum {
             ACTIVE ACTIVE
-CANCELLED CANCELLED
+CANCELED CANCELED
 EXPIRED EXPIRED
 COMPLETED COMPLETED
         }
@@ -447,8 +447,8 @@ DEPARTURE DEPARTURE
     HoldStatusEnum status 
     Int extensionCount 
     String cancelReasonId "❓"
-    DateTime cancelledAt "❓"
-    String cancelledById "❓"
+    DateTime canceledAt "❓"
+    String canceledById "❓"
     DateTime transferredAt "❓"
     String transferredById "❓"
     String transferredByBadgeNumber "❓"
@@ -761,7 +761,7 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
     "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
-    "Deflection" o|--|o "User" : "cancelledBy"
+    "Deflection" o|--|o "User" : "canceledBy"
     "Deflection" o|--|o "User" : "transferredBy"
     "Deflection" o|--|o "Organization" : "transferredByOrganization"
     "Deflection" o|--|o "Unit" : "transferredByUnit"

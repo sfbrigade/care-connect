@@ -98,9 +98,9 @@ describe('getSfpdDeflectionStatusChip', () => {
     expect(chip).toEqual({ label: 'Custody transferred', tone: 'success' });
   });
 
-  it('returns Canceled when hold is cancelled', () => {
+  it('returns Canceled when hold is canceled', () => {
     const chip = getSfpdDeflectionStatusChip({
-      deflection: buildDeflection({ status: 'CANCELLED' }),
+      deflection: buildDeflection({ status: 'CANCELED' }),
       incident: buildIncident(),
     });
     expect(chip).toEqual({ label: 'Canceled', tone: 'danger' });

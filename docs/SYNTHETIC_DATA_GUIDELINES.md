@@ -123,7 +123,7 @@ Each incident now has one or more `IncidentOfficer` rows:
 1. An incident can have one or more deflections.
 2. **Incident cancel**: The current `DELETE /incidents/:id` route allows cancellation of any active incident by the creator, an admin, or a full-handoff recipient who controls all remaining active holds.
 3. **Cancel with subject details**: If any deflection has a `subjectId`, a cancel reason is required.
-4. **Auto-completion**: Incident auto-completes when all pre-transfer deflections are cancelled/expired AND legacy `incident.arrivedAt == null`.
+4. **Auto-completion**: Incident auto-completes when all pre-transfer deflections are canceled/expired AND legacy `incident.arrivedAt == null`.
 5. **Arrived**: `PATCH /incidents/:id/arrived` updates the requesting officer's `IncidentOfficer.arrivedAt` and only that officer's active deflections move `DETAINED → ONSITE_AWAITING_TRANSFER`.
 6. **Legacy incident arrival field**: `incident.arrivedAt` is only set when the creator marks arrived; downstream logic still uses it for some completion checks.
 7. **Leave**: `PATCH /incidents/:id/left` updates the requesting officer's `IncidentOfficer.leftAt`; `incident.completedAt` is set once no active holds remain.
@@ -150,7 +150,7 @@ Each incident now has one or more `IncidentOfficer` rows:
 | `facilityId` | UUID | Facility for this hold |
 | `bedTypeId` | UUID | Which bed type is reserved |
 | `subjectId` | UUID? | Subject record (nullable; added when details entered) |
-| `status` | HoldStatusEnum | `ACTIVE`, `CANCELLED`, `EXPIRED`, `COMPLETED` |
+| `status` | HoldStatusEnum | `ACTIVE`, `CANCELED`, `EXPIRED`, `COMPLETED` |
 | `subjectStatus` | SubjectStatusEnum | Person's current state (see below) |
 | `expiresAt` | DateTime | Default: 1 hour after creation |
 | `extensionCount` | Int | Number of times hold was extended (default 0) |
@@ -160,7 +160,7 @@ Each incident now has one or more `IncidentOfficer` rows:
 
 ```
 ACTIVE      → Hold is open and in progress
-CANCELLED   → Cancelled by a user
+CANCELED   → Canceled by a user
 EXPIRED     → Automatically expired (expiresAt passed without completion)
 COMPLETED   → Person has exited/been released (terminal state)
 ```
@@ -231,14 +231,14 @@ Death Paths (from any in-custody or released state):
     └─ [/record-death] ────────────────────────────────────→ DEATH_IN_FACILITY
 
 Cancellation (from ACTIVE hold, any subject status):
-  ACTIVE hold ──────────────────────────────────────────→ status = CANCELLED
+  ACTIVE hold ──────────────────────────────────────────→ status = CANCELED
 
 Auto-expiration (job only expires DETAINED holds whose expiresAt passed):
   ACTIVE + DETAINED ────────────────────────────────────→ status = EXPIRED
   (nightly job: expireHolds.js)
 
-Reopen (only from CANCELLED or EXPIRED):
-  CANCELLED/EXPIRED ─────────────────────────────────────→ ACTIVE
+Reopen (only from CANCELED or EXPIRED):
+  CANCELED/EXPIRED ─────────────────────────────────────→ ACTIVE
 ```
 
 ### Hold Status Groupings (used in business logic)
@@ -427,12 +427,12 @@ Subjects can be created standalone or inline during deflection creation.
    → hold status typically remains ACTIVE in the current codebase
 ```
 
-#### Scenario B: Cancelled / No Capacity Scenario
+#### Scenario B: Canceled / No Capacity Scenario
 ```
 1. Create incident
 2. Create deflection → subjectStatus: DETAINED, holdStatus: ACTIVE
 3. DELETE deflection (cancel with reason)
-   → holdStatus: CANCELLED, holds-1, available+1
+   → holdStatus: CANCELED, holds-1, available+1
 4. If no remaining active pre-transfer deflections and incident.arrivedAt==null → incident auto-completes
 ```
 
@@ -528,7 +528,7 @@ Subjects can be created standalone or inline during deflection creation.
 #### Subject Status Terminal Distribution
 - `EXITED`: ~80% of completed holds
 - `DEATH_IN_CUSTODY`/`DEATH_IN_FACILITY`: ~1% (rare)
-- `CANCELLED`: ~10–15% of all holds
+- `CANCELED`: ~10–15% of all holds
 - `EXPIRED`: ~5–10% of all holds
 
 ---
@@ -600,7 +600,7 @@ When generating synthetic data, generate corresponding audit records to ensure a
 ## Key Enums Reference
 
 ```
-HoldStatusEnum:       ACTIVE | CANCELLED | EXPIRED | COMPLETED
+HoldStatusEnum:       ACTIVE | CANCELED | EXPIRED | COMPLETED
 SubjectStatusEnum:    DETAINED | ONSITE_AWAITING_TRANSFER | AWAITING_INTAKE |
                       READY_FOR_INTAKE | FAILED_INTAKE | ADMITTED | IN_CHAIR |
                       RELEASED | EXITED | DEATH_IN_FACILITY | DEATH_IN_CUSTODY

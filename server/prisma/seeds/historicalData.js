@@ -293,10 +293,10 @@ export default async function main (prisma) {
     ...Array.from({ length: 20 }, () => ({ type: 'full_exit', daysAgoMin: 3, daysAgoMax: 90 })),
     // 2 officer handoff happy paths
     ...Array.from({ length: 2 }, () => ({ type: 'handoff_full_exit', daysAgoMin: 3, daysAgoMax: 90 })),
-    // 7 cancelled before arrival
-    ...Array.from({ length: 7 }, () => ({ type: 'cancelled_early', daysAgoMin: 2, daysAgoMax: 90 })),
-    // 3 cancelled after transfer to custody
-    ...Array.from({ length: 3 }, () => ({ type: 'cancelled_after_transfer', daysAgoMin: 2, daysAgoMax: 80 })),
+    // 7 canceled before arrival
+    ...Array.from({ length: 7 }, () => ({ type: 'canceled_early', daysAgoMin: 2, daysAgoMax: 90 })),
+    // 3 canceled after transfer to custody
+    ...Array.from({ length: 3 }, () => ({ type: 'canceled_after_transfer', daysAgoMin: 2, daysAgoMax: 80 })),
     // 4 hospital direct exits
     ...Array.from({ length: 4 }, () => ({ type: 'hospital_exit', daysAgoMin: 5, daysAgoMax: 85 })),
     // 3 failed intake → released → exited
@@ -454,7 +454,7 @@ export default async function main (prisma) {
           updatedById: careUser.id
         },
       ]);
-    } else if (type === 'cancelled_early') {
+    } else if (type === 'canceled_early') {
       const tCancel = addMins(base, randInt(5, 60));
       const cancelReason = pick(cancelReasons);
       const incident = await prisma.incident.create({
@@ -466,16 +466,16 @@ export default async function main (prisma) {
           incidentId: incident.id,
           subjectId: subject.id,
           subjectStatus: 'DETAINED',
-          status: 'CANCELLED',
+          status: 'CANCELED',
           cancelReasonId: cancelReason.id,
-          cancelledAt: tCancel,
-          cancelledById: fieldUser.id,
+          canceledAt: tCancel,
+          canceledById: fieldUser.id,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
-        { status: 'CANCELLED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: fieldUser.id },
+        { status: 'CANCELED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: fieldUser.id },
       ]);
-    } else if (type === 'cancelled_after_transfer') {
+    } else if (type === 'canceled_after_transfer') {
       const tCancel = addMins(tTransfer, randInt(10, 90));
       const cancelReason = pick(cancelReasons);
       const incident = await prisma.incident.create({
@@ -488,16 +488,16 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'AWAITING_INTAKE',
-          status: 'CANCELLED',
+          status: 'CANCELED',
           cancelReasonId: cancelReason.id,
-          cancelledAt: tCancel,
-          cancelledById: custodyUser.id,
+          canceledAt: tCancel,
+          canceledById: custodyUser.id,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
-        { status: 'CANCELLED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: custodyUser.id },
+        { status: 'CANCELED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: custodyUser.id },
       ]);
     } else if (type === 'hospital_exit') {
       const tHospital = addMins(tSafetyCheck, randInt(5, 30));

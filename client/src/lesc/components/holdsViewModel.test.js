@@ -4,11 +4,11 @@ import {
   SFPD_ACTIVE_SUBJECT_STATUSES,
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
   buildActiveHoldDisplayDeflections,
-  buildAdminCancelledHoldsMessage,
+  buildAdminCanceledHoldsMessage,
   buildIncidentSubtitle,
   buildHistoryDisplayDeflections,
-  buildAutoCancelledHoldsMessage,
-  detectAutoCancelledExpiredHolds,
+  buildAutoCanceledHoldsMessage,
+  detectAutoCanceledExpiredHolds,
   getExpiredDeflectionsForIncident,
   getDeflectionActivityMs,
   getTransferredDeflectionsForIncident,
@@ -124,7 +124,7 @@ describe('holdsViewModel', () => {
   it('returns expired deflections for the current incident only', () => {
     const expired = getExpiredDeflectionsForIncident([
       deflection({ id: 1, incidentId: 100, status: 'EXPIRED' }),
-      deflection({ id: 2, incidentId: 100, status: 'CANCELLED' }),
+      deflection({ id: 2, incidentId: 100, status: 'CANCELED' }),
       deflection({ id: 3, incidentId: 200, status: 'EXPIRED' }),
     ], 100);
 
@@ -132,12 +132,12 @@ describe('holdsViewModel', () => {
   });
 
   it('builds singular and plural auto-cancel copy', () => {
-    expect(buildAutoCancelledHoldsMessage(1)).toBe('1 hold was auto-canceled because it expired.');
-    expect(buildAutoCancelledHoldsMessage(3)).toBe('3 holds were auto-canceled because they expired.');
+    expect(buildAutoCanceledHoldsMessage(1)).toBe('1 hold was auto-canceled because it expired.');
+    expect(buildAutoCanceledHoldsMessage(3)).toBe('3 holds were auto-canceled because they expired.');
   });
 
   it('detects expired holds removed while some holds remain active', () => {
-    const notice = detectAutoCancelledExpiredHolds({
+    const notice = detectAutoCanceledExpiredHolds({
       previousDeflectionIds: [1, 2],
       currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
       historyDeflections: [deflection({ id: 2, incidentId: 100, status: 'EXPIRED' })],
@@ -147,7 +147,7 @@ describe('holdsViewModel', () => {
   });
 
   it('detects expired holds across multiple incidents and when nothing remains active', () => {
-    const notice = detectAutoCancelledExpiredHolds({
+    const notice = detectAutoCanceledExpiredHolds({
       previousDeflectionIds: [1, 2],
       currentDeflections: [],
       historyDeflections: [
@@ -205,47 +205,47 @@ describe('holdsViewModel', () => {
   it('ignores expiresAt (a future deadline) when calculating hold activity recency', () => {
     const result = getDeflectionActivityMs(deflection({
       updatedAt: '2026-02-27T09:00:00.000Z',
-      cancelledAt: '2026-02-27T09:00:00.000Z',
+      canceledAt: '2026-02-27T09:00:00.000Z',
       expiresAt: '2026-02-27T15:00:00.000Z',
     }));
     expect(result).toBe(new Date('2026-02-27T09:00:00.000Z').getTime());
   });
 
-  describe('buildAdminCancelledHoldsMessage', () => {
+  describe('buildAdminCanceledHoldsMessage', () => {
     it('builds single hold message with person name', () => {
-      expect(buildAdminCancelledHoldsMessage({
+      expect(buildAdminCanceledHoldsMessage({
         count: 1,
-        allCancelled: false,
+        allCanceled: false,
         personName: 'Jane Doe',
         facilityName: 'RESET',
-      })).toBe('RESET cancelled hold for Jane Doe. Do not bring this person to RESET.');
+      })).toBe('RESET canceled hold for Jane Doe. Do not bring this person to RESET.');
     });
 
-    it('builds all-cancelled message', () => {
-      expect(buildAdminCancelledHoldsMessage({
+    it('builds all-canceled message', () => {
+      expect(buildAdminCanceledHoldsMessage({
         count: 2,
-        allCancelled: true,
+        allCanceled: true,
         personName: 'Jane Doe',
         facilityName: 'RESET',
-      })).toBe('All active holds were cancelled by RESET. Incident was moved to History.');
+      })).toBe('All active holds were canceled by RESET. Incident was moved to History.');
     });
 
     it('builds single hold message without person name', () => {
-      expect(buildAdminCancelledHoldsMessage({
+      expect(buildAdminCanceledHoldsMessage({
         count: 1,
-        allCancelled: false,
+        allCanceled: false,
         personName: null,
         facilityName: 'RESET',
-      })).toBe('RESET cancelled hold for this person. Do not bring this person to RESET.');
+      })).toBe('RESET canceled hold for this person. Do not bring this person to RESET.');
     });
 
     it('builds multi-hold message', () => {
-      expect(buildAdminCancelledHoldsMessage({
+      expect(buildAdminCanceledHoldsMessage({
         count: 3,
-        allCancelled: false,
+        allCanceled: false,
         personName: null,
         facilityName: 'RESET',
-      })).toBe('RESET cancelled 3 holds. Do not bring these persons to RESET.');
+      })).toBe('RESET canceled 3 holds. Do not bring these persons to RESET.');
     });
   });
 

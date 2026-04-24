@@ -79,7 +79,7 @@ enum FacilityEligibilityTypeEnum {
 
 enum HoldStatusEnum {
   ACTIVE
-  CANCELLED
+  CANCELED
   EXPIRED
   COMPLETED
 }
@@ -247,7 +247,7 @@ model User {
   deflectionExitDestinationsUpdated    DeflectionExitDestination[]   @relation("UpdatedBy")
   deflectionExitHousingStatusesCreated DeflectionExitHousingStatus[] @relation("CreatedBy")
   deflectionExitHousingStatusesUpdated DeflectionExitHousingStatus[] @relation("UpdatedBy")
-  deflectionsCancelled                 Deflection[]                  @relation("CancelledBy")
+  deflectionsCanceled                 Deflection[]                  @relation("CanceledBy")
   deflectionsCreated                   Deflection[]                  @relation("CreatedBy")
   deflectionsCurrentOfficer            Deflection[]                  @relation("CurrentOfficer")
   deflectionsTransferred               Deflection[]                  @relation("TransferredBy")
@@ -567,9 +567,9 @@ model Deflection {
   extensionCount               Int                     @default(0)
   cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
   cancelReasonId               String?
-  cancelledAt                  DateTime?
-  cancelledBy                  User?                   @relation("CancelledBy", fields: [cancelledById], references: [id])
-  cancelledById                String?                 @db.Uuid
+  canceledAt                  DateTime?
+  canceledBy                  User?                   @relation("CanceledBy", fields: [canceledById], references: [id])
+  canceledById                String?                 @db.Uuid
   transferredAt                DateTime?
   transferredBy                User?                   @relation("TransferredBy", fields: [transferredById], references: [id])
   transferredById              String?                 @db.Uuid

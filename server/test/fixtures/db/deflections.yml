@@ -19,14 +19,14 @@ items:
     subjectStatus: 'DETAINED'
     createdBy: '@user4'
     currentOfficer: '@user4'
-  deflection3Cancelled:
+  deflection3Canceled:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     incident: '@incident2'
     expiresAt: '2024-12-27T09:53:41-07:00'
-    status: 'CANCELLED'
+    status: 'CANCELED'
     subjectStatus: 'DETAINED'
-    cancelledAt: '2024-12-27T09:53:41-07:00'
+    canceledAt: '2024-12-27T09:53:41-07:00'
     createdBy: '@user4'
     currentOfficer: '@user4'
   deflection4Active:

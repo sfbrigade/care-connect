@@ -10,7 +10,7 @@ test('647f hospital cancellation appends the release narrative', () => {
     narcoticsSubstance: false,
     narcoticsParaphernalia: true,
     cancelReasonId: 'hospital',
-    cancelledAt: new Date('2025-04-15T17:35:00.000Z'),
+    canceledAt: new Date('2025-04-15T17:35:00.000Z'),
     subject: {
       firstName: 'Test',
       lastName: 'Client',

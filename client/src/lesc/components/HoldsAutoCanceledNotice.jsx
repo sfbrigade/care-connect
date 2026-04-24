@@ -1,10 +1,10 @@
 import { ActionIcon, Group, Text } from '@mantine/core';
 import { IconAlertCircle, IconX } from '@tabler/icons-react';
 
-import { buildAutoCancelledHoldsMessage } from './holdsViewModel';
-import classes from './HoldsAutoCancelledNotice.module.css';
+import { buildAutoCanceledHoldsMessage } from './holdsViewModel';
+import classes from './HoldsAutoCanceledNotice.module.css';
 
-function HoldsAutoCancelledNotice ({ count, message, onClose }) {
+function HoldsAutoCanceledNotice ({ count, message, onClose }) {
   return (
     <Group
       align='center'
@@ -18,7 +18,7 @@ function HoldsAutoCancelledNotice ({ count, message, onClose }) {
     >
       <IconAlertCircle size={32} color='var(--mantine-color-red-6)' />
       <Text c='dark.9' flex={1} fz='md' fw={400} lh='md' pr='sm'>
-        {message || buildAutoCancelledHoldsMessage(count)}
+        {message || buildAutoCanceledHoldsMessage(count)}
       </Text>
       <ActionIcon
         aria-label='Dismiss auto-canceled holds notice'
@@ -34,4 +34,4 @@ function HoldsAutoCancelledNotice ({ count, message, onClose }) {
   );
 }
 
-export default HoldsAutoCancelledNotice;
+export default HoldsAutoCanceledNotice;

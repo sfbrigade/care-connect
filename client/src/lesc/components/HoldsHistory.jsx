@@ -50,7 +50,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
           <Box bdrs='50%' bg='gray.1' w='160px' h='160px' mx='auto' />
           <Box align='center'>
             <Title order={4}>You don't have any past holds</Title>
-            <Text size='md' c='dimmed'>Completed, cancelled, and expired holds will show up here.</Text>
+            <Text size='md' c='dimmed'>Completed, canceled, and expired holds will show up here.</Text>
           </Box>
         </>
       )}

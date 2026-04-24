@@ -26,9 +26,9 @@ import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import {
   SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
-  buildAdminCancelledHoldsMessage,
+  buildAdminCanceledHoldsMessage,
   buildHistoryDisplayDeflections,
-  detectAutoCancelledExpiredHolds,
+  detectAutoCanceledExpiredHolds,
   mergeHistoryDeflections,
 } from './holdsViewModel';
 import classes from './Holds.module.css';
@@ -57,7 +57,7 @@ function buildBlankIncident (facilityId) {
   };
 }
 
-function parseAutoCancelledNoticeState (value) {
+function parseAutoCanceledNoticeState (value) {
   if (!value) return null;
 
   try {
@@ -148,12 +148,12 @@ function Holds () {
   const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, null, allActiveDeflections.length > 0);
 
   const [tab, setTab] = useSessionState('holds', 'active');
-  const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
-  const autoCancelledNotice = parseAutoCancelledNoticeState(autoCancelledNoticeState);
-  const [adminCancelledNoticeState, setAdminCancelledNoticeState] = useSessionState('holds-admin-cancelled-notice', '');
-  const adminCancelledNotice = parseAutoCancelledNoticeState(adminCancelledNoticeState);
+  const [autoCanceledNoticeState, setAutoCanceledNoticeState] = useSessionState('holds-auto-canceled-notice', '');
+  const autoCanceledNotice = parseAutoCanceledNoticeState(autoCanceledNoticeState);
+  const [adminCanceledNoticeState, setAdminCanceledNoticeState] = useSessionState('holds-admin-canceled-notice', '');
+  const adminCanceledNotice = parseAutoCanceledNoticeState(adminCanceledNoticeState);
   const previousActiveDeflectionIdsRef = useRef([]);
-  const pendingAutoCancelledCheckRef = useRef(null);
+  const pendingAutoCanceledCheckRef = useRef(null);
 
   const lastSyncedAtMs = myHoldsUpdatedAt ?? 0;
 
@@ -163,32 +163,32 @@ function Holds () {
       .filter((id) => !currentDeflectionIds.includes(id));
 
     if (removedDeflectionIds.length > 0) {
-      pendingAutoCancelledCheckRef.current = {
+      pendingAutoCanceledCheckRef.current = {
         deflectionIds: removedDeflectionIds,
       };
     }
 
-    const pendingCheck = pendingAutoCancelledCheckRef.current;
-    const detectedNotice = detectAutoCancelledExpiredHolds({
+    const pendingCheck = pendingAutoCanceledCheckRef.current;
+    const detectedNotice = detectAutoCanceledExpiredHolds({
       previousDeflectionIds: pendingCheck?.deflectionIds ?? [],
       currentDeflections: allActiveDeflections,
       historyDeflections,
     });
 
     if (detectedNotice) {
-      setAutoCancelledNoticeState(JSON.stringify(detectedNotice));
-      pendingAutoCancelledCheckRef.current = null;
+      setAutoCanceledNoticeState(JSON.stringify(detectedNotice));
+      pendingAutoCanceledCheckRef.current = null;
     } else if (pendingCheck) {
       const matchedHistoryDeflectionCount = historyDeflections
         .filter((deflection) => pendingCheck.deflectionIds.includes(deflection.id))
         .length;
 
       if (matchedHistoryDeflectionCount === pendingCheck.deflectionIds.length) {
-        pendingAutoCancelledCheckRef.current = null;
+        pendingAutoCanceledCheckRef.current = null;
       }
     }
 
-    // Check for admin-cancelled holds by fetching removed deflections directly
+    // Check for admin-canceled holds by fetching removed deflections directly
     if (removedDeflectionIds.length > 0 && !detectedNotice) {
       (async () => {
         try {
@@ -196,27 +196,27 @@ function Holds () {
             Promise.all(removedDeflectionIds.map(id => Api.deflections.get(id).then(r => r.data))),
             Api.facilities.get(facility.id).then(r => r.data),
           ]);
-          const adminCancelled = removed.filter(d =>
-            d.status === 'CANCELLED' &&
-            d.cancelledById &&
-            d.cancelledById !== user?.id
+          const adminCanceled = removed.filter(d =>
+            d.status === 'CANCELED' &&
+            d.canceledById &&
+            d.canceledById !== user?.id
           );
-          if (adminCancelled.length > 0) {
-            const allCancelled = freshFacility.status === 'CLOSED';
-            const firstCancelled = adminCancelled[0];
+          if (adminCanceled.length > 0) {
+            const allCanceled = freshFacility.status === 'CLOSED';
+            const firstCanceled = adminCanceled[0];
             const personName = [
-              firstCancelled.subject?.firstName,
-              firstCancelled.subject?.lastName,
+              firstCanceled.subject?.firstName,
+              firstCanceled.subject?.lastName,
             ].filter(Boolean).join(' ') || null;
-            const message = buildAdminCancelledHoldsMessage({
-              count: adminCancelled.length,
-              allCancelled,
+            const message = buildAdminCanceledHoldsMessage({
+              count: adminCanceled.length,
+              allCanceled,
               personName,
               facilityName: facility?.name || 'Facility',
             });
-            setAdminCancelledNoticeState(JSON.stringify({
-              count: adminCancelled.length,
-              allCancelled,
+            setAdminCanceledNoticeState(JSON.stringify({
+              count: adminCanceled.length,
+              allCanceled,
               message,
             }));
           }
@@ -228,22 +228,22 @@ function Holds () {
 
     previousActiveDeflectionIdsRef.current = currentDeflectionIds;
   }, [
-    autoCancelledNotice,
+    autoCanceledNotice,
     allActiveDeflections.length,
     historyDeflections,
-    setAutoCancelledNoticeState,
-    setAdminCancelledNoticeState,
-    adminCancelledNotice,
+    setAutoCanceledNoticeState,
+    setAdminCanceledNoticeState,
+    adminCanceledNotice,
     user?.id,
     facility?.name,
   ]);
 
-  function onDismissAutoCancelledNotice () {
-    setAutoCancelledNoticeState('');
+  function onDismissAutoCanceledNotice () {
+    setAutoCanceledNoticeState('');
   }
 
-  function onDismissAdminCancelledNotice () {
-    setAdminCancelledNoticeState('');
+  function onDismissAdminCanceledNotice () {
+    setAdminCanceledNoticeState('');
   }
 
   const markArrivedMutation = useMutation({
@@ -364,10 +364,10 @@ function Holds () {
       const count = selectedDeflections.length;
       onCloseCancelModal();
       showToast(
-        count > 1 ? `${count} holds cancelled` : 'Hold cancelled',
+        count > 1 ? `${count} holds canceled` : 'Hold canceled',
         'success',
         4000,
-        count > 1 ? `You cancelled ${count} holds.` : 'You cancelled the hold.'
+        count > 1 ? `You canceled ${count} holds.` : 'You canceled the hold.'
       );
     },
     onError: (error) => {
@@ -475,10 +475,10 @@ function Holds () {
               onCancelHoldClick={onCancelHoldClick}
               onEditIncidentClick={onEditIncidentClick}
               onHandoffClick={onHandoffClick}
-              autoCancelledNotice={autoCancelledNotice}
-              onDismissAutoCancelledNotice={onDismissAutoCancelledNotice}
-              adminCancelledNotice={adminCancelledNotice}
-              onDismissAdminCancelledNotice={onDismissAdminCancelledNotice}
+              autoCanceledNotice={autoCanceledNotice}
+              onDismissAutoCanceledNotice={onDismissAutoCanceledNotice}
+              adminCanceledNotice={adminCanceledNotice}
+              onDismissAdminCanceledNotice={onDismissAdminCanceledNotice}
               updatedAtMs={lastSyncedAtMs}
               holdsHighlighted={holdsHighlighted}
               currentUserId={user?.id}

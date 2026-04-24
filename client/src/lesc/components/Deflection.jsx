@@ -58,8 +58,8 @@ function Deflection () {
     'DEATH_IN_FACILITY',
     'DEATH_IN_CUSTODY',
   ].includes(deflection?.subjectStatus);
-  const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
-  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
+  const isExpiredAutoCanceled = isExpiredBeforeTransfer(deflection, DateTime.now());
+  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCanceled && !isCustodyTransferred;
   const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
@@ -87,7 +87,7 @@ function Deflection () {
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       setShowCancelModal(false);
-      showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
+      showToast('Hold canceled', 'success', 4000, `You canceled the hold for ${name}.`);
       navigate('/holds');
     },
     onError: (error) => {

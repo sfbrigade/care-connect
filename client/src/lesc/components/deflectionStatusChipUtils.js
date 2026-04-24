@@ -30,7 +30,7 @@ export function isExpiredBeforeTransfer (deflection, now) {
 export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateTime.now() }) {
   if (!deflection) return null;
 
-  if (deflection.status === 'CANCELLED') {
+  if (deflection.status === 'CANCELED') {
     return { label: 'Canceled', tone: 'danger' };
   }
 

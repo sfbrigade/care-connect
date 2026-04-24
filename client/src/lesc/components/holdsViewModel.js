@@ -75,7 +75,7 @@ export function getExpiredDeflectionsForIncident (deflections = [], incidentId) 
   ));
 }
 
-export function buildAutoCancelledHoldsMessage (count) {
+export function buildAutoCanceledHoldsMessage (count) {
   if (count === 1) {
     return '1 hold was auto-canceled because it expired.';
   }
@@ -83,7 +83,7 @@ export function buildAutoCancelledHoldsMessage (count) {
   return `${count} holds were auto-canceled because they expired.`;
 }
 
-export function detectAutoCancelledExpiredHolds ({
+export function detectAutoCanceledExpiredHolds ({
   previousDeflectionIds = [],
   currentDeflections = [],
   historyDeflections = [],
@@ -106,15 +106,15 @@ export function detectAutoCancelledExpiredHolds ({
   };
 }
 
-export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personName, facilityName }) {
-  if (allCancelled) {
-    return `All active holds were cancelled by ${facilityName}. Incident was moved to History.`;
+export function buildAdminCanceledHoldsMessage ({ count, allCanceled, personName, facilityName }) {
+  if (allCanceled) {
+    return `All active holds were canceled by ${facilityName}. Incident was moved to History.`;
   }
   if (count === 1) {
     const name = personName || 'this person';
-    return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
+    return `${facilityName} canceled hold for ${name}. Do not bring this person to ${facilityName}.`;
   }
-  return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
+  return `${facilityName} canceled ${count} holds. Do not bring these persons to ${facilityName}.`;
 }
 
 function toMillis (value) {
@@ -128,7 +128,7 @@ export function getDeflectionActivityMs (deflection) {
   // expiresAt is a scheduled future deadline, not activity, so excluded.
   return Math.max(
     toMillis(deflection?.updatedAt),
-    toMillis(deflection?.cancelledAt),
+    toMillis(deflection?.canceledAt),
     toMillis(deflection?.exitedAt),
     toMillis(deflection?.releasedAt),
     toMillis(deflection?.admittedAt),

@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
 
 const STATUS_INFO = {
   OPEN_NOT_ACCEPTING: 'Not accepting new holds: New holds are blocked. Existing workflows continue.',
-  CLOSED: 'Closed: All in-transit holds will be cancelled. No new holds can be created.',
+  CLOSED: 'Closed: All in-transit holds will be canceled. No new holds can be created.',
 };
 
 function ChangeStatus ({ facility, onCancel }) {

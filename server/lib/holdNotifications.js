@@ -6,18 +6,18 @@ function getPersonName (deflection) {
 }
 
 /**
- * Send cancellation emails to officers whose holds were cancelled by someone else.
+ * Send cancellation emails to officers whose holds were canceled by someone else.
  * Groups multiple holds per officer into a single email.
  *
- * @param {Array} deflections - Cancelled deflections with createdBy and subject relations
+ * @param {Array} deflections - Canceled deflections with createdBy and subject relations
  * @param {string} facilityName - Name of the facility
- * @param {string} cancelledById - ID of the user who cancelled the holds
+ * @param {string} canceledById - ID of the user who canceled the holds
  */
-export async function sendHoldCancelledEmails (deflections, facilityName, cancelledById) {
+export async function sendHoldCanceledEmails (deflections, facilityName, canceledById) {
   // Group by officer, excluding self-cancellations
   const byOfficer = {};
   for (const deflection of deflections) {
-    if (deflection.createdById === cancelledById) continue;
+    if (deflection.createdById === canceledById) continue;
     if (!deflection.createdBy?.email) continue;
 
     if (!byOfficer[deflection.createdById]) {
@@ -38,7 +38,7 @@ export async function sendHoldCancelledEmails (deflections, facilityName, cancel
       message: {
         to: `${officer.firstName} ${officer.lastName} <${officer.email}>`,
       },
-      template: 'hold-cancelled',
+      template: 'hold-canceled',
       locals: {
         firstName: officer.firstName,
         facilityName,
@@ -51,7 +51,7 @@ export async function sendHoldCancelledEmails (deflections, facilityName, cancel
 }
 
 /**
- * Send reopening emails to officers whose holds were cancelled during a facility closure.
+ * Send reopening emails to officers whose holds were canceled during a facility closure.
  *
  * @param {Array} officers - Unique officer User records with email
  * @param {string} facilityName - Name of the facility

@@ -171,7 +171,7 @@ test('anonymizeSubjects job', async (t) => {
         bedTypeId,
         subjectId: subject.id,
         createdById: user.id,
-        status: 'CANCELLED',
+        status: 'CANCELED',
       },
     });
 

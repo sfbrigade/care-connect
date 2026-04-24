@@ -7,7 +7,7 @@ import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg'
 import { isValidIncident } from '@/utils/validators';
 
 import Hold from './Hold';
-import HoldsAutoCancelledNotice from './HoldsAutoCancelledNotice';
+import HoldsAutoCanceledNotice from './HoldsAutoCanceledNotice';
 import IncidentGroup from './IncidentGroup';
 
 function CheckerboardEmptyState ({ title, subtitle, updatedAtMs = 0, showUpdatedAt = false }) {
@@ -43,10 +43,10 @@ function HoldsActive ({
   onCancelHoldClick,
   onEditIncidentClick,
   onHandoffClick,
-  autoCancelledNotice,
-  onDismissAutoCancelledNotice,
-  adminCancelledNotice,
-  onDismissAdminCancelledNotice,
+  autoCanceledNotice,
+  onDismissAutoCanceledNotice,
+  adminCanceledNotice,
+  onDismissAdminCanceledNotice,
   updatedAtMs = 0,
   holdsHighlighted = false,
   currentUserId,
@@ -55,24 +55,24 @@ function HoldsActive ({
 
   const allDeflections = incidents.flatMap(inc => inc.deflections);
   const hasDeflections = allDeflections.length > 0;
-  const hasExpiredAutoCancelledHolds = (autoCancelledNotice?.count ?? 0) > 0;
-  const hasAdminCancelledHolds = (adminCancelledNotice?.count ?? 0) > 0;
-  const showAllAdminCancelledState = !hasDeflections && adminCancelledNotice?.allCancelled;
-  const showNoActiveHoldsState = !hasDeflections && !showAllAdminCancelledState;
+  const hasExpiredAutoCanceledHolds = (autoCanceledNotice?.count ?? 0) > 0;
+  const hasAdminCanceledHolds = (adminCanceledNotice?.count ?? 0) > 0;
+  const showAllAdminCanceledState = !hasDeflections && adminCanceledNotice?.allCanceled;
+  const showNoActiveHoldsState = !hasDeflections && !showAllAdminCanceledState;
   const showUpdatedAt = updatedAtMs > 0 && hasDeflections;
 
   return (
     <>
-      {hasAdminCancelledHolds && (
-        <HoldsAutoCancelledNotice
-          message={adminCancelledNotice.message}
-          onClose={onDismissAdminCancelledNotice}
+      {hasAdminCanceledHolds && (
+        <HoldsAutoCanceledNotice
+          message={adminCanceledNotice.message}
+          onClose={onDismissAdminCanceledNotice}
         />
       )}
-      {hasExpiredAutoCancelledHolds && (
-        <HoldsAutoCancelledNotice
-          count={autoCancelledNotice.count}
-          onClose={onDismissAutoCancelledNotice}
+      {hasExpiredAutoCanceledHolds && (
+        <HoldsAutoCanceledNotice
+          count={autoCanceledNotice.count}
+          onClose={onDismissAutoCanceledNotice}
         />
       )}
       {showNoActiveHoldsState && (

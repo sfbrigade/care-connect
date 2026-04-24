@@ -36,7 +36,7 @@ test('Hold cancellation email notifications', async (t) => {
     const sentMail = nodemailerMock.mock.getSentMail();
     assert.ok(sentMail.length > 0, 'Expected cancellation email to be sent');
     const email = sentMail[sentMail.length - 1];
-    assert.ok(email.text.includes('cancelled'));
+    assert.ok(email.text.includes('canceled'));
   });
 
   await t.test('does not send email for self-cancellation', async () => {
@@ -83,7 +83,7 @@ test('Hold cancellation email notifications', async (t) => {
     assert.ok(sentMail.length > 0, 'Expected cancellation emails when facility closes');
     // All emails should mention cancellation
     for (const email of sentMail) {
-      assert.ok(email.text.includes('cancelled'));
+      assert.ok(email.text.includes('canceled'));
     }
   });
 
@@ -147,6 +147,6 @@ test('Hold cancellation email notifications', async (t) => {
     const sentMail = nodemailerMock.mock.getSentMail();
     assert.ok(sentMail.length > 0, 'Expected cancellation email from capacity squeeze');
     const email = sentMail[sentMail.length - 1];
-    assert.ok(email.text.includes('cancelled'));
+    assert.ok(email.text.includes('canceled'));
   });
 });

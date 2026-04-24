@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
+import { sendHoldCanceledEmails } from '#lib/holdNotifications.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 import {
@@ -89,7 +89,7 @@ export default async function (fastify, opts) {
           const update = await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
-              status: Deflection.HoldStatus.CANCELLED,
+              status: Deflection.HoldStatus.CANCELED,
               cancelReasonId,
               updatedById: request.user.id,
               updatedAt: new Date(),
@@ -98,10 +98,10 @@ export default async function (fastify, opts) {
           deflection = await tx.deflection.update({
             where: { id },
             data: {
-              status: Deflection.HoldStatus.CANCELLED,
+              status: Deflection.HoldStatus.CANCELED,
               cancelReasonId: update.cancelReasonId,
-              cancelledAt: update.updatedAt,
-              cancelledById: update.updatedById,
+              canceledAt: update.updatedAt,
+              canceledById: update.updatedById,
               updatedAt: update.updatedAt,
             },
             include: {
@@ -145,7 +145,7 @@ export default async function (fastify, opts) {
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
       if (
-        deflection.status === Deflection.HoldStatus.CANCELLED &&
+        deflection.status === Deflection.HoldStatus.CANCELED &&
         deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID &&
         isHospitalCancellation647fEligible({ ...deflection, status: Deflection.HoldStatus.ACTIVE })
       ) {
@@ -157,14 +157,14 @@ export default async function (fastify, opts) {
         });
       }
 
-      // Send email if cancelled by someone other than the creator
-      if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {
+      // Send email if canceled by someone other than the creator
+      if (deflection.status === Deflection.HoldStatus.CANCELED && deflection.createdById !== request.user.id) {
         const [creator, facility] = await Promise.all([
           fastify.prisma.user.findUnique({ where: { id: deflection.createdById } }),
           fastify.prisma.facility.findUnique({ where: { id: deflection.facilityId } }),
         ]);
         if (creator && facility) {
-          await sendHoldCancelledEmails(
+          await sendHoldCanceledEmails(
             [{ ...deflection, createdBy: creator }],
             facility.name,
             request.user.id

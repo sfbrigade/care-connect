@@ -1092,7 +1092,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
-    await t.test('queues 647f generation when a completed hold is cancelled for hospital', async () => {
+    await t.test('queues 647f generation when a completed hold is canceled for hospital', async () => {
       await prisma.incident.update({
         where: { id: 1 },
         data: {
@@ -1119,7 +1119,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.status, 'CANCELLED');
+      assert.deepStrictEqual(data.status, 'CANCELED');
       assert.deepStrictEqual(data.cancelReasonId, 'hospital');
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
@@ -1139,19 +1139,19 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.status, 'CANCELLED');
+      assert.deepStrictEqual(data.status, 'CANCELED');
       assert.deepStrictEqual(data.cancelReasonId, '5150');
-      assert.ok(data.cancelledAt);
-      assert.ok(data.cancelledById);
+      assert.ok(data.canceledAt);
+      assert.ok(data.canceledById);
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
         where: { id: 4 },
       });
-      assert.deepStrictEqual(deflection.status, 'CANCELLED');
+      assert.deepStrictEqual(deflection.status, 'CANCELED');
       assert.deepStrictEqual(deflection.cancelReasonId, '5150');
-      assert.ok(deflection.cancelledAt);
-      assert.ok(deflection.cancelledById);
+      assert.ok(deflection.canceledAt);
+      assert.ok(deflection.canceledById);
 
       let bedType = await prisma.bedType.findUnique({
         where: { id: deflection.bedTypeId },
@@ -1189,7 +1189,7 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('POST /:id/reopen', async (t) => {
-    await t.test('reopens a cancelled deflection', async () => {
+    await t.test('reopens a canceled deflection', async () => {
       await prisma.deflection.expire();
       await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
 
@@ -1213,11 +1213,11 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available - 1);
     });
 
-    await t.test('returns 400 if deflection is not cancelled or expired', async () => {
+    await t.test('returns 400 if deflection is not canceled or expired', async () => {
       const response = await app.inject().post('/api/deflections/1/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Deflection is not cancelled or expired');
+      assert.deepStrictEqual(data.error, 'Deflection is not canceled or expired');
     });
 
     await t.test('returns 409 if no available beds', async () => {

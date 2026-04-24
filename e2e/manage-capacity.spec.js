@@ -229,8 +229,8 @@ test.describe('Manage Holds', () => {
       await expect(page.getByText('Hold canceled')).toBeVisible();
       await expect(page.getByText('Officer notified.')).toBeVisible();
 
-      // Card should show cancelled state
-      await expect(page.getByText(/Cancelled by/)).toBeVisible();
+      // Card should show canceled state
+      await expect(page.getByText(/Canceled by/)).toBeVisible();
     } catch {
       // No active holds to cancel — that's OK
     }

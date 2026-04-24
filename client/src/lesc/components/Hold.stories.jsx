@@ -179,13 +179,13 @@ export const ArrivedComplete = {
   }
 };
 
-export const CancelledWithSomeDetails = {
+export const CanceledWithSomeDetails = {
   args: {
     ...WithSomeSubjectDetails.args,
     deflection: {
       ...WithSomeSubjectDetails.args.deflection,
-      status: 'CANCELLED',
-      cancelledAt: new Date().toISOString(),
+      status: 'CANCELED',
+      canceledAt: new Date().toISOString(),
       cancelReasonId: 'staffing_shortage',
     },
   }

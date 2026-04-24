@@ -48,7 +48,7 @@ export function transformData (deflection) {
     charge: '647(f) RWS',
     justification: deflection.behavior || '',
     hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
-      ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)
+      ? getHospitalCancellationReleaseNarrative(deflection.canceledAt)
       : '',
     substanceFound: deflection.narcoticsSubstance === true,
     paraphernaliaFound: deflection.narcoticsParaphernalia === true,

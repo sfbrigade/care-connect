@@ -145,9 +145,9 @@ test('/api/deflections/:id/handoff', async (t) => {
   });
 
   await t.test('hold is not active', async () => {
-    // deflection3 is CANCELLED
+    // deflection3 is CANCELED
     const deflection = await prisma.deflection.findFirst({
-      where: { incidentId: 2, status: 'CANCELLED' },
+      where: { incidentId: 2, status: 'CANCELED' },
     });
     assert.ok(deflection);
 

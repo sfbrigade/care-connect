@@ -24,20 +24,20 @@ function HoldCard ({ deflection, facilityName, onCancelClick }) {
     deflection.createdBy?.lastName,
   ].filter(Boolean).join(' ') || 'Unknown officer';
 
-  const isCancelled = deflection.status === 'CANCELLED';
+  const isCanceled = deflection.status === 'CANCELED';
 
   return (
     <Card withBorder shadow='sm' radius='md' p='lg'>
       <Stack gap='xs'>
-        {!isCancelled && (
+        {!isCanceled && (
           <Text ta='center' c='dimmed' size='sm'>{officerName}</Text>
         )}
         <Group gap='xs'>
           <Text size='sm' c='dimmed'>Hold {deflection.id}</Text>
-          {isCancelled && (
+          {isCanceled && (
             <>
               <Text size='sm' c='dimmed'>·</Text>
-              <Text size='sm' c='red'>Cancelled by {facilityName}</Text>
+              <Text size='sm' c='red'>Canceled by {facilityName}</Text>
             </>
           )}
         </Group>
@@ -45,7 +45,7 @@ function HoldCard ({ deflection, facilityName, onCancelClick }) {
         {subjectDetails.length > 0 && (
           <Text size='sm'>{subjectDetails.join(', ')}</Text>
         )}
-        {!isCancelled && (
+        {!isCanceled && (
           <Group justify='space-between' align='center'>
             <Text fw={500}>{formatTimeRemaining(deflection.expiresAt, now)}</Text>
             <Button variant='destructive' size='sm' onClick={() => onCancelClick(deflection)}>
@@ -53,7 +53,7 @@ function HoldCard ({ deflection, facilityName, onCancelClick }) {
             </Button>
           </Group>
         )}
-        {isCancelled && (
+        {isCanceled && (
           <Group justify='flex-end'>
             <Button variant='secondary' size='sm' component={Link} to={`/holds/${deflection.id}`}>
               Details

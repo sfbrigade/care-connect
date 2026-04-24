@@ -64,13 +64,13 @@ export function isHospitalCancellation647fEligible (deflection) {
   );
 }
 
-export function getHospitalCancellationReleaseNarrative (cancelledAt) {
-  if (!cancelledAt) return '';
+export function getHospitalCancellationReleaseNarrative (canceledAt) {
+  if (!canceledAt) return '';
 
-  const releasedAt = DateTime.fromJSDate(cancelledAt instanceof Date ? cancelledAt : new Date(cancelledAt), { zone: 'America/Los_Angeles' });
+  const releasedAt = DateTime.fromJSDate(canceledAt instanceof Date ? canceledAt : new Date(canceledAt), { zone: 'America/Los_Angeles' });
   const releasedAtText = releasedAt.isValid
     ? releasedAt.toFormat("HH:mm 'on' MM/dd/yyyy")
-    : String(cancelledAt);
+    : String(canceledAt);
 
   return `The person was released at ${releasedAtText} due to a medical need and was transported to hospital.`;
 }

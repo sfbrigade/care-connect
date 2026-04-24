@@ -5,7 +5,7 @@ import Facility from '#models/facility.js';
 import FacilityUpdate from '#models/facilityUpdate.js';
 import Deflection from '#models/deflection.js';
 import BedType from '#models/bedType.js';
-import { sendHoldCancelledEmails, sendFacilityReopenedEmails } from '#lib/holdNotifications.js';
+import { sendHoldCanceledEmails, sendFacilityReopenedEmails } from '#lib/holdNotifications.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/status',
@@ -91,7 +91,7 @@ export default async function (fastify, opts) {
             await tx.deflectionUpdate.create({
               data: {
                 deflectionId: hold.id,
-                status: Deflection.HoldStatus.CANCELLED,
+                status: Deflection.HoldStatus.CANCELED,
                 updatedById: userId,
                 updatedAt: now,
               },
@@ -101,9 +101,9 @@ export default async function (fastify, opts) {
             await tx.deflection.update({
               where: { id: hold.id },
               data: {
-                status: Deflection.HoldStatus.CANCELLED,
-                cancelledAt: now,
-                cancelledById: userId,
+                status: Deflection.HoldStatus.CANCELED,
+                canceledAt: now,
+                canceledById: userId,
                 updatedAt: now,
               },
             });
@@ -139,24 +139,24 @@ export default async function (fastify, opts) {
 
       // Send email notifications after transaction completes
       if (data.status === Facility.Status.CLOSED) {
-        // Notify officers whose holds were cancelled
-        const cancelledHolds = await fastify.prisma.deflection.findMany({
+        // Notify officers whose holds were canceled
+        const canceledHolds = await fastify.prisma.deflection.findMany({
           where: {
             facilityId: id,
-            status: Deflection.HoldStatus.CANCELLED,
-            cancelledById: userId,
-            cancelledAt: { gte: new Date(Date.now() - 60000) }, // cancelled in last minute (this request)
+            status: Deflection.HoldStatus.CANCELED,
+            canceledById: userId,
+            canceledAt: { gte: new Date(Date.now() - 60000) }, // canceled in last minute (this request)
           },
           include: {
             createdBy: true,
             subject: true,
           },
         });
-        if (cancelledHolds.length > 0) {
-          await sendHoldCancelledEmails(cancelledHolds, facility.name, userId);
+        if (canceledHolds.length > 0) {
+          await sendHoldCanceledEmails(canceledHolds, facility.name, userId);
         }
       } else if (data.status === Facility.Status.OPEN_ACCEPTING) {
-        // Notify officers whose holds were cancelled during the closure
+        // Notify officers whose holds were canceled during the closure
         const lastClosure = await fastify.prisma.facilityUpdate.findFirst({
           where: {
             facilityId: id,
@@ -165,20 +165,20 @@ export default async function (fastify, opts) {
           orderBy: { updatedAt: 'desc' },
         });
         if (lastClosure) {
-          const cancelledDuringClosure = await fastify.prisma.deflection.findMany({
+          const canceledDuringClosure = await fastify.prisma.deflection.findMany({
             where: {
               facilityId: id,
-              status: Deflection.HoldStatus.CANCELLED,
-              cancelledAt: { gte: lastClosure.updatedAt },
+              status: Deflection.HoldStatus.CANCELED,
+              canceledAt: { gte: lastClosure.updatedAt },
             },
             include: {
               createdBy: true,
             },
           });
-          // Filter to only holds cancelled by someone else and deduplicate officers
+          // Filter to only holds canceled by someone else and deduplicate officers
           const officerMap = {};
-          for (const d of cancelledDuringClosure) {
-            if (d.cancelledById !== d.createdById && d.createdBy) {
+          for (const d of canceledDuringClosure) {
+            if (d.canceledById !== d.createdById && d.createdBy) {
               officerMap[d.createdById] = d.createdBy;
             }
           }

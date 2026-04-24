@@ -8,7 +8,7 @@ export default async function (fastify, opts) {
   fastify.post('/:id/reopen', {
     onRequest: fastify.requireUser,
     schema: {
-      description: 'Reopen a cancelled or expired deflection.',
+      description: 'Reopen a canceled or expired deflection.',
       params: z.object({
         id: z.coerce.number(),
       }),
@@ -47,9 +47,9 @@ export default async function (fastify, opts) {
           incident: true,
         }
       });
-      if (deflection.status !== Deflection.HoldStatus.CANCELLED && deflection.status !== Deflection.HoldStatus.EXPIRED) {
+      if (deflection.status !== Deflection.HoldStatus.CANCELED && deflection.status !== Deflection.HoldStatus.EXPIRED) {
         return reply.code(StatusCodes.BAD_REQUEST).send({
-          error: 'Deflection is not cancelled or expired',
+          error: 'Deflection is not canceled or expired',
         });
       }
 
