@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
 import {
@@ -30,8 +30,6 @@ import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
 import { validateIncident } from '@/utils/validators';
 
-import CancelIncidentModal from './CancelIncidentModal';
-
 const initialValues = {
   cadNumber: '',
   caseNumber: '',
@@ -47,6 +45,51 @@ const initialValues = {
   supervisorBadgeNumber: '',
 };
 
+function normalizeIncidentFormValues (values) {
+  return {
+    ...initialValues,
+    ...values,
+    cadNumber: values?.cadNumber ?? '',
+    caseNumber: values?.caseNumber ?? '',
+    encounteredVia: values?.encounteredVia ?? '',
+    addressLine1: values?.addressLine1 ?? '',
+    addressLine2: values?.addressLine2 ?? '',
+    city: values?.city ?? '',
+    state: values?.state ?? '',
+    postalCode: values?.postalCode ?? '',
+    latitude: values?.latitude ?? '',
+    longitude: values?.longitude ?? '',
+    arrestedAt: values?.arrestedAt ?? '',
+    supervisorBadgeNumber: values?.supervisorBadgeNumber ?? '',
+  };
+}
+
+function emptyStringToNull (value) {
+  return value === '' ? null : value;
+}
+
+function buildIncidentPayload (values) {
+  const arrestedAt = DateTime.fromISO(values.arrestedAt, {
+    zone: 'local',
+  });
+
+  return {
+    ...values,
+    cadNumber: emptyStringToNull(values.cadNumber),
+    caseNumber: emptyStringToNull(values.caseNumber),
+    encounteredVia: emptyStringToNull(values.encounteredVia),
+    addressLine1: emptyStringToNull(values.addressLine1),
+    addressLine2: emptyStringToNull(values.addressLine2),
+    city: emptyStringToNull(values.city),
+    state: emptyStringToNull(values.state),
+    postalCode: emptyStringToNull(values.postalCode),
+    latitude: emptyStringToNull(values.latitude),
+    longitude: emptyStringToNull(values.longitude),
+    arrestedAt: arrestedAt.isValid ? arrestedAt.toISO() : null,
+    supervisorBadgeNumber: emptyStringToNull(values.supervisorBadgeNumber),
+  };
+}
+
 function normalizeCadNumber (value) {
   return String(value ?? '')
     .replace(/[^0-9a-z]/gi, '')
@@ -55,86 +98,79 @@ function normalizeCadNumber (value) {
 
 function IncidentForm () {
   const navigate = useNavigate();
+  const { id: incidentId } = useParams();
   const [searchParams] = useSearchParams();
+  const initialNextPathRef = useRef(searchParams.get('next'));
+  const nextPath = initialNextPathRef.current;
+  const isConfirmIncidentFlow = !!nextPath;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
   const { t } = useTranslation();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const addressRef = useRef();
+  const isEditing = !!incidentId;
 
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    transformValues: values => ({
-      ...values,
-      arrestedAt: DateTime.fromISO(values.arrestedAt, {
-        zone: 'local',
-      }).toISO(),
-    }),
+    transformValues: buildIncidentPayload,
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () =>
-      Api.facilities
-        .activeIncident(facility.id)
-        .then((response) => response.data),
-  });
-
-  const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
-    queryKey: ['deflections', data?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
-    enabled: !!data?.id,
+    queryKey: ['incidents', incidentId],
+    queryFn: () => Api.incidents.get(incidentId).then(response => response.data),
+    enabled: !!incidentId,
   });
 
   useEffect(() => {
-    if (!isLoading) {
-      if (data) {
+    if (isEditing) {
+      if (!isLoading && data) {
         let { arrestedAt } = data;
         arrestedAt = DateTime.fromISO(arrestedAt).toISO({
           includeOffset: false,
           precision: 'seconds',
         });
-        form.initialize({
+        form.initialize(normalizeIncidentFormValues({
           ...data,
           arrestedAt,
-        });
-        form.setErrors(validateIncident(data));
+        }));
+        if (!isConfirmIncidentFlow) {
+          form.setErrors(validateIncident(data));
+        }
         setInitialized(true);
-      } else {
-        const now = DateTime.now().toISO({
-          includeOffset: false,
-          precision: 'seconds',
-        });
-        getCurrentLocationAddress()
-          .then((address) => {
-            form.initialize({
-              ...initialValues,
-              ...address,
-              facilityId: facility.id,
-              arrestedAt: now,
-            });
-          })
-          .catch(() => {
-            form.initialize({
-              ...initialValues,
-              facilityId: facility.id,
-              arrestedAt: now,
-            });
-          })
-          .finally(() => {
-            setInitialized(true);
-          });
       }
+    } else {
+      const now = DateTime.now().toISO({
+        includeOffset: false,
+        precision: 'seconds',
+      });
+      getCurrentLocationAddress()
+        .then((address) => {
+          form.initialize({
+            ...initialValues,
+            ...address,
+            facilityId: facility.id,
+            arrestedAt: now,
+          });
+        })
+        .catch(() => {
+          form.initialize({
+            ...initialValues,
+            facilityId: facility.id,
+            arrestedAt: now,
+          });
+        })
+        .finally(() => {
+          setInitialized(true);
+        });
     }
-  }, [isLoading, data]);
+  }, [isEditing, isLoading, data]);
 
   function LocationButton () {
     return (
-      <ActionIcon onClick={getLocation} variant='transparent'>
+      <ActionIcon onClick={getLocation} variant='transparent' aria-label='Use current location'>
         <IconCurrentLocationFilled size={24} style={{ color: 'gray' }} />
       </ActionIcon>
     );
@@ -150,68 +186,26 @@ function IncidentForm () {
   };
 
   const onSubmitMutation = useMutation({
-    mutationFn: (data) =>
-      data.id
-        ? Api.incidents.update(data.id, data)
-        : Api.incidents.create(data, {
+    mutationFn: (formData) =>
+      isEditing
+        ? Api.incidents.update(incidentId, formData)
+        : Api.incidents.create(formData, {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
-    onSuccess: async (response) => {
-      await queryClient.invalidateQueries({
-        queryKey: ['facilities', facility.id, 'bed-types'],
-      });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        response.data
-      );
-      window.sessionStorage.setItem('_session-holds', 'active');
-      navigate('/holds');
-    },
-    onError: () => {
-      showToast('We couldn’t create the incident', 'error', 4000, 'Something went wrong. Try again later.');
-    },
-  });
-
-  const cancelIncidentMutation = useMutation({
-    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, { cancelReasonId }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        null
-      );
-      await queryClient.removeQueries({
-        queryKey: ['deflections', data?.id, 'active'],
-      });
       await queryClient.invalidateQueries({
-        queryKey: ['deflections', facility.id, 'inactive'],
+        queryKey: ['facilities', facility.id, 'my-holds'],
       });
-      setShowCancelModal(false);
-      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
-      navigate('/holds');
+      window.sessionStorage.setItem('_session-holds', 'active');
+      navigate(nextPath || '/holds');
     },
-    onError: (error) => {
-      const isNetworkError = !error?.response;
-
-      if (isNetworkError) {
-        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
-        return;
-      }
-
-      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    onError: () => {
+      showToast('We couldn\'t save the incident', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
-
-  async function onCancelIncidentConfirmed (cancelReasonId) {
-    if (data?.id) {
-      await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
-    }
-  }
-
-  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
-  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => deflection.subjectId);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -222,7 +216,7 @@ function IncidentForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to='/holds' />
+          <IconButtonLink icon={IconArrowLeft} to='/holds' aria-label='Go back' />
           {onSubmitMutation.isPending && (
             <Text c='dimmed' size='lg'>
               Saving...
@@ -237,7 +231,7 @@ function IncidentForm () {
       </Header>
       <Container>
         <Text c='dimmed' size='xl'>
-          Start an incident
+          {isConfirmIncidentFlow ? 'First, confirm incident details' : 'Start an incident'}
         </Text>
         <Title order={3} mb='xl'>
           Enter these details once. They apply to all holds in this
@@ -403,33 +397,13 @@ function IncidentForm () {
                   Add Star Number before custody transfer.
                 </Text>
               </Stack>
-              <Stack gap='sm'>
-                <Button type='submit' style={{ alignSelf: 'flex-start' }}>
-                  {data?.id ? 'Save incident details' : 'Create incident & hold'}
-                </Button>
-                {canCancelIncident && (
-                  <Button
-                    type='button'
-                    variant='destructive'
-                    style={{ alignSelf: 'flex-start' }}
-                    onClick={() => setShowCancelModal(true)}
-                    disabled={cancelIncidentMutation.isPending}
-                  >
-                    Cancel incident
-                  </Button>
-                )}
-              </Stack>
+              <Button type='submit' style={{ alignSelf: 'flex-start' }}>
+                {isConfirmIncidentFlow ? 'Continue to person details' : isEditing ? 'Save incident details' : 'Create incident & hold'}
+              </Button>
             </Stack>
           </Fieldset>
         </form>
       </Container>
-      <CancelIncidentModal
-        opened={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={onCancelIncidentConfirmed}
-        requiresReason={incidentHasDetailedHolds}
-        loading={cancelIncidentMutation.isPending}
-      />
     </>
   );
 }

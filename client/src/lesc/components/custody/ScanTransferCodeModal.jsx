@@ -46,8 +46,8 @@ function ScanTransferCodeModal ({ opened, onClose, onSuccess, _debugScanPhase })
 
     if (lastDeflectionId) {
       window.sessionStorage.setItem('custodyHighlightTarget', String(lastDeflectionId));
+      onSuccess?.();
     }
-    onSuccess?.();
     if (transferResults.every((r) => !r.error)) {
       showToast(
         'Person received',

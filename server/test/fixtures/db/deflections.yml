@@ -5,7 +5,7 @@ items:
     facility: '@lescFacility1'
     bedType: '@lescFacility1BedType'
     incident: '@incident2'
-    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     subjectStatus: 'DETAINED'
     createdBy: '@user4'
@@ -34,7 +34,7 @@ items:
     bedType: '@lescFacility1BedType'
     subject: '@subject1'
     incident: '@incident1'
-    expiresAt: <%= new Date(Date.now() + 60 * 60 * 1000).toISOString() %>
+    expiresAt: <%= new Date(Date.now() + 90 * 60 * 1000).toISOString() %>
     status: 'ACTIVE'
     subjectStatus: 'DETAINED'
     createdBy: '@user2'
