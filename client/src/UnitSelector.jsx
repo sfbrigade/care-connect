@@ -150,7 +150,7 @@ function UnitSelector () {
                   clearable
                   disabled={isLoading}
                   rightSection={isLoading ? <Loader size='sm' /> : null}
-                  nothingfound='No units found'
+                  nothingFoundMessage='No units found'
                 />
               </Stack>
             </>
