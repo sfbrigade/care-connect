@@ -5,6 +5,13 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+function propertyReturnConflict (code) {
+  const error = new Error(code);
+  error.statusCode = StatusCodes.CONFLICT;
+  error.code = code;
+  return error;
+}
+
 function hasAssociatedProperty (deflection) {
   const hasPropertyVolume = deflection?.property && deflection.property !== 'NONE';
   const hasPropertyDescription = Boolean(deflection?.propertyDetails?.trim());
@@ -65,62 +72,76 @@ export default async function (fastify, opts) {
         });
       }
 
-      let deflection = await fastify.prisma.deflection.findUnique({
-        where: { id },
-        include: {
-          subject: true,
-          propertyPhotos: true,
-        },
-      });
-
-      if (!deflection) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.RELEASED) {
-        return reply.code(StatusCodes.CONFLICT).send({ code: 'NOT_LEGALLY_RELEASED' });
-      }
-
-      if (!hasAssociatedProperty(deflection)) {
-        return reply.code(StatusCodes.CONFLICT).send({ code: 'NO_ASSOCIATED_PROPERTY' });
-      }
-
-      if (deflection.propertyReturned !== null) {
-        return reply.code(StatusCodes.CONFLICT).send({ code: 'ALREADY_RECORDED' });
-      }
-
       const now = new Date();
+      let deflection;
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const data = {
-          propertyReturned,
-          propertyNotReturnedReason: propertyReturned ? null : propertyNotReturnedReason,
-          propertyNotReturnedOtherReason: propertyReturned ? null : (propertyNotReturnedReason === 'OTHER' ? propertyNotReturnedOtherReason : null),
-        };
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const lockedDeflection = await fastify.prisma.deflection.findByIdForUpdate(tx, id);
+          if (!lockedDeflection) {
+            const error = new Error('Deflection not found');
+            error.statusCode = StatusCodes.NOT_FOUND;
+            throw error;
+          }
 
-        await tx.deflectionUpdate.create({
-          data: {
-            ...data,
-            deflectionId: id,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
+          const currentDeflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          if (currentDeflection.subjectStatus !== Deflection.SubjectStatus.RELEASED) {
+            throw propertyReturnConflict('NOT_LEGALLY_RELEASED');
+          }
+
+          if (!hasAssociatedProperty(currentDeflection)) {
+            throw propertyReturnConflict('NO_ASSOCIATED_PROPERTY');
+          }
+
+          if (currentDeflection.propertyReturned !== null) {
+            throw propertyReturnConflict('ALREADY_RECORDED');
+          }
+
+          const data = {
+            propertyReturned,
+            propertyNotReturnedReason: propertyReturned ? null : propertyNotReturnedReason,
+            propertyNotReturnedOtherReason: propertyReturned ? null : (propertyNotReturnedReason === 'OTHER' ? propertyNotReturnedOtherReason : null),
+          };
+
+          await tx.deflectionUpdate.create({
+            data: {
+              ...data,
+              deflectionId: id,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              ...data,
+              propertyReturnedAt: now,
+              propertyReturnedById: request.user.id,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
         });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            ...data,
-            propertyReturnedAt: now,
-            propertyReturnedById: request.user.id,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-      });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.NOT_FOUND) {
+          return reply.code(StatusCodes.NOT_FOUND).send();
+        }
+        if (error.statusCode === StatusCodes.CONFLICT) {
+          return reply.code(StatusCodes.CONFLICT).send({ code: error.code });
+        }
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

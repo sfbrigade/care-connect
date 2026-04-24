@@ -824,6 +824,50 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.code, 'ALREADY_RECORDED');
     });
 
+    await t.test('records property return only once under concurrent submissions', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const [yesResponse, noResponse] = await Promise.all([
+        app.inject()
+          .post(`/api/deflections/${deflection.id}/property-return`)
+          .payload({ propertyReturned: true })
+          .headers(custodyUserHeaders),
+        app.inject()
+          .post(`/api/deflections/${deflection.id}/property-return`)
+          .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Evidence hold' })
+          .headers(custodyUserHeaders),
+      ]);
+
+      const successResponses = [yesResponse, noResponse].filter((response) => response.statusCode === StatusCodes.OK);
+      const conflictResponses = [yesResponse, noResponse].filter((response) => response.statusCode === StatusCodes.CONFLICT);
+
+      assert.deepStrictEqual(successResponses.length, 1);
+      assert.deepStrictEqual(conflictResponses.length, 1);
+      assert.deepStrictEqual(JSON.parse(conflictResponses[0].body).code, 'ALREADY_RECORDED');
+
+      const updatedDeflection = await prisma.deflection.findUnique({
+        where: { id: deflection.id },
+      });
+      const propertyReturnUpdates = await prisma.deflectionUpdate.findMany({
+        where: {
+          deflectionId: deflection.id,
+          propertyReturned: {
+            not: null,
+          },
+        },
+      });
+
+      assert.notStrictEqual(updatedDeflection.propertyReturned, null);
+      assert.ok(updatedDeflection.propertyReturnedAt);
+      assert.ok(updatedDeflection.propertyReturnedById);
+      assert.deepStrictEqual(propertyReturnUpdates.length, 1);
+      assert.deepStrictEqual(propertyReturnUpdates[0].propertyReturned, updatedDeflection.propertyReturned);
+      assert.deepStrictEqual(
+        propertyReturnUpdates[0].propertyNotReturnedReason,
+        updatedDeflection.propertyNotReturnedReason
+      );
+    });
+
     await t.test('returns 422 when returned=false and reason is missing', async () => {
       const deflection = await createReleasedDeflection();
 
@@ -936,6 +980,74 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
       assert.deepStrictEqual(deflection.drugUseEvidence, true);
       assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
+    });
+
+    await t.test('creates only one subject under concurrent upserts', async () => {
+      const subjectsBefore = await prisma.subject.count();
+      const incident = await prisma.incident.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          encounteredVia: 'DISPATCHED',
+          cadNumber: `CAD-SUBJECT-${Date.now()}`,
+          caseNumber: `CASE-SUBJECT-${Date.now()}`,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          updatedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+      const deflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+          currentOfficerId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        },
+      });
+
+      const [firstResponse, secondResponse] = await Promise.all([
+        app.inject()
+          .put(`/api/deflections/${deflection.id}/subject`)
+          .payload({
+            firstName: 'Concurrent',
+            lastName: 'Subject',
+            middleInitial: 'A',
+            dateOfBirth: '1988-05-25',
+            sex: 'MALE',
+            race: 'WHITE',
+            localId: 'CONCURRENT-SUBJECT',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: true,
+            drugUseEvidence: true,
+            drugType: 'ALCOHOL',
+          })
+          .headers(userHeaders),
+        app.inject()
+          .put(`/api/deflections/${deflection.id}/subject`)
+          .payload({
+            firstName: 'Concurrent',
+            lastName: 'Subject',
+            middleInitial: 'B',
+            dateOfBirth: '1988-05-25',
+            sex: 'MALE',
+            race: 'ASIAN',
+            localId: 'CONCURRENT-SUBJECT',
+            narcoticsSubstance: true,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+          })
+          .headers(userHeaders),
+      ]);
+
+      assert.deepStrictEqual(firstResponse.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(secondResponse.statusCode, StatusCodes.OK);
+
+      const updatedDeflection = await prisma.deflection.findUnique({
+        where: { id: deflection.id },
+      });
+      const subjectsAfter = await prisma.subject.count();
+
+      assert.ok(updatedDeflection.subjectId);
+      assert.deepStrictEqual(subjectsAfter - subjectsBefore, 1);
     });
 
     await t.test('updates the subject of a deflection', async () => {
