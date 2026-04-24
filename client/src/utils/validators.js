@@ -44,7 +44,7 @@ const SubjectSchema = z.object({
   dateOfBirth: z.string(ERROR_REQUIRED).check(
     z.minLength(1, ERROR_REQUIRED),
     z.refine(
-      (value) => DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
+      (value) => !value || DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
       ERROR_DOB_INVALID
     )
   ),
