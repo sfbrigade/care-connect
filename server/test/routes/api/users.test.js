@@ -122,7 +122,6 @@ test('/api/users', async (t) => {
       const data = JSON.parse(response.body);
       assert.strictEqual(data.hasActiveFieldWork, true);
     });
-
   });
 
   await t.test('GET /:id', async (t) => {
