@@ -16,7 +16,7 @@ export function getWorkModeFromPath (pathname) {
 
 export function readStoredWorkMode () {
   try {
-    const v = globalThis.sessionStorage?.getItem(STORAGE_KEY);
+    const v = globalThis.localStorage?.getItem(STORAGE_KEY);
     return v === 'FIELD' || v === 'CUSTODY' ? v : null;
   } catch {
     return null;
@@ -26,13 +26,13 @@ export function readStoredWorkMode () {
 export function writeStoredWorkMode (mode) {
   try {
     if (mode === 'FIELD' || mode === 'CUSTODY') {
-      globalThis.sessionStorage?.setItem(STORAGE_KEY, mode);
+      globalThis.localStorage?.setItem(STORAGE_KEY, mode);
     }
   } catch { /* swallow — storage unavailable */ }
 }
 
 export function clearStoredWorkMode () {
   try {
-    globalThis.sessionStorage?.removeItem(STORAGE_KEY);
+    globalThis.localStorage?.removeItem(STORAGE_KEY);
   } catch { /* swallow */ }
 }

@@ -32,7 +32,23 @@ export function getDefaultPathForUser (user) {
   return '/holds';
 }
 
-export function handleRedirects (authContext, location, pathname, handler) {
+function isCustodyPath (pathname) {
+  return pathname === '/custody' || pathname.startsWith('/custody/');
+}
+
+export function handleRedirects (authContext, location, pathname, handler, { hasActiveFieldWork = false } = {}) {
+  // Work-mode block: a dual-role user with active field work (open holds or
+  // an open arrival) cannot enter custody routes. Route guards otherwise let
+  // them through because they hold the CUSTODY role.
+  if (
+    authContext.user &&
+    isCustodyPath(pathname) &&
+    authContext.user.roles?.includes(UserRole.FIELD) &&
+    authContext.user.roles?.includes(UserRole.CUSTODY) &&
+    hasActiveFieldWork
+  ) {
+    return handler('/holds', { workModeBlocked: true });
+  }
   let match;
   for (const pattern of ADMIN_AUTH_PROTECTED_PATHS) {
     match = matchPath(pattern, pathname);

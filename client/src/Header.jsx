@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
-import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
+import { Badge, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
   IconSend,
   IconHome,
@@ -27,6 +27,9 @@ import { useToast } from '@/components/ToastContext';
 
 const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
 const MODE_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };
+const MODE_BADGE_LABEL = { FIELD: 'FIELD', CUSTODY: 'RESET' };
+const MODE_COLOR = { FIELD: 'violet', CUSTODY: 'green' };
+const OPPOSITE_MODE = { FIELD: 'CUSTODY', CUSTODY: 'FIELD' };
 const MODE_SUCCESS_TOAST = {
   FIELD: {
     title: 'Mode changed to "In the field"',
@@ -61,17 +64,19 @@ function Header ({ opened, close, toggle, logout }) {
   const [storedMode, setStoredMode] = useState(() => (isDualRole ? readStoredWorkMode() : null));
 
   useEffect(() => {
-    if (routeMode) {
-      writeStoredWorkMode(routeMode);
-      setStoredMode(routeMode);
-    }
-  }, [routeMode]);
+    if (!routeMode) return;
+    // Don't persist a CUSTODY landing if the guard is about to bounce the
+    // user back for active field work — leaves localStorage on FIELD.
+    const latest = queryClient.getQueryData(['users', 'me']);
+    if (routeMode === 'CUSTODY' && latest?.hasActiveFieldWork) return;
+    writeStoredWorkMode(routeMode);
+    setStoredMode(routeMode);
+  }, [routeMode, queryClient]);
 
-  // Route is the source of truth when present; sessionStorage fills in on
+  // Route is the source of truth when present; localStorage fills in on
   // mode-agnostic routes (e.g. /profile, /manage-users) so the submenu
-  // still reflects the user's last-known mode.
+  // still reflects the user's last-known mode across sessions.
   const workMode = routeMode ?? storedMode;
-  const workModeLabel = workMode ? MODE_LABEL[workMode] : null;
 
   // Share the cache key with AuthContextProvider so only one /api/users/me
   // query exists. This observer adds a poll interval for dual-role users and
@@ -113,11 +118,37 @@ function Header ({ opened, close, toggle, logout }) {
       <Group h='100%' align='center' justify='space-between' wrap='nowrap'>
         <Link to='/' onClick={close} style={{ minWidth: 0 }}>
           <Box>
-            <Title order={3} c='black' truncate>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
-            {(workModeLabel || user?.unit?.name) && (
+            <Group gap='xs' wrap='nowrap' align='center'>
+              <Title order={3} c='black' truncate>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
+              {facility && isDualRole && workMode && (
+                <Badge
+                  color={MODE_COLOR[workMode]}
+                  variant='light'
+                  size='lg'
+                  role='button'
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleModeClick(OPPOSITE_MODE[workMode]);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleModeClick(OPPOSITE_MODE[workMode]);
+                    }
+                  }}
+                  style={{ cursor: 'pointer', flexShrink: 0 }}
+                  aria-label={`Switch work mode to ${MODE_LABEL[OPPOSITE_MODE[workMode]]}`}
+                >
+                  {MODE_BADGE_LABEL[workMode]}
+                </Badge>
+              )}
+            </Group>
+            {user?.unit?.name && (
               <Text size='sm' color='dimmed' truncate>
-                {workModeLabel && <>{workModeLabel}{user?.unit?.name ? ' | ' : ''}</>}
-                {user?.unit?.name}
+                {user.unit.name}
               </Text>
             )}
           </Box>
@@ -173,13 +204,21 @@ function Header ({ opened, close, toggle, logout }) {
                           key={m}
                           onClick={() => handleModeClick(m)}
                           pl={44}
-                          rightSection={isCurrent ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
+                          rightSection={isCurrent ? <IconCheck size={16} color={`var(--mantine-color-${MODE_COLOR[m]}-6)`} /> : null}
                           c={isBlocked ? 'var(--mantine-color-gray-5)' : undefined}
                           aria-label={`Work mode: ${MODE_LABEL[m]}`}
                           aria-current={isCurrent ? 'true' : undefined}
                           aria-disabled={isBlocked || undefined}
                         >
-                          {MODE_LABEL[m]}
+                          <Group gap={8} align='center' wrap='nowrap'>
+                            <Box
+                              w={10}
+                              h={10}
+                              bg={`var(--mantine-color-${MODE_COLOR[m]}-6)`}
+                              style={{ borderRadius: '50%', flexShrink: 0 }}
+                            />
+                            <span>{MODE_LABEL[m]}</span>
+                          </Group>
                         </Menu.Item>
                       );
                     })}
@@ -209,7 +248,7 @@ function Header ({ opened, close, toggle, logout }) {
                   color='red'
                   leftSection={<IconLogout size={20} />}
                   to='/logout'
-                  onClick={() => { clearStoredWorkMode(); logout(); }}
+                  onClick={(e) => { clearStoredWorkMode(); logout(e); }}
                 >
                   Logout
                 </Menu.Item>

@@ -12,8 +12,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
 
-const { mockUserRef } = vi.hoisted(() => ({
+const { mockUserRef, mockFacilityRef } = vi.hoisted(() => ({
   mockUserRef: { current: null },
+  mockFacilityRef: { current: null },
 }));
 
 vi.mock('./AuthContext', () => ({
@@ -21,7 +22,7 @@ vi.mock('./AuthContext', () => ({
 }));
 
 vi.mock('./FacilityContext', () => ({
-  useFacilityContext: () => ({ facility: null, setFacility: vi.fn() }),
+  useFacilityContext: () => ({ facility: mockFacilityRef.current, setFacility: vi.fn() }),
 }));
 
 const { meMock } = vi.hoisted(() => ({
@@ -47,8 +48,9 @@ function LocationProbe () {
   return <div data-testid='loc'>{loc.pathname}</div>;
 }
 
-function renderHeader (user, pathname = '/') {
+function renderHeader (user, pathname = '/', facility = null) {
   mockUserRef.current = user;
+  mockFacilityRef.current = facility;
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -75,9 +77,10 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   mockUserRef.current = null;
+  mockFacilityRef.current = null;
   toastMocks.showToast.mockClear();
   meMock.mockReset();
-  globalThis.sessionStorage.clear();
+  globalThis.localStorage.clear();
 });
 
 describe('Header — Work mode submenu', () => {
@@ -146,7 +149,7 @@ describe('Header — Work mode submenu', () => {
   });
 
   it('falls back to stored mode on a neutral route', async () => {
-    globalThis.sessionStorage.setItem('cc:workMode', 'CUSTODY');
+    globalThis.localStorage.setItem('cc:workMode', 'CUSTODY');
     renderHeader(
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
       '/manage-users'
@@ -157,12 +160,12 @@ describe('Header — Work mode submenu', () => {
     expect(resetItem).toHaveAttribute('aria-current', 'true');
   });
 
-  it('persists route mode to globalThis.sessionStorage so neutral routes show it', async () => {
+  it('persists route mode to globalThis.localStorage so neutral routes show it', async () => {
     renderHeader(
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
       '/holds'
     );
-    await waitFor(() => expect(globalThis.sessionStorage.getItem('cc:workMode')).toBe('FIELD'));
+    await waitFor(() => expect(globalThis.localStorage.getItem('cc:workMode')).toBe('FIELD'));
   });
 
   it('clicking current mode is a no-op (no navigation, no toast)', async () => {
@@ -180,36 +183,72 @@ describe('Header — Work mode submenu', () => {
   });
 });
 
-describe('Header — mode label', () => {
-  it('shows "In the field" label on /holds for dual-role users', async () => {
+describe('Header — mode badge', () => {
+  const user = { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] };
+  const facility = { id: 'f1', type: 'LESC' };
+
+  it('renders a badge for dual-role users in a facility on a mode-specific route', async () => {
+    renderHeader(user, '/holds', facility);
+    expect(await screen.findByLabelText('Switch work mode to At RESET')).toBeInTheDocument();
+  });
+
+  it('omits the badge when no facility is set', async () => {
+    renderHeader(user, '/holds');
+    expect(screen.queryByLabelText(/Switch work mode/)).not.toBeInTheDocument();
+  });
+
+  it('omits the badge for single-role users', async () => {
+    renderHeader({ ...user, roles: ['FIELD'] }, '/holds', facility);
+    expect(screen.queryByLabelText(/Switch work mode/)).not.toBeInTheDocument();
+  });
+
+  it('clicking the badge toggles to opposite home + success toast', async () => {
+    renderHeader(user, '/holds', facility);
+    const badge = await screen.findByLabelText('Switch work mode to At RESET');
+    await userEvent.click(badge);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loc')).toHaveTextContent('/custody');
+    });
+    expect(toastMocks.showToast).toHaveBeenCalledWith(
+      'Mode changed to "At RESET"',
+      'success',
+      4000,
+      expect.any(String)
+    );
+  });
+
+  it('clicking the badge shows error toast when blocked', async () => {
+    meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: true } });
+    renderHeader(user, '/holds', facility);
+    const badge = await screen.findByLabelText('Switch work mode to At RESET');
+    // Wait for background fetch to land so the blocked branch is active.
+    await waitFor(() => expect(meMock).toHaveBeenCalled());
+    await userEvent.click(badge);
+
+    expect(screen.getByTestId('loc')).toHaveTextContent('/holds');
+    expect(toastMocks.showToast).toHaveBeenCalledWith(
+      "Couldn't update work mode",
+      'error',
+      5000,
+      expect.stringContaining('active field work')
+    );
+  });
+});
+
+describe('Header — subtitle', () => {
+  it('renders unit name in subtitle', async () => {
     renderHeader(
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'K-9 Unit' } },
       '/holds'
     );
-    expect(await screen.findByText(/In the field/)).toBeInTheDocument();
-    expect(screen.getByText(/K-9 Unit/)).toBeInTheDocument();
+    expect(await screen.findByText(/K-9 Unit/)).toBeInTheDocument();
   });
 
-  it('shows "At RESET" label on /custody for dual-role users', async () => {
+  it('omits subtitle entirely when no unit is set', async () => {
     renderHeader(
-      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'DEM' } },
-      '/custody'
-    );
-    expect(await screen.findByText(/At RESET/)).toBeInTheDocument();
-  });
-
-  it('omits mode label for single-role FIELD users', async () => {
-    renderHeader(
-      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD'], unit: { name: 'K-9 Unit' } },
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
       '/holds'
-    );
-    expect(screen.queryByText(/In the field/)).not.toBeInTheDocument();
-  });
-
-  it('omits mode label on mode-agnostic paths (e.g. /profile)', async () => {
-    renderHeader(
-      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'K-9 Unit' } },
-      '/profile'
     );
     expect(screen.queryByText(/In the field/)).not.toBeInTheDocument();
     expect(screen.queryByText(/At RESET/)).not.toBeInTheDocument();
