@@ -15,7 +15,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
 import {
-  clearStoredWorkMode,
   getWorkModeFromPath,
   readStoredWorkMode,
   writeStoredWorkMode,
@@ -262,7 +261,7 @@ function Header ({ opened, close, toggle, logout }) {
                   color='red'
                   leftSection={<IconLogout size={20} />}
                   to='/logout'
-                  onClick={(e) => { clearStoredWorkMode(); logout(e); }}
+                  onClick={logout}
                 >
                   Logout
                 </Menu.Item>
