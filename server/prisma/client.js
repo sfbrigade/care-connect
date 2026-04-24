@@ -9,6 +9,12 @@ const prisma = new PrismaClient({
 }).$extends({
   name: 'paginate',
   model: {
+    facility: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "Facility" WHERE "id" = ${id}::uuid FOR UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      }
+    },
     bedType: {
       async findByIdForUpdate (tx, id) {
         let result;

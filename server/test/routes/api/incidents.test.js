@@ -3,11 +3,13 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
+import Facility from '#models/facility.js';
 
 test('/api/incidents', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new incident', async () => {
@@ -223,6 +225,64 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(bedType.holds, 1);
       assert.deepStrictEqual(bedType.inTransit, 1);
       assert.deepStrictEqual(bedType.available, 0);
+    });
+
+    await t.test('rejects hold creation when facility is open but not accepting', async () => {
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.OPEN_NOT_ACCEPTING,
+          statusReasonId: 'other',
+          statusOther: 'Pausing holds',
+        });
+
+      const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: 'CAD-NOT-ACCEPTING',
+        caseNumber: 'CASE-NOT-ACCEPTING',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+    });
+
+    await t.test('rejects hold creation when facility is closed', async () => {
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Closed for testing',
+        });
+
+      const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: 'CAD-CLOSED',
+        caseNumber: 'CASE-CLOSED',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     });
 
     await t.test('requires encounteredVia', async () => {

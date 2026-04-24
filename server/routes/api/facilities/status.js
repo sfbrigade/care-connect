@@ -54,6 +54,8 @@ export default async function (fastify, opts) {
       }
 
       await fastify.prisma.$transaction(async (tx) => {
+        await fastify.prisma.facility.findByIdForUpdate(tx, id);
+
         const update = await tx.facilityUpdate.create({
           data: {
             ...data,

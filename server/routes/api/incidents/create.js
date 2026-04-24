@@ -3,10 +3,17 @@ import { z } from 'zod';
 
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
+import Facility from '#models/facility.js';
 
 function noAvailableBedError () {
   const error = new Error('No available beds');
   error.statusCode = StatusCodes.GONE;
+  return error;
+}
+
+function facilityNotAcceptingError () {
+  const error = new Error('Facility is not accepting new holds');
+  error.statusCode = StatusCodes.CONFLICT;
   return error;
 }
 
@@ -40,6 +47,11 @@ export default async function (fastify, opts) {
 
       let incident;
       await fastify.prisma.$transaction(async (tx) => {
+        const facility = await fastify.prisma.facility.findByIdForUpdate(tx, data.facilityId);
+        if (!facility || facility.status !== Facility.Status.OPEN_ACCEPTING) {
+          throw facilityNotAcceptingError();
+        }
+
         let bedType;
         if (bedTypeId) {
           bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
