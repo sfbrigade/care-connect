@@ -11,6 +11,7 @@ import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import { formatTime } from '@/utils/format';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
@@ -114,12 +115,11 @@ function Custody () {
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
   function handleScanSuccess () {
+    setTab('in-custody');
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
   }
 
@@ -313,18 +313,16 @@ function Custody () {
           )}
         </Stack>
       </Container>
-      {tab === 'in-custody' && (
-        <ActionFooter>
-          <Button
-            data-testid='scan-code-btn'
-            variant='secondary'
-            leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
-            onClick={() => setScanModalOpened(true)}
-          >
-            Take custody
-          </Button>
-        </ActionFooter>
-      )}
+      <ActionFooter>
+        <Button
+          data-testid='scan-code-btn'
+          variant='secondary'
+          leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
+          onClick={() => setScanModalOpened(true)}
+        >
+          Take custody
+        </Button>
+      </ActionFooter>
       {scanModalOpened && (
         <ScanTransferCodeModal
           opened={scanModalOpened}

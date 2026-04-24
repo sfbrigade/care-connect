@@ -82,8 +82,6 @@ export default async function main (prisma) {
     });
 
     if ((i % 3) === 0) {
-      const arrivedAt = new Date(Date.now() - 60 * 60 * 1000);
-      const now = new Date();
       incident = await prisma.incident.create({
         data: {
           facilityId: facility.id,
@@ -95,9 +93,6 @@ export default async function main (prisma) {
           encounteredVia: 'DISPATCHED',
           cadNumber: `25020${1234 + i}`,
           supervisorBadgeNumber: '1234',
-          arrivedAt,
-          leftAt: now,
-          completedAt: now,
           createdById: sfpdUser.id,
           createdByOrganizationId: sfpdUser.organizationId,
           updatedById: sfpdUser.id,

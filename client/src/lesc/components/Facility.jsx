@@ -8,19 +8,19 @@ import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/F
 function Facility ({
   facility,
   bedTypes,
+  atFacility,
   arrivedAt,
-  leftAt,
-  hasActiveHold,
+  canArrive,
+  canLeave,
   onArrivedClick,
   onLeftClick,
   isArrivalPending,
 }) {
   const { t } = useTranslation();
   const placeholderPhone = '(415) 555-7890';
-  const hasArrived = !!arrivedAt;
-  const hasLeft = !!leftAt;
   const isClosed = facility.status === 'CLOSED';
-  const isArrivedButtonDisabled = isArrivalPending || isClosed || !hasActiveHold;
+  const isArrivedButtonDisabled = isArrivalPending || isClosed || !canArrive;
+  const isLeftButtonDisabled = isArrivalPending || !canLeave;
   const hasAddressParts = [
     facility.addressLine1,
     facility.addressLine2,
@@ -79,7 +79,7 @@ function Facility ({
           )}
         </Stack>
         <Group gap='sm' justify='center' wrap='nowrap'>
-          {(!hasArrived || hasLeft) && (
+          {!atFacility && (
             <Button
               data-testid='arrived-btn'
               size='lg'
@@ -90,19 +90,22 @@ function Facility ({
               {isArrivalPending ? <Loader size='sm' /> : "I've arrived"}
             </Button>
           )}
-          {hasArrived && !hasLeft && (
+          {atFacility && (
             <Button
               data-testid='left-btn'
               size='lg'
               onClick={onLeftClick}
-              disabled={hasActiveHold}
+              disabled={isLeftButtonDisabled}
             >
               I've left
             </Button>
           )}
         </Group>
-        {hasArrived && !hasLeft && <Text align='center' size='md' c='gray.5'>Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
-        {hasLeft && <Text align='center' size='md' c='gray.5'>Left at {DateTime.fromISO(leftAt).toLocaleString(DateTime.TIME_SIMPLE)}</Text>}
+        {atFacility && arrivedAt && (
+          <Text align='center' size='md' c='gray.5'>
+            Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}
+          </Text>
+        )}
       </Stack>
     </Card>
   );

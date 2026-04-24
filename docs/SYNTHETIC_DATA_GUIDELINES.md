@@ -340,7 +340,7 @@ Required (from `IN_CHAIR` or `RELEASED`):
 - `exitConnectedToCare`: `YES`, `NO`, or `UNKNOWN`
 - `exitSFResident`: `YES`, `NO`, `UNKNOWN`, or `DECLINED_CONSENT`
 
-Note: `DECLINED_CONSENT` is stored as `UNKNOWN` in the database.
+Note: `DECLINED_CONSENT` is stored distinctly in the database for SF residency.
 
 ### Exit to Jail (`/exit-to-jail`)
 Role required: `CUSTODY`
@@ -614,6 +614,7 @@ FacilityStatusEnum:   CLOSED | OPEN_NOT_ACCEPTING | OPEN_ACCEPTING
 FacilityTypeEnum:     DIDO | LESC
 BedTypeEnum:          BED | CHAIR
 TernaryEnum:          YES | NO | UNKNOWN
+SFResidentEnum:       YES | NO | UNKNOWN | DECLINED_CONSENT
 RoleEnum:             FIELD | CUSTODY | CARE
 SexEnum:              MALE | FEMALE | OTHER
 ```

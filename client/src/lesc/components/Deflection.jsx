@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 import { Accordion, Box, Button, Container, Divider, Group, Image, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconAlarm } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlarm, IconFileText } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -10,14 +10,13 @@ import { useTranslation } from 'react-i18next';
 import Api from '@/Api';
 import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
-import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidSubstance, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -29,11 +28,6 @@ function Deflection () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
-  });
-
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
@@ -41,6 +35,7 @@ function Deflection () {
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
+  const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
   const detailsComplete = deflection ? isValidDeflection(deflection) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
@@ -65,7 +60,6 @@ function Deflection () {
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const canEditHoldDetails = !isExpiredAutoCancelled;
   const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
@@ -90,70 +84,23 @@ function Deflection () {
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(id, data),
     onSuccess: () => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== id);
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
-        }
-      }
-      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       setShowCancelModal(false);
       showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
       navigate('/holds');
     },
-  });
-
-  const cancelIncidentMutation = useMutation({
-    mutationFn: ({ incidentId, cancelReasonId }) => Api.incidents.cancel(incidentId, { cancelReasonId }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['facilities', facility.id, 'bed-types'],
-      });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        null
-      );
-      await queryClient.removeQueries({
-        queryKey: ['deflections', incident?.id, 'active'],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['deflections', facility.id, 'inactive'],
-      });
-      setShowCancelModal(false);
-      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
-      navigate('/holds');
-    },
     onError: (error) => {
-      const isNetworkError = !error?.response;
-
-      if (isNetworkError) {
-        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
+      const message = error?.response?.data?.error;
+      if (error?.response?.status === 422 && message) {
+        showToast(message, 'error');
         return;
       }
-
-      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+      showToast('We couldn’t cancel the hold', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
 
-  const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
-  const activeHoldsCount = incident?.totalActiveHolds ?? 0;
-  const shouldCancelIncidentWithHold =
-    canCancelIncident &&
-    !!deflection?.subjectId &&
-    deflection?.status === 'ACTIVE' &&
-    activeHoldsCount === 1;
-
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (shouldCancelIncidentWithHold && incident?.id) {
-      await cancelIncidentMutation.mutateAsync({
-        incidentId: incident.id,
-        cancelReasonId,
-      });
-      return;
-    }
-
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
@@ -188,13 +135,13 @@ function Deflection () {
               )}
             </Group>
             <Group gap='xs'>
-              <Text size='md'>Incident {incident ? incident.id : ''}</Text>
+              <Text size='md'>Incident {deflection ? deflection.incidentId : ''}</Text>
               <Text c='gray.5' size='md'>•</Text>
               <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {(doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
+          {!isCustodyTransferred && (doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
             <>
               <Group>
                 <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
@@ -239,7 +186,7 @@ function Deflection () {
                 <Text>{address}</Text>
               </Box>
             )}
-            {canEditHoldDetails && (
+            {isActionableActiveHold && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/subject`)}>
                   {subjectDetailsComplete ? 'Edit details' : 'Finish details'}
@@ -271,6 +218,20 @@ function Deflection () {
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
+                </Stack>
+                {isActionableActiveHold && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>{isValidNarcotics(deflection) ? 'Edit narcotics' : 'Finish narcotics'}</Button>
+                  </Group>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item value='drug-use'>
+              <Accordion.Control>
+                <Title order={3}>Substance use</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
                   <Box>
                     <Text c='dimmed'>Signs of substance use</Text>
                     {(deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined)
@@ -288,7 +249,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/substance`)}>
                       {substanceComplete ? 'Edit substance details' : 'Finish substance details'}
@@ -312,7 +273,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
                   </Group>
@@ -353,7 +314,7 @@ function Deflection () {
                     </Box>
                   )}
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
                     <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/property`)}>{isValidProperty(deflection) ? 'Edit property' : 'Finish property'}</Button>
                   </Group>
@@ -416,9 +377,9 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                 </Stack>
-                {canEditHoldDetails && (
+                {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate('/incident')}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/incident/${deflection?.incidentId}`)}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -431,7 +392,6 @@ function Deflection () {
           <Button
             onClick={() => setShowCancelModal(true)}
             variant='destructive'
-            disabled={!incident}
           >
             Cancel hold
           </Button>
@@ -444,24 +404,19 @@ function Deflection () {
           )}
         </ActionFooter>
       )}
-      {showActionFooter && <Box h='120px' />}
-      {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
+      {isCustodyTransferred && doc647f && (
+        <ActionFooter>
+          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Print 647(f) form</Button>
+        </ActionFooter>
+      )}
+      {(showActionFooter || (isCustodyTransferred && doc647f)) && <Box h='120px' />}
+      {!!deflection && showCancelModal && (
         <CancelHoldModal
-          deflection={deflection}
+          deflections={[deflection]}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
           loading={cancelDeflectionMutation.isPending}
-        />
-      )}
-      {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
-        <CancelIncidentModal
-          opened={showCancelModal}
-          onClose={() => setShowCancelModal(false)}
-          onConfirm={onCancelHoldConfirmed}
-          requiresReason
-          isLastHoldDetailedCancellation
-          loading={cancelIncidentMutation.isPending}
         />
       )}
     </>
