@@ -123,23 +123,6 @@ test('/api/users', async (t) => {
       assert.strictEqual(data.hasActiveFieldWork, true);
     });
 
-    await t.test('hasActiveFieldWork is true for dual-role user with open arrival', async () => {
-      const headers = await authenticate(app, 'dual.user@test.com', 'test');
-      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
-      const incident = await prisma.incident.findFirst();
-      await prisma.incidentOfficer.create({
-        data: {
-          officerId: dualUser.id,
-          incidentId: incident.id,
-          facilityId: incident.facilityId,
-          role: 'ARRESTING',
-          arrivedAt: new Date(),
-        },
-      });
-      const response = await app.inject({ url: '/api/users/me' }).headers(headers);
-      const data = JSON.parse(response.body);
-      assert.strictEqual(data.hasActiveFieldWork, true);
-    });
   });
 
   await t.test('GET /:id', async (t) => {
@@ -553,64 +536,8 @@ test('/api/users', async (t) => {
     });
   });
 
-  await t.test('User.hasOpenArrival', async (t) => {
-    await t.test('returns false when user has no incidentOfficer records', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      assert.equal(await user.hasOpenArrival(prisma), false);
-    });
-
-    await t.test('returns true when user has arrivedAt set and leftAt null', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      const incident = await prisma.incident.findFirst();
-      await prisma.incidentOfficer.create({
-        data: {
-          officerId: user.id,
-          incidentId: incident.id,
-          facilityId: incident.facilityId,
-          role: 'ARRESTING',
-          arrivedAt: new Date(),
-        },
-      });
-      assert.equal(await user.hasOpenArrival(prisma), true);
-    });
-
-    await t.test('returns false when leftAt is set (arrival completed)', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      const incident = await prisma.incident.findFirst();
-      await prisma.incidentOfficer.create({
-        data: {
-          officerId: user.id,
-          incidentId: incident.id,
-          facilityId: incident.facilityId,
-          role: 'ARRESTING',
-          arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
-          leftAt: new Date(),
-        },
-      });
-      assert.equal(await user.hasOpenArrival(prisma), false);
-    });
-
-    await t.test('returns false when arrivedAt is null (assigned but never arrived)', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      const incident = await prisma.incident.findFirst();
-      await prisma.incidentOfficer.create({
-        data: {
-          officerId: user.id,
-          incidentId: incident.id,
-          facilityId: incident.facilityId,
-          role: 'ARRESTING',
-        },
-      });
-      assert.equal(await user.hasOpenArrival(prisma), false);
-    });
-  });
-
   await t.test('User.hasActiveFieldWork', async (t) => {
-    await t.test('returns false when neither active holds nor open arrival', async () => {
+    await t.test('returns false when user has no active holds', async () => {
       const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
       const user = new User(data);
       assert.equal(await user.hasActiveFieldWork(prisma), false);
@@ -630,22 +557,6 @@ test('/api/users', async (t) => {
           status: 'ACTIVE',
           subjectStatus: 'DETAINED',
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-      assert.equal(await user.hasActiveFieldWork(prisma), true);
-    });
-
-    await t.test('returns true when user has an open arrival (no active holds)', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      const incident = await prisma.incident.findFirst();
-      await prisma.incidentOfficer.create({
-        data: {
-          officerId: user.id,
-          incidentId: incident.id,
-          facilityId: incident.facilityId,
-          role: 'ARRESTING',
-          arrivedAt: new Date(),
         },
       });
       assert.equal(await user.hasActiveFieldWork(prisma), true);

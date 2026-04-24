@@ -92,7 +92,7 @@ function EditUserProfilePage () {
     onSuccess: (response) => {
       queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
-        queryClient.setQueryData(['users', 'me'], response.data);
+        queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       }
       showToast('Your profile has been updated', 'success');
       navigate('/profile');

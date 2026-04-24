@@ -56,7 +56,7 @@ function UnitSelector () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.users.update(user.id, values),
     onSuccess: async (response) => {
-      queryClient.setQueryData(['users', 'me'], response.data);
+      queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       if (needsModeSelection && mode) {
         writeStoredWorkMode(mode);
         navigate(MODE_HOME_PATH[mode]);

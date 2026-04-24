@@ -40,7 +40,7 @@ const MODE_SUCCESS_TOAST = {
 };
 const BLOCKED_TOAST = {
   title: 'Couldn\'t update work mode',
-  body: 'You have active field work. Transfer, hand off, or cancel active holds (or close out your arrival) before switching work modes.',
+  body: 'You have active holds. Transfer, hand off, or cancel them before switching work modes.',
 };
 
 function fetchMe () {

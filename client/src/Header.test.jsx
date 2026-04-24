@@ -144,7 +144,7 @@ describe('Header — Work mode submenu', () => {
       "Couldn't update work mode",
       'error',
       5000,
-      expect.stringContaining('active field work')
+      expect.stringContaining('active holds')
     );
   });
 
@@ -231,7 +231,7 @@ describe('Header — mode toggle', () => {
       "Couldn't update work mode",
       'error',
       5000,
-      expect.stringContaining('active field work')
+      expect.stringContaining('active holds')
     );
   });
 });
