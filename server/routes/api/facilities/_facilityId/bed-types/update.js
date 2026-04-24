@@ -112,26 +112,6 @@ export default async function (fastify, opts) {
                 updatedAt: now,
               },
             });
-
-            // Close incident if no more active deflections
-            const activeDeflections = await tx.deflection.count({
-              where: {
-                incidentId: hold.incidentId,
-                status: Deflection.HoldStatus.ACTIVE,
-              },
-            });
-            if (activeDeflections === 0) {
-              await tx.incident.updateMany({
-                where: {
-                  id: hold.incidentId,
-                  arrivedAt: null,
-                },
-                data: {
-                  completedAt: now,
-                  updatedById: userId,
-                },
-              });
-            }
           }
 
           cancelledHolds = inTransitHolds;

@@ -5,20 +5,20 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["nativeDistinct","postgresqlExtensions"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["nativeDistinct", "postgresqlExtensions"]
 }
 
 generator erd {
-  provider = "prisma-erd-generator"
-  output = "./ERD.md"
-  theme = "default"
+  provider                  = "prisma-erd-generator"
+  output                    = "./ERD.md"
+  theme                     = "default"
   includeRelationFromFields = true
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
   extensions = [citext]
 }
 
@@ -91,7 +91,7 @@ enum PropertyEnum {
   LARGE
 }
 
-enum PropertyNotReturnedReasonEnum{
+enum PropertyNotReturnedReasonEnum {
   ABANDONED
   DESTROYED
   OTHER
@@ -136,11 +136,6 @@ enum RoleEnum {
   FACILITY_ADMIN
 }
 
-enum IncidentOfficerRoleEnum {
-  ARRESTING
-  RECEIVING
-}
-
 enum SubjectStatusEnum {
   DETAINED
   ONSITE_AWAITING_TRANSFER
@@ -156,56 +151,53 @@ enum SubjectStatusEnum {
 }
 
 model Organization {
-  id                           String                  @id
-  name                         String
-  defaultRoles                 RoleEnum[]              @default([])
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id           String     @id
+  name         String
+  defaultRoles RoleEnum[] @default([])
+  createdBy    User       @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById  String     @db.Uuid
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  deflections                  Deflection[]
-  incidentOfficers             IncidentOfficer[]
-  incidents                    Incident[]
-  invites                      Invite[]
-  titles                       Title[]
-  units                        Unit[]
-  users                        User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  invites     Invite[]
+  titles      Title[]
+  units       Unit[]
+  users       User[]
 }
 
 model Unit {
-  id                           String
-  organization                 Organization            @relation(fields: [organizationId], references: [id])
-  organizationId               String
-  name                         String
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id             String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  name           String
+  createdBy      User         @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById    String       @db.Uuid
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  deflections                  Deflection[]
-  incidentOfficers             IncidentOfficer[]
-  incidents                    Incident[]
-  users                        User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  users       User[]
 
   @@id(name: "unitId", [id, organizationId])
 }
 
 model Title {
-  id                           String
-  organization                 Organization            @relation(fields: [organizationId], references: [id])
-  organizationId               String
-  name                         String
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id             String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+  name           String
+  createdBy      User         @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById    String       @db.Uuid
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  deflections                  Deflection[]
-  incidentOfficers             IncidentOfficer[]
-  incidents                    Incident[]
-  invites                      Invite[]
-  users                        User[]
+  deflections Deflection[]
+  incidents   Incident[]
+  invites     Invite[]
+  users       User[]
 
   @@id(name: "titleId", [id, organizationId])
 }
@@ -240,307 +232,309 @@ model User {
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
 
-  bedTypesCreated              BedType[]               @relation("CreatedBy")
-  bedTypesUpdated              BedType[]               @relation("UpdatedBy")
-  bedTypeUnavailableReasonsCreated BedTypeUnavailableReason[] @relation("CreatedBy")
-  bedTypeUnavailableReasonsUpdated BedTypeUnavailableReason[] @relation("UpdatedBy")
-  bedTypeUpdatesCreated        BedTypeUpdate[]
-  deflectionCancelReasonsCreated DeflectionCancelReason[] @relation("CreatedBy")
-  deflectionCancelReasonsUpdated DeflectionCancelReason[] @relation("UpdatedBy")
-  deflectionReleaseReasonsCreated DeflectionReleaseReason[] @relation("CreatedBy")
-  deflectionReleaseReasonsUpdated DeflectionReleaseReason[] @relation("UpdatedBy")
-  deflectionRefusalReasonsCreated DeflectionRefusalReason[] @relation("CreatedBy")
-  deflectionRefusalReasonsUpdated DeflectionRefusalReason[] @relation("UpdatedBy")
-  deflectionExitDestinationsCreated DeflectionExitDestination[] @relation("CreatedBy")
-  deflectionExitDestinationsUpdated DeflectionExitDestination[] @relation("UpdatedBy")
+  bedTypesCreated                      BedType[]                     @relation("CreatedBy")
+  bedTypesUpdated                      BedType[]                     @relation("UpdatedBy")
+  bedTypeUnavailableReasonsCreated     BedTypeUnavailableReason[]    @relation("CreatedBy")
+  bedTypeUnavailableReasonsUpdated     BedTypeUnavailableReason[]    @relation("UpdatedBy")
+  bedTypeUpdatesCreated                BedTypeUpdate[]
+  deflectionCancelReasonsCreated       DeflectionCancelReason[]      @relation("CreatedBy")
+  deflectionCancelReasonsUpdated       DeflectionCancelReason[]      @relation("UpdatedBy")
+  deflectionReleaseReasonsCreated      DeflectionReleaseReason[]     @relation("CreatedBy")
+  deflectionReleaseReasonsUpdated      DeflectionReleaseReason[]     @relation("UpdatedBy")
+  deflectionRefusalReasonsCreated      DeflectionRefusalReason[]     @relation("CreatedBy")
+  deflectionRefusalReasonsUpdated      DeflectionRefusalReason[]     @relation("UpdatedBy")
+  deflectionExitDestinationsCreated    DeflectionExitDestination[]   @relation("CreatedBy")
+  deflectionExitDestinationsUpdated    DeflectionExitDestination[]   @relation("UpdatedBy")
   deflectionExitHousingStatusesCreated DeflectionExitHousingStatus[] @relation("CreatedBy")
   deflectionExitHousingStatusesUpdated DeflectionExitHousingStatus[] @relation("UpdatedBy")
-  deflectionsCancelled         Deflection[]            @relation("CancelledBy")
-  deflectionsCreated           Deflection[]            @relation("CreatedBy")
-  deflectionsCurrentOfficer    Deflection[]            @relation("CurrentOfficer")
-  deflectionsTransferred       Deflection[]            @relation("TransferredBy")
-  deflectionsAdmitted          Deflection[]            @relation("AdmittedBy")
-  deflectionsRejected          Deflection[]            @relation("RejectedBy")
-  deflectionsReleased          Deflection[]            @relation("ReleasedBy")
-  deflectionsPropertyReturned  Deflection[]            @relation("PropertyReturnedBy")
-  deflectionsExited            Deflection[]            @relation("ExitedBy")
-  deflectionUpdatesCreated     DeflectionUpdate[]
-  facilitiesCreated            Facility[]              @relation("CreatedBy")
-  facilitiesUpdated            Facility[]              @relation("UpdatedBy")
-  facilityStatusReasonsCreated FacilityStatusReason[]  @relation("CreatedBy")
-  facilityStatusReasonsUpdated FacilityStatusReason[]  @relation("UpdatedBy")
-  facilityUpdatesCreated       FacilityUpdate[]
-  incidentOfficers             IncidentOfficer[]       @relation("IncidentOfficer")
-  incidentOfficersHandedOff    IncidentOfficer[]       @relation("HandoffReceivedFrom")
-  incidentsCreated             Incident[]              @relation("CreatedBy")
-  incidentsUpdated             Incident[]              @relation("UpdatedBy")
-  invitesCreated               Invite[]                @relation("CreatedBy")
-  invitesAccepted              Invite[]                @relation("AcceptedBy")
-  invitesRevoked               Invite[]                @relation("RevokedBy")
-  organizationsCreated         Organization[]          @relation("CreatedBy")
-  deflectionDocumentsCreated   DeflectionDocument[]    @relation("CreatedBy")
-  deflectionDocumentsUpdated   DeflectionDocument[]    @relation("UpdatedBy")
-  propertyPhotosCreated        PropertyPhoto[]         @relation("CreatedBy")
-  propertyPhotosUpdated        PropertyPhoto[]         @relation("UpdatedBy")
-  titlesCreated                Title[]                 @relation("CreatedBy")
-  unitsCreated                 Unit[]                  @relation("CreatedBy") 
+  deflectionsCancelled                 Deflection[]                  @relation("CancelledBy")
+  deflectionsCreated                   Deflection[]                  @relation("CreatedBy")
+  deflectionsCurrentOfficer            Deflection[]                  @relation("CurrentOfficer")
+  deflectionsTransferred               Deflection[]                  @relation("TransferredBy")
+  deflectionsAdmitted                  Deflection[]                  @relation("AdmittedBy")
+  deflectionsRejected                  Deflection[]                  @relation("RejectedBy")
+  deflectionsReleased                  Deflection[]                  @relation("ReleasedBy")
+  deflectionsPropertyReturned          Deflection[]                  @relation("PropertyReturnedBy")
+  deflectionsExited                    Deflection[]                  @relation("ExitedBy")
+  deflectionUpdatesCreated             DeflectionUpdate[]
+  facilitiesCreated                    Facility[]                    @relation("CreatedBy")
+  facilitiesUpdated                    Facility[]                    @relation("UpdatedBy")
+  facilityStatusReasonsCreated         FacilityStatusReason[]        @relation("CreatedBy")
+  facilityStatusReasonsUpdated         FacilityStatusReason[]        @relation("UpdatedBy")
+  facilityUpdatesCreated               FacilityUpdate[]
+  facilityCheckIns                     FacilityCheckIn[]             @relation("FacilityCheckIns")
+  handoffsFrom                         Handoff[]                     @relation("HandoffFrom")
+  handoffsTo                           Handoff[]                     @relation("HandoffTo")
+  incidentsCreated                     Incident[]                    @relation("CreatedBy")
+  incidentsUpdated                     Incident[]                    @relation("UpdatedBy")
+  invitesCreated                       Invite[]                      @relation("CreatedBy")
+  invitesAccepted                      Invite[]                      @relation("AcceptedBy")
+  invitesRevoked                       Invite[]                      @relation("RevokedBy")
+  organizationsCreated                 Organization[]                @relation("CreatedBy")
+  deflectionDocumentsCreated           DeflectionDocument[]          @relation("CreatedBy")
+  deflectionDocumentsUpdated           DeflectionDocument[]          @relation("UpdatedBy")
+  propertyPhotosCreated                PropertyPhoto[]               @relation("CreatedBy")
+  propertyPhotosUpdated                PropertyPhoto[]               @relation("UpdatedBy")
+  titlesCreated                        Title[]                       @relation("CreatedBy")
+  unitsCreated                         Unit[]                        @relation("CreatedBy")
 }
 
 model Invite {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName                    String
-  lastName                     String
-  email                        String                  @db.Citext
-  message                      String?
-  organization                 Organization?           @relation(fields: [organizationId], references: [id])
-  organizationId               String?
-  title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
-  titleId                      String?
-  badgeNumber                  String?
-  prop115Certified             Boolean                 @default(false)
-  expiresAt                    DateTime?
-  updatedAt                    DateTime                @updatedAt
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById                  String                  @db.Uuid
-  acceptedAt                   DateTime?
-  acceptedBy                   User?                   @relation("AcceptedBy", fields: [acceptedById], references: [id])
-  acceptedById                 String?                 @db.Uuid
-  revokedAt                    DateTime?
-  revokedBy                    User?                   @relation("RevokedBy", fields: [revokedById], references: [id])
-  revokedById                  String?                 @db.Uuid
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName        String
+  lastName         String
+  email            String        @db.Citext
+  message          String?
+  organization     Organization? @relation(fields: [organizationId], references: [id])
+  organizationId   String?
+  title            Title?        @relation(fields: [organizationId, titleId], references: [organizationId, id])
+  titleId          String?
+  badgeNumber      String?
+  prop115Certified Boolean       @default(false)
+  expiresAt        DateTime?
+  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime      @default(now())
+  createdBy        User          @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById      String        @db.Uuid
+  acceptedAt       DateTime?
+  acceptedBy       User?         @relation("AcceptedBy", fields: [acceptedById], references: [id])
+  acceptedById     String?       @db.Uuid
+  revokedAt        DateTime?
+  revokedBy        User?         @relation("RevokedBy", fields: [revokedById], references: [id])
+  revokedById      String?       @db.Uuid
 }
 
 model Facility {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                         String
-  type                         FacilityTypeEnum        @default(DIDO)
-  serviceType                  ServiceType             @relation(fields: [serviceTypeId], references: [id])
-  serviceTypeId                String
-  status                       FacilityStatusEnum      @default(OPEN_ACCEPTING)
-  statusReason                 FacilityStatusReason?   @relation(fields: [statusReasonId], references: [id])
-  statusReasonId               String?
-  statusOther                  String?
-  updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
-  updateNotes                  String?
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  type           FacilityTypeEnum         @default(DIDO)
+  serviceType    ServiceType              @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId  String
+  status         FacilityStatusEnum       @default(OPEN_ACCEPTING)
+  statusReason   FacilityStatusReason?    @relation(fields: [statusReasonId], references: [id])
+  statusReasonId String?
+  statusOther    String?
+  updateMethod   FacilityUpdateMethodEnum @default(MANUAL)
+  updateNotes    String?
 
-  subdomain                    String?                 @db.Citext @unique
-  description                  String?
-  phone                        String?
-  email                        String?
-  website                      String?
-  addressLine1                 String?
-  addressLine2                 String?
-  city                         String?
-  state                        String?
-  postalCode                   String?
-  neighborhood                 String?
-  nstDistrict                  String?
-  latitude                     Decimal?                @db.Decimal(9, 6)
-  longitude                    Decimal?                @db.Decimal(9, 6)
-  timezone                     String?
-  isActive                     Boolean                 @default(true)
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  subdomain    String?  @unique @db.Citext
+  description  String?
+  phone        String?
+  email        String?
+  website      String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  neighborhood String?
+  nstDistrict  String?
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  timezone     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  createdBy    User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String   @db.Uuid
+  updatedAt    DateTime @updatedAt
+  updatedBy    User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById  String   @db.Uuid
 
-  amenities                    Amenity[]
-  bedTypes                     BedType[]
-  bedTypeUpdates               BedTypeUpdate[]
-  contacts                     FacilityContact[]
-  deflections                  Deflection[]
-  eligibility                  FacilityEligibility[]
-  incidents                    Incident[]
-  updates                      FacilityUpdate[]
+  amenities        Amenity[]
+  bedTypes         BedType[]
+  bedTypeUpdates   BedTypeUpdate[]
+  contacts         FacilityContact[]
+  deflections      Deflection[]
+  eligibility      FacilityEligibility[]
+  facilityCheckIns FacilityCheckIn[]
+  incidents        Incident[]
+  updates          FacilityUpdate[]
 }
 
 model FacilityUpdate {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String                  @db.Uuid
-  status                       FacilityStatusEnum
-  statusReasonId               String?
-  statusReason                 FacilityStatusReason?   @relation(fields: [statusReasonId], references: [id])
-  statusOther                  String?
-  updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
-  updateNotes                  String?
-  updatedAt                    DateTime                @default(now())
-  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility       Facility                 @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId     String                   @db.Uuid
+  status         FacilityStatusEnum
+  statusReasonId String?
+  statusReason   FacilityStatusReason?    @relation(fields: [statusReasonId], references: [id])
+  statusOther    String?
+  updateMethod   FacilityUpdateMethodEnum @default(MANUAL)
+  updateNotes    String?
+  updatedAt      DateTime                 @default(now())
+  updatedBy      User                     @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById    String                   @db.Uuid
 }
 
 model FacilityStatusReason {
-  id                           String                  @id
-  type                         FacilityTypeEnum?
-  description                  String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String            @id
+  type        FacilityTypeEnum?
+  description String
+  createdAt   DateTime          @default(now())
+  createdBy   User              @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String            @db.Uuid
+  updatedAt   DateTime          @updatedAt
+  updatedBy   User              @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String            @db.Uuid
 
-  facilities                   Facility[]
-  facilityUpdates              FacilityUpdate[]
+  facilities      Facility[]
+  facilityUpdates FacilityUpdate[]
 }
 
 model BedTypeUnavailableReason {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  description                  String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  bedTypes                     BedType[]
-  bedTypeUpdates               BedTypeUpdate[]
+  bedTypes       BedType[]
+  bedTypeUpdates BedTypeUpdate[]
 }
 
 model FacilityContact {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String                  @db.Uuid
-  name                         String
-  role                         String?
-  email                        String?
-  phone                        String?
-  notes                        String?
-  isPrimary                    Boolean                 @default(false)
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId String   @db.Uuid
+  name       String
+  role       String?
+  email      String?
+  phone      String?
+  notes      String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Amenity {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                         String                  @unique
-  description                  String?
-  facilities                   Facility[]
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String     @unique
+  description String?
+  facilities  Facility[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model ServiceType {
-  id                           String                  @id
-  name                         String
-  description                  String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id          String   @id
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  facilities                   Facility[]
+  facilities Facility[]
 }
 
 model BedType {
-  id                           String                  @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String                  @db.Uuid
-  type                         BedTypeEnum             @default(BED)
-  capacity                     Int                     @default(0)
-  unavailableUnoccupied        Int                     @default(0)
-  unavailableOccupied          Int                     @default(0)
-  occupied                     Int                     @default(0)
-  holds                        Int                     @default(0)
-  inTransit                    Int                     @default(0)
-  available                    Int                     @default(0)
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  unavailableReason            BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
-  unavailableReasonId          String?                 @db.Uuid
-  unavailableOther             String?
-  updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
-  updateNotes                  String?
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy",fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id                    String                    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility              Facility                  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId            String                    @db.Uuid
+  type                  BedTypeEnum               @default(BED)
+  capacity              Int                       @default(0)
+  unavailableUnoccupied Int                       @default(0)
+  unavailableOccupied   Int                       @default(0)
+  occupied              Int                       @default(0)
+  holds                 Int                       @default(0)
+  inTransit             Int                       @default(0)
+  available             Int                       @default(0)
+  createdAt             DateTime                  @default(now())
+  createdBy             User                      @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById           String                    @db.Uuid
+  unavailableReason     BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
+  unavailableReasonId   String?                   @db.Uuid
+  unavailableOther      String?
+  updateMethod          FacilityUpdateMethodEnum  @default(MANUAL)
+  updateNotes           String?
+  updatedAt             DateTime                  @updatedAt
+  updatedBy             User                      @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById           String                    @db.Uuid
+
+  deflections Deflection[]
+  updates     BedTypeUpdate[]
 
   @@id(name: "bedTypeId", [id, facilityId])
-
-  deflections                  Deflection[]
-  updates                      BedTypeUpdate[]
 }
 
 model BedTypeUpdate {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid  
-  bedType                      BedType                 @relation(fields: [bedTypeId, facilityId], references: [id, facilityId])
-  bedTypeId                    String                  @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id])
-  facilityId                   String                  @db.Uuid
-  capacity                     Int                     @default(0)
-  unavailableUnoccupied        Int                     @default(0)
-  unavailableOccupied          Int                     @default(0)
-  occupied                     Int                     @default(0)
-  holds                        Int                     @default(0)
-  inTransit                    Int                     @default(0)
-  available                    Int                     @default(0)
-  unavailableReason            BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
-  unavailableReasonId          String?                 @db.Uuid
-  unavailableOther             String?
-  updateMethod                 FacilityUpdateMethodEnum @default(MANUAL)
-  updateNotes                  String?
-  updatedAt                    DateTime                @default(now())
-  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id                    String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bedType               BedType                   @relation(fields: [bedTypeId, facilityId], references: [id, facilityId])
+  bedTypeId             String                    @db.Uuid
+  facility              Facility                  @relation(fields: [facilityId], references: [id])
+  facilityId            String                    @db.Uuid
+  capacity              Int                       @default(0)
+  unavailableUnoccupied Int                       @default(0)
+  unavailableOccupied   Int                       @default(0)
+  occupied              Int                       @default(0)
+  holds                 Int                       @default(0)
+  inTransit             Int                       @default(0)
+  available             Int                       @default(0)
+  unavailableReason     BedTypeUnavailableReason? @relation(fields: [unavailableReasonId], references: [id])
+  unavailableReasonId   String?                   @db.Uuid
+  unavailableOther      String?
+  updateMethod          FacilityUpdateMethodEnum  @default(MANUAL)
+  updateNotes           String?
+  updatedAt             DateTime                  @default(now())
+  updatedBy             User                      @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById           String                    @db.Uuid
 }
 
 model FacilityEligibility {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  facilityId                   String                  @db.Uuid
-  type                         FacilityEligibilityTypeEnum
-  value                        String?
-  notes                        String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id         String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  facility   Facility                    @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  facilityId String                      @db.Uuid
+  type       FacilityEligibilityTypeEnum
+  value      String?
+  notes      String?
+  createdAt  DateTime                    @default(now())
+  updatedAt  DateTime                    @updatedAt
 
   @@index([facilityId, type])
 }
 
 model Subject {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName                    String?
-  lastName                     String?
-  middleInitial                String?
-  dateOfBirth                  DateTime?               @db.Date
-  sex                          SexEnum?
-  race                         RaceEnum?
-  driverLicense                String?
-  addressLine1                 String?
-  addressLine2                 String?
-  city                         String?
-  state                        String?
-  postalCode                   String?
-  localId                      String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName     String?
+  lastName      String?
+  middleInitial String?
+  dateOfBirth   DateTime? @db.Date
+  sex           SexEnum?
+  race          RaceEnum?
+  driverLicense String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  postalCode    String?
+  localId       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  deflections                  Deflection[]
+  deflections Deflection[]
 }
 
 model Deflection {
-  id                           Int                     @id @default(autoincrement())
-  facility                     Facility                @relation(fields: [facilityId], references: [id])
-  facilityId                   String                  @db.Uuid
-  incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
-  incidentId                   Int
-  bedType                      BedType                 @relation(fields: [facilityId, bedTypeId], references: [facilityId, id])
-  bedTypeId                    String                  @db.Uuid 
-  subject                      Subject?                @relation(fields: [subjectId], references: [id])
-  subjectId                    String?                 @db.Uuid
-  subjectStatus                SubjectStatusEnum       @default(DETAINED)
-  narcoticsSubstance           Boolean?
-  narcoticsParaphernalia       Boolean?
-  drugUseEvidence              Boolean?
-  drugType                     DrugTypeEnum?
-  behavior                     String?
-  behaviorNarrative            String?
-  property                     PropertyEnum?
-  propertyDetails              String?
-  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  id                             Int                            @id @default(autoincrement())
+  facility                       Facility                       @relation(fields: [facilityId], references: [id])
+  facilityId                     String                         @db.Uuid
+  incident                       Incident                       @relation(fields: [facilityId, incidentId], references: [facilityId, id])
+  incidentId                     Int
+  bedType                        BedType                        @relation(fields: [facilityId, bedTypeId], references: [facilityId, id])
+  bedTypeId                      String                         @db.Uuid
+  subject                        Subject?                       @relation(fields: [subjectId], references: [id])
+  subjectId                      String?                        @db.Uuid
+  subjectStatus                  SubjectStatusEnum              @default(DETAINED)
+  narcoticsSubstance             Boolean?
+  narcoticsParaphernalia         Boolean?
+  drugUseEvidence                Boolean?
+  drugType                       DrugTypeEnum?
+  behavior                       String?
+  behaviorNarrative              String?
+  property                       PropertyEnum?
+  propertyDetails                String?
+  propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
   propertyReturned             Boolean?
   propertyReturnedAt           DateTime?
@@ -596,30 +590,32 @@ model Deflection {
   exitHousingStatusId          String?
   exitConnectedToCare          TernaryEnum?
   exitSFResident               SFResidentEnum?
+  arrivedAt                    DateTime?
   handoffReadyAt               DateTime?
   updatedAt                    DateTime                @updatedAt
 
-  deflectionUpdates            DeflectionUpdate[]
-  deflectionDocuments          DeflectionDocument[]
-  propertyPhotos               PropertyPhoto[]
+  deflectionUpdates   DeflectionUpdate[]
+  deflectionDocuments DeflectionDocument[]
+  propertyPhotos      PropertyPhoto[]
+  handoffs            Handoff[]
 }
 
 model DeflectionUpdate {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection                   Deflection              @relation(fields: [deflectionId], references: [id])
-  deflectionId                 Int
-  status                       HoldStatusEnum?
-  expiresAt                    DateTime?
-  extensionCount               Int?
-  cancelReason                 DeflectionCancelReason? @relation(fields: [cancelReasonId], references: [id])
-  cancelReasonId               String?
-  subjectStatus                SubjectStatusEnum?
-  releaseReason                DeflectionReleaseReason? @relation(fields: [releaseReasonId], references: [id])
-  releaseReasonId              String?
-  otherReleaseReason           String?
-  otherReleaseDestination      String?
-  propertyReturned             Boolean?
-  propertyNotReturnedReason    PropertyNotReturnedReasonEnum?
+  id                             String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                     Deflection                     @relation(fields: [deflectionId], references: [id])
+  deflectionId                   Int
+  status                         HoldStatusEnum?
+  expiresAt                      DateTime?
+  extensionCount                 Int?
+  cancelReason                   DeflectionCancelReason?        @relation(fields: [cancelReasonId], references: [id])
+  cancelReasonId                 String?
+  subjectStatus                  SubjectStatusEnum?
+  releaseReason                  DeflectionReleaseReason?       @relation(fields: [releaseReasonId], references: [id])
+  releaseReasonId                String?
+  otherReleaseReason             String?
+  otherReleaseDestination        String?
+  propertyReturned               Boolean?
+  propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
   refusalReason                DeflectionRefusalReason? @relation(fields: [refusalReasonId], references: [id])
   refusalReasonId              String?
@@ -635,179 +631,180 @@ model DeflectionUpdate {
 }
 
 model DeflectionCancelReason {
-  id                           String                  @id
-  name                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  deflections                  Deflection[]
-  deflectionUpdates            DeflectionUpdate[]
+  deflections       Deflection[]
+  deflectionUpdates DeflectionUpdate[]
 }
 
 model DeflectionReleaseReason {
-  id                           String                  @id
-  name                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  deflections                  Deflection[]
-  deflectionUpdates            DeflectionUpdate[]
+  deflections       Deflection[]
+  deflectionUpdates DeflectionUpdate[]
 }
 
 model DeflectionRefusalReason {
-  id                           String                  @id
-  name                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  deflections                  Deflection[]
-  deflectionUpdates            DeflectionUpdate[]
+  deflections       Deflection[]
+  deflectionUpdates DeflectionUpdate[]
 }
 
 model DeflectionExitDestination {
-  id                           String                  @id
-  name                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  deflections                  Deflection[]
-  deflectionUpdates            DeflectionUpdate[]
+  deflections       Deflection[]
+  deflectionUpdates DeflectionUpdate[]
 }
 
 model DeflectionExitHousingStatus {
-  id                           String                  @id
-  name                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id          String   @id
+  name        String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String   @db.Uuid
+  updatedAt   DateTime @updatedAt
+  updatedBy   User     @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById String   @db.Uuid
 
-  deflections                  Deflection[]
-  deflectionUpdates            DeflectionUpdate[]
+  deflections       Deflection[]
+  deflectionUpdates DeflectionUpdate[]
 }
 
 model DeflectionDocument {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
-  deflectionId                 Int
-  formId                       String
-  file                         String
-  sourceDataHash               String?
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection     Deflection @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId   Int
+  formId         String
+  file           String
+  sourceDataHash String?
+  createdAt      DateTime   @default(now())
+  createdBy      User       @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById    String     @db.Uuid
+  updatedAt      DateTime   @updatedAt
+  updatedBy      User       @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById    String     @db.Uuid
 
   @@unique([deflectionId, formId])
 }
 
 model PropertyPhoto {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
-  deflectionId                 Int
-  file                         String
-  createdAt                    DateTime                @default(now())
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById                  String                  @db.Uuid
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection   Deflection @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId Int
+  file         String
+  createdAt    DateTime   @default(now())
+  createdBy    User       @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String     @db.Uuid
+  updatedAt    DateTime   @updatedAt
+  updatedBy    User       @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById  String     @db.Uuid
 }
 
 model Incident {
-  id                           Int                     @unique @default(autoincrement())
-  facilityId                   String                  @db.Uuid
-  facility                     Facility                @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  arrivedAt                    DateTime?
-  leftAt                       DateTime?
-  completedAt                  DateTime?
-  addressLine1                 String?
-  addressLine2                 String?
-  city                         String?
-  state                        String?
-  postalCode                   String?
-  latitude                     Decimal?                @db.Decimal(9, 6)
-  longitude                    Decimal?                @db.Decimal(9, 6)
-  arrestedAt                   DateTime?
-  encounteredVia               EncounteredViaEnum?
-  cadNumber                    String?
-  caseNumber                   String?
-  supervisorBadgeNumber        String?
-  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  createdById                  String                  @db.Uuid
-  createdByOrganization        Organization?           @relation(fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
-  createdByOrganizationId      String?
-  createdByTitle               Title?                  @relation(fields: [createdByOrganizationId, createdByTitleId], references: [organizationId, id], onDelete: Restrict)
-  createdByTitleId             String?
-  createdByUnit                Unit?                   @relation(fields: [createdByOrganizationId, createdByUnitId], references: [organizationId, id], onDelete: Restrict)
-  createdByUnitId              String?
-  createdByBadgeNumber         String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
-  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id])
-  updatedById                  String                  @db.Uuid
+  id                      Int                 @unique @default(autoincrement())
+  facilityId              String              @db.Uuid
+  facility                Facility            @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  addressLine1            String?
+  addressLine2            String?
+  city                    String?
+  state                   String?
+  postalCode              String?
+  latitude                Decimal?            @db.Decimal(9, 6)
+  longitude               Decimal?            @db.Decimal(9, 6)
+  arrestedAt              DateTime?
+  encounteredVia          EncounteredViaEnum?
+  cadNumber               String?
+  caseNumber              String?
+  supervisorBadgeNumber   String?
+  createdBy               User                @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  createdById             String              @db.Uuid
+  createdByOrganization   Organization?       @relation(fields: [createdByOrganizationId], references: [id], onDelete: Restrict)
+  createdByOrganizationId String?
+  createdByTitle          Title?              @relation(fields: [createdByOrganizationId, createdByTitleId], references: [organizationId, id], onDelete: Restrict)
+  createdByTitleId        String?
+  createdByUnit           Unit?               @relation(fields: [createdByOrganizationId, createdByUnitId], references: [organizationId, id], onDelete: Restrict)
+  createdByUnitId         String?
+  createdByBadgeNumber    String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  updatedBy               User                @relation("UpdatedBy", fields: [updatedById], references: [id])
+  updatedById             String              @db.Uuid
+
+  deflections Deflection[]
 
   @@id([id, facilityId])
   @@index([cadNumber])
   @@index([caseNumber])
-
-  deflections                  Deflection[]
-  incidentOfficers             IncidentOfficer[]
-}
-
-model IncidentOfficer {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  incident                     Incident                @relation(fields: [facilityId, incidentId], references: [facilityId, id])
-  incidentId                   Int
-  facilityId                   String                  @db.Uuid
-  officer                      User                    @relation("IncidentOfficer", fields: [officerId], references: [id])
-  officerId                    String                  @db.Uuid
-  role                         IncidentOfficerRoleEnum
-  arrivedAt                    DateTime?
-  leftAt                       DateTime?
-  handoffReceivedAt            DateTime?
-  handoffReceivedFrom          User?                   @relation("HandoffReceivedFrom", fields: [handoffReceivedFromId], references: [id])
-  handoffReceivedFromId        String?                 @db.Uuid
-  badgeNumber                  String?
-  organization                 Organization?           @relation(fields: [organizationId], references: [id])
-  organizationId               String?
-  unit                         Unit?                   @relation(fields: [organizationId, unitId], references: [organizationId, id])
-  unitId                       String?
-  title                        Title?                  @relation(fields: [organizationId, titleId], references: [organizationId, id])
-  titleId                      String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
-
-  @@unique([incidentId, facilityId, officerId])
 }
 
 model Feedback {
-  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  message                      String
-  userEmail                    String?
-  userAgent                    String?
-  createdAt                    DateTime                @default(now())
-  updatedAt                    DateTime                @updatedAt
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message   String
+  userEmail String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+enum FacilityCheckInEventEnum {
+  ARRIVAL
+  DEPARTURE
+}
+
+model FacilityCheckIn {
+  id                       String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user                     User                     @relation("FacilityCheckIns", fields: [userId], references: [id])
+  userId                   String                   @db.Uuid
+  facility                 Facility                 @relation(fields: [facilityId], references: [id])
+  facilityId               String                   @db.Uuid
+  timestamp                DateTime                 @default(now())
+  eventType                FacilityCheckInEventEnum
+  arrivedWithDeflectionIds Int[]
+
+  @@index([userId, facilityId, timestamp])
+}
+
+model Handoff {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection    Deflection @relation(fields: [deflectionId], references: [id])
+  deflectionId  Int
+  fromOfficer   User       @relation("HandoffFrom", fields: [fromOfficerId], references: [id])
+  fromOfficerId String     @db.Uuid
+  toOfficer     User       @relation("HandoffTo", fields: [toOfficerId], references: [id])
+  toOfficerId   String     @db.Uuid
+  timestamp     DateTime   @default(now())
+
+  @@index([deflectionId])
 }

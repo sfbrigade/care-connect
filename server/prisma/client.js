@@ -75,27 +75,6 @@ const prisma = new PrismaClient({
               },
             });
 
-            // If the incident has no more active deflections, and the user has not arrived, mark it as completed
-            const incidentIds = [...new Set(deflections.map((deflection) => deflection.incidentId))];
-            for (const incidentId of incidentIds) {
-              // prisma does not support lte on enums, so we use a raw query
-              const [{ activeDeflections }] = await tx.$queryRaw`SELECT COUNT(*) as "activeDeflections" FROM "Deflection" WHERE "incidentId" = ${incidentId} AND "status" = ${Deflection.HoldStatus.ACTIVE}::"HoldStatusEnum" AND "subjectStatus" <= ${Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER}::"SubjectStatusEnum"`;
-              // if the user has not arrived yet, close the incident if there no more deflections
-              if (activeDeflections === BigInt(0)) {
-                await tx.incident.updateMany({
-                  where: {
-                    id: incidentId,
-                    arrivedAt: null
-                  },
-                  data: {
-                    completedAt: now,
-                    updatedById: User.BATCH_USER_ID,
-                    updatedAt: now,
-                  },
-                });
-              }
-            }
-
             // Auto-expired deflections are always DETAINED (in transit)
             const bedTypeUpdate = await tx.bedTypeUpdate.create({
               data: {
