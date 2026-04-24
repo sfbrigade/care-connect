@@ -38,7 +38,7 @@
     "@fastify/swagger": "^9.5.1",
     "@fastify/url-data": "^6.0.3",
     "@pdf-lib/fontkit": "^1.1.1",
-    "@prisma/client": "6.16.2",
+    "@prisma/client": "^6.16.2",
     "@scalar/fastify-api-reference": "^1.35.7",
     "@turf/boolean-point-in-polygon": "^7.2.0",
     "@turf/helpers": "^7.2.0",
