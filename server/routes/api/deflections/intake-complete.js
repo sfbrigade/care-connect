@@ -5,6 +5,12 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+function conflictError () {
+  const error = new Error('Conflict');
+  error.statusCode = StatusCodes.CONFLICT;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/intake-complete',
     {
@@ -40,81 +46,88 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
 
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
-          return reply.code(StatusCodes.CONFLICT).send();
-        }
-
-        const now = new Date();
-        const nextSubjectStatus = completed
-          ? Deflection.SubjectStatus.IN_CHAIR
-          : Deflection.SubjectStatus.FAILED_INTAKE;
-
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: nextSubjectStatus,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            subjectStatus: nextSubjectStatus,
-            ...(completed
-              ? {}
-              : {
-                  rejectedAt: now,
-                  rejectedById: request.user.id,
-                }),
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-
-        // When intake is completed (ADMITTED → IN_CHAIR), transition from hold to occupied.
-        // When intake fails (ADMITTED → FAILED_INTAKE), both are holds so no count change.
-        if (completed) {
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-          const updatedData = {
-            capacity,
-            unavailableUnoccupied,
-            unavailableOccupied,
-            occupied: occupied + 1,
-            holds: Math.max(0, holds - 1),
-            available,
-            updateMethod: 'API',
-            updatedById: request.user.id,
-          };
-          await tx.bedTypeUpdate.create({
-            data: {
-              ...updatedData,
-              bedTypeId,
-              facilityId: deflection.facilityId,
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
             },
           });
-          await tx.bedType.update({
-            where: { id: bedTypeId },
-            data: updatedData,
+
+          if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
+            throw conflictError();
+          }
+
+          const now = new Date();
+          const nextSubjectStatus = completed
+            ? Deflection.SubjectStatus.IN_CHAIR
+            : Deflection.SubjectStatus.FAILED_INTAKE;
+
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: nextSubjectStatus,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
           });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              subjectStatus: nextSubjectStatus,
+              ...(completed
+                ? {}
+                : {
+                    rejectedAt: now,
+                    rejectedById: request.user.id,
+                  }),
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          // When intake is completed (ADMITTED → IN_CHAIR), transition from hold to occupied.
+          // When intake fails (ADMITTED → FAILED_INTAKE), both are holds so no count change.
+          if (completed) {
+            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+            const updatedData = {
+              capacity,
+              unavailableUnoccupied,
+              unavailableOccupied,
+              occupied: occupied + 1,
+              holds: Math.max(0, holds - 1),
+              available,
+              updateMethod: 'API',
+              updatedById: request.user.id,
+            };
+            await tx.bedTypeUpdate.create({
+              data: {
+                ...updatedData,
+                bedTypeId,
+                facilityId: deflection.facilityId,
+              },
+            });
+            await tx.bedType.update({
+              where: { id: bedTypeId },
+              data: updatedData,
+            });
+          }
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
+          return reply.code(StatusCodes.CONFLICT).send();
         }
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

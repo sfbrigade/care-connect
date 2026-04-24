@@ -5,6 +5,12 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+function conflictError () {
+  const error = new Error('Conflict');
+  error.statusCode = StatusCodes.CONFLICT;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/admit',
     {
@@ -32,40 +38,47 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        deflection = await tx.deflection.findUnique({
-          where: { id },
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+          });
+          // ensure correct subject state
+          if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
+            throw conflictError();
+          }
+          // update deflection
+          // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses.
+          // The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR).
+          const now = new Date();
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: Deflection.SubjectStatus.ADMITTED,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              subjectStatus: Deflection.SubjectStatus.ADMITTED,
+              admittedAt: now,
+              admittedById: request.user.id,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
         });
-        // ensure correct subject state
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-        // update deflection
-        // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses.
-        // The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR).
-        const now = new Date();
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.ADMITTED,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            subjectStatus: Deflection.SubjectStatus.ADMITTED,
-            admittedAt: now,
-            admittedById: request.user.id,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

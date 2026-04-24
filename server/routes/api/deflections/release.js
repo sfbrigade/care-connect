@@ -41,6 +41,12 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
   };
 }
 
+function conflictError () {
+  const error = new Error('Conflict');
+  error.statusCode = StatusCodes.CONFLICT;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/release',
     {
@@ -111,97 +117,104 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-        });
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          // re-fetch deflection after lock
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+          });
 
-        if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
-          return reply.code(StatusCodes.CONFLICT).send();
-        }
+          if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
+            throw conflictError();
+          }
 
-        const now = new Date();
-        const previousSubjectStatus = deflection.subjectStatus;
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
-            releaseReasonId,
-            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
-            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        if (isExitRelease) {
+          const now = new Date();
+          const previousSubjectStatus = deflection.subjectStatus;
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
-              status: Deflection.HoldStatus.COMPLETED,
-              subjectStatus: Deflection.SubjectStatus.EXITED,
-              exitDestinationId,
+              subjectStatus: Deflection.SubjectStatus.RELEASED,
+              releaseReasonId,
+              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
               updatedById: request.user.id,
               updatedAt: now,
             },
           });
-        }
 
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            ...(isExitRelease
-              ? {
-                  status: Deflection.HoldStatus.COMPLETED,
-                  completedAt: now,
-                }
-              : {}),
-            subjectStatus: isExitRelease
-              ? Deflection.SubjectStatus.EXITED
-              : Deflection.SubjectStatus.RELEASED,
-            releasedAt: now,
-            releasedById: request.user.id,
-            releaseReasonId,
-            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
-            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
-            ...(isExitRelease
-              ? {
-                  exitedAt: now,
-                  exitedById: request.user.id,
-                  exitDestinationId,
-                }
-              : {}),
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-            exitDestination: true,
-          },
-        });
+          if (isExitRelease) {
+            await tx.deflectionUpdate.create({
+              data: {
+                deflectionId: id,
+                status: Deflection.HoldStatus.COMPLETED,
+                subjectStatus: Deflection.SubjectStatus.EXITED,
+                exitDestinationId,
+                updatedById: request.user.id,
+                updatedAt: now,
+              },
+            });
+          }
 
-        if (isExitRelease) {
-          const bedTypeUpdateData = buildBedTypeUpdate({
-            previousSubjectStatus,
-            bedType,
-            userId: request.user.id,
-          });
-          await tx.bedTypeUpdate.create({
+          deflection = await tx.deflection.update({
+            where: { id },
             data: {
-              ...bedTypeUpdateData,
-              bedTypeId,
-              facilityId: deflection.facilityId,
+              ...(isExitRelease
+                ? {
+                    status: Deflection.HoldStatus.COMPLETED,
+                    completedAt: now,
+                  }
+                : {}),
+              subjectStatus: isExitRelease
+                ? Deflection.SubjectStatus.EXITED
+                : Deflection.SubjectStatus.RELEASED,
+              releasedAt: now,
+              releasedById: request.user.id,
+              releaseReasonId,
+              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+              ...(isExitRelease
+                ? {
+                    exitedAt: now,
+                    exitedById: request.user.id,
+                    exitDestinationId,
+                  }
+                : {}),
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+              exitDestination: true,
             },
           });
-          await tx.bedType.update({
-            where: { id: bedTypeId },
-            data: bedTypeUpdateData,
-          });
+
+          if (isExitRelease) {
+            const bedTypeUpdateData = buildBedTypeUpdate({
+              previousSubjectStatus,
+              bedType,
+              userId: request.user.id,
+            });
+            await tx.bedTypeUpdate.create({
+              data: {
+                ...bedTypeUpdateData,
+                bedTypeId,
+                facilityId: deflection.facilityId,
+              },
+            });
+            await tx.bedType.update({
+              where: { id: bedTypeId },
+              data: bedTypeUpdateData,
+            });
+          }
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
+          return reply.code(StatusCodes.CONFLICT).send();
         }
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

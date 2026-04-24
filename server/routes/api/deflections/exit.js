@@ -15,6 +15,12 @@ const EXITABLE_STATUSES = [
   Deflection.SubjectStatus.RELEASED,
 ];
 
+function conflictError () {
+  const error = new Error('Conflict');
+  error.statusCode = StatusCodes.CONFLICT;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/exit',
     {
@@ -58,77 +64,84 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId);
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId);
 
-        deflection = await tx.deflection.findUnique({
-          where: { id },
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+          });
+
+          if (!EXITABLE_STATUSES.includes(deflection.subjectStatus)) {
+            throw conflictError();
+          }
+
+          const now = new Date();
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              exitDestinationId,
+              exitHousingStatusId,
+              exitConnectedToCare,
+              exitSFResident,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              completedAt: now,
+              exitedAt: now,
+              exitedById: request.user.id,
+              exitDestinationId,
+              exitHousingStatusId,
+              exitConnectedToCare,
+              exitSFResident,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied: occupied - 1,
+            holds,
+            available: available + 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId: deflection.bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
+
+          await tx.bedType.update({
+            where: { id: deflection.bedTypeId },
+            data: updatedData,
+          });
         });
-
-        if (!EXITABLE_STATUSES.includes(deflection.subjectStatus)) {
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-
-        const now = new Date();
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: Deflection.SubjectStatus.EXITED,
-            exitDestinationId,
-            exitHousingStatusId,
-            exitConnectedToCare,
-            exitSFResident,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: Deflection.SubjectStatus.EXITED,
-            completedAt: now,
-            exitedAt: now,
-            exitedById: request.user.id,
-            exitDestinationId,
-            exitHousingStatusId,
-            exitConnectedToCare,
-            exitSFResident,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-
-        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-        const updatedData = {
-          capacity,
-          unavailableUnoccupied,
-          unavailableOccupied,
-          occupied: occupied - 1,
-          holds,
-          available: available + 1,
-          updateMethod: 'API',
-          updatedById: request.user.id,
-        };
-
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedData,
-            bedTypeId: deflection.bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-
-        await tx.bedType.update({
-          where: { id: deflection.bedTypeId },
-          data: updatedData,
-        });
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

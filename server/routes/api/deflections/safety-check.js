@@ -5,6 +5,12 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+function conflictError () {
+  const error = new Error('Conflict');
+  error.statusCode = StatusCodes.CONFLICT;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/:id/safety-check',
     {
@@ -37,44 +43,51 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.CONFLICT).send();
       }
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          // re-fetch deflection after lock
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
 
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
+          if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
+            throw conflictError();
+          }
+
+          const now = new Date();
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-
-        const now = new Date();
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

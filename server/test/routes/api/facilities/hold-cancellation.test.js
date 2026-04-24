@@ -74,6 +74,46 @@ test('Hold cancellation edge cases', async (t) => {
     assert.ok(cancelUpdate, 'Expected deflectionUpdate audit record for auto-cancelled hold');
   });
 
+  await t.test('PATCH bed-type: validation failure rolls back any attempted auto-cancellations', async () => {
+    await app.prisma.deflection.expire();
+
+    const bedTypeBefore = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const cancelledBefore = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.CANCELLED,
+      },
+    });
+
+    const response = await app.inject()
+      .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
+      .headers(facilityAdminHeaders)
+      .payload({
+        unavailableUnoccupied: 7,
+      });
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+    const bedTypeAfter = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const cancelledAfter = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.CANCELLED,
+      },
+    });
+
+    assert.deepStrictEqual(bedTypeAfter.holds, bedTypeBefore.holds);
+    assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit);
+    assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available);
+    assert.deepStrictEqual(cancelledAfter, cancelledBefore);
+  });
+
   await t.test('POST facility status CLOSED: cancels all active in-transit holds', async () => {
     // Expire the expired hold so counts are clean
     await app.prisma.deflection.expire();
