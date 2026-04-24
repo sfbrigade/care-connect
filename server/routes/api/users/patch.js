@@ -69,10 +69,6 @@ export default async function (fastify, opts) {
           [StatusCodes.OK]: User.ResponseSchema,
           [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.NOT_FOUND]: z.null(),
-          [StatusCodes.CONFLICT]: z.object({
-            code: z.literal('ACTIVE_FIELD_WORK'),
-            message: z.string(),
-          }),
         },
       },
       attachValidation: true,
@@ -130,25 +126,9 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
       }
-      // Mode-switch guard: a dual-role user switching INTO custody mode cannot
-      // leave behind active field work (active holds or an open arrival).
-      if (
-        request.body.targetMode === 'CUSTODY' &&
-        data.id === request.user.id &&
-        request.user.isField &&
-        request.user.isCustody
-      ) {
-        const requestingUser = new User(request.user);
-        if (await requestingUser.hasActiveFieldWork(fastify.prisma)) {
-          return reply.code(StatusCodes.CONFLICT).send({
-            code: 'ACTIVE_FIELD_WORK',
-            message: 'Finish active field work first',
-          });
-        }
-      }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
-      const updateData = _.omit(request.body, ['password', 'picture', 'unitName', 'targetMode']);
+      const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;

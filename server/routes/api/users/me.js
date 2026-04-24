@@ -23,8 +23,11 @@ export default async function (fastify, opts) {
         const hasActiveFieldWork = (request.user.isField && request.user.isCustody)
           ? await request.user.hasActiveFieldWork(fastify.prisma)
           : false;
-        request.user.hasActiveFieldWork = hasActiveFieldWork;
-        return reply.send(request.user);
+        return reply.send({
+          ...request.user.toJSON(),
+          pictureUrl: request.user.pictureUrl,
+          hasActiveFieldWork,
+        });
       }
       return reply.status(StatusCodes.NO_CONTENT).send();
     });

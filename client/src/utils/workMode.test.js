@@ -17,9 +17,19 @@ describe('getWorkModeFromPath', () => {
     expect(getWorkModeFromPath('/custody/abc')).toBe('CUSTODY');
   });
 
+  it('returns FIELD for /forms and children', () => {
+    expect(getWorkModeFromPath('/forms')).toBe('FIELD');
+    expect(getWorkModeFromPath('/forms/intake/abc')).toBe('FIELD');
+  });
+
+  it('does not match prefix-bleed paths', () => {
+    expect(getWorkModeFromPath('/holdsfoo')).toBeNull();
+    expect(getWorkModeFromPath('/custodyroom')).toBeNull();
+    expect(getWorkModeFromPath('/incidentish')).toBeNull();
+  });
+
   it('returns null for other paths', () => {
     expect(getWorkModeFromPath('/profile')).toBeNull();
-    expect(getWorkModeFromPath('/work-mode')).toBeNull();
     expect(getWorkModeFromPath('/')).toBeNull();
     expect(getWorkModeFromPath('/care')).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { getWorkModeFromPath } from './utils/workMode';
+import { StatusCodes } from 'http-status-codes';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
   IconSend,
@@ -14,6 +14,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
+import { getWorkModeFromPath } from './utils/workMode';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -33,8 +34,12 @@ const MODE_SUCCESS_TOAST = {
 };
 const BLOCKED_TOAST = {
   title: 'Couldn\'t update work mode',
-  body: 'You have active holds. You must transfer, hand off, or cancel these holds first before switching work modes.',
+  body: 'You have active field work. Transfer, hand off, or cancel active holds (or close out your arrival) before switching work modes.',
 };
+
+function fetchMe () {
+  return Api.users.me().then((r) => r.status === StatusCodes.OK ? r.data : null);
+}
 
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
@@ -44,38 +49,43 @@ function Header ({ opened, close, toggle, logout }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const canChangeWorkMode = isField && isCustody;
+  const isDualRole = isField && isCustody;
 
   const location = useLocation();
-  const workMode = canChangeWorkMode ? getWorkModeFromPath(location.pathname) : null;
+  const workMode = isDualRole ? getWorkModeFromPath(location.pathname) : null;
   const workModeLabel = workMode ? MODE_LABEL[workMode] : null;
 
-  const { data: meData } = useQuery({
-    queryKey: ['users', 'me', 'work-mode-status'],
-    queryFn: () => Api.users.me().then((r) => r.data),
-    enabled: canChangeWorkMode,
-    refetchOnMount: 'always',
+  // Share the cache key with AuthContextProvider so only one /api/users/me
+  // query exists. This observer adds a poll interval for dual-role users and
+  // provides hasActiveFieldWork for the work-mode submenu.
+  const { data: me, isLoading } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: fetchMe,
+    enabled: isDualRole,
     refetchInterval: 30_000,
-    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
-  const hasActiveFieldWork = !!meData?.hasActiveFieldWork;
+  const hasActiveFieldWork = !!me?.hasActiveFieldWork;
 
-  const handleMenuChange = useCallback((isOpen) => {
-    if (isOpen && canChangeWorkMode) {
-      queryClient.invalidateQueries({ queryKey: ['users', 'me', 'work-mode-status'] });
+  const handleMenuOpen = useCallback(() => {
+    if (isDualRole) {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     }
-  }, [canChangeWorkMode, queryClient]);
+  }, [isDualRole, queryClient]);
 
   function handleModeClick (targetMode) {
     close();
     if (targetMode === workMode) return;
-    if (targetMode === 'CUSTODY' && hasActiveFieldWork) {
+    // Re-read from cache at click time so we act on the freshest value that
+    // the invalidate-on-open refetch may have landed since render.
+    const latest = queryClient.getQueryData(['users', 'me']);
+    const blocked = targetMode === 'CUSTODY' && !!latest?.hasActiveFieldWork;
+    if (blocked) {
       showToast(BLOCKED_TOAST.title, 'error', 5000, BLOCKED_TOAST.body);
       return;
     }
-    const path = MODE_HOME_PATH[targetMode];
-    navigate(path);
+    navigate(MODE_HOME_PATH[targetMode]);
     const copy = MODE_SUCCESS_TOAST[targetMode];
     showToast(copy.title, 'success', 4000, copy.body);
   }
@@ -96,7 +106,7 @@ function Header ({ opened, close, toggle, logout }) {
         </Link>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
           {user &&
-            <Menu position='bottom-end' width={280} onChange={handleMenuChange} onDismiss={close}>
+            <Menu position='bottom-end' width={280} onOpen={handleMenuOpen} onClose={close}>
               <Menu.Target>
                 <Burger opened={opened} onClick={toggle} aria-label={opened ? 'Close menu' : 'Open menu'} />
               </Menu.Target>
@@ -129,25 +139,17 @@ function Header ({ opened, close, toggle, logout }) {
                 >
                   Profile
                 </Menu.Item>
-                {canChangeWorkMode && (
+                {isDualRole && (
                   <>
-                    <Menu.Label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        paddingTop: 8,
-                        color: 'var(--mantine-color-dark-9)',
-                        fontSize: 'var(--mantine-font-size-sm)',
-                        fontWeight: 400,
-                      }}
-                    >
-                      <IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />
-                      <span>Work mode</span>
+                    <Menu.Label>
+                      <Group gap={8} align='center'>
+                        <IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />
+                        <Text size='sm' c='dark.9' fw={400}>Work mode</Text>
+                      </Group>
                     </Menu.Label>
                     {['FIELD', 'CUSTODY'].map((m) => {
                       const isCurrent = m === workMode;
-                      const isBlocked = m === 'CUSTODY' && hasActiveFieldWork && !isCurrent;
+                      const isBlocked = m === 'CUSTODY' && hasActiveFieldWork && !isCurrent && !isLoading;
                       return (
                         <Menu.Item
                           key={m}

@@ -57,7 +57,6 @@ const UserUpdateSchema = UserAttributesSchema.extend({
   isAdmin: z.boolean(),
   deactivatedAt: z.coerce.date().nullable(),
   deletedAt: z.coerce.date().nullable(),
-  targetMode: z.enum(['FIELD', 'CUSTODY']),
 }).partial();
 
 export class User extends Base {

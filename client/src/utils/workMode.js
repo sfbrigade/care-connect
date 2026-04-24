@@ -1,5 +1,13 @@
+function startsWithBase (pathname, base) {
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
 export function getWorkModeFromPath (pathname) {
-  if (pathname.startsWith('/custody')) return 'CUSTODY';
-  if (pathname.startsWith('/holds') || pathname.startsWith('/incident')) return 'FIELD';
+  if (startsWithBase(pathname, '/custody')) return 'CUSTODY';
+  if (
+    startsWithBase(pathname, '/holds') ||
+    startsWithBase(pathname, '/incident') ||
+    startsWithBase(pathname, '/forms')
+  ) return 'FIELD';
   return null;
 }

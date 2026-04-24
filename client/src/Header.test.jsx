@@ -69,7 +69,7 @@ function renderHeader (user, pathname = '/') {
 }
 
 beforeEach(() => {
-  meMock.mockResolvedValue({ data: { hasActiveFieldWork: false } });
+  meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: false } });
 });
 
 afterEach(() => {
@@ -123,7 +123,7 @@ describe('Header — Work mode submenu', () => {
   });
 
   it('blocks CUSTODY click when hasActiveFieldWork and shows error toast', async () => {
-    meMock.mockResolvedValue({ data: { hasActiveFieldWork: true } });
+    meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: true } });
     renderHeader(
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
       '/holds'
@@ -140,7 +140,7 @@ describe('Header — Work mode submenu', () => {
       "Couldn't update work mode",
       'error',
       5000,
-      expect.stringContaining('active holds')
+      expect.stringContaining('active field work')
     );
   });
 
