@@ -27,6 +27,7 @@ function ArrivalConfirmationModal ({
             <IconButtonLink
               icon={IconX}
               onClick={onClose}
+              aria-label='Close'
             />
           </Group>
           <Text>Confirm that you've arrived at {facilityName} and can start custody transfer.</Text>

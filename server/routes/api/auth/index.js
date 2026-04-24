@@ -5,4 +5,6 @@ export default async function (fastify, opts) {
   await fastify.register(import('./login.js'), {});
   await fastify.register(import('./logout.js'), {});
   await fastify.register(import('./register.js'), {});
+  await fastify.register(import('./verify-code.js'), {});
+  await fastify.register(import('./resend-code.js'), {});
 }
