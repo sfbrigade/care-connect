@@ -83,11 +83,31 @@ export default async function (fastify, opts) {
               createdBy: true,
               subject: true,
             },
+            orderBy: [
+              { bedTypeId: 'asc' },
+              { createdAt: 'desc' },
+            ],
           });
 
           const now = new Date();
           for (const hold of activeHolds) {
             const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, hold.bedTypeId);
+            const cancelled = await tx.deflection.updateMany({
+              where: {
+                id: hold.id,
+                status: Deflection.HoldStatus.ACTIVE,
+                subjectStatus: Deflection.SubjectStatus.DETAINED,
+              },
+              data: {
+                status: Deflection.HoldStatus.CANCELLED,
+                cancelledAt: now,
+                cancelledById: userId,
+                updatedAt: now,
+              },
+            });
+            if (cancelled.count === 0) {
+              continue;
+            }
 
             // Create deflection update audit record
             await tx.deflectionUpdate.create({
@@ -99,23 +119,12 @@ export default async function (fastify, opts) {
               },
             });
 
-            // Cancel the deflection
-            await tx.deflection.update({
-              where: { id: hold.id },
-              data: {
-                status: Deflection.HoldStatus.CANCELLED,
-                cancelledAt: now,
-                cancelledById: userId,
-                updatedAt: now,
-              },
-            });
-
             // Update bed type counts
-            const updatedHolds = bedType.holds - 1;
+            const updatedHolds = Math.max(0, bedType.holds - 1);
             const updatedAvailable = bedType.capacity - bedType.unavailableUnoccupied - bedType.unavailableOccupied - bedType.occupied - updatedHolds;
             const bedTypeData = {
               holds: updatedHolds,
-              inTransit: bedType.inTransit - 1,
+              inTransit: Math.max(0, bedType.inTransit - 1),
               available: updatedAvailable,
               updateMethod: BedType.UpdateMethod.MANUAL,
               updatedById: userId,

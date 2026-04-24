@@ -55,6 +55,8 @@ export default async function (fastify, opts) {
       let bedType;
       let cancelledHolds = [];
       await fastify.prisma.$transaction(async (tx) => {
+        await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+
         // refetch with lock
         bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
         // Merge existing data with updates to calculate new metrics
@@ -91,7 +93,25 @@ export default async function (fastify, opts) {
           }
 
           const now = new Date();
+          const actuallyCancelledHolds = [];
           for (const hold of inTransitHolds) {
+            const cancelled = await tx.deflection.updateMany({
+              where: {
+                id: hold.id,
+                status: Deflection.HoldStatus.ACTIVE,
+                subjectStatus: Deflection.SubjectStatus.DETAINED,
+              },
+              data: {
+                status: Deflection.HoldStatus.CANCELLED,
+                cancelledAt: now,
+                cancelledById: userId,
+                updatedAt: now,
+              },
+            });
+            if (cancelled.count === 0) {
+              continue;
+            }
+
             // Create deflection update audit record
             await tx.deflectionUpdate.create({
               data: {
@@ -102,23 +122,20 @@ export default async function (fastify, opts) {
               },
             });
 
-            // Cancel the deflection
-            await tx.deflection.update({
-              where: { id: hold.id },
-              data: {
-                status: Deflection.HoldStatus.CANCELLED,
-                cancelledAt: now,
-                cancelledById: userId,
-                updatedAt: now,
-              },
+            actuallyCancelledHolds.push(hold);
+          }
+
+          if (actuallyCancelledHolds.length < holdsToCancel) {
+            return reply.code(StatusCodes.BAD_REQUEST).send({
+              error: 'Cannot make that many chairs unavailable. Not enough in-transit holds to cancel.',
             });
           }
 
-          cancelledHolds = inTransitHolds;
+          cancelledHolds = actuallyCancelledHolds;
 
           // Adjust holds count and recalculate available
-          nextData.holds -= inTransitHolds.length;
-          nextData.inTransit -= inTransitHolds.length;
+          nextData.holds = Math.max(0, nextData.holds - actuallyCancelledHolds.length);
+          nextData.inTransit = Math.max(0, nextData.inTransit - actuallyCancelledHolds.length);
           available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
         }
 

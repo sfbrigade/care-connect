@@ -357,4 +357,66 @@ test('Hold cancellation edge cases', async (t) => {
     assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
     assert.notDeepStrictEqual(deflection.status, Deflection.HoldStatus.ACTIVE);
   });
+
+  await t.test('concurrent bed-type shrink vs facility close never drives counters negative or double-cancels holds', async () => {
+    await app.prisma.deflection.expire();
+
+    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
+    const [shrinkResponse, closeResponse] = await Promise.all([
+      app.inject()
+        .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          unavailableUnoccupied: 7,
+          unavailableReasonId: reason.id,
+        }),
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/status`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Concurrent close',
+        }),
+    ]);
+
+    assert.ok([StatusCodes.OK, StatusCodes.BAD_REQUEST].includes(shrinkResponse.statusCode));
+    assert.deepStrictEqual(closeResponse.statusCode, StatusCodes.OK);
+
+    const bedType = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const holdBackedStatuses = [
+      Deflection.SubjectStatus.DETAINED,
+      Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+      Deflection.SubjectStatus.READY_FOR_INTAKE,
+    ];
+    const activeHolds = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: {
+          in: holdBackedStatuses,
+        },
+      },
+    });
+    const activeInTransit = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: Deflection.SubjectStatus.DETAINED,
+      },
+    });
+
+    assert.ok(bedType.holds >= 0);
+    assert.ok(bedType.inTransit >= 0);
+    assert.deepStrictEqual(bedType.holds, activeHolds);
+    assert.deepStrictEqual(bedType.inTransit, activeInTransit);
+    assert.deepStrictEqual(
+      bedType.available,
+      bedType.capacity - bedType.unavailableUnoccupied - bedType.unavailableOccupied - bedType.occupied - bedType.holds
+    );
+  });
 });
