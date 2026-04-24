@@ -31,6 +31,7 @@ export const metadata = {
       include: {
         organization: true,
         unit: true,
+        title: true,
       },
     },
   },

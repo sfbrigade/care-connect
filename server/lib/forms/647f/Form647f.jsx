@@ -60,8 +60,8 @@ export default function Form647f ({ data = {} }) {
     facilityAddress = '',
   } = data;
 
-  const arrestingOfficer = joinWords(officerRank, officerName, `#${officerBadge}`);
-  const transferOfficer = joinWords(transferOfficerRank, transferOfficerName, `#${transferOfficerBadge}`);
+  const arrestingOfficer = joinWords(officerRank, officerName, officerBadge && `#${officerBadge}`);
+  const transferOfficer = joinWords(transferOfficerRank, transferOfficerName, transferOfficerBadge && `#${transferOfficerBadge}`);
   const substanceNot = substanceFound ? '' : 'not ';
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
