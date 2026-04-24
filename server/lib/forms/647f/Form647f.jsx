@@ -1,5 +1,5 @@
 import React from 'react';
-import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase } from '../shared/formUtils.js';
+import { FORM_TIMEZONE, formatDateTime24, formatDateOnly, titleCase, joinWords } from '../shared/formUtils.js';
 import { Header, Row, SectionHeader } from '../shared/formComponents.jsx';
 
 /*
@@ -42,12 +42,15 @@ export default function Form647f ({ data = {} }) {
     arrestLocation = '',
     charge = '',
     cadNumber = '',
+    officerRank = '',
     officerName = '',
     officerBadge = '',
     officerUnit = '',
-    agency = '',
+    officerAgency = '',
     supervisorBadgeNumber = '',
+    transferOfficerRank = '',
     transferOfficerName = '',
+    transferOfficerBadge = '',
     justification = '',
     hospitalCancellationReleaseNarrative = '',
     substanceFound = false,
@@ -57,6 +60,8 @@ export default function Form647f ({ data = {} }) {
     facilityAddress = '',
   } = data;
 
+  const arrestingOfficer = joinWords(officerRank, officerName, `#${officerBadge}`);
+  const transferOfficer = joinWords(transferOfficerRank, transferOfficerName, `#${transferOfficerBadge}`);
   const substanceNot = substanceFound ? '' : 'not ';
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
@@ -76,29 +81,28 @@ export default function Form647f ({ data = {} }) {
         <table className='form-table'>
           <tbody>
             <SectionHeader title='Subject Information' />
-            <Row label='Subject Last Name' value={subjectLastName} required />
-            <Row label='Subject First Name' value={subjectFirstName} required />
+            <Row label='Subject Last Name' value={subjectLastName} />
+            <Row label='Subject First Name' value={subjectFirstName} />
             <Row label='Subject Middle Initial' value={subjectMiddleInitial} />
-            <Row label='Race' value={titleCase(subjectRace)} required />
-            <Row label='Sex' value={titleCase(subjectSex)} required />
-            <Row label='Date of Birth (DOB)' value={formatDateOnly(subjectDOB)} required />
+            <Row label='Race' value={titleCase(subjectRace)} />
+            <Row label='Sex' value={titleCase(subjectSex)} />
+            <Row label='Date of Birth (DOB)' value={formatDateOnly(subjectDOB)} />
             <Row label='Address' value={subjectAddress} />
             <Row label="Driver's License" value={subjectDL} />
             <Row label='Local ID / SF #' value={subjectLocalId} />
 
             <SectionHeader title='Arrest Information' />
-            <Row label='Date/Time Arrested' value={formatDateTime24(arrestedAt)} required />
-            <Row label='Location Arrested' value={arrestLocation} required />
-            <Row label='Charge' value={charge || '647(f) RWS'} required />
-            <Row label='CAD Number' value={cadNumber} required />
+            <Row label='Date/Time Arrested' value={formatDateTime24(arrestedAt)} />
+            <Row label='Location Arrested' value={arrestLocation} />
+            <Row label='Charge' value={charge || '647(f) RWS'} />
+            <Row label='CAD Number' value={cadNumber} />
 
             <SectionHeader title='Officer Information' />
-            <Row label='Arresting Officer' value={officerName} required />
-            <Row label='Badge Number / Star Number' value={officerBadge} required />
-            <Row label='Unit' value={officerUnit} required />
-            <Row label='Agency' value={agency} required />
-            <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} required />
-            <Row label='Officer Present at Custody Transfer' value={transferOfficerName} />
+            <Row label='Arresting Officer' value={arrestingOfficer} />
+            <Row label='Unit' value={officerUnit} />
+            <Row label='Agency' value={officerAgency} />
+            <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} />
+            <Row label='Officer Present at Custody Transfer' value={transferOfficer} />
 
             <SectionHeader title='Additional Information' />
             <Row label='Hold ID' value={String(deflectionId)} />
@@ -109,12 +113,10 @@ export default function Form647f ({ data = {} }) {
 
         <div className='narrative-section'>
           <div className='narrative-label'>
-            647(f) RWS Justification / Narrative<span style={{ color: '#c00' }}>*</span>
+            647(f) RWS Justification / Narrative
           </div>
           <div className='narrative-text'>{narrative}</div>
         </div>
-
-        <div className='footer-note'>* Required field</div>
 
         <footer>
           <span>

@@ -15,12 +15,18 @@ export const metadata = {
           include: {
             organization: true,
             unit: true,
+            title: true,
           },
         },
       },
     },
     facility: true,
-    transferredBy: true,
+    transferredBy: {
+      include: {
+        unit: true,
+        title: true,
+      },
+    },
     createdBy: {
       include: {
         organization: true,
