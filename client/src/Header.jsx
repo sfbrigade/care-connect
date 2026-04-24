@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
-import { Badge, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
+import { Burger, Box, Container, Group, Menu, SegmentedControl, Text, Title } from '@mantine/core';
 import {
   IconSend,
   IconHome,
@@ -29,7 +29,6 @@ const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
 const MODE_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };
 const MODE_BADGE_LABEL = { FIELD: 'FIELD', CUSTODY: 'RESET' };
 const MODE_COLOR = { FIELD: 'violet', CUSTODY: 'green' };
-const OPPOSITE_MODE = { FIELD: 'CUSTODY', CUSTODY: 'FIELD' };
 const MODE_SUCCESS_TOAST = {
   FIELD: {
     title: 'Mode changed to "In the field"',
@@ -97,11 +96,13 @@ function Header ({ opened, close, toggle, logout }) {
     }
   }, [isDualRole, queryClient]);
 
-  function handleModeClick (targetMode) {
+  async function handleModeClick (targetMode) {
     close();
     if (targetMode === workMode) return;
-    // Re-read from cache at click time so we act on the freshest value that
-    // the invalidate-on-open refetch may have landed since render.
+    // Force a fresh users.me fetch before acting. Hold-changing mutations
+    // elsewhere don't invalidate this key, so the cached hasActiveFieldWork
+    // can lag until the next poll tick.
+    await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     const latest = queryClient.getQueryData(['users', 'me']);
     const blocked = targetMode === 'CUSTODY' && !!latest?.hasActiveFieldWork;
     if (blocked) {
@@ -116,43 +117,56 @@ function Header ({ opened, close, toggle, logout }) {
   return (
     <Container h='100%'>
       <Group h='100%' align='center' justify='space-between' wrap='nowrap'>
-        <Link to='/' onClick={close} style={{ minWidth: 0 }}>
-          <Box>
-            <Group gap='xs' wrap='nowrap' align='center'>
-              <Title order={3} c='black' truncate>{facility ? `${user?.rank ?? ''} ${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() : 'CareConnectSF'}</Title>
-              {facility && isDualRole && workMode && (
-                <Badge
+        <Box style={{ minWidth: 0 }}>
+          <Group gap='xs' wrap='nowrap' align='center'>
+            <Link to='/' onClick={close} style={{ minWidth: 0 }}>
+              <Title order={3} c='black' truncate>
+                {facility
+                  ? [user?.rank, user?.firstName ? `${user.firstName[0]}.` : null, user?.lastName].filter(Boolean).join(' ')
+                  : 'CareConnectSF'}
+              </Title>
+            </Link>
+            {facility && isDualRole && workMode && (() => {
+              const isCustodyBlocked = workMode === 'FIELD' && hasActiveFieldWork && !isLoading;
+              const labelStyle = { display: 'inline-block', width: 56, textAlign: 'center' };
+              return (
+                <SegmentedControl
+                  size='sm'
+                  value={workMode}
+                  onChange={(value) => handleModeClick(value)}
                   color={MODE_COLOR[workMode]}
-                  variant='light'
-                  size='lg'
-                  role='button'
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleModeClick(OPPOSITE_MODE[workMode]);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleModeClick(OPPOSITE_MODE[workMode]);
-                    }
-                  }}
-                  style={{ cursor: 'pointer', flexShrink: 0 }}
-                  aria-label={`Switch work mode to ${MODE_LABEL[OPPOSITE_MODE[workMode]]}`}
-                >
-                  {MODE_BADGE_LABEL[workMode]}
-                </Badge>
-              )}
-            </Group>
-            {user?.unit?.name && (
-              <Text size='sm' color='dimmed' truncate>
-                {user.unit.name}
-              </Text>
-            )}
-          </Box>
-        </Link>
+                  data={[
+                    {
+                      value: 'FIELD',
+                      label: <span style={labelStyle}>{MODE_BADGE_LABEL.FIELD}</span>,
+                    },
+                    {
+                      value: 'CUSTODY',
+                      label: (
+                        <span
+                          style={{
+                            ...labelStyle,
+                            opacity: isCustodyBlocked ? 0.4 : 1,
+                            cursor: isCustodyBlocked ? 'not-allowed' : undefined,
+                          }}
+                        >
+                          {MODE_BADGE_LABEL.CUSTODY}
+                        </span>
+                      ),
+                    },
+                  ]}
+                  aria-label='Work mode'
+                  style={{ flexShrink: 0 }}
+                />
+              );
+            })()}
+          </Group>
+          {user?.unit?.name && (
+            <Text size='sm' color='dimmed' truncate>
+              {user.unit.name}
+            </Text>
+          )}
+        </Box>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
           {user &&
             <Menu position='bottom-end' width={280} onOpen={handleMenuOpen} onClose={close}>

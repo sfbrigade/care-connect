@@ -1,6 +1,7 @@
 import { matchPath } from 'react-router';
 
 import { UserRole } from '@/hooks/useUserRole';
+import { readStoredWorkMode } from './utils/workMode';
 
 export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
@@ -27,6 +28,14 @@ export const REDIRECTS = [
 
 export function getDefaultPathForUser (user) {
   const roles = user?.roles ?? [];
+  // Dual-role users route to their remembered mode so they don't land on
+  // /custody and leave it in browser history when their current mode is
+  // FIELD (or vice-versa).
+  if (roles.includes(UserRole.FIELD) && roles.includes(UserRole.CUSTODY)) {
+    const stored = readStoredWorkMode();
+    if (stored === 'FIELD') return '/holds';
+    if (stored === 'CUSTODY') return '/custody';
+  }
   if (roles.includes(UserRole.CUSTODY)) return '/custody';
   if (roles.includes(UserRole.CARE)) return '/care';
   return '/holds';
@@ -47,7 +56,7 @@ export function handleRedirects (authContext, location, pathname, handler, { has
     authContext.user.roles?.includes(UserRole.CUSTODY) &&
     hasActiveFieldWork
   ) {
-    return handler('/holds', { workModeBlocked: true });
+    return handler('/holds');
   }
   let match;
   for (const pattern of ADMIN_AUTH_PROTECTED_PATHS) {
