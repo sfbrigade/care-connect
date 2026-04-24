@@ -140,7 +140,7 @@ function EditUserProfilePage () {
                     onChange={handleUnitChange}
                     disabled={!form.getValues().organizationId}
                     rightSection={units === undefined && form.getValues().organizationId ? <Loader size='sm' /> : null}
-                    nothingfound='No units found'
+                    nothingFoundMessage='No units found'
                   />
                 )}
                 {form.getValues().organizationId === 'sfso' && (
