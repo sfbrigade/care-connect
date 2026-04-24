@@ -3,6 +3,7 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
+import Facility from '#models/facility.js';
 
 function assertCareSubjectRedaction (subject) {
   assert.ok(subject);
@@ -18,6 +19,7 @@ test('/api/deflections', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
   const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
@@ -1219,6 +1221,42 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.error, 'No available beds');
+    });
+
+    await t.test('returns 409 if facility is open but not accepting', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.OPEN_NOT_ACCEPTING,
+          statusReasonId: 'other',
+          statusOther: 'Pausing reopens',
+        });
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'Facility is not accepting new holds');
+    });
+
+    await t.test('returns 409 if facility is closed', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Closed for testing',
+        });
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.error, 'Facility is not accepting new holds');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
