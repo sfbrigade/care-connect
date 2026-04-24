@@ -742,7 +742,7 @@ model DeflectionDocument {
 
 model SatisfactionSurvey {
   id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  source                 String
+  department             String
   careConnectRating      String
   improvementSuggestions String?
   resetFacilityFeedback  String

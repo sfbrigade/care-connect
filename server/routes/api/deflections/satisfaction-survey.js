@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { canReadDeflection } from '#lib/deflectionVisibility.js';
 
 const BodySchema = z.object({
-  source: z.enum(['legal_release', 'holds_ive_left']),
+  department: z.enum(['SFSO', 'SFPD', 'CONNECTIONS']),
   answers: z.object({
     careConnectRating: z.enum(['bad', 'neutral', 'good']),
     improvementSuggestions: z.string().trim().max(5000).optional(),
@@ -36,7 +36,7 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const { source, answers } = request.body;
+      const { department, answers } = request.body;
 
       const deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -49,13 +49,12 @@ export default async function (fastify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      const improvementTrimmed = answers.improvementSuggestions?.trim();
       const row = await fastify.prisma.satisfactionSurvey.create({
         data: {
-          source,
+          department,
           careConnectRating: answers.careConnectRating,
-          improvementSuggestions: improvementTrimmed ? improvementTrimmed : null,
-          resetFacilityFeedback: answers.resetFacilityFeedback.trim(),
+          improvementSuggestions: answers.improvementSuggestions?.trim() ?? undefined,
+          resetFacilityFeedback: answers.resetFacilityFeedback?.trim() ?? undefined,
         },
       });
 

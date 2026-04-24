@@ -130,7 +130,7 @@ function Holds () {
     navigate,
     deflections?.[0]?.id ?? incident?.id ?? '',
     {
-      surveySource: 'holds_ive_left',
+      department: 'SFPD',
     }
   );
 

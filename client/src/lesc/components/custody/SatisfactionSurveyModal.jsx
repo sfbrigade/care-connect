@@ -25,7 +25,7 @@ export function isSatisfactionSurveyEnabled () {
   return true;
 }
 
-export function appendSatisfactionSurveyResponse (deflectionId, didCompleteSurvey, answers, { source = 'legal_release' } = {}) {
+export function appendSatisfactionSurveyResponse (deflectionId, didCompleteSurvey, answers, { department } = {}) {
   const previousResponses = JSON.parse(window.sessionStorage.getItem(SATISFACTION_SURVEY_RESPONSES_KEY) || '[]');
   window.sessionStorage.setItem(
     SATISFACTION_SURVEY_RESPONSES_KEY,
@@ -33,7 +33,7 @@ export function appendSatisfactionSurveyResponse (deflectionId, didCompleteSurve
       ...previousResponses,
       {
         deflectionId: String(deflectionId),
-        source,
+        department,
         didCompleteSurvey,
         answers,
         createdAt: new Date().toISOString(),
@@ -46,7 +46,7 @@ function SatisfactionSurveyModal ({
   opened,
   deflectionId,
   onFinished,
-  source = 'legal_release',
+  department,
 }) {
   const { showToast } = useToast();
   const [surveyStep, setSurveyStep] = useState(0);
@@ -66,7 +66,7 @@ function SatisfactionSurveyModal ({
       try {
         setSubmitting(true);
         await Api.deflections.submitSatisfactionSurvey(deflectionId, {
-          source,
+          department,
           answers: {
             careConnectRating: surveyAnswers.careConnectRating,
             resetFacilityFeedback: surveyAnswers.resetFacilityFeedback.trim(),

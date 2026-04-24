@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "public"."SatisfactionSurvey" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "source" TEXT NOT NULL,
+    "department" TEXT NOT NULL,
     "careConnectRating" TEXT NOT NULL,
     "improvementSuggestions" TEXT,
     "resetFacilityFeedback" TEXT NOT NULL,

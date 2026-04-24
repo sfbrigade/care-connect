@@ -9,7 +9,7 @@ export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
  * After a SFSO legal release or SFPD leaves facility, either navigates immediately or waits 3s
  * and opens the satisfaction survey modal, then optionally navigates.
  */
-function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_release' } = {}) {
+function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
   const shouldShowSatisfactionSurvey = isSatisfactionSurveyEnabled();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
   const [staySurveyScheduled, setStaySurveyScheduled] = useState(false);
@@ -36,14 +36,14 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
         state: {
           [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
             deflectionId,
-            surveySource,
+            department,
           },
         },
       });
       return;
     }
     navigate(path);
-  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, surveySource]);
+  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, department]);
 
   /**
    * Show the delayed survey without navigating afterward (e.g. after "I've left" on Holds).
@@ -65,7 +65,7 @@ function useSatisfactionSurvey (navigate, deflectionId, { surveySource = 'legal_
     <SatisfactionSurveyModal
       opened={isSurveyModalOpen}
       deflectionId={activeSurveyContextId}
-      source={surveySource}
+      department={department}
       onFinished={closeSurveyAndContinue}
     />
   );
