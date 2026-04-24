@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import { holdExpiresAt } from '#lib/holds.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/reopen', {
@@ -46,11 +47,6 @@ export default async function (fastify, opts) {
           incident: true,
         }
       });
-      if (deflection.incident.completedAt) {
-        return reply.code(StatusCodes.BAD_REQUEST).send({
-          error: 'Incident is already completed',
-        });
-      }
       if (deflection.status !== Deflection.HoldStatus.CANCELLED && deflection.status !== Deflection.HoldStatus.EXPIRED) {
         return reply.code(StatusCodes.BAD_REQUEST).send({
           error: 'Deflection is not cancelled or expired',
@@ -96,7 +92,7 @@ export default async function (fastify, opts) {
         data: {
           deflectionId: id,
           status: Deflection.HoldStatus.ACTIVE,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          expiresAt: holdExpiresAt(),
           updatedById: request.user.id,
           updatedAt: new Date(),
         },

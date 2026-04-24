@@ -6,6 +6,7 @@ import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import IconButtonLink from '@/components/IconButtonLink';
 
 import AdjustAvailability from './AdjustAvailability';
@@ -19,13 +20,13 @@ function ManageCapacity () {
   const { data: freshFacility } = useQuery({
     queryKey: ['facilities', facility.id],
     queryFn: () => Api.facilities.get(facility.id).then(response => response.data),
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
   const { data: bedTypes } = useQuery({
     queryKey: ['facilities', facility.id, 'bed-types'],
     queryFn: () => Api.facilities.bedTypes.index(facility.id).then(response => response.data),
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
   const currentFacility = freshFacility || facility;
@@ -37,7 +38,7 @@ function ManageCapacity () {
         <title>Manage capacity</title>
       </Head>
       <Stack>
-        <IconButtonLink icon={IconArrowLeft} to='/' />
+        <IconButtonLink icon={IconArrowLeft} to='/' aria-label='Go back' />
 
         <div>
           <Text c='dimmed' size='sm'>Manage capacity</Text>

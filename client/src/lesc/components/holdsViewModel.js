@@ -84,28 +84,25 @@ export function buildAutoCancelledHoldsMessage (count) {
 }
 
 export function detectAutoCancelledExpiredHolds ({
-  previousIncidentId,
   previousDeflectionIds = [],
   currentDeflections = [],
   historyDeflections = [],
 }) {
-  const incidentId = previousIncidentId ?? currentDeflections[0]?.incidentId;
-  if (!incidentId || previousDeflectionIds.length === 0) return null;
+  if (previousDeflectionIds.length === 0) return null;
 
   const currentDeflectionIds = new Set(currentDeflections.map((deflection) => deflection.id));
   const removedDeflectionIds = previousDeflectionIds.filter((id) => !currentDeflectionIds.has(id));
   if (removedDeflectionIds.length === 0) return null;
 
-  const removedDeflectionIdSet = new Set(removedDeflectionIds);
-  const expiredDeflections = getExpiredDeflectionsForIncident(historyDeflections, incidentId)
-    .filter((deflection) => removedDeflectionIdSet.has(deflection.id));
+  const removedSet = new Set(removedDeflectionIds);
+  const expiredDeflections = historyDeflections.filter((d) =>
+    removedSet.has(d.id) && d.status === 'EXPIRED'
+  );
 
   if (expiredDeflections.length === 0) return null;
 
   return {
-    incidentId,
     count: expiredDeflections.length,
-    allExpired: currentDeflectionIds.size === 0,
   };
 }
 
@@ -127,6 +124,8 @@ function toMillis (value) {
 }
 
 export function getDeflectionActivityMs (deflection) {
+  // Only timestamps that represent events that actually happened.
+  // expiresAt is a scheduled future deadline, not activity, so excluded.
   return Math.max(
     toMillis(deflection?.updatedAt),
     toMillis(deflection?.cancelledAt),
@@ -134,7 +133,6 @@ export function getDeflectionActivityMs (deflection) {
     toMillis(deflection?.releasedAt),
     toMillis(deflection?.admittedAt),
     toMillis(deflection?.transferredAt),
-    toMillis(deflection?.expiresAt),
     toMillis(deflection?.createdAt)
   );
 }

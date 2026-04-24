@@ -34,11 +34,6 @@ function SubstanceForm () {
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
   const autoSaveTimerRef = useRef(null);
 
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
-  });
-
   const { data: deflection, isLoading } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
@@ -106,13 +101,7 @@ function SubstanceForm () {
 
   async function updateDeflectionCache (updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
-    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-    if (cachedDeflections) {
-      const updatedDeflections = cachedDeflections.map(d => (
-        d.id === id ? updatedDeflection : d
-      ));
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-    }
+    queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
   }
 
   const autoSaveMutation = useMutation({
@@ -157,7 +146,7 @@ function SubstanceForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
+          <Text size='md'>Incident {deflection ? deflection.incidentId : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>

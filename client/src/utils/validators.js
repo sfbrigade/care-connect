@@ -119,6 +119,12 @@ export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
 };
 
+export const validateNarcotics = zod4Resolver(NarcoticsSchema);
+
+export const isValidNarcotics = (obj) => {
+  return !!NarcoticsSchema.safeParse(obj)?.success;
+};
+
 const SubstanceSchema = z.union([
   z.object({
     narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),

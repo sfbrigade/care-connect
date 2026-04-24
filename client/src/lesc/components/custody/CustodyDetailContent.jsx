@@ -27,13 +27,19 @@ import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
+import SafetyCheckResultModal from './SafetyCheckResultModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
+function isNetworkError (error) {
+  return !error?.response || window.navigator?.onLine === false;
+}
+
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
+  const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
@@ -53,11 +59,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const isExited = deflection?.subjectStatus === 'EXITED';
+  const isPostRelease = isLegallyReleased || isExited;
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
-  const showPrimaryPrintCertificate = isLegallyReleased || isExited;
+  const showPrimaryPrintCertificate = isPostRelease;
   const canExitToHospitalViaRelease = HOSPITAL_RELEASE_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
   const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
     viewerMode,
@@ -70,6 +77,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
+  const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
@@ -102,12 +110,18 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
+      setSafetyCheckResultModalOpened(false);
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
-    onError: () => {
+    onError: (error) => {
+      setSafetyCheckResultModalOpened(false);
+      if (isNetworkError(error)) {
+        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
+        return;
+      }
       showToast('Safety check not saved. Please try again.', 'error');
     },
   });
@@ -174,7 +188,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
-  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
+  const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
   const [releaseNarrative, setReleaseNarrative] = useState('');
   const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
@@ -222,7 +236,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   return (
     <>
       <Header>
-        <IconButtonLink icon={IconArrowLeft} to={backTo} />
+        <IconButtonLink icon={IconArrowLeft} to={backTo} aria-label='Go back' />
       </Header>
       <Container>
         <Stack gap='xl'>
@@ -268,7 +282,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               )}
             </Stack>
           )}
-          {!isCareView && (isLegallyReleased || isExited) && (
+          {!isCareView && isPostRelease && (
             <Stack gap='xs' align='flex-start'>
               <Button
                 onClick={open849bPdf}
@@ -301,7 +315,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             )}
             {deflection?.subject?.sex && (
               <Box>
-                <Text c='dimmed'>{isCareView ? 'Gender' : 'Sex'}</Text>
+                <Text c='dimmed'>Sex</Text>
                 <Text>{t(`sex.${deflection.subject.sex}`)}</Text>
               </Box>
             )}
@@ -311,7 +325,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{t(`race.${deflection.subject.race}`)}</Text>
               </Box>
             )}
-            {!isCareView && deflection?.subject?.driverLicense && (
+            {deflection?.subject?.driverLicense && (
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
                 <Text>{deflection.subject.driverLicense}</Text>
@@ -323,12 +337,35 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{address}</Text>
               </Box>
             )}
-            {!isCareView && (
+            {!isCareView && !isPostRelease && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
             )}
+            {isCareView && (
+              <Group mt='md'>
+                <Button variant='secondary' size='md' onClick={() => navigate(`/care/${deflection?.id}/subject`)}>Edit</Button>
+              </Group>
+            )}
           </Stack>
+          {isCareView && hasDrugUseEvidence && (
+            <>
+              <Divider />
+              <Stack gap='sm'>
+                <Title order={3}>Substance-related details</Title>
+                <Box>
+                  <Text c='dimmed'>Signs of substance use</Text>
+                  <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                </Box>
+                {deflection.drugUseEvidence === true && deflection?.drugType && (
+                  <Box>
+                    <Text c='dimmed'>Substance used (suspected)</Text>
+                    <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                  </Box>
+                )}
+              </Stack>
+            </>
+          )}
           {!isCareView && (
             <>
               <Accordion
@@ -340,37 +377,39 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Divider />
                 <Accordion.Item value='substance'>
                   <Accordion.Control>
-                    <Title order={3}>Substance details</Title>
+                    <Title order={3}>Substance-related details</Title>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
                       {deflection?.narcoticsSubstance !== null && deflection?.narcoticsSubstance !== undefined && (
                         <Box>
                           <Text c='dimmed'>Controlled substance found</Text>
-                          <Text c={deflection.narcoticsSubstance ? 'red.6' : 'teal.6'}>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.narcoticsSubstance ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
                       {deflection?.narcoticsParaphernalia !== null && deflection?.narcoticsParaphernalia !== undefined && (
                         <Box>
                           <Text c='dimmed'>Paraphernalia found</Text>
-                          <Text c={deflection.narcoticsParaphernalia ? 'red.6' : 'teal.6'}>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.narcoticsParaphernalia ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
-                      {deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined && (
+                      {hasDrugUseEvidence && (
                         <Box>
                           <Text c='dimmed'>Signs of substance use</Text>
-                          <Text c={deflection.drugUseEvidence ? 'red.6' : 'teal.6'}>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                          <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
                         </Box>
                       )}
                       {deflection?.drugUseEvidence === true && deflection?.drugType && (
                         <Box>
-                          <Text c='dimmed'>Substance used</Text>
+                          <Text c='dimmed'>Substance used (suspected)</Text>
                           <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}
-                      <Group mt='sm'>
-                        <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
-                      </Group>
+                      {!isPostRelease && (
+                        <Group mt='sm'>
+                          <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
+                        </Group>
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -487,7 +526,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             )
                           : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
                       </Box>
-                      {!isEditingReleaseNarrative && (
+                      {!isEditingReleaseNarrative && !isPostRelease && (
                         <Group>
                           <Button
                             variant='secondary'
@@ -530,6 +569,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       {careFooterState.showFooter && (
         <ActionFooter>
           <Button
+            data-testid='complete-intake-btn'
             variant='secondary'
             onClick={() => {
               if (careFooterState.primaryAction === 'complete-intake') {
@@ -658,9 +698,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Menu>
                   )}
                   <Button
+                    data-testid={isAwaitingSafetyCheck ? 'safety-check-btn' : (showPrimaryPrintCertificate ? 'print-certificate-btn' : 'start-release-btn')}
                     onClick={() => {
                       if (isAwaitingSafetyCheck) {
-                        safetyCheckMutation.mutate();
+                        setSafetyCheckResultModalOpened(true);
                         return;
                       }
                       if (showPrimaryStartLegalRelease) {
@@ -672,10 +713,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         window.open(url, '_blank');
                       }
                     }}
-                    loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Complete safety check'
+                      ? 'Record result'
                       : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
@@ -691,6 +731,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setRecordDeathModalOpened(false)}
         onConfirm={() => recordDeathMutation.mutate()}
         loading={recordDeathMutation.isPending}
+      />
+      <SafetyCheckResultModal
+        opened={safetyCheckResultModalOpened}
+        onClose={() => setSafetyCheckResultModalOpened(false)}
+        loading={safetyCheckMutation.isPending}
+        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmFailed={() => {
+          setSafetyCheckResultModalOpened(false);
+          setExitToJailModalOpened(true);
+        }}
       />
       <ExitToJailModal
         opened={exitToJailModalOpened}

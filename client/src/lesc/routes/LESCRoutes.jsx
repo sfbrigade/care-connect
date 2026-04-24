@@ -5,6 +5,7 @@ import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
 import Care from '../components/care/Care';
 import CareExitDetails from '../components/care/CareExitDetails';
+import CareSubjectForm from '../components/care/CareSubjectForm';
 import Custody from '../components/custody/Custody';
 import CustodyDetail from '../components/custody/CustodyDetail';
 import LegalReleaseQuestions from '../components/custody/LegalReleaseQuestions';
@@ -31,6 +32,7 @@ function LESCRoutes () {
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
+      <Route path='incident/:id' element={<IncidentForm />} />
       <Route path='incident' element={<IncidentForm />} />
       <Route path='incident/handoff' element={<HandoffScreen />} />
       <Route path='custody/:id/subject' element={<SubjectForm />} />
@@ -39,6 +41,7 @@ function LESCRoutes () {
       <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
       <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />
+      <Route path='care/:id/subject' element={<CareSubjectForm />} />
       <Route path='care/:id/exit' element={<CareExitDetails />} />
       <Route path='care' element={<Care />} />
       <Route path='manage-capacity' element={<ManageCapacity />} />

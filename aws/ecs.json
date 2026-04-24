@@ -29,6 +29,10 @@
     "SiteTitle": {
       "Type": "String",
       "Description": "The title of the site"
+    },
+    "SmtpFromEmailAddress": {
+      "Type": "String",
+      "Description": "Default reply-to email address"
     }
   },
   "Outputs": {},
@@ -417,17 +421,7 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Fn::Join": [
-                    "@",
-                    [
-                      "no-reply",
-                      {
-                        "Fn::ImportValue": {
-                          "Fn::Sub": "${BaseName}-domain"
-                        }
-                      }
-                    ]
-                  ]
+                  "Ref": "SmtpFromEmailAddress"
                 }
               },
               {
@@ -906,17 +900,7 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Fn::Join": [
-                    "@",
-                    [
-                      "no-reply",
-                      {
-                        "Fn::ImportValue": {
-                          "Fn::Sub": "${BaseName}-domain"
-                        }
-                      }
-                    ]
-                  ]
+                  "Ref": "SmtpFromEmailAddress"
                 }
               },
               {
