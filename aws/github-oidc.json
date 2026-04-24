@@ -1,0 +1,399 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "GitHub Actions OIDC federation for Care Connect. Creates (1) the OIDC identity provider for token.actions.githubusercontent.com, (2) a narrow CI role that GitHub Actions workflows assume via web identity, and (3) a CloudFormation service role that the CI role can pass to cfn for stack operations. The service-role separation keeps the CI role's direct AWS power minimal.",
+  "Parameters": {
+    "GitHubRepo": {
+      "Type": "String",
+      "Default": "sfbrigade/care-connect",
+      "Description": "GitHub repository in owner/repo form. Scopes the OIDC trust policy's sub condition."
+    }
+  },
+  "Resources": {
+    "GitHubOIDCProvider": {
+      "Type": "AWS::IAM::OIDCProvider",
+      "Properties": {
+        "Url": "https://token.actions.githubusercontent.com",
+        "ClientIdList": [
+          "sts.amazonaws.com"
+        ],
+        "ThumbprintList": [
+          "6938fd4d98bab03faadb97b34396831e3780aea1",
+          "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+        ]
+      }
+    },
+    "GitHubActionsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "careconnect-github-actions",
+        "Description": "Assumed by GitHub Actions via OIDC for Care Connect CI/CD. Narrow permissions: CloudFormation on careconnect-* stacks, PassRole to the CFN service role, and ECS RunTask for pre-deploy migrations.",
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": {
+                  "Ref": "GitHubOIDCProvider"
+                }
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                  "token.actions.githubusercontent.com:sub": [
+                    {
+                      "Fn::Sub": "repo:${GitHubRepo}:ref:refs/heads/main"
+                    },
+                    {
+                      "Fn::Sub": "repo:${GitHubRepo}:environment:production"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "CareConnectDeploy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "CloudFormationStackOperations",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:CreateChangeSet",
+                    "cloudformation:ExecuteChangeSet",
+                    "cloudformation:DeleteChangeSet",
+                    "cloudformation:DescribeStacks",
+                    "cloudformation:DescribeStackEvents",
+                    "cloudformation:DescribeStackResources",
+                    "cloudformation:DescribeStackResource",
+                    "cloudformation:DescribeChangeSet",
+                    "cloudformation:GetTemplateSummary",
+                    "cloudformation:GetTemplate",
+                    "cloudformation:ListStackResources",
+                    "cloudformation:ListChangeSets"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/careconnect-*/*"
+                    }
+                  ]
+                },
+                {
+                  "Sid": "CloudFormationValidateTemplate",
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:ValidateTemplate"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "PassCFNServiceRole",
+                  "Effect": "Allow",
+                  "Action": "iam:PassRole",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "CFNServiceRole",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "iam:PassedToService": "cloudformation.amazonaws.com"
+                    }
+                  }
+                },
+                {
+                  "Sid": "PassECSTaskRolesForRunTask",
+                  "Effect": "Allow",
+                  "Action": "iam:PassRole",
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/careconnect-*"
+                    }
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "iam:PassedToService": "ecs-tasks.amazonaws.com"
+                    }
+                  }
+                },
+                {
+                  "Sid": "ECSMigrationRunTask",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecs:RunTask",
+                    "ecs:StopTask"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/careconnect-*:*"
+                  },
+                  "Condition": {
+                    "ArnLike": {
+                      "ecs:cluster": {
+                        "Fn::Sub": "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/careconnect-*"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Sid": "ECSDescribeForDeploy",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecs:DescribeTasks",
+                    "ecs:DescribeServices",
+                    "ecs:DescribeTaskDefinition",
+                    "ecs:DescribeClusters",
+                    "ecs:ListTasks"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "LogsReadMigrationOutput",
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:GetLogEvents",
+                    "logs:DescribeLogStreams",
+                    "logs:FilterLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/careconnect-*:*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CFNServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "careconnect-cfn-service-role",
+        "Description": "Assumed by CloudFormation itself when updating Care Connect stacks. Broad permissions on the AWS services used by the aws/*.json templates. Scoped to the account. Explicitly denied from modifying the IAM roles in this stack (belt-and-suspenders against self-elevation).",
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudformation.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "CareConnectResourceManagement",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "CoreResourceServices",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:*",
+                    "ecs:*",
+                    "rds:*",
+                    "elasticloadbalancing:*",
+                    "s3:*",
+                    "route53:*",
+                    "acm:*",
+                    "logs:*",
+                    "ses:*",
+                    "secretsmanager:*",
+                    "geo:*",
+                    "bedrock:*",
+                    "transcribe:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "IAMRolesForServices",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreateRole",
+                    "iam:DeleteRole",
+                    "iam:UpdateRole",
+                    "iam:UpdateRoleDescription",
+                    "iam:UpdateAssumeRolePolicy",
+                    "iam:GetRole",
+                    "iam:ListRoles",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy",
+                    "iam:GetRolePolicy",
+                    "iam:ListRolePolicies",
+                    "iam:AttachRolePolicy",
+                    "iam:DetachRolePolicy",
+                    "iam:ListAttachedRolePolicies",
+                    "iam:TagRole",
+                    "iam:UntagRole",
+                    "iam:PassRole"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/careconnect-*"
+                  }
+                },
+                {
+                  "Sid": "IAMUsersForServiceAccounts",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreateUser",
+                    "iam:DeleteUser",
+                    "iam:GetUser",
+                    "iam:UpdateUser",
+                    "iam:ListUsers",
+                    "iam:PutUserPolicy",
+                    "iam:DeleteUserPolicy",
+                    "iam:GetUserPolicy",
+                    "iam:ListUserPolicies",
+                    "iam:AttachUserPolicy",
+                    "iam:DetachUserPolicy",
+                    "iam:ListAttachedUserPolicies",
+                    "iam:TagUser",
+                    "iam:UntagUser",
+                    "iam:CreateAccessKey",
+                    "iam:DeleteAccessKey",
+                    "iam:ListAccessKeys",
+                    "iam:UpdateAccessKey"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:user/careconnect-*"
+                  }
+                },
+                {
+                  "Sid": "IAMInstanceProfile",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreateInstanceProfile",
+                    "iam:DeleteInstanceProfile",
+                    "iam:GetInstanceProfile",
+                    "iam:AddRoleToInstanceProfile",
+                    "iam:RemoveRoleFromInstanceProfile",
+                    "iam:TagInstanceProfile",
+                    "iam:UntagInstanceProfile"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:instance-profile/careconnect-*"
+                  }
+                },
+                {
+                  "Sid": "IAMPolicies",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreatePolicy",
+                    "iam:DeletePolicy",
+                    "iam:GetPolicy",
+                    "iam:ListPolicies",
+                    "iam:CreatePolicyVersion",
+                    "iam:DeletePolicyVersion",
+                    "iam:GetPolicyVersion",
+                    "iam:ListPolicyVersions",
+                    "iam:SetDefaultPolicyVersion",
+                    "iam:TagPolicy",
+                    "iam:UntagPolicy"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:policy/careconnect-*"
+                  }
+                },
+                {
+                  "Sid": "IAMServiceLinkedRoles",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreateServiceLinkedRole"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringLike": {
+                      "iam:AWSServiceName": [
+                        "ecs.amazonaws.com",
+                        "elasticloadbalancing.amazonaws.com",
+                        "rds.amazonaws.com",
+                        "ses.amazonaws.com",
+                        "transcribe.amazonaws.com"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Sid": "DenyModifyingOwnBootstrapRoles",
+                  "Effect": "Deny",
+                  "Action": [
+                    "iam:DeleteRole",
+                    "iam:UpdateAssumeRolePolicy",
+                    "iam:PutRolePolicy",
+                    "iam:DeleteRolePolicy",
+                    "iam:AttachRolePolicy",
+                    "iam:DetachRolePolicy"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/careconnect-cfn-service-role"
+                    },
+                    {
+                      "Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/careconnect-github-actions"
+                    }
+                  ]
+                },
+                {
+                  "Sid": "DenyDeletingOIDCProvider",
+                  "Effect": "Deny",
+                  "Action": [
+                    "iam:DeleteOpenIDConnectProvider",
+                    "iam:UpdateOpenIDConnectProviderThumbprint",
+                    "iam:AddClientIDToOpenIDConnectProvider",
+                    "iam:RemoveClientIDFromOpenIDConnectProvider"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "GitHubActionsRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "GitHubActionsRole",
+          "Arn"
+        ]
+      },
+      "Description": "ARN to register as the GitHub repository variable AWS_DEPLOY_ROLE_ARN.",
+      "Export": {
+        "Name": "careconnect-github-actions-role-arn"
+      }
+    },
+    "CFNServiceRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "CFNServiceRole",
+          "Arn"
+        ]
+      },
+      "Description": "ARN to register as the GitHub repository variable CFN_SERVICE_ROLE_ARN. Passed to 'aws cloudformation deploy' via --role-arn.",
+      "Export": {
+        "Name": "careconnect-cfn-service-role-arn"
+      }
+    },
+    "GitHubOIDCProviderArn": {
+      "Value": {
+        "Ref": "GitHubOIDCProvider"
+      },
+      "Description": "ARN of the GitHub OIDC identity provider in this account.",
+      "Export": {
+        "Name": "careconnect-github-oidc-provider-arn"
+      }
+    }
+  }
+}
