@@ -4,6 +4,12 @@ import { z } from 'zod';
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
 
+function noAvailableBedError () {
+  const error = new Error('No available beds');
+  error.statusCode = StatusCodes.GONE;
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/',
     {
@@ -34,6 +40,14 @@ export default async function (fastify, opts) {
 
       let incident;
       await fastify.prisma.$transaction(async (tx) => {
+        let bedType;
+        if (bedTypeId) {
+          bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          if (!bedType || bedType.available <= 0) {
+            throw noAvailableBedError();
+          }
+        }
+
         // create the incident
         incident = await tx.incident.create({
           data: {
@@ -54,47 +68,42 @@ export default async function (fastify, opts) {
             updatedBy: true,
           },
         });
-        if (bedTypeId) {
+        if (bedType) {
           // create the initial deflection/
-          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-          if (bedType.available > 0) {
-            await tx.deflection.create({
-              data: {
-                incidentId: incident.id,
-                facilityId: data.facilityId,
-                bedTypeId,
-                createdById: request.user.id,
-                currentOfficerId: request.user.id,
-              }
-            });
-            const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
-            const updatedData = {
-              capacity,
-              unavailableUnoccupied,
-              unavailableOccupied,
-              occupied,
-              holds: holds + 1,
-              inTransit: inTransit + 1,
-              available: available - 1,
-              updateMethod: 'API',
-              updatedById: request.user.id,
-            };
-            await tx.bedTypeUpdate.create({
-              data: {
-                ...updatedData,
-                bedTypeId,
-                facilityId: data.facilityId,
-              }
-            });
-            await tx.bedType.update({
-              where: {
-                id: bedTypeId,
-              },
-              data: updatedData,
-            });
-          } else {
-            return reply.code(StatusCodes.GONE).send();
-          }
+          await tx.deflection.create({
+            data: {
+              incidentId: incident.id,
+              facilityId: data.facilityId,
+              bedTypeId,
+              createdById: request.user.id,
+              currentOfficerId: request.user.id,
+            }
+          });
+          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
+          const updatedData = {
+            capacity,
+            unavailableUnoccupied,
+            unavailableOccupied,
+            occupied,
+            holds: holds + 1,
+            inTransit: inTransit + 1,
+            available: available - 1,
+            updateMethod: 'API',
+            updatedById: request.user.id,
+          };
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedData,
+              bedTypeId,
+              facilityId: data.facilityId,
+            }
+          });
+          await tx.bedType.update({
+            where: {
+              id: bedTypeId,
+            },
+            data: updatedData,
+          });
         }
       });
 
