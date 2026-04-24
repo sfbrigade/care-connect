@@ -60,9 +60,17 @@ function UnitSelector () {
       if (needsModeSelection && mode) {
         writeStoredWorkMode(mode);
         navigate(MODE_HOME_PATH[mode]);
-      } else {
-        navigate(from);
+        return;
       }
+      // Dual-role users with a remembered mode should always land on that
+      // mode's home after confirming their unit, regardless of the `from`
+      // location carried through from the redirect.
+      const stored = isDualRole ? readStoredWorkMode() : null;
+      if (stored) {
+        navigate(MODE_HOME_PATH[stored]);
+        return;
+      }
+      navigate(from);
     },
     onError: (errors) => console.error(errors),
   });
