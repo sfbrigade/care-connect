@@ -40,10 +40,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const canViewDetails = !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
-  const canFinishDetails = !isHandedOff && isActive && !isNew && !isValid && !isExpired && !isCancelled;
-  const canAddDetails = !isHandedOff && isActive && isNew && !isExpired && !isCancelled;
-  const showFooter = !isHandedOff && (isActive || canViewDetails);
+  const canViewDetails = !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred || isHandedOff);
+  const canFinishDetails = isActive && !isNew && !isValid && !isExpired && !isCancelled && !isHistory;
+  const canAddDetails = isActive && isNew && !isExpired && !isCancelled && !isHistory;
+  const showFooter = canAddDetails || canFinishDetails || canViewDetails;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
