@@ -1,78 +1,5 @@
-import { DateTime } from 'luxon';
-
-import { formatAddress } from '../../utils/format';
-import { isCustodyTransferredStatus } from './deflectionStatusChipUtils';
-
-export const SFPD_ACTIVE_SUBJECT_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
-export const SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES = 'AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED';
-
-export function mergeHistoryDeflections (inactiveDeflections = [], postTransferActiveDeflections = [], handedOffDeflections = []) {
-  const merged = [...inactiveDeflections, ...postTransferActiveDeflections, ...handedOffDeflections];
-  const byId = new Map();
-  for (const deflection of merged) {
-    byId.set(deflection.id, deflection);
-  }
-  return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
-
-export function shouldShowIncidentInActive (incident, deflections) {
-  return !!incident && (deflections?.length ?? 0) > 0;
-}
-
-export function shouldShowTransferredHoldsPrompt (incident, deflections) {
-  return !!incident?.arrivedAt && !incident?.leftAt && (deflections?.length ?? 0) === 0;
-}
-
-export function getTransferredDeflectionsForIncident (deflections = [], incidentId, currentUserId) {
-  if (!incidentId) return [];
-
-  return deflections.filter((deflection) => {
-    if (deflection.incidentId !== incidentId) return false;
-    if (!isCustodyTransferredStatus(deflection.subjectStatus)) return false;
-    // Exclude holds that were handed off to a different officer
-    if (currentUserId && deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId) return false;
-    return true;
-  });
-}
-
-export function buildActiveHoldDisplayDeflections (activeDeflections = [], historyDeflections = [], incident, currentUserId) {
-  if (!incident?.id) return activeDeflections;
-
-  if ((activeDeflections?.length ?? 0) === 0) {
-    return activeDeflections;
-  }
-
-  const transferredDeflections = getTransferredDeflectionsForIncident(historyDeflections, incident.id, currentUserId);
-  const combinedDeflections = [...activeDeflections, ...transferredDeflections];
-  const byId = new Map();
-
-  for (const deflection of combinedDeflections) {
-    byId.set(deflection.id, deflection);
-  }
-
-  return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-}
-
-export function buildHistoryDisplayDeflections (historyDeflections = [], incident, hasActiveHolds = false) {
-  if (!incident?.id || !hasActiveHolds) return historyDeflections;
-
-  return historyDeflections.filter((deflection) => !(
-    deflection.incidentId === incident.id &&
-    isCustodyTransferredStatus(deflection.subjectStatus)
-  ));
-}
-
 export function isInitialLoading (isFetching, data) {
   return !!isFetching && data === undefined;
-}
-
-export function getExpiredDeflectionsForIncident (deflections = [], incidentId) {
-  if (!incidentId) return [];
-
-  return deflections.filter((deflection) => (
-    deflection.incidentId === incidentId &&
-    deflection.status === 'EXPIRED'
-  ));
 }
 
 export function buildAutoCancelledHoldsMessage (count) {
@@ -137,21 +64,6 @@ export function getDeflectionActivityMs (deflection) {
   );
 }
 
-export function splitCurrentIncidentDeflections (deflections = [], incident, hasActiveHolds = false) {
-  const shouldShowCurrentIncidentGroup = !!incident && !hasActiveHolds;
-  const currentIncidentDeflections = shouldShowCurrentIncidentGroup
-    ? deflections.filter((deflection) => deflection.incidentId === incident.id)
-    : [];
-  const currentIncidentDeflectionIds = new Set(currentIncidentDeflections.map((deflection) => deflection.id));
-  const remainingDeflections = deflections.filter((deflection) => !currentIncidentDeflectionIds.has(deflection.id));
-
-  return {
-    shouldShowCurrentIncidentGroup,
-    currentIncidentDeflections,
-    remainingDeflections,
-  };
-}
-
 export function groupDeflectionsByIncident (deflections = [], incidentsById = {}) {
   const deflectionsByIncident = deflections.reduce((acc, deflection) => {
     if (!acc[deflection.incidentId]) {
@@ -171,14 +83,4 @@ export function groupDeflectionsByIncident (deflections = [], incidentsById = {}
         .sort((a, b) => b - a)[0] ?? 0,
     }))
     .sort((a, b) => b.latestActivityMs - a.latestActivityMs);
-}
-
-export function buildIncidentSubtitle (incident) {
-  const address = incident ? formatAddress(incident) : '';
-  const time = incident?.arrestedAt
-    ? DateTime.fromISO(incident.arrestedAt).toLocaleString(DateTime.TIME_SIMPLE)
-    : '';
-  const safeAddress = address || 'Address unavailable';
-  const safeTime = time || 'Time unavailable';
-  return `${safeAddress} • ${safeTime}`;
 }
