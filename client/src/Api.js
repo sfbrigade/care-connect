@@ -60,6 +60,10 @@ function handleError (error) {
     }
   } else {
     errors._form = error.message;
+    errors._status = error.response?.status;
+    if (error.response?.data?.code) {
+      errors._code = error.response.data.code;
+    }
   }
   throw errors;
 }

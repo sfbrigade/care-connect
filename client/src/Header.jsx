@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router';
+import { useCallback } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { getWorkModeFromPath } from './utils/workMode';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
@@ -6,23 +7,78 @@ import {
   IconHome,
   IconAddressBook,
   IconArrowsLeftRight,
+  IconCheck,
   IconLogout,
   IconUser
 } from '@tabler/icons-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+import Api from './Api';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useToast } from '@/components/ToastContext';
+
+const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
+const MODE_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };
+const MODE_SUCCESS_TOAST = {
+  FIELD: {
+    title: 'Mode changed to "In the field"',
+    body: 'You can now place holds, add arrest details, and bring persons to RESET.',
+  },
+  CUSTODY: {
+    title: 'Mode changed to "At RESET"',
+    body: 'You can now receive custody and manage facility tasks.',
+  },
+};
+const BLOCKED_TOAST = {
+  title: 'Couldn\'t update work mode',
+  body: 'You have active holds. You must transfer, hand off, or cancel these holds first before switching work modes.',
+};
 
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
   const { user } = useAuthContext();
   const { isOrgAdmin, isField, isCustody } = useUserRole();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const canChangeWorkMode = isField && isCustody;
 
   const location = useLocation();
   const workMode = canChangeWorkMode ? getWorkModeFromPath(location.pathname) : null;
-  const workModeLabel = workMode === 'FIELD' ? 'In the field' : workMode === 'CUSTODY' ? 'At RESET' : null;
+  const workModeLabel = workMode ? MODE_LABEL[workMode] : null;
+
+  const { data: meData } = useQuery({
+    queryKey: ['users', 'me', 'work-mode-status'],
+    queryFn: () => Api.users.me().then((r) => r.data),
+    enabled: canChangeWorkMode,
+    refetchOnMount: 'always',
+    refetchInterval: 30_000,
+    staleTime: 0,
+  });
+
+  const hasActiveFieldWork = !!meData?.hasActiveFieldWork;
+
+  const handleMenuChange = useCallback((isOpen) => {
+    if (isOpen && canChangeWorkMode) {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me', 'work-mode-status'] });
+    }
+  }, [canChangeWorkMode, queryClient]);
+
+  function handleModeClick (targetMode) {
+    close();
+    if (targetMode === workMode) return;
+    if (targetMode === 'CUSTODY' && hasActiveFieldWork) {
+      showToast(BLOCKED_TOAST.title, 'error', 5000, BLOCKED_TOAST.body);
+      return;
+    }
+    const path = MODE_HOME_PATH[targetMode];
+    navigate(path);
+    const copy = MODE_SUCCESS_TOAST[targetMode];
+    showToast(copy.title, 'success', 4000, copy.body);
+  }
 
   return (
     <Container h='100%'>
@@ -40,7 +96,7 @@ function Header ({ opened, close, toggle, logout }) {
         </Link>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
           {user &&
-            <Menu position='bottom-end' width={280} onDismiss={close}>
+            <Menu position='bottom-end' width={280} onChange={handleMenuChange} onDismiss={close}>
               <Menu.Target>
                 <Burger opened={opened} onClick={toggle} aria-label={opened ? 'Close menu' : 'Open menu'} />
               </Menu.Target>
@@ -74,14 +130,40 @@ function Header ({ opened, close, toggle, logout }) {
                   Profile
                 </Menu.Item>
                 {canChangeWorkMode && (
-                  <Menu.Item
-                    leftSection={<IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />}
-                    component={Link}
-                    to='/work-mode'
-                    onClick={close}
-                  >
-                    Change work mode
-                  </Menu.Item>
+                  <>
+                    <Menu.Label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        paddingTop: 8,
+                        color: 'var(--mantine-color-dark-9)',
+                        fontSize: 'var(--mantine-font-size-sm)',
+                        fontWeight: 400,
+                      }}
+                    >
+                      <IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />
+                      <span>Work mode</span>
+                    </Menu.Label>
+                    {['FIELD', 'CUSTODY'].map((m) => {
+                      const isCurrent = m === workMode;
+                      const isBlocked = m === 'CUSTODY' && hasActiveFieldWork && !isCurrent;
+                      return (
+                        <Menu.Item
+                          key={m}
+                          onClick={() => handleModeClick(m)}
+                          pl={44}
+                          rightSection={isCurrent ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
+                          c={isBlocked ? 'var(--mantine-color-gray-5)' : undefined}
+                          aria-label={`Work mode: ${MODE_LABEL[m]}`}
+                          aria-current={isCurrent ? 'true' : undefined}
+                          aria-disabled={isBlocked || undefined}
+                        >
+                          {MODE_LABEL[m]}
+                        </Menu.Item>
+                      );
+                    })}
+                  </>
                 )}
                 <Menu.Item
                   leftSection={<IconSend size={20} color='var(--mantine-color-gray-5)' />}
