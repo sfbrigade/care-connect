@@ -20,12 +20,24 @@ export default async function (fastify) {
       const officerId = request.user.id;
 
       await fastify.prisma.$transaction(async (tx) => {
+        await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
         const now = new Date();
 
-        // Clear currentOfficerId on all active holds where this officer
-        // has arrived (arrivedAt set). This makes atFacility flip to false.
+        // Snapshot the officer's still-eligible arrived holds under the facility lock.
+        const eligibleHoldIds = (await tx.deflection.findMany({
+          where: {
+            facilityId,
+            currentOfficerId: officerId,
+            status: 'ACTIVE',
+            arrivedAt: { not: null },
+          },
+          select: { id: true },
+        })).map((hold) => hold.id);
+
+        // Clear currentOfficerId only for holds that are still eligible at commit time.
         await tx.deflection.updateMany({
           where: {
+            id: { in: eligibleHoldIds },
             facilityId,
             currentOfficerId: officerId,
             status: 'ACTIVE',
