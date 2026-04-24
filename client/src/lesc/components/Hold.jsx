@@ -5,10 +5,8 @@ import useNow from '@/hooks/useNow';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection } from '@/utils/validators';
-import { useQuery } from '@tanstack/react-query';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
-import Api from '@/Api';
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
 function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false, isHandedOff = false }) {
@@ -48,12 +46,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const showFooter = !isHandedOff && (isActive || canViewDetails);
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
-  const { data: cancelReason } = useQuery({
-    queryKey: ['deflection-cancel-reasons', deflection.cancelReasonId],
-    queryFn: () => Api.deflections.cancelReasons.get(deflection.cancelReasonId).then(response => response.data),
-    enabled: !!deflection.cancelReasonId,
-  });
-  const cancelReasonLabel = cancelReason?.name;
+  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
 
   return (
     <Card bg='white' p='md' withBorder>

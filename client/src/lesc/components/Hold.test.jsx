@@ -134,6 +134,26 @@ describe('Hold', () => {
     expect(screen.queryByTestId('transferred-hold-checkerboard')).not.toBeInTheDocument();
   });
 
+  it('reads the cancel reason label from the embedded deflection.cancelReason (no refetch)', () => {
+    renderHold({
+      isHistory: true,
+      deflection: {
+        id: 10,
+        incidentId: 7,
+        status: 'CANCELLED',
+        subjectId: 22,
+        subjectStatus: 'DETAINED',
+        createdAt: '2026-03-14T15:00:00.000Z',
+        cancelledAt: '2026-03-14T16:00:00.000Z',
+        cancelReasonId: 'release_on_scene',
+        cancelReason: { id: 'release_on_scene', name: 'Released on scene' },
+        subject: { firstName: 'Person', lastName: 'X', sex: 'FEMALE', dateOfBirth: '1982-03-14' },
+      },
+    });
+
+    expect(screen.getByText(/Released on scene/)).toBeInTheDocument();
+  });
+
   it('does not show the QR code in history for a handed-off onsite hold (issue #694)', () => {
     // Alice's view of a hold she handed to Bob after Bob arrived: still
     // status=ACTIVE + subjectStatus=ONSITE_AWAITING_TRANSFER, but shown in
