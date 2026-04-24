@@ -18,7 +18,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { getDateOfBirthInputError, validateSubjectFormValues } from '@/utils/validators';
+import { normalizeDobInput, validateSubject } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -53,7 +53,6 @@ function SubjectForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const { t } = useTranslation();
-  const [dobInput, setDobInput] = useState('');
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
@@ -64,12 +63,21 @@ function SubjectForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
+    validate: validateSubject,
+    transformValues: (values) => {
+      const parsed = DateTime.fromFormat(normalizeDobInput(values.dateOfBirth), 'MM/dd/yyyy', { zone: 'local' });
+      return {
+        ...values,
+        dateOfBirth: parsed.isValid ? parsed.toISO() : null,
+        drugType: values.drugUseEvidence ? values.drugType ?? null : null,
+      };
+    },
     onValuesChange: (values) => {
       setShowDrugTypeQuestion(values.drugUseEvidence);
       if (form.initialized && !isCustodyContext) {
-        scheduleAutoSave(values, dobInput);
+        scheduleAutoSave();
       }
-    }
+    },
   });
 
   const { data: incident } = useQuery({
@@ -85,7 +93,7 @@ function SubjectForm () {
   useEffect(() => {
     if (!isLoading && !form.initialized) {
       if (deflection?.subject) {
-        const normalized = normalizeValues({
+        form.initialize({
           ...initialValues,
           ...deflection.subject,
           narcoticsSubstance: deflection.narcoticsSubstance,
@@ -94,11 +102,8 @@ function SubjectForm () {
           drugType: deflection.drugType ?? null,
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
-        setDobInput(normalized.dateOfBirth ?? '');
-        form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubjectFormValues(normalized, normalized.dateOfBirth);
-          form.setErrors(errors);
+          form.validate();
         }
       } else {
         form.initialize(initialValues);
@@ -112,81 +117,21 @@ function SubjectForm () {
     }
   }, []);
 
-  function normalizeValues (values) {
-    return {
-      ...initialValues,
-      ...values,
-      drugType: values.drugType ?? null,
-      dateOfBirth: values.dateOfBirth ?? '',
-    };
-  }
-
-  function buildAutoSavePayload (values, dobString) {
-    const normalized = normalizeValues(values);
-    const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
-    const payload = {
-      ...normalized,
-      drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
-    };
-
-    const dobValue = String(dobString ?? '').trim();
-    if (!dobValue) {
-      payload.dateOfBirth = null;
-    } else if (parsedDob.isValid) {
-      payload.dateOfBirth = parsedDob.toISO();
-    }
-
-    return payload;
-  }
-
-  function buildSubmitPayload (values, dobString) {
-    const normalized = normalizeValues(values);
-    const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
-    return {
-      ...normalized,
-      drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
-      dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
-    };
-  }
-
-  function validateForm (values, dobString = dobInput) {
-    const errors = validateSubjectFormValues(values, dobString);
-    form.setErrors(errors);
-    return errors;
-  }
-
-  function setDateOfBirthError (message) {
-    if (message) {
-      form.setFieldError('dateOfBirth', message);
-      return;
-    }
-
-    form.clearFieldError('dateOfBirth');
-  }
-
   async function submitForm (values) {
-    const errors = validateForm(values);
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-
-    const payload = buildSubmitPayload(values, dobInput);
     if (isCustodyContext) {
-      handleCustodySubmit(payload);
+      handleCustodySubmit(values);
       return;
     }
 
-    await onSubmitMutation.mutateAsync(payload);
+    await onSubmitMutation.mutateAsync(values);
   }
 
-  function scheduleAutoSave (values, dobString) {
-    const normalized = normalizeValues(values);
+  function scheduleAutoSave () {
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
-      const payload = buildAutoSavePayload(values, dobString);
-      autoSaveMutation.mutate({ payload, normalized });
+      autoSaveMutation.mutate(form.getTransformedValues());
     }, 700);
   }
 
@@ -201,7 +146,7 @@ function SubjectForm () {
   }
 
   const autoSaveMutation = useMutation({
-    mutationFn: ({ payload }) => Api.deflections.subject(id, payload),
+    mutationFn: (payload) => Api.deflections.subject(id, payload),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
     },
@@ -253,10 +198,7 @@ function SubjectForm () {
     if (data.firstName) form.setFieldValue('firstName', data.firstName);
     if (data.lastName) form.setFieldValue('lastName', data.lastName);
     if (data.middleInitial) form.setFieldValue('middleInitial', data.middleInitial);
-    if (data.dateOfBirth) {
-      setDobInput(data.dateOfBirth);
-      form.setFieldValue('dateOfBirth', data.dateOfBirth);
-    }
+    if (data.dateOfBirth) form.setFieldValue('dateOfBirth', data.dateOfBirth);
     if (data.sex) form.setFieldValue('sex', data.sex);
     if (data.documentType === 'DRIVERS_LICENSE' && data.documentNumber) {
       form.setFieldValue('driverLicense', data.documentNumber);
@@ -266,7 +208,7 @@ function SubjectForm () {
     if (data.state) form.setFieldValue('state', data.state);
     if (data.postalCode) form.setFieldValue('postalCode', data.postalCode);
     if (!isCustodyContext) {
-      scheduleAutoSave(form.getValues(), data.dateOfBirth || dobInput);
+      scheduleAutoSave();
     }
   }
 
@@ -341,20 +283,15 @@ function SubjectForm () {
                 inputMode='numeric'
                 maxLength={10}
                 placeholder='MM/DD/YYYY'
+                key={form.key('dateOfBirth')}
                 {...form.getInputProps('dateOfBirth')}
-                value={dobInput}
-                onChange={(event) => {
-                  const formatted = formatInputDob(event.currentTarget.value);
-                  setDobInput(formatted);
-                  form.setFieldValue('dateOfBirth', formatted);
-                  const dateOfBirthError = getDateOfBirthInputError(formatted, { allowPartial: true });
-                  setDateOfBirthError(dateOfBirthError);
-                  if (!isCustodyContext) {
-                    scheduleAutoSave(form.getValues(), formatted);
+                onChange={(event) => form.setFieldValue('dateOfBirth', formatInputDob(event.currentTarget.value))}
+                onBlur={(event) => {
+                  const expanded = normalizeDobInput(event.currentTarget.value);
+                  if (expanded !== event.currentTarget.value) {
+                    form.setFieldValue('dateOfBirth', expanded);
                   }
-                }}
-                onBlur={() => {
-                  setDateOfBirthError(getDateOfBirthInputError(dobInput));
+                  form.validateField('dateOfBirth');
                 }}
               />
               <ChipInput

@@ -7,12 +7,23 @@ import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
 const ERROR_REQUIRED = 'This field is required';
 const ERROR_SELECT_ONE = 'Select one';
 const ERROR_MIN_ALPHANUMERIC = 'Enter at least 2 letters or numbers';
-const ERROR_DOB_YEAR = 'Enter date of birth with a 4-digit year';
 const ERROR_DOB_INVALID = 'Enter a valid date as MM/DD/YYYY';
+
+// Two-digit years below this pivot expand to 20YY; at or above, to 19YY.
+const TWO_DIGIT_YEAR_PIVOT = 30;
 
 function hasMinimumAlphanumericChars (value, minimum) {
   const alphanumericCount = String(value ?? '').match(/[0-9a-z]/gi)?.length ?? 0;
   return alphanumericCount >= minimum;
+}
+
+export function normalizeDobInput (value) {
+  const trimmed = String(value ?? '').trim();
+  const match = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (!match) return trimmed;
+  const [, mm, dd, yy] = match;
+  const century = parseInt(yy, 10) < TWO_DIGIT_YEAR_PIVOT ? '20' : '19';
+  return `${mm}/${dd}/${century}${yy}`;
 }
 
 const IncidentSchema = z.object({
@@ -30,7 +41,13 @@ const IncidentSchema = z.object({
 const SubjectSchema = z.object({
   firstName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
   lastName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
-  dateOfBirth: z.iso.datetime(ERROR_REQUIRED),
+  dateOfBirth: z.string(ERROR_REQUIRED).check(
+    z.minLength(1, ERROR_REQUIRED),
+    z.refine(
+      (value) => DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
+      ERROR_DOB_INVALID,
+    ),
+  ),
   sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
   race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
 });
@@ -77,40 +94,6 @@ export const isValidIncident = (obj) => {
 };
 
 export const validateSubject = zod4Resolver(SubjectSchema);
-
-export function getDateOfBirthInputError (value, { allowPartial = false } = {}) {
-  const normalized = String(value ?? '').trim();
-  if (!normalized) {
-    return null;
-  }
-
-  const digits = normalized.replace(/\D/g, '');
-  if (digits.length < 8) {
-    return allowPartial ? null : ERROR_DOB_YEAR;
-  }
-
-  const parsed = DateTime.fromFormat(normalized, 'MM/dd/yyyy', { zone: 'local' });
-  if (!parsed.isValid) {
-    return ERROR_DOB_INVALID;
-  }
-
-  return null;
-}
-
-export function validateSubjectFormValues (values, dobInput = values?.dateOfBirth) {
-  const parsedDob = DateTime.fromFormat(String(dobInput ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
-  const errors = validateSubject({
-    ...values,
-    dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
-  });
-
-  const dateOfBirthError = getDateOfBirthInputError(dobInput);
-  if (dateOfBirthError) {
-    errors.dateOfBirth = dateOfBirthError;
-  }
-
-  return errors;
-}
 
 export const isValidSubject = (obj) => {
   return !!SubjectSchema.safeParse(obj)?.success;
