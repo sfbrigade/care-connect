@@ -413,6 +413,7 @@ DEPARTURE DEPARTURE
     String state "❓"
     String postalCode "❓"
     String localId "❓"
+    DateTime anonymizedAt "❓"
     DateTime createdAt 
     DateTime updatedAt 
     }
@@ -556,7 +557,7 @@ DEPARTURE DEPARTURE
     String id "🗝️"
     Int deflectionId 
     String formId 
-    String file 
+    String file "❓"
     String sourceDataHash "❓"
     DateTime createdAt 
     String createdById 
@@ -568,7 +569,7 @@ DEPARTURE DEPARTURE
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
-    String file 
+    String file "❓"
     DateTime createdAt 
     String createdById 
     DateTime updatedAt 
