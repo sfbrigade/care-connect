@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
@@ -14,7 +14,12 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
-import { getWorkModeFromPath } from './utils/workMode';
+import {
+  clearStoredWorkMode,
+  getWorkModeFromPath,
+  readStoredWorkMode,
+  writeStoredWorkMode,
+} from './utils/workMode';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -52,7 +57,20 @@ function Header ({ opened, close, toggle, logout }) {
   const isDualRole = isField && isCustody;
 
   const location = useLocation();
-  const workMode = isDualRole ? getWorkModeFromPath(location.pathname) : null;
+  const routeMode = isDualRole ? getWorkModeFromPath(location.pathname) : null;
+  const [storedMode, setStoredMode] = useState(() => (isDualRole ? readStoredWorkMode() : null));
+
+  useEffect(() => {
+    if (routeMode) {
+      writeStoredWorkMode(routeMode);
+      setStoredMode(routeMode);
+    }
+  }, [routeMode]);
+
+  // Route is the source of truth when present; sessionStorage fills in on
+  // mode-agnostic routes (e.g. /profile, /manage-users) so the submenu
+  // still reflects the user's last-known mode.
+  const workMode = routeMode ?? storedMode;
   const workModeLabel = workMode ? MODE_LABEL[workMode] : null;
 
   // Share the cache key with AuthContextProvider so only one /api/users/me
@@ -191,7 +209,7 @@ function Header ({ opened, close, toggle, logout }) {
                   color='red'
                   leftSection={<IconLogout size={20} />}
                   to='/logout'
-                  onClick={logout}
+                  onClick={() => { clearStoredWorkMode(); logout(); }}
                 >
                   Logout
                 </Menu.Item>

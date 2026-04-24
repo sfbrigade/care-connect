@@ -77,6 +77,7 @@ afterEach(() => {
   mockUserRef.current = null;
   toastMocks.showToast.mockClear();
   meMock.mockReset();
+  globalThis.sessionStorage.clear();
 });
 
 describe('Header — Work mode submenu', () => {
@@ -142,6 +143,26 @@ describe('Header — Work mode submenu', () => {
       5000,
       expect.stringContaining('active field work')
     );
+  });
+
+  it('falls back to stored mode on a neutral route', async () => {
+    globalThis.sessionStorage.setItem('cc:workMode', 'CUSTODY');
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
+      '/manage-users'
+    );
+    const trigger = await screen.findByRole('button');
+    await userEvent.click(trigger);
+    const resetItem = await screen.findByLabelText('Work mode: At RESET');
+    expect(resetItem).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('persists route mode to globalThis.sessionStorage so neutral routes show it', async () => {
+    renderHeader(
+      { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
+      '/holds'
+    );
+    await waitFor(() => expect(globalThis.sessionStorage.getItem('cc:workMode')).toBe('FIELD'));
   });
 
   it('clicking current mode is a no-op (no navigation, no toast)', async () => {
