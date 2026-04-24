@@ -30,6 +30,7 @@ export default async function (fastify, opts) {
         where: { id },
         include: {
           subject: true,
+          incident: true,
           cancelReason: true,
           deflectionDocuments: true,
           propertyPhotos: true,

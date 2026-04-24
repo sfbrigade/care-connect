@@ -1,4 +1,4 @@
-import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -40,6 +40,23 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.number(),
   status: z.enum(Object.values(HoldStatusEnum)),
   subject: Subject.ResponseSchema.nullable().optional(),
+  incident: z.object({
+    id: z.number(),
+    addressLine1: z.string().nullable(),
+    addressLine2: z.string().nullable(),
+    city: z.string().nullable(),
+    state: z.string().nullable(),
+    postalCode: z.string().nullable(),
+    latitude: z.coerce.number().nullable(),
+    longitude: z.coerce.number().nullable(),
+    arrestedAt: z.coerce.date().catch(null).nullable(),
+    encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED']).catch(null).nullable(),
+    cadNumber: z.string().nullable(),
+    caseNumber: z.string().nullable(),
+    supervisorBadgeNumber: z.string().nullable(),
+    createdById: z.string().uuid(),
+    createdAt: z.coerce.date(),
+  }).optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
   deflectionDocuments: z.array(DeflectionDocument.ResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
@@ -91,7 +108,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitHousingStatusId: z.string().nullable(),
   exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
-  exitSFResident: z.enum(Object.values(TernaryEnum)).nullable(),
+  exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
   currentOfficerId: z.string().uuid().nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
@@ -106,6 +123,7 @@ export class Deflection extends Base {
   static HoldStatus = HoldStatusEnum;
   static SubjectStatus = SubjectStatusEnum;
   static Ternary = TernaryEnum;
+  static SFResident = SFResidentEnum;
   static PropertyNotReturnedReason = PropertyNotReturnedReasonEnum;
 
   constructor (data) {

@@ -42,10 +42,10 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const isExpiringSoon = isActive && minutesUntilExpiration !== null && minutesUntilExpiration < 10;
   const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const hasIncompleteDetails = isActive && !isNew && !isValid && !isCancelled && !isExpired;
-  const canViewDetails = !isHistory && !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
+  const canViewDetails = !isHandedOff && !isNew && !!onDetailsClick && (isValid || isCancelled || isExpired || isCustodyTransferred);
   const canFinishDetails = !isHandedOff && isActive && !isNew && !isValid && !isExpired && !isCancelled;
   const canAddDetails = !isHandedOff && isActive && isNew && !isExpired && !isCancelled;
-  const showFooter = !isHistory && !isHandedOff && (isActive || canViewDetails);
+  const showFooter = !isHandedOff && (isActive || canViewDetails);
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
   const { data: cancelReason } = useQuery({
@@ -135,7 +135,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
             {canAddDetails && (
               <Group gap='sm' wrap='nowrap'>
                 <Button size='md' variant='destructive' onClick={onCancelClick}>Cancel</Button>
-                <Button size='md' onClick={onDetailsClick}>Add Details</Button>
+                <Button data-testid='add-details-btn' size='md' onClick={onDetailsClick}>Add Details</Button>
               </Group>
             )}
             {canFinishDetails && (

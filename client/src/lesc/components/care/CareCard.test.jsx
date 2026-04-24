@@ -61,11 +61,11 @@ afterEach(() => {
 });
 
 describe('CareCard', () => {
-  it('shows View details and Complete intake for ADMITTED', () => {
+  it('shows View details and Update intake status for ADMITTED', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'ADMITTED' }) });
 
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Complete intake' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Update intake status' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
@@ -74,7 +74,7 @@ describe('CareCard', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'IN_CHAIR' }) });
 
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Complete intake' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update intake status' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
@@ -106,12 +106,12 @@ describe('CareCard', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('calls onCompleteIntake when Complete intake is clicked', () => {
+  it('calls onCompleteIntake when Update intake status is clicked', () => {
     const { onCompleteIntake } = renderCard({
       deflection: buildDeflection({ subjectStatus: 'ADMITTED' }),
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Complete intake' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Update intake status' }));
     expect(onCompleteIntake).toHaveBeenCalledTimes(1);
   });
 

@@ -24,6 +24,7 @@ export default async function (fastify) {
         where: {
           currentOfficerId: request.user.id,
           status: 'ACTIVE',
+          subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
         },
         data: {
           handoffReadyAt: active ? new Date() : null,

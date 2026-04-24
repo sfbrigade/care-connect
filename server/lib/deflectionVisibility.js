@@ -1,9 +1,11 @@
 const CARE_ALLOWED_SUBJECT_FIELDS = new Set([
   'firstName',
   'lastName',
+  'middleInitial',
   'dateOfBirth',
   'sex',
   'race',
+  'driverLicense',
   // These are model-required metadata fields; keep them stable for existing response contracts.
   'id',
   'createdAt',
