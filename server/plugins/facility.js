@@ -20,7 +20,7 @@ export default fp(async function (fastify) {
       request.facility = new Facility(data);
     }
   });
-  // onRequest handler to be used to ensure a user is logged in
+  // onRequest handler to be used to ensure request is called on a facility subdomain
   fastify.decorate('requireFacility', async (request, reply) => {
     if (!request.facility) {
       return reply.code(StatusCodes.BAD_REQUEST).send();

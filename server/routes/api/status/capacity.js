@@ -2,7 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 const CACHE_TTL_MS = 30_000;
-const FACILITY_SUBDOMAIN = 'reset';
 
 const OccupantSchema = z.object({
   occupiedSince: z.string().datetime().nullable(),
@@ -24,14 +23,8 @@ const CapacityResponseSchema = z.object({
 let cache = null;
 let inflight = null;
 
-async function computeCapacity (fastify) {
-  const facility = await fastify.prisma.facility.findUnique({
-    where: { subdomain: FACILITY_SUBDOMAIN },
-    include: { bedTypes: true },
-  });
-  if (!facility) {
-    throw new Error('RESET facility not configured');
-  }
+async function computeCapacity (fastify, request) {
+  const { facility } = request;
 
   const totals = facility.bedTypes.reduce((acc, bt) => ({
     total: acc.total + bt.capacity,
@@ -51,7 +44,7 @@ async function computeCapacity (fastify) {
   });
 
   return {
-    facility: 'RESET',
+    facility: facility.name,
     generatedAt: new Date().toISOString(),
     beds: {
       total: totals.total,
@@ -66,11 +59,11 @@ async function computeCapacity (fastify) {
   };
 }
 
-async function getCapacity (fastify) {
+async function getCapacity (fastify, request) {
   const now = Date.now();
   if (cache && cache.expiresAt > now) return cache.data;
   if (inflight) return inflight;
-  inflight = computeCapacity(fastify)
+  inflight = computeCapacity(fastify, request)
     .then(data => {
       cache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
       return data;
@@ -82,11 +75,12 @@ async function getCapacity (fastify) {
 export default async function (fastify) {
   fastify.get('/capacity',
     {
-      onRequest: fastify.requireCapacityApiKey,
+      onRequest: [fastify.requireFacility, fastify.requireCapacityApiKey],
       schema: {
         description: 'Aggregate capacity and occupant data for external dashboard consumption.',
         response: {
           [StatusCodes.OK]: CapacityResponseSchema,
+          [StatusCodes.BAD_REQUEST]: z.null(),
           [StatusCodes.UNAUTHORIZED]: z.null(),
           [StatusCodes.SERVICE_UNAVAILABLE]: z.object({ error: z.string() }),
         },
@@ -94,7 +88,7 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       try {
-        const data = await getCapacity(fastify);
+        const data = await getCapacity(fastify, request);
         reply.header('Cache-Control', 'public, max-age=30');
         return reply.send(data);
       } catch (err) {

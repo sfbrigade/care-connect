@@ -15,7 +15,7 @@ test('/api/status/capacity', async (t) => {
   // The shared test fixtures don't include a facility with subdomain='reset',
   // and the helper's afterEach recreates the DB from template1 after every
   // subtest — so we re-seed per test that needs it.
-  async function seedResetFacility () {
+  t.beforeEach(async () => {
     const user = await prisma.user.findFirst();
     const serviceType = await prisma.serviceType.findFirst();
     await prisma.facility.create({
@@ -42,38 +42,44 @@ test('/api/status/capacity', async (t) => {
         },
       },
     });
-  }
+  });
+
+  await t.test('400 when not called on a facility subdomain', async () => {
+    const response = await app.inject()
+      .get('/api/status/capacity');
+    assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+  });
 
   await t.test('401 when Authorization header missing', async () => {
     const response = await app.inject()
-      .get('/api/status/capacity');
+      .get('/api/status/capacity')
+      .headers({ host: 'reset.localhost' });
     assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
   });
 
   await t.test('401 when Bearer token is wrong', async () => {
     const response = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: 'Bearer not-the-right-token' });
+      .headers({ authorization: 'Bearer not-the-right-token', host: 'reset.localhost' });
     assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
   });
 
   await t.test('401 when auth scheme is not Bearer', async () => {
     const response = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: `Basic ${TEST_API_KEY}` });
+      .headers({ authorization: `Basic ${TEST_API_KEY}`, host: 'reset.localhost' });
     assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
   });
 
   await t.test('200 with correct token; response shape is valid', async () => {
-    await seedResetFacility();
     const response = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
     const body = JSON.parse(response.body);
 
-    assert.deepStrictEqual(body.facility, 'RESET');
+    assert.deepStrictEqual(body.facility, 'RESET (test)');
     assert.ok(body.generatedAt);
     assert.ok(body.beds);
     assert.deepStrictEqual(typeof body.beds.total, 'number');
@@ -93,10 +99,10 @@ test('/api/status/capacity', async (t) => {
   await t.test('successive requests within TTL return cached snapshot', async () => {
     const first = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
     const second = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
 
     const firstBody = JSON.parse(first.body);
     const secondBody = JSON.parse(second.body);
@@ -107,7 +113,7 @@ test('/api/status/capacity', async (t) => {
   await t.test('Cache-Control header is set', async () => {
     const response = await app.inject()
       .get('/api/status/capacity')
-      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
     assert.ok(response.headers['cache-control'].includes('max-age=30'));
   });
 });
