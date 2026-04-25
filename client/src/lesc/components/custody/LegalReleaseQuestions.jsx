@@ -9,12 +9,8 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
-<<<<<<< satisfaction-survey
 import useSatisfactionSurvey from '../../../hooks/useSatisfactionSurvey';
-import { IconArrowLeft } from '@tabler/icons-react';
-=======
 import { IconAlertCircle, IconArrowBackUp, IconArrowLeft, IconCheck } from '@tabler/icons-react';
->>>>>>> dev
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
 const RELEASE_TOAST_KEY = 'custodyReleaseToast';

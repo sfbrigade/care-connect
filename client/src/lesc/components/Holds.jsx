@@ -150,7 +150,7 @@ function Holds () {
 
   const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(
     navigate,
-    deflections?.[0]?.id ?? incident?.id ?? '',
+    allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId ?? '',
     {
       department: 'SFPD',
     }
@@ -279,17 +279,12 @@ function Holds () {
     mutationFn: () => Api.facilities.left(facility.id),
     onSuccess: () => {
       const facilityName = facility?.name ?? 'RESET';
-<<<<<<< satisfaction-survey
-      showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(leftAt)}`);
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
-      const surveyContextId = deflections?.[0]?.id ?? incident?.id;
-      scheduleOptionalSurveyWithoutNavigation(surveyContextId);
-    }
-=======
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(new Date())}`);
+      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      const surveyContextId = allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId;
+      scheduleOptionalSurveyWithoutNavigation(surveyContextId);
     },
->>>>>>> dev
   });
 
   function onLeftClick () {

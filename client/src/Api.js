@@ -395,13 +395,11 @@ const Api = {
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
     },
-<<<<<<< satisfaction-survey
     submitSatisfactionSurvey (id, body) {
       return instance.post(`/api/deflections/${id}/satisfaction-survey`, body).catch(handleError);
-=======
+    },
     extend (deflectionIds) {
       return instance.patch('/api/deflections/extend', { deflectionIds }).catch(handleError);
->>>>>>> dev
     },
     cancelReasons: {
       index () {
