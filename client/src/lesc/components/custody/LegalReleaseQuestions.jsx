@@ -211,7 +211,7 @@ function LegalReleaseQuestions () {
                   <Box mt='md'>
                     <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                       <Stack gap='sm' align='flex-start'>
-                        <Chip value='sobered'>Can care for themselves</Chip>
+                        <Chip data-testid='release-reason-sobered' value='sobered'>Can care for themselves</Chip>
                         <Chip value='medical_issue'>Medical issue</Chip>
                         <Chip value='other'>Other (please specify)</Chip>
                       </Stack>
@@ -268,6 +268,7 @@ function LegalReleaseQuestions () {
                   Cancel
                 </Button>
                 <Button
+                  data-testid='release-confirm-btn'
                   onClick={() => {
                     if (isEditingNarrative) {
                       saveNarrativeMutation.mutate(undefined, {

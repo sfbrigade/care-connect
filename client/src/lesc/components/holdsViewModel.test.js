@@ -136,37 +136,27 @@ describe('holdsViewModel', () => {
     expect(buildAutoCancelledHoldsMessage(3)).toBe('3 holds were auto-canceled because they expired.');
   });
 
-  it('detects expired holds removed from the active incident while some holds remain active', () => {
+  it('detects expired holds removed while some holds remain active', () => {
     const notice = detectAutoCancelledExpiredHolds({
-      previousIncidentId: 100,
       previousDeflectionIds: [1, 2],
       currentDeflections: [deflection({ id: 1, incidentId: 100, status: 'ACTIVE' })],
       historyDeflections: [deflection({ id: 2, incidentId: 100, status: 'EXPIRED' })],
     });
 
-    expect(notice).toEqual({
-      incidentId: 100,
-      count: 1,
-      allExpired: false,
-    });
+    expect(notice).toEqual({ count: 1 });
   });
 
-  it('detects when all holds in the active incident were auto-canceled after expiry', () => {
+  it('detects expired holds across multiple incidents and when nothing remains active', () => {
     const notice = detectAutoCancelledExpiredHolds({
-      previousIncidentId: 100,
       previousDeflectionIds: [1, 2],
       currentDeflections: [],
       historyDeflections: [
         deflection({ id: 1, incidentId: 100, status: 'EXPIRED' }),
-        deflection({ id: 2, incidentId: 100, status: 'EXPIRED' }),
+        deflection({ id: 2, incidentId: 200, status: 'EXPIRED' }),
       ],
     });
 
-    expect(notice).toEqual({
-      incidentId: 100,
-      count: 2,
-      allExpired: true,
-    });
+    expect(notice).toEqual({ count: 2 });
   });
 
   it('splits out current incident deflections when there are no active holds', () => {
@@ -210,6 +200,15 @@ describe('holdsViewModel', () => {
       releasedAt: '2026-02-27T10:00:00.000Z',
     }));
     expect(result).toBe(new Date('2026-02-27T12:00:00.000Z').getTime());
+  });
+
+  it('ignores expiresAt (a future deadline) when calculating hold activity recency', () => {
+    const result = getDeflectionActivityMs(deflection({
+      updatedAt: '2026-02-27T09:00:00.000Z',
+      cancelledAt: '2026-02-27T09:00:00.000Z',
+      expiresAt: '2026-02-27T15:00:00.000Z',
+    }));
+    expect(result).toBe(new Date('2026-02-27T09:00:00.000Z').getTime());
   });
 
   describe('buildAdminCancelledHoldsMessage', () => {

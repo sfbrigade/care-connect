@@ -54,7 +54,7 @@ export function transformData (deflection) {
     subjectDL: subject?.driverLicense || '',
     subjectLocalId: subject?.localId || '',
     subjectDrugType: deflection.drugType || null,
-    arrivedAtReset: incident?.arrivedAt?.toISOString() || null,
+    arrivedAtReset: deflection.arrivedAt?.toISOString() || null,
     transferredAt: deflection.transferredAt?.toISOString() || null,
     releasedAt: deflection.releasedAt.toISOString(),
     releaseReason: deflection.releaseReason?.name || '',

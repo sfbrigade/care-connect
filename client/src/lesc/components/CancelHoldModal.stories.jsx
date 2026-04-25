@@ -37,50 +37,63 @@ export default {
   },
 };
 
+const baseDeflection = {
+  id: '012345',
+  subjectId: null,
+  subject: null,
+  createdAt: new Date().toISOString(),
+  expiresAt: new Date(Date.now() + 59 * 60 * 1000).toISOString(),
+  status: 'ACTIVE',
+};
+
+const baseDeflectionWithSubject = {
+  ...baseDeflection,
+  id: '012346',
+  subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+  subject: {
+    id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
+    firstName: 'John',
+    middleInitial: 'D',
+    lastName: 'Doe',
+    dateOfBirth: '2000-01-01',
+    sex: 'MALE',
+  },
+};
+
 export const Default = {
   args: {
-    deflection: {
-      id: '012345',
-      subjectId: null,
-      subject: null,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 59 * 60 * 1000).toISOString(),
-      status: 'ACTIVE',
-    }
+    deflections: [baseDeflection],
   },
 };
 
 export const WithSubject = {
   args: {
-    deflection: {
-      ...Default.args.deflection,
-      subjectId: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-      subject: {
-        id: 'bfe79463-866a-40b3-8b6a-068e716a02db',
-        firstName: 'John',
-        middleInitial: 'D',
-        lastName: 'Doe',
-        dateOfBirth: '2000-01-01',
-        sex: 'MALE',
-      },
-    }
+    deflections: [baseDeflectionWithSubject],
+  },
+};
+
+export const MultipleMixed = {
+  args: {
+    deflections: [baseDeflectionWithSubject, baseDeflection],
+  },
+};
+
+export const MultipleNoSubjects = {
+  args: {
+    deflections: [baseDeflection, { ...baseDeflection, id: '012347' }],
   },
 };
 
 export const Loading = {
   args: {
-    deflection: {
-      ...Default.args.deflection,
-    },
+    deflections: [baseDeflection],
     loading: true,
-  }
+  },
 };
 
 export const LoadingWithSubject = {
   args: {
-    deflection: {
-      ...WithSubject.args.deflection,
-    },
+    deflections: [baseDeflectionWithSubject],
     loading: true,
-  }
+  },
 };

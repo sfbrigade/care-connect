@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         get: vi.fn(async () => ({ data: incident })),
       },
       deflections: {
+        exitToJail: vi.fn(async () => ({ data: {} })),
         safetyCheck: vi.fn(async () => ({ data: {} })),
         release: vi.fn(async () => ({ data: {} })),
         update: vi.fn(async (id, payload) => ({ data: { id, ...payload } })),
@@ -104,9 +105,9 @@ vi.mock('@mantine/core', async () => {
   const AccordionContext = createContext([]);
   const AccordionItemContext = createContext(null);
 
-  const Accordion = ({ defaultValue = [], children }) => createElement(
+  const Accordion = ({ defaultValue = [], value, children }) => createElement(
     AccordionContext.Provider,
-    { value: Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
+    { value: Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
     createElement('div', null, children)
   );
 
@@ -274,6 +275,14 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
+  it('renders Record result as the safety check footer action', () => {
+    const html = render({ subjectStatus: 'AWAITING_INTAKE' });
+
+    expect(html).toContain('Record result');
+    expect(html).toContain('Record safety check result');
+    expect(html).toContain('Passed safety check');
+    expect(html).toContain('Failed safety check');
+  });
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(
       { subjectStatus: 'ADMITTED', drugUseEvidence: true, drugType: 'ALCOHOL' },
@@ -288,6 +297,24 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('drugType.ALCOHOL');
   });
 
+  it('shows behavioral observations after substance-related details in care personal details', () => {
+    const html = render(
+      {
+        subjectStatus: 'ADMITTED',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL',
+        behavior: 'Person was stumbling into traffic.',
+      },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Behavioral observations');
+    expect(html).toContain('Arrestable behavior');
+    expect(html).toContain('Person was stumbling into traffic.');
+    expect(html.indexOf('Substance-related details')).toBeLessThan(html.indexOf('Behavioral observations'));
+  });
+
   it('shows no drug use status without a drug type in care personal details', () => {
     const html = render(
       { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
@@ -298,5 +325,14 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Signs of substance use');
     expect(html).toContain('No');
     expect(html).not.toContain('Substance used (suspected)');
+  });
+
+  it('hides care behavioral observations when no arrestable behavior was recorded', () => {
+    const html = render(
+      { subjectStatus: 'ADMITTED', behavior: null },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).not.toContain('Arrestable behavior');
   });
 });
