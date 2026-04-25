@@ -12,6 +12,8 @@ function unprocessableFormError (message) {
   return error;
 }
 
+const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
+
 export default async function (fastify) {
   fastify.post('/:id/handoff',
     {
@@ -39,7 +41,6 @@ export default async function (fastify) {
       let updatedDeflection;
       try {
         await fastify.prisma.$transaction(async (tx) => {
-          const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
           const lockedDeflection = await fastify.prisma.deflection.findByIdForUpdate(tx, id);
 
           if (!lockedDeflection) {
@@ -116,6 +117,8 @@ export default async function (fastify) {
         }
         throw error;
       }
+
+      if (!updatedDeflection) return;
 
       updatedDeflection.propertyPhotos = updatedDeflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

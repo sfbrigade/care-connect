@@ -495,24 +495,40 @@ model FacilityEligibility {
 }
 
 model Subject {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firstName     String?
-  lastName      String?
-  middleInitial String?
-  dateOfBirth   DateTime? @db.Date
-  sex           SexEnum?
-  race          RaceEnum?
-  driverLicense String?
-  addressLine1  String?
-  addressLine2  String?
-  city          String?
-  state         String?
-  postalCode    String?
-  localId       String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// @pii
+  firstName                    String?
+  /// @pii
+  lastName                     String?
+  /// @pii
+  middleInitial                String?
+  /// @pii
+  dateOfBirth                  DateTime?               @db.Date
+  /// @pii
+  sex                          SexEnum?
+  /// @pii
+  race                         RaceEnum?
+  /// @pii
+  driverLicense                String?
+  /// @pii
+  addressLine1                 String?
+  /// @pii
+  addressLine2                 String?
+  /// @pii
+  city                         String?
+  /// @pii
+  state                        String?
+  /// @pii
+  postalCode                   String?
+  /// @pii
+  localId                      String?
+  anonymizedAt                 DateTime?
+  createdAt                    DateTime                @default(now())
+  updatedAt                    DateTime                @updatedAt
 
-  deflections Deflection[]
+  deflections                  Deflection[]
+
+  @@index([anonymizedAt])
 }
 
 model Deflection {
@@ -701,33 +717,35 @@ model DeflectionExitHousingStatus {
 }
 
 model DeflectionDocument {
-  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection     Deflection @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
-  deflectionId   Int
-  formId         String
-  file           String
-  sourceDataHash String?
-  createdAt      DateTime   @default(now())
-  createdBy      User       @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById    String     @db.Uuid
-  updatedAt      DateTime   @updatedAt
-  updatedBy      User       @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById    String     @db.Uuid
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId                 Int
+  formId                       String
+  /// @pii-asset — S3 object contains subject PII; deleted and file cleared on anonymization
+  file                         String?
+  sourceDataHash               String?
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 
   @@unique([deflectionId, formId])
 }
 
 model PropertyPhoto {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deflection   Deflection @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
-  deflectionId Int
-  file         String
-  createdAt    DateTime   @default(now())
-  createdBy    User       @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById  String     @db.Uuid
-  updatedAt    DateTime   @updatedAt
-  updatedBy    User       @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById  String     @db.Uuid
+  id                           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deflection                   Deflection              @relation(fields: [deflectionId], references: [id], onDelete: Cascade)
+  deflectionId                 Int
+  /// @pii-asset — S3 object may identify subject; deleted and file cleared on anonymization
+  file                         String?
+  createdAt                    DateTime                @default(now())
+  createdBy                    User                    @relation("CreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById                  String                  @db.Uuid
+  updatedAt                    DateTime                @updatedAt
+  updatedBy                    User                    @relation("UpdatedBy", fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                  String                  @db.Uuid
 }
 
 model Incident {
