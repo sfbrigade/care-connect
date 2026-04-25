@@ -1,17 +1,15 @@
 import { Link } from 'react-router';
 import { Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
-  IconBug,
+  IconSend,
   IconHome,
   IconAddressBook,
-  IconMessages,
   IconLogout,
   IconUser
 } from '@tabler/icons-react';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
-import IconButtonLink from '@/components/IconButtonLink';
 
 function Header ({ opened, close, toggle, logout }) {
   const { facility } = useFacilityContext();
@@ -28,11 +26,10 @@ function Header ({ opened, close, toggle, logout }) {
           </Box>
         </Link>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
-          <IconButtonLink icon={IconMessages} to='/feedback' />
           {user &&
             <Menu position='bottom-end' width={280} onDismiss={close}>
               <Menu.Target>
-                <Burger opened={opened} onClick={toggle} />
+                <Burger opened={opened} onClick={toggle} aria-label={opened ? 'Close menu' : 'Open menu'} />
               </Menu.Target>
 
               <Menu.Dropdown>
@@ -64,12 +61,12 @@ function Header ({ opened, close, toggle, logout }) {
                   Profile
                 </Menu.Item>
                 <Menu.Item
-                  leftSection={<IconBug size={20} color='var(--mantine-color-gray-5)' />}
+                  leftSection={<IconSend size={20} color='var(--mantine-color-gray-5)' />}
                   component={Link}
                   to='/feedback'
                   onClick={close}
                 >
-                  Report a bug
+                  Share feedback
                 </Menu.Item>
                 {user?.isAdmin && (
                   <>

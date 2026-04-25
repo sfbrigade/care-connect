@@ -30,14 +30,14 @@ export default async function (fastify, opts) {
         where: { id },
         include: {
           subject: true,
+          incident: true,
           cancelReason: true,
-          deflectionDetails: true,
           deflectionDocuments: true,
           propertyPhotos: true,
         },
       });
 
-      if (!deflection) {
+      if (!deflection || deflection.subject?.anonymizedAt) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Deflection not found' });
       }
       if (!canReadDeflection(request.user, deflection)) {
