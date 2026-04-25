@@ -210,10 +210,10 @@ test('/api/deflections', async (t) => {
 
   await t.test('POST /:id/satisfaction-survey', async (t) => {
     const validPayload = {
-      source: 'legal_release',
+      department: 'SFSO',
       answers: {
         careConnectRating: 'good',
-        resetFacilityFeedback: 'Staff were helpful.',
+        resetFacilityFeedback: 'Staff are helpful.',
       },
     };
 
@@ -221,7 +221,13 @@ test('/api/deflections', async (t) => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
-        .payload(validPayload);
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'Staff are helpful.',
+          },
+        });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
       const data = JSON.parse(response.body);
@@ -232,23 +238,21 @@ test('/api/deflections', async (t) => {
         where: { id: data.id },
       });
       assert.ok(row);
-      assert.deepStrictEqual(row.source, 'legal_release');
+      assert.deepStrictEqual(row.department, 'SFSO');
       assert.deepStrictEqual(row.careConnectRating, 'good');
-      assert.deepStrictEqual(row.resetFacilityFeedback, 'Staff were helpful.');
+      assert.deepStrictEqual(row.resetFacilityFeedback, 'Staff are helpful.');
       assert.strictEqual(row.improvementSuggestions, null);
     });
 
-    await t.test('allows custody users who can read the facility hold', async () => {
+    await t.test('allows SFPD users who can read the facility hold', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
         .headers(custodyUserHeaders)
         .payload({
-          ...validPayload,
-          source: 'holds_ive_left',
+          department: 'SFPD',
           answers: {
-            ...validPayload.answers,
             careConnectRating: 'neutral',
-            improvementSuggestions: 'More signage.',
+            resetFacilityFeedback: 'Communication with staff could be better.',
           },
         });
 
@@ -257,9 +261,32 @@ test('/api/deflections', async (t) => {
       const row = await prisma.satisfactionSurvey.findUnique({
         where: { id: data.id },
       });
-      assert.deepStrictEqual(row.source, 'holds_ive_left');
+      assert.deepStrictEqual(row.department, 'SFPD');
       assert.deepStrictEqual(row.careConnectRating, 'neutral');
-      assert.deepStrictEqual(row.improvementSuggestions, 'More signage.');
+      assert.deepStrictEqual(row.resetFacilityFeedback, 'Communication with staff could be better.');
+      assert.strictEqual(row.improvementSuggestions, null);
+    });
+
+    await t.test('allows intake staff to submit surveys', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/satisfaction-survey')
+        .headers(careUserHeaders)
+        .payload({
+          department: 'CONNECTIONS',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'Intake flow is smooth.',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.deepStrictEqual(row.department, 'CONNECTIONS');
+      assert.deepStrictEqual(row.careConnectRating, 'good');
+      assert.deepStrictEqual(row.resetFacilityFeedback, 'Intake flow is smooth.');
     });
 
     await t.test('requires authentication', async () => {
@@ -293,7 +320,7 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
         .payload({
-          source: 'legal_release',
+          department: 'SFSO',
           answers: {
             careConnectRating: 'great',
             resetFacilityFeedback: 'ok',
@@ -308,10 +335,25 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
         .payload({
-          source: 'legal_release',
+          department: 'SFSO',
           answers: {
             careConnectRating: 'bad',
             resetFacilityFeedback: '   ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 for invalid department', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'CARE_TEAM',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'ok',
           },
         });
 

@@ -7,6 +7,7 @@ import { useToast } from '@/components/ToastContext';
 
 export const SATISFACTION_SURVEY_FLAG_KEY = 'satisfactionSurveyEnabled';
 export const SATISFACTION_SURVEY_RESPONSES_KEY = 'satisfactionSurveyResponses';
+export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'satisfactionSurveyNextEligibleAt';
 
 const INITIAL_ANSWERS = {
   careConnectRating: '',
@@ -21,8 +22,25 @@ const SATISFACTION_OPTIONS = [
 ];
 
 export function isSatisfactionSurveyEnabled () {
-  // return typeof window !== 'undefined' && window.sessionStorage.getItem(SATISFACTION_SURVEY_FLAG_KEY) === 'true';
-  return true;
+  if (typeof window === 'undefined') return true;
+
+  const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
+  if (!storedNextEligibleAt) return true;
+
+  const nextEligibleAt = Number(storedNextEligibleAt);
+  if (!Number.isFinite(nextEligibleAt)) return true;
+
+  return Date.now() >= nextEligibleAt;
+}
+
+export function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
+  if (typeof window === 'undefined') return null;
+
+  const nextEligibleDate = new Date(now);
+  nextEligibleDate.setMonth(nextEligibleDate.getMonth() + 1);
+  const nextEligibleAt = nextEligibleDate.getTime();
+  window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(nextEligibleAt));
+  return nextEligibleAt;
 }
 
 export function appendSatisfactionSurveyResponse (deflectionId, didCompleteSurvey, answers, { department } = {}) {
@@ -64,6 +82,7 @@ function SatisfactionSurveyModal ({
 
   useEffect(() => {
     if (!opened) return;
+    scheduleNextSatisfactionSurveyEligibility();
     setShowImprovementSuggestions(false);
     setSurveyStep(0);
     setSurveyAnswers(INITIAL_ANSWERS);

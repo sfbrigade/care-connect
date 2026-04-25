@@ -147,7 +147,6 @@ function Care () {
           4000,
           "Person moved to 'In-chair' for Sheriff's review."
         );
-        scheduleOptionalSurveyWithoutNavigation(variables.deflectionId);
       } else {
         window.sessionStorage.setItem('custodyHighlightTarget', String(variables.deflectionId));
         showToast(
@@ -157,6 +156,7 @@ function Care () {
           'Person moved back. Please review their status before release or exit.'
         );
       }
+      scheduleOptionalSurveyWithoutNavigation(variables.deflectionId);
       setIntakeModalDeflection(null);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
