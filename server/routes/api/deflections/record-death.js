@@ -86,7 +86,6 @@ export default async function (fastify, opts) {
           include: {
             subject: true,
             releaseReason: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });
@@ -106,6 +105,7 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
+            status: Deflection.HoldStatus.COMPLETED,
             subjectStatus: nextSubjectStatus,
             releaseReasonId,
             updatedById: request.user.id,
@@ -116,14 +116,15 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
+            status: Deflection.HoldStatus.COMPLETED,
             subjectStatus: nextSubjectStatus,
+            completedAt: now,
             releaseReasonId,
             updatedAt: now,
           },
           include: {
             subject: true,
             releaseReason: true,
-            deflectionDetails: true,
             propertyPhotos: true,
           },
         });

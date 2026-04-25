@@ -27,6 +27,7 @@ function ArrivalConfirmationModal ({
             <IconButtonLink
               icon={IconX}
               onClick={onClose}
+              aria-label='Close'
             />
           </Group>
           <Text>Confirm that you've arrived at {facilityName} and can start custody transfer.</Text>
@@ -40,6 +41,7 @@ function ArrivalConfirmationModal ({
             Not yet
           </Button>
           <Button
+            data-testid='arrival-confirm-btn'
             onClick={() => onConfirm()}
             disabled={loading}
           >

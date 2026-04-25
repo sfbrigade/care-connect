@@ -3,6 +3,7 @@ import s3 from '#lib/s3.js';
 export default async function (fastify, opts) {
   fastify.get('/*',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Redirects to a signed url for the specified asset in storage',
       }

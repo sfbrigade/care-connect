@@ -236,6 +236,41 @@ manually outside of those commands, run this first (from inside the container):
 npm run build:forms -w server
 ```
 
+### Accessibility Testing
+
+Two Playwright scripts run [axe-core](https://github.com/dequelabs/axe-core) against the app and fail on any WCAG 2.1 A/AA violation. Run them from the repo root (outside the server container):
+
+- **Shallow audit** (21 stateless pages, ~2 minutes):
+
+  ```
+  npm run test:a11y
+  ```
+
+- **Deep audit** (17 stateful pages across SFPD/SFSO/Care roles, ~4 minutes):
+
+  ```
+  npm run test:a11y:deep
+  ```
+
+Both scripts assume:
+- Docker is running (`docker compose up -d`) — the test setup resets the database to its seed state before each run
+- The dev server is reachable at http://localhost:3333
+- Playwright's Chromium browser is installed locally — this is a one-time setup per machine, not tracked in `package.json` because Playwright installs browsers into a user-level cache rather than `node_modules`. Run:
+
+  ```
+  npx playwright install chromium
+  ```
+
+After each run, a JSON report is written to `e2e/accessibility-report.json` or `e2e/accessibility-report-deep.json` summarizing all violations found, including any that were excluded from the pass/fail gate.
+
+**What it checks:** axe-core rules tagged `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`. This tests compliance with WCAG level AA.
+
+**Color contrast exclusion:** The scripts currently treat `color-contrast` violations as non-blocking while the design team finalizes color decisions. The violations still appear in the JSON reports for review. Once color fixes ship, this exclusion will be removed and the gate will enforce the full ruleset.
+
+**Making the audits blocking in CI:** These scripts are intended to become part of CI once the color-contrast exclusion is removed. At that point the audits can run as a required check on pull requests so that accessibility regressions are caught before merge. Until then, run the scripts locally before pushing a11y-sensitive changes.
+
+**Adding pages:** edit the `routes` arrays in `e2e/accessibility-audit.spec.js` or `e2e/accessibility-audit-deep.spec.js`.
+
 ### Linting and Formatting
 
 To lint and format your code:

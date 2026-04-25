@@ -32,13 +32,10 @@ function renderHoldsActive (props) {
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>
           <HoldsActive
-            incident={null}
-            deflections={[]}
-            isFetchingDeflections={false}
+            incidents={[]}
             onCancelHoldClick={vi.fn()}
             onEditIncidentClick={vi.fn()}
             onHandoffClick={vi.fn()}
-            onCancelIncidentClick={vi.fn()}
             {...props}
           />
         </MemoryRouter>
@@ -56,25 +53,29 @@ afterEach(() => {
 });
 
 describe('HoldsActive', () => {
-  it('shows the transferred-holds prompt when the officer has arrived and no active holds remain', () => {
-    renderHoldsActive({
-      incident: {
-        id: 10,
-        arrivedAt: '2026-03-14T15:15:00.000Z',
-        leftAt: null,
-      },
-      updatedAtMs: new Date('2026-03-14T17:42:00.000Z').getTime(),
-    });
-
-    expect(screen.getByTestId('transferred-holds-checkerboard')).toBeInTheDocument();
-    expect(screen.getByText(/All holds transferred/)).toBeInTheDocument();
-    expect(screen.getByText(/make sure to tap/)).toBeInTheDocument();
-  });
-
-  it('falls back to the generic empty state when there is no transferred-holds incident state', () => {
+  it('shows the empty state when there are no incidents with holds', () => {
     renderHoldsActive();
 
     expect(screen.getByText('No active holds.')).toBeInTheDocument();
-    expect(screen.queryByText(/All holds transferred/)).not.toBeInTheDocument();
+  });
+
+  it('renders holds grouped by incident', () => {
+    renderHoldsActive({
+      incidents: [
+        {
+          id: 10,
+          addressLine1: '123 Main St',
+          city: 'San Francisco',
+          state: 'CA',
+          canEdit: true,
+          canHandoff: false,
+          deflections: [
+            { id: 1, subjectStatus: 'DETAINED', status: 'ACTIVE', createdAt: '2026-03-14T15:00:00Z' },
+          ],
+        },
+      ],
+    });
+
+    expect(screen.queryByText('No active holds.')).not.toBeInTheDocument();
   });
 });

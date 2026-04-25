@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Anchor, Box, Button, CloseButton, Container, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, Anchor, Badge, Box, Button, CloseButton, Container, Divider, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -31,11 +31,6 @@ function PropertyForm () {
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
   const autoSaveTimerRef = useRef(null);
-
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
-  });
 
   const { data: deflection, isLoading } = useQuery({
     queryKey: ['deflections', id],
@@ -93,13 +88,7 @@ function PropertyForm () {
 
   async function updateDeflectionCache (updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
-    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-    if (cachedDeflections) {
-      const updatedDeflections = cachedDeflections.map(deflection => (
-        deflection.id === id ? updatedDeflection : deflection
-      ));
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-    }
+    queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
   }
 
   const autoSaveMutation = useMutation({
@@ -177,21 +166,20 @@ function PropertyForm () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} />
-          <Group gap='xs'>
-            {header}
-            {!!header && isNew && <Text c='gray.5' size='lg'>•</Text>}
-            {isNew && <Text c='dimmed' size='lg'>3 of 3</Text>}
-          </Group>
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} aria-label='Go back' />
+          {header}
         </Group>
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
+          <Text size='md'>Incident {deflection ? deflection.incidentId : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
-        <Title order={2} mb='xs'>Personal property</Title>
+        <Group gap='sm' mb='xs' align='center'>
+          <Title order={2}>Personal property</Title>
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>4/4</Badge>}
+        </Group>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
@@ -213,51 +201,64 @@ function PropertyForm () {
                   <Anchor href={`tel:${facility?.phone}`}>Call {facility?.name}</Anchor>
                 </Group>
               )}
-              <PhotoInput
-                key={`property-photo-uploader-${propertyPhotos.length}`}
-                label='Photos (optional)'
-                id='file'
-                onAllUploaded={onAllUploaded}
-                maxPhotos={maxPropertyPhotos}
-                photoCount={propertyPhotos.length}
-              >
-                <Button variant='secondary' size='md' mt='md' loading={uploadPhotoMutation.isPending}>Take or upload photo</Button>
-              </PhotoInput>
-              {!!propertyPhotos.length && (
-                <Group gap='md' align='flex-start'>
-                  {propertyPhotos.map((photo, index) => (
-                    <Stack key={photo.id} gap='xs'>
-                      <Box pos='relative' w={180} h={180}>
-                        <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
-                        <CloseButton
-                          aria-label={`Remove property photo ${index + 1}`}
-                          variant='filled'
-                          size='md'
-                          pos='absolute'
-                          top={8}
-                          right={8}
-                          bg='gray.0'
-                          c='red.7'
-                          style={{ zIndex: 1 }}
-                          onClick={() => onRemovePhoto(photo.id)}
-                          disabled={deletePhotoMutation.isPending}
-                        />
-                      </Box>
+              <Divider />
+              <Accordion variant='section' defaultValue={[]}>
+                <Accordion.Item value='optional'>
+                  <Accordion.Control>
+                    <Title order={3}>Optional details</Title>
+                    <Text c='gray.5' size='sm'>Photo and description</Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap='xl'>
+                      <PhotoInput
+                        key={`property-photo-uploader-${propertyPhotos.length}`}
+                        label='Would you like to add a photo?'
+                        id='file'
+                        onAllUploaded={onAllUploaded}
+                        maxPhotos={maxPropertyPhotos}
+                        photoCount={propertyPhotos.length}
+                      >
+                        <Button variant='secondary' size='md' mt='md' loading={uploadPhotoMutation.isPending}>Take or upload photo</Button>
+                      </PhotoInput>
+                      {!!propertyPhotos.length && (
+                        <Group gap='md' align='flex-start'>
+                          {propertyPhotos.map((photo, index) => (
+                            <Stack key={photo.id} gap='xs'>
+                              <Box pos='relative' w={180} h={180}>
+                                <Image src={photo.fileUrl} alt={`Property photo ${index + 1}`} h={180} w={180} radius='md' />
+                                <CloseButton
+                                  aria-label={`Remove property photo ${index + 1}`}
+                                  variant='filled'
+                                  size='md'
+                                  pos='absolute'
+                                  top={8}
+                                  right={8}
+                                  bg='gray.0'
+                                  c='red.7'
+                                  style={{ zIndex: 1 }}
+                                  onClick={() => onRemovePhoto(photo.id)}
+                                  disabled={deletePhotoMutation.isPending}
+                                />
+                              </Box>
+                            </Stack>
+                          ))}
+                        </Group>
+                      )}
+                      <Text size='sm' c='dimmed'>
+                        {propertyPhotos.length} photos uploaded (max. {maxPropertyPhotos} photos)
+                      </Text>
+                      <Textarea
+                        key={form.key('propertyDetails')}
+                        {...form.getInputProps('propertyDetails')}
+                        label='Description'
+                        placeholder='e.g., black backpack with clothing and toiletries.'
+                      />
                     </Stack>
-                  ))}
-                </Group>
-              )}
-              <Text size='sm' c='dimmed'>
-                {propertyPhotos.length} photos uploaded (max. {maxPropertyPhotos} photos)
-              </Text>
-              <Textarea
-                key={form.key('propertyDetails')}
-                {...form.getInputProps('propertyDetails')}
-                label='Description (optional)'
-                placeholder='e.g., black backpack with clothing and toiletries.'
-              />
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
               <Button type='submit' mb='xl'>
-                {isNew ? 'Save details' : 'Save property'}
+                {isNew ? 'Finish details' : 'Save property'}
               </Button>
             </Stack>
           </Fieldset>

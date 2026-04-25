@@ -8,6 +8,7 @@ import s3 from '#lib/s3.js';
 export default async function (fastify, opts) {
   fastify.post('/',
     {
+      onRequest: fastify.requireUser,
       schema: {
         description: 'Returns a signed URL for asset upload to storage.',
         body: z.object({

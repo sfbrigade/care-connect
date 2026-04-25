@@ -69,7 +69,7 @@ describe('Care flow unit tests', () => {
     });
     expect(admittedState).toEqual({
       showFooter: true,
-      primaryLabel: 'Complete intake',
+      primaryLabel: 'Update intake status',
       primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
