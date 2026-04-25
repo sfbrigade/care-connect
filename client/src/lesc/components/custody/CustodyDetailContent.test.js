@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         get: vi.fn(async () => ({ data: incident })),
       },
       deflections: {
+        exitToJail: vi.fn(async () => ({ data: {} })),
         safetyCheck: vi.fn(async () => ({ data: {} })),
         release: vi.fn(async () => ({ data: {} })),
         update: vi.fn(async (id, payload) => ({ data: { id, ...payload } })),
@@ -187,13 +188,14 @@ describe('CustodyDetailContent', () => {
     CustodyDetailContent = (await import('./CustodyDetailContent')).default;
     AuthContextProvider = (await import('../../../AuthContextProvider')).default;
 
-    render = (deflectionOverride = {}) => {
+    render = (deflectionOverride = {}, propsOverride = {}) => {
       const content = h(CustodyDetailContent, {
         deflection: {
           ...deflection,
           ...deflectionOverride,
         },
-        backTo: '/custody'
+        backTo: propsOverride.viewerMode === 'care' ? '/care' : '/custody',
+        ...propsOverride,
       });
       const provider = h(AuthContextProvider, null, content);
       return renderToStaticMarkup(provider);
@@ -211,6 +213,8 @@ describe('CustodyDetailContent', () => {
     propertyPhotos: [],
     narcoticsSubstance: false,
     narcoticsParaphernalia: false,
+    drugUseEvidence: false,
+    drugType: null,
     subject: {
       firstName: 'Test',
       lastName: 'Person',
@@ -240,6 +244,7 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Intake staff can scan this code to start full intake.');
     expect(html).toContain('Legal release');
     expect(html).toContain('Behavioral observations');
+    expect(html).toContain('Substance-related details');
     expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
     expect(html).toContain('CASE-456');
@@ -268,5 +273,39 @@ describe('CustodyDetailContent', () => {
 
     expect(html).not.toContain('Exit to hospital');
     expect(html).not.toContain('Record exit to hospital');
+  });
+
+  it('renders Record result as the safety check footer action', () => {
+    const html = render({ subjectStatus: 'AWAITING_INTAKE' });
+
+    expect(html).toContain('Record result');
+    expect(html).toContain('Record safety check result');
+    expect(html).toContain('Passed safety check');
+    expect(html).toContain('Failed safety check');
+  });
+  it('shows drug use status and selected drug type in care personal details', () => {
+    const html = render(
+      { subjectStatus: 'ADMITTED', drugUseEvidence: true, drugType: 'ALCOHOL' },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).toContain('Edit');
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Signs of substance use');
+    expect(html).toContain('Yes');
+    expect(html).toContain('Substance used (suspected)');
+    expect(html).toContain('drugType.ALCOHOL');
+  });
+
+  it('shows no drug use status without a drug type in care personal details', () => {
+    const html = render(
+      { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Signs of substance use');
+    expect(html).toContain('No');
+    expect(html).not.toContain('Substance used (suspected)');
   });
 });

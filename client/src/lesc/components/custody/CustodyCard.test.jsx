@@ -7,7 +7,8 @@ import { MantineProvider } from '@mantine/core';
 
 import CustodyCard from './CustodyCard';
 
-const { mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
+const { mockExitToJail, mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
+  mockExitToJail: vi.fn(),
   mockNavigate: vi.fn(),
   mockSafetyCheck: vi.fn(),
   mockShowToast: vi.fn(),
@@ -30,6 +31,7 @@ vi.mock('react-router', async () => {
 vi.mock('../../../Api', () => ({
   default: {
     deflections: {
+      exitToJail: mockExitToJail,
       safetyCheck: mockSafetyCheck,
     },
   },
@@ -84,6 +86,7 @@ function renderCard (deflection) {
 beforeEach(() => {
   vi.clearAllMocks();
   window.sessionStorage.clear();
+  mockExitToJail.mockResolvedValue({ data: {} });
   mockSafetyCheck.mockResolvedValue({ data: {} });
 });
 
@@ -92,11 +95,11 @@ afterEach(() => {
 });
 
 describe('CustodyCard', () => {
-  it('shows View details and Mark complete for awaiting intake', () => {
+  it('shows View details and Record result for awaiting intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mark complete' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Record result' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
@@ -107,7 +110,7 @@ describe('CustodyCard', () => {
     expect(screen.getByText('Intake not completed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
   });
 
   it('shows qr code and only View details for ready for intake', () => {
@@ -115,7 +118,7 @@ describe('CustodyCard', () => {
 
     expect(screen.getByText('Transfer code: 123')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
   });
 
@@ -125,7 +128,7 @@ describe('CustodyCard', () => {
       renderCard(buildDeflection({ subjectStatus: status }));
 
       expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     }
   );
@@ -153,10 +156,11 @@ describe('CustodyCard', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123/legal-release');
   });
 
-  it('calls safety check mutation when Mark complete is clicked', async () => {
+  it('calls safety check mutation when Passed safety check is clicked', async () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
 
     await waitFor(() => {
       expect(mockSafetyCheck).toHaveBeenCalledWith(123);
@@ -165,6 +169,48 @@ describe('CustodyCard', () => {
     await waitFor(() => {
       expect(window.sessionStorage.getItem('custodyHighlightTarget')).toBe('123');
       expect(window.sessionStorage.getItem('custodyInCustodySectionTarget')).toBe('READY_FOR_INTAKE');
+    });
+  });
+
+  it('opens the exit to jail flow when Failed safety check is clicked', async () => {
+    renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Failed safety check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, exit to jail' }));
+
+    await waitFor(() => {
+      expect(mockExitToJail).toHaveBeenCalledWith(123);
+    });
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/custody?tab=released');
+    });
+  });
+
+  it('shows the offline safety check toast for network errors', async () => {
+    mockSafetyCheck.mockRejectedValueOnce(new Error('Network Error'));
+    renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith(
+        'Safety check saved offline. We’ll sync when connection is back.',
+        'warning'
+      );
+    });
+  });
+
+  it('shows the error safety check toast for server errors', async () => {
+    mockSafetyCheck.mockRejectedValueOnce({ response: { status: 500 } });
+    renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith('Safety check not saved. Please try again.', 'error');
     });
   });
 });

@@ -3,16 +3,16 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
-import { getOfficerPermissions } from '#lib/incidentPermissions.js';
+import { holdExpiresAt } from '#lib/holds.js';
 
-export default async function (fastify, opts) {
-  fastify.patch('/:id/extend',
+export default async function (fastify) {
+  fastify.patch('/extend',
     {
       onRequest: fastify.requireUser,
       schema: {
-        description: 'Extends active deflections associated with this incident',
-        params: z.object({
-          id: z.coerce.number(),
+        description: 'Extend active holds. Accepts explicit hold IDs.',
+        body: z.object({
+          deflectionIds: z.array(z.number()).min(1),
         }),
         response: {
           [StatusCodes.OK]: z.array(Deflection.ResponseSchema),
@@ -20,38 +20,31 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const { id } = request.params;
-
-      const incident = await fastify.prisma.incident.findUnique({
-        where: { id },
-      });
-
-      if (!incident) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-
-      const permissions = await getOfficerPermissions(fastify.prisma, incident, request.user.id);
-      if (!permissions.canExtend && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
-      }
+      const { deflectionIds } = request.body;
+      const officerId = request.user.id;
 
       let deflections;
       await fastify.prisma.$transaction(async (tx) => {
+        // Fetch only holds that belong to this officer and are DETAINED
         deflections = await tx.deflection.findMany({
           where: {
-            incidentId: id,
-            currentOfficerId: request.user.id,
+            id: { in: deflectionIds },
+            currentOfficerId: officerId,
             status: Deflection.HoldStatus.ACTIVE,
             subjectStatus: Deflection.SubjectStatus.DETAINED,
           },
         });
 
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        if (deflections.length === 0) {
+          return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'No eligible holds to extend' });
+        }
+
+        const expiresAt = holdExpiresAt();
         const deflectionUpdates = deflections.map((deflection) => ({
           deflectionId: deflection.id,
           expiresAt,
           extensionCount: deflection.extensionCount + 1,
-          updatedById: request.user.id,
+          updatedById: officerId,
         }));
         await tx.deflectionUpdate.createMany({ data: deflectionUpdates });
 
@@ -64,7 +57,7 @@ export default async function (fastify, opts) {
             },
             include: {
               subject: true,
-              propertyPhotos: true
+              propertyPhotos: true,
             },
           })
         )));

@@ -153,6 +153,7 @@ function ScanCodeModal ({
                   color={manualEntry ? undefined : 'dark.5'}
                   icon={IconX}
                   onClick={handleClose}
+                  aria-label='Close'
                 />
               </Group>
             </Header>
@@ -190,6 +191,7 @@ function ScanCodeModal ({
                     <Stack gap='sm'>
                       {codes.map((code, index) => (
                         <TextInput
+                          data-testid='manual-code-input'
                           key={index}
                           placeholder={manualEntryInputPlaceholder || 'Enter transfer code'}
                           value={code}
@@ -241,6 +243,7 @@ function ScanCodeModal ({
               {manualEntry
                 ? (
                   <Button
+                    data-testid='manual-code-submit'
                     type='submit'
                     disabled={!canSubmit}
                   >
