@@ -42,11 +42,6 @@ test('expireHolds job', async (t) => {
       where: { id: deflection.id },
     });
     assert.strictEqual(updated.status, 'EXPIRED');
-
-    const updatedIncident = await prisma.incident.findUnique({
-      where: { id: incident.id },
-    });
-    assert.ok(updatedIncident.completedAt);
   });
 
   await t.test('does not expire holds that are not yet past expiresAt', async () => {

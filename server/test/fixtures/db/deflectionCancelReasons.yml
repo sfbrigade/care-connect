@@ -21,6 +21,11 @@ items:
     name: 'Release on Scene'
     createdBy: '@user1'
     updatedBy: '@user1'
+  no_chairs_available:
+    id: 'no_chairs_available'
+    name: 'No chairs available'
+    createdBy: '@user1'
+    updatedBy: '@user1'
   staffing_shortage:
     id: 'staffing_shortage'
     name: 'Staffing shortage'

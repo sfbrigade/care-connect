@@ -11,18 +11,22 @@ const {
   mockNavigate,
   mockShowToast,
   mockBedTypesIndex,
-  mockActiveIncident,
+  mockMyHolds,
   mockDeflectionsList,
-  mockIncidentLeft,
-  mockIncidentExtend,
+  mockFacilityLeft,
+  mockDeflectionCreate,
+  mockDeflectionsExtend,
+  mockIncidentCreate,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
   mockBedTypesIndex: vi.fn(),
-  mockActiveIncident: vi.fn(),
+  mockMyHolds: vi.fn(),
   mockDeflectionsList: vi.fn(),
-  mockIncidentLeft: vi.fn(),
-  mockIncidentExtend: vi.fn(),
+  mockFacilityLeft: vi.fn(),
+  mockDeflectionCreate: vi.fn(),
+  mockDeflectionsExtend: vi.fn(),
+  mockIncidentCreate: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -45,14 +49,16 @@ vi.mock('@/Api', () => ({
       bedTypes: {
         index: mockBedTypesIndex,
       },
-      activeIncident: mockActiveIncident,
+      myHolds: mockMyHolds,
+      left: mockFacilityLeft,
     },
     deflections: {
       list: mockDeflectionsList,
+      create: mockDeflectionCreate,
+      extend: mockDeflectionsExtend,
     },
     incidents: {
-      left: mockIncidentLeft,
-      extend: mockIncidentExtend,
+      create: mockIncidentCreate,
     },
   },
 }));
@@ -93,6 +99,27 @@ vi.mock('@unhead/react', () => ({
   Head: ({ children }) => <>{children}</>,
 }));
 
+const mockMyHoldsData = {
+  atFacility: true,
+  canArrive: false,
+  canLeave: true,
+  canExtend: true,
+  canCreateHold: true,
+  activeIncidentId: 55,
+  incidents: [
+    {
+      id: 55,
+      addressLine1: '1001 Polk St',
+      city: 'San Francisco',
+      state: 'CA',
+      createdById: 'test-user-1',
+      canEdit: true,
+      canHandoff: true,
+      deflections: [],
+    },
+  ],
+};
+
 function renderHolds () {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -117,47 +144,26 @@ beforeEach(() => {
   mockBedTypesIndex.mockResolvedValue({
     data: [{ id: 99, available: 2, type: 'CHAIR' }],
   });
-  mockActiveIncident.mockResolvedValue({
+  mockMyHolds.mockResolvedValue({
+    data: mockMyHoldsData,
+  });
+  mockDeflectionsList.mockResolvedValue({ data: [] });
+  mockFacilityLeft.mockResolvedValue({ data: { ok: true } });
+  mockDeflectionsExtend.mockResolvedValue({ data: [] });
+  mockIncidentCreate.mockResolvedValue({
     data: {
-      id: 55,
-      arrivedAt: '2026-03-14T15:00:00.000Z',
-      leftAt: null,
-      addressLine1: '1001 Polk St',
-      createdById: 1,
-      permissions: {
-        isCreator: true,
-        canExtend: true,
-        canArrive: false,
-        canLeave: true,
-        canCancelIncident: true,
-        canEditIncident: true,
-        canCreateHold: true,
-        canHandoff: true,
-        incidentDetailsComplete: true,
-      },
-      totalActiveHolds: 1,
+      id: 56,
+      facilityId: 1,
     },
   });
-  mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-    if (incidentId === 55 && active === true) {
-      return Promise.resolve({ data: [] });
-    }
-    if (facilityId === 1 && active === false) {
-      return Promise.resolve({ data: [] });
-    }
-    if (facilityId === 1 && active === true && subjectStatus) {
-      return Promise.resolve({ data: [] });
-    }
-    return Promise.resolve({ data: [] });
-  });
-  mockIncidentLeft.mockResolvedValue({
+  mockDeflectionCreate.mockResolvedValue({
     data: {
-      id: 55,
-      leftAt: '2026-03-14T16:35:00.000Z',
+      id: 89,
+      incidentId: 55,
+      subjectId: null,
+      status: 'ACTIVE',
+      subjectStatus: 'DETAINED',
     },
-  });
-  mockIncidentExtend.mockResolvedValue({
-    data: [],
   });
 });
 
@@ -181,7 +187,7 @@ describe('Holds', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'I\'ve left' }));
 
     await waitFor(() => {
-      expect(mockIncidentLeft).toHaveBeenCalledWith(55);
+      expect(mockFacilityLeft).toHaveBeenCalledWith(1);
     });
 
     await waitFor(() => {
@@ -195,25 +201,23 @@ describe('Holds', () => {
   });
 
   it('extends active holds from the footer overflow menu', async () => {
-    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-      if (incidentId === 55 && active === true) {
-        return Promise.resolve({
-          data: [{
-            id: 88,
-            incidentId: 55,
-            subjectId: 'subject-1',
-            status: 'ACTIVE',
-            subjectStatus: 'DETAINED',
-          }],
-        });
-      }
-      if (facilityId === 1 && active === false) {
-        return Promise.resolve({ data: [] });
-      }
-      if (facilityId === 1 && active === true && subjectStatus) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
     });
 
     renderHolds();
@@ -222,18 +226,118 @@ describe('Holds', () => {
     fireEvent.click(await screen.findByText('Extend active holds'));
 
     await waitFor(() => {
-      expect(mockIncidentExtend).toHaveBeenCalledWith(55);
+      expect(mockDeflectionsExtend).toHaveBeenCalledWith([88]);
     });
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
-        'All active holds have been reset to 60 minutes.',
+        'All active holds have been reset to 90 minutes.',
         'success'
       );
     });
   });
 
-  it('navigates to incident details from the incident overflow menu', async () => {
+  it('creates a blank incident when placing the first hold (no activeIncidentId)', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        atFacility: false,
+        arrivedAt: null,
+        canArrive: false,
+        canLeave: false,
+        canCreateHold: true,
+        canExtend: false,
+        activeIncidentId: null,
+        incidents: [],
+      },
+    });
+
+    renderHolds();
+
+    // Wait for myHolds to load so activeIncidentId is null (not undefined from loading state)
+    await waitFor(() => expect(mockMyHolds).toHaveBeenCalled());
+
+    const holdButton = await screen.findByRole('button', { name: /Hold a bedtype\.chair/i });
+    await waitFor(() => expect(holdButton).not.toBeDisabled());
+    fireEvent.click(holdButton);
+
+    await waitFor(() => {
+      expect(mockIncidentCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          facilityId: 1,
+          cadNumber: null,
+          caseNumber: null,
+          arrestedAt: expect.any(String),
+        }),
+        { bedTypeId: 99 }
+      );
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/incident'));
+  });
+
+  it('routes add-details tap through incident confirmation when incident details are incomplete', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        activeIncidentId: 55,
+        incidents: [{
+          id: 55,
+          // addressLine1 missing → isValidIncident returns false
+          addressLine1: null,
+          city: null,
+          state: null,
+          arrestedAt: null,
+          encounteredVia: null,
+          cadNumber: null,
+          caseNumber: null,
+          supervisorBadgeNumber: null,
+          createdById: 'test-user-1',
+          canEdit: true,
+          canHandoff: false,
+          deflections: [{
+            id: 88,
+            incidentId: 55,
+            subjectId: null,
+            status: 'ACTIVE',
+            subjectStatus: 'DETAINED',
+            createdAt: '2026-03-14T15:00:00Z',
+          }],
+        }],
+      },
+    });
+
+    renderHolds();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add Details' }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        `/incident/55?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
+      );
+    });
+  });
+
+  it('delays placing an additional hold and then shows a 90 minute success toast', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
+    });
+
     mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
       if (incidentId === 55 && active === true) {
         return Promise.resolve({
@@ -243,6 +347,10 @@ describe('Holds', () => {
             subjectId: 'subject-1',
             status: 'ACTIVE',
             subjectStatus: 'DETAINED',
+            subject: {
+              firstName: 'Jane',
+              lastName: 'Doe',
+            },
           }],
         });
       }
@@ -257,11 +365,58 @@ describe('Holds', () => {
 
     renderHolds();
 
+    expect(await screen.findByText('Hold 88')).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Hold a bedtype\.chair/i }));
+
+    expect(await screen.findByRole('button', { name: /Placing hold/i })).toBeInTheDocument();
+    expect(mockDeflectionCreate).not.toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(mockDeflectionCreate).toHaveBeenCalledWith({
+        facilityId: 1,
+        incidentId: 55,
+        bedTypeId: 99,
+      });
+    }, { timeout: 3000 });
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalledWith(
+        'Hold placed',
+        'success',
+        4000,
+        '1 bedtype.chair reserved. Hold expires in 90 minutes.'
+      );
+    });
+  });
+
+  it('navigates to incident details from the incident overflow menu', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
+    });
+
+    renderHolds();
+
     fireEvent.click(await screen.findByRole('button', { name: 'Incident actions' }));
     fireEvent.click(await screen.findByText('Edit details'));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/incident');
+      expect(mockNavigate).toHaveBeenCalledWith('/incident/55');
     });
   });
 });
