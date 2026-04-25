@@ -2,6 +2,9 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
+import DeflectionDocument from '#models/deflectionDocument.js';
+import PropertyPhoto from '#models/propertyPhoto.js';
+import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
 
 const prisma = new PrismaClient({
@@ -79,27 +82,6 @@ const prisma = new PrismaClient({
               },
             });
 
-            // If the incident has no more active deflections, and the user has not arrived, mark it as completed
-            const incidentIds = [...new Set(deflections.map((deflection) => deflection.incidentId))];
-            for (const incidentId of incidentIds) {
-              // prisma does not support lte on enums, so we use a raw query
-              const [{ activeDeflections }] = await tx.$queryRaw`SELECT COUNT(*) as "activeDeflections" FROM "Deflection" WHERE "incidentId" = ${incidentId} AND "status" = ${Deflection.HoldStatus.ACTIVE}::"HoldStatusEnum" AND "subjectStatus" <= ${Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER}::"SubjectStatusEnum"`;
-              // if the user has not arrived yet, close the incident if there no more deflections
-              if (activeDeflections === BigInt(0)) {
-                await tx.incident.updateMany({
-                  where: {
-                    id: incidentId,
-                    arrivedAt: null
-                  },
-                  data: {
-                    completedAt: now,
-                    updatedById: User.BATCH_USER_ID,
-                    updatedAt: now,
-                  },
-                });
-              }
-            }
-
             // Auto-expired deflections are always DETAINED (in transit)
             const bedTypeUpdate = await tx.bedTypeUpdate.create({
               data: {
@@ -134,6 +116,56 @@ const prisma = new PrismaClient({
             });
           });
         }));
+      }
+    },
+    subject: {
+      async anonymize (now = new Date()) {
+        const parsed = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS);
+        const hours = Number.isFinite(parsed) ? parsed : 72;
+        const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+        const eligible = await prisma.$queryRaw`
+          SELECT s."id"
+          FROM "Subject" s
+          WHERE s."anonymizedAt" IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM "Deflection" d
+              WHERE d."subjectId" = s."id"
+                AND d."status" = 'ACTIVE'::"HoldStatusEnum"
+                AND d."subjectStatus" NOT IN ('EXITED'::"SubjectStatusEnum", 'DEATH_IN_FACILITY'::"SubjectStatusEnum", 'DEATH_IN_CUSTODY'::"SubjectStatusEnum")
+            )
+            AND COALESCE(
+              (SELECT MAX(d."updatedAt") FROM "Deflection" d WHERE d."subjectId" = s."id"),
+              s."createdAt"
+            ) <= ${cutoff}
+        `;
+        if (eligible.length === 0) return;
+        const ids = eligible.map((row) => row.id);
+
+        const documents = await prisma.deflectionDocument.findMany({
+          where: { deflection: { subjectId: { in: ids } }, file: { not: null } },
+        });
+        const photos = await prisma.propertyPhoto.findMany({
+          where: { deflection: { subjectId: { in: ids } }, file: { not: null } },
+        });
+
+        await Promise.all([
+          ...documents.map(async (doc) => {
+            const handler = new DeflectionDocument(doc).setAsset('file', null);
+            await prisma.deflectionDocument.update({ where: { id: doc.id }, data: { file: null } });
+            await handler?.();
+          }),
+          ...photos.map(async (photo) => {
+            const handler = new PropertyPhoto(photo).setAsset('file', null);
+            await prisma.propertyPhoto.update({ where: { id: photo.id }, data: { file: null } });
+            await handler?.();
+          }),
+        ]);
+
+        const nulledPii = Object.fromEntries(PII_FIELDS.map((field) => [field, null]));
+        await prisma.subject.updateMany({
+          where: { id: { in: ids } },
+          data: { ...nulledPii, anonymizedAt: now },
+        });
       }
     },
     user: {

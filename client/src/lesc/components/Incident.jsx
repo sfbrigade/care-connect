@@ -7,6 +7,7 @@ function Incident ({ incident, incidentId, onEditClick, onHandoffClick, onCancel
   const isIncomplete = incident ? !isValidIncident(incident) : false;
   const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
   const displayId = incident?.id ?? incidentId ?? '';
+  const cancelLabel = (incident?.deflections?.length ?? 0) > 1 ? 'Cancel holds' : 'Cancel hold';
 
   return (
     <Group justify='space-between'>
@@ -65,7 +66,7 @@ function Incident ({ incident, incidentId, onEditClick, onHandoffClick, onCancel
                 onClick={onCancelClick}
                 disabled={!onCancelClick}
               >
-                Cancel incident
+                {cancelLabel}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
