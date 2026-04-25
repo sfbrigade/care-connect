@@ -1,0 +1,16 @@
+.sunburstLoader {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  animation: sunburstSpin 0.9s linear infinite;
+}
+
+@keyframes sunburstSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
