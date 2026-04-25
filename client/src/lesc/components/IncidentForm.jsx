@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconCurrentLocationFilled } from '@tabler/icons-react';
 import {
@@ -29,8 +29,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import { formatAddress } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
 import { validateIncident } from '@/utils/validators';
-
-import CancelIncidentModal from './CancelIncidentModal';
 
 const initialValues = {
   cadNumber: '',
@@ -100,6 +98,7 @@ function normalizeCadNumber (value) {
 
 function IncidentForm () {
   const navigate = useNavigate();
+  const { id: incidentId } = useParams();
   const [searchParams] = useSearchParams();
   const initialNextPathRef = useRef(searchParams.get('next'));
   const nextPath = initialNextPathRef.current;
@@ -110,8 +109,8 @@ function IncidentForm () {
   const { t } = useTranslation();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const addressRef = useRef();
+  const isEditing = !!incidentId;
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -120,22 +119,14 @@ function IncidentForm () {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () =>
-      Api.facilities
-        .activeIncident(facility.id)
-        .then((response) => response.data),
-  });
-
-  const { data: incidentDeflections, isFetching: isFetchingIncidentDeflections } = useQuery({
-    queryKey: ['deflections', data?.id, 'active'],
-    queryFn: () => Api.deflections.list({ incidentId: data.id }).then(response => response.data),
-    enabled: !!data?.id,
+    queryKey: ['incidents', incidentId],
+    queryFn: () => Api.incidents.get(incidentId).then(response => response.data),
+    enabled: !!incidentId,
   });
 
   useEffect(() => {
-    if (!isLoading) {
-      if (data) {
+    if (isEditing) {
+      if (!isLoading && data) {
         let { arrestedAt } = data;
         arrestedAt = DateTime.fromISO(arrestedAt).toISO({
           includeOffset: false,
@@ -149,33 +140,33 @@ function IncidentForm () {
           form.setErrors(validateIncident(data));
         }
         setInitialized(true);
-      } else {
-        const now = DateTime.now().toISO({
-          includeOffset: false,
-          precision: 'seconds',
-        });
-        getCurrentLocationAddress()
-          .then((address) => {
-            form.initialize({
-              ...initialValues,
-              ...address,
-              facilityId: facility.id,
-              arrestedAt: now,
-            });
-          })
-          .catch(() => {
-            form.initialize({
-              ...initialValues,
-              facilityId: facility.id,
-              arrestedAt: now,
-            });
-          })
-          .finally(() => {
-            setInitialized(true);
-          });
       }
+    } else {
+      const now = DateTime.now().toISO({
+        includeOffset: false,
+        precision: 'seconds',
+      });
+      getCurrentLocationAddress()
+        .then((address) => {
+          form.initialize({
+            ...initialValues,
+            ...address,
+            facilityId: facility.id,
+            arrestedAt: now,
+          });
+        })
+        .catch(() => {
+          form.initialize({
+            ...initialValues,
+            facilityId: facility.id,
+            arrestedAt: now,
+          });
+        })
+        .finally(() => {
+          setInitialized(true);
+        });
     }
-  }, [isLoading, data]);
+  }, [isEditing, isLoading, data]);
 
   function LocationButton () {
     return (
@@ -195,73 +186,26 @@ function IncidentForm () {
   };
 
   const onSubmitMutation = useMutation({
-    mutationFn: (data) =>
-      data.id
-        ? Api.incidents.update(data.id, data)
-        : Api.incidents.create(data, {
+    mutationFn: (formData) =>
+      isEditing
+        ? Api.incidents.update(incidentId, formData)
+        : Api.incidents.create(formData, {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
-    onSuccess: async (response) => {
-      await queryClient.invalidateQueries({
-        queryKey: ['facilities', facility.id, 'bed-types'],
-      });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        response.data
-      );
-      window.sessionStorage.setItem('_session-holds', 'active');
-      navigate(nextPath || '/holds');
-    },
-    onError: () => {
-      showToast('We couldn’t create the incident', 'error', 4000, 'Something went wrong. Try again later.');
-    },
-  });
-
-  const cancelIncidentMutation = useMutation({
-    mutationFn: ({ id, cancelReasonId }) => Api.incidents.cancel(id, { cancelReasonId }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        null
-      );
-      await queryClient.removeQueries({
-        queryKey: ['deflections', data?.id, 'active'],
-      });
       await queryClient.invalidateQueries({
-        queryKey: ['deflections', facility.id, 'inactive'],
+        queryKey: ['facilities', facility.id, 'my-holds'],
       });
-      setShowCancelModal(false);
-      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
-      navigate('/holds');
+      window.sessionStorage.setItem('_session-holds', 'active');
+      navigate(nextPath || '/holds');
     },
-    onError: (error) => {
-      const isNetworkError = !error?.response;
-
-      if (isNetworkError) {
-        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
-        return;
-      }
-
-      if (error?.response?.status === 422 && error?.response?.data?.error) {
-        showToast(error.response.data.error, 'error');
-        return;
-      }
-
-      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
+    onError: () => {
+      showToast('We couldn\'t save the incident', 'error', 4000, 'Something went wrong. Try again later.');
     },
   });
-
-  async function onCancelIncidentConfirmed (cancelReasonId) {
-    if (data?.id) {
-      await cancelIncidentMutation.mutateAsync({ id: data.id, cancelReasonId });
-    }
-  }
-
-  const canCancelIncident = !!data?.id && !isFetchingIncidentDeflections;
-  const incidentHasDetailedHolds = !!incidentDeflections?.some(deflection => deflection.subjectId);
 
   const cadNumberInputProps = form.getInputProps('cadNumber');
 
@@ -301,6 +245,7 @@ function IncidentForm () {
             <Stack gap='xl'>
               {!showAddressForm && (
                 <TextInput
+                  data-testid='incident-arrest-location'
                   label={
                     <>
                       Arrest location<span>*</span>
@@ -320,6 +265,7 @@ function IncidentForm () {
               {showAddressForm && (
                 <>
                   <AddressAutocomplete
+                    data-testid='incident-address-line1'
                     ref={addressRef}
                     form={form}
                     field='addressLine1'
@@ -339,6 +285,7 @@ function IncidentForm () {
                     label='Arrest address line 2'
                   />
                   <TextInput
+                    data-testid='incident-city'
                     key={form.key('city')}
                     {...form.getInputProps('city')}
                     label={
@@ -349,6 +296,7 @@ function IncidentForm () {
                   />
                   <Group wrap='nowrap'>
                     <TextInput
+                      data-testid='incident-state'
                       key={form.key('state')}
                       {...form.getInputProps('state')}
                       label={
@@ -379,6 +327,7 @@ function IncidentForm () {
                 onFocus={() => setShowAddressForm(false)}
               />
               <ChipInput
+                data-testid='incident-encountered-via'
                 {...form.getInputProps('encounteredVia')}
                 key={form.key('encounteredVia')}
                 label={<>Encountered via<span>*</span></>}
@@ -389,6 +338,7 @@ function IncidentForm () {
               />
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-cad'
                   key={form.key('cadNumber')}
                   {...cadNumberInputProps}
                   label={
@@ -418,6 +368,7 @@ function IncidentForm () {
               </Stack>
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-case'
                   key={form.key('caseNumber')}
                   {...form.getInputProps('caseNumber')}
                   label={
@@ -436,6 +387,7 @@ function IncidentForm () {
               </Stack>
               <Stack gap='xs'>
                 <TextInput
+                  data-testid='incident-star'
                   key={form.key('supervisorBadgeNumber')}
                   {...form.getInputProps('supervisorBadgeNumber')}
                   label={<>Supervising Sergeant’s Star Number<span>*</span></>}
@@ -453,33 +405,13 @@ function IncidentForm () {
                   Add Star Number before custody transfer.
                 </Text>
               </Stack>
-              <Stack gap='sm'>
-                <Button type='submit' style={{ alignSelf: 'flex-start' }}>
-                  {isConfirmIncidentFlow ? 'Continue to person details' : data?.id ? 'Save incident details' : 'Create incident & hold'}
-                </Button>
-                {canCancelIncident && (
-                  <Button
-                    type='button'
-                    variant='destructive'
-                    style={{ alignSelf: 'flex-start' }}
-                    onClick={() => setShowCancelModal(true)}
-                    disabled={cancelIncidentMutation.isPending}
-                  >
-                    Cancel incident
-                  </Button>
-                )}
-              </Stack>
+              <Button data-testid='incident-submit-btn' type='submit' style={{ alignSelf: 'flex-start' }}>
+                {isConfirmIncidentFlow ? 'Continue to person details' : isEditing ? 'Save incident details' : 'Create incident & hold'}
+              </Button>
             </Stack>
           </Fieldset>
         </form>
       </Container>
-      <CancelIncidentModal
-        opened={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={onCancelIncidentConfirmed}
-        requiresReason={incidentHasDetailedHolds}
-        loading={cancelIncidentMutation.isPending}
-      />
     </>
   );
 }

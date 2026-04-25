@@ -2,7 +2,8 @@ import inviteEmail from '../../jobs/inviteEmail.js';
 import expireHolds from '../../jobs/expireHolds.js';
 import generateForms from '../../jobs/generateForms.js';
 import formsEmail from '../../jobs/formsEmail.js';
-import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL } from './queueNames.js';
+import anonymizeSubjects from '../../jobs/anonymizeSubjects.js';
+import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS } from './queueNames.js';
 
 const queues = [
   {
@@ -40,6 +41,12 @@ const queues = [
     options: { retryLimit: 3, retryBackoff: true },
     handler: async ([job]) => formsEmail(job.data),
     deadLetterData: (data) => ({ deflectionId: data?.deflectionId }),
+  },
+  {
+    name: QUEUE_ANONYMIZE_SUBJECTS,
+    options: { retryLimit: 1 },
+    handler: async ([job]) => anonymizeSubjects(job.data),
+    cron: '0 * * * *',
   },
 ];
 export default queues;

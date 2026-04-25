@@ -167,6 +167,7 @@ function Login () {
                 <Stack align='center' mt='3rem'>
                   <Button
                     type='submit'
+                    data-testid='login-submit-btn'
                     loading={loginMutation.isPending}
                   >
                     Continue
