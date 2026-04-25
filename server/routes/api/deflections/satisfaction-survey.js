@@ -49,12 +49,13 @@ export default async function (fastify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
+      const improvementTrimmed = answers.improvementSuggestions?.trim();
       const row = await fastify.prisma.satisfactionSurvey.create({
         data: {
           department,
           careConnectRating: answers.careConnectRating,
-          improvementSuggestions: answers.improvementSuggestions?.trim() ?? undefined,
-          resetFacilityFeedback: answers.resetFacilityFeedback?.trim() ?? undefined,
+          improvementSuggestions: improvementTrimmed ?? null,
+          resetFacilityFeedback: answers.resetFacilityFeedback.trim(),
         },
       });
 

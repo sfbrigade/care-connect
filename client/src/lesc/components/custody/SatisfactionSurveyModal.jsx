@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActionIcon, Box, Button, Group, Input, Modal, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
 import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX } from '@tabler/icons-react';
 
@@ -50,14 +50,25 @@ function SatisfactionSurveyModal ({
 }) {
   const { showToast } = useToast();
   const [surveyStep, setSurveyStep] = useState(0);
+  const [showImprovementSuggestions, setShowImprovementSuggestions] = useState(false);
   const [surveyAnswers, setSurveyAnswers] = useState(INITIAL_ANSWERS);
   const [submitting, setSubmitting] = useState(false);
+  const advanceStepTimerRef = useRef(null);
+
+  const clearAdvanceStepTimer = () => {
+    if (advanceStepTimerRef.current != null) {
+      clearTimeout(advanceStepTimerRef.current);
+      advanceStepTimerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!opened) return;
+    setShowImprovementSuggestions(false);
     setSurveyStep(0);
     setSurveyAnswers(INITIAL_ANSWERS);
     setSubmitting(false);
+    return () => clearAdvanceStepTimer();
   }, [opened]);
 
   const finish = async (didCompleteSurvey) => {
@@ -125,7 +136,21 @@ function SatisfactionSurveyModal ({
                 return (
                   <UnstyledButton
                     key={option.value}
-                    onClick={() => setSurveyAnswers((prev) => ({ ...prev, careConnectRating: option.value }))}
+                    onClick={() => {
+                      clearAdvanceStepTimer();
+                      setSurveyAnswers((prev) => ({ ...prev, careConnectRating: option.value }));
+                      if (option.value === 'bad') {
+                        setShowImprovementSuggestions(true);
+                        return;
+                      }
+                      if (option.value === 'neutral' || option.value === 'good') {
+                        setShowImprovementSuggestions(false);
+                        advanceStepTimerRef.current = setTimeout(() => {
+                          advanceStepTimerRef.current = null;
+                          setSurveyStep(1);
+                        }, 1000);
+                      }
+                    }}
                     aria-label={option.label}
                     style={{ display: 'flex', justifyContent: 'center', width: '100%' }}
                   >
@@ -151,7 +176,7 @@ function SatisfactionSurveyModal ({
             </Group>
           </Input.Wrapper>
         )}
-        {surveyAnswers.careConnectRating === 'bad' && (
+        {surveyStep === 0 && showImprovementSuggestions && (
           <Input.Wrapper size='md' mt='xl' label='What can we do to improve your experience with CareConnect?'>
             <Group mt='sm' grow gap='xs'>
               <Textarea
@@ -188,16 +213,17 @@ function SatisfactionSurveyModal ({
           </Input.Wrapper>
         )}
         <Group justify='flex-start' mt='sm'>
-          {surveyStep < 1 && (
-            <Button
-              onClick={() => setSurveyStep((prev) => prev + 1)}
-              disabled={
-                (surveyStep === 0 && !surveyAnswers.careConnectRating) ||
-                (surveyStep === 1 && !surveyAnswers.resetFacilityFeedback)
-              }
-            >
-              Next
-            </Button>
+          {surveyStep < 1 &&
+            !(surveyStep === 0 && (surveyAnswers.careConnectRating === 'neutral' || surveyAnswers.careConnectRating === 'good')) && (
+              <Button
+                onClick={() => setSurveyStep((prev) => prev + 1)}
+                disabled={
+                  (surveyStep === 0 && !surveyAnswers.careConnectRating) ||
+                  (surveyStep === 1 && !surveyAnswers.resetFacilityFeedback)
+                }
+              >
+                Next
+              </Button>
           )}
           {surveyStep === 1 && (
             <Button

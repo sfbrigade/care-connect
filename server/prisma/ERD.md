@@ -571,7 +571,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
 
   "SatisfactionSurvey" {
     String id "🗝️"
-    String source 
+    String department 
     String careConnectRating 
     String improvementSuggestions "❓"
     String resetFacilityFeedback 
