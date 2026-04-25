@@ -47,11 +47,6 @@ export default async function (fastify, opts) {
           incident: true,
         }
       });
-      if (deflection.incident.completedAt) {
-        return reply.code(StatusCodes.BAD_REQUEST).send({
-          error: 'Incident is already completed',
-        });
-      }
       if (deflection.status !== Deflection.HoldStatus.CANCELLED && deflection.status !== Deflection.HoldStatus.EXPIRED) {
         return reply.code(StatusCodes.BAD_REQUEST).send({
           error: 'Deflection is not cancelled or expired',

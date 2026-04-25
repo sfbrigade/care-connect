@@ -312,24 +312,5 @@ test('/api/facilities', async (t) => {
     });
   });
 
-  await t.test('GET /:id/active-incident', async (t) => {
-    await t.test('returns active incident for facility', async () => {
-      const response = await app.inject().get('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/active-incident')
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-      assert.ok(data);
-      assert.deepStrictEqual(data.id, 1);
-    });
-
-    await t.test('returns null if no active incident for user and facility', async () => {
-      const response = await app.inject().get('/api/facilities/fab67d53-a1c7-4eb5-b151-33727270ad20/active-incident')
-        .headers(userHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data, null);
-    });
-  });
+  // GET /:id/active-incident — removed (replaced by GET /:id/my-holds)
 });

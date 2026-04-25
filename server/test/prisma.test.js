@@ -42,75 +42,35 @@ test('Prisma Client Extensions', async (t) => {
       return { incident, deflections };
     };
 
-    await t.test('closes incident when single hold expires', async () => {
-      const { incident } = await createIncidentWithDeflections(1);
+    await t.test('expires a single hold without affecting the incident', async () => {
+      const { incident, deflections } = await createIncidentWithDeflections(1);
 
-      // Initial state: incident is active (not completed)
-      assert.strictEqual(incident.completedAt, null);
-
-      // Run expiry logic
       await prisma.deflection.expire();
 
-      // Fetch updated incident
-      const updatedIncident = await prisma.incident.findUnique({
-        where: { id: incident.id },
-      });
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: deflections[0].id } });
+      assert.strictEqual(updatedDeflection.status, 'EXPIRED');
 
-      // Verify incident is now completed
-      assert.ok(updatedIncident.completedAt);
+      // Incident is not affected (no lifecycle state)
+      const updatedIncident = await prisma.incident.findUnique({ where: { id: incident.id } });
+      assert.ok(updatedIncident);
     });
 
-    await t.test('incident remains open if other holds are active', async () => {
-      const { incident, deflections } = await createIncidentWithDeflections(2);
+    await t.test('expires only holds past their expiresAt', async () => {
+      const { deflections } = await createIncidentWithDeflections(2);
 
-      // Allow the second deflection to be ACTIVE and valid (future expiry)
+      // Set second deflection to expire in the future
       await prisma.deflection.update({
         where: { id: deflections[1].id },
         data: { expiresAt: DateTime.now().plus({ hours: 1 }).toJSDate() },
       });
 
-      // Run expiry logic (should only expire the first deflection)
       await prisma.deflection.expire();
 
-      // Deflection 1 should be EXPIRED
       const updatedDeflection1 = await prisma.deflection.findUnique({ where: { id: deflections[0].id } });
       assert.strictEqual(updatedDeflection1.status, 'EXPIRED');
 
-      // Deflection 2 should remain ACTIVE
       const updatedDeflection2 = await prisma.deflection.findUnique({ where: { id: deflections[1].id } });
       assert.strictEqual(updatedDeflection2.status, 'ACTIVE');
-
-      // Incident should still be OPEN because Deflection 2 is active
-      const updatedIncident = await prisma.incident.findUnique({
-        where: { id: incident.id },
-      });
-      assert.strictEqual(updatedIncident.completedAt, null);
-    });
-
-    await t.test('closes incident after last hold expires', async () => {
-      // Reuse logic similar to above but manually ensuring specific state
-      const { incident, deflections } = await createIncidentWithDeflections(2);
-
-      // 1. Set one to expire now, one to expire in future
-      await prisma.deflection.update({ where: { id: deflections[1].id }, data: { expiresAt: DateTime.now().plus({ hours: 1 }).toJSDate() } });
-
-      // 2. Run expire - incident should stay open
-      await prisma.deflection.expire();
-      let updatedIncident = await prisma.incident.findUnique({ where: { id: incident.id } });
-      assert.strictEqual(updatedIncident.completedAt, null);
-
-      // 3. Set the remaining active hold to be expired
-      await prisma.deflection.update({
-        where: { id: deflections[1].id },
-        data: { expiresAt: DateTime.now().minus({ minutes: 5 }).toJSDate() }
-      });
-
-      // 4. Run expire again
-      await prisma.deflection.expire();
-
-      // 5. Incident should now be closed
-      updatedIncident = await prisma.incident.findUnique({ where: { id: incident.id } });
-      assert.ok(updatedIncident.completedAt);
     });
   });
 });

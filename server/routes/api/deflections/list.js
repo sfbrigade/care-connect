@@ -29,7 +29,14 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { page = '1', perPage = '25', active, handedOff, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
-      const where = {};
+      const where = {
+        subject: { isNot: { anonymizedAt: { not: null } } },
+      };
+      // Collect OR groups as AND-ed sub-clauses so multiple OR groups don't clobber each other.
+      const addOrGroup = (conditions) => {
+        where.AND = where.AND ?? [];
+        where.AND.push({ OR: conditions });
+      };
 
       await fastify.prisma.deflection.expire();
 
@@ -43,7 +50,7 @@ export default async function (fastify) {
           where.status = Deflection.HoldStatus.ACTIVE;
         } else {
           where.status = { not: Deflection.HoldStatus.ACTIVE };
-          where.subject = { isNot: null };
+          where.subjectId = { not: null };
         }
       }
 
@@ -72,10 +79,10 @@ export default async function (fastify) {
           const otherStatuses = statuses.filter(s => s !== 'EXITED');
 
           if (otherStatuses.length > 0) {
-            where.OR = [
+            addOrGroup([
               { subjectStatus: otherStatuses.length > 1 ? { in: otherStatuses } : otherStatuses[0] },
               { subjectStatus: 'EXITED', exitedAt: { gte: twentyFourHoursAgo } },
-            ];
+            ]);
           } else {
             where.subjectStatus = 'EXITED';
             where.exitedAt = { gte: twentyFourHoursAgo };
@@ -90,23 +97,12 @@ export default async function (fastify) {
       }
 
       if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId) && handedOff !== 'true') {
-        if (active === 'true') {
-          // Active holds: only show holds the user currently controls
-          where.currentOfficerId = request.user.id;
-        } else if (active === 'false') {
-          // History: show holds the user created OR currently controls
-          // This includes holds they created but handed off (still ACTIVE, but currentOfficerId !== them)
-          where.OR = [
-            { createdById: request.user.id },
-            { currentOfficerId: request.user.id },
-          ];
-        } else {
-          // No active filter: show everything the user is involved with
-          where.OR = [
-            { createdById: request.user.id },
-            { currentOfficerId: request.user.id },
-          ];
-        }
+        // A deflection is "mine" if I currently own it, created it, or ever received it via handoff.
+        addOrGroup([
+          { currentOfficerId: request.user.id },
+          { createdById: request.user.id },
+          { handoffs: { some: { toOfficerId: request.user.id } } },
+        ]);
       }
 
       const options = {
