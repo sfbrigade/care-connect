@@ -40,8 +40,14 @@ export default async function (fastify, opts) {
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
+          await fastify.prisma.deflection.findByIdForUpdate(tx, id);
+
           deflection = await tx.deflection.findUnique({
             where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
           });
           // ensure correct subject state
           if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {

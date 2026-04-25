@@ -324,6 +324,50 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
+
+    await t.test('allows exactly one admit under concurrent requests', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          admittedAt: null,
+          admittedById: null,
+        },
+      });
+
+      const beforeAuditCount = await prisma.deflectionUpdate.count({
+        where: {
+          deflectionId: 6,
+          subjectStatus: 'ADMITTED',
+        },
+      });
+
+      const [firstResponse, secondResponse] = await Promise.all([
+        app.inject().post('/api/deflections/6/admit').headers(careUserHeaders),
+        app.inject().post('/api/deflections/6/admit').headers(careUserHeaders),
+      ]);
+
+      const successResponses = [firstResponse, secondResponse].filter((response) => response.statusCode === StatusCodes.OK);
+      const conflictResponses = [firstResponse, secondResponse].filter((response) => response.statusCode === StatusCodes.CONFLICT);
+
+      assert.deepStrictEqual(successResponses.length, 1);
+      assert.deepStrictEqual(conflictResponses.length, 1);
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 6 },
+      });
+      const afterAuditCount = await prisma.deflectionUpdate.count({
+        where: {
+          deflectionId: 6,
+          subjectStatus: 'ADMITTED',
+        },
+      });
+
+      assert.deepStrictEqual(deflection.subjectStatus, 'ADMITTED');
+      assert.ok(deflection.admittedAt);
+      assert.ok(deflection.admittedById);
+      assert.deepStrictEqual(afterAuditCount, beforeAuditCount + 1);
+    });
   });
 
   await t.test('POST /:id/intake-complete', async (t) => {
