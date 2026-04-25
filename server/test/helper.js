@@ -21,10 +21,10 @@ import {
   Parser,
   Resolver,
 } from '@getbigger-io/prisma-fixtures-cli';
-import { PrismaClient } from '@prisma/client';
-
+import prismaPkg from '@prisma/client';
 import s3 from '#lib/s3.js';
 import { configureMailer } from '#lib/mailer.js';
+const { PrismaClient } = prismaPkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

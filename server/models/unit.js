@@ -1,7 +1,8 @@
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+const { Prisma } = prismaPkg;
 
 const UnitAttributesSchema = z.object({
   name: z.string(),

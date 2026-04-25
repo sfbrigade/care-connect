@@ -1,8 +1,9 @@
-import { Prisma, BedTypeEnum, FacilityUpdateMethodEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import User from './user.js';
+const { Prisma, BedTypeEnum, FacilityUpdateMethodEnum } = prismaPkg;
 
 const BedTypeCreateSchema = z.object({
   facilityId: z.string().uuid(),
