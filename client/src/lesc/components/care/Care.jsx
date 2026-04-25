@@ -13,6 +13,7 @@ import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
+import useSatisfactionSurvey from '@/hooks/useSatisfactionSurvey';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import { formatTime } from '@/utils/format';
 
@@ -73,6 +74,9 @@ function Care () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate, '', {
+    department: 'CONNECTIONS',
+  });
 
   const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
@@ -143,6 +147,7 @@ function Care () {
           4000,
           "Person moved to 'In-chair' for Sheriff's review."
         );
+        scheduleOptionalSurveyWithoutNavigation(variables.deflectionId);
       } else {
         window.sessionStorage.setItem('custodyHighlightTarget', String(variables.deflectionId));
         showToast(
@@ -267,6 +272,7 @@ function Care () {
       />
 
       <Box h='120px' />
+      {satisfactionSurveyModal}
     </>
   );
 }
