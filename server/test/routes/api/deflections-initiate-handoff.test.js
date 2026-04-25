@@ -97,4 +97,44 @@ test('/api/deflections/initiate-handoff', async (t) => {
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
   });
+
+  await t.test('does not touch post-transfer holds (READY_FOR_INTAKE, etc.)', async () => {
+    // user2 owns deflection 4/5 (DETAINED, pre-transfer) and 6 (READY_FOR_INTAKE, post-transfer).
+    // initiate-handoff should only set handoffReadyAt on pre-transfer holds — otherwise it pollutes
+    // updatedAt on in-custody holds, which distorts History-tab ordering (and conceptually makes no
+    // sense since post-transfer holds aren't handoff-eligible).
+    const USER2_ID = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
+    const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+
+    const postTransferBefore = await prisma.deflection.findUnique({ where: { id: 6 } });
+
+    const response = await app.inject()
+      .post('/api/deflections/initiate-handoff')
+      .headers(userHeaders)
+      .payload({ active: true });
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+    // Pre-transfer holds get handoffReadyAt set.
+    const preTransfer = await prisma.deflection.findMany({
+      where: { currentOfficerId: USER2_ID, subjectStatus: 'DETAINED' },
+    });
+    for (const d of preTransfer) {
+      assert.ok(d.handoffReadyAt, `deflection ${d.id} (DETAINED) should have handoffReadyAt set`);
+    }
+
+    // Post-transfer hold: handoffReadyAt untouched, updatedAt untouched.
+    const postTransferAfter = await prisma.deflection.findUnique({ where: { id: 6 } });
+    assert.deepStrictEqual(postTransferAfter.handoffReadyAt, null);
+    assert.deepStrictEqual(
+      postTransferAfter.updatedAt.getTime(),
+      postTransferBefore.updatedAt.getTime(),
+      'post-transfer hold\'s updatedAt must not be bumped by initiate-handoff'
+    );
+
+    // Cleanup
+    await prisma.deflection.updateMany({
+      where: { currentOfficerId: USER2_ID },
+      data: { handoffReadyAt: null },
+    });
+  });
 });

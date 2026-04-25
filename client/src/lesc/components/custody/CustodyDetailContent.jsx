@@ -27,16 +27,23 @@ import { getCustodyStatusChip } from './custodyStatusChipUtils';
 import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from './propertyReturnUtils';
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
+import SafetyCheckResultModal from './SafetyCheckResultModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
+function isNetworkError (error) {
+  return !error?.response || window.navigator?.onLine === false;
+}
+
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
+  const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
+  const [careAccordionValues, setCareAccordionValues] = useState(['substance', 'deflection']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -72,6 +79,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
+  const hasBehavioralObservations = Boolean(deflection?.behavior);
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
@@ -104,12 +112,18 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const safetyCheckMutation = useMutation({
     mutationFn: () => Api.deflections.safetyCheck(deflection.id),
     onSuccess: () => {
+      setSafetyCheckResultModalOpened(false);
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
     },
-    onError: () => {
+    onError: (error) => {
+      setSafetyCheckResultModalOpened(false);
+      if (isNetworkError(error)) {
+        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
+        return;
+      }
       showToast('Safety check not saved. Please try again.', 'error');
     },
   });
@@ -336,23 +350,56 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               </Group>
             )}
           </Stack>
-          {isCareView && hasDrugUseEvidence && (
-            <>
-              <Divider />
-              <Stack gap='sm'>
-                <Title order={3}>Substance-related details</Title>
-                <Box>
-                  <Text c='dimmed'>Signs of substance use</Text>
-                  <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
-                </Box>
-                {deflection.drugUseEvidence === true && deflection?.drugType && (
-                  <Box>
-                    <Text c='dimmed'>Substance used (suspected)</Text>
-                    <Text>{t(`drugType.${deflection.drugType}`)}</Text>
-                  </Box>
-                )}
-              </Stack>
-            </>
+          {isCareView && (hasDrugUseEvidence || hasBehavioralObservations) && (
+            <Accordion
+              variant='section'
+              multiple
+              value={careAccordionValues}
+              onChange={setCareAccordionValues}
+            >
+              {hasDrugUseEvidence && (
+                <>
+                  <Divider />
+                  <Accordion.Item value='substance'>
+                    <Accordion.Control>
+                      <Title order={3}>Substance-related details</Title>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>Signs of substance use</Text>
+                          <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                        </Box>
+                        {deflection.drugUseEvidence === true && deflection?.drugType && (
+                          <Box>
+                            <Text c='dimmed'>Substance used (suspected)</Text>
+                            <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                          </Box>
+                        )}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </>
+              )}
+              {hasBehavioralObservations && (
+                <>
+                  <Divider />
+                  <Accordion.Item value='deflection'>
+                    <Accordion.Control>
+                      <Title order={3}>Behavioral observations</Title>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>Arrestable behavior</Text>
+                          <Text>{deflection.behavior}</Text>
+                        </Box>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </>
+              )}
+            </Accordion>
           )}
           {!isCareView && (
             <>
@@ -557,6 +604,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       {careFooterState.showFooter && (
         <ActionFooter>
           <Button
+            data-testid='complete-intake-btn'
             variant='secondary'
             onClick={() => {
               if (careFooterState.primaryAction === 'complete-intake') {
@@ -685,9 +733,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Menu>
                   )}
                   <Button
+                    data-testid={isAwaitingSafetyCheck ? 'safety-check-btn' : (showPrimaryPrintCertificate ? 'print-certificate-btn' : 'start-release-btn')}
                     onClick={() => {
                       if (isAwaitingSafetyCheck) {
-                        safetyCheckMutation.mutate();
+                        setSafetyCheckResultModalOpened(true);
                         return;
                       }
                       if (showPrimaryStartLegalRelease) {
@@ -699,10 +748,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         window.open(url, '_blank');
                       }
                     }}
-                    loading={isAwaitingSafetyCheck ? safetyCheckMutation.isPending : false}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Complete safety check'
+                      ? 'Record result'
                       : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
@@ -718,6 +766,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         onClose={() => setRecordDeathModalOpened(false)}
         onConfirm={() => recordDeathMutation.mutate()}
         loading={recordDeathMutation.isPending}
+      />
+      <SafetyCheckResultModal
+        opened={safetyCheckResultModalOpened}
+        onClose={() => setSafetyCheckResultModalOpened(false)}
+        loading={safetyCheckMutation.isPending}
+        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmFailed={() => {
+          setSafetyCheckResultModalOpened(false);
+          setExitToJailModalOpened(true);
+        }}
       />
       <ExitToJailModal
         opened={exitToJailModalOpened}

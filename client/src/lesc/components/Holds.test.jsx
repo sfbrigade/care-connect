@@ -11,21 +11,21 @@ const {
   mockNavigate,
   mockShowToast,
   mockBedTypesIndex,
-  mockActiveIncident,
+  mockMyHolds,
   mockDeflectionsList,
+  mockFacilityLeft,
   mockDeflectionCreate,
-  mockIncidentLeft,
-  mockIncidentExtend,
+  mockDeflectionsExtend,
   mockIncidentCreate,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
   mockBedTypesIndex: vi.fn(),
-  mockActiveIncident: vi.fn(),
+  mockMyHolds: vi.fn(),
   mockDeflectionsList: vi.fn(),
+  mockFacilityLeft: vi.fn(),
   mockDeflectionCreate: vi.fn(),
-  mockIncidentLeft: vi.fn(),
-  mockIncidentExtend: vi.fn(),
+  mockDeflectionsExtend: vi.fn(),
   mockIncidentCreate: vi.fn(),
 }));
 
@@ -49,16 +49,16 @@ vi.mock('@/Api', () => ({
       bedTypes: {
         index: mockBedTypesIndex,
       },
-      activeIncident: mockActiveIncident,
+      myHolds: mockMyHolds,
+      left: mockFacilityLeft,
     },
     deflections: {
       list: mockDeflectionsList,
       create: mockDeflectionCreate,
+      extend: mockDeflectionsExtend,
     },
     incidents: {
       create: mockIncidentCreate,
-      left: mockIncidentLeft,
-      extend: mockIncidentExtend,
     },
   },
 }));
@@ -99,6 +99,27 @@ vi.mock('@unhead/react', () => ({
   Head: ({ children }) => <>{children}</>,
 }));
 
+const mockMyHoldsData = {
+  atFacility: true,
+  canArrive: false,
+  canLeave: true,
+  canExtend: true,
+  canCreateHold: true,
+  activeIncidentId: 55,
+  incidents: [
+    {
+      id: 55,
+      addressLine1: '1001 Polk St',
+      city: 'San Francisco',
+      state: 'CA',
+      createdById: 'test-user-1',
+      canEdit: true,
+      canHandoff: true,
+      deflections: [],
+    },
+  ],
+};
+
 function renderHolds () {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -123,64 +144,16 @@ beforeEach(() => {
   mockBedTypesIndex.mockResolvedValue({
     data: [{ id: 99, available: 2, type: 'CHAIR' }],
   });
-  mockActiveIncident.mockResolvedValue({
-    data: {
-      id: 55,
-      arrivedAt: '2026-03-14T15:00:00.000Z',
-      leftAt: null,
-      addressLine1: '1001 Polk St',
-      createdById: 1,
-      permissions: {
-        isCreator: true,
-        canExtend: true,
-        canArrive: false,
-        canLeave: true,
-        canCancelIncident: true,
-        canEditIncident: true,
-        canCreateHold: true,
-        canHandoff: true,
-        incidentDetailsComplete: true,
-      },
-      totalActiveHolds: 1,
-    },
+  mockMyHolds.mockResolvedValue({
+    data: mockMyHoldsData,
   });
-  mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-    if (incidentId === 55 && active === true) {
-      return Promise.resolve({ data: [] });
-    }
-    if (facilityId === 1 && active === false) {
-      return Promise.resolve({ data: [] });
-    }
-    if (facilityId === 1 && active === true && subjectStatus) {
-      return Promise.resolve({ data: [] });
-    }
-    return Promise.resolve({ data: [] });
-  });
-  mockIncidentLeft.mockResolvedValue({
-    data: {
-      id: 55,
-      leftAt: '2026-03-14T16:35:00.000Z',
-    },
-  });
-  mockIncidentExtend.mockResolvedValue({
-    data: [],
-  });
+  mockDeflectionsList.mockResolvedValue({ data: [] });
+  mockFacilityLeft.mockResolvedValue({ data: { ok: true } });
+  mockDeflectionsExtend.mockResolvedValue({ data: [] });
   mockIncidentCreate.mockResolvedValue({
     data: {
       id: 56,
       facilityId: 1,
-      permissions: {
-        isCreator: true,
-        canExtend: true,
-        canArrive: true,
-        canLeave: false,
-        canCancelIncident: true,
-        canEditIncident: true,
-        canCreateHold: true,
-        canHandoff: false,
-        incidentDetailsComplete: false,
-      },
-      totalActiveHolds: 1,
     },
   });
   mockDeflectionCreate.mockResolvedValue({
@@ -214,7 +187,7 @@ describe('Holds', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'I\'ve left' }));
 
     await waitFor(() => {
-      expect(mockIncidentLeft).toHaveBeenCalledWith(55);
+      expect(mockFacilityLeft).toHaveBeenCalledWith(1);
     });
 
     await waitFor(() => {
@@ -228,25 +201,23 @@ describe('Holds', () => {
   });
 
   it('extends active holds from the footer overflow menu', async () => {
-    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-      if (incidentId === 55 && active === true) {
-        return Promise.resolve({
-          data: [{
-            id: 88,
-            incidentId: 55,
-            subjectId: 'subject-1',
-            status: 'ACTIVE',
-            subjectStatus: 'DETAINED',
-          }],
-        });
-      }
-      if (facilityId === 1 && active === false) {
-        return Promise.resolve({ data: [] });
-      }
-      if (facilityId === 1 && active === true && subjectStatus) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
     });
 
     renderHolds();
@@ -255,7 +226,7 @@ describe('Holds', () => {
     fireEvent.click(await screen.findByText('Extend active holds'));
 
     await waitFor(() => {
-      expect(mockIncidentExtend).toHaveBeenCalledWith(55);
+      expect(mockDeflectionsExtend).toHaveBeenCalledWith([88]);
     });
 
     await waitFor(() => {
@@ -266,17 +237,29 @@ describe('Holds', () => {
     });
   });
 
-  it('places the first hold without navigating to incident details', async () => {
-    mockActiveIncident.mockResolvedValue({ data: null });
+  it('creates a blank incident when placing the first hold (no activeIncidentId)', async () => {
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        atFacility: false,
+        arrivedAt: null,
+        canArrive: false,
+        canLeave: false,
+        canCreateHold: true,
+        canExtend: false,
+        activeIncidentId: null,
+        incidents: [],
+      },
+    });
 
     renderHolds();
 
-    const button = await screen.findByRole('button', { name: /Hold a bedtype\.chair/i });
-    await waitFor(() => {
-      expect(button).not.toBeDisabled();
-    });
+    // Wait for myHolds to load so activeIncidentId is null (not undefined from loading state)
+    await waitFor(() => expect(mockMyHolds).toHaveBeenCalled());
 
-    fireEvent.click(button);
+    const holdButton = await screen.findByRole('button', { name: /Hold a bedtype\.chair/i });
+    await waitFor(() => expect(holdButton).not.toBeDisabled());
+    fireEvent.click(holdButton);
 
     await waitFor(() => {
       expect(mockIncidentCreate).toHaveBeenCalledWith(
@@ -293,47 +276,35 @@ describe('Holds', () => {
     expect(mockNavigate).not.toHaveBeenCalledWith(expect.stringContaining('/incident'));
   });
 
-  it('routes first add-details tap through incident confirmation when incident details are incomplete', async () => {
-    mockActiveIncident.mockResolvedValue({
+  it('routes add-details tap through incident confirmation when incident details are incomplete', async () => {
+    mockMyHolds.mockResolvedValue({
       data: {
-        id: 55,
-        arrivedAt: null,
-        leftAt: null,
-        addressLine1: null,
-        createdById: 1,
-        permissions: {
-          isCreator: true,
-          canExtend: true,
-          canArrive: true,
-          canLeave: false,
-          canCancelIncident: true,
-          canEditIncident: true,
-          canCreateHold: true,
+        ...mockMyHoldsData,
+        activeIncidentId: 55,
+        incidents: [{
+          id: 55,
+          // addressLine1 missing → isValidIncident returns false
+          addressLine1: null,
+          city: null,
+          state: null,
+          arrestedAt: null,
+          encounteredVia: null,
+          cadNumber: null,
+          caseNumber: null,
+          supervisorBadgeNumber: null,
+          createdById: 'test-user-1',
+          canEdit: true,
           canHandoff: false,
-          incidentDetailsComplete: false,
-        },
-        totalActiveHolds: 1,
-      },
-    });
-    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-      if (incidentId === 55 && active === true) {
-        return Promise.resolve({
-          data: [{
+          deflections: [{
             id: 88,
             incidentId: 55,
             subjectId: null,
             status: 'ACTIVE',
             subjectStatus: 'DETAINED',
+            createdAt: '2026-03-14T15:00:00Z',
           }],
-        });
-      }
-      if (facilityId === 1 && active === false) {
-        return Promise.resolve({ data: [] });
-      }
-      if (facilityId === 1 && active === true && subjectStatus) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
+        }],
+      },
     });
 
     renderHolds();
@@ -342,31 +313,28 @@ describe('Holds', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
-        `/incident?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
+        `/incident/55?next=${encodeURIComponent('/holds/88/subject?isNew=true')}`
       );
     });
   });
 
   it('delays placing an additional hold and then shows a 90 minute success toast', async () => {
-    mockActiveIncident.mockResolvedValue({
+    mockMyHolds.mockResolvedValue({
       data: {
-        id: 55,
-        arrivedAt: null,
-        leftAt: null,
-        addressLine1: '1001 Polk St',
-        createdById: 1,
-        permissions: {
-          isCreator: true,
-          canExtend: true,
-          canArrive: true,
-          canLeave: true,
-          canCancelIncident: true,
-          canEditIncident: true,
-          canCreateHold: true,
-          canHandoff: true,
-          incidentDetailsComplete: true,
-        },
-        totalActiveHolds: 1,
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
       },
     });
 
@@ -423,25 +391,23 @@ describe('Holds', () => {
   });
 
   it('navigates to incident details from the incident overflow menu', async () => {
-    mockDeflectionsList.mockImplementation(({ incidentId, facilityId, active, subjectStatus }) => {
-      if (incidentId === 55 && active === true) {
-        return Promise.resolve({
-          data: [{
-            id: 88,
-            incidentId: 55,
-            subjectId: 'subject-1',
-            status: 'ACTIVE',
-            subjectStatus: 'DETAINED',
-          }],
-        });
-      }
-      if (facilityId === 1 && active === false) {
-        return Promise.resolve({ data: [] });
-      }
-      if (facilityId === 1 && active === true && subjectStatus) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.resolve({ data: [] });
+    mockMyHolds.mockResolvedValue({
+      data: {
+        ...mockMyHoldsData,
+        incidents: [
+          {
+            ...mockMyHoldsData.incidents[0],
+            deflections: [{
+              id: 88,
+              incidentId: 55,
+              subjectId: 'subject-1',
+              status: 'ACTIVE',
+              subjectStatus: 'DETAINED',
+              createdAt: '2026-03-14T15:00:00Z',
+            }],
+          },
+        ],
+      },
     });
 
     renderHolds();
@@ -450,7 +416,7 @@ describe('Holds', () => {
     fireEvent.click(await screen.findByText('Edit details'));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/incident');
+      expect(mockNavigate).toHaveBeenCalledWith('/incident/55');
     });
   });
 });

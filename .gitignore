@@ -74,6 +74,9 @@ playwright-report/
 # Ignore AI settings
 .claude
 
+# Ignore playwright test results
+test-results/
+
 # Ignore implementation plans
 implementation_plans/
 pr-body.md
