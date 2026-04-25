@@ -29,41 +29,71 @@ export default async function (fastify) {
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
+          await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
           const now = new Date();
 
-          // Find all active pre-transfer holds this officer controls at this facility
-          const holds = await tx.deflection.findMany({
+          // Snapshot candidate pre-transfer holds for this officer under the facility lock.
+          const candidateHolds = await tx.deflection.findMany({
             where: {
               facilityId,
               currentOfficerId: officerId,
               status: 'ACTIVE',
               subjectStatus: { in: PRE_TRANSFER_STATUSES },
             },
-            select: { id: true },
+            select: {
+              id: true,
+              arrivedAt: true,
+              subjectStatus: true,
+            },
           });
 
-          if (holds.length === 0) {
+          if (candidateHolds.length === 0) {
             throw badRequestError('No active holds to mark as arrived');
           }
 
-          const holdIds = holds.map(h => h.id);
+          const holdIds = [];
+          const holdsNeedingArrivalUpdate = [];
 
-          // Set arrivedAt on all these holds
-          await tx.deflection.updateMany({
-            where: { id: { in: holdIds } },
-            data: { arrivedAt: now, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
-          });
+          for (const hold of candidateHolds.sort((a, b) => a.id - b.id)) {
+            const updated = await tx.deflection.updateMany({
+              where: {
+                id: hold.id,
+                facilityId,
+                currentOfficerId: officerId,
+                status: 'ACTIVE',
+                subjectStatus: hold.subjectStatus,
+                arrivedAt: hold.arrivedAt,
+              },
+              data: {
+                arrivedAt: hold.arrivedAt ?? now,
+                subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+              },
+            });
 
-          // Create audit trail entries
-          await tx.deflectionUpdate.createMany({
-            data: holdIds.map(deflectionId => ({
-              deflectionId,
-              subjectStatus: 'ONSITE_AWAITING_TRANSFER',
-              updatedById: officerId,
-            })),
-          });
+            if (updated.count === 1) {
+              holdIds.push(hold.id);
+              if (hold.subjectStatus !== 'ONSITE_AWAITING_TRANSFER' || hold.arrivedAt === null) {
+                holdsNeedingArrivalUpdate.push(hold);
+              }
+            }
+          }
 
-          // Record the facility check-in event
+          if (holdIds.length === 0) {
+            throw badRequestError('No active holds to mark as arrived');
+          }
+
+          if (holdsNeedingArrivalUpdate.length > 0) {
+            await tx.deflectionUpdate.createMany({
+              data: holdsNeedingArrivalUpdate.map(({ id: deflectionId }) => ({
+                deflectionId,
+                subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+                updatedById: officerId,
+                updatedAt: now,
+              })),
+            });
+          }
+
+          // Record the facility check-in event for the holds that were still eligible at commit time.
           await tx.facilityCheckIn.create({
             data: {
               userId: officerId,
