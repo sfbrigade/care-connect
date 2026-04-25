@@ -29,7 +29,12 @@ const prisma = new PrismaClient({
     },
     deflection: {
       async findByIdForUpdate (tx, id) {
-        const result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ${id} FOR UPDATE`;
+        let result;
+        if (Array.isArray(id)) {
+          result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ANY(${id}::int[]) ORDER BY "id" FOR UPDATE`;
+          return result;
+        }
+        result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ${id} FOR UPDATE`;
         return result.length > 0 ? result[0] : null;
       },
       async expire (now = new Date()) {
