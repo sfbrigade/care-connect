@@ -16,6 +16,15 @@ UNKNOWN UNKNOWN
     
 
 
+        SFResidentEnum {
+            YES YES
+NO NO
+UNKNOWN UNKNOWN
+DECLINED_CONSENT DECLINED_CONSENT
+        }
+    
+
+
         FacilityTypeEnum {
             DIDO DIDO
 LESC LESC
@@ -88,13 +97,13 @@ OTHER OTHER
 
 
         DrugTypeEnum {
-            CNS_DEPRESSANTS CNS_DEPRESSANTS
-CNS_STIMULANTS CNS_STIMULANTS
-HALLUCINOGENS HALLUCINOGENS
-DISSOCIATIVE_ANESTHETICS DISSOCIATIVE_ANESTHETICS
-NARCOTIC_ANALGESICS NARCOTIC_ANALGESICS
-INHALANTS INHALANTS
-CANNABIS CANNABIS
+            ALCOHOL ALCOHOL
+HEROIN HEROIN
+FENTANYL FENTANYL
+COCAINE COCAINE
+METH METH
+MEDS MEDS
+OTHER OTHER
         }
     
 
@@ -136,13 +145,6 @@ FACILITY_ADMIN FACILITY_ADMIN
     
 
 
-        IncidentOfficerRoleEnum {
-            ARRESTING ARRESTING
-RECEIVING RECEIVING
-        }
-    
-
-
         SubjectStatusEnum {
             DETAINED DETAINED
 ONSITE_AWAITING_TRANSFER ONSITE_AWAITING_TRANSFER
@@ -155,6 +157,13 @@ RELEASED RELEASED
 EXITED EXITED
 DEATH_IN_FACILITY DEATH_IN_FACILITY
 DEATH_IN_CUSTODY DEATH_IN_CUSTODY
+        }
+    
+
+
+        FacilityCheckInEventEnum {
+            ARRIVAL ARRIVAL
+DEPARTURE DEPARTURE
         }
     
   "Organization" {
@@ -203,6 +212,12 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DateTime deletedAt "❓"
     String passwordResetToken "❓"
     DateTime passwordResetExpiresAt "❓"
+    Boolean mfaEnabled 
+    String mfaCode "❓"
+    String mfaToken "❓"
+    DateTime mfaExpiresAt "❓"
+    Int mfaAttempts 
+    DateTime mfaLastSentAt "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
     DateTime updatedAt 
@@ -398,6 +413,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String state "❓"
     String postalCode "❓"
     String localId "❓"
+    DateTime anonymizedAt "❓"
     DateTime createdAt 
     DateTime updatedAt 
     }
@@ -412,11 +428,10 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     SubjectStatusEnum subjectStatus 
     Boolean narcoticsSubstance "❓"
     Boolean narcoticsParaphernalia "❓"
-    Boolean volunteeredToReset "❓"
     Boolean drugUseEvidence "❓"
     DrugTypeEnum drugType "❓"
     String behavior "❓"
-    String behaviorAdditions "❓"
+    String behaviorNarrative "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
@@ -457,28 +472,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
-    TernaryEnum exitSFResident "❓"
-    DateTime updatedAt 
-    }
-  
-
-  "DeflectionDetailCategory" {
-    String id "🗝️"
-    String name 
-    String createdById 
-    DateTime createdAt 
-    String updatedById "❓"
-    DateTime updatedAt 
-    }
-  
-
-  "DeflectionDetail" {
-    String id "🗝️"
-    String deflectionDetailCategoryId 
-    String name 
-    String createdById 
-    DateTime createdAt 
-    String updatedById "❓"
+    SFResidentEnum exitSFResident "❓"
+    DateTime arrivedAt "❓"
+    DateTime handoffReadyAt "❓"
     DateTime updatedAt 
     }
   
@@ -501,7 +497,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String exitDestinationId "❓"
     String exitHousingStatusId "❓"
     TernaryEnum exitConnectedToCare "❓"
-    TernaryEnum exitSFResident "❓"
+    SFResidentEnum exitSFResident "❓"
     DateTime updatedAt 
     String updatedById 
     }
@@ -561,7 +557,8 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     String id "🗝️"
     Int deflectionId 
     String formId 
-    String file 
+    String file "❓"
+    String sourceDataHash "❓"
     DateTime createdAt 
     String createdById 
     DateTime updatedAt 
@@ -582,7 +579,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
-    String file 
+    String file "❓"
     DateTime createdAt 
     String createdById 
     DateTime updatedAt 
@@ -593,9 +590,6 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
   "Incident" {
     Int id "🗝️"
     String facilityId "🗝️"
-    DateTime arrivedAt "❓"
-    DateTime leftAt "❓"
-    DateTime completedAt "❓"
     String addressLine1 "❓"
     String addressLine2 "❓"
     String city "❓"
@@ -619,25 +613,6 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     }
   
 
-  "IncidentOfficer" {
-    String id "🗝️"
-    Int incidentId 
-    String facilityId 
-    String officerId 
-    IncidentOfficerRoleEnum role 
-    DateTime arrivedAt "❓"
-    DateTime leftAt "❓"
-    DateTime handoffReceivedAt "❓"
-    String handoffReceivedFromId "❓"
-    String badgeNumber "❓"
-    String organizationId "❓"
-    String unitId "❓"
-    String titleId "❓"
-    DateTime createdAt 
-    DateTime updatedAt 
-    }
-  
-
   "Feedback" {
     String id "🗝️"
     String message 
@@ -647,10 +622,28 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     DateTime updatedAt 
     }
   
+
+  "FacilityCheckIn" {
+    String id "🗝️"
+    String userId 
+    String facilityId 
+    DateTime timestamp 
+    FacilityCheckInEventEnum eventType 
+    Int arrivedWithDeflectionIds 
+    }
+  
+
+  "Handoff" {
+    String id "🗝️"
+    Int deflectionId 
+    String fromOfficerId 
+    String toOfficerId 
+    DateTime timestamp 
+    }
+  
     "Organization" o|--}o "RoleEnum" : "enum:defaultRoles"
     "Organization" o|--|| "User" : "createdBy"
     "Organization" o{--}o "Deflection" : ""
-    "Organization" o{--}o "IncidentOfficer" : ""
     "Organization" o{--}o "Incident" : ""
     "Organization" o{--}o "Invite" : ""
     "Organization" o{--}o "Title" : ""
@@ -659,13 +652,11 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Unit" o|--|| "Organization" : "organization"
     "Unit" o|--|| "User" : "createdBy"
     "Unit" o{--}o "Deflection" : ""
-    "Unit" o{--}o "IncidentOfficer" : ""
     "Unit" o{--}o "Incident" : ""
     "Unit" o{--}o "User" : ""
     "Title" o|--|| "Organization" : "organization"
     "Title" o|--|| "User" : "createdBy"
     "Title" o{--}o "Deflection" : ""
-    "Title" o{--}o "IncidentOfficer" : ""
     "Title" o{--}o "Incident" : ""
     "Title" o{--}o "Invite" : ""
     "Title" o{--}o "User" : ""
@@ -680,10 +671,6 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "BedTypeUpdate" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
     "User" o{--}o "DeflectionCancelReason" : ""
-    "User" o{--}o "DeflectionDetailCategory" : ""
-    "User" o{--}o "DeflectionDetailCategory" : ""
-    "User" o{--}o "DeflectionDetail" : ""
-    "User" o{--}o "DeflectionDetail" : ""
     "User" o{--}o "DeflectionReleaseReason" : ""
     "User" o{--}o "DeflectionReleaseReason" : ""
     "User" o{--}o "DeflectionRefusalReason" : ""
@@ -707,8 +694,9 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityUpdate" : ""
-    "User" o{--}o "IncidentOfficer" : ""
-    "User" o{--}o "IncidentOfficer" : ""
+    "User" o{--}o "FacilityCheckIn" : ""
+    "User" o{--}o "Handoff" : ""
+    "User" o{--}o "Handoff" : ""
     "User" o{--}o "Incident" : ""
     "User" o{--}o "Incident" : ""
     "User" o{--}o "Invite" : ""
@@ -736,6 +724,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Facility" o{--}o "FacilityContact" : ""
     "Facility" o{--}o "Deflection" : ""
     "Facility" o{--}o "FacilityEligibility" : ""
+    "Facility" o{--}o "FacilityCheckIn" : ""
     "Facility" o{--}o "Incident" : ""
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
@@ -796,17 +785,11 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Deflection" o|--|o "DeflectionExitDestination" : "exitDestination"
     "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
-    "Deflection" o|--|o "TernaryEnum" : "enum:exitSFResident"
-    "Deflection" o{--}o "DeflectionDetail" : ""
+    "Deflection" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionUpdate" : ""
     "Deflection" o{--}o "DeflectionDocument" : ""
     "Deflection" o{--}o "PropertyPhoto" : ""
-    "DeflectionDetailCategory" o|--|| "User" : "createdBy"
-    "DeflectionDetailCategory" o|--|o "User" : "updatedBy"
-    "DeflectionDetailCategory" o{--}o "DeflectionDetail" : ""
-    "DeflectionDetail" o|--|| "DeflectionDetailCategory" : "deflectionDetailCategory"
-    "DeflectionDetail" o|--|| "User" : "createdBy"
-    "DeflectionDetail" o|--|o "User" : "updatedBy"
+    "Deflection" o{--}o "Handoff" : ""
     "DeflectionUpdate" o|--|| "Deflection" : "deflection"
     "DeflectionUpdate" o|--|o "HoldStatusEnum" : "enum:status"
     "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"
@@ -817,7 +800,7 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
-    "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitSFResident"
+    "DeflectionUpdate" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
     "DeflectionCancelReason" o|--|| "User" : "createdBy"
     "DeflectionCancelReason" o|--|| "User" : "updatedBy"
@@ -842,12 +825,10 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     "Incident" o|--|o "Title" : "createdByTitle"
     "Incident" o|--|o "Unit" : "createdByUnit"
     "Incident" o|--|| "User" : "updatedBy"
-    "Incident" o{--}o "IncidentOfficer" : ""
-    "IncidentOfficer" o|--|| "Incident" : "incident"
-    "IncidentOfficer" o|--|| "User" : "officer"
-    "IncidentOfficer" o|--|| "IncidentOfficerRoleEnum" : "enum:role"
-    "IncidentOfficer" o|--|o "User" : "handoffReceivedFrom"
-    "IncidentOfficer" o|--|o "Organization" : "organization"
-    "IncidentOfficer" o|--|o "Unit" : "unit"
-    "IncidentOfficer" o|--|o "Title" : "title"
+    "FacilityCheckIn" o|--|| "User" : "user"
+    "FacilityCheckIn" o|--|| "Facility" : "facility"
+    "FacilityCheckIn" o|--|| "FacilityCheckInEventEnum" : "enum:eventType"
+    "Handoff" o|--|| "Deflection" : "deflection"
+    "Handoff" o|--|| "User" : "fromOfficer"
+    "Handoff" o|--|| "User" : "toOfficer"
 ```

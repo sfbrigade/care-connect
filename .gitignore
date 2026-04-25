@@ -65,8 +65,17 @@ server/tmp
 *.pem
 *.zip
 
+# playwright / accessibility audit artifacts
+e2e/accessibility-report*.json
+e2e/a11y-screenshots*/
+test-results/
+playwright-report/
+
 # Ignore AI settings
 .claude
+
+# Ignore playwright test results
+test-results/
 
 # Ignore implementation plans
 implementation_plans/

@@ -19,7 +19,7 @@ export function isCustodyTransferredStatus (subjectStatus) {
 }
 
 export function isExpiredBeforeTransfer (deflection, now) {
-  if (!deflection || isCustodyTransferredStatus(deflection.subjectStatus)) return false;
+  if (!deflection || deflection.subjectStatus !== 'DETAINED') return false;
   if (deflection.status === 'EXPIRED') return true;
   if (deflection.status !== 'ACTIVE' || !deflection.expiresAt) return false;
 
@@ -39,7 +39,7 @@ export function getSfpdDeflectionStatusChip ({ deflection, incident, now = DateT
   }
 
   if (isCustodyTransferredStatus(deflection.subjectStatus)) {
-    return { label: 'Custody transferred', tone: 'info' };
+    return { label: 'Custody transferred', tone: 'success' };
   }
 
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(incident);
