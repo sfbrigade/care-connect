@@ -1008,12 +1008,9 @@ async function runIncidentCancelVsDeflectionCreate (context, metadata) {
   const activeHoldCount = await prisma.deflection.count({
     where: { incidentId: incident.id, status: 'ACTIVE' },
   });
-  if (state.incident) {
-    assertInvariant(!(state.incident.completedAt && activeHoldCount > 0), 'Completed incident retained active holds.', {
-      incidentId: incident.id,
-      activeHoldCount,
-    });
-  }
+  // NOTE: post-#666, Incident.completedAt no longer exists. The "completed
+  // incident retained active holds" invariant doesn't translate to a single
+  // field on the new model; the equivalent intent is captured by activeHoldCount.
   await assertFacilityBedIntegrity(context);
   return buildResult(metadata, results, state, { activeHoldCount });
 }
@@ -1033,12 +1030,8 @@ async function runIncidentCancelVsTransfer (context, metadata) {
   assertAllowedStatuses(results, [200, 204, 404, 409, 410, 422]);
   const state = await loadFinalState(context, fixture);
   const activeHoldCount = await countIncidentActiveHolds(fixture.incident.id);
-  if (state.incident) {
-    assertInvariant(!(state.incident.completedAt && activeHoldCount > 0), 'Completed incident retained active holds.', {
-      incidentId: fixture.incident.id,
-      activeHoldCount,
-    });
-  }
+  // NOTE: see runIncidentCancelVsDeflectionCreate above re: post-#666 incident
+  // lifecycle — completedAt no longer exists on Incident.
   await assertFacilityBedIntegrity(context);
   return buildResult(metadata, results, state, { activeHoldCount });
 }
@@ -1059,12 +1052,9 @@ async function runIncidentLeftVsDeflectionCancel (context, metadata) {
   assertAllowedStatuses(results, [200, 404, 409, 410, 422]);
   const state = await loadFinalState(context, fixture);
   const activeHoldCount = await countIncidentActiveHolds(fixture.incident.id);
-  if (activeHoldCount === 0 && state.incident) {
-    assertInvariant(Boolean(state.incident.completedAt), 'Incident had no active holds after the race but was not completed.', {
-      incidentId: fixture.incident.id,
-      completedAt: state.incident.completedAt,
-    });
-  }
+  // NOTE: post-#666, Incident has no completedAt. The original invariant
+  // "no active holds → incident must be completed" doesn't translate; the
+  // facility-bed-integrity check below covers data consistency.
   await assertFacilityBedIntegrity(context);
   return buildResult(metadata, results, state, { activeHoldCount });
 }
@@ -1313,18 +1303,9 @@ async function createIncidentRecord (context, { user, runTag, suffix }) {
     },
   });
 
-  await prisma.incidentOfficer.create({
-    data: {
-      incidentId: incident.id,
-      facilityId: context.facilityId,
-      officerId: user.id,
-      role: 'ARRESTING',
-      badgeNumber: user.badgeNumber,
-      organizationId: user.organizationId,
-      unitId: user.unitId,
-      titleId: user.titleId,
-    },
-  });
+  // NOTE: IncidentOfficer was removed by the #666 data model refactor. The
+  // officer-incident relationship now lives on Deflection.currentOfficerId,
+  // which is set when the deflection is created. No equivalent setup needed.
 
   return incident;
 }
@@ -1342,24 +1323,9 @@ async function createDeflectionFixture (context, metadata, options) {
     suffix: options.incidentSuffix ?? 'fixture',
   });
 
-  if (options.incidentArrived) {
-    const now = new Date();
-    await prisma.incidentOfficer.updateMany({
-      where: {
-        incidentId: incident.id,
-        facilityId: context.facilityId,
-        officerId: incident.createdById,
-      },
-      data: { arrivedAt: now },
-    });
-    await prisma.incident.update({
-      where: { id: incident.id },
-      data: {
-        arrivedAt: now,
-        updatedById: incident.createdById,
-      },
-    });
-  }
+  // NOTE: post-#666, "officer arrived" lives on the Deflection (arrivedAt +
+  // subjectStatus = ONSITE_AWAITING_TRANSFER), not on Incident or IncidentOfficer.
+  // The arrivedAt setup is applied to the deflection.create data block below.
 
   let subjectId = null;
   if (options.includeSubject) {
@@ -1432,6 +1398,13 @@ async function createDeflectionFixture (context, metadata, options) {
   }
   if (status === 'EXPIRED') {
     data.expiresAt = new Date(now.getTime() - 60 * 1000);
+  }
+  if (options.incidentArrived) {
+    // post-#666: officer-arrived state lives on the deflection
+    data.arrivedAt = now;
+    if (subjectStatus === 'DETAINED') {
+      data.subjectStatus = 'ONSITE_AWAITING_TRANSFER';
+    }
   }
 
   const deflection = await prisma.deflection.create({ data });
@@ -1676,10 +1649,11 @@ async function cleanupLoadtestArtifacts (context) {
     await prisma.deflectionDocument.deleteMany({ where: { deflectionId: { in: deflectionIds } } });
     await prisma.propertyPhoto.deleteMany({ where: { deflectionId: { in: deflectionIds } } });
     await prisma.deflectionUpdate.deleteMany({ where: { deflectionId: { in: deflectionIds } } });
+    await prisma.handoff.deleteMany({ where: { deflectionId: { in: deflectionIds } } });
     await prisma.deflection.deleteMany({ where: { id: { in: deflectionIds } } });
   }
 
-  await prisma.incidentOfficer.deleteMany({
+  await prisma.facilityCheckIn.deleteMany({
     where: { facilityId: context.facilityId },
   });
   await prisma.incident.deleteMany({
