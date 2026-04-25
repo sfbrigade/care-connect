@@ -31,7 +31,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
 
     const timeoutId = window.setTimeout(() => {
       setIsPostNavigationSurveyOpen(true);
-    }, 3000);
+    }, 2000);
 
     return () => {
       window.clearTimeout(timeoutId);

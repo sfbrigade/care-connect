@@ -280,7 +280,6 @@ function Holds () {
     onSuccess: () => {
       const facilityName = facility?.name ?? 'RESET';
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(new Date())}`);
-      queryClient.setQueryData(['facilities', facility.id, 'active-incident'], null);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
       const surveyContextId = allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId;
       scheduleOptionalSurveyWithoutNavigation(surveyContextId);

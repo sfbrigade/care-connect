@@ -20,7 +20,7 @@ function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
     if (staySurveyScheduled && shouldShowSatisfactionSurvey) {
       surveyTimeoutId = window.setTimeout(() => {
         setIsSurveyModalOpen(true);
-      }, 1000);
+      }, 2000);
     }
 
     return () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActionIcon, Box, Button, Group, Input, Modal, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
-import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX } from '@tabler/icons-react';
+import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX, IconShieldChevron } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
@@ -181,6 +181,7 @@ function SatisfactionSurveyModal ({
             <Group mt='sm' grow gap='xs'>
               <Textarea
                 placeholder='Share your thoughts...'
+                size='md'
                 value={surveyAnswers.improvementSuggestions}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
@@ -194,6 +195,7 @@ function SatisfactionSurveyModal ({
           <Input.Wrapper size='xl' label='How can we improve operations at the RESET facility?'>
             <Textarea
               placeholder='Share your thoughts...'
+              size='md'
               mt='lg'
               value={surveyAnswers.resetFacilityFeedback}
               onChange={(event) => {
@@ -212,9 +214,13 @@ function SatisfactionSurveyModal ({
             />
           </Input.Wrapper>
         )}
-        <Group justify='flex-start' mt='sm'>
+        <Group justify='center' mt='lg' align='center' gap='sm'>
+          <IconShieldChevron size={18} color='var(--mantine-color-dimmed)' />
+          <Text size='sm' c='dimmed'>Your response will be anonymous.</Text>
+        </Group>
+        <Group justify='flex-start' mt='md'>
           {surveyStep < 1 &&
-            !(surveyStep === 0 && (surveyAnswers.careConnectRating === 'neutral' || surveyAnswers.careConnectRating === 'good')) && (
+            (surveyStep === 0 && (surveyAnswers.careConnectRating === 'bad')) && (
               <Button
                 onClick={() => setSurveyStep((prev) => prev + 1)}
                 disabled={
