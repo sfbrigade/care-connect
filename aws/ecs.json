@@ -29,6 +29,10 @@
     "SiteTitle": {
       "Type": "String",
       "Description": "The title of the site"
+    },
+    "SmtpReplyToEmailAddress": {
+      "Type": "String",
+      "Description": "Default reply-to email address"
     }
   },
   "Outputs": {},
@@ -428,6 +432,12 @@
                       }
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {
@@ -917,6 +927,12 @@
                       }
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {

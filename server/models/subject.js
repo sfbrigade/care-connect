@@ -3,6 +3,22 @@ import { z } from 'zod';
 
 import Base from './base.js';
 
+export const PII_FIELDS = [
+  'firstName',
+  'lastName',
+  'middleInitial',
+  'dateOfBirth',
+  'sex',
+  'race',
+  'driverLicense',
+  'addressLine1',
+  'addressLine2',
+  'city',
+  'state',
+  'postalCode',
+  'localId',
+];
+
 const SubjectAttributesSchema = z.object({
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
