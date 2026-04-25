@@ -38,18 +38,24 @@ const IncidentSchema = z.object({
   supervisorBadgeNumber: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED), z.maxLength(4, ERROR_REQUIRED)),
 });
 
+const SEX_OPTIONS = ['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'];
+const RACE_OPTIONS = ['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'];
+
 const SubjectSchema = z.object({
-  firstName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
-  lastName: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED)),
-  dateOfBirth: z.string(ERROR_REQUIRED).check(
-    z.minLength(1, ERROR_REQUIRED),
+  firstName: z.string(),
+  lastName: z.string(),
+  dateOfBirth: z.string().check(
     z.refine(
       (value) => !value || DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
       ERROR_DOB_INVALID
     )
   ),
-  sex: z.enum(['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
-  race: z.enum(['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'], ERROR_SELECT_ONE),
+  sex: z.string().check(
+    z.refine((value) => !value || SEX_OPTIONS.includes(value), ERROR_SELECT_ONE)
+  ),
+  race: z.string().check(
+    z.refine((value) => !value || RACE_OPTIONS.includes(value), ERROR_SELECT_ONE)
+  ),
 });
 
 const DrugTypeSchema = z.enum(DRUG_TYPE_OPTIONS, ERROR_SELECT_ONE);

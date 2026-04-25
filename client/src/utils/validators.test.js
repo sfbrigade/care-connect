@@ -46,10 +46,18 @@ describe('SubjectSchema dateOfBirth validation', () => {
     });
   });
 
-  it('rejects empty input', () => {
-    expect(validateSubject({ ...baseSubject, dateOfBirth: '' })).toEqual({
-      dateOfBirth: 'This field is required',
-    });
+  it('accepts empty input (DOB is optional so partial saves work)', () => {
+    expect(validateSubject({ ...baseSubject, dateOfBirth: '' })).toEqual({});
+  });
+
+  it('accepts a fully empty subject (all SubjectSchema fields are optional for partial saves)', () => {
+    expect(validateSubject({
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      sex: '',
+      race: '',
+    })).toEqual({});
   });
 
   it('rejects incomplete input', () => {

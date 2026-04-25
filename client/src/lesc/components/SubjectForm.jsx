@@ -53,6 +53,7 @@ function SubjectForm () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const { t } = useTranslation();
+  const [dobInput, setDobInput] = useState('');
   const [showFile647fModal, setShowFile647fModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState(null);
   const [showDrugTypeQuestion, setShowDrugTypeQuestion] = useState(false);
@@ -63,21 +64,17 @@ function SubjectForm () {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues,
-    validate: validateSubject,
-    transformValues: (values) => {
-      const parsed = DateTime.fromFormat(normalizeDobInput(values.dateOfBirth), 'MM/dd/yyyy', { zone: 'local' });
-      return {
-        ...values,
-        dateOfBirth: parsed.isValid ? parsed.toISO() : null,
-        drugType: values.drugUseEvidence ? values.drugType ?? null : null,
-      };
-    },
+    transformValues: (values) => ({
+      ...values,
+      drugType: values.drugUseEvidence ? values.drugType ?? null : null,
+      dateOfBirth: DateTime.fromFormat(dobInput.trim(), 'MM/dd/yyyy', { zone: 'local' }).toISO(),
+    }),
     onValuesChange: (values) => {
       setShowDrugTypeQuestion(values.drugUseEvidence);
       if (form.initialized && !isCustodyContext) {
-        scheduleAutoSave();
+        scheduleAutoSave(values, dobInput);
       }
-    },
+    }
   });
 
   const { data: deflection, isLoading } = useQuery({
@@ -88,7 +85,7 @@ function SubjectForm () {
   useEffect(() => {
     if (!isLoading && !form.initialized) {
       if (deflection?.subject) {
-        form.initialize({
+        const normalized = normalizeValues({
           ...initialValues,
           ...deflection.subject,
           narcoticsSubstance: deflection.narcoticsSubstance,
@@ -97,8 +94,11 @@ function SubjectForm () {
           drugType: deflection.drugType ?? null,
           dateOfBirth: deflection.subject.dateOfBirth ? DateTime.fromISO(deflection.subject.dateOfBirth, { setZone: true }).toFormat('MM/dd/yyyy') : '',
         });
+        setDobInput(normalized.dateOfBirth ?? '');
+        form.initialize(normalized);
         if (!isNew) {
-          form.validate();
+          const errors = validateSubject(normalized);
+          form.setErrors(errors);
         }
       } else {
         form.initialize(initialValues);
@@ -112,21 +112,33 @@ function SubjectForm () {
     }
   }, []);
 
-  async function submitForm (values) {
-    if (isCustodyContext) {
-      handleCustodySubmit(values);
-      return;
-    }
-
-    await onSubmitMutation.mutateAsync(values);
+  function normalizeValues (values) {
+    return {
+      ...initialValues,
+      ...values,
+      drugType: values.drugType ?? null,
+      dateOfBirth: values.dateOfBirth ?? '',
+    };
   }
 
-  function scheduleAutoSave () {
+  function buildAutoSavePayload (values, dobString) {
+    const normalized = normalizeValues(values);
+    const parsedDob = DateTime.fromFormat((dobString ?? '').trim(), 'MM/dd/yyyy', { zone: 'local' });
+    return {
+      ...normalized,
+      drugType: normalized.drugUseEvidence ? normalized.drugType ?? null : null,
+      dateOfBirth: parsedDob.isValid ? parsedDob.toISO() : null,
+    };
+  }
+
+  function scheduleAutoSave (values, dobString) {
+    const normalized = normalizeValues(values);
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current);
     }
     autoSaveTimerRef.current = setTimeout(() => {
-      autoSaveMutation.mutate(form.getTransformedValues());
+      const payload = buildAutoSavePayload(values, dobString);
+      autoSaveMutation.mutate({ payload, normalized });
     }, 700);
   }
 
@@ -136,7 +148,7 @@ function SubjectForm () {
   }
 
   const autoSaveMutation = useMutation({
-    mutationFn: (payload) => Api.deflections.subject(id, payload),
+    mutationFn: ({ payload }) => Api.deflections.subject(id, payload),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
     },
@@ -188,7 +200,10 @@ function SubjectForm () {
     if (data.firstName) form.setFieldValue('firstName', data.firstName);
     if (data.lastName) form.setFieldValue('lastName', data.lastName);
     if (data.middleInitial) form.setFieldValue('middleInitial', data.middleInitial);
-    if (data.dateOfBirth) form.setFieldValue('dateOfBirth', data.dateOfBirth);
+    if (data.dateOfBirth) {
+      setDobInput(data.dateOfBirth);
+      form.setFieldValue('dateOfBirth', data.dateOfBirth);
+    }
     if (data.sex) form.setFieldValue('sex', data.sex);
     if (data.documentType === 'DRIVERS_LICENSE' && data.documentNumber) {
       form.setFieldValue('driverLicense', data.documentNumber);
@@ -198,7 +213,7 @@ function SubjectForm () {
     if (data.state) form.setFieldValue('state', data.state);
     if (data.postalCode) form.setFieldValue('postalCode', data.postalCode);
     if (!isCustodyContext) {
-      scheduleAutoSave();
+      scheduleAutoSave(form.getValues(), data.dateOfBirth || dobInput);
     }
   }
 
@@ -228,6 +243,7 @@ function SubjectForm () {
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
+
         <Group gap='sm' mb='xs' align='center'>
           <Title order={2}>Personal details</Title>
           {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/4</Badge>}
@@ -246,7 +262,7 @@ function SubjectForm () {
           onResult={handleIdScanResult}
           onClose={() => setScannerOpened(false)}
         />
-        <form onSubmit={form.onSubmit(submitForm)}>
+        <form onSubmit={form.onSubmit(isCustodyContext ? handleCustodySubmit : onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <TextInput
@@ -275,15 +291,23 @@ function SubjectForm () {
                 inputMode='numeric'
                 maxLength={10}
                 placeholder='MM/DD/YYYY'
-                key={form.key('dateOfBirth')}
                 {...form.getInputProps('dateOfBirth')}
-                onChange={(event) => form.setFieldValue('dateOfBirth', formatInputDob(event.currentTarget.value))}
+                defaultValue={undefined}
+                value={dobInput}
+                onChange={(event) => {
+                  const formatted = formatInputDob(event.currentTarget.value);
+                  setDobInput(formatted);
+                  form.setFieldValue('dateOfBirth', formatted);
+                  if (!isCustodyContext) {
+                    scheduleAutoSave(form.getValues(), formatted);
+                  }
+                }}
                 onBlur={(event) => {
                   const expanded = normalizeDobInput(event.currentTarget.value);
-                  if (expanded !== event.currentTarget.value) {
+                  if (expanded !== dobInput) {
+                    setDobInput(expanded);
                     form.setFieldValue('dateOfBirth', expanded);
                   }
-                  form.validateField('dateOfBirth');
                 }}
               />
               <ChipInput
