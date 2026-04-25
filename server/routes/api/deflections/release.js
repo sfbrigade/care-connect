@@ -14,6 +14,17 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
+// Pre-chair hold states: the subject has reserved a chair (counted in `holds`)
+// but has not yet physically entered one (which would set IN_CHAIR and bump
+// `occupied`). A sobered release from any of these finalizes the deflection
+// and frees the hold without ever touching `occupied`.
+const PRE_CHAIR_HOLD_STATUSES = [
+  Deflection.SubjectStatus.AWAITING_INTAKE,
+  Deflection.SubjectStatus.READY_FOR_INTAKE,
+  Deflection.SubjectStatus.FAILED_INTAKE,
+  Deflection.SubjectStatus.ADMITTED,
+];
+
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
   const isHoldRelease = [
     Deflection.SubjectStatus.DETAINED,
@@ -132,6 +143,14 @@ export default async function (fastify, opts) {
 
           const now = new Date();
           const previousSubjectStatus = deflection.subjectStatus;
+          // A sobered release from a pre-chair hold has no chair to vacate
+          // and no follow-up step, so it finalizes here as EXITED. A sobered
+          // release from IN_CHAIR keeps the existing two-step pattern
+          // (lingers ACTIVE/RELEASED until the care team marks EXITED).
+          const isPreChairHoldRelease =
+            !isExitRelease && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
+          const releaseFinalizesAsExited = isExitRelease || isPreChairHoldRelease;
+
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
@@ -144,7 +163,7 @@ export default async function (fastify, opts) {
             },
           });
 
-          if (isExitRelease) {
+          if (releaseFinalizesAsExited) {
             await tx.deflectionUpdate.create({
               data: {
                 deflectionId: id,
@@ -160,13 +179,13 @@ export default async function (fastify, opts) {
           deflection = await tx.deflection.update({
             where: { id },
             data: {
-              ...(isExitRelease
+              ...(releaseFinalizesAsExited
                 ? {
                     status: Deflection.HoldStatus.COMPLETED,
                     completedAt: now,
                   }
                 : {}),
-              subjectStatus: isExitRelease
+              subjectStatus: releaseFinalizesAsExited
                 ? Deflection.SubjectStatus.EXITED
                 : Deflection.SubjectStatus.RELEASED,
               releasedAt: now,
@@ -174,7 +193,7 @@ export default async function (fastify, opts) {
               releaseReasonId,
               otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
               otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
-              ...(isExitRelease
+              ...(releaseFinalizesAsExited
                 ? {
                     exitedAt: now,
                     exitedById: request.user.id,
@@ -190,7 +209,7 @@ export default async function (fastify, opts) {
             },
           });
 
-          if (isExitRelease) {
+          if (releaseFinalizesAsExited) {
             const bedTypeUpdateData = buildBedTypeUpdate({
               previousSubjectStatus,
               bedType,
