@@ -27,6 +27,8 @@ export const metadata = {
         title: true,
       },
     },
+    transferredByTitle: true,
+    transferredByUnit: true,
     createdBy: {
       include: {
         organization: true,
