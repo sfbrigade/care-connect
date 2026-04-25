@@ -1707,7 +1707,87 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
     });
 
-    await t.test('marks a subject as legally released (simple sobered)', async () => {
+    await t.test('records sobered release from a pre-chair hold and finalizes the deflection', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'sobered',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReasonId, 'sobered');
+      assert.strictEqual(data.exitDestinationId, null);
+      assert.ok(data.releasedAt);
+      assert.ok(data.releasedById);
+      assert.ok(data.exitedAt);
+      assert.ok(data.completedAt);
+
+      // Verify DB state
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.releaseReasonId, 'sobered');
+      assert.ok(dbDeflection.completedAt);
+
+      // Verify the finalization is recorded as a second update entry
+      const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
+      const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
+      assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
+
+      // Verify bedType counters: a pre-chair hold never used a chair, so
+      // holds -> available with no occupied involvement.
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 1, holds: 4, inTransit: 3, available: 4 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
       const response = await app.inject()
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
@@ -1733,11 +1813,21 @@ test('/api/deflections', async (t) => {
       assert.ok(dbDeflection.releasedAt);
       assert.strictEqual(dbDeflection.completedAt, null);
 
-      // Verify deflection update history
+      // Verify the deflection lingers — only one update entry, no finalization
       const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
       const lastUpdate = updates[updates.length - 1];
       assert.strictEqual(lastUpdate.status, null);
       assert.strictEqual(lastUpdate.subjectStatus, 'RELEASED');
+
+      // Verify bedType counters are unchanged: the chair is still occupied
+      // until the care team marks the subject EXITED.
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 1);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('marks a subject as legally released (medical issue)', async () => {
