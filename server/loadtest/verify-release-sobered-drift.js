@@ -217,7 +217,7 @@ async function main () {
 
   if (fixApplied) {
     console.log('PASS: sobered release from a pre-chair hold finalized as expected.');
-    console.log(`  deflection: ACTIVE/READY_FOR_INTAKE -> COMPLETED/EXITED`);
+    console.log('  deflection: ACTIVE/READY_FOR_INTAKE -> COMPLETED/EXITED');
     console.log(`  bedType holds:    ${before.holds} -> ${after.holds}`);
     console.log(`  bedType occupied: ${before.occupied} -> ${after.occupied} (unchanged; no chair was used)`);
     console.log(`  bedType available: ${before.available} -> ${after.available}`);
@@ -226,8 +226,8 @@ async function main () {
   }
   if (bugReproduced) {
     console.log('FAIL: sobered release left bedType counters drifted.');
-    console.log(`  deflection: ACTIVE/READY_FOR_INTAKE -> ACTIVE/RELEASED  (still active, lingering)`);
-    console.log(`  bedType:    unchanged from BEFORE (no decrement of holds)`);
+    console.log('  deflection: ACTIVE/READY_FOR_INTAKE -> ACTIVE/RELEASED  (still active, lingering)');
+    console.log('  bedType:    unchanged from BEFORE (no decrement of holds)');
     console.log('release.js is skipping the bedType update for sobered release from a pre-chair hold.');
     console.log('See plans/release-sobered-bedtype-drift-bug.md for the proposed fix.');
     process.exit(2);

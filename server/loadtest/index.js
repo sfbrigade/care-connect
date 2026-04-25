@@ -1700,7 +1700,7 @@ function assertAllowedStatuses (results, allowedStatuses) {
   assertInvariant(
     results.every((result) => allowed.has(result.status)),
     'Unexpected response status returned.',
-    statusCounts,
+    statusCounts
   );
 }
 
