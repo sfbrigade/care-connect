@@ -172,4 +172,29 @@ describe('Custody', () => {
 
     expect(mockSetSessionState).not.toHaveBeenCalled();
   });
+
+  it('groups jail exits under the Transferred to jail section on the released tab', async () => {
+    mockSessionStateValue.current = 'released';
+    mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
+      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR') {
+        return Promise.resolve({ data: [] });
+      }
+
+      if (subjectStatus === 'RELEASED,EXITED') {
+        return Promise.resolve({
+          data: [
+            { id: 6, subjectStatus: 'RELEASED' },
+            { id: 7, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+          ],
+        });
+      }
+
+      return Promise.resolve({ data: [] });
+    });
+
+    renderCustody();
+
+    expect(await screen.findByText('Transferred to jail: 1')).toBeInTheDocument();
+    expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
+  });
 });
