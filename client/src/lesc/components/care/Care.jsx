@@ -35,7 +35,7 @@ const IN_CUSTODY_SECTIONS = [
 const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility for jail within the last 24 hours.' },
 ];
 const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 

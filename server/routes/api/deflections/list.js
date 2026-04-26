@@ -31,7 +31,9 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { page = '1', perPage = '25', active, handedOff, scope, includeIncident, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
-      const where = {};
+      const where = {
+        subject: { isNot: { anonymizedAt: { not: null } } },
+      };
       // Collect OR groups as AND-ed sub-clauses so multiple OR groups don't clobber each other.
       const addOrGroup = (conditions) => {
         where.AND = where.AND ?? [];
@@ -76,7 +78,7 @@ export default async function (fastify) {
           where.status = Deflection.HoldStatus.ACTIVE;
         } else {
           where.status = { not: Deflection.HoldStatus.ACTIVE };
-          where.subject = { isNot: null };
+          where.subjectId = { not: null };
         }
       }
 
