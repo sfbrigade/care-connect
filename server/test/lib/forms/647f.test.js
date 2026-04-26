@@ -6,7 +6,7 @@ import { transformData } from '#lib/forms/647f/generate.js';
 test('647f hospital cancellation appends the release narrative', () => {
   const data = transformData({
     id: 42,
-    chargeType: '11550 HS',
+    chargeType: 'HS_11550',
     behavior: 'Subject was unable to care for themself.',
     narcoticsSubstance: false,
     narcoticsParaphernalia: true,

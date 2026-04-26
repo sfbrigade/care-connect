@@ -278,7 +278,7 @@ function Deflection () {
                   <Box>
                     <Text c='dimmed'>Charge type</Text>
                     {deflection?.chargeType
-                      ? <Text>{deflection.chargeType}</Text>
+                      ? <Text>{t(`chargeType.${deflection.chargeType}`)}</Text>
                       : <Text c='red.6'>Incomplete</Text>}
                   </Box>
                 </Stack>

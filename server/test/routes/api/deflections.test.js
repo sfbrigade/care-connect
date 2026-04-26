@@ -213,7 +213,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().patch('/api/deflections/4').payload({
         behavior: 'This is the narrative text.',
         behaviorNarrative: 'Additional details from officer.',
-        chargeType: '11550 HS',
+        chargeType: 'HS_11550',
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -221,7 +221,7 @@ test('/api/deflections', async (t) => {
 
       assert.deepStrictEqual(data.behavior, 'This is the narrative text.');
       assert.deepStrictEqual(data.behaviorNarrative, 'Additional details from officer.');
-      assert.deepStrictEqual(data.chargeType, '11550 HS');
+      assert.deepStrictEqual(data.chargeType, 'HS_11550');
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
@@ -229,7 +229,7 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(deflection.behavior, 'This is the narrative text.');
       assert.deepStrictEqual(deflection.behaviorNarrative, 'Additional details from officer.');
-      assert.deepStrictEqual(deflection.chargeType, '11550 HS');
+      assert.deepStrictEqual(deflection.chargeType, 'HS_11550');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
@@ -1168,7 +1168,7 @@ test('/api/deflections', async (t) => {
           narcoticsParaphernalia: false,
           drugUseEvidence: false,
           drugType: null,
-          chargeType: '647(f) RWS',
+          chargeType: 'RWS_647F',
           behavior: 'Subject was unable to care for self.',
           behaviorNarrative: 'Additional narrative.',
           property: 'NONE',

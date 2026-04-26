@@ -1,4 +1,4 @@
-import { Prisma, DrugTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
+import { Prisma, DrugTypeEnum, ChargeTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -18,7 +18,7 @@ import User from './user.js';
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
   behaviorNarrative: z.string().nullable(),
-  chargeType: z.enum(['11550 HS', '647(f) RWS']).nullable(),
+  chargeType: z.enum(Object.values(ChargeTypeEnum)).catch(null).nullable(),
   narcoticsSubstance: z.boolean().nullable(),
   narcoticsParaphernalia: z.boolean().nullable(),
   drugUseEvidence: z.boolean().nullable(),

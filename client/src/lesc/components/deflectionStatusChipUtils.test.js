@@ -34,7 +34,7 @@ function buildDeflection (overrides = {}) {
     narcoticsParaphernalia: false,
     drugUseEvidence: false,
     drugType: null,
-    chargeType: '647(f) RWS',
+    chargeType: 'RWS_647F',
     behavior: 'Observed unsafe behavior',
     behaviorNarrative: 'Observed unsafe behavior',
     property: 'NONE',
