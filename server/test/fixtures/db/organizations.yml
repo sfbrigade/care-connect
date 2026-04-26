@@ -9,7 +9,7 @@ items:
   sfso:
     id: sfso
     name: 'SFSO'
-    defaultRoles: [CUSTODY]
+    defaultRoles: [FIELD, CUSTODY]
     createdBy: '@user1'
   connections:
     id: connections
