@@ -40,7 +40,7 @@ export default async function main (prisma) {
       lastName: 'User',
       isAdmin: false,
       organizationId: 'sfso',
-      roles: ['FIELD', 'CUSTODY', 'ORG_ADMIN'],
+      roles: ['FIELD', 'CUSTODY'],
       badgeNumber: '8765',
       mfaEnabled: false,
     },
