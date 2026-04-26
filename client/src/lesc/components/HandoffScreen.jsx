@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Button, Card, Container, Group, Stack, Text, Title } from '@mantine/core';
+import { Box, Button, Card, Center, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 
@@ -74,15 +74,24 @@ function HandoffScreen () {
   const { facility } = useFacilityContext();
   const seenIncidentsRef = useRef(new Map());
   const seenDeflectionsRef = useRef(new Map());
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    Api.deflections.initiateHandoff(true);
+    // Don't clear handoffReadyAt on unmount. The cleanup `initiateHandoff(false)`
+    // races with the mount's `initiateHandoff(true)` (StrictMode double-mount,
+    // or a prior visit's in-flight cleanup landing after the next visit's
+    // init), leaving the deflection un-claimable until the field user retries.
+    // The 3-min HANDOFF_READY_TTL on the server expires it naturally.
+    let cancelled = false;
+    Api.deflections.initiateHandoff(true).then(() => {
+      if (!cancelled) setIsReady(true);
+    });
     const interval = setInterval(() => {
       Api.deflections.initiateHandoff(true);
     }, 60_000);
     return () => {
+      cancelled = true;
       clearInterval(interval);
-      Api.deflections.initiateHandoff(false);
     };
   }, []);
 
@@ -169,23 +178,31 @@ function HandoffScreen () {
             </Title>
           </Stack>
 
-          <Stack gap='xl'>
-            {groups.map(({ incident, deflections }) => (
-              <Stack key={incident.id} gap='md'>
-                <Stack gap={4}>
-                  <Text size='md'>Incident {incident.id}</Text>
-                  <Text size='md' c='dimmed'>{formatIncidentSubtitle(incident)}</Text>
-                </Stack>
-                {deflections.map(deflection => (
-                  <HandoffHoldCard
-                    key={deflection.id}
-                    deflection={deflection}
-                    isHandedOff={!currentIds.has(deflection.id)}
-                  />
+          {isReady
+            ? (
+              <Stack gap='xl'>
+                {groups.map(({ incident, deflections }) => (
+                  <Stack key={incident.id} gap='md'>
+                    <Stack gap={4}>
+                      <Text size='md'>Incident {incident.id}</Text>
+                      <Text size='md' c='dimmed'>{formatIncidentSubtitle(incident)}</Text>
+                    </Stack>
+                    {deflections.map(deflection => (
+                      <HandoffHoldCard
+                        key={deflection.id}
+                        deflection={deflection}
+                        isHandedOff={!currentIds.has(deflection.id)}
+                      />
+                    ))}
+                  </Stack>
                 ))}
               </Stack>
-            ))}
-          </Stack>
+              )
+            : (
+              <Center py='xl'>
+                <Loader />
+              </Center>
+              )}
         </Stack>
       </Container>
       <ActionFooter>
