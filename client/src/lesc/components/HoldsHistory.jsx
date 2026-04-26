@@ -1,44 +1,26 @@
 import { useNavigate } from 'react-router';
 import { Box, Stack, Title, Text, Loader } from '@mantine/core';
-import { useQueries } from '@tanstack/react-query';
 
 import Hold from './Hold';
 import IncidentGroup from './IncidentGroup';
-import Api from '@/Api';
-import { getDeflectionActivityMs, groupDeflectionsByIncident, isInitialLoading, splitCurrentIncidentDeflections } from './holdsViewModel';
+import { groupDeflectionsByIncident, isInitialLoading } from './holdsViewModel';
 
-function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, hasActiveHolds = false, currentUserId }) {
+function HoldsHistory ({ deflections, isFetchingDeflections = false, currentUserId }) {
   const navigate = useNavigate();
   const showInitialLoading = isInitialLoading(isFetchingDeflections, deflections);
   const hasDeflections = (deflections?.length ?? 0) > 0;
 
-  // Coerce once at the top
-  const safeDeflections = deflections ?? [];
-  const { shouldShowCurrentIncidentGroup, currentIncidentDeflections, remainingDeflections } = splitCurrentIncidentDeflections(
-    safeDeflections,
-    incident,
-    hasActiveHolds
-  );
-  const incidentIdList = [...new Set(remainingDeflections.map((deflection) => String(deflection.incidentId)))];
-
-  const incidentQueries = useQueries({
-    queries: incidentIdList.map((incidentId) => ({
-      queryKey: ['incidents', incidentId],
-      queryFn: () => Api.incidents.get(incidentId).then((response) => response.data),
-      enabled: !!incidentId,
-      retry: false,
-    })),
-  });
-
-  const incidentsById = incidentIdList.reduce((acc, incidentId, index) => {
-    const query = incidentQueries[index];
-    if (query?.data) {
-      acc[incidentId] = query.data;
+  // Each deflection arrives with its own `incident` embedded (server-side
+  // include when `scope=history&includeIncident=true`), so we build the
+  // id → incident map straight from the response, no per-incident fetches.
+  const incidentsById = (deflections ?? []).reduce((acc, deflection) => {
+    if (deflection.incident && !acc[deflection.incidentId]) {
+      acc[deflection.incidentId] = deflection.incident;
     }
     return acc;
   }, {});
 
-  const groupedByIncident = groupDeflectionsByIncident(remainingDeflections, incidentsById);
+  const groupedByIncident = groupDeflectionsByIncident(deflections ?? [], incidentsById);
 
   return (
     <>
@@ -55,43 +37,23 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, incident, h
         </>
       )}
       {hasDeflections && (
-        <>
-          <Stack gap='md'>
-            {shouldShowCurrentIncidentGroup && currentIncidentDeflections.length > 0 && (
-              <IncidentGroup incident={incident} incidentId={incident?.id} gap='xs'>
-                {[...currentIncidentDeflections]
-                  .sort((a, b) => getDeflectionActivityMs(b) - getDeflectionActivityMs(a))
-                  .map((deflection) => (
-                    <Hold
-                      key={deflection.id}
-                      deflection={deflection}
-                      isHistory
-                      isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
-                      onDetailsClick={() => {
-                        navigate(`/holds/${deflection.id}`);
-                      }}
-                    />
-                  ))}
-              </IncidentGroup>
-            )}
-            {groupedByIncident.map((group) => (
-              <IncidentGroup key={`incident-${group.incidentId}`} incident={group.incident} incidentId={group.incidentId} gap='xs'>
-                {group.deflections.map((deflection) => (
-                  <Hold
-                    incident={incident}
-                    key={deflection.id}
-                    deflection={deflection}
-                    isHistory
-                    isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
-                    onDetailsClick={() => {
-                      navigate(`/holds/${deflection.id}`);
-                    }}
-                  />
-                ))}
-              </IncidentGroup>
-            ))}
-          </Stack>
-        </>
+        <Stack gap='md'>
+          {groupedByIncident.map((group) => (
+            <IncidentGroup key={`incident-${group.incidentId}`} incident={group.incident} incidentId={group.incidentId} gap='xs'>
+              {group.deflections.map((deflection) => (
+                <Hold
+                  key={deflection.id}
+                  deflection={deflection}
+                  isHistory
+                  isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
+                  onDetailsClick={() => {
+                    navigate(`/holds/${deflection.id}`);
+                  }}
+                />
+              ))}
+            </IncidentGroup>
+          ))}
+        </Stack>
       )}
     </>
   );

@@ -3,6 +3,11 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { createHead, UnheadProvider } from '@unhead/react/client';
 
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/600.css';
+import '@fontsource/roboto/700.css';
+
 import './i18n';
 import App from './App';
 import { defaultValue } from './StaticContext';
