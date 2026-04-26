@@ -35,16 +35,6 @@ export default async function main (prisma) {
       mfaEnabled: false,
     },
     {
-      email: 'sfso-dual@careconnectsf.org',
-      firstName: 'SFSO',
-      lastName: 'Dual',
-      isAdmin: false,
-      organizationId: 'sfso',
-      roles: ['FIELD', 'CUSTODY'],
-      badgeNumber: '5679',
-      mfaEnabled: false,
-    },
-    {
       email: 'care@careconnectsf.org',
       firstName: 'Care',
       lastName: 'User',
