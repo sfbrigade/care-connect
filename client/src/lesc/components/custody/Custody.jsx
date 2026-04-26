@@ -35,7 +35,7 @@ const IN_CUSTODY_SECTIONS = [
 const RELEASED_SECTIONS = [
   { status: 'RELEASED', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility for jail within the last 24 hours.' },
 ];
 
 function groupByStatus (deflections) {
@@ -51,15 +51,14 @@ function groupByStatus (deflections) {
 }
 
 function groupReleasedByStatus (deflections) {
-  function isTransferredToJailWithoutLegalRelease (deflection) {
+  function isTransferredToJail (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestinationId === 'jail' &&
-      !deflection?.releasedAt
+      deflection?.exitDestinationId === 'jail'
     );
   }
 
-  function isTransferredToHospitalWithoutLegalRelease (deflection) {
+  function isTransferredToHospital (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
       deflection?.exitDestinationId === 'hospital' &&
@@ -71,14 +70,14 @@ function groupReleasedByStatus (deflections) {
     RELEASED: (deflections ?? []).filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: (deflections ?? []).filter(
       d => d.subjectStatus === 'EXITED' &&
-        !isTransferredToJailWithoutLegalRelease(d) &&
-        !isTransferredToHospitalWithoutLegalRelease(d)
+        !isTransferredToJail(d) &&
+        !isTransferredToHospital(d)
     ),
     TRANSFERRED_TO_JAIL: (deflections ?? []).filter(
-      d => isTransferredToJailWithoutLegalRelease(d)
+      d => isTransferredToJail(d)
     ),
     TRANSFERRED_TO_HOSPITAL: (deflections ?? []).filter(
-      d => isTransferredToHospitalWithoutLegalRelease(d)
+      d => isTransferredToHospital(d)
     ),
   };
 }
@@ -315,6 +314,7 @@ function Custody () {
       </Container>
       <ActionFooter>
         <Button
+          data-testid='scan-code-btn'
           variant='secondary'
           leftSection={<ScanTransferCodeIcon size={20} color='var(--mantine-color-indigo-6)' />}
           onClick={() => setScanModalOpened(true)}

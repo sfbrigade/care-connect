@@ -54,7 +54,7 @@ function Login () {
   });
 
   const onLoginSuccess = useCallback((userData) => {
-    queryClient.setQueryData(['users', 'me'], userData);
+    queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...userData }));
     if (userData.organizationId === 'sfpd' || userData.organizationId === 'sfso') {
       navigate('/units', { replace: true, state: { from } });
     } else {
@@ -167,6 +167,7 @@ function Login () {
                 <Stack align='center' mt='3rem'>
                   <Button
                     type='submit'
+                    data-testid='login-submit-btn'
                     loading={loginMutation.isPending}
                   >
                     Continue

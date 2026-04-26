@@ -60,6 +60,10 @@ function handleError (error) {
     }
   } else {
     errors._form = error.message;
+    errors._status = error.response?.status;
+    if (error.response?.data?.code) {
+      errors._code = error.response.data.code;
+    }
   }
   throw errors;
 }
@@ -218,8 +222,14 @@ const Api = {
     removeService (id, serviceTypeId) {
       return instance.delete(`/api/facilities/${id}/services/${serviceTypeId}`).catch(handleError);
     },
-    activeIncident (id) {
-      return instance.get(`/api/facilities/${id}/active-incident`);
+    myHolds (id) {
+      return instance.get(`/api/facilities/${id}/my-holds`);
+    },
+    arrived (id) {
+      return instance.post(`/api/facilities/${id}/arrived`);
+    },
+    left (id) {
+      return instance.post(`/api/facilities/${id}/left`);
     },
     updateStatus (id, data) {
       return instance.post(`/api/facilities/${id}/status`, data).catch(handleError);
@@ -304,21 +314,9 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/incidents/${id}`, data).catch(handleError);
     },
-    arrived (id) {
-      return instance.patch(`/api/incidents/${id}/arrived`).catch(handleError);
-    },
-    left (id) {
-      return instance.patch(`/api/incidents/${id}/left`).catch(handleError);
-    },
-    extend (id) {
-      return instance.patch(`/api/incidents/${id}/extend`).catch(handleError);
-    },
-    cancel (id, { cancelReasonId } = {}) {
-      return instance.delete(`/api/incidents/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
-    },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, handedOff, subjectStatus } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, subjectStatus, perPage } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -332,8 +330,17 @@ const Api = {
       if (handedOff) {
         params.handedOff = handedOff;
       }
+      if (scope) {
+        params.scope = scope;
+      }
+      if (includeIncident) {
+        params.includeIncident = 'true';
+      }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
+      }
+      if (perPage) {
+        params.perPage = perPage;
       }
       return instance.get('/api/deflections', { params });
     },
@@ -400,6 +407,9 @@ const Api = {
     },
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
+    },
+    extend (deflectionIds) {
+      return instance.patch('/api/deflections/extend', { deflectionIds }).catch(handleError);
     },
     cancelReasons: {
       index () {

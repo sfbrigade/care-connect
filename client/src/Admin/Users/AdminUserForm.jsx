@@ -80,7 +80,7 @@ function AdminUserForm () {
       showToast('The user\'s profile has been updated', 'success');
       queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
-        queryClient.setQueryData(['users', 'me'], response.data);
+        queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       }
       navigate('/admin/users');
     },

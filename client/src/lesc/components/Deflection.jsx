@@ -8,9 +8,9 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
-import CancelIncidentModal from './CancelIncidentModal';
 import Header from '@/components/Header';
 import { useFacilityContext } from '@/FacilityContext';
 import ActionFooter from '@/components/ActionFooter';
@@ -28,11 +28,7 @@ function Deflection () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
-  });
+  const { user } = useAuthContext();
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -41,6 +37,7 @@ function Deflection () {
 
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Person X';
   const address = formatAddress(deflection?.subject ?? {});
+  const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
   const detailsComplete = deflection ? isValidDeflection(deflection) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
@@ -64,7 +61,8 @@ function Deflection () {
     'DEATH_IN_CUSTODY',
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
-  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
+  const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
+  const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
   const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
   const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
@@ -89,15 +87,8 @@ function Deflection () {
   const cancelDeflectionMutation = useMutation({
     mutationFn: (data) => Api.deflections.cancel(id, data),
     onSuccess: () => {
-      const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-      if (cachedDeflections) {
-        const updatedDeflections = cachedDeflections.filter(deflection => deflection.id !== id);
-        queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-        if (updatedDeflections.length === 0 && !incident?.arrivedAt) {
-          queryClient.invalidateQueries(['facilities', facility.id, 'active-incident']);
-        }
-      }
-      queryClient.invalidateQueries(['facilities', facility.id, 'bed-types']);
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       setShowCancelModal(false);
       showToast('Hold cancelled', 'success', 4000, `You cancelled the hold for ${name}.`);
       navigate('/holds');
@@ -112,60 +103,7 @@ function Deflection () {
     },
   });
 
-  const cancelIncidentMutation = useMutation({
-    mutationFn: ({ incidentId, cancelReasonId }) => Api.incidents.cancel(incidentId, { cancelReasonId }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['facilities', facility.id, 'bed-types'],
-      });
-      await queryClient.setQueryData(
-        ['facilities', facility.id, 'active-incident'],
-        null
-      );
-      await queryClient.removeQueries({
-        queryKey: ['deflections', incident?.id, 'active'],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['deflections', facility.id, 'inactive'],
-      });
-      setShowCancelModal(false);
-      showToast('Incident canceled', 'success', 4000, 'Any chairs have been released. Ready for new incident.');
-      navigate('/holds');
-    },
-    onError: (error) => {
-      const isNetworkError = !error?.response;
-
-      if (isNetworkError) {
-        showToast('Connection failure', 'warning', 4000, 'Failed to cancel incident. Check your connection and try again.');
-        return;
-      }
-
-      if (error?.response?.status === 422 && error?.response?.data?.error) {
-        showToast(error.response.data.error, 'error');
-        return;
-      }
-
-      showToast('We couldn’t cancel the incident', 'error', 4000, 'Something went wrong. Try again later.');
-    },
-  });
-
-  const canCancelIncident = incident?.permissions?.canCancelIncident ?? true;
-  const activeHoldsCount = incident?.totalActiveHolds ?? 0;
-  const shouldCancelIncidentWithHold =
-    canCancelIncident &&
-    !!deflection?.subjectId &&
-    deflection?.status === 'ACTIVE' &&
-    activeHoldsCount === 1;
-
   async function onCancelHoldConfirmed (cancelReasonId) {
-    if (shouldCancelIncidentWithHold && incident?.id) {
-      await cancelIncidentMutation.mutateAsync({
-        incidentId: incident.id,
-        cancelReasonId,
-      });
-      return;
-    }
-
     await cancelDeflectionMutation.mutateAsync({
       cancelReasonId,
     });
@@ -200,7 +138,7 @@ function Deflection () {
               )}
             </Group>
             <Group gap='xs'>
-              <Text size='md'>Incident {incident ? incident.id : ''}</Text>
+              <Text size='md'>Incident {deflection ? deflection.incidentId : ''}</Text>
               <Text c='gray.5' size='md'>•</Text>
               <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
             </Group>
@@ -450,7 +388,7 @@ function Deflection () {
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate('/incident')}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/incident/${deflection?.incidentId}`)}>{isValidIncident(incident) ? 'Edit incident' : 'Finish incident'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -463,7 +401,6 @@ function Deflection () {
           <Button
             onClick={() => setShowCancelModal(true)}
             variant='destructive'
-            disabled={!incident}
           >
             Cancel hold
           </Button>
@@ -482,23 +419,13 @@ function Deflection () {
         </ActionFooter>
       )}
       {(showActionFooter || (isCustodyTransferred && doc647f)) && <Box h='120px' />}
-      {!!deflection && showCancelModal && (!shouldCancelIncidentWithHold) && (
+      {!!deflection && showCancelModal && (
         <CancelHoldModal
-          deflection={deflection}
+          deflections={[deflection]}
           opened={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={onCancelHoldConfirmed}
           loading={cancelDeflectionMutation.isPending}
-        />
-      )}
-      {!!deflection && showCancelModal && shouldCancelIncidentWithHold && (
-        <CancelIncidentModal
-          opened={showCancelModal}
-          onClose={() => setShowCancelModal(false)}
-          onConfirm={onCancelHoldConfirmed}
-          requiresReason
-          isLastHoldDetailedCancellation
-          loading={cancelIncidentMutation.isPending}
         />
       )}
     </>

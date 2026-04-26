@@ -19,16 +19,17 @@ test('/api/users', async (t) => {
         url: '/api/users'
       }).headers(adminHeaders);
       const data = JSON.parse(response.payload);
-      assert.deepStrictEqual(data.length, 9);
+      assert.deepStrictEqual(data.length, 10);
       assert.deepStrictEqual(data[0].email, 'admin.user@test.com');
       assert.deepStrictEqual(data[1].email, 'another.user@test.com');
       assert.deepStrictEqual(data[2].email, 'deactivated.user@test.com');
-      assert.deepStrictEqual(data[3].email, 'facilityadmin@test.com');
-      assert.deepStrictEqual(data[4].email, 'orgadmin@test.com');
-      assert.deepStrictEqual(data[5].email, 'regular.user@test.com');
-      assert.deepStrictEqual(data[6].email, 'careuser1@test.com');
-      assert.deepStrictEqual(data[7].email, 'sfsouser1@test.com');
-      assert.deepStrictEqual(data[8].email, 'field.noholds@test.com');
+      assert.deepStrictEqual(data[3].email, 'dual.user@test.com');
+      assert.deepStrictEqual(data[4].email, 'facilityadmin@test.com');
+      assert.deepStrictEqual(data[5].email, 'orgadmin@test.com');
+      assert.deepStrictEqual(data[6].email, 'regular.user@test.com');
+      assert.deepStrictEqual(data[7].email, 'careuser1@test.com');
+      assert.deepStrictEqual(data[8].email, 'sfsouser1@test.com');
+      assert.deepStrictEqual(data[9].email, 'field.noholds@test.com');
     });
   });
 
@@ -65,11 +66,61 @@ test('/api/users', async (t) => {
         prop115Certified: false,
         unit: null,
         unitId: null,
+        hasActiveHolds: false,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
         deactivatedAt: null,
         deletedAt: null
       });
+    });
+
+    await t.test('hasActiveHolds is false for single-role users even with active holds', async () => {
+      const fieldUser = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: fieldUser.id,
+          currentOfficerId: fieldUser.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      const response = await app.inject({ url: '/api/users/me' }).headers(userHeaders);
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.hasActiveHolds, false);
+    });
+
+    await t.test('hasActiveHolds is false for dual-role user with no field work', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const response = await app.inject({ url: '/api/users/me' }).headers(headers);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.hasActiveHolds, false);
+    });
+
+    await t.test('hasActiveHolds is true for dual-role user with active hold', async () => {
+      const headers = await authenticate(app, 'dual.user@test.com', 'test');
+      const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: dualUser.id,
+          currentOfficerId: dualUser.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      const response = await app.inject({ url: '/api/users/me' }).headers(headers);
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.hasActiveHolds, true);
     });
   });
 
@@ -407,6 +458,80 @@ test('/api/users', async (t) => {
         },
       });
       assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
+  await t.test('User.hasActiveHolds', async (t) => {
+    // field.noholds@test.com has no deflections in the seed fixtures
+    await t.test('returns false when the user has no deflections', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      assert.equal(await user.hasActiveHolds(prisma), false);
+    });
+
+    // regular.user@test.com already has ACTIVE/DETAINED deflections in seed fixtures
+    await t.test('returns true when user is currentOfficer on an ACTIVE, DETAINED deflection', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      const user = new User(data);
+      assert.equal(await user.hasActiveHolds(prisma), true);
+    });
+
+    await t.test('returns true for ONSITE_AWAITING_TRANSFER', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'ACTIVE',
+          subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), true);
+    });
+
+    await t.test('returns false for AWAITING_INTAKE (already transferred)', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: user.id,
+          currentOfficerId: user.id,
+          status: 'ACTIVE',
+          subjectStatus: 'AWAITING_INTAKE',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), false);
+    });
+
+    await t.test('returns false when currentOfficer is a different user', async () => {
+      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
+      const user = new User(data);
+      const other = await prisma.user.findUnique({ where: { email: 'another.user@test.com' } });
+      const incident = await prisma.incident.findFirst();
+      await prisma.deflection.create({
+        data: {
+          facilityId: incident.facilityId,
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: other.id,
+          currentOfficerId: other.id,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+      assert.equal(await user.hasActiveHolds(prisma), false);
     });
   });
 });

@@ -38,11 +38,6 @@ function DeflectionForm () {
   });
   const [recorderBusy, setRecorderBusy] = useState(false);
 
-  const { data: incident } = useQuery({
-    queryKey: ['facilities', facility.id, 'active-incident'],
-    queryFn: () => Api.facilities.activeIncident(facility.id).then(response => response.data),
-  });
-
   const { data: deflection, isLoading } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
@@ -82,13 +77,13 @@ function DeflectionForm () {
 
   useEffect(() => {
     const nextGeneratedNarrative = buildDeflectionNarrative({
-      incident,
+      incident: deflection?.incident,
       drugType: narrativeContext.drugType,
       drugUseEvidence: narrativeContext.drugUseEvidence,
     });
     generatedNarrativeRef.current = nextGeneratedNarrative;
     setGeneratedNarrative(nextGeneratedNarrative);
-  }, [incident, narrativeContext.drugType, narrativeContext.drugUseEvidence]);
+  }, [deflection?.incident, narrativeContext.drugType, narrativeContext.drugUseEvidence]);
 
   function normalizeFormValues (values) {
     return {
@@ -120,12 +115,7 @@ function DeflectionForm () {
 
   async function updateDeflectionCache (updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
-    const cachedDeflections = queryClient.getQueryData(['deflections', incident?.id, 'active']);
-    if (cachedDeflections) {
-      const updatedDeflections = [...cachedDeflections];
-      updatedDeflections[updatedDeflections.findIndex(deflection => deflection.id === id)] = updatedDeflection;
-      queryClient.setQueryData(['deflections', incident?.id, 'active'], updatedDeflections);
-    }
+    queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
   }
 
   const autoSaveMutation = useMutation({
@@ -171,7 +161,7 @@ function DeflectionForm () {
       </Header>
       <Container>
         <Group gap='xs' mb='xs'>
-          <Text size='md'>Incident {incident ? incident.id : ''}</Text>
+          <Text size='md'>Incident {deflection ? deflection.incidentId : ''}</Text>
           <Text c='gray.5' size='md'>•</Text>
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
