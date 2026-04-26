@@ -43,6 +43,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
+  const [careAccordionValues, setCareAccordionValues] = useState(['substance', 'deflection']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -78,6 +79,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const releaseTimingChip = releaseTiming(deflection);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
+  const hasBehavioralObservations = Boolean(deflection?.behavior);
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
@@ -348,23 +350,56 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               </Group>
             )}
           </Stack>
-          {isCareView && hasDrugUseEvidence && (
-            <>
-              <Divider />
-              <Stack gap='sm'>
-                <Title order={3}>Substance-related details</Title>
-                <Box>
-                  <Text c='dimmed'>Signs of substance use</Text>
-                  <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
-                </Box>
-                {deflection.drugUseEvidence === true && deflection?.drugType && (
-                  <Box>
-                    <Text c='dimmed'>Substance used (suspected)</Text>
-                    <Text>{t(`drugType.${deflection.drugType}`)}</Text>
-                  </Box>
-                )}
-              </Stack>
-            </>
+          {isCareView && (hasDrugUseEvidence || hasBehavioralObservations) && (
+            <Accordion
+              variant='section'
+              multiple
+              value={careAccordionValues}
+              onChange={setCareAccordionValues}
+            >
+              {hasDrugUseEvidence && (
+                <>
+                  <Divider />
+                  <Accordion.Item value='substance'>
+                    <Accordion.Control>
+                      <Title order={3}>Substance-related details</Title>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>Signs of substance use</Text>
+                          <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                        </Box>
+                        {deflection.drugUseEvidence === true && deflection?.drugType && (
+                          <Box>
+                            <Text c='dimmed'>Substance used (suspected)</Text>
+                            <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                          </Box>
+                        )}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </>
+              )}
+              {hasBehavioralObservations && (
+                <>
+                  <Divider />
+                  <Accordion.Item value='deflection'>
+                    <Accordion.Control>
+                      <Title order={3}>Behavioral observations</Title>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>Arrestable behavior</Text>
+                          <Text>{deflection.behavior}</Text>
+                        </Box>
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                </>
+              )}
+            </Accordion>
           )}
           {!isCareView && (
             <>
@@ -569,6 +604,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       {careFooterState.showFooter && (
         <ActionFooter>
           <Button
+            data-testid='complete-intake-btn'
             variant='secondary'
             onClick={() => {
               if (careFooterState.primaryAction === 'complete-intake') {
@@ -697,6 +733,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Menu>
                   )}
                   <Button
+                    data-testid={isAwaitingSafetyCheck ? 'safety-check-btn' : (showPrimaryPrintCertificate ? 'print-certificate-btn' : 'start-release-btn')}
                     onClick={() => {
                       if (isAwaitingSafetyCheck) {
                         setSafetyCheckResultModalOpened(true);
