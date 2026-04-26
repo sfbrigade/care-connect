@@ -181,6 +181,21 @@ describe('Holds', () => {
     expect(screen.queryByText('RESET')).not.toBeInTheDocument();
   });
 
+  it('fetches history via a single scope=history call with embedded incident', async () => {
+    renderHolds();
+
+    await waitFor(() => {
+      expect(mockDeflectionsList).toHaveBeenCalledWith(expect.objectContaining({
+        facilityId: 1,
+        scope: 'history',
+        includeIncident: true,
+      }));
+    });
+    // Guard against regressing to the old three-bucket fetch.
+    expect(mockDeflectionsList).not.toHaveBeenCalledWith(expect.objectContaining({ active: false }));
+    expect(mockDeflectionsList).not.toHaveBeenCalledWith(expect.objectContaining({ handedOff: true }));
+  });
+
   it('shows the departure toast after tapping "I\'ve left"', async () => {
     renderHolds();
 
