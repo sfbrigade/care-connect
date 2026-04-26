@@ -94,7 +94,7 @@ function LegalReleaseQuestions () {
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       if (isExitRelease) {
         showToast('Exit recorded', 'success', 4000, 'Person now appears in "Exited facility" under "Legally released" (for 24 hours).');
-        navigateWithOptionalSurvey(`/custody/${id}`);
+        navigateWithOptionalSurvey(backTo);
         return;
       }
       window.sessionStorage.setItem(RELEASE_TOAST_KEY, JSON.stringify({
@@ -104,7 +104,7 @@ function LegalReleaseQuestions () {
       }));
       window.sessionStorage.setItem('_session-custody', 'released');
       window.sessionStorage.setItem('custodyHighlightTarget', String(id));
-      navigateWithOptionalSurvey(`/custody/${id}`);
+      navigateWithOptionalSurvey('/custody');
     },
     onError: (error) => {
       const status = error?.response?.status;

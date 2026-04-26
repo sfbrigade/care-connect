@@ -5,10 +5,6 @@ import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '@/lesc/com
 /** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
 export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
 
-/**
- * After a SFSO legal release or SFPD leaves facility, either navigates immediately or waits 3s
- * and opens the satisfaction survey modal, then optionally navigates.
- */
 function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
   const shouldShowSatisfactionSurvey = isSatisfactionSurveyEnabled();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);

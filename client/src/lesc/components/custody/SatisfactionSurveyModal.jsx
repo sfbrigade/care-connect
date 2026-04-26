@@ -6,7 +6,6 @@ import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 
 export const SATISFACTION_SURVEY_FLAG_KEY = 'satisfactionSurveyEnabled';
-export const SATISFACTION_SURVEY_RESPONSES_KEY = 'satisfactionSurveyResponses';
 export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'satisfactionSurveyNextEligibleAt';
 
 const INITIAL_ANSWERS = {
@@ -25,10 +24,16 @@ export function isSatisfactionSurveyEnabled () {
   if (typeof window === 'undefined') return true;
 
   const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-  if (!storedNextEligibleAt) return true;
+  if (!storedNextEligibleAt) {
+    scheduleNextSatisfactionSurveyEligibility();
+    return false;
+  }
 
   const nextEligibleAt = Number(storedNextEligibleAt);
-  if (!Number.isFinite(nextEligibleAt)) return true;
+  if (!Number.isFinite(nextEligibleAt)) {
+    scheduleNextSatisfactionSurveyEligibility();
+    return false;
+  }
 
   return Date.now() >= nextEligibleAt;
 }
@@ -41,23 +46,6 @@ export function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
   const nextEligibleAt = nextEligibleDate.getTime();
   window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(nextEligibleAt));
   return nextEligibleAt;
-}
-
-export function appendSatisfactionSurveyResponse (deflectionId, didCompleteSurvey, answers, { department } = {}) {
-  const previousResponses = JSON.parse(window.sessionStorage.getItem(SATISFACTION_SURVEY_RESPONSES_KEY) || '[]');
-  window.sessionStorage.setItem(
-    SATISFACTION_SURVEY_RESPONSES_KEY,
-    JSON.stringify([
-      ...previousResponses,
-      {
-        deflectionId: String(deflectionId),
-        department,
-        didCompleteSurvey,
-        answers,
-        createdAt: new Date().toISOString(),
-      },
-    ])
-  );
 }
 
 function SatisfactionSurveyModal ({
