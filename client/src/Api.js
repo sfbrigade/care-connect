@@ -316,7 +316,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, handedOff, subjectStatus } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, subjectStatus, perPage } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -330,8 +330,17 @@ const Api = {
       if (handedOff) {
         params.handedOff = handedOff;
       }
+      if (scope) {
+        params.scope = scope;
+      }
+      if (includeIncident) {
+        params.includeIncident = 'true';
+      }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
+      }
+      if (perPage) {
+        params.perPage = perPage;
       }
       return instance.get('/api/deflections', { params });
     },

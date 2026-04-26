@@ -45,9 +45,9 @@ let mailer;
 export function configureMailer (lib) {
   const transport = lib.createTransport(options);
 
-  mailer = new Email({
+  const config = {
     message: {
-      from: process.env.SMTP_FROM_EMAIL_ADDRESS,
+      from: `"${process.env.VITE_SITE_TITLE}" <${process.env.SMTP_FROM_EMAIL_ADDRESS}>`,
     },
     send: true,
     preview: false,
@@ -58,7 +58,12 @@ export function configureMailer (lib) {
       },
     },
     juice: false,
-  });
+  };
+  if (process.env.SMTP_REPLY_TO_EMAIL_ADDRESS) {
+    config.message.replyTo = `"${process.env.VITE_SITE_TITLE}" <${process.env.SMTP_REPLY_TO_EMAIL_ADDRESS}>`;
+  }
+
+  mailer = new Email(config);
 }
 
 configureMailer(nodemailer);
