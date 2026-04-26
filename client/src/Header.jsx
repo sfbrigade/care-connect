@@ -64,9 +64,9 @@ function Header ({ opened, close, toggle, logout }) {
   useEffect(() => {
     if (!routeMode) return;
     // Don't persist a CUSTODY landing if the guard is about to bounce the
-    // user back for active field work — leaves localStorage on FIELD.
+    // user back for active holds — leaves localStorage on FIELD.
     const latest = queryClient.getQueryData(['users', 'me']);
-    if (routeMode === 'CUSTODY' && latest?.hasActiveFieldWork) return;
+    if (routeMode === 'CUSTODY' && latest?.hasActiveHolds) return;
     writeStoredWorkMode(routeMode);
     setStoredMode(routeMode);
   }, [routeMode, queryClient]);
@@ -78,7 +78,7 @@ function Header ({ opened, close, toggle, logout }) {
 
   // Share the cache key with AuthContextProvider so only one /api/users/me
   // query exists. This observer adds a poll interval for dual-role users and
-  // provides hasActiveFieldWork for the work-mode submenu.
+  // provides hasActiveHolds for the work-mode submenu.
   const { data: me, isLoading } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: fetchMe,
@@ -87,7 +87,7 @@ function Header ({ opened, close, toggle, logout }) {
     refetchOnMount: 'always',
   });
 
-  const hasActiveFieldWork = !!me?.hasActiveFieldWork;
+  const hasActiveHolds = !!me?.hasActiveHolds;
 
   const handleMenuOpen = useCallback(() => {
     if (isDualRole) {
@@ -99,11 +99,11 @@ function Header ({ opened, close, toggle, logout }) {
     close();
     if (targetMode === workMode) return;
     // Force a fresh users.me fetch before acting. Hold-changing mutations
-    // elsewhere don't invalidate this key, so the cached hasActiveFieldWork
+    // elsewhere don't invalidate this key, so the cached hasActiveHolds
     // can lag until the next poll tick.
     await queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     const latest = queryClient.getQueryData(['users', 'me']);
-    const blocked = targetMode === 'CUSTODY' && !!latest?.hasActiveFieldWork;
+    const blocked = targetMode === 'CUSTODY' && !!latest?.hasActiveHolds;
     if (blocked) {
       showToast(BLOCKED_TOAST.title, 'error', 5000, BLOCKED_TOAST.body);
       return;
@@ -190,7 +190,7 @@ function Header ({ opened, close, toggle, logout }) {
                     </Menu.Item>
                     {['FIELD', 'CUSTODY'].map((m) => {
                       const isCurrent = m === workMode;
-                      const isBlocked = m === 'CUSTODY' && hasActiveFieldWork && !isCurrent && !isLoading;
+                      const isBlocked = m === 'CUSTODY' && hasActiveHolds && !isCurrent && !isLoading;
                       return (
                         <Menu.Item
                           key={m}

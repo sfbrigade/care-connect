@@ -31,7 +31,7 @@ function AppRedirects ({ children }) {
       }
       return <Navigate to={to} replace />;
     },
-    { hasActiveFieldWork: !!data?.hasActiveFieldWork }
+    { hasActiveHolds: !!data?.hasActiveHolds }
   );
   return result || children;
 }

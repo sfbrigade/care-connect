@@ -4,7 +4,7 @@ import { z } from 'zod';
 import User from '#models/user.js';
 
 const MeResponseSchema = User.ResponseSchema.extend({
-  hasActiveFieldWork: z.boolean(),
+  hasActiveHolds: z.boolean(),
 });
 
 export default async function (fastify, opts) {
@@ -20,13 +20,13 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       if (request.user?.isActive) {
-        const hasActiveFieldWork = (request.user.isField && request.user.isCustody)
-          ? await request.user.hasActiveFieldWork(fastify.prisma)
+        const hasActiveHolds = (request.user.isField && request.user.isCustody)
+          ? await request.user.hasActiveHolds(fastify.prisma)
           : false;
         return reply.send({
           ...request.user.toJSON(),
           pictureUrl: request.user.pictureUrl,
-          hasActiveFieldWork,
+          hasActiveHolds,
         });
       }
       return reply.status(StatusCodes.NO_CONTENT).send();

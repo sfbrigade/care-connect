@@ -66,7 +66,7 @@ test('/api/users', async (t) => {
         prop115Certified: false,
         unit: null,
         unitId: null,
-        hasActiveFieldWork: false,
+        hasActiveHolds: false,
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
         deactivatedAt: null,
@@ -74,7 +74,7 @@ test('/api/users', async (t) => {
       });
     });
 
-    await t.test('hasActiveFieldWork is false for single-role users even with active holds', async () => {
+    await t.test('hasActiveHolds is false for single-role users even with active holds', async () => {
       const fieldUser = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
       const incident = await prisma.incident.findFirst();
       await prisma.deflection.create({
@@ -91,18 +91,18 @@ test('/api/users', async (t) => {
       });
       const response = await app.inject({ url: '/api/users/me' }).headers(userHeaders);
       const data = JSON.parse(response.body);
-      assert.strictEqual(data.hasActiveFieldWork, false);
+      assert.strictEqual(data.hasActiveHolds, false);
     });
 
-    await t.test('hasActiveFieldWork is false for dual-role user with no field work', async () => {
+    await t.test('hasActiveHolds is false for dual-role user with no field work', async () => {
       const headers = await authenticate(app, 'dual.user@test.com', 'test');
       const response = await app.inject({ url: '/api/users/me' }).headers(headers);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.strictEqual(data.hasActiveFieldWork, false);
+      assert.strictEqual(data.hasActiveHolds, false);
     });
 
-    await t.test('hasActiveFieldWork is true for dual-role user with active hold', async () => {
+    await t.test('hasActiveHolds is true for dual-role user with active hold', async () => {
       const headers = await authenticate(app, 'dual.user@test.com', 'test');
       const dualUser = await prisma.user.findUnique({ where: { email: 'dual.user@test.com' } });
       const incident = await prisma.incident.findFirst();
@@ -120,7 +120,7 @@ test('/api/users', async (t) => {
       });
       const response = await app.inject({ url: '/api/users/me' }).headers(headers);
       const data = JSON.parse(response.body);
-      assert.strictEqual(data.hasActiveFieldWork, true);
+      assert.strictEqual(data.hasActiveHolds, true);
     });
   });
 
@@ -532,33 +532,6 @@ test('/api/users', async (t) => {
         },
       });
       assert.equal(await user.hasActiveHolds(prisma), false);
-    });
-  });
-
-  await t.test('User.hasActiveFieldWork', async (t) => {
-    await t.test('returns false when user has no active holds', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'field.noholds@test.com' } });
-      const user = new User(data);
-      assert.equal(await user.hasActiveFieldWork(prisma), false);
-    });
-
-    await t.test('returns true when user has an active hold', async () => {
-      const data = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
-      const user = new User(data);
-      const incident = await prisma.incident.findFirst();
-      await prisma.deflection.create({
-        data: {
-          facilityId: incident.facilityId,
-          incidentId: incident.id,
-          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
-          createdById: user.id,
-          currentOfficerId: user.id,
-          status: 'ACTIVE',
-          subjectStatus: 'DETAINED',
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-      assert.equal(await user.hasActiveFieldWork(prisma), true);
     });
   });
 });

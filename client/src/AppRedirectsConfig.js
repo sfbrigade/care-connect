@@ -45,16 +45,16 @@ function isCustodyPath (pathname) {
   return pathname === '/custody' || pathname.startsWith('/custody/');
 }
 
-export function handleRedirects (authContext, location, pathname, handler, { hasActiveFieldWork = false } = {}) {
-  // Work-mode block: a dual-role user with active field work (open holds or
-  // an open arrival) cannot enter custody routes. Route guards otherwise let
-  // them through because they hold the CUSTODY role.
+export function handleRedirects (authContext, location, pathname, handler, { hasActiveHolds = false } = {}) {
+  // Work-mode block: a dual-role user with active holds cannot enter custody
+  // routes. Route guards otherwise let them through because they hold the
+  // CUSTODY role.
   if (
     authContext.user &&
     isCustodyPath(pathname) &&
     authContext.user.roles?.includes(UserRole.FIELD) &&
     authContext.user.roles?.includes(UserRole.CUSTODY) &&
-    hasActiveFieldWork
+    hasActiveHolds
   ) {
     return handler('/holds');
   }

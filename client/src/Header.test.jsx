@@ -71,7 +71,7 @@ function renderHeader (user, pathname = '/', facility = null) {
 }
 
 beforeEach(() => {
-  meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: false } });
+  meMock.mockResolvedValue({ status: 200, data: { hasActiveHolds: false } });
 });
 
 afterEach(() => {
@@ -126,8 +126,8 @@ describe('Header — Work mode submenu', () => {
     );
   });
 
-  it('blocks CUSTODY click when hasActiveFieldWork and shows error toast', async () => {
-    meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: true } });
+  it('blocks CUSTODY click when hasActiveHolds and shows error toast', async () => {
+    meMock.mockResolvedValue({ status: 200, data: { hasActiveHolds: true } });
     renderHeader(
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] },
       '/holds'
