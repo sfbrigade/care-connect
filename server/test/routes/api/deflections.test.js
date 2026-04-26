@@ -638,6 +638,62 @@ test('/api/deflections', async (t) => {
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     });
+
+    await t.test('records exit to jail from legally released and releases occupied chair', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 1, holds: 4, inTransit: 3, available: 4 },
+      });
+
+      const releasedAt = new Date();
+      const testDeflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: 1,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          subjectStatus: 'RELEASED',
+          releasedAt,
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          property: 'SMALL',
+          propertyDetails: 'Black backpack',
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post(`/api/deflections/${testDeflection.id}/exit-to-jail`)
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(data.exitDestinationId, 'jail');
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+      assert.strictEqual(data.propertyReturned, true);
+      assert.ok(data.propertyReturnedAt);
+      assert.ok(data.propertyReturnedById);
+      assert.ok(data.releasedAt);
+      assert.strictEqual(data.releasedById, '49acdf99-536f-49ac-8138-1c77e5087697');
+
+      const updatedDeflection = await prisma.deflection.findUnique({ where: { id: testDeflection.id } });
+      assert.deepStrictEqual(updatedDeflection.subjectStatus, 'EXITED');
+      assert.deepStrictEqual(updatedDeflection.exitDestinationId, 'jail');
+      assert.ok(updatedDeflection.releasedAt);
+      assert.strictEqual(updatedDeflection.releasedById, '49acdf99-536f-49ac-8138-1c77e5087697');
+      assert.strictEqual(updatedDeflection.propertyReturned, true);
+      assert.ok(updatedDeflection.propertyReturnedAt);
+      assert.ok(updatedDeflection.propertyReturnedById);
+
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 5);
+    });
   });
 
   await t.test('POST /:id/record-death', async (t) => {

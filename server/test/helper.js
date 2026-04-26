@@ -31,6 +31,9 @@ const __dirname = path.dirname(__filename);
 const AppPath = path.join(__dirname, '..', 'app.js');
 const POSTGRES_PORT = 5432;
 const MINIO_PORT = 9000;
+const MINIO_CONSOLE_PORT = 9001;
+const MINIO_ROOT_USER = 'minioadmin';
+const MINIO_ROOT_PASSWORD = 'minioadmin';
 const TEST_CONTAINER_STARTUP_TIMEOUT_MS = Number(process.env.TESTCONTAINERS_STARTUP_TIMEOUT_MS ?? 120_000);
 
 // Disable pg-boss in tests — the plugin will decorate a no-op stub
@@ -140,8 +143,8 @@ async function buildPostgres (t) {
   t.prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
 
   // set up storage
-  process.env.AWS_S3_ACCESS_KEY_ID = 'minioadmin';
-  process.env.AWS_S3_SECRET_ACCESS_KEY = 'minioadmin';
+  process.env.AWS_S3_ACCESS_KEY_ID = MINIO_ROOT_USER;
+  process.env.AWS_S3_SECRET_ACCESS_KEY = MINIO_ROOT_PASSWORD;
   process.env.AWS_S3_BUCKET = 'app';
   process.env.AWS_S3_REGION = 'us-east-1';
   process.env.AWS_S3_ENDPOINT = `http://${storageHost}:${storagePort}`;
@@ -300,8 +303,13 @@ async function startStorageContainer (image, networkMode) {
   if (!networkMode) {
     return new StartedTestStorageContainer(
       await new GenericContainer(image)
-        .withEntrypoint(['minio', 'server', '/data'])
+        .withEnvironment({
+          MINIO_ROOT_USER,
+          MINIO_ROOT_PASSWORD,
+        })
+        .withCommand(['server', '--console-address', `:${MINIO_CONSOLE_PORT}`, '/data'])
         .withExposedPorts(MINIO_PORT)
+        .withWaitStrategy(Wait.forLogMessage('API:'))
         .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
         .start()
     );
@@ -309,7 +317,11 @@ async function startStorageContainer (image, networkMode) {
 
   const networkAlias = testContainerAlias('care-connect-test-storage');
   const container = await new GenericContainer(image)
-    .withEntrypoint(['minio', 'server', '/data'])
+    .withEnvironment({
+      MINIO_ROOT_USER,
+      MINIO_ROOT_PASSWORD,
+    })
+    .withCommand(['server', '--console-address', `:${MINIO_CONSOLE_PORT}`, '/data'])
     .withWaitStrategy(Wait.forLogMessage('API:'))
     .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
     .withNetworkMode(networkMode)

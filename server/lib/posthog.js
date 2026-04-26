@@ -19,6 +19,11 @@ export function captureEvent (event, properties = {}) {
   });
 }
 
+export function captureException (error, distinctId = 'care-connect-server', properties = {}) {
+  if (!client) return;
+  client.captureException(error, distinctId, properties);
+}
+
 export async function shutdown () {
   if (!client) return;
   await client.shutdown();

@@ -26,6 +26,10 @@ const prisma = new PrismaClient({
       }
     },
     deflection: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ${id} FOR UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      },
       async expire (now = new Date()) {
         try {
           await prisma.user.findOrCreateBatchUser();

@@ -25,11 +25,8 @@ import Facility from './Facility';
 import HoldsActive from './HoldsActive';
 import HoldsHistory from './HoldsHistory';
 import {
-  SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
   buildAdminCancelledHoldsMessage,
-  buildHistoryDisplayDeflections,
   detectAutoCancelledExpiredHolds,
-  mergeHistoryDeflections,
 } from './holdsViewModel';
 import classes from './Holds.module.css';
 
@@ -102,50 +99,26 @@ function Holds () {
   // Flatten all deflections from all incidents for convenience
   const allActiveDeflections = (myHolds?.incidents ?? []).flatMap(inc => inc.deflections);
 
+  // Single history query: everything this officer was ever involved with, minus
+  // what's currently on their Active Holds panel. Not polled — invalidated on
+  // demand when an ID disappears from my-holds (see effect below).
   const {
-    data: inactiveDeflections,
-    isFetching: isFetchingInactiveDeflections,
+    data: historyDeflectionsData,
+    isFetching: isFetchingHistoryDeflections,
   } = useQuery({
-    queryKey: ['deflections', facility?.id, 'inactive'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, active: false }).then(response => response.data),
-    enabled: !!facility,
-    refetchInterval: 3000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
-  });
-
-  const {
-    data: postTransferActiveDeflections,
-    isFetching: isFetchingPostTransferActiveDeflections,
-  } = useQuery({
-    queryKey: ['deflections', facility?.id, 'post-transfer-active'],
+    queryKey: ['deflections', facility?.id, 'history'],
     queryFn: () => Api.deflections.list({
       facilityId: facility.id,
-      active: true,
-      subjectStatus: SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
+      scope: 'history',
+      includeIncident: true,
+      perPage: 100,
     }).then(response => response.data),
     enabled: !!facility,
-    refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     refetchOnMount: 'always',
   });
-
-  const {
-    data: handedOffDeflections,
-  } = useQuery({
-    queryKey: ['deflections', facility?.id, 'handed-off'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, handedOff: true }).then(response => response.data),
-    enabled: !!facility,
-    refetchInterval: 3000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchOnMount: 'always',
-  });
-
-  const historyDeflections = mergeHistoryDeflections(inactiveDeflections ?? [], postTransferActiveDeflections ?? [], handedOffDeflections ?? []);
-  const displayHistoryDeflections = buildHistoryDisplayDeflections(historyDeflections, null, allActiveDeflections.length > 0);
+  const historyDeflections = historyDeflectionsData ?? [];
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
@@ -163,6 +136,10 @@ function Holds () {
       .filter((id) => !currentDeflectionIds.includes(id));
 
     if (removedDeflectionIds.length > 0) {
+      // A hold the officer was just holding is gone — custody transferred,
+      // admin cancelled, expired, or a handoff receiver claimed it. Refetch
+      // history so the row shows up there without waiting on a clock.
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility?.id, 'history'] });
       pendingAutoCancelledCheckRef.current = {
         deflectionIds: removedDeflectionIds,
       };
@@ -235,7 +212,9 @@ function Holds () {
     setAdminCancelledNoticeState,
     adminCancelledNotice,
     user?.id,
+    facility?.id,
     facility?.name,
+    queryClient,
   ]);
 
   function onDismissAutoCancelledNotice () {
@@ -486,9 +465,8 @@ function Holds () {
           )}
           {tab === 'history' && (
             <HoldsHistory
-              deflections={displayHistoryDeflections}
-              isFetchingDeflections={isFetchingInactiveDeflections || isFetchingPostTransferActiveDeflections}
-              hasActiveHolds={allActiveDeflections.length > 0}
+              deflections={historyDeflections}
+              isFetchingDeflections={isFetchingHistoryDeflections}
               currentUserId={user?.id}
             />
           )}
