@@ -59,7 +59,10 @@ function Header ({ opened, close, toggle, logout }) {
 
   const location = useLocation();
   const routeMode = isDualRole ? getWorkModeFromPath(location.pathname) : null;
-  const [storedMode, setStoredMode] = useState(() => (isDualRole ? readStoredWorkMode() : null));
+  // Read unconditionally: isDualRole is false on initial mount during a page
+  // refresh (user data not yet loaded), and useState initializers only run
+  // once. storedMode is gated by isDualRole at the consumption site.
+  const [storedMode, setStoredMode] = useState(() => readStoredWorkMode());
 
   useEffect(() => {
     if (!routeMode) return;
