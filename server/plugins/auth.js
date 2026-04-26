@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fp from 'fastify-plugin';
 import { StatusCodes } from 'http-status-codes';
 
@@ -83,8 +84,26 @@ export default fp(async function (fastify) {
     };
   };
 
+  // Bearer token check for external integrations (not tied to a user session)
+  const requireCapacityApiKey = async (request, reply) => {
+    const configured = process.env.CAPACITY_API_KEY;
+    if (!configured) {
+      return reply.code(StatusCodes.UNAUTHORIZED).send();
+    }
+    const header = request.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      return reply.code(StatusCodes.UNAUTHORIZED).send();
+    }
+    const provided = Buffer.from(header.slice('Bearer '.length));
+    const expected = Buffer.from(configured);
+    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+      return reply.code(StatusCodes.UNAUTHORIZED).send();
+    }
+  };
+
   fastify.decorate('requireUser', requireUser);
   fastify.decorate('requireAdmin', requireAdmin);
+  fastify.decorate('requireCapacityApiKey', requireCapacityApiKey);
   fastify.decorate('requireRole', requireRole);
   fastify.decorate('requireField', requireRole(User.Role.FIELD));
   fastify.decorate('requireCustody', requireRole(User.Role.CUSTODY));

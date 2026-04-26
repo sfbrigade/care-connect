@@ -12,6 +12,7 @@ const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.ADMITTED,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
+  Deflection.SubjectStatus.RELEASED,
 ]);
 
 function hasAssociatedProperty (deflection) {
@@ -25,6 +26,33 @@ function conflictError () {
   const error = new Error('Conflict');
   error.statusCode = StatusCodes.CONFLICT;
   return error;
+}
+
+function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
+  const isHoldRelease = [
+    Deflection.SubjectStatus.DETAINED,
+    Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+    Deflection.SubjectStatus.AWAITING_INTAKE,
+    Deflection.SubjectStatus.READY_FOR_INTAKE,
+    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.FAILED_INTAKE,
+  ].includes(previousSubjectStatus);
+
+  const isOccupiedRelease = [
+    Deflection.SubjectStatus.IN_CHAIR,
+    Deflection.SubjectStatus.RELEASED,
+  ].includes(previousSubjectStatus);
+
+  return {
+    capacity: bedType.capacity,
+    unavailableUnoccupied: bedType.unavailableUnoccupied,
+    unavailableOccupied: bedType.unavailableOccupied,
+    occupied: isOccupiedRelease ? Math.max(0, bedType.occupied - 1) : bedType.occupied,
+    holds: isHoldRelease ? Math.max(0, bedType.holds - 1) : bedType.holds,
+    available: bedType.available + 1,
+    updateMethod: 'API',
+    updatedById: userId,
+  };
 }
 
 export default async function (fastify, opts) {
@@ -125,25 +153,11 @@ export default async function (fastify, opts) {
             },
           });
 
-          const isHoldStatus = [
-            Deflection.SubjectStatus.DETAINED,
-            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
-            Deflection.SubjectStatus.AWAITING_INTAKE,
-            Deflection.SubjectStatus.READY_FOR_INTAKE,
-            Deflection.SubjectStatus.ADMITTED,
-            Deflection.SubjectStatus.FAILED_INTAKE,
-          ].includes(previousSubjectStatus);
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
-          const updatedBedTypeData = {
-            capacity,
-            unavailableUnoccupied,
-            unavailableOccupied,
-            occupied: isHoldStatus ? occupied : Math.max(0, occupied - 1),
-            holds: isHoldStatus ? Math.max(0, holds - 1) : holds,
-            available: available + 1,
-            updateMethod: 'API',
-            updatedById: request.user.id,
-          };
+          const updatedBedTypeData = buildBedTypeUpdate({
+            previousSubjectStatus,
+            bedType,
+            userId: request.user.id,
+          });
 
           await tx.bedTypeUpdate.create({
             data: {
