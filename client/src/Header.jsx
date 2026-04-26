@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { StatusCodes } from 'http-status-codes';
-import { Burger, Box, Container, Group, Menu, SegmentedControl, Text, Title } from '@mantine/core';
+import { Badge, Burger, Box, Container, Group, Menu, Text, Title } from '@mantine/core';
 import {
   IconSend,
   IconHome,
   IconAddressBook,
-  IconArrowsLeftRight,
   IconCheck,
+  IconTransform,
   IconLogout,
   IconUser
 } from '@tabler/icons-react';
@@ -27,7 +27,7 @@ import { useToast } from '@/components/ToastContext';
 const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
 const MODE_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };
 const MODE_BADGE_LABEL = { FIELD: 'FIELD', CUSTODY: 'RESET' };
-const MODE_COLOR = { FIELD: 'violet', CUSTODY: 'green' };
+const MODE_COLOR = { FIELD: 'blue', CUSTODY: 'green' };
 const MODE_SUCCESS_TOAST = {
   FIELD: {
     title: 'Mode changed to "In the field"',
@@ -35,12 +35,12 @@ const MODE_SUCCESS_TOAST = {
   },
   CUSTODY: {
     title: 'Mode changed to "At RESET"',
-    body: 'You can now receive custody and manage facility tasks.',
+    body: 'You can now receive custody and undertake other facility activities.',
   },
 };
 const BLOCKED_TOAST = {
   title: 'Couldn\'t update work mode',
-  body: 'You have active holds. Transfer, hand off, or cancel them before switching work modes.',
+  body: 'You must transfer, hand off, or cancel active holds first before switching.',
 };
 
 function fetchMe () {
@@ -125,40 +125,18 @@ function Header ({ opened, close, toggle, logout }) {
                   : 'CareConnectSF'}
               </Title>
             </Link>
-            {facility && isDualRole && workMode && (() => {
-              const isCustodyBlocked = workMode === 'FIELD' && hasActiveFieldWork && !isLoading;
-              const labelStyle = { display: 'inline-block', width: 56, textAlign: 'center' };
-              return (
-                <SegmentedControl
-                  size='sm'
-                  value={workMode}
-                  onChange={(value) => handleModeClick(value)}
-                  color={MODE_COLOR[workMode]}
-                  data={[
-                    {
-                      value: 'FIELD',
-                      label: <span style={labelStyle}>{MODE_BADGE_LABEL.FIELD}</span>,
-                    },
-                    {
-                      value: 'CUSTODY',
-                      label: (
-                        <span
-                          style={{
-                            ...labelStyle,
-                            opacity: isCustodyBlocked ? 0.4 : 1,
-                            cursor: isCustodyBlocked ? 'not-allowed' : undefined,
-                          }}
-                        >
-                          {MODE_BADGE_LABEL.CUSTODY}
-                        </span>
-                      ),
-                    },
-                  ]}
-                  aria-label='Work mode'
-                  style={{ flexShrink: 0 }}
-                />
-              );
-            })()}
+            {facility && isDualRole && workMode && (
+              <Badge
+                color={MODE_COLOR[workMode]}
+                variant='light'
+                size='lg'
+                fw={500}
+                c={`${MODE_COLOR[workMode]}.9`}
+                style={{ flexShrink: 0 }}
+              >
+                {MODE_BADGE_LABEL[workMode]}
+              </Badge>
+            )}
           </Group>
           {user?.unit?.name && (
             <Text size='sm' color='dimmed' truncate>
@@ -203,12 +181,13 @@ function Header ({ opened, close, toggle, logout }) {
                 </Menu.Item>
                 {isDualRole && (
                   <>
-                    <Menu.Label>
-                      <Group gap={8} align='center'>
-                        <IconArrowsLeftRight size={20} color='var(--mantine-color-gray-5)' />
-                        <Text size='sm' c='dark.9' fw={400}>Work mode</Text>
-                      </Group>
-                    </Menu.Label>
+                    <Menu.Item
+                      leftSection={<IconTransform size={20} color='var(--mantine-color-gray-5)' />}
+                      component='div'
+                      style={{ cursor: 'default', pointerEvents: 'none' }}
+                    >
+                      Work mode
+                    </Menu.Item>
                     {['FIELD', 'CUSTODY'].map((m) => {
                       const isCurrent = m === workMode;
                       const isBlocked = m === 'CUSTODY' && hasActiveFieldWork && !isCurrent && !isLoading;
@@ -217,21 +196,13 @@ function Header ({ opened, close, toggle, logout }) {
                           key={m}
                           onClick={() => handleModeClick(m)}
                           pl={44}
-                          rightSection={isCurrent ? <IconCheck size={16} color={`var(--mantine-color-${MODE_COLOR[m]}-6)`} /> : null}
+                          rightSection={isCurrent ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
                           c={isBlocked ? 'var(--mantine-color-gray-5)' : undefined}
                           aria-label={`Work mode: ${MODE_LABEL[m]}`}
                           aria-current={isCurrent ? 'true' : undefined}
                           aria-disabled={isBlocked || undefined}
                         >
-                          <Group gap={8} align='center' wrap='nowrap'>
-                            <Box
-                              w={10}
-                              h={10}
-                              bg={`var(--mantine-color-${MODE_COLOR[m]}-6)`}
-                              style={{ borderRadius: '50%', flexShrink: 0 }}
-                            />
-                            <span>{MODE_LABEL[m]}</span>
-                          </Group>
+                          {MODE_LABEL[m]}
                         </Menu.Item>
                       );
                     })}

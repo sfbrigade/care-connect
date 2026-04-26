@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import {
-  Alert,
   Autocomplete,
   Box,
   Button,
   Container,
+  Group,
   Loader,
-  SegmentedControl,
   Stack,
   Text,
   Title,
@@ -23,10 +22,9 @@ import { readStoredWorkMode, writeStoredWorkMode } from './utils/workMode';
 const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
 const MODE_DESCRIPTION = {
   FIELD: 'means you can create holds and complete arrests.',
-  CUSTODY: 'means you can receive custody and manage facility tasks.',
+  CUSTODY: 'means you can receive custody and undertake other facility activities.',
 };
 const MODE_SHORT_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };
-const MODE_COLOR = { FIELD: 'violet', CUSTODY: 'green' };
 
 function UnitSelector () {
   const { user } = useAuthContext();
@@ -97,41 +95,49 @@ function UnitSelector () {
   }
 
   return (
-    <Container>
-      <Stack gap='xl' mah='calc(100vh - var(--app-shell-header-offset) - var(--app-shell-padding) - 1.25rem)'>
+    <Container pt={0}>
+      <Stack gap='xl' mt='-sm' mah='calc(100vh - var(--app-shell-header-offset) - var(--app-shell-padding) - 1.25rem)'>
         {needsModeSelection
           ? (
             <>
               <Stack gap='xs' flex='0 0'>
-                <Title order={2}>How are you working today?</Title>
-                <Text size='sm' c='dimmed'>You&apos;ll only see this once. You can change it later from the menu.</Text>
+                <Title order={3}>How are you working today?</Title>
+                <Text size='lg'>You&apos;ll only see this once. You can change it later from the menu.</Text>
               </Stack>
               <Stack gap='xs'>
-                <Text fw={500}>Work mode<Text span c='red'>*</Text></Text>
-                <SegmentedControl
-                  value={mode ?? ''}
-                  onChange={setMode}
-                  color={mode ? MODE_COLOR[mode] : undefined}
-                  data={[
-                    { label: 'In the field', value: 'FIELD' },
-                    { label: 'At RESET', value: 'CUSTODY' },
-                  ]}
-                />
+                <Text fw={700}>Work mode<Text span c='red'>*</Text></Text>
+                <Group gap='xs'>
+                  {['FIELD', 'CUSTODY'].map((m) => (
+                    <Button
+                      key={m}
+                      variant={mode === m ? 'filled' : 'light'}
+                      color='gray'
+                      radius='xl'
+                      size='sm'
+                      fz='md'
+                      c={mode === m ? 'white' : 'dark.9'}
+                      onClick={() => setMode(m)}
+                    >
+                      {MODE_SHORT_LABEL[m]}
+                    </Button>
+                  ))}
+                </Group>
                 {mode && (
-                  <Alert
-                    color='gray'
-                    icon={<IconInfoCircle color='var(--mantine-color-blue-6)' />}
-                  >
-                    <Text span fw={700}>{MODE_SHORT_LABEL[mode]}</Text>
-                    {' '}
-                    {MODE_DESCRIPTION[mode]}
-                  </Alert>
+                  <Group gap='xs' align='flex-start' wrap='nowrap' mt='sm'>
+                    <IconInfoCircle size={20} color='var(--mantine-color-blue-6)' style={{ flexShrink: 0 }} />
+                    <Text size='md'>
+                      <Text span fw={700} size='md'>{MODE_SHORT_LABEL[mode]}</Text>
+                      {' '}
+                      {MODE_DESCRIPTION[mode]}
+                    </Text>
+                  </Group>
                 )}
               </Stack>
-              <Stack gap='xs'>
-                <Text fw={500}>What unit are you assigned to today?</Text>
+              <Stack gap='md'>
+                <Title order={3}>What unit are you assigned to today?</Title>
                 <Autocomplete
                   label='Unit'
+                  withAsterisk
                   placeholder='Type unit name'
                   data={autocompleteData}
                   value={unitName}
@@ -151,6 +157,7 @@ function UnitSelector () {
                 <Text size='sm' c='dimmed'>If your unit number does not appear in list, just type and confirm</Text>
                 <Autocomplete
                   label='Unit'
+                  withAsterisk
                   placeholder='Type unit name'
                   data={autocompleteData}
                   value={unitName}
@@ -164,7 +171,7 @@ function UnitSelector () {
             </>
             )}
         <Box flex='0 0'>
-          <Button disabled={!canConfirm} loading={onSubmitMutation.isPending} fullWidth mt='3rem' onClick={onConfirm}>Confirm</Button>
+          <Button disabled={!canConfirm} loading={onSubmitMutation.isPending} onClick={onConfirm}>Confirm</Button>
         </Box>
       </Stack>
     </Container>

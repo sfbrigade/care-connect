@@ -183,56 +183,29 @@ describe('Header — Work mode submenu', () => {
   });
 });
 
-describe('Header — mode toggle', () => {
+describe('Header — mode badge', () => {
   const user = { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'] };
   const facility = { id: 'f1', type: 'LESC' };
 
-  it('renders a toggle for dual-role users in a facility on a mode-specific route', async () => {
+  it('renders FIELD badge for dual-role users in a facility on /holds', async () => {
     renderHeader(user, '/holds', facility);
-    expect(await screen.findByRole('radio', { name: 'FIELD' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'RESET' })).not.toBeChecked();
+    expect(await screen.findByText('FIELD')).toBeInTheDocument();
   });
 
-  it('omits the toggle when no facility is set', async () => {
+  it('renders RESET badge for dual-role users in a facility on /custody', async () => {
+    renderHeader(user, '/custody', facility);
+    expect(await screen.findByText('RESET')).toBeInTheDocument();
+  });
+
+  it('omits the badge when no facility is set', async () => {
     renderHeader(user, '/holds');
-    expect(screen.queryByRole('radio', { name: 'FIELD' })).not.toBeInTheDocument();
+    expect(screen.queryByText('FIELD')).not.toBeInTheDocument();
+    expect(screen.queryByText('RESET')).not.toBeInTheDocument();
   });
 
-  it('omits the toggle for single-role users', async () => {
+  it('omits the badge for single-role users', async () => {
     renderHeader({ ...user, roles: ['FIELD'] }, '/holds', facility);
-    expect(screen.queryByRole('radio', { name: 'FIELD' })).not.toBeInTheDocument();
-  });
-
-  it('clicking the opposite option navigates to its home + success toast', async () => {
-    renderHeader(user, '/holds', facility);
-    const reset = await screen.findByRole('radio', { name: 'RESET' });
-    await userEvent.click(reset);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('loc')).toHaveTextContent('/custody');
-    });
-    expect(toastMocks.showToast).toHaveBeenCalledWith(
-      'Mode changed to "At RESET"',
-      'success',
-      4000,
-      expect.any(String)
-    );
-  });
-
-  it('clicking the opposite option shows error toast when blocked', async () => {
-    meMock.mockResolvedValue({ status: 200, data: { hasActiveFieldWork: true } });
-    renderHeader(user, '/holds', facility);
-    const reset = await screen.findByRole('radio', { name: 'RESET' });
-    await waitFor(() => expect(meMock).toHaveBeenCalled());
-    await userEvent.click(reset);
-
-    expect(screen.getByTestId('loc')).toHaveTextContent('/holds');
-    expect(toastMocks.showToast).toHaveBeenCalledWith(
-      "Couldn't update work mode",
-      'error',
-      5000,
-      expect.stringContaining('active holds')
-    );
+    expect(screen.queryByText('FIELD')).not.toBeInTheDocument();
   });
 });
 
