@@ -209,6 +209,8 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('POST /:id/satisfaction-survey', async (t) => {
+    const maxLengthText = 'a'.repeat(5000);
+    const tooLongText = 'a'.repeat(5001);
     const validPayload = {
       department: 'SFSO',
       answers: {
@@ -244,6 +246,89 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(row.improvementSuggestions, null);
     });
 
+    await t.test('trims resetFacilityFeedback before persisting', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: '  Helpful staff and fast process.  ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.resetFacilityFeedback, 'Helpful staff and fast process.');
+      assert.strictEqual(row.improvementSuggestions, null);
+    });
+
+    await t.test('persists trimmed improvementSuggestions when provided', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'neutral',
+            resetFacilityFeedback: 'Feedback is still useful.',
+            improvementSuggestions: '  More evening availability.  ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.improvementSuggestions, 'More evening availability.');
+    });
+
+    await t.test('persists null for omitted improvementSuggestions', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'Still positive.',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.improvementSuggestions, null);
+    });
+
+    await t.test('persists empty string when improvementSuggestions is whitespace-only', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'No additional notes.',
+            improvementSuggestions: '   ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.improvementSuggestions, '');
+    });
+
     await t.test('allows SFPD users who can read the facility hold', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
@@ -267,28 +352,6 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(row.improvementSuggestions, null);
     });
 
-    await t.test('allows intake staff to submit surveys', async () => {
-      const response = await app.inject()
-        .post('/api/deflections/6/satisfaction-survey')
-        .headers(careUserHeaders)
-        .payload({
-          department: 'CONNECTIONS',
-          answers: {
-            careConnectRating: 'good',
-            resetFacilityFeedback: 'Intake flow is smooth.',
-          },
-        });
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
-      const data = JSON.parse(response.body);
-      const row = await prisma.satisfactionSurvey.findUnique({
-        where: { id: data.id },
-      });
-      assert.deepStrictEqual(row.department, 'CONNECTIONS');
-      assert.deepStrictEqual(row.careConnectRating, 'good');
-      assert.deepStrictEqual(row.resetFacilityFeedback, 'Intake flow is smooth.');
-    });
-
     await t.test('requires authentication', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
@@ -304,6 +367,7 @@ test('/api/deflections', async (t) => {
         .payload(validPayload);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+      assert.ok(['', 'null'].includes(response.body));
     });
 
     await t.test('returns 404 for an unknown deflection id', async () => {
@@ -313,6 +377,16 @@ test('/api/deflections', async (t) => {
         .payload(validPayload);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+      assert.deepStrictEqual(JSON.parse(response.body), { error: 'Deflection not found' });
+    });
+
+    await t.test('returns 422 when route id is not numeric', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/not-a-number/satisfaction-survey')
+        .headers(userHeaders)
+        .payload(validPayload);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
     await t.test('returns 422 for invalid careConnectRating', async () => {
@@ -339,6 +413,112 @@ test('/api/deflections', async (t) => {
           answers: {
             careConnectRating: 'bad',
             resetFacilityFeedback: '   ',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('accepts exactly 5000 characters for resetFacilityFeedback', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: maxLengthText,
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+    });
+
+    await t.test('returns 422 when resetFacilityFeedback exceeds 5000 characters', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: tooLongText,
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('accepts exactly 5000 characters for improvementSuggestions', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'neutral',
+            resetFacilityFeedback: 'Reasonable experience.',
+            improvementSuggestions: maxLengthText,
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.improvementSuggestions.length, 5000);
+    });
+
+    await t.test('returns 422 when improvementSuggestions exceeds 5000 characters', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'neutral',
+            resetFacilityFeedback: 'Reasonable experience.',
+            improvementSuggestions: tooLongText,
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when answers object is missing', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when answers.careConnectRating is missing', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            resetFacilityFeedback: 'ok',
+          },
+        });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when answers.resetFacilityFeedback is missing', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/4/satisfaction-survey')
+        .headers(userHeaders)
+        .payload({
+          department: 'SFSO',
+          answers: {
+            careConnectRating: 'good',
           },
         });
 

@@ -232,8 +232,7 @@ function SatisfactionSurveyModal ({
               <Button
                 onClick={() => setSurveyStep((prev) => prev + 1)}
                 disabled={
-                  (surveyStep === 0 && !surveyAnswers.careConnectRating) ||
-                  (surveyStep === 1 && !surveyAnswers.resetFacilityFeedback)
+                  (surveyStep === 0 && !surveyAnswers.careConnectRating)
                 }
               >
                 Next
