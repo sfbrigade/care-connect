@@ -21,21 +21,22 @@ const SATISFACTION_OPTIONS = [
 ];
 
 export function isSatisfactionSurveyEnabled () {
-  if (typeof window === 'undefined') return true;
+  // if (typeof window === 'undefined') return true;
 
-  const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-  if (!storedNextEligibleAt) {
-    scheduleNextSatisfactionSurveyEligibility();
-    return false;
-  }
+  // const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
+  // if (!storedNextEligibleAt) {
+  //   scheduleNextSatisfactionSurveyEligibility();
+  //   return false;
+  // }
 
-  const nextEligibleAt = Number(storedNextEligibleAt);
-  if (!Number.isFinite(nextEligibleAt)) {
-    scheduleNextSatisfactionSurveyEligibility();
-    return false;
-  }
+  // const nextEligibleAt = Number(storedNextEligibleAt);
+  // if (!Number.isFinite(nextEligibleAt)) {
+  //   scheduleNextSatisfactionSurveyEligibility();
+  //   return false;
+  // }
 
-  return Date.now() >= nextEligibleAt;
+  // return Date.now() >= nextEligibleAt;
+  return true;
 }
 
 export function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
