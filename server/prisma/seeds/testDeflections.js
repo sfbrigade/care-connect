@@ -127,6 +127,7 @@ export default async function main (prisma) {
         createdById: sfpdUser.id,
         narcoticsSubstance: i % 2 === 0,
         narcoticsParaphernalia: false,
+        chargeType: 'RWS_647F',
         behavior: 'Cooperative',
         property: 'SMALL',
         transferredAt: now,
