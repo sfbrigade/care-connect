@@ -1,0 +1,1 @@
+export const CHARGE_TYPE_OPTIONS = ['HS_11550', 'RWS_647F'];

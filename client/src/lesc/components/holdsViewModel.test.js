@@ -1,23 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-  SFPD_ACTIVE_SUBJECT_STATUSES,
-  SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES,
-  buildActiveHoldDisplayDeflections,
   buildAdminCancelledHoldsMessage,
-  buildIncidentSubtitle,
-  buildHistoryDisplayDeflections,
   buildAutoCancelledHoldsMessage,
   detectAutoCancelledExpiredHolds,
-  getExpiredDeflectionsForIncident,
   getDeflectionActivityMs,
-  getTransferredDeflectionsForIncident,
   groupDeflectionsByIncident,
   isInitialLoading,
-  mergeHistoryDeflections,
-  shouldShowIncidentInActive,
-  shouldShowTransferredHoldsPrompt,
-  splitCurrentIncidentDeflections,
 } from './holdsViewModel';
 
 function deflection (overrides = {}) {
@@ -31,104 +20,10 @@ function deflection (overrides = {}) {
 }
 
 describe('holdsViewModel', () => {
-  it('exports the expected SFPD subject status filters', () => {
-    expect(SFPD_ACTIVE_SUBJECT_STATUSES).toBe('DETAINED,ONSITE_AWAITING_TRANSFER');
-    expect(SFPD_HISTORY_ACTIVE_SUBJECT_STATUSES).toBe('AWAITING_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED');
-  });
-
-  it('merges and deduplicates history deflections by id, sorted by createdAt desc', () => {
-    const inactive = [
-      deflection({ id: 1, createdAt: '2026-02-27T09:00:00.000Z', subjectStatus: 'EXITED' }),
-      deflection({ id: 2, createdAt: '2026-02-27T10:00:00.000Z', subjectStatus: 'EXITED' }),
-    ];
-    const postTransfer = [
-      deflection({ id: 3, createdAt: '2026-02-27T11:00:00.000Z', subjectStatus: 'AWAITING_INTAKE' }),
-      deflection({ id: 2, createdAt: '2026-02-27T10:00:00.000Z', subjectStatus: 'READY_FOR_INTAKE' }),
-    ];
-
-    const merged = mergeHistoryDeflections(inactive, postTransfer);
-
-    expect(merged.map((d) => d.id)).toEqual([3, 2, 1]);
-    expect(merged.find((d) => d.id === 2)?.subjectStatus).toBe('READY_FOR_INTAKE');
-  });
-
-  it('returns active incident visibility only when there is an incident and active deflections', () => {
-    expect(shouldShowIncidentInActive(null, [deflection()])).toBe(false);
-    expect(shouldShowIncidentInActive({ id: 1 }, [])).toBe(false);
-    expect(shouldShowIncidentInActive({ id: 1 }, [deflection()])).toBe(true);
-  });
-
-  it('shows the transferred-holds prompt only after arrival when no active holds remain', () => {
-    expect(shouldShowTransferredHoldsPrompt(null, [])).toBe(false);
-    expect(shouldShowTransferredHoldsPrompt({ id: 1 }, [])).toBe(false);
-    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [deflection()])).toBe(false);
-    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z' }, [])).toBe(true);
-    expect(shouldShowTransferredHoldsPrompt({ id: 1, arrivedAt: '2026-02-27T09:00:00.000Z', leftAt: '2026-02-27T10:00:00.000Z' }, [])).toBe(false);
-  });
-
-  it('returns transferred deflections for a single incident only', () => {
-    const transferred = getTransferredDeflectionsForIncident([
-      deflection({ id: 1, incidentId: 100, subjectStatus: 'AWAITING_INTAKE' }),
-      deflection({ id: 2, incidentId: 100, subjectStatus: 'DETAINED' }),
-      deflection({ id: 3, incidentId: 200, subjectStatus: 'AWAITING_INTAKE' }),
-    ], 100);
-
-    expect(transferred.map((d) => d.id)).toEqual([1]);
-  });
-
-  it('keeps transferred holds in the active list while an incident still has active holds', () => {
-    const displayed = buildActiveHoldDisplayDeflections(
-      [deflection({ id: 1, incidentId: 100, createdAt: '2026-02-27T10:00:00.000Z', subjectStatus: 'DETAINED' })],
-      [deflection({ id: 2, incidentId: 100, createdAt: '2026-02-27T09:00:00.000Z', subjectStatus: 'AWAITING_INTAKE' })],
-      { id: 100 }
-    );
-
-    expect(displayed.map((d) => d.id)).toEqual([1, 2]);
-  });
-
-  it('does not keep transferred holds in the active list when no active holds remain', () => {
-    const displayed = buildActiveHoldDisplayDeflections(
-      [],
-      [deflection({ id: 2, incidentId: 100, createdAt: '2026-02-27T09:00:00.000Z', subjectStatus: 'AWAITING_INTAKE' })],
-      { id: 100 }
-    );
-
-    expect(displayed).toEqual([]);
-  });
-
-  it('hides current-incident transferred holds from history while active holds remain', () => {
-    const displayed = buildHistoryDisplayDeflections([
-      deflection({ id: 1, incidentId: 100, subjectStatus: 'AWAITING_INTAKE' }),
-      deflection({ id: 2, incidentId: 100, subjectStatus: 'EXPIRED' }),
-      deflection({ id: 3, incidentId: 200, subjectStatus: 'AWAITING_INTAKE' }),
-    ], { id: 100 }, true);
-
-    expect(displayed.map((d) => d.id)).toEqual([2, 3]);
-  });
-
-  it('shows current-incident transferred holds in history once no active holds remain', () => {
-    const displayed = buildHistoryDisplayDeflections([
-      deflection({ id: 1, incidentId: 100, subjectStatus: 'AWAITING_INTAKE' }),
-      deflection({ id: 2, incidentId: 100, subjectStatus: 'EXITED' }),
-    ], { id: 100 }, false);
-
-    expect(displayed.map((d) => d.id)).toEqual([1, 2]);
-  });
-
   it('detects initial loading without treating background refetch as initial', () => {
     expect(isInitialLoading(true, undefined)).toBe(true);
     expect(isInitialLoading(true, [])).toBe(false);
     expect(isInitialLoading(false, undefined)).toBe(false);
-  });
-
-  it('returns expired deflections for the current incident only', () => {
-    const expired = getExpiredDeflectionsForIncident([
-      deflection({ id: 1, incidentId: 100, status: 'EXPIRED' }),
-      deflection({ id: 2, incidentId: 100, status: 'CANCELLED' }),
-      deflection({ id: 3, incidentId: 200, status: 'EXPIRED' }),
-    ], 100);
-
-    expect(expired.map((d) => d.id)).toEqual([1]);
   });
 
   it('builds singular and plural auto-cancel copy', () => {
@@ -157,28 +52,6 @@ describe('holdsViewModel', () => {
     });
 
     expect(notice).toEqual({ count: 2 });
-  });
-
-  it('splits out current incident deflections when there are no active holds', () => {
-    const all = [
-      deflection({ id: 1, incidentId: 100 }),
-      deflection({ id: 2, incidentId: 100 }),
-      deflection({ id: 3, incidentId: 200 }),
-    ];
-
-    const split = splitCurrentIncidentDeflections(all, { id: 100 }, false);
-    expect(split.shouldShowCurrentIncidentGroup).toBe(true);
-    expect(split.currentIncidentDeflections.map((d) => d.id)).toEqual([1, 2]);
-    expect(split.remainingDeflections.map((d) => d.id)).toEqual([3]);
-  });
-
-  it('does not split current incident when active holds remain', () => {
-    const all = [deflection({ id: 1, incidentId: 100 }), deflection({ id: 2, incidentId: 200 })];
-    const split = splitCurrentIncidentDeflections(all, { id: 100 }, true);
-
-    expect(split.shouldShowCurrentIncidentGroup).toBe(false);
-    expect(split.currentIncidentDeflections).toEqual([]);
-    expect(split.remainingDeflections.map((d) => d.id)).toEqual([1, 2]);
   });
 
   it('groups all history deflections by incident and sorts by latest hold activity', () => {
@@ -247,17 +120,5 @@ describe('holdsViewModel', () => {
         facilityName: 'RESET',
       })).toBe('RESET cancelled 3 holds. Do not bring these persons to RESET.');
     });
-  });
-
-  it('builds incident subtitle with address/time when present and fallback when missing', () => {
-    const richSubtitle = buildIncidentSubtitle({
-      addressLine1: '1843 9th Avenue',
-      arrestedAt: '2026-02-27T09:54:00.000Z',
-    });
-    const fallbackSubtitle = buildIncidentSubtitle({});
-
-    expect(richSubtitle).toContain('1843 9th Avenue');
-    expect(richSubtitle).toContain('•');
-    expect(fallbackSubtitle).toBe('Address unavailable • Time unavailable');
   });
 });

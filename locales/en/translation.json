@@ -3,6 +3,10 @@
     "CHAIR": "Chair",
     "BED": "Bed"
   },
+  "chargeType": {
+    "RWS_647F": "647(f) RWS",
+    "HS_11550": "11550 HS"
+  },
   "drugType": {
     "ALCOHOL": "Alcohol",
     "HEROIN": "Heroin",

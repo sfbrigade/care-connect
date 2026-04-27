@@ -97,6 +97,11 @@ enum PropertyNotReturnedReasonEnum {
   OTHER
 }
 
+enum ChargeTypeEnum {
+  RWS_647F
+  HS_11550
+}
+
 enum DrugTypeEnum {
   ALCOHOL
   HEROIN
@@ -548,6 +553,7 @@ model Deflection {
   drugType                       DrugTypeEnum?
   behavior                       String?
   behaviorNarrative              String?
+  chargeType                     ChargeTypeEnum?
   property                       PropertyEnum?
   propertyDetails                String?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
