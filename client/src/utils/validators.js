@@ -1,6 +1,7 @@
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import * as z from 'zod/mini';
 
+import { CHARGE_TYPE_OPTIONS } from '../lesc/constants/chargeTypeOptions';
 import { DRUG_TYPE_OPTIONS } from '../lesc/constants/drugTypeOptions';
 
 const ERROR_REQUIRED = 'This field is required';
@@ -33,6 +34,7 @@ const SubjectSchema = z.object({
 });
 
 const DrugTypeSchema = z.enum(DRUG_TYPE_OPTIONS, ERROR_SELECT_ONE);
+const ChargeTypeSchema = z.enum(CHARGE_TYPE_OPTIONS, ERROR_SELECT_ONE);
 
 const NarcoticsSchema = z.object({
   narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
@@ -42,6 +44,7 @@ const NarcoticsSchema = z.object({
 const BehaviorSchema = z.object({
   behavior: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
   behaviorNarrative: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+  chargeType: ChargeTypeSchema,
 });
 
 const PropertySchema = z.object({

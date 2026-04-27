@@ -21,12 +21,18 @@ function AppRedirects ({ children }) {
     );
   }
 
-  const result = handleRedirects(authContext, location, location.pathname, (to, state) => {
-    if (state) {
-      return <Navigate to={to} state={state} replace />;
-    }
-    return <Navigate to={to} replace />;
-  });
+  const result = handleRedirects(
+    authContext,
+    location,
+    location.pathname,
+    (to, state) => {
+      if (state) {
+        return <Navigate to={to} state={state} replace />;
+      }
+      return <Navigate to={to} replace />;
+    },
+    { hasActiveHolds: !!data?.hasActiveHolds }
+  );
   return result || children;
 }
 
