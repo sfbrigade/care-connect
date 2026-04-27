@@ -165,6 +165,39 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, createdInvite.id);
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
     });
+
+    await t.test('persists organizationId so register applies multi-role org defaults', async (t) => {
+      const response = await app.inject().post('/api/invites/bulk').payload({
+        organizationId: 'sfso',
+        invites: [
+          {
+            firstName: 'Multi',
+            lastName: 'Role',
+            email: 'multi.role@test.com',
+          },
+        ],
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const createdInvite = await prisma.invite.findFirst({
+        where: { email: 'multi.role@test.com' },
+      });
+      assert.ok(createdInvite);
+      assert.deepStrictEqual(createdInvite.organizationId, 'sfso');
+
+      const registerResponse = await app.inject().post('/api/auth/register').payload({
+        firstName: 'Ignored',
+        lastName: 'Ignored',
+        email: 'ignored@test.com',
+        password: 'Abcdef12345!',
+        inviteId: createdInvite.id,
+      });
+      assert.deepStrictEqual(registerResponse.statusCode, StatusCodes.CREATED);
+
+      const user = JSON.parse(registerResponse.body);
+      assert.deepStrictEqual(user.organizationId, 'sfso');
+      assert.deepStrictEqual(user.roles, ['FIELD', 'CUSTODY']);
+    });
   });
 
   await t.test('GET /:id', async (t) => {

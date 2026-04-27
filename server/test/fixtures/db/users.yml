@@ -52,6 +52,16 @@ items:
     roles: [FIELD]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: "@sfpd"
+  dualuser1:
+    id: b7f1a3e0-2c31-4d9a-9f8b-4e5a0f1c2d33
+    firstName: Dual
+    lastName: User
+    email: dual.user@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [FIELD, CUSTODY]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: "@sfpd"
   sfsouser1:
     id: 49acdf99-536f-49ac-8138-1c77e5087697
     firstName: SFSO
