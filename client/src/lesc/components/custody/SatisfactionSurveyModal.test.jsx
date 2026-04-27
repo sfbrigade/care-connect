@@ -57,8 +57,15 @@ describe('SatisfactionSurveyModal eligibility', () => {
     window.localStorage.clear();
   });
 
-  it('returns true when no next eligible timestamp is stored', () => {
-    expect(isSatisfactionSurveyEnabled()).toBe(true);
+  it('returns false when no next eligible timestamp is stored and seeds localStorage', () => {
+    expect(isSatisfactionSurveyEnabled()).toBe(false);
+
+    const stored = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
+    expect(stored).toBeTruthy();
+    const storedTimestamp = Number(stored);
+    const expected = new Date(Date.now());
+    expected.setMonth(expected.getMonth() + 1);
+    expect(storedTimestamp).toBe(expected.getTime());
   });
 
   it('returns false before the next eligible timestamp', () => {
@@ -66,6 +73,13 @@ describe('SatisfactionSurveyModal eligibility', () => {
     window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(futureTimestamp));
 
     expect(isSatisfactionSurveyEnabled()).toBe(false);
+  });
+
+  it('returns true when the next eligible timestamp is in the past', () => {
+    const pastTimestamp = Date.now() - 60_000;
+    window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(pastTimestamp));
+
+    expect(isSatisfactionSurveyEnabled()).toBe(true);
   });
 
   it('writes the next eligible timestamp about one month ahead when opened', async () => {

@@ -19,7 +19,6 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
 
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
   const surveyIntentDeflectionId = surveyIntent?.deflectionId;
-  const surveyIntentSource = surveyIntent?.surveySource ?? 'legal_release';
 
   useEffect(() => {
     setIsPostNavigationSurveyOpen(false);
@@ -70,7 +69,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
         <SatisfactionSurveyModal
           opened={isPostNavigationSurveyOpen}
           deflectionId={surveyIntentDeflectionId}
-          source={surveyIntentSource}
+          department={surveyIntent?.department}
           onFinished={onPostNavigationSurveyFinished}
         />
       )}

@@ -5,7 +5,6 @@ import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX, IconShieldChevron } f
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 
-export const SATISFACTION_SURVEY_FLAG_KEY = 'satisfactionSurveyEnabled';
 export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'satisfactionSurveyNextEligibleAt';
 
 const INITIAL_ANSWERS = {
@@ -23,25 +22,24 @@ const SATISFACTION_OPTIONS = [
 ];
 
 export function isSatisfactionSurveyEnabled () {
-  // if (typeof window === 'undefined') return true;
+  if (typeof window === 'undefined') return false;
 
-  // const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-  // if (!storedNextEligibleAt) {
-  //   scheduleNextSatisfactionSurveyEligibility();
-  //   return false;
-  // }
+  const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
+  if (!storedNextEligibleAt) {
+    scheduleNextSatisfactionSurveyEligibility();
+    return false;
+  }
 
-  // const nextEligibleAt = Number(storedNextEligibleAt);
-  // if (!Number.isFinite(nextEligibleAt)) {
-  //   scheduleNextSatisfactionSurveyEligibility();
-  //   return false;
-  // }
+  const nextEligibleAt = Number(storedNextEligibleAt);
+  if (!Number.isFinite(nextEligibleAt)) {
+    scheduleNextSatisfactionSurveyEligibility();
+    return false;
+  }
 
-  // return Date.now() >= nextEligibleAt;
-  return true;
+  return Date.now() >= nextEligibleAt;
 }
 
-export function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
+function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
   if (typeof window === 'undefined') return null;
 
   const nextEligibleDate = new Date(now);
