@@ -1,31 +1,33 @@
 import { metadata } from './metadata.js';
 import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
 import i18n from '#lib/i18n.js';
+import { firstLastName, streetCityState, streetCityStateZip } from '#lib/forms/shared/formUtils.js';
 
 export function transformData (deflection) {
   const subject = deflection.subject;
   const incident = deflection.incident;
-  const officer = incident?.createdBy || deflection.createdBy;
 
-  const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
-    .filter(Boolean)
-    .join(', ');
+  const subjectAddress = streetCityState(subject);
+  const arrestLocation = streetCityState(incident);
 
-  const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
-    .filter(Boolean)
-    .join(', ');
+  const arrestingOfficer = incident?.createdBy || deflection.createdBy;
+  const arrestingOfficerRank = incident?.createdByTitle?.name || arrestingOfficer?.title?.name || '';
+  const arrestingOfficerName = firstLastName(arrestingOfficer);
+  const arrestingOfficerBadge = incident?.createdByBadgeNumber || arrestingOfficer?.badgeNumber || '';
+  const arrestingOfficerUnit = incident?.createdByUnit?.name || arrestingOfficer?.unit?.name || '';
+  const arrestingOfficerAgency = incident?.createdByOrganization?.name || arrestingOfficer?.organization?.name || '';
 
-  const officerName = officer
-    ? `${officer.firstName} ${officer.lastName}`
-    : '';
-  const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
-  const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
-  const agency = officer?.organization?.name || '';
+  // find the field officer who handed the subject to RESET:
+  // use toOfficer from the most recent Handoff, or fall back to the deflection creator
+  const mostRecentHandoff = deflection.handoffs?.toSorted((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+  const custodyReleaseOfficer = mostRecentHandoff?.toOfficer || arrestingOfficer;
+  const custodyReleaseOfficerRank = custodyReleaseOfficer?.title?.name || '';
+  const custodyReleaseOfficerName = firstLastName(custodyReleaseOfficer);
+  const custodyReleaseOfficerBadge = custodyReleaseOfficer?.badgeNumber || '';
+  const custodyReleaseOfficerUnit = custodyReleaseOfficer?.unit?.name || '';
 
   const facility = deflection.facility;
-  const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]
-    .filter(Boolean)
-    .join(', ');
+  const facilityAddress = streetCityStateZip(facility);
 
   return {
     deflectionId: deflection.id,
@@ -38,15 +40,20 @@ export function transformData (deflection) {
     subjectAddress,
     subjectDL: subject?.driverLicense || '',
     subjectLocalId: subject?.localId || '',
-    cadNumber: incident?.cadNumber || '',
     arrestedAt: incident?.arrestedAt?.toISOString() || null,
-    officerName,
     arrestLocation,
-    officerUnit,
-    officerBadge,
-    supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
-    agency,
     charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
+    cadNumber: incident?.cadNumber || '',
+    arrestingOfficerRank,
+    arrestingOfficerName,
+    arrestingOfficerBadge,
+    arrestingOfficerUnit,
+    arrestingOfficerAgency,
+    supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
+    custodyReleaseOfficerRank,
+    custodyReleaseOfficerName,
+    custodyReleaseOfficerBadge,
+    custodyReleaseOfficerUnit,
     justification: deflection.behavior || '',
     hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
       ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)
