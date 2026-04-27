@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 
+import Api from '@/Api';
 import SatisfactionSurveyModal, {
   isSatisfactionSurveyEnabled,
   SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY,
@@ -93,5 +94,45 @@ describe('SatisfactionSurveyModal eligibility', () => {
 
     expect(onFinished).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY)).toBe(storedTimestampBeforeClose);
+  });
+});
+
+describe('SatisfactionSurveyModal character limit validation', () => {
+  const maxPlusOneText = 'a'.repeat(5001);
+
+  beforeEach(() => {
+    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockReset();
+    mockShowToast.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows over-limit error styles and message for improvement suggestions', () => {
+    renderSurveyModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bad' }));
+    const textarea = screen.getByPlaceholderText('Share your thoughts...');
+    fireEvent.change(textarea, { target: { value: maxPlusOneText } });
+
+    expect(screen.getByText('Max character limit reached. Please shorten your response.')).toBeInTheDocument();
+    expect(textarea).toHaveStyle('color: var(--mantine-color-red-6)');
+    expect(textarea).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('prevents submission when any survey textarea exceeds 5000 characters', async () => {
+    renderSurveyModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    const textarea = screen.getByPlaceholderText('Share your thoughts...');
+    fireEvent.change(textarea, { target: { value: maxPlusOneText } });
+    fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
+
+    await waitFor(() => {
+      expect(Api.deflections.submitSatisfactionSurvey).not.toHaveBeenCalled();
+    });
   });
 });

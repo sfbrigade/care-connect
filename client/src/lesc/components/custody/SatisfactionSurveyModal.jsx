@@ -13,6 +13,8 @@ const INITIAL_ANSWERS = {
   improvementSuggestions: '',
   resetFacilityFeedback: '',
 };
+const MAX_SURVEY_TEXT_LENGTH = 5000;
+const MAX_CHAR_ERROR_MESSAGE = 'Max character limit reached. Please shorten your response.';
 
 const SATISFACTION_OPTIONS = [
   { value: 'bad', label: 'Bad', Icon: IconMoodSad },
@@ -61,6 +63,9 @@ function SatisfactionSurveyModal ({
   const [surveyAnswers, setSurveyAnswers] = useState(INITIAL_ANSWERS);
   const [submitting, setSubmitting] = useState(false);
   const advanceStepTimerRef = useRef(null);
+  const isImprovementSuggestionsTooLong = surveyAnswers.improvementSuggestions.length > MAX_SURVEY_TEXT_LENGTH;
+  const isResetFacilityFeedbackTooLong = surveyAnswers.resetFacilityFeedback.length > MAX_SURVEY_TEXT_LENGTH;
+  const hasExceededTextLimit = isImprovementSuggestionsTooLong || isResetFacilityFeedbackTooLong;
 
   const clearAdvanceStepTimer = () => {
     if (advanceStepTimerRef.current != null) {
@@ -81,6 +86,7 @@ function SatisfactionSurveyModal ({
 
   const finish = async (didCompleteSurvey) => {
     if (didCompleteSurvey && deflectionId != null) {
+      if (hasExceededTextLimit) return;
       const improvementTrimmed = surveyAnswers.improvementSuggestions.trim();
       const resetFacilityFeedbackTrimmed = surveyAnswers.resetFacilityFeedback.trim();
       try {
@@ -153,7 +159,7 @@ function SatisfactionSurveyModal ({
                         return;
                       }
                       if (option.value === 'neutral' || option.value === 'good') {
-                        setShowImprovementSuggestions(false);
+                        if (isImprovementSuggestionsTooLong) return;
                         advanceStepTimerRef.current = setTimeout(() => {
                           advanceStepTimerRef.current = null;
                           setSurveyStep(1);
@@ -190,11 +196,22 @@ function SatisfactionSurveyModal ({
             <Group mt='sm' grow gap='xs'>
               <Textarea
                 placeholder='Share your thoughts...'
-                size='md'
+                size='sm'
+                autosize
+                minRows={3}
+                maxRows={3}
                 value={surveyAnswers.improvementSuggestions}
+                error={isImprovementSuggestionsTooLong ? MAX_CHAR_ERROR_MESSAGE : null}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
                   setSurveyAnswers((prev) => ({ ...prev, improvementSuggestions: value }));
+                }}
+                styles={{
+                  input: isImprovementSuggestionsTooLong
+                    ? {
+                        color: 'var(--mantine-color-red-6)',
+                      }
+                    : undefined,
                 }}
               />
             </Group>
@@ -204,16 +221,24 @@ function SatisfactionSurveyModal ({
           <Input.Wrapper size='xl' label='How can we improve operations at the RESET facility?'>
             <Textarea
               placeholder='Share your thoughts...'
-              size='md'
+              size='sm'
               mt='lg'
+              autosize
+              minRows={3}
+              maxRows={3}
               value={surveyAnswers.resetFacilityFeedback}
+              error={isResetFacilityFeedbackTooLong ? MAX_CHAR_ERROR_MESSAGE : null}
               onChange={(event) => {
                 const value = event.currentTarget.value;
                 setSurveyAnswers((prev) => ({ ...prev, resetFacilityFeedback: value }));
               }}
-              minRows={3}
               styles={{
                 input: {
+                  ...(isResetFacilityFeedbackTooLong
+                    ? {
+                        color: 'var(--mantine-color-red-6)',
+                      }
+                    : {}),
                   '&::placeholder': {
                     fontSize: 'var(--mantine-font-size-xs)',
                     color: 'var(--mantine-color-dimmed)',
@@ -229,11 +254,11 @@ function SatisfactionSurveyModal ({
         </Group>
         <Group justify='flex-start' mt='md'>
           {surveyStep < 1 &&
-            (surveyStep === 0 && (surveyAnswers.careConnectRating === 'bad')) && (
+            (surveyStep === 0 && showImprovementSuggestions) && (
               <Button
                 onClick={() => setSurveyStep((prev) => prev + 1)}
                 disabled={
-                  (surveyStep === 0 && !surveyAnswers.careConnectRating)
+                  (surveyStep === 0 && !surveyAnswers.careConnectRating) || isImprovementSuggestionsTooLong
                 }
               >
                 Next
@@ -242,6 +267,7 @@ function SatisfactionSurveyModal ({
           {surveyStep === 1 && (
             <Button
               loading={submitting}
+              disabled={hasExceededTextLimit}
               onClick={async () => {
                 await finish(true);
               }}
