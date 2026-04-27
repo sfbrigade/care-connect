@@ -1,4 +1,4 @@
-const VALID_RELEASE_REASON_IDS = new Set(['sobered', 'medical_issue', 'other']);
+const VALID_RELEASE_REASON_IDS = new Set(['sobered', 'medical_issue', 'behavioral_health_evaluation', 'other']);
 const VALID_MEDICAL_EXIT_DESTINATION_IDS = new Set(['hospital', 'other']);
 
 export function getPrefilledLegalReleaseState (searchParams) {
