@@ -203,7 +203,11 @@ function IncidentForm () {
         : Api.incidents.create(formData, {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
-    onSuccess: async () => {
+    onSuccess: async (response) => {
+      const updatedIncident = response?.data;
+      if (updatedIncident?.id != null) {
+        queryClient.setQueryData(['incidents', String(updatedIncident.id)], updatedIncident);
+      }
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
