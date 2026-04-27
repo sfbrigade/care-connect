@@ -739,7 +739,7 @@ model SatisfactionSurvey {
   department             String
   careConnectRating      String
   improvementSuggestions String?
-  resetFacilityFeedback  String
+  resetFacilityFeedback  String?
   createdAt              DateTime   @default(now())
 
   @@index([createdAt])

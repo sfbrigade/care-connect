@@ -511,7 +511,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
-    await t.test('returns 422 when answers.resetFacilityFeedback is missing', async () => {
+    await t.test('persists null when answers.resetFacilityFeedback is missing', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
@@ -522,7 +522,12 @@ test('/api/deflections', async (t) => {
           },
         });
 
-      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.resetFacilityFeedback, null);
     });
 
     await t.test('returns 422 for invalid department', async () => {

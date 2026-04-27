@@ -82,13 +82,14 @@ function SatisfactionSurveyModal ({
   const finish = async (didCompleteSurvey) => {
     if (didCompleteSurvey && deflectionId != null) {
       const improvementTrimmed = surveyAnswers.improvementSuggestions.trim();
+      const resetFacilityFeedbackTrimmed = surveyAnswers.resetFacilityFeedback.trim();
       try {
         setSubmitting(true);
         await Api.deflections.submitSatisfactionSurvey(deflectionId, {
           department,
           answers: {
             careConnectRating: surveyAnswers.careConnectRating,
-            resetFacilityFeedback: surveyAnswers.resetFacilityFeedback.trim(),
+            ...(resetFacilityFeedbackTrimmed ? { resetFacilityFeedback: resetFacilityFeedbackTrimmed } : {}),
             ...(improvementTrimmed ? { improvementSuggestions: improvementTrimmed } : {}),
           },
         });

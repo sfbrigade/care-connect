@@ -571,7 +571,7 @@ DEPARTURE DEPARTURE
     String department 
     String careConnectRating 
     String improvementSuggestions "❓"
-    String resetFacilityFeedback 
+    String resetFacilityFeedback "❓"
     DateTime createdAt 
     }
   

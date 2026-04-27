@@ -4,7 +4,7 @@ CREATE TABLE "public"."SatisfactionSurvey" (
     "department" TEXT NOT NULL,
     "careConnectRating" TEXT NOT NULL,
     "improvementSuggestions" TEXT,
-    "resetFacilityFeedback" TEXT NOT NULL,
+    "resetFacilityFeedback" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "SatisfactionSurvey_pkey" PRIMARY KEY ("id")

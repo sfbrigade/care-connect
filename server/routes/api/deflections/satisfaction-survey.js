@@ -8,7 +8,7 @@ const BodySchema = z.object({
   answers: z.object({
     careConnectRating: z.enum(['bad', 'neutral', 'good']),
     improvementSuggestions: z.string().trim().max(5000).optional(),
-    resetFacilityFeedback: z.string().trim().min(1).max(5000),
+    resetFacilityFeedback: z.string().trim().min(1).max(5000).optional(),
   }),
 });
 
@@ -50,12 +50,13 @@ export default async function (fastify) {
       }
 
       const improvementTrimmed = answers.improvementSuggestions?.trim();
+      const resetFeedbackTrimmed = answers.resetFacilityFeedback?.trim();
       const row = await fastify.prisma.satisfactionSurvey.create({
         data: {
           department,
           careConnectRating: answers.careConnectRating,
           improvementSuggestions: improvementTrimmed ?? null,
-          resetFacilityFeedback: answers.resetFacilityFeedback.trim(),
+          resetFacilityFeedback: resetFeedbackTrimmed ?? null,
         },
       });
 
