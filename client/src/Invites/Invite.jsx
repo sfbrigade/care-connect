@@ -31,7 +31,7 @@ function Invite () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.auth.register({ ...values, inviteId }),
     onSuccess: async (response) => {
-      queryClient.setQueryData(['users', 'me'], response.data);
+      queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       setSuccess(true);
       setTimeout(() => {
         if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Badge, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Badge, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
@@ -13,9 +14,11 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
+import { CHARGE_TYPE_OPTIONS } from '@/lesc/constants/chargeTypeOptions';
 
 const initialValues = {
   behaviorNarrative: '',
+  chargeType: null,
   drugType: null,
   drugUseEvidence: null,
 };
@@ -24,6 +27,7 @@ function DeflectionForm () {
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const isNew = searchParams.get('isNew') === 'true';
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
@@ -60,6 +64,7 @@ function DeflectionForm () {
       if (deflection) {
         const normalized = normalizeFormValues({
           behaviorNarrative: deflection.behaviorNarrative,
+          chargeType: deflection.chargeType,
           drugType: deflection.drugType,
           drugUseEvidence: deflection.drugUseEvidence,
         });
@@ -85,6 +90,7 @@ function DeflectionForm () {
   function normalizeFormValues (values) {
     return {
       behaviorNarrative: values.behaviorNarrative ?? '',
+      chargeType: values.chargeType ?? null,
       drugType: values.drugType ?? null,
       drugUseEvidence: values.drugUseEvidence ?? null,
     };
@@ -94,6 +100,7 @@ function DeflectionForm () {
     return buildDeflectionUpdatePayload({
       generatedNarrative: generatedNarrativeValue,
       behaviorNarrative: values.behaviorNarrative ?? '',
+      chargeType: values.chargeType ?? null,
     });
   }
 
@@ -146,7 +153,7 @@ function DeflectionForm () {
   return (
     <>
       <Head>
-        <title>Behavioral observations</title>
+        <title>Arrest details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -161,10 +168,10 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
         <Group gap='sm' mb='xs' align='center'>
-          <Title order={2}>Behavioral observations</Title>
+          <Title order={3}>Arrest details</Title>
           {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
         </Group>
-        <Text c='dimmed' size='md' mb='xl'>Describe the behaviors you observed.</Text>
+        <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the arrest, and select charge type.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);
@@ -174,23 +181,41 @@ function DeflectionForm () {
         })}
         >
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
-            <Stack gap='xl'>
+            <Stack gap='2xl'>
               <Stack gap='lg'>
                 <AudioRecorder
                   onResult={handleTranscriptionResult}
                   onBusyChange={setRecorderBusy}
                   disabled={isLoading || onSubmitMutation.isPending}
                 />
-                <Textarea
-                  label='Arrestable behavior'
+                <Stack gap='xs'>
+                  <Textarea
+                    label='Behavioral observation'
+                    withAsterisk
+                    key={form.key('behaviorNarrative')}
+                    autosize
+                    minRows={4}
+                    {...form.getInputProps('behaviorNarrative')}
+                    placeholder='e.g. "Individual was stumbling and unable to stand on their own. Strong smell of alcohol. Found lying on the sidewalk near Market St..."'
+                  />
+                  <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
+                </Stack>
+                <Input.Wrapper
+                  label='Select a charge type'
                   withAsterisk
-                  key={form.key('behaviorNarrative')}
-                  autosize
-                  minRows={4}
-                  {...form.getInputProps('behaviorNarrative')}
-                  placeholder='e.g. "Individual was stumbling and unable to stand on their own. Strong smell of alcohol. Found lying on the sidewalk near Market St..."'
-                />
-                <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
+                  error={form.errors.chargeType}
+                >
+                  <Chip.Group
+                    key={form.key('chargeType')}
+                    {...form.getInputProps('chargeType')}
+                  >
+                    <Group gap='sm' mt='md'>
+                      {CHARGE_TYPE_OPTIONS.map((chargeType) => (
+                        <Chip key={chargeType} value={chargeType}>{t(`chargeType.${chargeType}`)}</Chip>
+                      ))}
+                    </Group>
+                  </Chip.Group>
+                </Input.Wrapper>
               </Stack>
               <Button type='submit' mb='xl' disabled={recorderBusy}>
                 {isNew ? 'Next: Personal property' : 'Save behavioral observations'}

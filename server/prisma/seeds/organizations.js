@@ -7,7 +7,7 @@ const organizations = [
   {
     id: 'sfso',
     name: "San Francisco Sheriff's Office",
-    defaultRoles: ['CUSTODY'],
+    defaultRoles: ['FIELD', 'CUSTODY'],
   },
   {
     id: 'connections',
