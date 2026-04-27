@@ -42,15 +42,15 @@ export default function Form647f ({ data = {} }) {
     arrestLocation = '',
     charge = '',
     cadNumber = '',
-    officerRank = '',
-    officerName = '',
-    officerBadge = '',
-    officerUnit = '',
-    officerAgency = '',
+    arrestingOfficerRank = '',
+    arrestingOfficerName = '',
+    arrestingOfficerBadge = '',
+    arrestingOfficerUnit = '',
+    arrestingOfficerAgency = '',
     supervisorBadgeNumber = '',
-    transferOfficerRank = '',
-    transferOfficerName = '',
-    transferOfficerBadge = '',
+    custodyReleaseOfficerRank = '',
+    custodyReleaseOfficerName = '',
+    custodyReleaseOfficerBadge = '',
     justification = '',
     hospitalCancellationReleaseNarrative = '',
     substanceFound = false,
@@ -60,8 +60,8 @@ export default function Form647f ({ data = {} }) {
     facilityAddress = '',
   } = data;
 
-  const arrestingOfficer = joinWords(officerRank, officerName, officerBadge && `#${officerBadge}`);
-  const transferOfficer = joinWords(transferOfficerRank, transferOfficerName, transferOfficerBadge && `#${transferOfficerBadge}`);
+  const arrestingOfficerDisplay = joinWords(arrestingOfficerRank, arrestingOfficerName, arrestingOfficerBadge && `#${arrestingOfficerBadge}`);
+  const custodyReleaseOfficerDisplay = joinWords(custodyReleaseOfficerRank, custodyReleaseOfficerName, custodyReleaseOfficerBadge && `#${custodyReleaseOfficerBadge}`);
   const substanceNot = substanceFound ? '' : 'not ';
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
   const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
@@ -98,11 +98,11 @@ export default function Form647f ({ data = {} }) {
             <Row label='CAD Number' value={cadNumber} />
 
             <SectionHeader title='Officer Information' />
-            <Row label='Arresting Officer' value={arrestingOfficer} />
-            <Row label='Unit' value={officerUnit} />
-            <Row label='Agency' value={officerAgency} />
+            <Row label='Arresting Officer' value={arrestingOfficerDisplay} />
+            <Row label='Unit' value={arrestingOfficerUnit} />
+            <Row label='Agency' value={arrestingOfficerAgency} />
             <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} />
-            <Row label='Officer Present at Custody Transfer' value={transferOfficer} />
+            <Row label='Officer Present at Custody Transfer' value={custodyReleaseOfficerDisplay} />
 
             <SectionHeader title='Additional Information' />
             <Row label='Hold ID' value={String(deflectionId)} />

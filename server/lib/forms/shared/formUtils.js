@@ -45,3 +45,15 @@ export function titleCase (str) {
 export function joinWords (...words) {
   return words.filter(Boolean).join(' ');
 }
+
+export function firstLastName (obj) {
+  return [obj?.firstName, obj?.lastName].filter(Boolean).join(' ');
+}
+
+export function streetCityState (obj) {
+  return [obj?.addressLine1, obj?.city, obj?.state].filter(Boolean).join(', ');
+}
+
+export function streetCityStateZip (obj) {
+  return [streetCityState(obj), obj?.postalCode].filter(Boolean).join(' ');
+}

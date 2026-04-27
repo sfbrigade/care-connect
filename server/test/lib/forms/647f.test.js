@@ -26,10 +26,10 @@ test('647f transferOfficer: no handoffs — falls back to incident.createdBy', (
     incident: { createdBy: incidentCreator },
   });
 
-  assert.equal(data.transferOfficerName, 'Jane Smith');
-  assert.equal(data.transferOfficerBadge, 'B001');
-  assert.equal(data.transferOfficerRank, 'Officer');
-  assert.equal(data.transferOfficerUnit, 'Unit 1');
+  assert.equal(data.custodyReleaseOfficerName, 'Jane Smith');
+  assert.equal(data.custodyReleaseOfficerBadge, 'B001');
+  assert.equal(data.custodyReleaseOfficerRank, 'Officer');
+  assert.equal(data.custodyReleaseOfficerUnit, 'Unit 1');
 });
 
 test('647f transferOfficer: no handoffs and no incident — falls back to deflection.createdBy', () => {
@@ -39,7 +39,7 @@ test('647f transferOfficer: no handoffs and no incident — falls back to deflec
     createdBy: creator,
   });
 
-  assert.equal(data.transferOfficerName, 'Jane Smith');
+  assert.equal(data.custodyReleaseOfficerName, 'Jane Smith');
 });
 
 test('647f transferOfficer: handoff exists — uses toOfficer from the most recent Handoff', () => {
@@ -56,10 +56,10 @@ test('647f transferOfficer: handoff exists — uses toOfficer from the most rece
     ],
   });
 
-  assert.equal(data.transferOfficerName, 'Al Vega');
-  assert.equal(data.transferOfficerBadge, 'F100');
-  assert.equal(data.transferOfficerRank, 'Deputy');
-  assert.equal(data.transferOfficerUnit, 'Field Unit');
+  assert.equal(data.custodyReleaseOfficerName, 'Al Vega');
+  assert.equal(data.custodyReleaseOfficerBadge, 'F100');
+  assert.equal(data.custodyReleaseOfficerRank, 'Deputy');
+  assert.equal(data.custodyReleaseOfficerUnit, 'Field Unit');
 });
 
 test('647f hospital cancellation appends the release narrative', () => {
