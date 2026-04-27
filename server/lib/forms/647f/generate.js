@@ -1,5 +1,6 @@
 import { metadata } from './metadata.js';
 import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
+import i18n from '#lib/i18n.js';
 
 export function transformData (deflection) {
   const subject = deflection.subject;
@@ -45,7 +46,7 @@ export function transformData (deflection) {
     officerBadge,
     supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
     agency,
-    charge: '647(f) RWS',
+    charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
     justification: deflection.behavior || '',
     hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
       ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)

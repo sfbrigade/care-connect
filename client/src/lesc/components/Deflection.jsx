@@ -263,22 +263,28 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Behavioral observations</Title>
+                <Title order={3}>Arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrestable behavior</Text>
+                    <Text c='dimmed'>Behavioral observation</Text>
                     {deflection?.behaviorNarrative
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorNarrative}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
+                  <Box>
+                    <Text c='dimmed'>Charge type</Text>
+                    {deflection?.chargeType
+                      ? <Text>{t(`chargeType.${deflection.chargeType}`)}</Text>
+                      : <Text c='red.6'>Incomplete</Text>}
+                  </Box>
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest details' : 'Finish arrest details'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>

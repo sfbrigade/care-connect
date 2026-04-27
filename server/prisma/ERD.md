@@ -96,6 +96,13 @@ OTHER OTHER
     
 
 
+        ChargeTypeEnum {
+            RWS_647F RWS_647F
+HS_11550 HS_11550
+        }
+    
+
+
         DrugTypeEnum {
             ALCOHOL ALCOHOL
 HEROIN HEROIN
@@ -432,6 +439,7 @@ DEPARTURE DEPARTURE
     DrugTypeEnum drugType "❓"
     String behavior "❓"
     String behaviorNarrative "❓"
+    ChargeTypeEnum chargeType "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
@@ -754,6 +762,7 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
     "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
+    "Deflection" o|--|o "ChargeTypeEnum" : "enum:chargeType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "Deflection" o|--|o "User" : "propertyReturnedBy"
