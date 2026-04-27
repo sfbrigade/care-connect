@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Button, Card, Container, Group, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { Alert, Box, Button, Card, Center, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { IconAlertTriangle, IconArrowLeft } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -74,17 +74,41 @@ function HandoffScreen () {
   const { facility } = useFacilityContext();
   const seenIncidentsRef = useRef(new Map());
   const seenDeflectionsRef = useRef(new Map());
+  const [isReady, setIsReady] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const isReadyRef = useRef(false);
+  const cancelledRef = useRef(false);
+
+  // Don't clear handoffReadyAt on unmount. The cleanup `initiateHandoff(false)`
+  // races with the mount's `initiateHandoff(true)` (StrictMode double-mount,
+  // or a prior visit's in-flight cleanup landing after the next visit's
+  // init), leaving the deflection un-claimable until the field user retries.
+  // The 3-min HANDOFF_READY_TTL on the server expires it naturally.
+  const initiate = useCallback(() => {
+    setHasError(false);
+    return Api.deflections.initiateHandoff(true)
+      .then(() => {
+        if (cancelledRef.current) return;
+        isReadyRef.current = true;
+        setIsReady(true);
+      })
+      .catch(() => {
+        if (cancelledRef.current) return;
+        // Only surface the error if we never succeeded — once the QR is
+        // visible, a transient interval failure shouldn't yank it.
+        if (!isReadyRef.current) setHasError(true);
+      });
+  }, []);
 
   useEffect(() => {
-    Api.deflections.initiateHandoff(true);
-    const interval = setInterval(() => {
-      Api.deflections.initiateHandoff(true);
-    }, 60_000);
+    cancelledRef.current = false;
+    initiate();
+    const interval = setInterval(initiate, 60_000);
     return () => {
+      cancelledRef.current = true;
       clearInterval(interval);
-      Api.deflections.initiateHandoff(false);
     };
-  }, []);
+  }, [initiate]);
 
   const { data: myHolds } = useQuery({
     queryKey: ['facilities', facility.id, 'my-holds'],
@@ -169,23 +193,38 @@ function HandoffScreen () {
             </Title>
           </Stack>
 
-          <Stack gap='xl'>
-            {groups.map(({ incident, deflections }) => (
-              <Stack key={incident.id} gap='md'>
-                <Stack gap={4}>
-                  <Text size='md'>Incident {incident.id}</Text>
-                  <Text size='md' c='dimmed'>{formatIncidentSubtitle(incident)}</Text>
+          {isReady && (
+            <Stack gap='xl'>
+              {groups.map(({ incident, deflections }) => (
+                <Stack key={incident.id} gap='md'>
+                  <Stack gap={4}>
+                    <Text size='md'>Incident {incident.id}</Text>
+                    <Text size='md' c='dimmed'>{formatIncidentSubtitle(incident)}</Text>
+                  </Stack>
+                  {deflections.map(deflection => (
+                    <HandoffHoldCard
+                      key={deflection.id}
+                      deflection={deflection}
+                      isHandedOff={!currentIds.has(deflection.id)}
+                    />
+                  ))}
                 </Stack>
-                {deflections.map(deflection => (
-                  <HandoffHoldCard
-                    key={deflection.id}
-                    deflection={deflection}
-                    isHandedOff={!currentIds.has(deflection.id)}
-                  />
-                ))}
+              ))}
+            </Stack>
+          )}
+          {!isReady && hasError && (
+            <Alert color='red' icon={<IconAlertTriangle />} title="Couldn't prepare handoff">
+              <Stack gap='sm' align='flex-start'>
+                <Text size='sm'>Check your connection and try again.</Text>
+                <Button variant='secondary' size='sm' onClick={initiate}>Retry</Button>
               </Stack>
-            ))}
-          </Stack>
+            </Alert>
+          )}
+          {!isReady && !hasError && (
+            <Center py='xl'>
+              <Loader />
+            </Center>
+          )}
         </Stack>
       </Container>
       <ActionFooter>
