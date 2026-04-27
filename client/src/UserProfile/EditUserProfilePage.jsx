@@ -92,7 +92,7 @@ function EditUserProfilePage () {
     onSuccess: (response) => {
       queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
-        queryClient.setQueryData(['users', 'me'], response.data);
+        queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       }
       showToast('Your profile has been updated', 'success');
       navigate('/profile');
@@ -140,7 +140,7 @@ function EditUserProfilePage () {
                     onChange={handleUnitChange}
                     disabled={!form.getValues().organizationId}
                     rightSection={units === undefined && form.getValues().organizationId ? <Loader size='sm' /> : null}
-                    nothingfound='No units found'
+                    nothingFoundMessage='No units found'
                   />
                 )}
                 {form.getValues().organizationId === 'sfso' && (

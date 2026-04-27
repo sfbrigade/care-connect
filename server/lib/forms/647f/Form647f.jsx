@@ -94,7 +94,7 @@ export default function Form647f ({ data = {} }) {
             <Row label='Badge Number / Star Number' value={officerBadge} required />
             <Row label="Supervising Sergeant's Star Number" value={supervisorBadgeNumber} required />
             <Row label='Agency' value={agency} required />
-            <Row label='Charge' value={charge || '647(f) RWS'} required />
+            <Row label='Charge' value={charge} required />
 
             <SectionHeader title='Additional Information' />
             <Row label='Hold ID' value={String(deflectionId)} />

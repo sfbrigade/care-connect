@@ -27,11 +27,12 @@ function PosthogProvider () {
       const { default: posthog } = await import('posthog-js');
       if (!isMounted) return;
 
-      const isDev = !!import.meta?.env?.DEV;
       posthog.init(apiKey, {
         api_host: apiHost || DEFAULT_API_HOST,
         capture_pageview: true,
-        disable_session_recording: isDev,
+        // We can't store ANY PII of people brought to a facility (not of the app users themselves) for >72 hrs,
+        // Disable Posthog session recording entirely until we have a way to anonymize or wipe it within the time limit.
+        disable_session_recording: true,
       });
       posthogRef.current = posthog;
 
