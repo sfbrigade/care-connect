@@ -18,17 +18,23 @@ export const metadata = {
             title: true,
           },
         },
+        createdByTitle: true,
+        createdByUnit: true,
+        createdByOrganization: true,
       },
     },
     facility: true,
-    transferredBy: {
+    handoffs: {
       include: {
-        unit: true,
-        title: true,
+        toOfficer: {
+          include: {
+            organization: true,
+            unit: true,
+            title: true,
+          },
+        },
       },
     },
-    transferredByTitle: true,
-    transferredByUnit: true,
     createdBy: {
       include: {
         organization: true,

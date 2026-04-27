@@ -14,23 +14,25 @@ export function transformData (deflection) {
     .filter(Boolean)
     .join(', ');
 
-  const arrestingOfficerRecord = incident?.incidentOfficers?.find(record => record.role === 'ARRESTING');
-  const officer = arrestingOfficerRecord?.officer || incident?.createdBy || deflection.createdBy;
-  const officerRank = arrestingOfficerRecord?.title?.name || officer?.title?.name || '';
+  const officer = incident?.createdBy || deflection.createdBy;
+  const officerRank = incident?.createdByTitle?.name || officer?.title?.name || '';
   const officerName = officer
     ? `${officer.firstName} ${officer.lastName}`
     : '';
-  const officerBadge = arrestingOfficerRecord?.badgeNumber || incident?.createdByBadgeNumber || officer?.badgeNumber || '';
-  const officerUnit = arrestingOfficerRecord?.unit?.name || incident?.createdByUnit?.name || officer?.unit?.name || '';
-  const officerAgency = arrestingOfficerRecord?.organization?.name || officer?.organization?.name || '';
+  const officerBadge = incident?.createdByBadgeNumber || officer?.badgeNumber || '';
+  const officerUnit = incident?.createdByUnit?.name || officer?.unit?.name || '';
+  const officerAgency = incident?.createdByOrganization?.name || officer?.organization?.name || '';
 
-  const transferOfficer = deflection.transferredBy;
-  const transferOfficerRank = deflection.transferredByTitle?.name || transferOfficer?.title?.name || '';
+  // find the field officer who handed the subject to RESET:
+  // use toOfficer from the most recent Handoff, or fall back to the deflection creator
+  const mostRecentHandoff = deflection.handoffs?.toSorted((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+  const transferOfficer = mostRecentHandoff?.toOfficer || incident?.createdBy || deflection.createdBy;
+  const transferOfficerRank = transferOfficer?.title?.name || '';
   const transferOfficerName = transferOfficer
     ? `${transferOfficer.firstName} ${transferOfficer.lastName}`
     : '';
-  const transferOfficerBadge = deflection.transferredByBadgeNumber || transferOfficer?.badgeNumber || '';
-  const transferOfficerUnit = deflection.transferredByUnit?.name || transferOfficer?.unit?.name || '';
+  const transferOfficerBadge = transferOfficer?.badgeNumber || '';
+  const transferOfficerUnit = transferOfficer?.unit?.name || '';
 
   const facility = deflection.facility;
   const facilityAddress = [facility?.addressLine1, facility?.city, facility?.state, facility?.postalCode]
@@ -50,7 +52,7 @@ export function transformData (deflection) {
     subjectLocalId: subject?.localId || '',
     arrestedAt: incident?.arrestedAt?.toISOString() || null,
     arrestLocation,
-    charge: '647(f) RWS',
+    charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
     cadNumber: incident?.cadNumber || '',
     officerRank,
     officerName,
@@ -58,8 +60,8 @@ export function transformData (deflection) {
     officerUnit,
     officerAgency,
     supervisorBadgeNumber: incident?.supervisorBadgeNumber || '',
-    agency,
-    charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
+    transferOfficerRank,
+    transferOfficerName,
     transferOfficerBadge,
     transferOfficerUnit,
     justification: deflection.behavior || '',
