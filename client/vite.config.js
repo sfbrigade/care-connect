@@ -53,40 +53,42 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       cssAsText(),
       // Skip PWA plugin during SSR builds — it only emits the service worker
       // and manifest for the client bundle.
-      ...(isSSRBuild ? [] : [VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon-32.png'],
-        manifest: {
-          name: 'Care Connect',
-          short_name: 'Care Connect',
-          description: 'San Francisco law-enforcement processing tool for specialized treatment centers.',
-          theme_color: '#4c6ef5',
-          background_color: '#ffffff',
-          display: 'minimal-ui',
-          orientation: 'portrait',
-          scope: '/',
-          start_url: '/',
-          icons: [
-            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-            { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          ],
-        },
-        workbox: {
-          navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//, /^\/static-data\//],
-          // Aggressive update propagation: new SW activates and claims clients
-          // immediately so deploys land within minutes on long-lived tablet sessions.
-          skipWaiting: true,
-          clientsClaim: true,
-        },
-        devOptions: {
-          // Serve manifest + SW in vite dev so DevTools → Application shows them.
-          enabled: true,
-          type: 'module',
-          navigateFallback: 'index.html',
-        },
-      })]),
+      ...(isSSRBuild
+        ? []
+        : [VitePWA({
+            registerType: 'autoUpdate',
+            includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon-32.png'],
+            manifest: {
+              name: 'Care Connect',
+              short_name: 'Care Connect',
+              description: 'San Francisco law-enforcement processing tool for specialized treatment centers.',
+              theme_color: '#4c6ef5',
+              background_color: '#ffffff',
+              display: 'minimal-ui',
+              orientation: 'portrait',
+              scope: '/',
+              start_url: '/',
+              icons: [
+                { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+                { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+                { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+              ],
+            },
+            workbox: {
+              navigateFallback: '/index.html',
+              navigateFallbackDenylist: [/^\/api\//, /^\/static-data\//],
+              // Aggressive update propagation: new SW activates and claims clients
+              // immediately so deploys land within minutes on long-lived tablet sessions.
+              skipWaiting: true,
+              clientsClaim: true,
+            },
+            devOptions: {
+              // Serve manifest + SW in vite dev so DevTools → Application shows them.
+              enabled: true,
+              type: 'module',
+              navigateFallback: 'index.html',
+            },
+          })]),
     ],
     resolve: {
       alias,
