@@ -51,8 +51,6 @@ export default async function (fastify) {
             where: { id },
             include: {
               incident: true,
-              subject: true,
-              propertyPhotos: true,
             },
           });
 
@@ -117,8 +115,6 @@ export default async function (fastify) {
         }
         throw error;
       }
-
-      if (!updatedDeflection) return;
 
       updatedDeflection.propertyPhotos = updatedDeflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
