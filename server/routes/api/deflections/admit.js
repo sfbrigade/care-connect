@@ -35,6 +35,9 @@ export default async function (fastify, opts) {
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
+          // Lock the deflection row (not the bedType, like other transition handlers)
+          // because admit doesn't change bed counters and per-deflection locking
+          // is sufficient to serialize concurrent admits.
           await fastify.prisma.deflection.findByIdForUpdate(tx, id);
 
           deflection = await tx.deflection.findUnique({
