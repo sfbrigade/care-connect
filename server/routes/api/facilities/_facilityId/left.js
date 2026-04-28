@@ -23,21 +23,12 @@ export default async function (fastify) {
         await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
         const now = new Date();
 
-        // Snapshot the officer's still-eligible arrived holds under the facility lock.
-        const eligibleHoldIds = (await tx.deflection.findMany({
-          where: {
-            facilityId,
-            currentOfficerId: officerId,
-            status: 'ACTIVE',
-            arrivedAt: { not: null },
-          },
-          select: { id: true },
-        })).map((hold) => hold.id);
-
-        // Clear currentOfficerId only for holds that are still eligible at commit time.
+        // Clear currentOfficerId on this officer's currently-arrived holds.
+        // The facility lock serializes us against concurrent close; the WHERE
+        // is re-evaluated per row at commit time, so holds whose state changed
+        // under us (cancel / transfer / release) are filtered out automatically.
         await tx.deflection.updateMany({
           where: {
-            id: { in: eligibleHoldIds },
             facilityId,
             currentOfficerId: officerId,
             status: 'ACTIVE',
