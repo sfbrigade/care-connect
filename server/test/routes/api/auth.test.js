@@ -79,7 +79,7 @@ test('/api/auth', async (t) => {
       assert.deepStrictEqual(data.lastName, 'User 2');
       assert.deepStrictEqual(data.email, 'invited.user.2@test.com');
       assert.deepStrictEqual(data.organizationId, 'sfso');
-      assert.deepStrictEqual(data.roles, ['CUSTODY']);
+      assert.deepStrictEqual(data.roles, ['FIELD', 'CUSTODY']);
       assert.deepStrictEqual(data.titleId, 'sheriff');
       assert.deepStrictEqual(data.prop115Certified, true);
 
@@ -92,7 +92,7 @@ test('/api/auth', async (t) => {
       assert.deepStrictEqual(userData.lastName, 'User 2');
       assert.deepStrictEqual(userData.email, 'invited.user.2@test.com');
       assert.deepStrictEqual(userData.organizationId, 'sfso');
-      assert.deepStrictEqual(userData.roles, ['CUSTODY']);
+      assert.deepStrictEqual(userData.roles, ['FIELD', 'CUSTODY']);
       assert.deepStrictEqual(userData.titleId, 'sheriff');
       assert.deepStrictEqual(userData.prop115Certified, true);
     });

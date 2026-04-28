@@ -142,6 +142,17 @@ export class User extends Base {
   async comparePassword (password) {
     return bcrypt.compare(password, this.hashedPassword);
   }
+
+  async hasActiveHolds (prisma) {
+    const count = await prisma.deflection.count({
+      where: {
+        currentOfficerId: this.id,
+        status: 'ACTIVE',
+        subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
+      },
+    });
+    return count > 0;
+  }
 }
 
 export default User;

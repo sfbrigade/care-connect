@@ -16,7 +16,7 @@ function Register () {
   const onSubmitMutation = useMutation({
     mutationFn: (values) => Api.auth.register(values),
     onSuccess: (response) => {
-      queryClient.setQueryData(['users', 'me'], response.data);
+      queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       if (response.data.organizationId === 'sfpd' || response.data.organizationId === 'sfso') {
         navigate('/units', { replace: true, state: { from } });
       } else {

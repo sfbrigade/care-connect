@@ -25,8 +25,8 @@ export default async function main (prisma) {
   const bedTypeData = {
     facilityId: facility.id,
     type: 'CHAIR',
-    capacity: 16,
-    available: 16,
+    capacity: 25,
+    available: 25,
     createdById: admin.id,
     updatedById: admin.id,
   };

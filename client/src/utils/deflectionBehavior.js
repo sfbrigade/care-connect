@@ -9,10 +9,11 @@ export function composeBehavior (generatedNarrative, behaviorNarrative) {
   return generated || additions || '';
 }
 
-export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative }) {
+export function buildDeflectionUpdatePayload ({ generatedNarrative, behaviorNarrative, chargeType }) {
   const normalizedBehaviorNarrative = (behaviorNarrative || '').trim();
   return {
     behavior: composeBehavior(generatedNarrative, normalizedBehaviorNarrative),
     behaviorNarrative: normalizedBehaviorNarrative || null,
+    chargeType: chargeType ?? null,
   };
 }
