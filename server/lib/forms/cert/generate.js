@@ -37,7 +37,7 @@ export function transformData (deflection) {
     unitIdentifier,
     narcoticsSubstance: deflection.narcoticsSubstance,
     narcoticsParaphernalia: deflection.narcoticsParaphernalia,
-    cadNumber: deflection.incident?.cadNumber || '',
+    caseNumber: deflection.incident?.caseNumber || '',
     releaseDateFormatted: formatDateOnly(deflection.releasedAt.toISOString()),
   };
 }
@@ -73,7 +73,7 @@ export async function generatePdf (deflectionData, user) {
     const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
     const noticeData = {
       date: deflectionData.releaseDateFormatted,
-      cadNumber: deflectionData.cadNumber,
+      caseNumber: deflectionData.caseNumber,
       substanceSeized: deflectionData.narcoticsSubstance === true,
       paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
     };
