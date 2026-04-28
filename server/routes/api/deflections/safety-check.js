@@ -4,12 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
+import { conflictError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/safety-check',
@@ -57,7 +52,7 @@ export default async function (fastify, opts) {
           });
 
           if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot complete safety check: status is ${deflection.subjectStatus}, expected AWAITING_INTAKE`);
           }
 
           const now = new Date();

@@ -4,12 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import Facility from '#models/facility.js';
 import { holdExpiresAt } from '#lib/holds.js';
-
-function facilityNotAcceptingError () {
-  const error = new Error('Facility is not accepting new holds');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
+import { facilityNotAcceptingError } from '#lib/httpErrors.js';
 
 function noAvailableBedError () {
   const error = new Error('No available beds');

@@ -4,18 +4,7 @@ import Deflection from '#models/deflection.js';
 import Facility from '#models/facility.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-
-function facilityNotAcceptingError () {
-  const error = new Error('Facility is not accepting new holds');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
-
-function noAvailableBedError () {
-  const error = new Error('No available beds');
-  error.statusCode = StatusCodes.GONE;
-  return error;
-}
+import { facilityNotAcceptingError, noAvailableBedError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',

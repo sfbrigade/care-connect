@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const IN_CUSTODY_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -50,12 +51,6 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
   };
 }
 
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
-
 export default async function (fastify, opts) {
   fastify.post('/:id/record-death',
     {
@@ -98,7 +93,7 @@ export default async function (fastify, opts) {
           });
 
           if (!ELIGIBLE_STATUSES.includes(deflection.subjectStatus)) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot have death recorded: status is ${deflection.subjectStatus}, expected one of [${ELIGIBLE_STATUSES.join(', ')}]`);
           }
 
           const now = new Date();

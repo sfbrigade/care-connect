@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -20,12 +21,6 @@ function hasAssociatedProperty (deflection) {
   const hasPropertyDescription = Boolean(deflection?.propertyDetails?.trim());
   const hasPropertyPhotos = (deflection?.propertyPhotos?.length ?? 0) > 0;
   return hasPropertyVolume || hasPropertyDescription || hasPropertyPhotos;
-}
-
-function conflictError (message = 'Conflict') {
-  const error = new Error(message);
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
 }
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -92,7 +87,7 @@ export default async function (fastify, opts) {
           });
 
           if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
-            throw conflictError(`Deflection ${id} is not in an exit-to-jail-eligible status (${deflection.subjectStatus})`);
+            throw conflictError(`Deflection ${id} cannot be exited to jail: status is ${deflection.subjectStatus}, expected one of [${[...EXIT_TO_JAIL_ELIGIBLE_STATUSES].join(', ')}]`);
           }
 
           const now = new Date();

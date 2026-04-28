@@ -4,18 +4,7 @@ import { z } from 'zod';
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
 import Facility from '#models/facility.js';
-
-function noAvailableBedError () {
-  const error = new Error('No available beds');
-  error.statusCode = StatusCodes.GONE;
-  return error;
-}
-
-function facilityNotAcceptingError () {
-  const error = new Error('Facility is not accepting new holds');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
+import { facilityNotAcceptingError, noAvailableBedError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',

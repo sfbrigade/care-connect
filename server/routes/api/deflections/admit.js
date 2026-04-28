@@ -4,12 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
+import { conflictError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/admit',
@@ -51,7 +46,7 @@ export default async function (fastify, opts) {
           });
           // ensure correct subject state
           if (deflection.subjectStatus !== Deflection.SubjectStatus.READY_FOR_INTAKE) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot be admitted: status is ${deflection.subjectStatus}, expected READY_FOR_INTAKE`);
           }
           // update deflection
           // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses.

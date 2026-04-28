@@ -5,6 +5,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
@@ -14,12 +15,6 @@ const EXITABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
   Deflection.SubjectStatus.RELEASED,
 ];
-
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
 
 export default async function (fastify, opts) {
   fastify.post('/:id/exit',
@@ -73,7 +68,7 @@ export default async function (fastify, opts) {
           });
 
           if (!EXITABLE_STATUSES.includes(deflection.subjectStatus)) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot be exited: status is ${deflection.subjectStatus}, expected one of [${EXITABLE_STATUSES.join(', ')}]`);
           }
 
           const now = new Date();

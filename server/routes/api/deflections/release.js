@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -50,12 +51,6 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     updateMethod: 'API',
     updatedById: userId,
   };
-}
-
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
 }
 
 export default async function (fastify, opts) {
@@ -138,7 +133,7 @@ export default async function (fastify, opts) {
           });
 
           if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot be released: status is ${deflection.subjectStatus}, expected one of [${RELEASABLE_STATUSES.join(', ')}]`);
           }
 
           const now = new Date();

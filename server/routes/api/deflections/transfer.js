@@ -5,12 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
-
-function conflictError () {
-  const error = new Error('Conflict');
-  error.statusCode = StatusCodes.CONFLICT;
-  return error;
-}
+import { conflictError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/transfer',
@@ -58,7 +53,7 @@ export default async function (fastify, opts) {
           });
 
           if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} cannot be transferred: status=${deflection.status}, subjectStatus=${deflection.subjectStatus}; expected status=ACTIVE and subjectStatus=ONSITE_AWAITING_TRANSFER`);
           }
 
           const now = new Date();
