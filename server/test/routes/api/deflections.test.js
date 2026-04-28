@@ -1435,7 +1435,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/1/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Deflection is not cancelled or expired');
+      assert.deepStrictEqual(data.message, 'Deflection is not cancelled or expired');
     });
 
     await t.test('returns 409 if no available beds', async () => {
@@ -1451,7 +1451,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'No available beds');
+      assert.deepStrictEqual(data.message, 'No available beds');
     });
 
     await t.test('returns 409 if facility is open but not accepting', async () => {
@@ -1469,7 +1469,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Facility is not accepting new holds');
+      assert.deepStrictEqual(data.message, 'Facility is not accepting new holds');
     });
 
     await t.test('returns 409 if facility is closed', async () => {
@@ -1487,7 +1487,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Facility is not accepting new holds');
+      assert.deepStrictEqual(data.message, 'Facility is not accepting new holds');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
