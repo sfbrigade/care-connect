@@ -6,6 +6,10 @@
       "Description": "Base name for the stack",
       "Type": "String"
     },
+    "CapacityApiKey": {
+      "Type": "String",
+      "Description": "The API key for fetching facility status"
+    },
     "ImageURL": {
       "Type": "String",
       "Description": "The URL of the Docker image (e.g., your-ecr-repo-url/image:tag)"
@@ -339,6 +343,12 @@
                       }
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
                 }
               },
               {
@@ -834,6 +844,12 @@
                       }
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
                 }
               },
               {
