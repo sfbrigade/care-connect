@@ -6,6 +6,8 @@ import Facility from '#models/facility.js';
 import { holdExpiresAt } from '#lib/holds.js';
 import { facilityNotAcceptingError } from '#lib/httpErrors.js';
 
+// TODO figure out how to rely on the shared helper in httpErrors.js
+// This one currently returns a different status code.
 function noAvailableBedError () {
   const error = new Error('No available beds');
   error.statusCode = StatusCodes.CONFLICT;
