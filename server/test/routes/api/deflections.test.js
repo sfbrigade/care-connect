@@ -308,7 +308,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(row.improvementSuggestions, null);
     });
 
-    await t.test('persists empty string when improvementSuggestions is whitespace-only', async () => {
+    await t.test('persists null when improvementSuggestions is whitespace-only', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
@@ -326,7 +326,7 @@ test('/api/deflections', async (t) => {
       const row = await prisma.satisfactionSurvey.findUnique({
         where: { id: data.id },
       });
-      assert.strictEqual(row.improvementSuggestions, '');
+      assert.strictEqual(row.improvementSuggestions, null);
     });
 
     await t.test('allows SFPD users who can read the facility hold', async () => {
@@ -404,7 +404,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
-    await t.test('returns 422 when resetFacilityFeedback is empty', async () => {
+    await t.test('persists null when resetFacilityFeedback is whitespace-only', async () => {
       const response = await app.inject()
         .post('/api/deflections/4/satisfaction-survey')
         .headers(userHeaders)
@@ -416,7 +416,12 @@ test('/api/deflections', async (t) => {
           },
         });
 
-      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.resetFacilityFeedback, null);
     });
 
     await t.test('accepts exactly 5000 characters for resetFacilityFeedback', async () => {

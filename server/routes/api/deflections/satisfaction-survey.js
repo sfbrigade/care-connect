@@ -8,7 +8,7 @@ const BodySchema = z.object({
   answers: z.object({
     careConnectRating: z.enum(['bad', 'neutral', 'good']),
     improvementSuggestions: z.string().trim().max(5000).optional(),
-    resetFacilityFeedback: z.string().trim().min(1).max(5000).optional(),
+    resetFacilityFeedback: z.string().trim().max(5000).optional(),
   }),
 });
 
