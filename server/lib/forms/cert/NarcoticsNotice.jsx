@@ -57,7 +57,7 @@ const pageCSS = `
 export default function NarcoticsNotice ({ data = {} }) {
   const {
     date = '',
-    cadNumber = '',
+    caseNumber = '',
     substanceSeized = false,
     paraphernaliaSeized = false,
   } = data;
@@ -75,7 +75,7 @@ export default function NarcoticsNotice ({ data = {} }) {
 
         <div className='fields'>
           <div>Date: <span>{date}</span></div>
-          <div>CAD # <span>{cadNumber}</span></div>
+          <div>Case # <span>{caseNumber}</span></div>
         </div>
 
         <div className='notice-title'>
@@ -103,7 +103,7 @@ export default function NarcoticsNotice ({ data = {} }) {
         <p>
           SFPD officers seized this property from you based on probable cause to
           believe this property is contraband. The SFPD now has custody of this
-          property and will hold it under the &ldquo;CAD&rdquo; number listed at the top right of this
+          property and will hold it under the &ldquo;Case&rdquo; number listed at the top right of this
           form.
         </p>
 
