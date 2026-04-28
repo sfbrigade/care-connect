@@ -134,12 +134,13 @@ export default async function (fastify, opts) {
 
           const now = new Date();
           const previousSubjectStatus = deflection.subjectStatus;
-          // A sobered release from a pre-chair hold has no chair to vacate
-          // and no follow-up step, so it finalizes here as EXITED. A sobered
-          // release from IN_CHAIR keeps the existing two-step pattern
-          // (lingers ACTIVE/RELEASED until the care team marks EXITED).
+          // Only `sobered` releases from a pre-chair hold finalize immediately
+          // as EXITED — there's no chair to vacate and no follow-up step.
+          // Sobered from IN_CHAIR and all other release reasons (e.g.
+          // behavioral_health_evaluation) linger as ACTIVE/RELEASED until the
+          // care team explicitly exits.
           const isPreChairHoldRelease =
-            !isExitRelease && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
+            releaseReasonId === 'sobered' && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
           const releaseFinalizesAsExited = isExitRelease || isPreChairHoldRelease;
 
           await tx.deflectionUpdate.create({

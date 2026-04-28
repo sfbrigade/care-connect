@@ -191,7 +191,7 @@ test('Hold cancellation edge cases', async (t) => {
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     const body = JSON.parse(response.body);
-    assert.deepStrictEqual(body.error, 'Facility is not accepting new holds');
+    assert.deepStrictEqual(body.message, 'Facility is not accepting new holds');
 
     // Restore facility to OPEN_ACCEPTING
     await app.inject()
