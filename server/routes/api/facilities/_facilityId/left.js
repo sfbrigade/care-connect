@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { notFoundError } from '#lib/httpErrors.js';
+
 export default async function (fastify) {
   fastify.post('/left',
     {
@@ -20,7 +22,10 @@ export default async function (fastify) {
       const officerId = request.user.id;
 
       await fastify.prisma.$transaction(async (tx) => {
-        await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+        const facility = await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+        if (!facility) {
+          throw notFoundError(`Facility ${facilityId} not found`);
+        }
         const now = new Date();
 
         // Clear currentOfficerId on this officer's currently-arrived holds.

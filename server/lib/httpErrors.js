@@ -11,3 +11,4 @@ function makeStatusError (statusCode, defaultMessage) {
 export const conflictError = makeStatusError(StatusCodes.CONFLICT, 'Conflict');
 export const facilityNotAcceptingError = makeStatusError(StatusCodes.CONFLICT, 'Facility is not accepting new holds');
 export const noAvailableBedError = makeStatusError(StatusCodes.GONE, 'No available beds');
+export const notFoundError = makeStatusError(StatusCodes.NOT_FOUND, 'Not Found');
