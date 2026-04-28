@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title } from '@mantine/core';
-import { isEmail, useForm } from '@mantine/form';
+import { useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconMail, IconLock, IconArrowLeft } from '@tabler/icons-react';
