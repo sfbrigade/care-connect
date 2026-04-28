@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { notFoundError } from '#lib/httpErrors.js';
+
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 
 function badRequestError (message) {
@@ -29,7 +31,10 @@ export default async function (fastify) {
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
-          await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+          const facility = await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+          if (!facility) {
+            throw notFoundError(`Facility ${facilityId} not found`);
+          }
           const now = new Date();
 
           // Snapshot candidate pre-transfer holds for this officer under the facility lock.
