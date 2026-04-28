@@ -110,6 +110,7 @@ function IncidentForm () {
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const addressRef = useRef();
+  const autoGeolocationRequestedRef = useRef(false);
   const isEditing = !!incidentId;
 
   const form = useForm({
@@ -140,6 +141,16 @@ function IncidentForm () {
           form.setErrors(validateIncident(data));
         }
         setInitialized(true);
+        // If this is a brand-new incident, and the incident doesn't already have an address,
+        // then try using device location to fill in the address/location data
+        if (isConfirmIncidentFlow && !data.addressLine1 && !autoGeolocationRequestedRef.current) {
+          autoGeolocationRequestedRef.current = true;
+          getCurrentLocationAddress().then((address) => {
+            if (address) {
+              form.setValues(address);
+            }
+          });
+        }
       }
     } else {
       const now = DateTime.now().toISO({
@@ -192,7 +203,11 @@ function IncidentForm () {
         : Api.incidents.create(formData, {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
-    onSuccess: async () => {
+    onSuccess: async (response) => {
+      const updatedIncident = response?.data;
+      if (updatedIncident?.id != null) {
+        queryClient.setQueryData(['incidents', String(updatedIncident.id)], updatedIncident);
+      }
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
