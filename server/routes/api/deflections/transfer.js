@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
@@ -20,6 +21,12 @@ export default async function (fastify, opts) {
           [StatusCodes.NOT_FOUND]: z.null(),
           [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({
+            errors: z.array(z.object({
+              path: z.string(),
+              message: z.string(),
+            })),
+          }),
         },
       },
     },
@@ -45,6 +52,7 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.findUnique({
           where: { id },
           include: {
+            incident: true,
             subject: true,
             propertyPhotos: true,
           },
@@ -52,6 +60,12 @@ export default async function (fastify, opts) {
 
         if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
           return reply.code(StatusCodes.CONFLICT).send();
+        }
+
+        if (!isIncidentDetailsComplete(deflection.incident) || !isDeflectionDetailsComplete(deflection)) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: 'Hold details must be complete before custody transfer.' }],
+          });
         }
 
         const now = new Date();
