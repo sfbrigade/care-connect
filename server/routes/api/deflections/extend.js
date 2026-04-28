@@ -24,7 +24,7 @@ export default async function (fastify) {
       const officerId = request.user.id;
       const requestedDeflectionIds = [...new Set(deflectionIds)].sort((a, b) => a - b);
 
-      let deflections;
+      let deflections = [];
       try {
         await fastify.prisma.$transaction(async (tx) => {
           // Candidate scan (no lock yet) to find which bedTypes we need to lock.

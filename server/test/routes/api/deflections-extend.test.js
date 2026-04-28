@@ -197,7 +197,7 @@ test('PATCH /api/deflections/extend', async (t) => {
     assert.deepStrictEqual(body.length, 0);
   });
 
-  await t.test('returns 400 when none of the requested holds are eligible', async () => {
+  await t.test('returns an empty array when none of the requested holds are eligible', async () => {
     const response = await app.inject()
       .patch('/api/deflections/extend')
       .headers(cleanFieldHeaders)
