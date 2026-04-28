@@ -1,4 +1,4 @@
-import { isEmail } from '@mantine/form';
+import { isEmail } from '../../utils/email';
 const emailValidator = isEmail('Please enter a valid email address.');
 
 function parseCsvLine (line) {

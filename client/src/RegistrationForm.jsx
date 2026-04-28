@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Alert, Anchor, Button, Fieldset, Stack, Text, TextInput } from '@mantine/core';
-import { isEmail, isNotEmpty, hasLength, useForm } from '@mantine/form';
+import { isNotEmpty, hasLength, useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { Link } from 'react-router';
 import { IconMail, IconLock } from '@tabler/icons-react';
 
