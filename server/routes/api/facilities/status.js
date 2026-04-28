@@ -79,10 +79,6 @@ export default async function (fastify, opts) {
               status: Deflection.HoldStatus.ACTIVE,
               subjectStatus: Deflection.SubjectStatus.DETAINED,
             },
-            include: {
-              createdBy: true,
-              subject: true,
-            },
             orderBy: [
               { bedTypeId: 'asc' },
               { createdAt: 'desc' },
