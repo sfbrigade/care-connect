@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { notFoundError } from '#lib/httpErrors.js';
 
 function propertyReturnConflict (code) {
   const error = new Error(code);
@@ -79,9 +80,7 @@ export default async function (fastify, opts) {
         await fastify.prisma.$transaction(async (tx) => {
           const lockedDeflection = await fastify.prisma.deflection.findByIdForUpdate(tx, id);
           if (!lockedDeflection) {
-            const error = new Error('Deflection not found');
-            error.statusCode = StatusCodes.NOT_FOUND;
-            throw error;
+            throw notFoundError('Deflection not found');
           }
 
           const currentDeflection = await tx.deflection.findUnique({
