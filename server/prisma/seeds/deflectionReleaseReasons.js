@@ -18,7 +18,13 @@ export default async function main (prisma) {
     },
     {
       id: 'medical_issue',
-      name: 'Medical issue',
+      name: 'Medical issue (physical)',
+      createdById: adminUser.id,
+      updatedById: adminUser.id,
+    },
+    {
+      id: 'behavioral_health_evaluation',
+      name: 'Behavioral health evaluation',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
