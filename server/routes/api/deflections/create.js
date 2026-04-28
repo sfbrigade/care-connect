@@ -34,19 +34,6 @@ export default async function (fastify, opts) {
 
       // TODO: check user authorization
 
-      // Block new holds if facility is not accepting
-      const facility = await fastify.prisma.facility.findUnique({
-        where: { id: data.facilityId },
-      });
-      if (!facility) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Facility not found' });
-      }
-      if (facility.status !== Facility.Status.OPEN_ACCEPTING) {
-        return reply.code(StatusCodes.CONFLICT).send({
-          error: 'Facility is not accepting new holds',
-        });
-      }
-
       let deflection;
       await fastify.prisma.$transaction(async (tx) => {
         const lockedFacility = await fastify.prisma.facility.findByIdForUpdate(tx, data.facilityId);
