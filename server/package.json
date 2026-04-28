@@ -18,7 +18,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
-    "test": "node test/run-tests.js --experimental-test-module-mocks --test-concurrency 8",
+    "test": "node test/run-tests.js",
     "test:sequential": "node --experimental-test-module-mocks --test-concurrency 1 --test $(find test -name '*.test.js')",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",

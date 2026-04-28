@@ -130,21 +130,51 @@ async function main () {
   }
   await findTestFiles(path.join(__dirname));
 
-  // Forward any extra CLI args (e.g. --test-concurrency 8, --experimental-test-module-mocks)
-  const extraArgs = process.argv.slice(2);
+  // Split test files: those that call mock.module() require
+  // --experimental-test-module-mocks, which patches Node's loader and races
+  // against Prisma's #main-entry-point subpath import under parallel loads.
+  // Run those serially in a second pass; everything else runs in parallel
+  // without the experimental flag.
+  const MOCK_MODULE_RE = /\bmock\.module\s*\(/;
+  const mockFiles = [];
+  const regularFiles = [];
+  for (const file of testFiles) {
+    const content = await fs.readFile(path.join(__dirname, '..', file), 'utf8');
+    if (MOCK_MODULE_RE.test(content)) {
+      mockFiles.push(file);
+    } else {
+      regularFiles.push(file);
+    }
+  }
 
-  const child = spawn('node', ['--test', ...extraArgs, ...testFiles], {
-    cwd: path.join(__dirname, '..'),
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      CARE_CONNECT_TEST_CONTAINERS: CONTAINER_INFO_PATH,
-    },
-  });
+  const concurrency = process.env.TEST_CONCURRENCY ?? '8';
+  const childEnv = {
+    ...process.env,
+    CARE_CONNECT_TEST_CONTAINERS: CONTAINER_INFO_PATH,
+  };
 
-  const exitCode = await new Promise((resolve) => {
-    child.on('close', resolve);
-  });
+  function runPass (label, args, files) {
+    if (files.length === 0) return Promise.resolve(0);
+    console.log(`\n${label} (${files.length} files):\n  node ${args.join(' ')}`);
+    const child = spawn('node', [...args, ...files], {
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit',
+      env: childEnv,
+    });
+    return new Promise((resolve) => child.on('close', resolve));
+  }
+
+  const passAExitCode = await runPass(
+    `Pass A: parallel (concurrency=${concurrency}), no experimental flag`,
+    ['--test', '--test-concurrency', concurrency],
+    regularFiles,
+  );
+
+  const passBExitCode = await runPass(
+    'Pass B: serial, --experimental-test-module-mocks',
+    ['--experimental-test-module-mocks', '--test', '--test-concurrency', '1'],
+    mockFiles,
+  );
 
   console.log('Stopping containers...');
   await storage.stop();
@@ -156,7 +186,7 @@ async function main () {
     // ignore
   }
 
-  process.exit(exitCode);
+  process.exit(passAExitCode || passBExitCode);
 }
 
 main().catch((err) => {
