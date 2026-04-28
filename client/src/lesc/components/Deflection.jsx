@@ -39,7 +39,7 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
-  const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const allDetailsComplete = deflection ? isValidDeflection(deflection) && isValidIncident(incident) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
   const substanceComplete = deflection
     ? isValidSubstance({
@@ -63,8 +63,8 @@ function Deflection () {
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
   const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
-  const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
+  const showFinishDetailsFooter = isActionableActiveHold && !allDetailsComplete;
+  const showCancelOnlyFooter = isActionableActiveHold && allDetailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
@@ -406,7 +406,14 @@ function Deflection () {
           </Button>
           {showFinishDetailsFooter && (
             <Button
-              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+              onClick={() => {
+                const subjectPath = `/holds/${deflection?.id}/subject`;
+                if (!isValidIncident(incident)) {
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(subjectPath)}`);
+                  return;
+                }
+                navigate(subjectPath);
+              }}
             >
               Finish details
             </Button>
