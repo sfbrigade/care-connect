@@ -23,6 +23,36 @@ test('/api/deflections', async (t) => {
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
 
+  // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
+  // deflections.yml). Tests opt into completeness when they exercise endpoints
+  // that gate on isIncidentDetailsComplete / isDeflectionDetailsComplete.
+  async function makeIncidentComplete (incidentId) {
+    await prisma.incident.updateMany({
+      where: { id: incidentId },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+  }
+
+  async function makeDeflectionComplete (deflectionId) {
+    await prisma.deflection.updateMany({
+      where: { id: deflectionId },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+      },
+    });
+  }
+
   await t.test('POST /', async (t) => {
     await t.test('creates a new deflection', async () => {
       await prisma.deflection.expire();
@@ -245,6 +275,8 @@ test('/api/deflections', async (t) => {
   await t.test('POST /:id/transfer', async (t) => {
     await t.test('transfers custody of a deflection', async () => {
       await prisma.deflection.expire();
+      await makeIncidentComplete(1);
+      await makeDeflectionComplete(5);
       await prisma.deflection.update({
         where: { id: 5 },
         data: {
