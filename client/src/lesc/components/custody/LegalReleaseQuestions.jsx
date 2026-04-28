@@ -212,7 +212,8 @@ function LegalReleaseQuestions () {
                     <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
                       <Stack gap='sm' align='flex-start'>
                         <Chip data-testid='release-reason-sobered' value='sobered'>Can care for themselves</Chip>
-                        <Chip value='medical_issue'>Medical issue</Chip>
+                        <Chip value='medical_issue'>Medical issue (physical)</Chip>
+                        <Chip value='behavioral_health_evaluation'>Behavioral health evaluation</Chip>
                         <Chip value='other'>Other (please specify)</Chip>
                       </Stack>
                     </Chip.Group>
@@ -221,7 +222,7 @@ function LegalReleaseQuestions () {
                 {isMedicalRelease && (
                   <>
                     <Text size='md' c='dimmed'>
-                      This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
+                      This &lsquo;Medical issue (physical)&rsquo; release will also mark the person as exited from RESET
                     </Text>
                     <Input.Wrapper label='Exit destination' required>
                       <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
@@ -283,7 +284,10 @@ function LegalReleaseQuestions () {
                     !releaseReasonId ||
                     (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
                     (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                    (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
+                    (releaseReasonId !== 'sobered' &&
+                      releaseReasonId !== 'medical_issue' &&
+                      releaseReasonId !== 'behavioral_health_evaluation' &&
+                      releaseReasonId !== 'other')
                   }
                 >
                   {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}

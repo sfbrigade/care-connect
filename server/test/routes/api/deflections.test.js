@@ -1939,6 +1939,49 @@ test('/api/deflections', async (t) => {
       assert.ok(dbDeflection.exitedAt);
     });
 
+    await t.test('marks a subject as legally released (behavioral health evaluation)', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'ADMITTED',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'behavioral_health_evaluation',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'RELEASED');
+      assert.strictEqual(data.status, 'ACTIVE');
+      assert.strictEqual(data.releaseReasonId, 'behavioral_health_evaluation');
+      assert.strictEqual(data.exitDestinationId, null);
+      assert.ok(data.releasedAt);
+      assert.strictEqual(data.completedAt, null);
+      assert.strictEqual(data.exitedAt, null);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
+      assert.strictEqual(dbDeflection.status, 'ACTIVE');
+      assert.strictEqual(dbDeflection.releaseReasonId, 'behavioral_health_evaluation');
+      assert.strictEqual(dbDeflection.exitDestinationId, null);
+      assert.strictEqual(dbDeflection.completedAt, null);
+      assert.strictEqual(dbDeflection.exitedAt, null);
+    });
+
     await t.test('marks a subject as legally released (other)', async () => {
       // Setup: reset deflection 6 status
       await prisma.deflection.update({

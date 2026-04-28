@@ -215,8 +215,16 @@ function ScanCodeModal ({
                       ))}
                     </Stack>
 
-                    <Group gap='sm'>
+                    <Group gap='sm' justify='flex-start'>
+                      <Button
+                        data-testid='manual-code-submit'
+                        type='submit'
+                        disabled={!canSubmit}
+                      >
+                        Submit
+                      </Button>
                       {manualEntryAllowMultiple && (
+
                         <Button
                           variant='secondary'
                           onClick={handleAddCodeField}
@@ -240,26 +248,16 @@ function ScanCodeModal ({
               </Box>
             )}
             <Box className={classes.scanDoneButton}>
-              {manualEntry
-                ? (
-                  <Button
-                    data-testid='manual-code-submit'
-                    type='submit'
-                    disabled={!canSubmit}
-                  >
-                    Submit
-                  </Button>
-                  )
-                : (
-                  <Button
-                    size='lg'
-                    radius='xl'
-                    disabled={!scanAccepted}
-                    onClick={handleClose}
-                  >
-                    Done
-                  </Button>
-                  )}
+              {!manualEntry && (
+                <Button
+                  size='lg'
+                  radius='xl'
+                  disabled={!scanAccepted}
+                  onClick={handleClose}
+                >
+                  Done
+                </Button>
+              )}
             </Box>
           </Box>
         </form>
