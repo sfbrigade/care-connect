@@ -161,7 +161,20 @@ async function main () {
       stdio: 'inherit',
       env: childEnv,
     });
-    return new Promise((resolve) => child.on('close', resolve));
+    // close emits (code, signal). When the child is killed by a signal
+    // (OOM, SIGTERM, SIGSEGV, ...), code is null. We must surface that as
+    // a non-zero exit code so the final `passA || passB` doesn't treat
+    // null as falsy and silently report CI green.
+    return new Promise((resolve) => {
+      child.on('close', (code, signal) => {
+        if (signal) {
+          console.error(`${label} killed by signal ${signal}`);
+          resolve(1);
+        } else {
+          resolve(code ?? 1);
+        }
+      });
+    });
   }
 
   const passAExitCode = await runPass(
