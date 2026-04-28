@@ -37,10 +37,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
-
       try {
         await fastify.prisma.$transaction(async (tx) => {
           const { bedTypeId } = deflection;
