@@ -22,8 +22,8 @@ function hasAssociatedProperty (deflection) {
   return hasPropertyVolume || hasPropertyDescription || hasPropertyPhotos;
 }
 
-function conflictError () {
-  const error = new Error('Conflict');
+function conflictError (message = 'Conflict') {
+  const error = new Error(message);
   error.statusCode = StatusCodes.CONFLICT;
   return error;
 }
@@ -92,7 +92,7 @@ export default async function (fastify, opts) {
           });
 
           if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
-            throw conflictError();
+            throw conflictError(`Deflection ${id} is not in an exit-to-jail-eligible status (${deflection.subjectStatus})`);
           }
 
           const now = new Date();
