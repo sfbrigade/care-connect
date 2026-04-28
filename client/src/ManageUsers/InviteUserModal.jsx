@@ -1,5 +1,7 @@
 import { Alert, Button, Stack, TextInput } from '@mantine/core';
-import { isEmail, isNotEmpty, useForm } from '@mantine/form';
+import { isNotEmpty, useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation } from '@tanstack/react-query';
 
 import Api from '@/Api';
