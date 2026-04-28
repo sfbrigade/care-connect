@@ -8,7 +8,12 @@ items:
     updatedBy: '@user1'
   deflection_release_reason_medical_issue:
     id: 'medical_issue'
-    name: 'Medical issue'
+    name: 'Medical issue (physical)'
+    createdBy: '@user1'
+    updatedBy: '@user1'
+  deflection_release_reason_behavioral_health_evaluation:
+    id: 'behavioral_health_evaluation'
+    name: 'Behavioral health evaluation'
     createdBy: '@user1'
     updatedBy: '@user1'
   deflection_release_reason_other:
