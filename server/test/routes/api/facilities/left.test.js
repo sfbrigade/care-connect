@@ -127,6 +127,29 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
 
+    // Make incident and deflection details complete so transfer doesn't 422.
+    await prisma.incident.updateMany({
+      where: { id: 1 },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+    await prisma.deflection.update({
+      where: { id: 4 },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+      },
+    });
+
     const [leftResponse, transferResponse] = await Promise.all([
       app.inject()
         .post(`/api/facilities/${FACILITY_ID}/left`)
