@@ -93,7 +93,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     // invariants below are what this test actually verifies.
     assert.ok(
       cancelResponse.statusCode === StatusCodes.OK || cancelResponse.statusCode === StatusCodes.FORBIDDEN,
-      `cancelResponse.statusCode was ${cancelResponse.statusCode}`,
+      `cancelResponse.statusCode was ${cancelResponse.statusCode}`
     );
 
     const activeArrivedHolds = await prisma.deflection.count({
