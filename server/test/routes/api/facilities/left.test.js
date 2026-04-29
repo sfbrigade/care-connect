@@ -88,7 +88,13 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     ]);
 
     assert.deepStrictEqual(leftResponse.statusCode, StatusCodes.OK);
-    assert.deepStrictEqual(cancelResponse.statusCode, StatusCodes.OK);
+    // If /left commits before cancel's auth read, currentOfficerId is null
+    // and cancel returns 403 — that is a valid race outcome. The post-race
+    // invariants below are what this test actually verifies.
+    assert.ok(
+      cancelResponse.statusCode === StatusCodes.OK || cancelResponse.statusCode === StatusCodes.FORBIDDEN,
+      `cancelResponse.statusCode was ${cancelResponse.statusCode}`
+    );
 
     const activeArrivedHolds = await prisma.deflection.count({
       where: {
@@ -120,6 +126,29 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
+
+    // Make incident and deflection details complete so transfer doesn't 422.
+    await prisma.incident.updateMany({
+      where: { id: 1 },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+    await prisma.deflection.update({
+      where: { id: 4 },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+      },
+    });
 
     const [leftResponse, transferResponse] = await Promise.all([
       app.inject()

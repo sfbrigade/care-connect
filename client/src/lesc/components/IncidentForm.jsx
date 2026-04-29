@@ -103,6 +103,7 @@ function IncidentForm () {
   const initialNextPathRef = useRef(searchParams.get('next'));
   const nextPath = initialNextPathRef.current;
   const isConfirmIncidentFlow = !!nextPath;
+  const isRevisit = searchParams.get('revisit') === 'true';
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
@@ -137,7 +138,7 @@ function IncidentForm () {
           ...data,
           arrestedAt,
         }));
-        if (!isConfirmIncidentFlow) {
+        if (!isConfirmIncidentFlow || isRevisit) {
           form.setErrors(validateIncident(data));
         }
         setInitialized(true);
