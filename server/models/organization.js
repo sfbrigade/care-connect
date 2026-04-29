@@ -1,7 +1,8 @@
-import { Prisma, RoleEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+const { Prisma, RoleEnum } = prismaPkg;
 
 const OrganizationAttributesSchema = z.object({
   name: z.string(),

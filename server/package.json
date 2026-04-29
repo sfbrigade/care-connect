@@ -18,7 +18,8 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "fastify start app.js -l info",
-    "test": "node --experimental-test-module-mocks --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "test": "node test/run-tests.js",
+    "test:sequential": "node --experimental-test-module-mocks --test-concurrency 1 --test $(find test -name '*.test.js')",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",
     "worker:dev": "npm run prisma:generate && node --watch worker.js"
@@ -78,7 +79,7 @@
     "neostandard": "^0.12.2",
     "nodemailer-mock": "^2.0.9",
     "pg-boss-admin-dashboard": "^1.1.1",
-    "prisma": "^6.16.2",
+    "prisma": "6.16.2",
     "testcontainers": "^11.6.0",
     "yaml": "^2.8.1"
   },
