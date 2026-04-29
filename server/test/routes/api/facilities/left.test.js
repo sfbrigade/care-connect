@@ -13,6 +13,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
 
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
+  const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
 
   await t.test('clears currentOfficerId on this officer\'s arrived holds', async () => {
     // Arrive first so there's something to leave.
@@ -67,6 +68,82 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
       orderBy: { timestamp: 'desc' },
     });
     assert.ok(checkIn, 'expected a DEPARTURE check-in row');
+  });
+
+  await t.test('remains consistent when left races with cancellation of the last active arrived hold', async () => {
+    await app.inject()
+      .delete('/api/deflections/5?cancelReasonId=5150')
+      .headers(userHeaders);
+    await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+
+    const [leftResponse, cancelResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/left`)
+        .headers(userHeaders),
+      app.inject()
+        .delete('/api/deflections/4?cancelReasonId=5150')
+        .headers(userHeaders),
+    ]);
+
+    assert.deepStrictEqual(leftResponse.statusCode, StatusCodes.OK);
+    assert.deepStrictEqual(cancelResponse.statusCode, StatusCodes.OK);
+
+    const activeArrivedHolds = await prisma.deflection.count({
+      where: {
+        facilityId: FACILITY_ID,
+        currentOfficerId: USER2_ID,
+        status: 'ACTIVE',
+        arrivedAt: { not: null },
+      },
+    });
+    const myHoldsResponse = await app.inject()
+      .get(`/api/facilities/${FACILITY_ID}/my-holds`)
+      .headers(userHeaders);
+    const myHolds = JSON.parse(myHoldsResponse.body);
+    const checkIn = await prisma.facilityCheckIn.findFirst({
+      where: { userId: USER2_ID, facilityId: FACILITY_ID, eventType: 'DEPARTURE' },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    assert.deepStrictEqual(activeArrivedHolds, 0);
+    assert.deepStrictEqual(myHolds.atFacility, false);
+    assert.deepStrictEqual(myHolds.canLeave, false);
+    assert.ok(checkIn, 'expected a DEPARTURE check-in row');
+  });
+
+  await t.test('clears officer ownership when left races with transfer of the last active arrived hold', async () => {
+    await app.inject()
+      .delete('/api/deflections/5?cancelReasonId=5150')
+      .headers(userHeaders);
+    await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+
+    const [leftResponse, transferResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/left`)
+        .headers(userHeaders),
+      app.inject()
+        .post('/api/deflections/4/transfer')
+        .headers(custodyUserHeaders),
+    ]);
+
+    assert.deepStrictEqual(leftResponse.statusCode, StatusCodes.OK);
+    assert.deepStrictEqual(transferResponse.statusCode, StatusCodes.OK);
+
+    const deflection = await prisma.deflection.findUnique({
+      where: { id: 4 },
+    });
+    const myHoldsResponse = await app.inject()
+      .get(`/api/facilities/${FACILITY_ID}/my-holds`)
+      .headers(userHeaders);
+    const myHolds = JSON.parse(myHoldsResponse.body);
+
+    assert.deepStrictEqual(deflection.currentOfficerId, null);
+    assert.deepStrictEqual(deflection.subjectStatus, 'AWAITING_INTAKE');
+    assert.deepStrictEqual(myHolds.atFacility, false);
   });
 
   await t.test('is idempotent / still succeeds when there\'s nothing to leave', async () => {
