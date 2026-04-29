@@ -88,7 +88,13 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     ]);
 
     assert.deepStrictEqual(leftResponse.statusCode, StatusCodes.OK);
-    assert.deepStrictEqual(cancelResponse.statusCode, StatusCodes.OK);
+    // If /left commits before cancel's auth read, currentOfficerId is null
+    // and cancel returns 403 — that is a valid race outcome. The post-race
+    // invariants below are what this test actually verifies.
+    assert.ok(
+      cancelResponse.statusCode === StatusCodes.OK || cancelResponse.statusCode === StatusCodes.FORBIDDEN,
+      `cancelResponse.statusCode was ${cancelResponse.statusCode}`
+    );
 
     const activeArrivedHolds = await prisma.deflection.count({
       where: {

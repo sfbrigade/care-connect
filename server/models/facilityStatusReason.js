@@ -1,7 +1,8 @@
-import { Prisma, FacilityTypeEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+const { Prisma, FacilityTypeEnum } = prismaPkg;
 
 const FacilityStatusReasonAttributesSchema = z.object({
   type: z.enum(Object.values(FacilityTypeEnum)).nullable(),
