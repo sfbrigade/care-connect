@@ -308,6 +308,8 @@ test('/api/invites', async (t) => {
           lastName: 'User',
           email: 'newuser@test.com',
           organizationId: 'sfso',
+          titleId: 'sheriff',
+          badgeNumber: '1234',
         },
       });
       assert.strictEqual(response.statusCode, StatusCodes.CREATED);
