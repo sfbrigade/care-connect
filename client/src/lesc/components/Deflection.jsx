@@ -197,7 +197,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
