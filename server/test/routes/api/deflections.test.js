@@ -529,6 +529,16 @@ test('/api/deflections', async (t) => {
       assert.ok(data.completedAt);
       assert.ok(data.exitedById);
 
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: testDeflection.id,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['849b'],
+        emailTemplate: 'release-forms',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });

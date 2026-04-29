@@ -5,7 +5,7 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
 
 export default async function formsEmail (data, prismaClient = prisma) {
-  const { deflectionId, formIds, template } = data;
+  const { deflectionId, formIds, template, recipientEmail } = data;
 
   const deflection = await prismaClient.deflection.findUnique({
     where: { id: deflectionId },
@@ -31,7 +31,7 @@ export default async function formsEmail (data, prismaClient = prisma) {
   await mailer.send({
     template,
     message: {
-      to: EMAIL_RECIPIENT,
+      to: recipientEmail || EMAIL_RECIPIENT,
       attachments: emailAttachments,
     },
     locals: {
