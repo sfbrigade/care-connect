@@ -25,6 +25,36 @@ test('/api/deflections', async (t) => {
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
 
+  // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
+  // deflections.yml). Tests opt into completeness when they exercise endpoints
+  // that gate on isIncidentDetailsComplete / isDeflectionDetailsComplete.
+  async function makeIncidentComplete (incidentId) {
+    await prisma.incident.updateMany({
+      where: { id: incidentId },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+  }
+
+  async function makeDeflectionComplete (deflectionId) {
+    await prisma.deflection.updateMany({
+      where: { id: deflectionId },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+      },
+    });
+  }
+
   await t.test('POST /', async (t) => {
     await t.test('creates a new deflection', async () => {
       await prisma.deflection.expire();
@@ -247,6 +277,8 @@ test('/api/deflections', async (t) => {
   await t.test('POST /:id/transfer', async (t) => {
     await t.test('transfers custody of a deflection', async () => {
       await prisma.deflection.expire();
+      await makeIncidentComplete(1);
+      await makeDeflectionComplete(5);
       await prisma.deflection.update({
         where: { id: 5 },
         data: {
@@ -286,6 +318,46 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 2); // in-transit decrements
       assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('rejects with 422 when incident details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // hold details complete, incident details intentionally not
+      await makeDeflectionComplete(5);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
+    });
+
+    await t.test('rejects with 422 when hold details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // incident details complete, hold details intentionally not
+      await makeIncidentComplete(1);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
     });
   });
 
