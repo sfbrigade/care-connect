@@ -64,7 +64,7 @@ export default async function (fastify, opts) {
 
         if (!isIncidentDetailsComplete(deflection.incident) || !isDeflectionDetailsComplete(deflection)) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            errors: [{ path: '_form', message: 'Hold details must be complete before custody transfer.' }],
+            errors: [{ path: '_form', message: 'Some required details are missing. Ask the officer to finish them before transferring.' }],
           });
         }
 
