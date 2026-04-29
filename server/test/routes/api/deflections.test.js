@@ -535,7 +535,7 @@ test('/api/deflections', async (t) => {
         deflectionId: testDeflection.id,
         userId: '49acdf99-536f-49ac-8138-1c77e5087697',
         formIds: ['849b'],
-        emailTemplate: 'release-forms',
+        emailTemplate: 'incident-forms',
         recipientEmail: 'sfsouser1@test.com',
       });
 

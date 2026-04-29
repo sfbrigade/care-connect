@@ -177,7 +177,7 @@ export default async function (fastify, opts) {
         deflectionId: deflection.id,
         userId: request.user.id,
         formIds: ['849b'],
-        emailTemplate: 'release-forms',
+        emailTemplate: 'incident-forms',
         recipientEmail: request.user.email,
       });
 
