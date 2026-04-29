@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -134,5 +134,28 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.queryByRole('button', { name: 'Undo review' })).not.toBeInTheDocument();
     expect(screen.queryByText('Release reason')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Confirm release' })).not.toBeInTheDocument();
+  });
+
+  it('renders the updated release reason labels', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Behavioral health evaluation' })).toBeInTheDocument();
+  });
+
+  it('submits behavioral health evaluation as the selected release reason', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm release' }));
+
+    await waitFor(() => {
+      expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
+        releaseReasonId: 'behavioral_health_evaluation',
+      });
+    });
   });
 });

@@ -16,6 +16,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
 
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
+  const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
 
   await t.test('sets arrivedAt and flips subjectStatus on pre-transfer holds', async () => {
     const response = await app.inject()
@@ -72,6 +73,168 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
     assert.ok(checkIn, 'expected an ARRIVAL check-in row');
     assert.ok(checkIn.arrivedWithDeflectionIds.includes(4));
     assert.ok(checkIn.arrivedWithDeflectionIds.includes(5));
+  });
+
+  await t.test('preserves existing arrivedAt timestamps on already-onsite holds', async () => {
+    const originalArrivedAt = new Date('2024-01-01T12:00:00.000Z');
+    const bedType = await prisma.bedType.findFirst({
+      where: { facilityId: OTHER_FACILITY_ID },
+    });
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-ARRIVED-${Date.now()}`,
+        caseNumber: `CASE-ARRIVED-${Date.now()}`,
+        createdById: USER2_ID,
+        updatedById: USER2_ID,
+      },
+    });
+    const deflection = await prisma.deflection.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        incidentId: incident.id,
+        bedTypeId: bedType.id,
+        currentOfficerId: USER2_ID,
+        subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+        arrivedAt: originalArrivedAt,
+        createdById: USER2_ID,
+      },
+    });
+
+    const response = await app.inject()
+      .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+    const updated = await prisma.deflection.findUnique({
+      where: { id: deflection.id },
+    });
+    const updates = await prisma.deflectionUpdate.findMany({
+      where: {
+        deflectionId: deflection.id,
+        updatedById: USER2_ID,
+        subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+      },
+    });
+
+    assert.deepStrictEqual(updated.arrivedAt?.toISOString(), originalArrivedAt.toISOString());
+    assert.deepStrictEqual(updates.length, 0);
+  });
+
+  await t.test('concurrent arrived vs cancel excludes holds cancelled before arrival commits', async () => {
+    const startedAt = new Date();
+    const bedType = await prisma.bedType.findFirst({
+      where: { facilityId: OTHER_FACILITY_ID },
+    });
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-ARR-CANCEL-${Date.now()}`,
+        caseNumber: `CASE-ARR-CANCEL-${Date.now()}`,
+        createdById: USER2_ID,
+        updatedById: USER2_ID,
+      },
+    });
+    const deflection = await prisma.deflection.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        incidentId: incident.id,
+        bedTypeId: bedType.id,
+        currentOfficerId: USER2_ID,
+        subjectStatus: 'DETAINED',
+        createdById: USER2_ID,
+      },
+    });
+
+    const [arrivedResponse, cancelResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
+        .headers(userHeaders),
+      app.inject()
+        .delete(`/api/deflections/${deflection.id}?cancelReasonId=5150`)
+        .headers(userHeaders),
+    ]);
+
+    assert.ok([StatusCodes.OK, StatusCodes.BAD_REQUEST].includes(arrivedResponse.statusCode));
+    assert.deepStrictEqual(cancelResponse.statusCode, StatusCodes.OK);
+
+    const checkIn = await prisma.facilityCheckIn.findFirst({
+      where: {
+        userId: USER2_ID,
+        facilityId: OTHER_FACILITY_ID,
+        eventType: 'ARRIVAL',
+        timestamp: { gte: startedAt },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+    const updated = await prisma.deflection.findUnique({
+      where: { id: deflection.id },
+    });
+
+    if (checkIn?.arrivedWithDeflectionIds.includes(deflection.id)) {
+      assert.ok(updated.cancelledAt > checkIn.timestamp);
+    }
+  });
+
+  await t.test('concurrent arrived vs transfer excludes holds transferred before arrival commits', async () => {
+    const startedAt = new Date();
+    const originalArrivedAt = new Date('2024-01-01T08:00:00.000Z');
+    const bedType = await prisma.bedType.findFirst({
+      where: { facilityId: OTHER_FACILITY_ID },
+    });
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-ARR-TRANSFER-${Date.now()}`,
+        caseNumber: `CASE-ARR-TRANSFER-${Date.now()}`,
+        createdById: USER2_ID,
+        updatedById: USER2_ID,
+      },
+    });
+    const deflection = await prisma.deflection.create({
+      data: {
+        facilityId: OTHER_FACILITY_ID,
+        incidentId: incident.id,
+        bedTypeId: bedType.id,
+        currentOfficerId: USER2_ID,
+        subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+        arrivedAt: originalArrivedAt,
+        createdById: USER2_ID,
+      },
+    });
+
+    const [arrivedResponse, transferResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
+        .headers(userHeaders),
+      app.inject()
+        .post(`/api/deflections/${deflection.id}/transfer`)
+        .headers(custodyUserHeaders),
+    ]);
+
+    assert.ok([StatusCodes.OK, StatusCodes.BAD_REQUEST].includes(arrivedResponse.statusCode));
+    assert.ok([StatusCodes.OK, StatusCodes.CONFLICT].includes(transferResponse.statusCode));
+
+    const checkIn = await prisma.facilityCheckIn.findFirst({
+      where: {
+        userId: USER2_ID,
+        facilityId: OTHER_FACILITY_ID,
+        eventType: 'ARRIVAL',
+        timestamp: { gte: startedAt },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+    const updated = await prisma.deflection.findUnique({
+      where: { id: deflection.id },
+    });
+
+    if (checkIn?.arrivedWithDeflectionIds.includes(deflection.id) && updated.transferredAt) {
+      assert.ok(updated.transferredAt > checkIn.timestamp);
+    }
   });
 
   await t.test('returns 400 when the caller has no eligible holds at this facility', async () => {
