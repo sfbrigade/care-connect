@@ -74,6 +74,52 @@ test('/api/deflections/:id/handoff', async (t) => {
     });
   });
 
+  await t.test('competing handoff acceptances allow exactly one winner', async () => {
+    await makeIncidentComplete(2);
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection, 'Expected an active deflection on incident2');
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { handoffReadyAt: new Date() },
+    });
+
+    const [user2Response, cleanFieldResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/deflections/${deflection.id}/handoff`)
+        .headers(user2Headers),
+      app.inject()
+        .post(`/api/deflections/${deflection.id}/handoff`)
+        .headers(cleanFieldHeaders),
+    ]);
+
+    const successResponses = [user2Response, cleanFieldResponse].filter((response) => response.statusCode === StatusCodes.OK);
+    const rejectedResponses = [user2Response, cleanFieldResponse].filter((response) => response.statusCode === StatusCodes.UNPROCESSABLE_ENTITY);
+
+    assert.deepStrictEqual(successResponses.length, 1);
+    assert.deepStrictEqual(rejectedResponses.length, 1);
+
+    const updated = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    const handoffs = await prisma.handoff.findMany({
+      where: { deflectionId: deflection.id },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    assert.deepStrictEqual(handoffs.length, 1);
+    assert.deepStrictEqual(handoffs[0].toOfficerId, updated.currentOfficerId);
+    assert.deepStrictEqual(updated.handoffReadyAt, null);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1', handoffReadyAt: null },
+    });
+    await prisma.handoff.deleteMany({
+      where: { deflectionId: deflection.id },
+    });
+  });
+
   await t.test('handoff rejected when not initiated by owner', async () => {
     await makeIncidentComplete(2);
     const deflection = await prisma.deflection.findFirst({

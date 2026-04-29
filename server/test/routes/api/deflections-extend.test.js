@@ -118,6 +118,51 @@ test('PATCH /api/deflections/extend', async (t) => {
     assert.deepStrictEqual(afterCount, beforeCount + 2);
   });
 
+  await t.test('concurrent duplicate extend requests increment from locked current state', async () => {
+    const before = await prisma.deflection.findUnique({
+      where: { id: 4 },
+    });
+    const beforeAuditCount = await prisma.deflectionUpdate.count({
+      where: {
+        deflectionId: 4,
+        updatedById: USER2_ID,
+        expiresAt: {
+          not: null,
+        },
+      },
+    });
+
+    const [firstResponse, secondResponse] = await Promise.all([
+      app.inject()
+        .patch('/api/deflections/extend')
+        .headers(userHeaders)
+        .payload({ deflectionIds: [4] }),
+      app.inject()
+        .patch('/api/deflections/extend')
+        .headers(userHeaders)
+        .payload({ deflectionIds: [4] }),
+    ]);
+
+    assert.deepStrictEqual(firstResponse.statusCode, StatusCodes.OK);
+    assert.deepStrictEqual(secondResponse.statusCode, StatusCodes.OK);
+
+    const updated = await prisma.deflection.findUnique({
+      where: { id: 4 },
+    });
+    const afterAuditCount = await prisma.deflectionUpdate.count({
+      where: {
+        deflectionId: 4,
+        updatedById: USER2_ID,
+        expiresAt: {
+          not: null,
+        },
+      },
+    });
+
+    assert.deepStrictEqual(updated.extensionCount, before.extensionCount + 2);
+    assert.deepStrictEqual(afterAuditCount, beforeAuditCount + 2);
+  });
+
   await t.test('silently skips holds the caller does not own', async () => {
     // user2 requests to extend deflection 1 (owned by user4) along with their own 4.
     const before = await prisma.deflection.findUnique({ where: { id: 1 } });
@@ -152,7 +197,7 @@ test('PATCH /api/deflections/extend', async (t) => {
     assert.deepStrictEqual(body.length, 0);
   });
 
-  await t.test('returns 400 when none of the requested holds are eligible', async () => {
+  await t.test('returns an empty array when none of the requested holds are eligible', async () => {
     const response = await app.inject()
       .patch('/api/deflections/extend')
       .headers(cleanFieldHeaders)
