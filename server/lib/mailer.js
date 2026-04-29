@@ -42,12 +42,15 @@ const options = {
 
 let mailer;
 
+export const EMAIL_TITLE = process.env.EMAIL_SITE_TITLE || 'City and County of San Francisco: CareConnect';
+export const EMAIL_BASE_URL = process.env.EMAIL_BASE_URL || 'https://careconnect.sf.gov';
+
 export function configureMailer (lib) {
   const transport = lib.createTransport(options);
 
   const config = {
     message: {
-      from: `"${process.env.VITE_SITE_TITLE}" <${process.env.SMTP_FROM_EMAIL_ADDRESS}>`,
+      from: `"${EMAIL_TITLE}" <${process.env.SMTP_FROM_EMAIL_ADDRESS}>`,
     },
     send: true,
     preview: false,
@@ -60,7 +63,7 @@ export function configureMailer (lib) {
     juice: false,
   };
   if (process.env.SMTP_REPLY_TO_EMAIL_ADDRESS) {
-    config.message.replyTo = `"${process.env.VITE_SITE_TITLE}" <${process.env.SMTP_REPLY_TO_EMAIL_ADDRESS}>`;
+    config.message.replyTo = `"${EMAIL_TITLE}" <${process.env.SMTP_REPLY_TO_EMAIL_ADDRESS}>`;
   }
 
   mailer = new Email(config);
@@ -74,9 +77,9 @@ async function send (options) {
   }
   options.locals ||= {};
   options.locals._layout = {
-    BASE_URL: process.env.BASE_URL,
+    BASE_URL: EMAIL_BASE_URL,
     LOGO_URL: '',
-    TITLE: process.env.VITE_SITE_TITLE,
+    TITLE: EMAIL_TITLE,
   };
   return mailer.send(options);
 }
