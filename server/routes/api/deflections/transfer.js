@@ -4,8 +4,15 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 import { conflictError } from '#lib/httpErrors.js';
+
+function unprocessableFormError (message) {
+  const error = new Error(message);
+  error.statusCode = StatusCodes.UNPROCESSABLE_ENTITY;
+  return error;
+}
 
 export default async function (fastify, opts) {
   fastify.post('/:id/transfer',
@@ -21,6 +28,12 @@ export default async function (fastify, opts) {
           [StatusCodes.NOT_FOUND]: z.null(),
           [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.CONFLICT]: z.null(),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: z.object({
+            errors: z.array(z.object({
+              path: z.string(),
+              message: z.string(),
+            })),
+          }),
         },
       },
     },
@@ -43,6 +56,7 @@ export default async function (fastify, opts) {
           deflection = await tx.deflection.findUnique({
             where: { id },
             include: {
+              incident: true,
               subject: true,
               propertyPhotos: true,
             },
@@ -50,6 +64,10 @@ export default async function (fastify, opts) {
 
           if (deflection.status !== Deflection.HoldStatus.ACTIVE || deflection.subjectStatus !== Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER) {
             throw conflictError(`Deflection ${id} cannot be transferred: status=${deflection.status}, subjectStatus=${deflection.subjectStatus}; expected status=ACTIVE and subjectStatus=ONSITE_AWAITING_TRANSFER`);
+          }
+
+          if (!isIncidentDetailsComplete(deflection.incident) || !isDeflectionDetailsComplete(deflection)) {
+            throw unprocessableFormError('Some required details are missing. Ask the officer to finish them before transferring.');
           }
 
           const now = new Date();
@@ -106,6 +124,11 @@ export default async function (fastify, opts) {
       } catch (error) {
         if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
+        }
+        if (error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: error.message }],
+          });
         }
         throw error;
       }

@@ -1,9 +1,10 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { DrugTypeEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
+const { DrugTypeEnum } = prismaPkg;
 
 export function transformData (deflection) {
   const incident = deflection.incident;

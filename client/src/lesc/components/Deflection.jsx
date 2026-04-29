@@ -39,7 +39,7 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
-  const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const allDetailsComplete = deflection ? isValidDeflection(deflection) && isValidIncident(incident) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
   const substanceComplete = deflection
     ? isValidSubstance({
@@ -63,8 +63,8 @@ function Deflection () {
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
   const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
-  const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
+  const showFinishDetailsFooter = isActionableActiveHold && !allDetailsComplete;
+  const showCancelOnlyFooter = isActionableActiveHold && allDetailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
@@ -197,7 +197,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
@@ -406,7 +406,35 @@ function Deflection () {
           </Button>
           {showFinishDetailsFooter && (
             <Button
-              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+              onClick={() => {
+                const detailPath = `/holds/${deflection?.id}`;
+                if (!isValidIncident(incident)) {
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(detailPath)}&revisit=true`);
+                  return;
+                }
+                if (!isValidSubject(deflection.subject)) {
+                  navigate(`${detailPath}/subject`);
+                  return;
+                }
+                if (!isValidSubstance({
+                  narcoticsSubstance: deflection.narcoticsSubstance,
+                  narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+                  drugUseEvidence: deflection.drugUseEvidence,
+                  drugType: deflection.drugType ?? null,
+                })) {
+                  navigate(`${detailPath}/substance`);
+                  return;
+                }
+                if (!isValidBehavior(deflection)) {
+                  navigate(`${detailPath}/deflection`);
+                  return;
+                }
+                if (!isValidProperty(deflection)) {
+                  navigate(`${detailPath}/property`);
+                  return;
+                }
+                navigate(detailPath);
+              }}
             >
               Finish details
             </Button>

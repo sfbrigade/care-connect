@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
@@ -6,6 +6,7 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
+const { Prisma, PrismaClient } = prismaPkg;
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
