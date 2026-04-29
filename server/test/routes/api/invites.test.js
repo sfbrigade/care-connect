@@ -7,6 +7,7 @@ import { authenticate, build } from '#test/helper.js';
 test('/api/invites', async (t) => {
   const app = await build(t);
   const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+  const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
   const { prisma } = app;
 
   await t.test('GET /', async (t) => {
@@ -61,6 +62,7 @@ test('/api/invites', async (t) => {
         email: 'john.doe@test.com',
         message: 'Welcome!',
         organizationId: 'sfpd',
+        badgeNumber: '1234',
       }).headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
 
@@ -71,6 +73,7 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.message, 'Welcome!');
       assert.deepStrictEqual(data.organizationId, 'sfpd');
       assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.badgeNumber, '1234');
       assert.deepStrictEqual(data.prop115Certified, false);
 
       data = await prisma.invite.findUnique({ where: { id: data.id } });
@@ -80,6 +83,7 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.message, 'Welcome!');
       assert.deepStrictEqual(data.organizationId, 'sfpd');
       assert.deepStrictEqual(data.titleId, null);
+      assert.deepStrictEqual(data.badgeNumber, '1234');
       assert.deepStrictEqual(data.prop115Certified, false);
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
@@ -96,6 +100,7 @@ test('/api/invites', async (t) => {
         message: 'Welcome!',
         organizationId: 'sfso',
         titleId: 'sheriff',
+        badgeNumber: '1234',
         prop115Certified: true,
       }).headers(adminHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
@@ -107,6 +112,7 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.message, 'Welcome!');
       assert.deepStrictEqual(data.organizationId, 'sfso');
       assert.deepStrictEqual(data.titleId, 'sheriff');
+      assert.deepStrictEqual(data.badgeNumber, '1234');
       assert.deepStrictEqual(data.prop115Certified, true);
 
       data = await prisma.invite.findUnique({ where: { id: data.id } });
@@ -116,12 +122,60 @@ test('/api/invites', async (t) => {
       assert.deepStrictEqual(data.message, 'Welcome!');
       assert.deepStrictEqual(data.organizationId, 'sfso');
       assert.deepStrictEqual(data.titleId, 'sheriff');
+      assert.deepStrictEqual(data.badgeNumber, '1234');
       assert.deepStrictEqual(data.prop115Certified, true);
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'invite-email');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data.inviteId, data.id);
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data.facilityId, null);
+    });
+
+    await t.test('requires a star number for SFPD invites', async (t) => {
+      const response = await app.inject().post('/api/invites').payload({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@test.com',
+        organizationId: 'sfpd',
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.errors, [
+        { path: 'badgeNumber', message: 'Star number is required.' },
+      ]);
+    });
+
+    await t.test('requires a star number and rank for SFSO org admin invites', async (t) => {
+      const response = await app.inject().post('/api/invites').payload({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@test.com',
+      }).headers(orgAdminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.errors, [
+        { path: 'badgeNumber', message: 'Star number is required.' },
+        { path: 'titleId', message: 'Rank is required.' },
+      ]);
+    });
+
+    await t.test('requires star number to match incident form length', async (t) => {
+      const response = await app.inject().post('/api/invites').payload({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@test.com',
+        organizationId: 'sfso',
+        titleId: 'sheriff',
+        badgeNumber: '12345',
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+      const error = JSON.parse(response.body);
+      assert.deepStrictEqual(error.errors, [
+        { path: 'badgeNumber', message: 'Star number must be 4 characters or fewer.' },
+      ]);
     });
   });
 
