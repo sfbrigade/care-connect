@@ -14,6 +14,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
+import { validateBehavior } from '@/utils/validators';
 import { CHARGE_TYPE_OPTIONS } from '@/lesc/constants/chargeTypeOptions';
 
 const initialValues = {
@@ -73,6 +74,12 @@ function DeflectionForm () {
           drugUseEvidence: normalized.drugUseEvidence,
         });
         form.initialize(normalized);
+        if (!isNew) {
+          form.setErrors(validateBehavior({
+            ...normalized,
+            behavior: deflection.behavior ?? '',
+          }));
+        }
       }
     }
   }, [isLoading, deflection, form.initialized]);
