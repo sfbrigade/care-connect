@@ -180,13 +180,13 @@ async function main () {
   const passAExitCode = await runPass(
     `Pass A: parallel (concurrency=${concurrency}), no experimental flag`,
     ['--test', '--test-concurrency', concurrency],
-    regularFiles,
+    regularFiles
   );
 
   const passBExitCode = await runPass(
     'Pass B: serial, --experimental-test-module-mocks',
     ['--experimental-test-module-mocks', '--test', '--test-concurrency', '1'],
-    mockFiles,
+    mockFiles
   );
 
   console.log('Stopping containers...');
