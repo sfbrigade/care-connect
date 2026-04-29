@@ -317,6 +317,46 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 2); // in-transit decrements
       assert.deepStrictEqual(bedType.available, 4);
     });
+
+    await t.test('rejects with 422 when incident details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // hold details complete, incident details intentionally not
+      await makeDeflectionComplete(5);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
+    });
+
+    await t.test('rejects with 422 when hold details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // incident details complete, hold details intentionally not
+      await makeIncidentComplete(1);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
+    });
   });
 
   await t.test('POST /:id/admit', async (t) => {
