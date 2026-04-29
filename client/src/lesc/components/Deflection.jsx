@@ -407,12 +407,33 @@ function Deflection () {
           {showFinishDetailsFooter && (
             <Button
               onClick={() => {
-                const subjectPath = `/holds/${deflection?.id}/subject`;
+                const detailPath = `/holds/${deflection?.id}`;
                 if (!isValidIncident(incident)) {
-                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(subjectPath)}&revisit=true`);
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(detailPath)}&revisit=true`);
                   return;
                 }
-                navigate(subjectPath);
+                if (!isValidSubject(deflection.subject)) {
+                  navigate(`${detailPath}/subject`);
+                  return;
+                }
+                if (!isValidSubstance({
+                  narcoticsSubstance: deflection.narcoticsSubstance,
+                  narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+                  drugUseEvidence: deflection.drugUseEvidence,
+                  drugType: deflection.drugType ?? null,
+                })) {
+                  navigate(`${detailPath}/substance`);
+                  return;
+                }
+                if (!isValidBehavior(deflection)) {
+                  navigate(`${detailPath}/deflection`);
+                  return;
+                }
+                if (!isValidProperty(deflection)) {
+                  navigate(`${detailPath}/property`);
+                  return;
+                }
+                navigate(detailPath);
               }}
             >
               Finish details
