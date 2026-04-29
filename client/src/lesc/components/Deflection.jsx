@@ -409,7 +409,7 @@ function Deflection () {
               onClick={() => {
                 const subjectPath = `/holds/${deflection?.id}/subject`;
                 if (!isValidIncident(incident)) {
-                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(subjectPath)}`);
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(subjectPath)}&revisit=true`);
                   return;
                 }
                 navigate(subjectPath);
