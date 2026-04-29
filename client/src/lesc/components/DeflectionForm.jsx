@@ -153,7 +153,7 @@ function DeflectionForm () {
   return (
     <>
       <Head>
-        <title>Arrest details</title>
+        <title>Custodial arrest details</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -168,10 +168,10 @@ function DeflectionForm () {
           <Text size='md' c='dimmed'>Hold {deflection ? deflection.id : ''}</Text>
         </Group>
         <Group gap='sm' mb='xs' align='center'>
-          <Title order={3}>Arrest details</Title>
+          <Title order={3}>Custodial arrest details</Title>
           {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
         </Group>
-        <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the arrest, and select charge type.</Text>
+        <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the custodial arrest, and select charge type.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);

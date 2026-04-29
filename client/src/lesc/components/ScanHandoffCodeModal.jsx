@@ -66,7 +66,7 @@ function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
       onClose={onClose}
       onScan={handleScan}
       onManualSubmitCodes={handleManualSubmitCodes}
-      prompt='Scan the QR code shown by the arresting officer to accept the handoff.'
+      prompt='Scan the QR code shown by the officer making the custodial arrest to accept the handoff.'
       manualEntryTitle='Enter Handoff Code'
       manualEntryLabel='Enter handoff code'
       manualEntryDescription="If the QR code doesn't work, ask the officer for the handoff code."

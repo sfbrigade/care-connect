@@ -263,7 +263,7 @@ function IncidentForm () {
                   data-testid='incident-arrest-location'
                   label={
                     <>
-                      Arrest location<span>*</span>
+                      Custodial arrest location<span>*</span>
                     </>
                   }
                   rightSection={
@@ -287,7 +287,7 @@ function IncidentForm () {
                     key={form.key('addressLine1')}
                     label={
                       <>
-                        Arrest address line 1<span>*</span>
+                        Custodial arrest address line 1<span>*</span>
                       </>
                     }
                     rightSection={
@@ -297,7 +297,7 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('addressLine2')}
                     {...form.getInputProps('addressLine2')}
-                    label='Arrest address line 2'
+                    label='Custodial arrest address line 2'
                   />
                   <TextInput
                     data-testid='incident-city'
@@ -305,7 +305,7 @@ function IncidentForm () {
                     {...form.getInputProps('city')}
                     label={
                       <>
-                        Arrest city<span>*</span>
+                        Custodial arrest city<span>*</span>
                       </>
                     }
                   />
@@ -316,14 +316,14 @@ function IncidentForm () {
                       {...form.getInputProps('state')}
                       label={
                         <>
-                          Arrest state<span>*</span>
+                          Custodial arrest state<span>*</span>
                         </>
                       }
                     />
                     <TextInput
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
-                      label='Arrest ZIP code'
+                      label='Custodial arrest ZIP code'
                       type='number'
                       inputMode='numeric'
                     />
@@ -335,7 +335,7 @@ function IncidentForm () {
                 {...form.getInputProps('arrestedAt')}
                 label={
                   <>
-                    Arrest date & time<span>*</span>
+                    Custodial arrest date & time<span>*</span>
                   </>
                 }
                 type='datetime-local'
