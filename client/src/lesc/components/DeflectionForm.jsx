@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { Badge, Button, Chip, Container, Fieldset, Group, Input, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Badge, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,10 +10,12 @@ import { useTranslation } from 'react-i18next';
 import Api from '@/Api';
 import { useFacilityContext } from '@/FacilityContext';
 import AudioRecorder from '@/components/AudioRecorder';
+import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { buildDeflectionNarrative } from '@/utils/deflectionNarrative';
 import { buildDeflectionUpdatePayload } from '@/utils/deflectionBehavior';
+import { validateBehavior } from '@/utils/validators';
 import { CHARGE_TYPE_OPTIONS } from '@/lesc/constants/chargeTypeOptions';
 
 const initialValues = {
@@ -73,6 +75,12 @@ function DeflectionForm () {
           drugUseEvidence: normalized.drugUseEvidence,
         });
         form.initialize(normalized);
+        if (!isNew) {
+          form.setErrors(validateBehavior({
+            ...normalized,
+            behavior: deflection.behavior ?? '',
+          }));
+        }
       }
     }
   }, [isLoading, deflection, form.initialized]);
@@ -200,22 +208,15 @@ function DeflectionForm () {
                   />
                   <Text size='sm' c='dimmed'>Used on 647(f) and 849(b) forms</Text>
                 </Stack>
-                <Input.Wrapper
-                  label='Select a charge type'
-                  withAsterisk
-                  error={form.errors.chargeType}
-                >
-                  <Chip.Group
-                    key={form.key('chargeType')}
-                    {...form.getInputProps('chargeType')}
-                  >
-                    <Group gap='sm' mt='md'>
-                      {CHARGE_TYPE_OPTIONS.map((chargeType) => (
-                        <Chip key={chargeType} value={chargeType}>{t(`chargeType.${chargeType}`)}</Chip>
-                      ))}
-                    </Group>
-                  </Chip.Group>
-                </Input.Wrapper>
+                <ChipInput
+                  key={form.key('chargeType')}
+                  {...form.getInputProps('chargeType')}
+                  label={<>Select a charge type<span>*</span></>}
+                  options={CHARGE_TYPE_OPTIONS.map((chargeType) => ({
+                    value: chargeType,
+                    label: t(`chargeType.${chargeType}`),
+                  }))}
+                />
               </Stack>
               <Button type='submit' mb='xl' disabled={recorderBusy}>
                 {isNew ? 'Next: Personal property' : 'Save behavioral observations'}

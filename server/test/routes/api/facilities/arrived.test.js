@@ -191,8 +191,22 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         encounteredVia: 'DISPATCHED',
         cadNumber: `CAD-ARR-TRANSFER-${Date.now()}`,
         caseNumber: `CASE-ARR-TRANSFER-${Date.now()}`,
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        arrestedAt: new Date('2024-01-01T07:00:00.000Z'),
+        supervisorBadgeNumber: '1234',
         createdById: USER2_ID,
         updatedById: USER2_ID,
+      },
+    });
+    const subject = await prisma.subject.create({
+      data: {
+        firstName: 'Test',
+        lastName: 'Transfer',
+        dateOfBirth: new Date('2000-01-01T00:00:00.000Z'),
+        sex: 'MALE',
+        race: 'WHITE',
       },
     });
     const deflection = await prisma.deflection.create({
@@ -200,9 +214,17 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         facilityId: OTHER_FACILITY_ID,
         incidentId: incident.id,
         bedTypeId: bedType.id,
+        subjectId: subject.id,
         currentOfficerId: USER2_ID,
         subjectStatus: 'ONSITE_AWAITING_TRANSFER',
         arrivedAt: originalArrivedAt,
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
         createdById: USER2_ID,
       },
     });

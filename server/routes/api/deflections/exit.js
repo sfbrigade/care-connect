@@ -1,11 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
-import { SFResidentEnum, TernaryEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
+const { SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
