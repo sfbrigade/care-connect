@@ -167,7 +167,10 @@ function IdScanner ({ opened, onResult, onClose }) {
 
       {/* Captured preview — overlays the video */}
       {capturedImage && (
-        <img src={capturedImage} alt='Captured ID' className={classes.preview} />
+        <>
+          <img src={capturedImage} alt='Captured ID' className={classes.preview} />
+          {!processing && <div className={classes.previewFrame} />}
+        </>
       )}
 
       {/* Viewfinder cutout overlay — only shown during live camera without error */}
