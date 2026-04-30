@@ -33,11 +33,18 @@ async function computeCapacity (fastify, request) {
     inTransit: acc.inTransit + bt.inTransit,
   }), { total: 0, unavailable: 0, occupied: 0, inTransit: 0 });
 
+  // Match the bedType.occupied counter: IN_CHAIR plus RELEASED-but-still-onsite
+  // (Path A — the person was admitted to a chair, then legally released, and
+  // is still physically taking the chair until exit). Path B (released without
+  // ever sitting in a chair, no admittedAt) is excluded.
   const occupiedRows = await fastify.prisma.deflection.findMany({
     where: {
       facilityId: facility.id,
       status: 'ACTIVE',
-      subjectStatus: 'IN_CHAIR',
+      OR: [
+        { subjectStatus: 'IN_CHAIR' },
+        { subjectStatus: 'RELEASED', admittedAt: { not: null } },
+      ],
     },
     select: { admittedAt: true, drugType: true },
     orderBy: { admittedAt: 'asc' },

@@ -19,10 +19,11 @@ const TEST_SUBJECTS = [
 ];
 
 // Holds = chair reserved, person not yet formally in a chair (DETAINED through ADMITTED)
-// Occupied = person formally in a chair (IN_CHAIR, RELEASED)
+// Occupied = person formally in a chair (IN_CHAIR), or legally released and still
+// onsite (RELEASED) — they continue to occupy the chair until exited.
 // The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR)
 const HOLD_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER', 'AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'FAILED_INTAKE'];
-const OCCUPIED_STATUSES = ['IN_CHAIR'];
+const OCCUPIED_STATUSES = ['IN_CHAIR', 'RELEASED'];
 
 const TEST_STATUSES = [
   'AWAITING_INTAKE',
