@@ -1,9 +1,10 @@
-import { Prisma, FacilityStatusEnum, FacilityUpdateMethodEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import FacilityStatusReason from './facilityStatusReason.js';
 import User from './user.js';
+const { Prisma, FacilityStatusEnum, FacilityUpdateMethodEnum } = prismaPkg;
 
 const FacilityUpdateAttributesSchema = z.object({
   status: z.enum(Object.values(FacilityStatusEnum)),
