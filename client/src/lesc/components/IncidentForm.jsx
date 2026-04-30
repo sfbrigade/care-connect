@@ -103,6 +103,7 @@ function IncidentForm () {
   const initialNextPathRef = useRef(searchParams.get('next'));
   const nextPath = initialNextPathRef.current;
   const isConfirmIncidentFlow = !!nextPath;
+  const isRevisit = searchParams.get('revisit') === 'true';
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
@@ -137,7 +138,7 @@ function IncidentForm () {
           ...data,
           arrestedAt,
         }));
-        if (!isConfirmIncidentFlow) {
+        if (!isConfirmIncidentFlow || isRevisit) {
           form.setErrors(validateIncident(data));
         }
         setInitialized(true);
@@ -263,7 +264,7 @@ function IncidentForm () {
                   data-testid='incident-arrest-location'
                   label={
                     <>
-                      Arrest location<span>*</span>
+                      Location<span>*</span>
                     </>
                   }
                   rightSection={
@@ -287,7 +288,7 @@ function IncidentForm () {
                     key={form.key('addressLine1')}
                     label={
                       <>
-                        Arrest address line 1<span>*</span>
+                        Address line 1<span>*</span>
                       </>
                     }
                     rightSection={
@@ -297,7 +298,7 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('addressLine2')}
                     {...form.getInputProps('addressLine2')}
-                    label='Arrest address line 2'
+                    label='Address line 2'
                   />
                   <TextInput
                     data-testid='incident-city'
@@ -305,7 +306,7 @@ function IncidentForm () {
                     {...form.getInputProps('city')}
                     label={
                       <>
-                        Arrest city<span>*</span>
+                        City<span>*</span>
                       </>
                     }
                   />
@@ -316,14 +317,14 @@ function IncidentForm () {
                       {...form.getInputProps('state')}
                       label={
                         <>
-                          Arrest state<span>*</span>
+                          State<span>*</span>
                         </>
                       }
                     />
                     <TextInput
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
-                      label='Arrest ZIP code'
+                      label='ZIP code'
                       type='number'
                       inputMode='numeric'
                     />
@@ -335,7 +336,7 @@ function IncidentForm () {
                 {...form.getInputProps('arrestedAt')}
                 label={
                   <>
-                    Arrest date & time<span>*</span>
+                    Date & time<span>*</span>
                   </>
                 }
                 type='datetime-local'

@@ -1,7 +1,8 @@
-import { Prisma, DrugTypeEnum, SexEnum, RaceEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+const { Prisma, DrugTypeEnum, SexEnum, RaceEnum } = prismaPkg;
 
 export const PII_FIELDS = [
   'firstName',

@@ -232,6 +232,7 @@ export default async function main (prisma) {
       behavior: 'Officer encountered this individual at 100 Market St, San Francisco, CA. Officer observed the following behaviors: Disoriented to person/place/time. Officer observed that drugs were recently used: Fentanyl.',
       releaseNarrative: 'Incident number: CS849B\nCad number: CAD849B\nSubject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
       property: 'SMALL',
+      arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
       transferredAt: pdfTestNow,
       transferredById: sfsoUser.id,
       admittedAt: pdfTestNow,

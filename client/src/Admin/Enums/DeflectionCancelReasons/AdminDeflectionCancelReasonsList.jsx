@@ -17,9 +17,9 @@ function AdminDeflectionCancelReasonsList () {
   return (
     <>
       <Head>
-        <title>Manage Arrest Cancel Reasons</title>
+        <title>Manage Custodial Arrest Cancel Reasons</title>
       </Head>
-      <Title mb='md'>Manage Arrest Cancel Reasons</Title>
+      <Title mb='md'>Manage Custodial Arrest Cancel Reasons</Title>
       <Group mb='lg'>
         <Button component={Link} to='new'>
           Create a new Cancel Reason

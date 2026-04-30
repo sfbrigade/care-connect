@@ -74,6 +74,46 @@ test('Hold cancellation edge cases', async (t) => {
     assert.ok(cancelUpdate, 'Expected deflectionUpdate audit record for auto-cancelled hold');
   });
 
+  await t.test('PATCH bed-type: validation failure rolls back any attempted auto-cancellations', async () => {
+    await app.prisma.deflection.expire();
+
+    const bedTypeBefore = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const cancelledBefore = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.CANCELLED,
+      },
+    });
+
+    const response = await app.inject()
+      .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
+      .headers(facilityAdminHeaders)
+      .payload({
+        unavailableUnoccupied: 7,
+      });
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+
+    const bedTypeAfter = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const cancelledAfter = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.CANCELLED,
+      },
+    });
+
+    assert.deepStrictEqual(bedTypeAfter.holds, bedTypeBefore.holds);
+    assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit);
+    assert.deepStrictEqual(bedTypeAfter.available, bedTypeBefore.available);
+    assert.deepStrictEqual(cancelledAfter, cancelledBefore);
+  });
+
   await t.test('POST facility status CLOSED: cancels all active in-transit holds', async () => {
     // Expire the expired hold so counts are clean
     await app.prisma.deflection.expire();
@@ -151,7 +191,7 @@ test('Hold cancellation edge cases', async (t) => {
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     const body = JSON.parse(response.body);
-    assert.deepStrictEqual(body.error, 'Facility is not accepting new holds');
+    assert.deepStrictEqual(body.message, 'Facility is not accepting new holds');
 
     // Restore facility to OPEN_ACCEPTING
     await app.inject()
@@ -191,5 +231,232 @@ test('Hold cancellation edge cases', async (t) => {
       .payload({
         status: Facility.Status.OPEN_ACCEPTING,
       });
+  });
+
+  await t.test('concurrent facility close vs incident-create never leaves closed facility with active new in-transit hold', async () => {
+    const caseNumber = `CLOSE-RACE-INCIDENT-${Date.now()}`;
+
+    await app.prisma.deflection.expire();
+    await app.prisma.bedType.update({
+      where: { id: BED_TYPE_ID },
+      data: {
+        holds: 0,
+        inTransit: 0,
+        available: 1,
+      },
+    });
+
+    const [closeResponse, createResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/status`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Concurrent close',
+        }),
+      app.inject()
+        .post(`/api/incidents?bedTypeId=${BED_TYPE_ID}`)
+        .headers(userHeaders)
+        .payload({
+          facilityId: FACILITY_ID,
+          encounteredVia: 'DISPATCHED',
+          cadNumber: `CAD-${caseNumber}`,
+          caseNumber,
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          latitude: 0,
+          longitude: 0,
+          arrestedAt: '',
+          supervisorBadgeNumber: '',
+        }),
+    ]);
+
+    assert.deepStrictEqual(closeResponse.statusCode, StatusCodes.OK);
+    assert.ok([StatusCodes.CREATED, StatusCodes.CONFLICT].includes(createResponse.statusCode));
+
+    const facility = await app.prisma.facility.findUnique({
+      where: { id: FACILITY_ID },
+    });
+    const activeNewHolds = await app.prisma.deflection.count({
+      where: {
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: Deflection.SubjectStatus.DETAINED,
+        incident: {
+          caseNumber,
+        },
+      },
+    });
+
+    assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
+    assert.deepStrictEqual(activeNewHolds, 0);
+  });
+
+  await t.test('concurrent facility close vs direct deflection-create never leaves closed facility with active new in-transit hold', async () => {
+    const incident = await app.prisma.incident.create({
+      data: {
+        facilityId: FACILITY_ID,
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-DIRECT-${Date.now()}`,
+        caseNumber: `CASE-DIRECT-${Date.now()}`,
+        createdById: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        updatedById: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+      },
+    });
+
+    await app.prisma.deflection.expire();
+    await app.prisma.bedType.update({
+      where: { id: BED_TYPE_ID },
+      data: {
+        holds: 0,
+        inTransit: 0,
+        available: 1,
+      },
+    });
+
+    const [closeResponse, createResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/status`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Concurrent close',
+        }),
+      app.inject()
+        .post('/api/deflections')
+        .headers(userHeaders)
+        .payload({
+          facilityId: FACILITY_ID,
+          incidentId: incident.id,
+          bedTypeId: BED_TYPE_ID,
+        }),
+    ]);
+
+    assert.deepStrictEqual(closeResponse.statusCode, StatusCodes.OK);
+    assert.ok([StatusCodes.CREATED, StatusCodes.CONFLICT].includes(createResponse.statusCode));
+
+    const facility = await app.prisma.facility.findUnique({
+      where: { id: FACILITY_ID },
+    });
+    const activeNewHolds = await app.prisma.deflection.count({
+      where: {
+        incidentId: incident.id,
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: Deflection.SubjectStatus.DETAINED,
+      },
+    });
+
+    assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
+    assert.deepStrictEqual(activeNewHolds, 0);
+  });
+
+  await t.test('concurrent facility close vs reopen never leaves closed facility with an active reopened hold', async () => {
+    await app.prisma.deflection.expire();
+    await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+
+    const deflectionBefore = await app.prisma.deflection.findUnique({
+      where: { id: 4 },
+    });
+    await app.prisma.bedType.update({
+      where: { id: BED_TYPE_ID },
+      data: {
+        holds: Math.max(0, deflectionBefore.status === Deflection.HoldStatus.ACTIVE ? 1 : 0),
+        inTransit: 0,
+        available: 1,
+      },
+    });
+
+    const [closeResponse, reopenResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/status`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Concurrent close',
+        }),
+      app.inject()
+        .post('/api/deflections/4/reopen')
+        .headers(userHeaders),
+    ]);
+
+    assert.deepStrictEqual(closeResponse.statusCode, StatusCodes.OK);
+    assert.ok([StatusCodes.OK, StatusCodes.CONFLICT].includes(reopenResponse.statusCode));
+
+    const facility = await app.prisma.facility.findUnique({
+      where: { id: FACILITY_ID },
+    });
+    const deflection = await app.prisma.deflection.findUnique({
+      where: { id: 4 },
+    });
+
+    assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
+    assert.notDeepStrictEqual(deflection.status, Deflection.HoldStatus.ACTIVE);
+  });
+
+  await t.test('concurrent bed-type shrink vs facility close never drives counters negative or double-cancels holds', async () => {
+    await app.prisma.deflection.expire();
+
+    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
+    const [shrinkResponse, closeResponse] = await Promise.all([
+      app.inject()
+        .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          unavailableUnoccupied: 7,
+          unavailableReasonId: reason.id,
+        }),
+      app.inject()
+        .post(`/api/facilities/${FACILITY_ID}/status`)
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Concurrent close',
+        }),
+    ]);
+
+    assert.ok([StatusCodes.OK, StatusCodes.BAD_REQUEST].includes(shrinkResponse.statusCode));
+    assert.deepStrictEqual(closeResponse.statusCode, StatusCodes.OK);
+
+    const bedType = await app.prisma.bedType.findUnique({
+      where: { id: BED_TYPE_ID },
+    });
+    const holdBackedStatuses = [
+      Deflection.SubjectStatus.DETAINED,
+      Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
+      Deflection.SubjectStatus.READY_FOR_INTAKE,
+    ];
+    const activeHolds = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: {
+          in: holdBackedStatuses,
+        },
+      },
+    });
+    const activeInTransit = await app.prisma.deflection.count({
+      where: {
+        bedTypeId: BED_TYPE_ID,
+        facilityId: FACILITY_ID,
+        status: Deflection.HoldStatus.ACTIVE,
+        subjectStatus: Deflection.SubjectStatus.DETAINED,
+      },
+    });
+
+    assert.ok(bedType.holds >= 0);
+    assert.ok(bedType.inTransit >= 0);
+    assert.deepStrictEqual(bedType.holds, activeHolds);
+    assert.deepStrictEqual(bedType.inTransit, activeInTransit);
+    assert.deepStrictEqual(
+      bedType.available,
+      bedType.capacity - bedType.unavailableUnoccupied - bedType.unavailableOccupied - bedType.occupied - bedType.holds
+    );
   });
 });

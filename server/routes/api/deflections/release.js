@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -12,6 +13,17 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.ADMITTED,
   Deflection.SubjectStatus.IN_CHAIR,
+];
+
+// Pre-chair hold states: the subject has reserved a chair (counted in `holds`)
+// but has not yet physically entered one (which would set IN_CHAIR and bump
+// `occupied`). A sobered release from any of these finalizes the deflection
+// and frees the hold without ever touching `occupied`.
+const PRE_CHAIR_HOLD_STATUSES = [
+  Deflection.SubjectStatus.AWAITING_INTAKE,
+  Deflection.SubjectStatus.READY_FOR_INTAKE,
+  Deflection.SubjectStatus.FAILED_INTAKE,
+  Deflection.SubjectStatus.ADMITTED,
 ];
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -107,101 +119,113 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          // re-fetch deflection after lock
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+          });
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-        });
+          if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
+            throw conflictError(`Deflection ${id} cannot be released: status is ${deflection.subjectStatus}, expected one of [${RELEASABLE_STATUSES.join(', ')}]`);
+          }
 
-        if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
-          return reply.code(StatusCodes.CONFLICT).send();
-        }
+          const now = new Date();
+          const previousSubjectStatus = deflection.subjectStatus;
+          // Only `sobered` releases from a pre-chair hold finalize immediately
+          // as EXITED — there's no chair to vacate and no follow-up step.
+          // Sobered from IN_CHAIR and all other release reasons (e.g.
+          // behavioral_health_evaluation) linger as ACTIVE/RELEASED until the
+          // care team explicitly exits.
+          const isPreChairHoldRelease =
+            releaseReasonId === 'sobered' && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
+          const releaseFinalizesAsExited = isExitRelease || isPreChairHoldRelease;
 
-        const now = new Date();
-        const previousSubjectStatus = deflection.subjectStatus;
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.RELEASED,
-            releaseReasonId,
-            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
-            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        if (isExitRelease) {
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
-              status: Deflection.HoldStatus.COMPLETED,
-              subjectStatus: Deflection.SubjectStatus.EXITED,
-              exitDestinationId,
+              subjectStatus: Deflection.SubjectStatus.RELEASED,
+              releaseReasonId,
+              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
               updatedById: request.user.id,
               updatedAt: now,
             },
           });
-        }
 
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            ...(isExitRelease
-              ? {
-                  status: Deflection.HoldStatus.COMPLETED,
-                  completedAt: now,
-                }
-              : {}),
-            subjectStatus: isExitRelease
-              ? Deflection.SubjectStatus.EXITED
-              : Deflection.SubjectStatus.RELEASED,
-            releasedAt: now,
-            releasedById: request.user.id,
-            releaseReasonId,
-            otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
-            otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
-            ...(isExitRelease
-              ? {
-                  exitedAt: now,
-                  exitedById: request.user.id,
-                  exitDestinationId,
-                }
-              : {}),
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-            exitDestination: true,
-          },
-        });
+          if (releaseFinalizesAsExited) {
+            await tx.deflectionUpdate.create({
+              data: {
+                deflectionId: id,
+                status: Deflection.HoldStatus.COMPLETED,
+                subjectStatus: Deflection.SubjectStatus.EXITED,
+                exitDestinationId,
+                updatedById: request.user.id,
+                updatedAt: now,
+              },
+            });
+          }
 
-        if (isExitRelease) {
-          const bedTypeUpdateData = buildBedTypeUpdate({
-            previousSubjectStatus,
-            bedType,
-            userId: request.user.id,
-          });
-          await tx.bedTypeUpdate.create({
+          deflection = await tx.deflection.update({
+            where: { id },
             data: {
-              ...bedTypeUpdateData,
-              bedTypeId,
-              facilityId: deflection.facilityId,
+              ...(releaseFinalizesAsExited
+                ? {
+                    status: Deflection.HoldStatus.COMPLETED,
+                    completedAt: now,
+                  }
+                : {}),
+              subjectStatus: releaseFinalizesAsExited
+                ? Deflection.SubjectStatus.EXITED
+                : Deflection.SubjectStatus.RELEASED,
+              releasedAt: now,
+              releasedById: request.user.id,
+              releaseReasonId,
+              otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
+              otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+              ...(releaseFinalizesAsExited
+                ? {
+                    exitedAt: now,
+                    exitedById: request.user.id,
+                    exitDestinationId,
+                  }
+                : {}),
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+              exitDestination: true,
             },
           });
-          await tx.bedType.update({
-            where: { id: bedTypeId },
-            data: bedTypeUpdateData,
-          });
+
+          if (releaseFinalizesAsExited) {
+            const bedTypeUpdateData = buildBedTypeUpdate({
+              previousSubjectStatus,
+              bedType,
+              userId: request.user.id,
+            });
+            await tx.bedTypeUpdate.create({
+              data: {
+                ...bedTypeUpdateData,
+                bedTypeId,
+                facilityId: deflection.facilityId,
+              },
+            });
+            await tx.bedType.update({
+              where: { id: bedTypeId },
+              data: bedTypeUpdateData,
+            });
+          }
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
+          return reply.code(StatusCodes.CONFLICT).send();
         }
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

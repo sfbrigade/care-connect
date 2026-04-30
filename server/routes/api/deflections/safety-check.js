@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/safety-check',
@@ -33,48 +34,51 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          // re-fetch deflection after lock
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // re-fetch deflection after lock
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
+          if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
+            throw conflictError(`Deflection ${id} cannot complete safety check: status is ${deflection.subjectStatus}, expected AWAITING_INTAKE`);
+          }
+
+          const now = new Date();
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
         });
-
-        if (deflection.subjectStatus !== Deflection.SubjectStatus.AWAITING_INTAKE) {
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-
-        const now = new Date();
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            subjectStatus: Deflection.SubjectStatus.READY_FOR_INTAKE,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
