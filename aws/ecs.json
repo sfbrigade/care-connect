@@ -8,6 +8,7 @@
     },
     "CapacityApiKey": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The API key for fetching facility status"
     },
     "ImageURL": {
@@ -28,6 +29,7 @@
     },
     "SessionSecret": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The session secret for the application"
     },
     "SiteTitle": {
