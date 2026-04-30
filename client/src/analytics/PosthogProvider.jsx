@@ -12,6 +12,7 @@ function PosthogProvider () {
   const env = staticContext?.env ?? {};
   const apiKey = env?.VITE_POSTHOG_KEY ?? import.meta?.env?.VITE_POSTHOG_KEY;
   const apiHost = env?.VITE_POSTHOG_HOST ?? import.meta?.env?.VITE_POSTHOG_HOST ?? DEFAULT_API_HOST;
+  const gitSha = env?.VITE_GIT_SHA ?? import.meta?.env?.VITE_GIT_SHA ?? null;
 
   useEffect(() => {
     if (!apiKey) {
@@ -34,6 +35,9 @@ function PosthogProvider () {
         // Disable Posthog session recording entirely until we have a way to anonymize or wipe it within the time limit.
         disable_session_recording: true,
       });
+      if (gitSha) {
+        posthog.register({ $git_commit: gitSha, release: gitSha });
+      }
       posthogRef.current = posthog;
 
       if (user) {
