@@ -364,6 +364,8 @@ const Api = {
             throw { _form: 'This transfer code is not valid. Check the number and try again.' };
           case StatusCodes.CONFLICT:
             throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
+          case StatusCodes.UNPROCESSABLE_ENTITY:
+            throw { _form: 'Some required details are missing. Ask the officer to finish them before transferring.' };
           default:
             throw { _form: error.message };
         }
