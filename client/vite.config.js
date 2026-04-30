@@ -2,6 +2,7 @@
 import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import { VitePWA } from 'vite-plugin-pwa';
+import viteCompression from 'vite-plugin-compression';
 import { fileURLToPath, URL } from 'node:url';
 import fs from 'fs';
 import path from 'path';
@@ -51,6 +52,9 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
     plugins: [
       react(),
       cssAsText(),
+      // Pre-gzip built assets so @fastify/static can serve them with
+      // Content-Encoding: gzip without runtime CPU cost.
+      ...(isSSRBuild ? [] : [viteCompression({ algorithm: 'gzip', ext: '.gz' })]),
       // Skip PWA plugin during SSR builds — it only emits the service worker
       // and manifest for the client bundle.
       ...(isSSRBuild

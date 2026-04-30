@@ -37,6 +37,7 @@ export default fp(async (fastify) => {
       prefix: '/assets/',
       decorateReply: false,
       index: false,
+      preCompressed: true,
       // Add cache headers for hashed assets (long cache since filenames are hashed)
       setHeaders: (res, path) => {
         // Vite creates hashed filenames (e.g., index-abc123.js), so these can be cached long-term
