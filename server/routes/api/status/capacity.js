@@ -4,9 +4,12 @@ import { z } from 'zod';
 const CACHE_TTL_MS = 30_000;
 
 const OccupantSchema = z.object({
-  occupiedSince: z.string().datetime().nullable(),
-  substance: z.string().nullable(),
+  admittedAt: z.string().datetime().nullable(),
+  releasedAt: z.string().datetime().nullable(),
+  exitedAt: z.string().datetime().nullable(),
 });
+
+const OCCUPANTS_LOOKBACK_HOURS = 24;
 
 const CapacityResponseSchema = z.object({
   facility: z.string(),
@@ -26,20 +29,54 @@ let inflight = null;
 async function computeCapacity (fastify, request) {
   const { facility } = request;
 
+  // Bed totals: capacity, what's unavailable, and the inTransit count come
+  // straight from the denormalized bedType counters. occupied is computed
+  // separately below — see comment on the count query.
   const totals = facility.bedTypes.reduce((acc, bt) => ({
     total: acc.total + bt.capacity,
     unavailable: acc.unavailable + bt.unavailableUnoccupied + bt.unavailableOccupied,
-    occupied: acc.occupied + bt.occupied,
     inTransit: acc.inTransit + bt.inTransit,
-  }), { total: 0, unavailable: 0, occupied: 0, inTransit: 0 });
+  }), { total: 0, unavailable: 0, inTransit: 0 });
 
-  const occupiedRows = await fastify.prisma.deflection.findMany({
+  // "Occupied" = people at the facility who are no longer in transit. We
+  // compute this from deflection rows rather than summing bedType.occupied
+  // because that counter only tracks IN_CHAIR subjects and is decremented
+  // when status moves to RELEASED (see deflections/release.js) — meaning
+  // released-but-not-yet-exited people would be undercounted, even though
+  // they're physically still in the facility.
+  //
+  // Boundary:
+  //   - transferredAt is set: SFSO has handed custody to care staff. This
+  //     matches the inTransit counter's exit point (deflections/transfer.js
+  //     decrements bedType.inTransit at the same moment), so anyone the
+  //     system calls "in transit" is excluded.
+  //   - exitedAt is null: the subject hasn't physically left the facility
+  //     (deflections/exit.js sets exitedAt when they leave).
+  //
+  // In subjectStatus terms this covers AWAITING_INTAKE through RELEASED.
+  const occupied = await fastify.prisma.deflection.count({
     where: {
       facilityId: facility.id,
-      status: 'ACTIVE',
-      subjectStatus: 'IN_CHAIR',
+      transferredAt: { not: null },
+      exitedAt: null,
     },
-    select: { admittedAt: true, drugType: true },
+  });
+
+  // Occupants list: anyone whose care-staff intake (admittedAt) started
+  // within the lookback window, regardless of subsequent status. Some will
+  // still be IN_CHAIR (releasedAt + exitedAt null), some released but still
+  // onsite (releasedAt set, exitedAt null), some already departed (both set).
+  const cutoff = new Date(Date.now() - OCCUPANTS_LOOKBACK_HOURS * 60 * 60 * 1000);
+  const occupants = await fastify.prisma.deflection.findMany({
+    where: {
+      facilityId: facility.id,
+      admittedAt: { gte: cutoff },
+    },
+    select: {
+      admittedAt: true,
+      releasedAt: true,
+      exitedAt: true,
+    },
     orderBy: { admittedAt: 'asc' },
   });
 
@@ -49,12 +86,13 @@ async function computeCapacity (fastify, request) {
     beds: {
       total: totals.total,
       operational: totals.total - totals.unavailable,
-      occupied: totals.occupied,
+      occupied,
       inTransit: totals.inTransit,
     },
-    occupants: occupiedRows.map(d => ({
-      occupiedSince: d.admittedAt ? d.admittedAt.toISOString() : null,
-      substance: d.drugType ?? null,
+    occupants: occupants.map(d => ({
+      admittedAt: d.admittedAt ? d.admittedAt.toISOString() : null,
+      releasedAt: d.releasedAt ? d.releasedAt.toISOString() : null,
+      exitedAt: d.exitedAt ? d.exitedAt.toISOString() : null,
     })),
   };
 }
