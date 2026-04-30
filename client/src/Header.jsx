@@ -223,6 +223,7 @@ function Header ({ opened, close, toggle, logout }) {
                   <>
                     <Menu.Divider />
                     <Menu.Label>Admin</Menu.Label>
+                    <Menu.Item component={Link} to='/admin/canary' onClick={close}>Canary</Menu.Item>
                     <Menu.Item component={Link} to='/admin/enums' onClick={close}>Enums</Menu.Item>
                     <Menu.Item component={Link} to='/admin/facilities' onClick={close}>Facilities</Menu.Item>
                     <Menu.Item component={Link} to='/admin/invites' onClick={close}>Invites</Menu.Item>
