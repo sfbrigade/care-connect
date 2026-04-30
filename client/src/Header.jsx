@@ -31,7 +31,7 @@ const MODE_COLOR = { FIELD: 'blue', CUSTODY: 'green' };
 const MODE_SUCCESS_TOAST = {
   FIELD: {
     title: 'Mode changed to "In the field"',
-    body: 'You can now place holds, add arrest details, and bring persons to RESET.',
+    body: 'You can now place holds, add custodial arrest details, and bring persons to RESET.',
   },
   CUSTODY: {
     title: 'Mode changed to "At RESET"',

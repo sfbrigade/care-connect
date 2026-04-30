@@ -29,6 +29,10 @@ test('/api/deflections/cancel-reasons', async (t) => {
       assert.ok(ids.includes('no_chairs_available'));
       assert.ok(ids.includes('release_on_scene'));
       assert.ok(ids.includes('staffing_shortage'));
+      assert.strictEqual(
+        reasons.find(r => r.id === '5150')?.name,
+        'Behavioral health evaluation'
+      );
 
       // Check sorting by name
       const names = reasons.map(r => r.name);
