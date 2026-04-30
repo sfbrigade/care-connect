@@ -60,7 +60,7 @@ test('/api/arrests', async (t) => {
   });
 
   // Create an incident + (optionally cancelled) deflection at the given facility.
-  async function seedArrest ({ facility, bedTypeId, arrestedAt, addressLine1, cancelled = false }) {
+  async function seedArrest ({ facility, bedTypeId, arrestedAt, addressLine1, caseNumber = null, cancelled = false }) {
     const incident = await prisma.incident.create({
       data: {
         facilityId: facility.id,
@@ -69,6 +69,7 @@ test('/api/arrests', async (t) => {
         state: 'CA',
         arrestedAt,
         encounteredVia: 'ON_VIEW',
+        caseNumber,
         createdById: user.id,
         updatedById: user.id,
       },
@@ -141,8 +142,8 @@ test('/api/arrests', async (t) => {
   });
 
   await t.test('200 returns arrests on the target day, ordered by arrestedAt asc', async () => {
-    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayEvening, addressLine1: '200 Mission St' });
-    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayMorning, addressLine1: '100 Market St' });
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayEvening, addressLine1: '200 Mission St', caseNumber: 'CS-2026-002' });
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayMorning, addressLine1: '100 Market St', caseNumber: 'CS-2026-001' });
 
     const response = await app.inject()
       .get(`/api/arrests?date=${TARGET_DATE}`)
@@ -154,13 +155,26 @@ test('/api/arrests', async (t) => {
 
     // Ordered ascending by arrestedAt
     assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+    assert.strictEqual(body[0].caseNumber, 'CS-2026-001');
     assert.strictEqual(body[1].address, '200 Mission St, San Francisco, CA');
-    // Each entry has only timestamp + address, no extra fields
+    assert.strictEqual(body[1].caseNumber, 'CS-2026-002');
+    // Each entry has timestamp + address + caseNumber, no extra fields
     for (const arrest of body) {
-      assert.deepStrictEqual(Object.keys(arrest).sort(), ['address', 'timestamp']);
+      assert.deepStrictEqual(Object.keys(arrest).sort(), ['address', 'caseNumber', 'timestamp']);
       assert.strictEqual(typeof arrest.timestamp, 'string');
       assert.match(arrest.timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     }
+  });
+
+  await t.test('caseNumber is null when missing on the underlying incident', async () => {
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayMorning, addressLine1: '100 Market St' });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].caseNumber, null);
   });
 
   await t.test('excludes arrests at non-RESET facilities', async () => {

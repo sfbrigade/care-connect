@@ -14,6 +14,7 @@ const QuerySchema = z.object({
 const ArrestSchema = z.object({
   timestamp: z.string().datetime(),
   address: z.string(),
+  caseNumber: z.string().nullable(),
 });
 
 const ArrestsResponseSchema = z.array(ArrestSchema);
@@ -54,6 +55,7 @@ export default async function (fastify) {
           addressLine1: true,
           city: true,
           state: true,
+          caseNumber: true,
         },
         orderBy: { arrestedAt: 'asc' },
       });
@@ -61,6 +63,7 @@ export default async function (fastify) {
       return incidents.map((i) => ({
         timestamp: i.arrestedAt.toISOString(),
         address: streetCityState(i),
+        caseNumber: i.caseNumber ?? null,
       }));
     }
   );
