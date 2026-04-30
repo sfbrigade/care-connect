@@ -98,6 +98,10 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       alias,
     },
     build: {
+      // Generate source maps but don't emit `//# sourceMappingURL` references in the
+      // shipped JS, so browsers don't request them. Maps are uploaded to PostHog at
+      // deploy time for stack-trace symbolication, then deleted from the image.
+      sourcemap: isSSRBuild ? false : 'hidden',
       rollupOptions: isSSRBuild
         ? {}
         : {

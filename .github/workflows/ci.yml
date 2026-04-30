@@ -113,6 +113,10 @@ jobs:
           labels: ${{ needs.meta.outputs.labels }}
           tags: ${{ vars.REGISTRY_IMAGE }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+          secrets: |
+            posthog_cli_token=${{ secrets.POSTHOG_CLI_TOKEN }}
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
