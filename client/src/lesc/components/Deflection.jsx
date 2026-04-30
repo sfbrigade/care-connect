@@ -263,7 +263,7 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Arrest details</Title>
+                <Title order={3}>Custodial arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
@@ -284,7 +284,7 @@ function Deflection () {
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest details' : 'Finish arrest details'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit details' : 'Finish details'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -338,7 +338,7 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrest location</Text>
+                    <Text c='dimmed'>Location</Text>
                     {incidentAddress
                       ? (
                         <Text>{incidentAddress}</Text>
@@ -346,7 +346,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
-                    <Text c='dimmed'>Arrest date & time</Text>
+                    <Text c='dimmed'>Date & time</Text>
                     {incident?.arrestedAt
                       ? (
                         <Text>{formatDateTime(incident.arrestedAt)}</Text>
