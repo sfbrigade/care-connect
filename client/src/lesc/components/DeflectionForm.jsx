@@ -177,7 +177,7 @@ function DeflectionForm () {
         </Group>
         <Group gap='sm' mb='xs' align='center'>
           <Title order={3}>Custodial arrest details</Title>
-          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/5</Badge>}
         </Group>
         <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the arrest, and select charge type.</Text>
         <form onSubmit={form.onSubmit((values) => {

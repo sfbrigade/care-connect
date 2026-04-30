@@ -18,7 +18,34 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
 
+  async function makeFixturePreTransferDetailsComplete () {
+    await prisma.incident.update({
+      where: { id: 1 },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+    await prisma.deflection.updateMany({
+      where: { id: { in: [4, 5] } },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+        certifiedAt: new Date(),
+      },
+    });
+  }
+
   await t.test('sets arrivedAt and flips subjectStatus on pre-transfer holds', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     const response = await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -47,6 +74,8 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   });
 
   await t.test('writes a deflectionUpdate audit row per affected hold', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     const beforeCount = await prisma.deflectionUpdate.count({
       where: { updatedById: USER2_ID, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
     });
@@ -62,6 +91,8 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   });
 
   await t.test('records an ARRIVAL FacilityCheckIn with the affected hold ids', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -86,8 +117,22 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         encounteredVia: 'DISPATCHED',
         cadNumber: `CAD-ARRIVED-${Date.now()}`,
         caseNumber: `CASE-ARRIVED-${Date.now()}`,
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        arrestedAt: new Date('2024-01-01T07:00:00.000Z'),
+        supervisorBadgeNumber: '1234',
         createdById: USER2_ID,
         updatedById: USER2_ID,
+      },
+    });
+    const subject = await prisma.subject.create({
+      data: {
+        firstName: 'Test',
+        lastName: 'Arrived',
+        dateOfBirth: new Date('2000-01-01T00:00:00.000Z'),
+        sex: 'MALE',
+        race: 'WHITE',
       },
     });
     const deflection = await prisma.deflection.create({
@@ -95,9 +140,18 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         facilityId: OTHER_FACILITY_ID,
         incidentId: incident.id,
         bedTypeId: bedType.id,
+        subjectId: subject.id,
         currentOfficerId: USER2_ID,
         subjectStatus: 'ONSITE_AWAITING_TRANSFER',
         arrivedAt: originalArrivedAt,
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+        certifiedAt: new Date(),
         createdById: USER2_ID,
       },
     });
@@ -225,6 +279,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         behaviorNarrative: 'Test narrative',
         chargeType: 'RWS_647F',
         property: 'NONE',
+        certifiedAt: new Date(),
         createdById: USER2_ID,
       },
     });

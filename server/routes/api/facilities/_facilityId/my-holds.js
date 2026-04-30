@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import Incident from '#models/incident.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
-import { isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 import { redactDeflectionsForUser } from '#lib/deflectionVisibility.js';
 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
@@ -104,6 +104,9 @@ export default async function (fastify) {
       // Build response incidents with permissions
       const hasPreTransferHolds = deflections.length > 0;
       const hasDETAINEDHolds = deflections.some(d => d.subjectStatus === 'DETAINED');
+      const allPreTransferDetailsComplete = deflections.every(deflection => (
+        isIncidentDetailsComplete(deflection.incident) && isDeflectionDetailsComplete(deflection)
+      ));
 
       let activeIncidentId = null;
       const incidents = [];
@@ -127,7 +130,7 @@ export default async function (fastify) {
       return reply.send({
         atFacility,
         arrivedAt,
-        canArrive: hasPreTransferHolds && !atFacility,
+        canArrive: hasPreTransferHolds && allPreTransferDetailsComplete && !atFacility,
         canLeave: atFacility && !hasPreTransferHolds,
         canExtend: hasDETAINEDHolds,
         canCreateHold: !atFacility,

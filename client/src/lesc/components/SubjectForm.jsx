@@ -249,7 +249,7 @@ function SubjectForm () {
 
         <Group gap='sm' mb='xs' align='center'>
           <Title order={2}>Personal details</Title>
-          {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/4</Badge>}
+          {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/5</Badge>}
         </Group>
         <Text c='dimmed' size='md' mb='md'>Scan an ID to fill details faster, or enter them manually.</Text>
         <Button

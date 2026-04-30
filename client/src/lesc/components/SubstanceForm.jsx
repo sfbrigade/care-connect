@@ -153,7 +153,7 @@ function SubstanceForm () {
         </Group>
         <Group gap='sm' mb='xs' align='center'>
           <Title order={2}>Substance details</Title>
-          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>2/4</Badge>}
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>2/5</Badge>}
         </Group>
         <Text c='dimmed' size='md' mb='xl'>Record what was found and any signs of use.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>

@@ -102,7 +102,7 @@ function PropertyForm () {
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      navigate(isNew ? '/holds' : `/holds/${id}`);
+      navigate(isNew ? `/holds/${id}/certify?isNew=true` : `/holds/${id}`);
     },
   });
 
@@ -178,7 +178,7 @@ function PropertyForm () {
         </Group>
         <Group gap='sm' mb='xs' align='center'>
           <Title order={2}>Personal property</Title>
-          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>4/4</Badge>}
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>4/5</Badge>}
         </Group>
         <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
@@ -258,7 +258,7 @@ function PropertyForm () {
                 </Accordion.Item>
               </Accordion>
               <Button type='submit' mb='xl'>
-                {isNew ? 'Finish details' : 'Save property'}
+                {isNew ? 'Next: Certify' : 'Save property'}
               </Button>
             </Stack>
           </Fieldset>

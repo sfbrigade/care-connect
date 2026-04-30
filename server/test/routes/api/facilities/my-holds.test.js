@@ -27,6 +27,31 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
     return JSON.parse(response.body);
   }
 
+  async function makeFixturePreTransferDetailsComplete () {
+    await prisma.incident.update({
+      where: { id: 1 },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+    await prisma.deflection.updateMany({
+      where: { id: { in: [4, 5] } },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+        certifiedAt: new Date(),
+      },
+    });
+  }
+
   await t.test('returns only caller\'s pre-transfer holds at the facility, grouped by incident', async () => {
     const body = await getBody(userHeaders);
 
@@ -69,6 +94,8 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
   });
 
   await t.test('with pre-transfer holds and not arrived: atFacility false, arrivedAt null, canArrive + canExtend + canCreateHold true, canLeave false', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     const body = await getBody(userHeaders);
     assert.deepStrictEqual(body.atFacility, false);
     assert.deepStrictEqual(body.arrivedAt, null);
@@ -79,6 +106,8 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
   });
 
   await t.test('after arriving: atFacility true, arrivedAt populated; canArrive / canCreateHold / canExtend all false; canLeave still false (pre-transfer holds remain)', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     const before = Date.now();
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
@@ -98,6 +127,8 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
   });
 
   await t.test('atFacility true + canLeave true once caller is arrived and has no pre-transfer holds', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -118,6 +149,8 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
   });
 
   await t.test('after leaving: atFacility flips back to false, arrivedAt null', async () => {
+    await makeFixturePreTransferDetailsComplete();
+
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
