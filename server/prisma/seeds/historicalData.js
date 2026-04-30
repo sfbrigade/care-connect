@@ -136,6 +136,10 @@ function makeDeflectionBase (facilityId, bedTypeId, fieldUser, baseTime) {
         { v: 'METH', w: 5 },
       ])
       : null,
+    chargeType: weightedPick([
+      { v: 'RWS_647F', w: 85 },
+      { v: 'HS_11550', w: 15 },
+    ]),
     behavior: pick(BEHAVIORS),
     property: weightedPick([
       { v: 'NONE', w: 40 }, { v: 'SMALL', w: 35 },

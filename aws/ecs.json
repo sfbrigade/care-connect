@@ -6,6 +6,10 @@
       "Description": "Base name for the stack",
       "Type": "String"
     },
+    "CapacityApiKey": {
+      "Type": "String",
+      "Description": "The API key for fetching facility status"
+    },
     "ImageURL": {
       "Type": "String",
       "Description": "The URL of the Docker image (e.g., your-ecr-repo-url/image:tag)"
@@ -30,7 +34,7 @@
       "Type": "String",
       "Description": "The title of the site"
     },
-    "SmtpFromEmailAddress": {
+    "SmtpReplyToEmailAddress": {
       "Type": "String",
       "Description": "Default reply-to email address"
     }
@@ -342,6 +346,12 @@
                 }
               },
               {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
+                }
+              },
+              {
                 "Name": "DATABASE_URL",
                 "Value": {
                   "Fn::Join": [
@@ -421,7 +431,23 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Ref": "SmtpFromEmailAddress"
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {
@@ -821,6 +847,12 @@
                 }
               },
               {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
+                }
+              },
+              {
                 "Name": "DATABASE_URL",
                 "Value": {
                   "Fn::Join": [
@@ -900,7 +932,23 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Ref": "SmtpFromEmailAddress"
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {

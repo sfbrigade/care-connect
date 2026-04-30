@@ -105,9 +105,9 @@ vi.mock('@mantine/core', async () => {
   const AccordionContext = createContext([]);
   const AccordionItemContext = createContext(null);
 
-  const Accordion = ({ defaultValue = [], children }) => createElement(
+  const Accordion = ({ defaultValue = [], value, children }) => createElement(
     AccordionContext.Provider,
-    { value: Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
+    { value: Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [defaultValue] },
     createElement('div', null, children)
   );
 
@@ -297,6 +297,23 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('drugType.ALCOHOL');
   });
 
+  it('hides behavioral observations in care personal details', () => {
+    const html = render(
+      {
+        subjectStatus: 'ADMITTED',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL',
+        behavior: 'Person was stumbling into traffic.',
+      },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).toContain('Substance-related details');
+    expect(html).not.toContain('Behavioral observations');
+    expect(html).not.toContain('Arrestable behavior');
+    expect(html).not.toContain('Person was stumbling into traffic.');
+  });
+
   it('shows no drug use status without a drug type in care personal details', () => {
     const html = render(
       { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
@@ -307,5 +324,20 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Signs of substance use');
     expect(html).toContain('No');
     expect(html).not.toContain('Substance used (suspected)');
+  });
+
+  it('does not show care behavioral observations without substance-related details', () => {
+    const html = render(
+      {
+        subjectStatus: 'ADMITTED',
+        drugUseEvidence: null,
+        behavior: 'Person was stumbling into traffic.',
+      },
+      { viewerMode: 'care' }
+    );
+
+    expect(html).not.toContain('Behavioral observations');
+    expect(html).not.toContain('Arrestable behavior');
+    expect(html).not.toContain('Person was stumbling into traffic.');
   });
 });

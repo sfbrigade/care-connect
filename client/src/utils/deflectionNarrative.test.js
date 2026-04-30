@@ -22,7 +22,7 @@ describe('deflectionNarrative', () => {
 
     expect(narrative).toBe([
       'Officer encountered this individual at 1455 Market St on 2/12/2026 at 11:53 PM.',
-      'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
+      'Officer concluded that a 647(f) RWS custodial arrest and transport of the individual to RESET was appropriate.',
     ].join('\n'));
   });
 
@@ -39,7 +39,7 @@ describe('deflectionNarrative', () => {
     expect(narrative).toBe([
       'Officer encountered this individual at 1455 Market St on 2/12/2026 at 11:53 PM.',
       'Officer suspected person used intoxicants: Alcohol.',
-      'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
+      'Officer concluded that a 647(f) RWS custodial arrest and transport of the individual to RESET was appropriate.',
     ].join('\n'));
   });
 
@@ -52,7 +52,7 @@ describe('deflectionNarrative', () => {
     expect(narrative).toBe([
       'Officer encountered this individual at [DETAILS MISSING] on [DETAILS MISSING] at [DETAILS MISSING].',
       '[DETAILS MISSING ON DRUG USE AND TYPE]',
-      'Officer concluded that a 647(f) RWS arrest and transport of the individual to RESET was appropriate.',
+      'Officer concluded that a 647(f) RWS custodial arrest and transport of the individual to RESET was appropriate.',
     ].join('\n'));
   });
 });

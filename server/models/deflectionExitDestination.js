@@ -1,8 +1,9 @@
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
 import User from './user.js';
+const { Prisma } = prismaPkg;
 
 const DeflectionExitDestinationAttributesSchema = z.object({
   name: z.string(),

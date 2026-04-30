@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
@@ -6,25 +6,41 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
+const { Prisma, PrismaClient } = prismaPkg;
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
 }).$extends({
   name: 'paginate',
   model: {
+    facility: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "Facility" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      }
+    },
     bedType: {
       async findByIdForUpdate (tx, id) {
         let result;
         if (Array.isArray(id)) {
-          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ANY(${id}::uuid[]) FOR UPDATE`;
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ANY(${id}::uuid[]) FOR NO KEY UPDATE`;
           return result;
         } else {
-          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR UPDATE`;
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
           return result.length > 0 ? result[0] : null;
         }
       }
     },
     deflection: {
+      async findByIdForUpdate (tx, id) {
+        let result;
+        if (Array.isArray(id)) {
+          result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ANY(${id}::int[]) ORDER BY "id" FOR NO KEY UPDATE`;
+          return result;
+        }
+        result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ${id} FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      },
       async expire (now = new Date()) {
         try {
           await prisma.user.findOrCreateBatchUser();

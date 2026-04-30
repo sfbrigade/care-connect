@@ -60,6 +60,10 @@ function handleError (error) {
     }
   } else {
     errors._form = error.message;
+    errors._status = error.response?.status;
+    if (error.response?.data?.code) {
+      errors._code = error.response.data.code;
+    }
   }
   throw errors;
 }
@@ -312,7 +316,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, handedOff, subjectStatus } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, subjectStatus, perPage } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -326,8 +330,17 @@ const Api = {
       if (handedOff) {
         params.handedOff = handedOff;
       }
+      if (scope) {
+        params.scope = scope;
+      }
+      if (includeIncident) {
+        params.includeIncident = 'true';
+      }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
+      }
+      if (perPage) {
+        params.perPage = perPage;
       }
       return instance.get('/api/deflections', { params });
     },
@@ -351,6 +364,8 @@ const Api = {
             throw { _form: 'This transfer code is not valid. Check the number and try again.' };
           case StatusCodes.CONFLICT:
             throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
+          case StatusCodes.UNPROCESSABLE_ENTITY:
+            throw { _form: 'Some required details are missing. Ask the officer to finish them before transferring.' };
           default:
             throw { _form: error.message };
         }

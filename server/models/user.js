@@ -1,4 +1,4 @@
-import { Prisma, RoleEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import mailer from '#lib/mailer.js';
 import Organization from '#models/organization.js';
 import Title from '#models/title.js';
 import Unit from '#models/unit.js';
+const { Prisma, RoleEnum } = prismaPkg;
 
 const UserAttributesSchema = z.object({
   firstName: z
@@ -140,6 +141,17 @@ export class User extends Base {
 
   async comparePassword (password) {
     return bcrypt.compare(password, this.hashedPassword);
+  }
+
+  async hasActiveHolds (prisma) {
+    const count = await prisma.deflection.count({
+      where: {
+        currentOfficerId: this.id,
+        status: 'ACTIVE',
+        subjectStatus: { in: ['DETAINED', 'ONSITE_AWAITING_TRANSFER'] },
+      },
+    });
+    return count > 0;
   }
 }
 

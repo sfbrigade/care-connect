@@ -6,6 +6,14 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
 
+function unprocessableFormError (message) {
+  const error = new Error(message);
+  error.statusCode = StatusCodes.UNPROCESSABLE_ENTITY;
+  return error;
+}
+
+const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
+
 export default async function (fastify) {
   fastify.post('/:id/handoff',
     {
@@ -30,87 +38,83 @@ export default async function (fastify) {
       const { id } = request.params;
       const receivingOfficerId = request.user.id;
 
-      const deflection = await fastify.prisma.deflection.findUnique({
-        where: { id },
-        include: { incident: true },
-      });
-
-      if (!deflection) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'Handoff code not recognized. Check the code and try again.' }],
-        });
-      }
-
-      if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'This hold is no longer active.' }],
-        });
-      }
-
-      // Incident details must be complete before handoff
-      if (!isIncidentDetailsComplete(deflection.incident)) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'Incident details must be complete before handing off.' }],
-        });
-      }
-
-      // Can't hand off to yourself
-      if (deflection.currentOfficerId === receivingOfficerId) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'You already control this hold.' }],
-        });
-      }
-
-      // Handoff ready gate: current owner must have initiated handoff recently
-      const HANDOFF_READY_TTL_MS = 3 * 60 * 1000;
-      if (
-        !deflection.handoffReadyAt ||
-        (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
-      ) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
-          errors: [{ path: '_form', message: 'This hold is not available for handoff.' }],
-        });
-      }
-
       let updatedDeflection;
-      await fastify.prisma.$transaction(async (tx) => {
-        const now = new Date();
-        const previousOfficerId = deflection.currentOfficerId;
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const lockedDeflection = await fastify.prisma.deflection.findByIdForUpdate(tx, id);
 
-        // Update the deflection's current officer
-        updatedDeflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            currentOfficerId: receivingOfficerId,
-            handoffReadyAt: null,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            propertyPhotos: true,
-          },
-        });
+          if (!lockedDeflection) {
+            throw unprocessableFormError('Handoff code not recognized. Check the code and try again.');
+          }
 
-        // Create audit trail
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            subjectStatus: deflection.subjectStatus,
-            updatedById: receivingOfficerId,
-            updatedAt: now,
-          },
-        });
+          const deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              incident: true,
+            },
+          });
 
-        // Record the handoff
-        await tx.handoff.create({
-          data: {
-            deflectionId: id,
-            fromOfficerId: previousOfficerId,
-            toOfficerId: receivingOfficerId,
-            timestamp: now,
-          },
+          if (deflection.status !== Deflection.HoldStatus.ACTIVE) {
+            throw unprocessableFormError('This hold is no longer active.');
+          }
+
+          if (!isIncidentDetailsComplete(deflection.incident)) {
+            throw unprocessableFormError('Incident details must be complete before handing off.');
+          }
+
+          if (deflection.currentOfficerId === receivingOfficerId) {
+            throw unprocessableFormError('You already control this hold.');
+          }
+
+          if (
+            !deflection.handoffReadyAt ||
+            (Date.now() - new Date(deflection.handoffReadyAt).getTime()) > HANDOFF_READY_TTL_MS
+          ) {
+            throw unprocessableFormError('This hold is not available for handoff.');
+          }
+
+          const now = new Date();
+          const previousOfficerId = deflection.currentOfficerId;
+
+          updatedDeflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              currentOfficerId: receivingOfficerId,
+              handoffReadyAt: null,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              subjectStatus: deflection.subjectStatus,
+              updatedById: receivingOfficerId,
+              updatedAt: now,
+            },
+          });
+
+          await tx.handoff.create({
+            data: {
+              deflectionId: id,
+              fromOfficerId: previousOfficerId,
+              toOfficerId: receivingOfficerId,
+              timestamp: now,
+            },
+          });
         });
-      });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+            errors: [{ path: '_form', message: error.message }],
+          });
+        }
+        throw error;
+      }
 
       updatedDeflection.propertyPhotos = updatedDeflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

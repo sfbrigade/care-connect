@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
-import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
+import { hasLength, isNotEmpty, useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
@@ -80,7 +82,7 @@ function AdminUserForm () {
       showToast('The user\'s profile has been updated', 'success');
       queryClient.setQueryData(['users', userId], response.data);
       if (userId === user?.id) {
-        queryClient.setQueryData(['users', 'me'], response.data);
+        queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       }
       navigate('/admin/users');
     },

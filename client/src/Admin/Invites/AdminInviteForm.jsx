@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router';
 import { Alert, Button, Checkbox, Container, Fieldset, Group, Stack, Select, Textarea, TextInput, Title } from '@mantine/core';
-import { isEmail, isNotEmpty, useForm } from '@mantine/form';
+import { isNotEmpty, useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 

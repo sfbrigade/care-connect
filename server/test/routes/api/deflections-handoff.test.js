@@ -74,6 +74,52 @@ test('/api/deflections/:id/handoff', async (t) => {
     });
   });
 
+  await t.test('competing handoff acceptances allow exactly one winner', async () => {
+    await makeIncidentComplete(2);
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection, 'Expected an active deflection on incident2');
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { handoffReadyAt: new Date() },
+    });
+
+    const [user2Response, cleanFieldResponse] = await Promise.all([
+      app.inject()
+        .post(`/api/deflections/${deflection.id}/handoff`)
+        .headers(user2Headers),
+      app.inject()
+        .post(`/api/deflections/${deflection.id}/handoff`)
+        .headers(cleanFieldHeaders),
+    ]);
+
+    const successResponses = [user2Response, cleanFieldResponse].filter((response) => response.statusCode === StatusCodes.OK);
+    const rejectedResponses = [user2Response, cleanFieldResponse].filter((response) => response.statusCode === StatusCodes.UNPROCESSABLE_ENTITY);
+
+    assert.deepStrictEqual(successResponses.length, 1);
+    assert.deepStrictEqual(rejectedResponses.length, 1);
+
+    const updated = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    const handoffs = await prisma.handoff.findMany({
+      where: { deflectionId: deflection.id },
+      orderBy: { timestamp: 'desc' },
+    });
+
+    assert.deepStrictEqual(handoffs.length, 1);
+    assert.deepStrictEqual(handoffs[0].toOfficerId, updated.currentOfficerId);
+    assert.deepStrictEqual(updated.handoffReadyAt, null);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1', handoffReadyAt: null },
+    });
+    await prisma.handoff.deleteMany({
+      where: { deflectionId: deflection.id },
+    });
+  });
+
   await t.test('handoff rejected when not initiated by owner', async () => {
     await makeIncidentComplete(2);
     const deflection = await prisma.deflection.findFirst({
@@ -217,5 +263,66 @@ test('/api/deflections/:id/handoff', async (t) => {
 
     // Restore
     await makeIncidentComplete(2);
+  });
+
+  await t.test('QR is one-time use: replay after success is rejected', async () => {
+    await makeIncidentComplete(2);
+
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { handoffReadyAt: new Date() },
+    });
+
+    const first = await app.inject()
+      .post(`/api/deflections/${deflection.id}/handoff`)
+      .headers(cleanFieldHeaders);
+    assert.deepStrictEqual(first.statusCode, StatusCodes.OK);
+
+    const afterFirst = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    assert.deepStrictEqual(afterFirst.handoffReadyAt, null);
+
+    // Former owner rescans the same QR — must fail on the cleared handoffReadyAt
+    const replay = await app.inject()
+      .post(`/api/deflections/${deflection.id}/handoff`)
+      .headers(user4Headers);
+    assert.deepStrictEqual(replay.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    const body = JSON.parse(replay.body);
+    assert.ok(body.errors[0].message.includes('not available for handoff'));
+  });
+
+  await t.test('concurrent handoffs: only one succeeds, audit trail has exactly one row', async () => {
+    await makeIncidentComplete(2);
+
+    const deflection = await prisma.deflection.findFirst({
+      where: { incidentId: 2, status: 'ACTIVE', currentOfficerId: 'aa1fdcf6-a63c-454e-9775-2d6fd116fdb1' },
+    });
+    assert.ok(deflection);
+
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { handoffReadyAt: new Date() },
+    });
+
+    const auditBefore = await prisma.deflectionUpdate.count({ where: { deflectionId: deflection.id } });
+
+    const [r1, r2] = await Promise.all([
+      app.inject().post(`/api/deflections/${deflection.id}/handoff`).headers(cleanFieldHeaders),
+      app.inject().post(`/api/deflections/${deflection.id}/handoff`).headers(cleanFieldHeaders),
+    ]);
+
+    const codes = [r1.statusCode, r2.statusCode].sort();
+    assert.deepStrictEqual(codes, [StatusCodes.OK, StatusCodes.UNPROCESSABLE_ENTITY]);
+
+    const auditAfter = await prisma.deflectionUpdate.count({ where: { deflectionId: deflection.id } });
+    assert.deepStrictEqual(auditAfter - auditBefore, 1);
+
+    const updated = await prisma.deflection.findUnique({ where: { id: deflection.id } });
+    assert.deepStrictEqual(updated.currentOfficerId, '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d');
+    assert.deepStrictEqual(updated.handoffReadyAt, null);
   });
 });

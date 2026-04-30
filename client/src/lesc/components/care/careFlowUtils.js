@@ -1,12 +1,11 @@
-function isTransferredToJailWithoutLegalRelease (deflection) {
+function isTransferredToJail (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
-    deflection?.exitDestinationId === 'jail' &&
-    !deflection?.releasedAt
+    deflection?.exitDestinationId === 'jail'
   );
 }
 
-function isTransferredToHospitalWithoutLegalRelease (deflection) {
+function isTransferredToHospital (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
     deflection?.exitDestinationId === 'hospital' &&
@@ -32,14 +31,14 @@ export function groupCareNotInCustodySections (deflections = []) {
     STILL_ONSITE: deflections.filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: deflections.filter(
       d => d.subjectStatus === 'EXITED' &&
-        !isTransferredToJailWithoutLegalRelease(d) &&
-        !isTransferredToHospitalWithoutLegalRelease(d)
+        !isTransferredToJail(d) &&
+        !isTransferredToHospital(d)
     ),
     TRANSFERRED_TO_JAIL: deflections.filter(
-      d => isTransferredToJailWithoutLegalRelease(d)
+      d => isTransferredToJail(d)
     ),
     TRANSFERRED_TO_HOSPITAL: deflections.filter(
-      d => isTransferredToHospitalWithoutLegalRelease(d)
+      d => isTransferredToHospital(d)
     ),
   };
 }

@@ -20,7 +20,9 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.58.2",
+    "@prisma/client": "6.16.2",
     "foreman": "^3.0.1",
+    "prisma": "6.16.2",
     "prisma-erd-generator": "^2.3.0"
   }
 }

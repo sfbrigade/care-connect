@@ -8,6 +8,7 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
 import Header from '@/components/Header';
@@ -27,6 +28,7 @@ function Deflection () {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { user } = useAuthContext();
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -37,7 +39,7 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
-  const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const allDetailsComplete = deflection ? isValidDeflection(deflection) && isValidIncident(incident) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
   const substanceComplete = deflection
     ? isValidSubstance({
@@ -59,9 +61,10 @@ function Deflection () {
     'DEATH_IN_CUSTODY',
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
-  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
-  const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
+  const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
+  const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
+  const showFinishDetailsFooter = isActionableActiveHold && !allDetailsComplete;
+  const showCancelOnlyFooter = isActionableActiveHold && allDetailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
@@ -194,7 +197,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
@@ -260,22 +263,28 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Behavioral observations</Title>
+                <Title order={3}>Custodial arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrestable behavior</Text>
+                    <Text c='dimmed'>Behavioral observation</Text>
                     {deflection?.behaviorNarrative
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorNarrative}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
+                  <Box>
+                    <Text c='dimmed'>Charge type</Text>
+                    {deflection?.chargeType
+                      ? <Text>{t(`chargeType.${deflection.chargeType}`)}</Text>
+                      : <Text c='red.6'>Incomplete</Text>}
+                  </Box>
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit details' : 'Finish details'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -329,7 +338,7 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrest location</Text>
+                    <Text c='dimmed'>Location</Text>
                     {incidentAddress
                       ? (
                         <Text>{incidentAddress}</Text>
@@ -337,7 +346,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
-                    <Text c='dimmed'>Arrest date & time</Text>
+                    <Text c='dimmed'>Date & time</Text>
                     {incident?.arrestedAt
                       ? (
                         <Text>{formatDateTime(incident.arrestedAt)}</Text>
@@ -397,7 +406,35 @@ function Deflection () {
           </Button>
           {showFinishDetailsFooter && (
             <Button
-              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+              onClick={() => {
+                const detailPath = `/holds/${deflection?.id}`;
+                if (!isValidIncident(incident)) {
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(detailPath)}&revisit=true`);
+                  return;
+                }
+                if (!isValidSubject(deflection.subject)) {
+                  navigate(`${detailPath}/subject`);
+                  return;
+                }
+                if (!isValidSubstance({
+                  narcoticsSubstance: deflection.narcoticsSubstance,
+                  narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+                  drugUseEvidence: deflection.drugUseEvidence,
+                  drugType: deflection.drugType ?? null,
+                })) {
+                  navigate(`${detailPath}/substance`);
+                  return;
+                }
+                if (!isValidBehavior(deflection)) {
+                  navigate(`${detailPath}/deflection`);
+                  return;
+                }
+                if (!isValidProperty(deflection)) {
+                  navigate(`${detailPath}/property`);
+                  return;
+                }
+                navigate(detailPath);
+              }}
             >
               Finish details
             </Button>
