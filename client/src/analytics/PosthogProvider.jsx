@@ -63,7 +63,7 @@ function PosthogProvider () {
         delete window.posthog;
       }
     };
-  }, [apiKey, apiHost]);
+  }, [apiKey, apiHost, gitSha]);
 
   useEffect(() => {
     if (!posthogRef.current) {
