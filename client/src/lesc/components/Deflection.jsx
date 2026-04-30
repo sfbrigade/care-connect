@@ -284,7 +284,7 @@ function Deflection () {
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit custodial arrest details' : 'Finish custodial arrest details'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit details' : 'Finish details'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -338,7 +338,7 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Custodial arrest location</Text>
+                    <Text c='dimmed'>Location</Text>
                     {incidentAddress
                       ? (
                         <Text>{incidentAddress}</Text>
@@ -346,7 +346,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
-                    <Text c='dimmed'>Custodial arrest date & time</Text>
+                    <Text c='dimmed'>Date & time</Text>
                     {incident?.arrestedAt
                       ? (
                         <Text>{formatDateTime(incident.arrestedAt)}</Text>

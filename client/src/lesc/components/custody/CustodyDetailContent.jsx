@@ -391,7 +391,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     <Accordion.Panel>
                       <Stack gap='sm'>
                         <Box>
-                          <Text c='dimmed'>Behavior warranting custodial arrest</Text>
+                          <Text c='dimmed'>Arrestable behavior</Text>
                           <Text>{deflection.behavior}</Text>
                         </Box>
                       </Stack>

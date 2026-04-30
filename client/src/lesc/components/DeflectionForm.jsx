@@ -179,7 +179,7 @@ function DeflectionForm () {
           <Title order={3}>Custodial arrest details</Title>
           {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
         </Group>
-        <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the custodial arrest, and select charge type.</Text>
+        <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the arrest, and select charge type.</Text>
         <form onSubmit={form.onSubmit((values) => {
           if (autoSaveTimerRef.current) {
             clearTimeout(autoSaveTimerRef.current);

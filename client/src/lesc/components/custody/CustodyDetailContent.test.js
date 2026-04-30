@@ -310,7 +310,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('Substance-related details');
     expect(html).toContain('Behavioral observations');
-    expect(html).toContain('Behavior warranting custodial arrest');
+    expect(html).toContain('Arrestable behavior');
     expect(html).toContain('Person was stumbling into traffic.');
     expect(html.indexOf('Substance-related details')).toBeLessThan(html.indexOf('Behavioral observations'));
   });
@@ -333,6 +333,6 @@ describe('CustodyDetailContent', () => {
       { viewerMode: 'care' }
     );
 
-    expect(html).not.toContain('Behavior warranting custodial arrest');
+    expect(html).not.toContain('Arrestable behavior');
   });
 });
