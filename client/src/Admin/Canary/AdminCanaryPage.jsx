@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Stack, Text, Title } from '@mantine/core';
+import { Button, Card, Container, Stack, Text, Title } from '@mantine/core';
 
 import Api from '@/Api';
 
@@ -32,39 +32,41 @@ function AdminCanaryPage () {
   }
 
   return (
-    <Stack p='xl' gap='md'>
-      <Title order={2}>Canary errors</Title>
-      <Text c='dimmed'>
-        Each button triggers a known error on one surface. Verify it appears in PostHog &gt; Error Tracking
-        with the matching <code>Canary:</code> prefix.
-      </Text>
+    <Container>
+      <Stack gap='md'>
+        <Title order={2}>Canary errors</Title>
+        <Text c='dimmed'>
+          Each button triggers a known error on one surface. Verify it appears in PostHog &gt; Error Tracking
+          with the matching <code>Canary:</code> prefix.
+        </Text>
 
-      <Card bg='white' p='xl' withBorder>
-        <Stack gap='sm'>
-          <Title order={4}>Browser</Title>
-          <Button color='red' variant='light' onClick={triggerRenderError}>
-            Throw FE render error
-          </Button>
-          <Button color='red' variant='light' onClick={triggerUnhandledRejection}>
-            Throw FE unhandled rejection
-          </Button>
-        </Stack>
-      </Card>
+        <Card bg='white' p='xl' withBorder>
+          <Stack gap='sm'>
+            <Title order={4}>Browser</Title>
+            <Button color='red' variant='light' onClick={triggerRenderError}>
+              Throw FE render error
+            </Button>
+            <Button color='red' variant='light' onClick={triggerUnhandledRejection}>
+              Throw FE unhandled rejection
+            </Button>
+          </Stack>
+        </Card>
 
-      <Card bg='white' p='xl' withBorder>
-        <Stack gap='sm'>
-          <Title order={4}>Server</Title>
-          <Button color='red' variant='light' onClick={triggerApiError}>
-            Throw API error (500)
-          </Button>
-          <Button color='red' variant='light' onClick={triggerJobError}>
-            Throw worker job error
-          </Button>
-        </Stack>
-      </Card>
+        <Card bg='white' p='xl' withBorder>
+          <Stack gap='sm'>
+            <Title order={4}>Server</Title>
+            <Button color='red' variant='light' onClick={triggerApiError}>
+              Throw API error (500)
+            </Button>
+            <Button color='red' variant='light' onClick={triggerJobError}>
+              Throw worker job error
+            </Button>
+          </Stack>
+        </Card>
 
-      {renderExplode && <ExplodingChild />}
-    </Stack>
+        {renderExplode && <ExplodingChild />}
+      </Stack>
+    </Container>
   );
 }
 
