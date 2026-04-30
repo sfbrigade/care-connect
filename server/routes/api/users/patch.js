@@ -7,6 +7,19 @@ import { z } from 'zod';
 import slugifyUnitId from '#lib/slugifyUnitId.js';
 import User from '#models/user.js';
 
+const ORG_ADMIN_ALLOWED_FIELDS = new Set([
+  'firstName',
+  'lastName',
+  'email',
+  'badgeNumber',
+  'titleId',
+  'unitId',
+  'unitName',
+  'prop115Certified',
+  'deactivatedAt',
+  'deletedAt',
+]);
+
 async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) {
   const trimmedUnitName = unitName?.trim();
 
@@ -115,10 +128,8 @@ export default async function (fastify, opts) {
         // Check if org admin editing a user in their org
         const requestUser = new User(request.user);
         if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
-          // Org admins can only change deactivatedAt and deletedAt
-          const allowedFields = new Set(['deactivatedAt', 'deletedAt']);
           const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
-          const hasDisallowedFields = bodyFields.some((f) => !allowedFields.has(f));
+          const hasDisallowedFields = bodyFields.some((f) => !ORG_ADMIN_ALLOWED_FIELDS.has(f));
           if (hasDisallowedFields) {
             return reply.code(StatusCodes.FORBIDDEN).send();
           }
@@ -145,13 +156,32 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
       }
-      // update password _if provided_
-      if (password) {
-        await user.setPassword(password);
-      }
       // update picture
       const pictureHandler = user.setAsset('picture', picture);
+      let lockedMissing = false;
+      let lockedForbidden = false;
       await fastify.prisma.$transaction(async (tx) => {
+        const lockedData = await tx.user.findByIdForUpdate(tx, id);
+        if (!lockedData) {
+          lockedMissing = true;
+          return;
+        }
+        Object.assign(data, lockedData);
+        if (data.id !== request.user.id && !request.user.isAdmin) {
+          const requestUser = new User(request.user);
+          if (!requestUser.isOrgAdmin || data.organizationId !== request.user.organizationId) {
+            lockedForbidden = true;
+            return;
+          }
+        }
+        user.update(updateData);
+        if (password) {
+          await user.setPassword(password);
+        }
+        if (user.changes.has('picture')) {
+          user.picture = picture;
+        }
+
         if (request.body.unitName && data.organizationId) {
           data.unitId = await resolveUnitId(tx, {
             organizationId: data.organizationId,
@@ -173,6 +203,12 @@ export default async function (fastify, opts) {
         });
         await pictureHandler?.();
       });
+      if (lockedMissing) {
+        return reply.code(StatusCodes.NOT_FOUND).send();
+      }
+      if (lockedForbidden) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
       return reply.send(new User(data));
     });
 }

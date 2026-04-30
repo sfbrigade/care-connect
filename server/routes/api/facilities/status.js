@@ -142,7 +142,7 @@ export default async function (fastify, opts) {
             });
           }
         }
-      });
+      }, { timeout: 30000 });
 
       // Send email notifications after transaction completes
       if (data.status === Facility.Status.CLOSED) {

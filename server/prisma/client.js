@@ -181,6 +181,10 @@ const prisma = new PrismaClient({
       }
     },
     user: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "User" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      },
       async findOrCreateBatchUser () {
         let data = await prisma.user.findUnique({
           where: { id: User.BATCH_USER_ID },
