@@ -48,7 +48,9 @@ RUN --mount=type=secret,id=posthog_cli_token \
       POSTHOG_CLI_TOKEN="$(cat /run/secrets/posthog_cli_token)" \
         npx --yes @posthog/cli@0.7.11 sourcemap inject --directory ./client/dist/client && \
       POSTHOG_CLI_TOKEN="$(cat /run/secrets/posthog_cli_token)" \
-        npx --yes @posthog/cli@0.7.11 sourcemap upload --directory ./client/dist/client; \
+        npx --yes @posthog/cli@0.7.11 sourcemap upload --directory ./client/dist/client \
+          --release-name care-connect \
+          --release-version "$GIT_SHA"; \
     else \
       echo "POSTHOG_CLI_TOKEN not provided — skipping source map upload"; \
     fi && \
