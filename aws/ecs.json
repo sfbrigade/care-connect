@@ -2,13 +2,23 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploy a simple ECS Fargate service with a specified image.",
   "Parameters": {
+    "ArrestsApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "The API key for the arrests API"
+    },
     "BaseName": {
       "Description": "Base name for the stack",
       "Type": "String"
     },
     "CapacityApiKey": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The API key for fetching facility status"
+    },
+    "EmailSiteTitle": {
+      "Type": "String",
+      "Description": "The site title used in emails"
     },
     "ImageURL": {
       "Type": "String",
@@ -28,6 +38,7 @@
     },
     "SessionSecret": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The session secret for the application"
     },
     "SiteTitle": {
@@ -158,6 +169,12 @@
               "Ref": "ImageURL"
             },
             "Environment": [
+              {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
               {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
@@ -406,6 +423,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
                 }
               },
               {
@@ -660,6 +683,12 @@
             },
             "Environment": [
               {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
+              {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -907,6 +936,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
                 }
               },
               {
