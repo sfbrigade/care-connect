@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
-import { Badge, Box, Button, Container, Fieldset, Group, Stack, Text, Title, VisuallyHidden } from '@mantine/core';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
+import { Badge, Button, Checkbox, Container, Fieldset, Group, Stack, Text, Title } from '@mantine/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
@@ -10,8 +10,6 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
-
-import classes from './CertifyInformation.module.css';
 
 const declaration = 'I declare under penalty of perjury that the information I have entered is true and correct, based on my personal knowledge, or is based on information and belief following an investigation of the events and parties involved. I agree that this declaration will apply to any subsequent edits I make to this information.';
 
@@ -110,21 +108,15 @@ function CertifyInformation () {
                   <Text fw={600} size='md' lh='md'>Read and agree to the declaration below</Text>
                   <Text c='red.6' size='md' lh='md'>*</Text>
                 </Group>
-                <Box component='label' className={classes.checkboxRow}>
-                  <VisuallyHidden
-                    component='input'
-                    type='checkbox'
-                    checked={Boolean(certifiedAt)}
-                    onChange={handleCertificationChange}
-                    aria-label='Certify information declaration'
-                  />
-                  <Group gap='md' align='flex-start' wrap='nowrap'>
-                    <Box component='span' className={classes.checkboxBox} data-checked={certifiedAt ? 'true' : undefined} aria-hidden='true'>
-                      {certifiedAt && <IconCheck size={16} stroke={2.25} />}
-                    </Box>
-                    <Text size='md' lh='md'>{declaration}</Text>
-                  </Group>
-                </Box>
+                <Checkbox
+                  size='md'
+                  color='indigo.6'
+                  radius='sm'
+                  checked={Boolean(certifiedAt)}
+                  onChange={handleCertificationChange}
+                  label={<Text size='md' lh='md'>{declaration}</Text>}
+                  styles={{ body: { alignItems: 'flex-start' } }}
+                />
               </Stack>
               <Button type='submit' mb='xl' disabled={!certifiedAt} loading={onSubmitMutation.isPending} w='fit-content'>
                 Finish details

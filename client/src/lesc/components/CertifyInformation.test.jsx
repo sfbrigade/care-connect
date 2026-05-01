@@ -91,7 +91,7 @@ describe('CertifyInformation', () => {
     const finishButton = await screen.findByRole('button', { name: 'Finish details' });
     expect(finishButton).toBeDisabled();
 
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Certify information declaration' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /declare under penalty of perjury/i }));
 
     await waitFor(() => {
       expect(deflectionUpdateMock).toHaveBeenCalledWith('10', { certifiedAt: expect.any(String) });
