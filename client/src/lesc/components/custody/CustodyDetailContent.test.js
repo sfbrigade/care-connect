@@ -297,7 +297,7 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('drugType.ALCOHOL');
   });
 
-  it('shows behavioral observations after substance-related details in care personal details', () => {
+  it('hides behavioral observations in care personal details', () => {
     const html = render(
       {
         subjectStatus: 'ADMITTED',
@@ -309,10 +309,9 @@ describe('CustodyDetailContent', () => {
     );
 
     expect(html).toContain('Substance-related details');
-    expect(html).toContain('Behavioral observations');
-    expect(html).toContain('Arrestable behavior');
-    expect(html).toContain('Person was stumbling into traffic.');
-    expect(html.indexOf('Substance-related details')).toBeLessThan(html.indexOf('Behavioral observations'));
+    expect(html).not.toContain('Behavioral observations');
+    expect(html).not.toContain('Arrestable behavior');
+    expect(html).not.toContain('Person was stumbling into traffic.');
   });
 
   it('shows no drug use status without a drug type in care personal details', () => {
@@ -327,12 +326,18 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Substance used (suspected)');
   });
 
-  it('hides care behavioral observations when no arrestable behavior was recorded', () => {
+  it('does not show care behavioral observations without substance-related details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', behavior: null },
+      {
+        subjectStatus: 'ADMITTED',
+        drugUseEvidence: null,
+        behavior: 'Person was stumbling into traffic.',
+      },
       { viewerMode: 'care' }
     );
 
+    expect(html).not.toContain('Behavioral observations');
     expect(html).not.toContain('Arrestable behavior');
+    expect(html).not.toContain('Person was stumbling into traffic.');
   });
 });

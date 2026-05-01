@@ -93,9 +93,11 @@ export default fp(async function (fastify) {
     };
   };
 
-  // Bearer token check for external integrations (not tied to a user session)
-  const requireCapacityApiKey = async (request, reply) => {
-    const configured = process.env.CAPACITY_API_KEY;
+  // Bearer token check for external integrations (not tied to a user session).
+  // Returns a Fastify hook that 401s unless the request's Authorization header
+  // matches the configured env var via timing-safe comparison.
+  const makeApiKeyGuard = (envVarName) => async (request, reply) => {
+    const configured = process.env[envVarName];
     if (!configured) {
       return reply.code(StatusCodes.UNAUTHORIZED).send();
     }
@@ -110,9 +112,13 @@ export default fp(async function (fastify) {
     }
   };
 
+  const requireCapacityApiKey = makeApiKeyGuard('CAPACITY_API_KEY');
+  const requireArrestsApiKey = makeApiKeyGuard('ARRESTS_API_KEY');
+
   fastify.decorate('requireUser', requireUser);
   fastify.decorate('requireAdmin', requireAdmin);
   fastify.decorate('requireCapacityApiKey', requireCapacityApiKey);
+  fastify.decorate('requireArrestsApiKey', requireArrestsApiKey);
   fastify.decorate('requireRole', requireRole);
   fastify.decorate('requireField', requireRole(User.Role.FIELD));
   fastify.decorate('requireCustody', requireRole(User.Role.CUSTODY));
