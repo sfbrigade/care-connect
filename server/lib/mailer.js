@@ -43,7 +43,7 @@ const options = {
 let mailer;
 
 export const EMAIL_TITLE = process.env.EMAIL_SITE_TITLE || 'City and County of San Francisco: CareConnect';
-export const EMAIL_BASE_URL = process.env.EMAIL_BASE_URL || 'https://careconnect.sf.gov';
+export const EMAIL_BASE_URL = process.env.EMAIL_BASE_URL || process.env.BASE_URL || 'https://careconnect.sf.gov';
 
 export function configureMailer (lib) {
   const transport = lib.createTransport(options);
