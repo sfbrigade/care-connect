@@ -12,7 +12,6 @@ import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
 import { hasAssociatedProperty } from '../custody/propertyReturnUtils';
 import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload, getSavedExitDraft, setSavedExitDraft } from './careFlowUtils';
-import classes from './CareExitDetails.module.css';
 
 const SF_RESIDENCY_OPTIONS = [
   { value: 'YES', label: 'Yes' },
@@ -233,19 +232,9 @@ function CareExitDetails () {
               <Divider />
               <Checkbox
                 checked={propertyReturnHandledConfirmed === true}
-                classNames={{
-                  body: classes.body,
-                  icon: classes.icon,
-                  inner: classes.inner,
-                  input: classes.input,
-                  label: classes.label,
-                  root: classes.propertyConfirmationCheckbox,
-                }}
-                color='indigo.6'
                 disabled={!isSectionTwoComplete}
                 label='I’ve confirmed with the SFSO Deputy that property has been handled.'
                 onChange={(event) => setPropertyReturnHandledConfirmed(event.currentTarget.checked ? true : null)}
-                radius='4px'
               />
             </>
           )}
