@@ -2,6 +2,11 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploy a simple ECS Fargate service with a specified image.",
   "Parameters": {
+    "ArrestsApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "The API key for the arrests API"
+    },
     "BaseName": {
       "Description": "Base name for the stack",
       "Type": "String"
@@ -164,6 +169,12 @@
               "Ref": "ImageURL"
             },
             "Environment": [
+              {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
               {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
@@ -671,6 +682,12 @@
               "Ref": "ImageURL"
             },
             "Environment": [
+              {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
               {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
