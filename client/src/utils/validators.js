@@ -27,6 +27,16 @@ export function normalizeDobInput (value) {
   return `${mm}/${dd}/${century}${yy}`;
 }
 
+function isValidDobValue (value) {
+  if (!value) return true;
+
+  const normalized = normalizeDobInput(value);
+  return (
+    DateTime.fromFormat(normalized, 'MM/dd/yyyy').isValid ||
+    DateTime.fromISO(String(value), { setZone: true }).isValid
+  );
+}
+
 const IncidentSchema = z.object({
   addressLine1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
   addressLine2: z.optional(z.nullable(z.string())),
@@ -47,7 +57,7 @@ const SubjectSchema = z.object({
   lastName: z.string(),
   dateOfBirth: z.string().check(
     z.refine(
-      (value) => !value || DateTime.fromFormat(normalizeDobInput(value), 'MM/dd/yyyy').isValid,
+      (value) => isValidDobValue(value),
       ERROR_DOB_INVALID
     )
   ),

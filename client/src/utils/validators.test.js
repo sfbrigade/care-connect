@@ -40,6 +40,11 @@ describe('SubjectSchema dateOfBirth validation', () => {
     expect(validateSubject({ ...baseSubject, dateOfBirth: '11/11/2001' })).toEqual({});
   });
 
+  it('accepts persisted ISO date strings', () => {
+    expect(validateSubject({ ...baseSubject, dateOfBirth: '2001-11-11' })).toEqual({});
+    expect(validateSubject({ ...baseSubject, dateOfBirth: '2001-11-11T00:00:00.000Z' })).toEqual({});
+  });
+
   it('rejects calendar-invalid dates', () => {
     expect(validateSubject({ ...baseSubject, dateOfBirth: '13/45/2020' })).toEqual({
       dateOfBirth: 'Enter a valid date as MM/DD/YYYY',
