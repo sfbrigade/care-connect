@@ -50,6 +50,10 @@ function config () {
   };
 }
 
+const TEST_FASTIFY_OPTIONS = {
+  pluginTimeout: Number(process.env.TEST_FASTIFY_PLUGIN_TIMEOUT_MS ?? 30_000),
+};
+
 // Try to load shared container info written by run-tests.js
 async function loadSharedContainerInfo () {
   const infoPath = process.env.CARE_CONNECT_TEST_CONTAINERS;
@@ -198,7 +202,7 @@ async function buildPostgres (t) {
   // fastify-plugin ensures that all decorators
   // are exposed for testing purposes, this is
   // different from the production setup
-  const app = await helper.build(argv, config());
+  const app = await helper.build(argv, config(), TEST_FASTIFY_OPTIONS);
 
   // recreate the database from the template
   async function recreateDb () {

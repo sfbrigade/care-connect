@@ -30,6 +30,7 @@ const queues = [
             deflectionId: job.data.deflectionId,
             formIds: emailFormIds,
             template: job.data.emailTemplate,
+            recipientEmail: job.data.recipientEmail,
           });
         }
       }
