@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticate, build } from '#test/helper.js';
+import { authenticate, build, makeFixturePreTransferDetailsComplete } from '#test/helper.js';
 
 // lescFacility1 hosts user2's active pre-transfer holds (deflections 4 and 5 are DETAINED;
 // deflection 6 is READY_FOR_INTAKE and deflection 7 is RELEASED, both post-transfer).
@@ -18,33 +18,8 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
 
-  async function makeFixturePreTransferDetailsComplete () {
-    await prisma.incident.update({
-      where: { id: 1 },
-      data: {
-        addressLine1: '123 Test St',
-        city: 'San Francisco',
-        state: 'CA',
-        supervisorBadgeNumber: '1234',
-      },
-    });
-    await prisma.deflection.updateMany({
-      where: { id: { in: [4, 5] } },
-      data: {
-        narcoticsSubstance: false,
-        narcoticsParaphernalia: false,
-        drugUseEvidence: false,
-        behavior: 'Cooperative',
-        behaviorNarrative: 'Test narrative',
-        chargeType: 'RWS_647F',
-        property: 'NONE',
-        certifiedAt: new Date(),
-      },
-    });
-  }
-
   await t.test('sets arrivedAt and flips subjectStatus on pre-transfer holds', async () => {
-    await makeFixturePreTransferDetailsComplete();
+    await makeFixturePreTransferDetailsComplete(prisma);
 
     const response = await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
@@ -74,7 +49,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   });
 
   await t.test('writes a deflectionUpdate audit row per affected hold', async () => {
-    await makeFixturePreTransferDetailsComplete();
+    await makeFixturePreTransferDetailsComplete(prisma);
 
     const beforeCount = await prisma.deflectionUpdate.count({
       where: { updatedById: USER2_ID, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
@@ -91,7 +66,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   });
 
   await t.test('records an ARRIVAL FacilityCheckIn with the affected hold ids', async () => {
-    await makeFixturePreTransferDetailsComplete();
+    await makeFixturePreTransferDetailsComplete(prisma);
 
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)

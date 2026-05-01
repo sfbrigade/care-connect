@@ -444,6 +444,31 @@ async function upload (fixtures) {
   );
 }
 
+async function makeFixturePreTransferDetailsComplete (prisma) {
+  await prisma.incident.update({
+    where: { id: 1 },
+    data: {
+      addressLine1: '123 Test St',
+      city: 'San Francisco',
+      state: 'CA',
+      supervisorBadgeNumber: '1234',
+    },
+  });
+  await prisma.deflection.updateMany({
+    where: { id: { in: [4, 5] } },
+    data: {
+      narcoticsSubstance: false,
+      narcoticsParaphernalia: false,
+      drugUseEvidence: false,
+      behavior: 'Cooperative',
+      behaviorNarrative: 'Test narrative',
+      chargeType: 'RWS_647F',
+      property: 'NONE',
+      certifiedAt: new Date(),
+    },
+  });
+}
+
 function assetExists (assetPath) {
   return s3.objectExists(assetPath);
 }
@@ -453,6 +478,7 @@ export {
   authenticate,
   build,
   config,
+  makeFixturePreTransferDetailsComplete,
   nodemailerMock,
   upload,
 };
