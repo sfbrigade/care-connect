@@ -91,7 +91,7 @@ export default function Form647f ({ data = {} }) {
             <Row label="Driver's License" value={subjectDL} />
             <Row label='Local ID / SF #' value={subjectLocalId} />
 
-            <SectionHeader title='Arrest Information' />
+            <SectionHeader title='Custodial Arrest Information' />
             <Row label='Date/Time Arrested' value={formatDateTime24(arrestedAt)} />
             <Row label='Location Arrested' value={arrestLocation} />
             <Row label='Charge' value={charge || '647(f) RWS'} />
