@@ -81,7 +81,7 @@ export default async function (fastify, opts) {
       if (id === User.BATCH_USER_ID) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      const { email, password, picture } = request.body;
+      const { email, picture } = request.body;
       if (email && await fastify.prisma.user.findFirst({
         where: { id: { not: id }, email },
       })) {
@@ -106,7 +106,7 @@ export default async function (fastify, opts) {
       // Self-protection: prevent users from disabling/deleting their own account
       if (data.id === request.user.id) {
         const selfProtectedFields = ['deactivatedAt', 'deletedAt'];
-        const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
+        const bodyFields = Object.keys(_.omit(request.body, ['picture']));
         if (bodyFields.some((f) => selfProtectedFields.includes(f))) {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
@@ -117,7 +117,7 @@ export default async function (fastify, opts) {
         if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
           // Org admins can only change deactivatedAt and deletedAt
           const allowedFields = new Set(['deactivatedAt', 'deletedAt']);
-          const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
+          const bodyFields = Object.keys(_.omit(request.body, ['picture']));
           const hasDisallowedFields = bodyFields.some((f) => !allowedFields.has(f));
           if (hasDisallowedFields) {
             return reply.code(StatusCodes.FORBIDDEN).send();
@@ -128,7 +128,8 @@ export default async function (fastify, opts) {
       }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
-      const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
+      const updateData = _.omit(request.body, ['picture', 'unitName']);
+      if (updateData.organizationId === '') updateData.organizationId = null;
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
@@ -144,10 +145,6 @@ export default async function (fastify, opts) {
         } else {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
-      }
-      // update password _if provided_
-      if (password) {
-        await user.setPassword(password);
       }
       // update picture
       const pictureHandler = user.setAsset('picture', picture);

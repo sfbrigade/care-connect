@@ -352,6 +352,16 @@ DEPARTURE DEPARTURE
     }
   
 
+  "AdminSecurityEvent" {
+    String id "🗝️"
+    String action 
+    Json metadata "❓"
+    String actorUserId 
+    String targetUserId 
+    DateTime createdAt 
+    }
+  
+
   "BedType" {
     String id "🗝️"
     String facilityId "🗝️"
@@ -662,6 +672,8 @@ DEPARTURE DEPARTURE
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
+    "User" o{--}o "AdminSecurityEvent" : ""
+    "User" o{--}o "AdminSecurityEvent" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedTypeUnavailableReason" : ""
@@ -738,6 +750,8 @@ DEPARTURE DEPARTURE
     "BedTypeUnavailableReason" o{--}o "BedType" : ""
     "BedTypeUnavailableReason" o{--}o "BedTypeUpdate" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
+    "AdminSecurityEvent" o|--|| "User" : "actor"
+    "AdminSecurityEvent" o|--|| "User" : "target"
     "BedType" o|--|| "Facility" : "facility"
     "BedType" o|--|| "BedTypeEnum" : "enum:type"
     "BedType" o|--|| "User" : "createdBy"
