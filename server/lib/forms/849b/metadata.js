@@ -4,9 +4,9 @@ export const metadata = {
   downloadFilename: (id) => `849b-report-${id}.pdf`,
 
   canGenerate (deflection) {
-    return deflection.releasedAt
+    return deflection.releasedAt || (deflection.exitDestinationId === 'jail' && deflection.exitedAt)
       ? true
-      : { message: 'The SFSO 849(b) Report can only be generated after the subject has been released.' };
+      : { message: 'The SFSO 849(b) Report can only be generated after the subject has been released or exited to jail.' };
   },
 
   deflectionInclude: {
@@ -23,5 +23,6 @@ export const metadata = {
       },
     },
     releaseReason: true,
+    exitDestination: true,
   },
 };
