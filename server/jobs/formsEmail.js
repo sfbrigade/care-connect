@@ -28,10 +28,15 @@ export default async function formsEmail (data, prismaClient = prisma) {
     });
   }
 
+  const arrestingOfficerEmail = formIds.includes('647f')
+    ? deflection.incident?.createdBy?.email
+    : null;
+
   await mailer.send({
     template,
     message: {
       to: recipientEmail || EMAIL_RECIPIENT,
+      ...(arrestingOfficerEmail && { cc: arrestingOfficerEmail }),
       attachments: emailAttachments,
     },
     locals: {

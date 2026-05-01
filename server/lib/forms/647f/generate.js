@@ -1,7 +1,18 @@
-import { metadata } from './metadata.js';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+import { fill647f } from './fill647f.js';
 import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
 import i18n from '#lib/i18n.js';
-import { firstLastName, streetCityState, streetCityStateZip } from '#lib/forms/shared/formUtils.js';
+import {
+  FORM_TIMEZONE,
+  firstLastName,
+  formatDateOnly,
+  formatDateTime24,
+  joinWords,
+  streetCityState,
+  streetCityStateZip,
+  titleCase,
+} from '#lib/forms/shared/formUtils.js';
 
 export function transformData (deflection) {
   const subject = deflection.subject;
@@ -66,7 +77,60 @@ export function transformData (deflection) {
 }
 
 export async function generatePdf (deflectionData) {
-  const { default: Form647f } = await import('#lib/forms/dist/Form647f.js');
-  const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
-  return Buffer.from(await renderFormToPdf(Form647f, deflectionData, { title: metadata.title }));
+  const templatePath = join(process.cwd(), 'lib/forms/647f/template.pdf');
+  const templateBytes = await readFile(templatePath);
+
+  const arrestingOfficerDisplay = joinWords(
+    deflectionData.arrestingOfficerRank,
+    deflectionData.arrestingOfficerName,
+    deflectionData.arrestingOfficerBadge && `#${deflectionData.arrestingOfficerBadge}`
+  );
+  const custodyReleaseOfficerDisplay = joinWords(
+    deflectionData.custodyReleaseOfficerRank,
+    deflectionData.custodyReleaseOfficerName,
+    deflectionData.custodyReleaseOfficerBadge && `#${deflectionData.custodyReleaseOfficerBadge}`
+  );
+
+  const substanceNot = deflectionData.substanceFound ? '' : 'not ';
+  const paraphernaliaNot = deflectionData.paraphernaliaFound ? '' : 'not ';
+  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
+  const narrative = [deflectionData.justification, narcoticsStatement, deflectionData.hospitalCancellationReleaseNarrative]
+    .filter(Boolean)
+    .join('\n\n');
+
+  const formData = {
+    subjectLastName: deflectionData.subjectLastName,
+    subjectFirstName: deflectionData.subjectFirstName,
+    subjectMiddleInitial: deflectionData.subjectMiddleInitial,
+    subjectRace: titleCase(deflectionData.subjectRace),
+    subjectSex: titleCase(deflectionData.subjectSex),
+    subjectDOB: formatDateOnly(deflectionData.subjectDOB),
+    subjectAddress: deflectionData.subjectAddress,
+    subjectDL: deflectionData.subjectDL,
+    subjectLocalId: deflectionData.subjectLocalId,
+
+    arrestedAt: formatDateTime24(deflectionData.arrestedAt),
+    arrestLocation: deflectionData.arrestLocation,
+    charge: deflectionData.charge || '647(f) RWS',
+    cadNumber: deflectionData.cadNumber,
+
+    arrestingOfficerDisplay,
+    arrestingOfficerUnit: deflectionData.arrestingOfficerUnit,
+    arrestingOfficerAgency: deflectionData.arrestingOfficerAgency,
+    supervisorBadgeNumber: deflectionData.supervisorBadgeNumber,
+    custodyReleaseOfficerDisplay,
+
+    deflectionId: String(deflectionData.deflectionId),
+    facilityName: deflectionData.facilityName,
+    facilityAddress: deflectionData.facilityAddress,
+
+    narrative,
+
+    generatedTimestamp: new Date().toLocaleString('en-US', {
+      timeZone: FORM_TIMEZONE,
+      hour12: false,
+    }),
+  };
+
+  return Buffer.from(await fill647f(templateBytes, formData));
 }

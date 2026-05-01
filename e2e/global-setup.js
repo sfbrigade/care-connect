@@ -71,10 +71,10 @@ export default async function globalSetup () {
       stdio: 'inherit',
       timeout: 120000,
     });
-    // Complete any active incidents for the SFPD test user so "Hold a chair" creates a fresh one
+    // Complete any active deflections so "Hold a chair" creates a fresh one
     execSync('docker compose exec -T server bash -c "cd server && node -e \\"' +
       "import prisma from './prisma/client.js';" +
-      "await prisma.incident.updateMany({ where: { completedAt: null }, data: { completedAt: new Date() } });" +
+      "await prisma.deflection.updateMany({ where: { completedAt: null }, data: { completedAt: new Date() } });" +
       "await prisma.\\\\\\$disconnect();" +
       '\\""', { stdio: 'inherit', timeout: 30000 });
     console.log('Database reset complete.');
