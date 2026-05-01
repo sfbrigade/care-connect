@@ -19,7 +19,7 @@ function SafetyCheckResultModal ({
       lockScroll
       withCloseButton={false}
     >
-        <Stack gap='xl'>
+      <Stack gap='xl'>
         <Stack gap='xs'>
           <Group justify='space-between' align='flex-start' wrap='nowrap'>
             <Title order={3}>Record safety check</Title>
