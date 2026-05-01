@@ -11,6 +11,10 @@
       "NoEcho": true,
       "Description": "The API key for fetching facility status"
     },
+    "EmailSiteTitle": {
+      "Type": "String",
+      "Description": "The site title used in emails"
+    },
     "ImageURL": {
       "Type": "String",
       "Description": "The URL of the Docker image (e.g., your-ecr-repo-url/image:tag)"
@@ -408,6 +412,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
                 }
               },
               {
@@ -909,6 +919,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
                 }
               },
               {
