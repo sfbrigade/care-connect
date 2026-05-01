@@ -160,7 +160,7 @@ function CareExitDetails () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='gray.6'>Review and complete exit details</Text>
-            <Title order={3}>These answers will be saved to the person&apos;s exit record.</Title>
+            <Title order={3}>Must complete before exit.</Title>
           </Stack>
 
           <Input.Wrapper label='Exit destination' required>
