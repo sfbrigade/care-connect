@@ -29,8 +29,8 @@ import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function isNetworkError (error) {
@@ -54,7 +54,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
-  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection?.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';

@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
 function buildDeflection (overrides = {}) {
   return {
     id: 123,
-    subjectStatus: 'ADMITTED',
+    subjectStatus: 'IN_MEDICAL_INTAKE',
     subject: {
       firstName: 'John',
       middleInitial: 'D',
@@ -61,8 +61,8 @@ afterEach(() => {
 });
 
 describe('CareCard', () => {
-  it('shows View details and Update intake status for ADMITTED', () => {
-    renderCard({ deflection: buildDeflection({ subjectStatus: 'ADMITTED' }) });
+  it('shows View details and Update intake status for IN_MEDICAL_INTAKE', () => {
+    renderCard({ deflection: buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }) });
 
     expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Update intake status' })).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('CareCard', () => {
 
   it('calls onCompleteIntake when Update intake status is clicked', () => {
     const { onCompleteIntake } = renderCard({
-      deflection: buildDeflection({ subjectStatus: 'ADMITTED' }),
+      deflection: buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }),
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Update intake status' }));

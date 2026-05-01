@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireCare,
       schema: {
-        description: 'Mark medical intake outcome, transitioning from ADMITTED to IN_CHAIR or FAILED_INTAKE.',
+        description: 'Mark medical intake outcome, transitioning from IN_MEDICAL_INTAKE to IN_CHAIR or FAILED_INTAKE.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -50,8 +50,8 @@ export default async function (fastify, opts) {
             },
           });
 
-          if (deflection.subjectStatus !== Deflection.SubjectStatus.ADMITTED) {
-            throw conflictError(`Deflection ${id} cannot complete intake: status is ${deflection.subjectStatus}, expected ADMITTED`);
+          if (deflection.subjectStatus !== Deflection.SubjectStatus.IN_MEDICAL_INTAKE) {
+            throw conflictError(`Deflection ${id} cannot complete intake: status is ${deflection.subjectStatus}, expected IN_MEDICAL_INTAKE`);
           }
 
           const now = new Date();
@@ -86,8 +86,8 @@ export default async function (fastify, opts) {
             },
           });
 
-          // When intake is completed (ADMITTED → IN_CHAIR), transition from hold to occupied.
-          // When intake fails (ADMITTED → FAILED_INTAKE), both are holds so no count change.
+          // When intake is completed (IN_MEDICAL_INTAKE → IN_CHAIR), transition from hold to occupied.
+          // When intake fails (IN_MEDICAL_INTAKE → FAILED_INTAKE), both are holds so no count change.
           if (completed) {
             const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, available } = bedType;
             const updatedData = {

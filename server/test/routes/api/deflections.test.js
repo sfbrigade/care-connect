@@ -377,20 +377,20 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.subjectStatus, 'ADMITTED');
-      assert.ok(data.admittedAt);
-      assert.ok(data.admittedById);
+      assert.deepStrictEqual(data.subjectStatus, 'IN_MEDICAL_INTAKE');
+      assert.ok(data.beginMedicalIntakeAt);
+      assert.ok(data.beginMedicalIntakeById);
       assertCareSubjectRedaction(data.subject);
 
       // Verify in database
       const deflection = await prisma.deflection.findUnique({
         where: { id: 6 },
       });
-      assert.deepStrictEqual(deflection.subjectStatus, 'ADMITTED');
-      assert.ok(deflection.admittedAt);
-      assert.ok(deflection.admittedById);
+      assert.deepStrictEqual(deflection.subjectStatus, 'IN_MEDICAL_INTAKE');
+      assert.ok(deflection.beginMedicalIntakeAt);
+      assert.ok(deflection.beginMedicalIntakeById);
 
-      // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses
+      // No bed type count changes: both READY_FOR_INTAKE and IN_MEDICAL_INTAKE are hold statuses
       bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
       });
@@ -405,15 +405,15 @@ test('/api/deflections', async (t) => {
         where: { id: 6 },
         data: {
           subjectStatus: 'READY_FOR_INTAKE',
-          admittedAt: null,
-          admittedById: null,
+          beginMedicalIntakeAt: null,
+          beginMedicalIntakeById: null,
         },
       });
 
       const beforeAuditCount = await prisma.deflectionUpdate.count({
         where: {
           deflectionId: 6,
-          subjectStatus: 'ADMITTED',
+          subjectStatus: 'IN_MEDICAL_INTAKE',
         },
       });
 
@@ -434,13 +434,13 @@ test('/api/deflections', async (t) => {
       const afterAuditCount = await prisma.deflectionUpdate.count({
         where: {
           deflectionId: 6,
-          subjectStatus: 'ADMITTED',
+          subjectStatus: 'IN_MEDICAL_INTAKE',
         },
       });
 
-      assert.deepStrictEqual(deflection.subjectStatus, 'ADMITTED');
-      assert.ok(deflection.admittedAt);
-      assert.ok(deflection.admittedById);
+      assert.deepStrictEqual(deflection.subjectStatus, 'IN_MEDICAL_INTAKE');
+      assert.ok(deflection.beginMedicalIntakeAt);
+      assert.ok(deflection.beginMedicalIntakeById);
       assert.deepStrictEqual(afterAuditCount, beforeAuditCount + 1);
     });
   });
@@ -450,8 +450,8 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'ADMITTED',
-          admittedAt: new Date(),
+          subjectStatus: 'IN_MEDICAL_INTAKE',
+          beginMedicalIntakeAt: new Date(),
         },
       });
 
@@ -473,8 +473,8 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'ADMITTED',
-          admittedAt: new Date(),
+          subjectStatus: 'IN_MEDICAL_INTAKE',
+          beginMedicalIntakeAt: new Date(),
         },
       });
 
@@ -599,9 +599,9 @@ test('/api/deflections', async (t) => {
           facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
-          subjectStatus: 'ADMITTED',
-          admittedAt: new Date(),
-          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          subjectStatus: 'IN_MEDICAL_INTAKE',
+          beginMedicalIntakeAt: new Date(),
+          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
           rejectedAt: null,
           rejectedById: null,
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
@@ -652,8 +652,8 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'FAILED_INTAKE',
-          admittedAt: new Date(),
-          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          beginMedicalIntakeAt: new Date(),
+          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
           rejectedAt: new Date(),
           rejectedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
@@ -694,8 +694,8 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'IN_CHAIR',
-          admittedAt: new Date(),
-          admittedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          beginMedicalIntakeAt: new Date(),
+          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
           property: 'SMALL',
           propertyDetails: 'Black backpack',
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
@@ -906,7 +906,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
 
       const custodyListResponse = await app.inject()
-        .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR,RELEASED,EXITED')
+        .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR,RELEASED,EXITED')
         .headers(custodyUserHeaders);
       assert.deepStrictEqual(custodyListResponse.statusCode, StatusCodes.OK);
       const listData = JSON.parse(custodyListResponse.body);
@@ -1734,7 +1734,7 @@ test('/api/deflections', async (t) => {
     await t.test('returns 409 if not IN_CHAIR', async () => {
       await app.prisma.deflection.update({
         where: { id: 5 },
-        data: { subjectStatus: 'ADMITTED' },
+        data: { subjectStatus: 'IN_MEDICAL_INTAKE' },
       });
 
       const response = await app.inject()
@@ -1981,7 +1981,7 @@ test('/api/deflections', async (t) => {
       // Setup: reset deflection 6 status
       await prisma.deflection.update({
         where: { id: 6 },
-        data: { subjectStatus: 'ADMITTED', releasedAt: null, releasedById: null, releaseReasonId: null },
+        data: { subjectStatus: 'IN_MEDICAL_INTAKE', releasedAt: null, releasedById: null, releaseReasonId: null },
       });
 
       const response = await app.inject()
@@ -2015,7 +2015,7 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'ADMITTED',
+          subjectStatus: 'IN_MEDICAL_INTAKE',
           status: 'ACTIVE',
           completedAt: null,
           releasedAt: null,
@@ -2058,7 +2058,7 @@ test('/api/deflections', async (t) => {
       // Setup: reset deflection 6 status
       await prisma.deflection.update({
         where: { id: 6 },
-        data: { subjectStatus: 'ADMITTED', releasedAt: null, releasedById: null, releaseReasonId: null, exitedAt: null, exitDestinationId: null },
+        data: { subjectStatus: 'IN_MEDICAL_INTAKE', releasedAt: null, releasedById: null, releaseReasonId: null, exitedAt: null, exitDestinationId: null },
       });
 
       const response = await app.inject()

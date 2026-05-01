@@ -122,7 +122,7 @@ describe('CustodyCard', () => {
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
   });
 
-  it.each(['ADMITTED', 'IN_CHAIR', 'RELEASED'])(
+  it.each(['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED'])(
     'shows only View details for %s',
     (status) => {
       renderCard(buildDeflection({ subjectStatus: status }));
@@ -140,7 +140,7 @@ describe('CustodyCard', () => {
   });
 
   it('navigates to details when View details is clicked', () => {
-    renderCard(buildDeflection({ subjectStatus: 'ADMITTED' }));
+    renderCard(buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'View details' }));
 

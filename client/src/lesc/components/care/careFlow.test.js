@@ -72,7 +72,7 @@ describe('Care flow unit tests', () => {
   it('builds care detail footer state by status/action mode', () => {
     const admittedState = getCareDetailFooterState({
       viewerMode: 'care',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(admittedState).toEqual({
       showFooter: true,
@@ -97,7 +97,7 @@ describe('Care flow unit tests', () => {
 
     const nonCareState = getCareDetailFooterState({
       viewerMode: 'custody',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(nonCareState.showFooter).toBe(false);
   });

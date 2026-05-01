@@ -58,7 +58,7 @@ export function getDeflectionActivityMs (deflection) {
     toMillis(deflection?.cancelledAt),
     toMillis(deflection?.exitedAt),
     toMillis(deflection?.releasedAt),
-    toMillis(deflection?.admittedAt),
+    toMillis(deflection?.beginMedicalIntakeAt),
     toMillis(deflection?.transferredAt),
     toMillis(deflection?.createdAt)
   );

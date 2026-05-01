@@ -175,7 +175,7 @@ ONSITE_AWAITING_TRANSFER   (2) At facility; waiting for custody transfer
 AWAITING_INTAKE            (3) Transferred to custody; waiting for intake
 READY_FOR_INTAKE           (4) Passed safety check; ready for medical intake
 FAILED_INTAKE              (5) Did not pass intake; still in hold
-ADMITTED                   (6) Admitted to facility (assessment complete)
+IN_MEDICAL_INTAKE                   (6) Admitted to facility (assessment complete)
 IN_CHAIR                   (7) Occupying bed/chair (intake workflow complete)
 RELEASED                   (8) Legally released (pending exit processing)
 EXITED                     (9) Left the facility — terminal state
@@ -200,7 +200,7 @@ DETAINED
                                                          │
                                                     [/admit]
                                                          ↓
-                                                     ADMITTED
+                                                     IN_MEDICAL_INTAKE
                                                          │
                                               [/intake-complete]
                                             ┌────────────┴────────────┐
@@ -217,7 +217,7 @@ DETAINED
                                          EXITED
 
 Direct Exit Paths (bypass release):
-  AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE
+  AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, FAILED_INTAKE
     └─ [/exit-to-jail] ────────────────────────────────────→ EXITED without release
 
 Release Short-Circuit (auto-exit on certain release reasons):
@@ -225,7 +225,7 @@ Release Short-Circuit (auto-exit on certain release reasons):
   [/release] with reason = "sobered" ─────────────────────→ RELEASED (then needs /exit)
 
 Death Paths (from any in-custody or released state):
-  AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, IN_CHAIR
+  AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, FAILED_INTAKE, IN_CHAIR
     └─ [/record-death] ────────────────────────────────────→ DEATH_IN_CUSTODY
   RELEASED
     └─ [/record-death] ────────────────────────────────────→ DEATH_IN_FACILITY
@@ -246,12 +246,12 @@ Reopen (only from CANCELLED or EXPIRED):
 ```javascript
 // Subjects physically in custody (count toward capacity holds)
 IN_CUSTODY_STATUSES = [
-  AWAITING_INTAKE, FAILED_INTAKE, READY_FOR_INTAKE, ADMITTED, IN_CHAIR
+  AWAITING_INTAKE, FAILED_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, IN_CHAIR
 ]
 
 // Subjects eligible for legal release
 RELEASABLE_STATUSES = [
-  AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, IN_CHAIR, FAILED_INTAKE
+  AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, IN_CHAIR, FAILED_INTAKE
 ]
 
 // Terminal subject statuses (deflection is done)
@@ -314,7 +314,7 @@ No additional required fields (transitions `AWAITING_INTAKE → READY_FOR_INTAKE
 
 ### Admit (`/admit`)
 Role required: `CARE`
-No additional required fields (transitions `READY_FOR_INTAKE → ADMITTED`).
+No additional required fields (transitions `READY_FOR_INTAKE → IN_MEDICAL_INTAKE`).
 
 ### Intake Complete (`/intake-complete`)
 - `completed` (Boolean): `true` → `IN_CHAIR`, `false` → `FAILED_INTAKE`
@@ -417,7 +417,7 @@ Subjects can be created standalone or inline during deflection creation.
 5. POST deflection /safety-check (5–20 min after transfer)
    → subjectStatus: READY_FOR_INTAKE
 6. POST deflection /admit (5–30 min after safety-check)
-   → subjectStatus: ADMITTED
+   → subjectStatus: IN_MEDICAL_INTAKE
 7. POST deflection /intake-complete with completed=true (15–60 min after admit)
    → subjectStatus: IN_CHAIR, holds-1, occupied+1
 8. POST deflection /release with reason="sobered" (1–6 hours after intake-complete)
@@ -454,7 +454,7 @@ Subjects can be created standalone or inline during deflection creation.
 
 #### Scenario E: Failed Intake
 ```
-1–6. Same as Scenario A steps 1–6 (up to ADMITTED)
+1–6. Same as Scenario A steps 1–6 (up to IN_MEDICAL_INTAKE)
 7. POST deflection /intake-complete with completed=false
    → subjectStatus: FAILED_INTAKE
 8. POST deflection /release (with appropriate reason)
@@ -490,7 +490,7 @@ Subjects can be created standalone or inline during deflection creation.
 7. POST deflection /safety-check
    → subjectStatus: READY_FOR_INTAKE
 8. POST deflection /admit
-   → subjectStatus: ADMITTED
+   → subjectStatus: IN_MEDICAL_INTAKE
 9. POST deflection /intake-complete with completed=true
    → subjectStatus: IN_CHAIR, holds-1, occupied+1
 10. POST deflection /release with reason="sobered"
@@ -542,7 +542,7 @@ incidentCreatedAt
   < arrivedAt (if set)
   < deflectionTransferredAt (if set)
   < safetyCheckAt (if set)
-  < admittedAt (if set)
+  < beginMedicalIntakeAt (if set)
   < intakeCompletedAt (if set)
   < releasedAt (if set)
   < exitedAt (if set)
@@ -602,7 +602,7 @@ When generating synthetic data, generate corresponding audit records to ensure a
 ```
 HoldStatusEnum:       ACTIVE | CANCELLED | EXPIRED | COMPLETED
 SubjectStatusEnum:    DETAINED | ONSITE_AWAITING_TRANSFER | AWAITING_INTAKE |
-                      READY_FOR_INTAKE | FAILED_INTAKE | ADMITTED | IN_CHAIR |
+                      READY_FOR_INTAKE | FAILED_INTAKE | IN_MEDICAL_INTAKE | IN_CHAIR |
                       RELEASED | EXITED | DEATH_IN_FACILITY | DEATH_IN_CUSTODY
 PropertyEnum:         NONE | SMALL | MEDIUM | LARGE
 PropertyNotReturnedReasonEnum: ABANDONED | DESTROYED | OTHER

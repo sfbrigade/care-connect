@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { getCareStatusChip } from './careStatusChipUtils';
 
 describe('getCareStatusChip', () => {
-  it('maps ADMITTED to In medical intake chip', () => {
+  it('maps IN_MEDICAL_INTAKE to In medical intake chip', () => {
     expect(getCareStatusChip({
-      deflection: { subjectStatus: 'ADMITTED' },
+      deflection: { subjectStatus: 'IN_MEDICAL_INTAKE' },
       careFooterState: { primaryLabel: 'Update intake status' },
     })).toEqual({ label: 'In medical intake', tone: 'info' });
   });
