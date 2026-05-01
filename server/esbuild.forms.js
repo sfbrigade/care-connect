@@ -4,7 +4,6 @@ const watch = process.argv.includes('--watch');
 
 const options = {
   entryPoints: [
-    'lib/forms/647f/Form647f.jsx',
     'lib/forms/cert/NarcoticsNotice.jsx',
     'lib/forms/shared/FormContainer.jsx',
   ],
