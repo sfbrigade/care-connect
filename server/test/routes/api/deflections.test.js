@@ -3,6 +3,7 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
+import Facility from '#models/facility.js';
 
 function assertCareSubjectRedaction (subject) {
   assert.ok(subject);
@@ -18,10 +19,41 @@ test('/api/deflections', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
   const anotherUserHeaders = await authenticate(app, 'another.user@test.com', 'test');
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+
+  // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
+  // deflections.yml). Tests opt into completeness when they exercise endpoints
+  // that gate on isIncidentDetailsComplete / isDeflectionDetailsComplete.
+  async function makeIncidentComplete (incidentId) {
+    await prisma.incident.updateMany({
+      where: { id: incidentId },
+      data: {
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        supervisorBadgeNumber: '1234',
+      },
+    });
+  }
+
+  async function makeDeflectionComplete (deflectionId) {
+    await prisma.deflection.updateMany({
+      where: { id: deflectionId },
+      data: {
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+      },
+    });
+  }
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new deflection', async () => {
@@ -245,6 +277,8 @@ test('/api/deflections', async (t) => {
   await t.test('POST /:id/transfer', async (t) => {
     await t.test('transfers custody of a deflection', async () => {
       await prisma.deflection.expire();
+      await makeIncidentComplete(1);
+      await makeDeflectionComplete(5);
       await prisma.deflection.update({
         where: { id: 5 },
         data: {
@@ -285,6 +319,46 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 2); // in-transit decrements
       assert.deepStrictEqual(bedType.available, 4);
     });
+
+    await t.test('rejects with 422 when incident details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // hold details complete, incident details intentionally not
+      await makeDeflectionComplete(5);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
+    });
+
+    await t.test('rejects with 422 when hold details are incomplete', async () => {
+      await prisma.deflection.expire();
+      // incident details complete, hold details intentionally not
+      await makeIncidentComplete(1);
+      await prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+
+      const response = await app.inject().post('/api/deflections/5/transfer').headers(custodyUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const body = JSON.parse(response.body);
+      assert.deepStrictEqual(body.errors.length, 1);
+      assert.deepStrictEqual(body.errors[0].path, '_form');
+
+      const deflection = await prisma.deflection.findUnique({ where: { id: 5 } });
+      assert.deepStrictEqual(deflection.subjectStatus, 'ONSITE_AWAITING_TRANSFER');
+      assert.deepStrictEqual(deflection.transferredAt, null);
+    });
   });
 
   await t.test('POST /:id/admit', async (t) => {
@@ -324,6 +398,50 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('allows exactly one admit under concurrent requests', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          admittedAt: null,
+          admittedById: null,
+        },
+      });
+
+      const beforeAuditCount = await prisma.deflectionUpdate.count({
+        where: {
+          deflectionId: 6,
+          subjectStatus: 'ADMITTED',
+        },
+      });
+
+      const [firstResponse, secondResponse] = await Promise.all([
+        app.inject().post('/api/deflections/6/admit').headers(careUserHeaders),
+        app.inject().post('/api/deflections/6/admit').headers(careUserHeaders),
+      ]);
+
+      const successResponses = [firstResponse, secondResponse].filter((response) => response.statusCode === StatusCodes.OK);
+      const conflictResponses = [firstResponse, secondResponse].filter((response) => response.statusCode === StatusCodes.CONFLICT);
+
+      assert.deepStrictEqual(successResponses.length, 1);
+      assert.deepStrictEqual(conflictResponses.length, 1);
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 6 },
+      });
+      const afterAuditCount = await prisma.deflectionUpdate.count({
+        where: {
+          deflectionId: 6,
+          subjectStatus: 'ADMITTED',
+        },
+      });
+
+      assert.deepStrictEqual(deflection.subjectStatus, 'ADMITTED');
+      assert.ok(deflection.admittedAt);
+      assert.ok(deflection.admittedById);
+      assert.deepStrictEqual(afterAuditCount, beforeAuditCount + 1);
     });
   });
 
@@ -881,6 +999,50 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.code, 'ALREADY_RECORDED');
     });
 
+    await t.test('records property return only once under concurrent submissions', async () => {
+      const deflection = await createReleasedDeflection();
+
+      const [yesResponse, noResponse] = await Promise.all([
+        app.inject()
+          .post(`/api/deflections/${deflection.id}/property-return`)
+          .payload({ propertyReturned: true })
+          .headers(custodyUserHeaders),
+        app.inject()
+          .post(`/api/deflections/${deflection.id}/property-return`)
+          .payload({ propertyReturned: false, propertyNotReturnedReason: 'OTHER', propertyNotReturnedOtherReason: 'Evidence hold' })
+          .headers(custodyUserHeaders),
+      ]);
+
+      const successResponses = [yesResponse, noResponse].filter((response) => response.statusCode === StatusCodes.OK);
+      const conflictResponses = [yesResponse, noResponse].filter((response) => response.statusCode === StatusCodes.CONFLICT);
+
+      assert.deepStrictEqual(successResponses.length, 1);
+      assert.deepStrictEqual(conflictResponses.length, 1);
+      assert.deepStrictEqual(JSON.parse(conflictResponses[0].body).code, 'ALREADY_RECORDED');
+
+      const updatedDeflection = await prisma.deflection.findUnique({
+        where: { id: deflection.id },
+      });
+      const propertyReturnUpdates = await prisma.deflectionUpdate.findMany({
+        where: {
+          deflectionId: deflection.id,
+          propertyReturned: {
+            not: null,
+          },
+        },
+      });
+
+      assert.notStrictEqual(updatedDeflection.propertyReturned, null);
+      assert.ok(updatedDeflection.propertyReturnedAt);
+      assert.ok(updatedDeflection.propertyReturnedById);
+      assert.deepStrictEqual(propertyReturnUpdates.length, 1);
+      assert.deepStrictEqual(propertyReturnUpdates[0].propertyReturned, updatedDeflection.propertyReturned);
+      assert.deepStrictEqual(
+        propertyReturnUpdates[0].propertyNotReturnedReason,
+        updatedDeflection.propertyNotReturnedReason
+      );
+    });
+
     await t.test('returns 422 when returned=false and reason is missing', async () => {
       const deflection = await createReleasedDeflection();
 
@@ -993,6 +1155,74 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.narcoticsParaphernalia, true);
       assert.deepStrictEqual(deflection.drugUseEvidence, true);
       assert.deepStrictEqual(deflection.drugType, 'ALCOHOL');
+    });
+
+    await t.test('creates only one subject under concurrent upserts', async () => {
+      const subjectsBefore = await prisma.subject.count();
+      const incident = await prisma.incident.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          encounteredVia: 'DISPATCHED',
+          cadNumber: `CAD-SUBJECT-${Date.now()}`,
+          caseNumber: `CASE-SUBJECT-${Date.now()}`,
+          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          updatedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+      const deflection = await prisma.deflection.create({
+        data: {
+          facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+          incidentId: incident.id,
+          bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
+          createdById: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+          currentOfficerId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        },
+      });
+
+      const [firstResponse, secondResponse] = await Promise.all([
+        app.inject()
+          .put(`/api/deflections/${deflection.id}/subject`)
+          .payload({
+            firstName: 'Concurrent',
+            lastName: 'Subject',
+            middleInitial: 'A',
+            dateOfBirth: '1988-05-25',
+            sex: 'MALE',
+            race: 'WHITE',
+            localId: 'CONCURRENT-SUBJECT',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: true,
+            drugUseEvidence: true,
+            drugType: 'ALCOHOL',
+          })
+          .headers(userHeaders),
+        app.inject()
+          .put(`/api/deflections/${deflection.id}/subject`)
+          .payload({
+            firstName: 'Concurrent',
+            lastName: 'Subject',
+            middleInitial: 'B',
+            dateOfBirth: '1988-05-25',
+            sex: 'MALE',
+            race: 'ASIAN',
+            localId: 'CONCURRENT-SUBJECT',
+            narcoticsSubstance: true,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+          })
+          .headers(userHeaders),
+      ]);
+
+      assert.deepStrictEqual(firstResponse.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(secondResponse.statusCode, StatusCodes.OK);
+
+      const updatedDeflection = await prisma.deflection.findUnique({
+        where: { id: deflection.id },
+      });
+      const subjectsAfter = await prisma.subject.count();
+
+      assert.ok(updatedDeflection.subjectId);
+      assert.deepStrictEqual(subjectsAfter - subjectsBefore, 1);
     });
 
     await t.test('updates the subject of a deflection', async () => {
@@ -1277,7 +1507,7 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/1/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'Deflection is not cancelled or expired');
+      assert.deepStrictEqual(data.message, 'Deflection is not cancelled or expired');
     });
 
     await t.test('returns 409 if no available beds', async () => {
@@ -1293,7 +1523,43 @@ test('/api/deflections', async (t) => {
       const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.error, 'No available beds');
+      assert.deepStrictEqual(data.message, 'No available beds');
+    });
+
+    await t.test('returns 409 if facility is open but not accepting', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.OPEN_NOT_ACCEPTING,
+          statusReasonId: 'other',
+          statusOther: 'Pausing reopens',
+        });
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.message, 'Facility is not accepting new holds');
+    });
+
+    await t.test('returns 409 if facility is closed', async () => {
+      await prisma.deflection.expire();
+      await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReasonId: 'other',
+          statusOther: 'Closed for testing',
+        });
+
+      const response = await app.inject().post('/api/deflections/4/reopen').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.message, 'Facility is not accepting new holds');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
@@ -1588,7 +1854,87 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
     });
 
-    await t.test('marks a subject as legally released (simple sobered)', async () => {
+    await t.test('records sobered release from a pre-chair hold and finalizes the deflection', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'sobered',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReasonId, 'sobered');
+      assert.strictEqual(data.exitDestinationId, null);
+      assert.ok(data.releasedAt);
+      assert.ok(data.releasedById);
+      assert.ok(data.exitedAt);
+      assert.ok(data.completedAt);
+
+      // Verify DB state
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.releaseReasonId, 'sobered');
+      assert.ok(dbDeflection.completedAt);
+
+      // Verify the finalization is recorded as a second update entry
+      const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
+      const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
+      assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
+
+      // Verify bedType counters: a pre-chair hold never used a chair, so
+      // holds -> available with no occupied involvement.
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 0);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
+    });
+
+    await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 1, holds: 4, inTransit: 3, available: 4 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
       const response = await app.inject()
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
@@ -1614,11 +1960,21 @@ test('/api/deflections', async (t) => {
       assert.ok(dbDeflection.releasedAt);
       assert.strictEqual(dbDeflection.completedAt, null);
 
-      // Verify deflection update history
+      // Verify the deflection lingers — only one update entry, no finalization
       const updates = await prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
       const lastUpdate = updates[updates.length - 1];
       assert.strictEqual(lastUpdate.status, null);
       assert.strictEqual(lastUpdate.subjectStatus, 'RELEASED');
+
+      // Verify bedType counters are unchanged: the chair is still occupied
+      // until the care team marks the subject EXITED.
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+      });
+      assert.deepStrictEqual(bedType.occupied, 1);
+      assert.deepStrictEqual(bedType.holds, 4);
+      assert.deepStrictEqual(bedType.inTransit, 3);
+      assert.deepStrictEqual(bedType.available, 4);
     });
 
     await t.test('marks a subject as legally released (medical issue)', async () => {
@@ -1653,6 +2009,49 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
+    });
+
+    await t.test('marks a subject as legally released (behavioral health evaluation)', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'ADMITTED',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReasonId: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestinationId: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReasonId: 'behavioral_health_evaluation',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'RELEASED');
+      assert.strictEqual(data.status, 'ACTIVE');
+      assert.strictEqual(data.releaseReasonId, 'behavioral_health_evaluation');
+      assert.strictEqual(data.exitDestinationId, null);
+      assert.ok(data.releasedAt);
+      assert.strictEqual(data.completedAt, null);
+      assert.strictEqual(data.exitedAt, null);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
+      assert.strictEqual(dbDeflection.status, 'ACTIVE');
+      assert.strictEqual(dbDeflection.releaseReasonId, 'behavioral_health_evaluation');
+      assert.strictEqual(dbDeflection.exitDestinationId, null);
+      assert.strictEqual(dbDeflection.completedAt, null);
+      assert.strictEqual(dbDeflection.exitedAt, null);
     });
 
     await t.test('marks a subject as legally released (other)', async () => {

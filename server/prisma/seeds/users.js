@@ -6,8 +6,8 @@ export default async function main (prisma) {
   const users = [
     {
       email: 'sfpd@careconnectsf.org',
-      firstName: 'SFPD',
-      lastName: 'User',
+      firstName: 'Test',
+      lastName: 'SFPD1',
       isAdmin: false,
       organizationId: 'sfpd',
       roles: ['FIELD'],
@@ -16,8 +16,8 @@ export default async function main (prisma) {
     },
     {
       email: 'sfpd2@careconnectsf.org',
-      firstName: 'SFPD2',
-      lastName: 'User',
+      firstName: 'Test',
+      lastName: 'SFPD2',
       isAdmin: false,
       organizationId: 'sfpd',
       roles: ['FIELD'],
@@ -26,8 +26,8 @@ export default async function main (prisma) {
     },
     {
       email: 'sfso@careconnectsf.org',
-      firstName: 'SFSO',
-      lastName: 'User',
+      firstName: 'Test',
+      lastName: 'SFSO',
       isAdmin: false,
       organizationId: 'sfso',
       roles: ['FIELD', 'CUSTODY', 'ORG_ADMIN'],
@@ -36,8 +36,8 @@ export default async function main (prisma) {
     },
     {
       email: 'sfso2@careconnectsf.org',
-      firstName: 'SFSO2',
-      lastName: 'User',
+      firstName: 'Test',
+      lastName: 'SFSO2',
       isAdmin: false,
       organizationId: 'sfso',
       roles: ['FIELD', 'CUSTODY'],
@@ -46,8 +46,8 @@ export default async function main (prisma) {
     },
     {
       email: 'care@careconnectsf.org',
-      firstName: 'Care',
-      lastName: 'User',
+      firstName: 'Test',
+      lastName: 'Care',
       isAdmin: false,
       organizationId: 'connections',
       roles: ['CARE', 'FACILITY_ADMIN'],

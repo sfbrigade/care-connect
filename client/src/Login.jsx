@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title } from '@mantine/core';
-import { isEmail, useForm } from '@mantine/form';
+import { useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconMail, IconLock, IconArrowLeft } from '@tabler/icons-react';
@@ -209,21 +211,21 @@ function Login () {
 
                   <Stack mt='md' gap='sm' align='flex-start'>
                     <Button
-                      variant={resendCooldown > 0 ? 'default' : 'secondary'}
+                      type='submit'
+                      loading={verifyMutation.isPending}
+                      disabled={verifyForm.getValues().code.length !== 6}
+                    >
+                      Verify and continue
+                    </Button>
+
+                    <Button
+                      variant='white'
                       onClick={handleResend}
                       disabled={resendCooldown > 0 || resendMutation.isPending}
                     >
                       {resendCooldown > 0
                         ? `Resend code in ${String(Math.floor(resendCooldown / 60)).padStart(2, '0')}:${String(resendCooldown % 60).padStart(2, '0')}`
                         : 'Resend code'}
-                    </Button>
-
-                    <Button
-                      type='submit'
-                      loading={verifyMutation.isPending}
-                      disabled={verifyForm.getValues().code.length !== 6}
-                    >
-                      Verify and continue
                     </Button>
                   </Stack>
                 </Stack>

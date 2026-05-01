@@ -85,7 +85,7 @@ function Care () {
 
   const { data: notInCustodyDeflections = [] } = useQuery({
     queryKey: ['deflections', facility.id, 'care-not-in-custody'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES, perPage: 200 }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

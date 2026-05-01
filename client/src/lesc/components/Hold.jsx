@@ -4,7 +4,7 @@ import LockedQRCode from '@/components/LockedQRCode';
 import useNow from '@/hooks/useNow';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { formatTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection } from '@/utils/validators';
+import { isValidDeflection, isValidIncident } from '@/utils/validators';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
@@ -106,7 +106,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
         )}
         {isActive && isArrived && !isHistory && (
           <Stack align='center' gap='xs'>
-            <LockedQRCode value={transferUrl} variant={!isValid ? 'locked' : undefined} />
+            <LockedQRCode value={transferUrl} variant={isValid && isValidIncident(incident) ? undefined : 'locked'} />
             <Text size='sm' c='dimmed'>Transfer code: {deflection.id}</Text>
           </Stack>
         )}

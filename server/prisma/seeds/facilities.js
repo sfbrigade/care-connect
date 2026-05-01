@@ -4,9 +4,10 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { parse } from 'csv-parse/sync';
-import { FacilityUpdateMethodEnum, FacilityEligibilityTypeEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { point } from '@turf/helpers';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+const { FacilityUpdateMethodEnum, FacilityEligibilityTypeEnum } = prismaPkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

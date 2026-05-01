@@ -12,7 +12,7 @@ export default async function main (prisma) {
   const deflectionCancelReasons = [
     {
       id: '5150',
-      name: '5150',
+      name: 'Behavioral health evaluation',
       createdById: adminUser.id,
       updatedById: adminUser.id,
     },
@@ -53,7 +53,16 @@ export default async function main (prisma) {
       where: { id: dcr.id },
     });
 
-    if (existing) {
+    if (existing && dcr.id === '5150' && existing.name !== dcr.name) {
+      const updated = await prisma.deflectionCancelReason.update({
+        where: { id: dcr.id },
+        data: {
+          name: dcr.name,
+          updatedById: dcr.updatedById,
+        },
+      });
+      console.log(`Updated deflection cancel reason: ${updated.id} - ${updated.name}`);
+    } else if (existing) {
       console.log(`Deflection cancel reason ${dcr.id} already exists, skipping...`);
     } else {
       const created = await prisma.deflectionCancelReason.create({

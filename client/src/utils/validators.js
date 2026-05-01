@@ -114,7 +114,7 @@ export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
 
-const SubstanceSchema = z.union([
+const SubstanceSchema = z.discriminatedUnion('drugUseEvidence', [
   z.object({
     narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
     narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
