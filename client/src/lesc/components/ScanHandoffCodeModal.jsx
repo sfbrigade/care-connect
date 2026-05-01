@@ -69,7 +69,7 @@ function ScanHandoffCodeModal ({ opened, onClose, onSuccess }) {
       prompt='Scan the QR code to accept the handoff.'
       manualEntryTitle='Enter Handoff Code'
       manualEntryLabel='Enter handoff code'
-      manualEntryDescription="If the QR code doesn't work, ask the officer for the handoff code."
+      manualEntryDescription='If scanning is not working, ask the officer for the numerical handoff code.'
       manualEntryInputPlaceholder='Enter handoff code'
       manualEntryAddButtonLabel='+ Handoff code'
       manualEntryAllowMultiple
