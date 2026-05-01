@@ -34,8 +34,9 @@ function LegalReleaseQuestions () {
   const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
 
   const isMedicalRelease = releaseReasonId === 'medical_issue';
+  const isBehavioralHealthRelease = releaseReasonId === 'behavioral_health_evaluation';
   const isOtherRelease = releaseReasonId === 'other';
-  const isExitRelease = isMedicalRelease || isOtherRelease;
+  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -76,6 +77,9 @@ function LegalReleaseQuestions () {
         releaseReasonId,
       };
       if (isMedicalRelease) {
+        payload.exitDestinationId = exitDestinationId;
+      }
+      if (isBehavioralHealthRelease) {
         payload.exitDestinationId = exitDestinationId;
       }
       if (isOtherRelease) {
@@ -131,7 +135,7 @@ function LegalReleaseQuestions () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={3}>Review the 849(b) before continuing.</Title>
+            <Title order={3}>Review the 849(b).</Title>
           </Stack>
 
           <Card bg='gray.1' p='md' radius='md'>
@@ -219,19 +223,21 @@ function LegalReleaseQuestions () {
                     </Chip.Group>
                   </Box>
                 </Input.Wrapper>
-                {isMedicalRelease && (
+                {(isMedicalRelease || isBehavioralHealthRelease) && (
                   <>
                     <Text size='md' c='dimmed'>
-                      This &lsquo;Medical issue (physical)&rsquo; release will also mark the person as exited from RESET
+                      This will also mark the person as exited from RESET.
                     </Text>
-                    <Input.Wrapper label='Exit destination' required>
-                      <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
-                        <Group gap='sm'>
-                          <Chip value='hospital'>Hospital</Chip>
-                          <Chip value='other'>Other</Chip>
-                        </Group>
-                      </Chip.Group>
-                    </Input.Wrapper>
+                    {(isMedicalRelease || isBehavioralHealthRelease) && (
+                      <Input.Wrapper label='Exit destination' required>
+                        <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
+                          <Group gap='sm'>
+                            <Chip value='hospital'>Hospital</Chip>
+                            <Chip value='other'>Other</Chip>
+                          </Group>
+                        </Chip.Group>
+                      </Input.Wrapper>
+                    )}
                   </>
                 )}
                 {isOtherRelease && (
@@ -261,7 +267,7 @@ function LegalReleaseQuestions () {
 
               <Group gap='md' wrap='nowrap' align='flex-start'>
                 <IconAlertCircle size={24} color='var(--mantine-color-indigo-6)' stroke={1.75} />
-                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO supervisors.</Text>
+                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.</Text>
               </Group>
 
               <Group>
@@ -282,7 +288,7 @@ function LegalReleaseQuestions () {
                   loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
                   disabled={
                     !releaseReasonId ||
-                    (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
+                    ((releaseReasonId === 'medical_issue' || releaseReasonId === 'behavioral_health_evaluation') && !exitDestinationId) ||
                     (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
                     (releaseReasonId !== 'sobered' &&
                       releaseReasonId !== 'medical_issue' &&

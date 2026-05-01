@@ -19,10 +19,10 @@ function SafetyCheckResultModal ({
       lockScroll
       withCloseButton={false}
     >
-      <Stack gap='xl'>
+        <Stack gap='xl'>
         <Stack gap='xs'>
           <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <Title order={3}>Record safety check result</Title>
+            <Title order={3}>Record safety check</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -49,22 +49,22 @@ function SafetyCheckResultModal ({
               <IconX size={16} />
             </ActionIcon>
           </Group>
-          <Text size='md'>Choose the result of the safety check.</Text>
+          <Text size='md'>Indicate a failed check if you have a safety concern that would require an exit to jail.</Text>
         </Stack>
 
-        <Group gap='sm' justify='flex-start' wrap='wrap'>
+        <Group gap='sm' justify='flex-start' wrap='nowrap' grow>
           <Button
             variant='destructive'
             onClick={onConfirmFailed}
             disabled={loading}
           >
-            Failed safety check
+            Failed
           </Button>
           <Button
             onClick={onConfirmPassed}
             loading={loading}
           >
-            Passed safety check
+            Passed
           </Button>
         </Group>
       </Stack>
