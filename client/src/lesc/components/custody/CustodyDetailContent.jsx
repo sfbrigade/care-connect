@@ -15,7 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -76,6 +76,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
+  const intakeStartedAt = formatIntakeStartedAt(deflection?.admittedAt);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
@@ -260,6 +261,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {isCareView && (
               <Stack gap='xs' align='center'>
                 <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+                {intakeStartedAt && (
+                  <Text size='sm' c='dimmed' ta='center'>Intake started: {intakeStartedAt}</Text>
+                )}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
                 )}
