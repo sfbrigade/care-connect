@@ -135,7 +135,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
             {canViewDetails && (
-              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+              <Button size='md' variant='secondary' onClick={onDetailsClick}>Details</Button>
             )}
           </Group>
         )}

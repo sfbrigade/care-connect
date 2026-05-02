@@ -63,7 +63,10 @@ function AdminUsersList () {
                   </Table.Td>
                   <Table.Td>{user.isAdmin && 'Admin'}</Table.Td>
                   <Table.Td>
-                    <Anchor component={Link} to={`${user.id}`}>Edit&nbsp;Profile</Anchor>
+                    <Group gap='md'>
+                      <Anchor component={Link} to={`${user.id}`}>Edit&nbsp;profile</Anchor>
+                      <Anchor component={Link} to={`${user.id}/support`}>Login&nbsp;support</Anchor>
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
               ))}

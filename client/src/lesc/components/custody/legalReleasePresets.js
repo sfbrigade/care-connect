@@ -1,5 +1,5 @@
 const VALID_RELEASE_REASON_IDS = new Set(['sobered', 'medical_issue', 'behavioral_health_evaluation', 'other']);
-const VALID_MEDICAL_EXIT_DESTINATION_IDS = new Set(['hospital', 'other']);
+const VALID_EXIT_DESTINATION_IDS = new Set(['hospital', 'other']);
 
 export function getPrefilledLegalReleaseState (searchParams) {
   const releaseReasonId = searchParams.get('releaseReasonId');
@@ -12,7 +12,7 @@ export function getPrefilledLegalReleaseState (searchParams) {
     };
   }
 
-  if (releaseReasonId !== 'medical_issue') {
+  if (releaseReasonId !== 'medical_issue' && releaseReasonId !== 'behavioral_health_evaluation') {
     return {
       releaseReasonId,
       exitDestinationId: null,
@@ -21,7 +21,7 @@ export function getPrefilledLegalReleaseState (searchParams) {
 
   return {
     releaseReasonId,
-    exitDestinationId: VALID_MEDICAL_EXIT_DESTINATION_IDS.has(exitDestinationId)
+    exitDestinationId: VALID_EXIT_DESTINATION_IDS.has(exitDestinationId)
       ? exitDestinationId
       : null,
   };

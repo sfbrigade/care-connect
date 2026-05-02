@@ -88,7 +88,7 @@ describe('Hold', () => {
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
 
-  it('hides the checkerboard but still shows view-details for transferred holds in history', () => {
+  it('hides the checkerboard but still shows details for transferred holds in history', () => {
     renderHold({
       isHistory: true,
       deflection: {
@@ -109,7 +109,7 @@ describe('Hold', () => {
 
     expect(screen.getByText('Transferred')).toBeInTheDocument();
     expect(screen.queryByTestId('transferred-hold-checkerboard')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View Details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
   });
 
   it('shows the QR code transfer area before custody transfer', () => {
