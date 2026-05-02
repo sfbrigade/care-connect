@@ -1430,6 +1430,11 @@ test('/api/deflections', async (t) => {
         userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
+        recipientEmail: [
+          'SFPD.Data.Transfer.Authorized@sfgov.org',
+          'Andrew.bley@sfgov.org',
+          'Sfso-incidentreports@sfgov.org',
+        ],
       });
     });
 
