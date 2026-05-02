@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { Accordion, Anchor, Badge, Box, Button, CloseButton, Container, Divider, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -168,6 +168,7 @@ function PropertyForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} aria-label='Go back' />
           {header}
+          <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />
         </Group>
       </Header>
       <Container>

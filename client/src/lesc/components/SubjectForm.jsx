@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft, IconScan } from '@tabler/icons-react';
+import { IconArrowLeft, IconScan, IconX } from '@tabler/icons-react';
 import { Accordion, Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -238,6 +238,7 @@ function SubjectForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} aria-label='Go back' />
           {header}
+          {!isCustodyContext && <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />}
         </Group>
       </Header>
       <Container>

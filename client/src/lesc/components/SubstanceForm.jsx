@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { Badge, Button, Container, Fieldset, Group, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -143,6 +143,7 @@ function SubstanceForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/subject?isNew=true` : `/holds/${id}`} />
           {header}
+          <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />
         </Group>
       </Header>
       <Container>
