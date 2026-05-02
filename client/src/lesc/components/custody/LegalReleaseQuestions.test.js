@@ -28,7 +28,7 @@ describe('getPrefilledLegalReleaseState', () => {
     });
   });
 
-  it('accepts behavioral health evaluation as a valid preset without an exit destination', () => {
+  it('accepts behavioral health evaluation as a valid preset with an exit destination', () => {
     const params = new URLSearchParams({
       releaseReasonId: 'behavioral_health_evaluation',
       exitDestinationId: 'hospital',
@@ -36,7 +36,7 @@ describe('getPrefilledLegalReleaseState', () => {
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
       releaseReasonId: 'behavioral_health_evaluation',
-      exitDestinationId: null,
+      exitDestinationId: 'hospital',
     });
   });
 
