@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
+import { isDeflectionDetailsComplete, isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
 
 function unprocessableFormError (message) {
   const error = new Error(message);
@@ -51,6 +51,7 @@ export default async function (fastify) {
             where: { id },
             include: {
               incident: true,
+              subject: true,
             },
           });
 
@@ -60,6 +61,10 @@ export default async function (fastify) {
 
           if (!isIncidentDetailsComplete(deflection.incident)) {
             throw unprocessableFormError('Incident details must be complete before handing off.');
+          }
+
+          if (!isDeflectionDetailsComplete(deflection)) {
+            throw unprocessableFormError('Hold details must be complete before handing off.');
           }
 
           if (deflection.currentOfficerId === receivingOfficerId) {
