@@ -51,6 +51,7 @@ test('/api/deflections', async (t) => {
         behaviorNarrative: 'Test narrative',
         chargeType: 'RWS_647F',
         property: 'NONE',
+        certifiedAt: new Date(),
       },
     });
   }

@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { notFoundError } from '#lib/httpErrors.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 
@@ -49,6 +50,17 @@ export default async function (fastify) {
               id: true,
               arrivedAt: true,
               subjectStatus: true,
+              incident: true,
+              subject: true,
+              narcoticsSubstance: true,
+              narcoticsParaphernalia: true,
+              drugUseEvidence: true,
+              drugType: true,
+              behavior: true,
+              behaviorNarrative: true,
+              chargeType: true,
+              property: true,
+              certifiedAt: true,
             },
           });
 
@@ -60,6 +72,10 @@ export default async function (fastify) {
           const holdsNeedingArrivalUpdate = [];
 
           for (const hold of candidateHolds.sort((a, b) => a.id - b.id)) {
+            if (!isIncidentDetailsComplete(hold.incident) || !isDeflectionDetailsComplete(hold)) {
+              throw badRequestError('Required details must be complete before arrival');
+            }
+
             const updated = await tx.deflection.updateMany({
               where: {
                 id: hold.id,

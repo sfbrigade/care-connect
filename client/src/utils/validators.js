@@ -51,6 +51,10 @@ const PropertySchema = z.object({
   property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE'], ERROR_SELECT_ONE),
 });
 
+const CertificationSchema = z.object({
+  certifiedAt: z.iso.datetime(ERROR_REQUIRED),
+});
+
 const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
   z.object({
     subject: SubjectSchema,
@@ -59,6 +63,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     drugType: z.nullable(z.optional(DrugTypeSchema)),
     ...BehaviorSchema.shape,
     ...PropertySchema.shape,
+    ...CertificationSchema.shape,
   }),
   z.object({
     subject: SubjectSchema,
@@ -67,6 +72,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     drugType: DrugTypeSchema,
     ...BehaviorSchema.shape,
     ...PropertySchema.shape,
+    ...CertificationSchema.shape,
   }),
 ], ERROR_SELECT_ONE);
 
@@ -119,6 +125,10 @@ export const validateProperty = zod4Resolver(PropertySchema);
 
 export const isValidProperty = (obj) => {
   return !!PropertySchema.safeParse(obj)?.success;
+};
+
+export const isValidCertification = (obj) => {
+  return !!CertificationSchema.safeParse(obj)?.success;
 };
 
 export const isValidDeflection = (obj) => {
