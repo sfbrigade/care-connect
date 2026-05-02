@@ -80,7 +80,7 @@ afterEach(() => {
 });
 
 describe('EditManagedUserPage', () => {
-  it('splits a multi-word fullName into firstName and lastName on save', async () => {
+  it('preserves multi-word last names by editing first and last name separately', async () => {
     mockUsersGet.mockResolvedValue({
       data: {
         id: 'u1',
@@ -95,10 +95,9 @@ describe('EditManagedUserPage', () => {
     }));
     renderEditPage('u1', 'personal');
 
-    // Form populates from loaded user; multi-word last name renders as one combined value.
-    await screen.findByDisplayValue('Mary Jane Watson');
+    await screen.findByDisplayValue('Mary');
+    await screen.findByDisplayValue('Jane Watson');
 
-    // Edit email so the form is dirty without changing the name.
     const emailInput = screen.getByDisplayValue('mary@example.test');
     await userEvent.clear(emailInput);
     await userEvent.type(emailInput, 'mary.watson@example.test');
@@ -112,6 +111,23 @@ describe('EditManagedUserPage', () => {
         email: 'mary.watson@example.test',
       });
     });
+  });
+
+  it('renders separate first and last name inputs in the personal section', async () => {
+    mockUsersGet.mockResolvedValue({
+      data: {
+        id: 'u3',
+        firstName: 'Alex',
+        lastName: 'Van Pelt',
+        email: 'alex@example.test',
+        organizationId: 'sfpd',
+      },
+    });
+    renderEditPage('u3', 'personal');
+
+    expect(await screen.findByDisplayValue('Alex')).toHaveAttribute('placeholder', 'Enter first name');
+    expect(screen.getByDisplayValue('Van Pelt')).toHaveAttribute('placeholder', 'Enter last name');
+    expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument();
   });
 
   it('redirects out of /edit/position for users not in SFPD or SFSO', async () => {

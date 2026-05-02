@@ -11,14 +11,6 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 
-function splitFullName (fullName) {
-  const parts = fullName.trim().split(/\s+/);
-  return {
-    firstName: parts[0] || '',
-    lastName: parts.slice(1).join(' '),
-  };
-}
-
 function EditManagedUserPage () {
   const { userId, section } = useParams();
   const navigate = useNavigate();
@@ -29,7 +21,8 @@ function EditManagedUserPage () {
 
   const form = useForm({
     initialValues: {
-      fullName: '',
+      firstName: '',
+      lastName: '',
       email: '',
       badgeNumber: '',
       organizationId: '',
@@ -60,7 +53,8 @@ function EditManagedUserPage () {
   useEffect(() => {
     if (!user) return;
     const values = {
-      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       email: user.email || '',
       badgeNumber: user.badgeNumber || '',
       organizationId: user.organizationId || '',
@@ -88,7 +82,8 @@ function EditManagedUserPage () {
   const payload = useMemo(() => {
     if (section === 'personal') {
       return {
-        ...splitFullName(form.values.fullName),
+        firstName: form.values.firstName.trim(),
+        lastName: form.values.lastName.trim(),
         email: form.values.email.trim(),
       };
     }
@@ -151,8 +146,15 @@ function EditManagedUserPage () {
                 {section === 'personal' && (
                   <>
                     <TextInput
-                      {...form.getInputProps('fullName')}
-                      label='Full name'
+                      {...form.getInputProps('firstName')}
+                      label='First name'
+                      placeholder='Enter first name'
+                      required
+                    />
+                    <TextInput
+                      {...form.getInputProps('lastName')}
+                      label='Last name'
+                      placeholder='Enter last name'
                       required
                     />
                     <TextInput
