@@ -43,7 +43,8 @@ export function isDeflectionDetailsComplete (deflection) {
     deflection.behavior &&
     deflection.behaviorNarrative &&
     deflection.chargeType &&
-    deflection.property
+    deflection.property &&
+    deflection.certifiedAt
   );
 }
 

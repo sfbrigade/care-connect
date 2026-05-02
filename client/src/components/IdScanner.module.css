@@ -22,6 +22,24 @@
 }
 
 /*
+ * Frame around the captured photo. The photo is contain-fitted at aspect-ratio 1.586,
+ * so on a portrait phone it fills viewport width with letterboxing top/bottom; this
+ * frame matches those bounds to visually distinguish the review state from live capture.
+ */
+.previewFrame {
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  aspect-ratio: 1.586;
+  border: 2px solid var(--mantine-color-teal-5);
+  box-shadow: 0 0 24px rgba(20, 184, 166, 0.25);
+  pointer-events: none;
+  z-index: 15;
+}
+
+/*
  * Viewfinder cutout — the inner box is transparent and a massive box-shadow
  * darkens everything outside it (same technique as QRScanner).
  */

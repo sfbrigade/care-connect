@@ -421,6 +421,62 @@ test('/api/users', async (t) => {
   });
 
   await t.test('PATCH /:id (org admin)', async (t) => {
+    await t.test('allows org admin to view a user in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+    });
+
+    await t.test('prevents org admin from viewing a user in a different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        headers: orgAdminHeaders,
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('allows org admin to update user profile fields in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'Updated',
+          lastName: 'Officer',
+          email: 'updated.sfso.user@test.com',
+          badgeNumber: '9876',
+          prop115Certified: true,
+        },
+      });
+      const body = response.json();
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      assert.strictEqual(body.firstName, 'Updated');
+      assert.strictEqual(body.lastName, 'Officer');
+      assert.strictEqual(body.email, 'updated.sfso.user@test.com');
+      assert.strictEqual(body.badgeNumber, '9876');
+      assert.strictEqual(body.prop115Certified, true);
+    });
+
+    await t.test('prevents org admin from updating privileged fields', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          isAdmin: true,
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
     await t.test('allows org admin to disable a user in their org', async (t) => {
       const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
       const response = await app.inject({
