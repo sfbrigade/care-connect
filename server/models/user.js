@@ -53,7 +53,7 @@ const UserResponseSchema = UserAttributesSchema.extend({
 
 const UserUpdateSchema = UserAttributesSchema.extend({
   unitName: z.string().trim().min(1).optional(),
-  password: UserPasswordSchema.or(z.literal('')),
+  password: z.never(),
   picture: z.string().nullable(),
   isAdmin: z.boolean(),
   deactivatedAt: z.coerce.date().nullable(),

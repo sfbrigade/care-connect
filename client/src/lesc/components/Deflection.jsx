@@ -17,7 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
+import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidCertification, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -111,6 +111,11 @@ function Deflection () {
 
   const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
 
+  function formatCertificationTimestamp (certifiedAt) {
+    const dateTime = DateTime.fromISO(certifiedAt);
+    return `${dateTime.toLocaleString(DateTime.TIME_SIMPLE)} on ${dateTime.toLocaleString(DateTime.DATE_SHORT)}`;
+  }
+
   function on647fClick () {
     const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
     window.open(url, '_blank');
@@ -197,7 +202,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'certification', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
@@ -330,6 +335,28 @@ function Deflection () {
                 )}
               </Accordion.Panel>
             </Accordion.Item>
+            <Accordion.Item value='certification'>
+              <Accordion.Control>
+                <Title order={3}>Certification</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  <Box>
+                    <Text c='dimmed'>Declaration</Text>
+                    {deflection?.certifiedAt
+                      ? (
+                        <Text>Certified as true and correct at {formatCertificationTimestamp(deflection.certifiedAt)}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                </Stack>
+                {isActionableActiveHold && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/certify`)}>{isValidCertification(deflection) ? 'Edit certification' : 'Finish certification'}</Button>
+                  </Group>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
             <Accordion.Item value='incident'>
               <Accordion.Control>
                 <Title order={3}>Incident details</Title>
@@ -431,6 +458,10 @@ function Deflection () {
                 }
                 if (!isValidProperty(deflection)) {
                   navigate(`${detailPath}/property`);
+                  return;
+                }
+                if (!isValidCertification(deflection)) {
+                  navigate(`${detailPath}/certify`);
                   return;
                 }
                 navigate(detailPath);

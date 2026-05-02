@@ -86,6 +86,41 @@ test('MFA — Email Verification', async (t) => {
       assert.deepStrictEqual(updatedUser.mfaExpiresAt, null);
     });
 
+    await t.test('prevents inactive users from completing MFA verification', async (t) => {
+      t.after(async () => {
+        await prisma.user.update({
+          where: { email: 'regular.user@test.com' },
+          data: { deactivatedAt: null },
+        });
+      });
+
+      const loginResponse = await app.inject().post('/api/auth/login').payload({
+        email: 'regular.user@test.com',
+        password: 'test',
+      });
+      const { mfaToken } = JSON.parse(loginResponse.body);
+      const user = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+
+      await prisma.user.update({
+        where: { email: 'regular.user@test.com' },
+        data: { deactivatedAt: new Date() },
+      });
+
+      const response = await app.inject().post('/api/auth/verify-code').payload({
+        token: mfaToken,
+        code: user.mfaCode,
+      });
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+      const cookie = response.headers['set-cookie'];
+      assert.ok(!cookie || !cookie.includes('session='));
+
+      const updatedUser = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+      assert.deepStrictEqual(updatedUser.mfaCode, null);
+      assert.deepStrictEqual(updatedUser.mfaToken, null);
+      assert.deepStrictEqual(updatedUser.mfaExpiresAt, null);
+    });
+
     await t.test('returns 422 for incorrect code and increments attempts', async () => {
       const loginResponse = await app.inject().post('/api/auth/login').payload({
         email: 'regular.user@test.com',

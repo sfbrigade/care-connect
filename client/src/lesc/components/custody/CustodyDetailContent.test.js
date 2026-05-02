@@ -59,6 +59,7 @@ vi.mock('@/FacilityContext', () => ({
 vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
   formatDateTime: () => 'formatted-date-time',
+  formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
 }));
 
 vi.mock('@/utils/releaseTiming', () => ({
@@ -286,16 +287,31 @@ describe('CustodyDetailContent', () => {
   });
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', drugUseEvidence: true, drugType: 'ALCOHOL' },
+      {
+        subjectStatus: 'ADMITTED',
+        admittedAt: '2026-04-29T11:24:00.000',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL',
+      },
       { viewerMode: 'care' }
     );
 
+    expect(html).toContain('Intake started: Apr 29, 11:24 AM');
     expect(html).toContain('Edit');
     expect(html).toContain('Substance-related details');
     expect(html).toContain('Signs of substance use');
     expect(html).toContain('Yes');
     expect(html).toContain('Substance used (suspected)');
     expect(html).toContain('drugType.ALCOHOL');
+  });
+
+  it('does not show intake started timestamp in custody details', () => {
+    const html = render({
+      subjectStatus: 'ADMITTED',
+      admittedAt: '2026-04-29T11:24:00.000',
+    });
+
+    expect(html).not.toContain('Intake started: Apr 29, 11:24 AM');
   });
 
   it('hides behavioral observations in care personal details', () => {
