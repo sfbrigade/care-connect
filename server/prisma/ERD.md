@@ -450,6 +450,7 @@ DEPARTURE DEPARTURE
     String behavior "❓"
     String behaviorNarrative "❓"
     ChargeTypeEnum chargeType "❓"
+    DateTime certifiedAt "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"

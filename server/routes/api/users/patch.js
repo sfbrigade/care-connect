@@ -7,6 +7,19 @@ import { z } from 'zod';
 import slugifyUnitId from '#lib/slugifyUnitId.js';
 import User from '#models/user.js';
 
+const ORG_ADMIN_ALLOWED_FIELDS = new Set([
+  'firstName',
+  'lastName',
+  'email',
+  'badgeNumber',
+  'titleId',
+  'unitId',
+  'unitName',
+  'prop115Certified',
+  'deactivatedAt',
+  'deletedAt',
+]);
+
 async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) {
   const trimmedUnitName = unitName?.trim();
 
@@ -128,27 +141,65 @@ export default async function (fastify, opts) {
       }
       const user = new User(data);
       // Convert empty strings to null for nullable fields
-      const updateData = _.omit(request.body, ['picture', 'unitName']);
+      const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
       if (updateData.organizationId === '') updateData.organizationId = null;
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
-      user.update(updateData);
-      // ensure only admins can change isAdmin and deactivatedAt params
-      if (user.changes.intersection(new Set(['isAdmin', 'deactivatedAt', 'deletedAt'])).size && !request.user.isAdmin) {
-        // Allow org admins to change deactivatedAt (but not isAdmin) for users in their org
-        const requestUser = new User(request.user);
-        if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
-          if (user.changes.has('isAdmin')) {
-            return reply.code(StatusCodes.FORBIDDEN).send();
-          }
-        } else {
-          return reply.code(StatusCodes.FORBIDDEN).send();
-        }
-      }
-      // update picture
-      const pictureHandler = user.setAsset('picture', picture);
+      const requestUser = new User(request.user);
+      const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
+
+      let data;
+      let lockedMissing = false;
+      let lockedForbidden = false;
       await fastify.prisma.$transaction(async (tx) => {
+        data = await tx.user.findByIdForUpdate(tx, id);
+        if (!data) {
+          lockedMissing = true;
+          return;
+        }
+
+        // Self-protection: a user cannot disable/delete their own account.
+        if (data.id === request.user.id) {
+          if (bodyFields.some((f) => f === 'deactivatedAt' || f === 'deletedAt')) {
+            lockedForbidden = true;
+            return;
+          }
+        }
+
+        // Authorization: caller must be self, platform admin, or an org admin
+        // acting within their own org. Org admins are additionally limited to
+        // ORG_ADMIN_ALLOWED_FIELDS.
+        if (data.id !== request.user.id && !request.user.isAdmin) {
+          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          if (!inSameOrg || bodyFields.some((f) => !ORG_ADMIN_ALLOWED_FIELDS.has(f))) {
+            lockedForbidden = true;
+            return;
+          }
+        }
+
+        const user = new User(data);
+        user.update(updateData);
+
+        // Privileged-field guard: only platform admins can flip isAdmin; org
+        // admins may flip deactivatedAt/deletedAt for users in their org but
+        // never isAdmin.
+        if (
+          user.changes.intersection(new Set(['isAdmin', 'deactivatedAt', 'deletedAt'])).size &&
+          !request.user.isAdmin
+        ) {
+          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          if (!inSameOrg || user.changes.has('isAdmin')) {
+            lockedForbidden = true;
+            return;
+          }
+        }
+
+        if (password) {
+          await user.setPassword(password);
+        }
+        const pictureHandler = user.setAsset('picture', picture);
+
         if (request.body.unitName && data.organizationId) {
           data.unitId = await resolveUnitId(tx, {
             organizationId: data.organizationId,
@@ -170,6 +221,12 @@ export default async function (fastify, opts) {
         });
         await pictureHandler?.();
       });
+      if (lockedMissing) {
+        return reply.code(StatusCodes.NOT_FOUND).send();
+      }
+      if (lockedForbidden) {
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
       return reply.send(new User(data));
     });
 }
