@@ -16,7 +16,7 @@ const UnitSelector = lazy(() => import('./UnitSelector'));
 const FeedbackViewer = lazy(() => import('./Feedback/FeedbackViewer'));
 const FeedbackList = lazy(() => import('./Feedback/FeedbackList'));
 const UserProfileRoutes = lazy(() => import('./UserProfile/UserProfileRoutes'));
-const ManageUsersPage = lazy(() => import('./ManageUsers/ManageUsersPage'));
+const ManageUsersRoutes = lazy(() => import('./ManageUsers/ManageUsersRoutes'));
 const DIDORoutes = lazy(() => import('./dido/routes/DIDORoutes'));
 const LESCRoutes = lazy(() => import('./lesc/routes/LESCRoutes'));
 const AdminRoutes = lazy(() => import('./Admin/AdminRoutes'));
@@ -41,7 +41,7 @@ function AppRoutes () {
                 <Route path='/feedback' element={<FeedbackViewer />} />
                 <Route path='/feedback/list' element={<FeedbackList />} />
                 <Route path='/profile/*' element={<UserProfileRoutes />} />
-                <Route path='/manage-users' element={<ManageUsersPage />} />
+                <Route path='/manage-users/*' element={<ManageUsersRoutes />} />
                 <Route path='/admin/*' element={<AdminRoutes />} />
                 {!facility && <Route path='/*' element={<DIDORoutes />} />}
                 {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
