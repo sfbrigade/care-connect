@@ -1,0 +1,14 @@
+.contactLink {
+  color: var(--mantine-color-indigo-6);
+  text-align: center;
+  font: var(--mantine-font-size-md)/24px Roboto, sans-serif;
+  font-weight: 400;
+}
+
+.statusText {
+  color: var(--mantine-color-gray-5);
+}
+
+.statusIcon {
+  color: var(--mantine-color-gray-5);
+}
