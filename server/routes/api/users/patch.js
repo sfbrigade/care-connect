@@ -94,7 +94,7 @@ export default async function (fastify, opts) {
       if (id === User.BATCH_USER_ID) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      const { email, picture } = request.body;
+      const { email, password, picture } = request.body;
       if (email && await fastify.prisma.user.findFirst({
         where: { id: { not: id }, email },
       })) {
@@ -139,7 +139,6 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
       }
-      const user = new User(data);
       // Convert empty strings to null for nullable fields
       const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
       if (updateData.organizationId === '') updateData.organizationId = null;
@@ -149,7 +148,6 @@ export default async function (fastify, opts) {
       const requestUser = new User(request.user);
       const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
 
-      let data;
       let lockedMissing = false;
       let lockedForbidden = false;
       await fastify.prisma.$transaction(async (tx) => {
