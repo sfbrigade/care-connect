@@ -588,8 +588,9 @@ test('/api/users', async (t) => {
           prop115Certified: true,
         },
       });
-      const body = response.json();
       assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const body = response.json();
       assert.strictEqual(body.firstName, 'Updated');
       assert.strictEqual(body.lastName, 'Officer');
       assert.strictEqual(body.email, 'updated.sfso.user@test.com');

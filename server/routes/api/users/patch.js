@@ -94,7 +94,7 @@ export default async function (fastify, opts) {
       if (id === User.BATCH_USER_ID) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      const { email, password, picture } = request.body;
+      const { email, picture } = request.body;
       if (email && await fastify.prisma.user.findFirst({
         where: { id: { not: id }, email },
       })) {
@@ -110,35 +110,6 @@ export default async function (fastify, opts) {
       if (error.validation.length) {
         throw error;
       }
-      let data = await fastify.prisma.user.findUnique({
-        where: { id },
-      });
-      if (!data) {
-        return reply.code(StatusCodes.NOT_FOUND).send();
-      }
-      // Self-protection: prevent users from disabling/deleting their own account
-      if (data.id === request.user.id) {
-        const selfProtectedFields = ['deactivatedAt', 'deletedAt'];
-        const bodyFields = Object.keys(_.omit(request.body, ['picture']));
-        if (bodyFields.some((f) => selfProtectedFields.includes(f))) {
-          return reply.code(StatusCodes.FORBIDDEN).send();
-        }
-      }
-      if (data.id !== request.user.id && !request.user.isAdmin) {
-        // Check if org admin editing a user in their org
-        const requestUser = new User(request.user);
-        if (requestUser.isOrgAdmin && data.organizationId === request.user.organizationId) {
-          // Org admins can only change deactivatedAt and deletedAt
-          const allowedFields = new Set(['deactivatedAt', 'deletedAt']);
-          const bodyFields = Object.keys(_.omit(request.body, ['picture']));
-          const hasDisallowedFields = bodyFields.some((f) => !allowedFields.has(f));
-          if (hasDisallowedFields) {
-            return reply.code(StatusCodes.FORBIDDEN).send();
-          }
-        } else {
-          return reply.code(StatusCodes.FORBIDDEN).send();
-        }
-      }
       // Convert empty strings to null for nullable fields
       const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
       if (updateData.organizationId === '') updateData.organizationId = null;
@@ -148,6 +119,7 @@ export default async function (fastify, opts) {
       const requestUser = new User(request.user);
       const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
 
+      let data;
       let lockedMissing = false;
       let lockedForbidden = false;
       await fastify.prisma.$transaction(async (tx) => {
@@ -193,9 +165,6 @@ export default async function (fastify, opts) {
           }
         }
 
-        if (password) {
-          await user.setPassword(password);
-        }
         const pictureHandler = user.setAsset('picture', picture);
 
         if (request.body.unitName && data.organizationId) {
