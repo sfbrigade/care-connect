@@ -50,7 +50,7 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
     assert.deepStrictEqual(body.incidents[0].canEdit, true);
   });
 
-  await t.test('canHandoff is false while the incident is incomplete and true once details are filled', async () => {
+  await t.test('canHandoff is false until both incident and hold details are complete', async () => {
     const before = await getBody(userHeaders);
     assert.deepStrictEqual(before.incidents[0].canHandoff, false);
 
@@ -63,6 +63,11 @@ test('GET /api/facilities/:facilityId/my-holds', async (t) => {
         supervisorBadgeNumber: '1234',
       },
     });
+
+    const incidentOnly = await getBody(userHeaders);
+    assert.deepStrictEqual(incidentOnly.incidents[0].canHandoff, false);
+
+    await makeFixturePreTransferDetailsComplete(prisma);
 
     const after = await getBody(userHeaders);
     assert.deepStrictEqual(after.incidents[0].canHandoff, true);

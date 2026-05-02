@@ -113,7 +113,9 @@ export default async function (fastify) {
 
       for (const [, { incident, deflections: incidentDeflections }] of incidentMap) {
         const isCreator = incident.createdById === officerId;
-        const canHandoff = incidentDeflections.length > 0 && isIncidentDetailsComplete(incident);
+        const canHandoff = incidentDeflections.length > 0 &&
+          isIncidentDetailsComplete(incident) &&
+          incidentDeflections.every(deflection => isDeflectionDetailsComplete(deflection));
 
         if (isCreator && activeIncidentId === null) {
           activeIncidentId = incident.id;
