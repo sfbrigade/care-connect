@@ -554,6 +554,7 @@ model Deflection {
   behavior                       String?
   behaviorNarrative              String?
   chargeType                     ChargeTypeEnum?
+  certifiedAt                    DateTime?
   property                       PropertyEnum?
   propertyDetails                String?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?

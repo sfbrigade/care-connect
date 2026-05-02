@@ -23,7 +23,7 @@ import StatusAccordion from '@/components/StatusAccordion';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
-import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
+import { groupCareNotInCustodySections, hasPersistedExitDetails, hasSavedExitDraft } from './careFlowUtils';
 
 const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
@@ -37,7 +37,6 @@ const NOT_IN_CUSTODY_SECTIONS = [
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
   { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility for jail within the last 24 hours.' },
 ];
-const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
 function groupByStatus (deflections) {
   const grouped = {};
@@ -46,16 +45,6 @@ function groupByStatus (deflections) {
     grouped[d.subjectStatus].push(d);
   }
   return grouped;
-}
-
-function hasSavedExitDraft (deflectionId) {
-  if (typeof window === 'undefined') return false;
-  try {
-    const draftMap = JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
-    return Boolean(draftMap?.[String(deflectionId)]?.exitDetailsSaved);
-  } catch {
-    return false;
-  }
 }
 
 function hasSavedOrPersistedExitDetails (deflection) {
@@ -85,7 +74,7 @@ function Care () {
 
   const { data: notInCustodyDeflections = [] } = useQuery({
     queryKey: ['deflections', facility.id, 'care-not-in-custody'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES, perPage: 200 }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -197,7 +186,7 @@ function Care () {
                       deflection={d}
                       highlighted={String(d.id) === highlightedId}
                       onCompleteIntake={() => setIntakeModalDeflection(d)}
-                      hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                      hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                       onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                     />}
                 />
@@ -219,7 +208,7 @@ function Care () {
                   deflection={d}
                   highlighted={String(d.id) === highlightedId}
                   onCompleteIntake={() => setIntakeModalDeflection(d)}
-                  hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                  hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                   onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                 />}
             />

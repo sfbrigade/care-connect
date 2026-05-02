@@ -1,0 +1,8 @@
+.icon {
+  height: 16px;
+  width: 16px;
+}
+
+.label {
+  padding-left: var(--mantine-spacing-md);
+}
