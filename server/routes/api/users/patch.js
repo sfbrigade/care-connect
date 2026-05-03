@@ -151,15 +151,15 @@ export default async function (fastify, opts) {
         const user = new User(data);
         user.update(updateData);
 
-        // Privileged-field guard: only platform admins can flip isAdmin; org
-        // admins may flip deactivatedAt/deletedAt for users in their org but
-        // never isAdmin.
+        // Privileged-field guard: only platform admins can flip isAdmin or
+        // change roles; org admins may flip deactivatedAt/deletedAt for users
+        // in their org but never isAdmin or roles.
         if (
-          user.changes.intersection(new Set(['isAdmin', 'deactivatedAt', 'deletedAt'])).size &&
+          user.changes.intersection(new Set(['isAdmin', 'roles', 'deactivatedAt', 'deletedAt'])).size &&
           !request.user.isAdmin
         ) {
           const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
-          if (!inSameOrg || user.changes.has('isAdmin')) {
+          if (!inSameOrg || user.changes.has('isAdmin') || user.changes.has('roles')) {
             lockedForbidden = true;
             return;
           }
