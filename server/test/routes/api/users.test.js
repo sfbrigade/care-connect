@@ -167,8 +167,7 @@ test('/api/users', async (t) => {
       const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john.doe@test.com',
-        password: 'Newpassword123!'
+        email: 'john.doe@test.com'
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
@@ -183,7 +182,7 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data.email, 'john.doe@test.com');
 
       const user = new User(data);
-      assert.ok(await user.comparePassword('Newpassword123!'));
+      assert.ok(await user.comparePassword('test'));
     });
 
     await t.test('attaches an uploaded picture', async (t) => {
@@ -216,10 +215,16 @@ test('/api/users', async (t) => {
       const response = await app.inject().patch('/api/users/aa1fdcf6-a63c-454e-9775-2d6fd116fdb1').payload({
         firstName: 'John',
         lastName: 'Doe',
-        email: 'john.doe@test.com',
-        password: 'Newpassword123!'
+        email: 'john.doe@test.com'
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('rejects password changes on the profile endpoint', async () => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        password: 'Newpassword123!'
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
     await t.test('allows admin to make admin changes to user', async (t) => {
@@ -420,7 +425,192 @@ test('/api/users', async (t) => {
     });
   });
 
+  await t.test('PATCH /:id/password', async (t) => {
+    await t.test('prevents non-admins from setting another user password', async () => {
+      const response = await app.inject().patch('/api/users/aa1fdcf6-a63c-454e-9775-2d6fd116fdb1/password').payload({
+        password: 'Newpassword123!'
+      }).headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('allows admins to set a password and records an audit event', async () => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/password').payload({
+        password: 'Newpassword123!'
+      }).headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      const user = new User(data);
+      assert.ok(await user.comparePassword('Newpassword123!'));
+
+      const event = await prisma.adminSecurityEvent.findFirst({
+        where: {
+          action: 'USER_PASSWORD_SET',
+          actorUserId: '555740af-17e9-48a3-93b8-d5236dfd2c29',
+          targetUserId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        },
+      });
+      assert.ok(event);
+      assert.strictEqual(event.metadata, null);
+    });
+
+    await t.test('clears password reset and active MFA challenge fields', async () => {
+      await app.inject().post('/api/auth/login').payload({
+        email: 'regular.user@test.com',
+        password: 'test',
+      });
+      await prisma.user.update({
+        where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
+        data: {
+          passwordResetToken: '11111111-2222-4333-8444-555555555555',
+          passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const before = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.ok(before.mfaCode);
+      assert.ok(before.mfaToken);
+      assert.ok(before.passwordResetToken);
+
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/password').payload({
+        password: 'Newpassword123!'
+      }).headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const after = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.strictEqual(after.passwordResetToken, null);
+      assert.strictEqual(after.passwordResetExpiresAt, null);
+      assert.strictEqual(after.mfaCode, null);
+      assert.strictEqual(after.mfaToken, null);
+      assert.strictEqual(after.mfaExpiresAt, null);
+      assert.strictEqual(after.mfaAttempts, 0);
+      assert.strictEqual(after.mfaLastSentAt, null);
+    });
+
+    await t.test('validates password strength', async () => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/password').payload({
+        password: 'too-short'
+      }).headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+  });
+
+  await t.test('GET /:id/mfa-code', async (t) => {
+    await t.test('prevents non-admins from viewing MFA codes', async () => {
+      const response = await app.inject().get('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/mfa-code').headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('returns no content when no active MFA code exists', async () => {
+      const response = await app.inject().get('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/mfa-code').headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.NO_CONTENT);
+    });
+
+    await t.test('shows active MFA code and records audit event without token metadata', async () => {
+      const loginResponse = await app.inject().post('/api/auth/login').payload({
+        email: 'regular.user@test.com',
+        password: 'test',
+      });
+      const { mfaToken } = JSON.parse(loginResponse.body);
+      const user = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });
+
+      const response = await app.inject().get('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/mfa-code').headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      assert.strictEqual(response.headers['cache-control'], 'no-store');
+      assert.strictEqual(response.headers.pragma, 'no-cache');
+      const data = JSON.parse(response.body);
+      assert.strictEqual(data.code, user.mfaCode);
+      assert.strictEqual(data.attemptsRemaining, 5);
+      assert.ok(data.expiresAt);
+      assert.strictEqual(data.mfaToken, undefined);
+
+      const event = await prisma.adminSecurityEvent.findFirst({
+        where: {
+          action: 'USER_MFA_CODE_VIEWED',
+          actorUserId: '555740af-17e9-48a3-93b8-d5236dfd2c29',
+          targetUserId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        },
+      });
+      assert.ok(event);
+      assert.strictEqual(event.metadata.code, undefined);
+      assert.strictEqual(event.metadata.mfaToken, undefined);
+      assert.strictEqual(event.metadata.attemptsRemaining, 5);
+      assert.notStrictEqual(mfaToken, data.code);
+    });
+
+    await t.test('does not return expired codes', async () => {
+      await app.inject().post('/api/auth/login').payload({
+        email: 'regular.user@test.com',
+        password: 'test',
+      });
+      await prisma.user.update({
+        where: { email: 'regular.user@test.com' },
+        data: { mfaExpiresAt: new Date(Date.now() - 1000) },
+      });
+
+      const response = await app.inject().get('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5/mfa-code').headers(adminHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.NO_CONTENT);
+    });
+  });
+
   await t.test('PATCH /:id (org admin)', async (t) => {
+    await t.test('allows org admin to view a user in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+    });
+
+    await t.test('prevents org admin from viewing a user in a different org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        headers: orgAdminHeaders,
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('allows org admin to update user profile fields in their org', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          firstName: 'Updated',
+          lastName: 'Officer',
+          email: 'updated.sfso.user@test.com',
+          badgeNumber: '9876',
+          prop115Certified: true,
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const body = response.json();
+      assert.strictEqual(body.firstName, 'Updated');
+      assert.strictEqual(body.lastName, 'Officer');
+      assert.strictEqual(body.email, 'updated.sfso.user@test.com');
+      assert.strictEqual(body.badgeNumber, '9876');
+      assert.strictEqual(body.prop115Certified, true);
+    });
+
+    await t.test('prevents org admin from updating privileged fields', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/users/49acdf99-536f-49ac-8138-1c77e5087697',
+        headers: orgAdminHeaders,
+        payload: {
+          isAdmin: true,
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
     await t.test('allows org admin to disable a user in their org', async (t) => {
       const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
       const response = await app.inject({

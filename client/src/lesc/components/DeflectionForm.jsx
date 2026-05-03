@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { Badge, Button, Container, Fieldset, Group, Stack, Text, Textarea, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -167,6 +167,7 @@ function DeflectionForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/substance?isNew=true` : `/holds/${id}`} aria-label='Go back' />
           {header}
+          <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />
         </Group>
       </Header>
       <Container>
@@ -177,7 +178,7 @@ function DeflectionForm () {
         </Group>
         <Group gap='sm' mb='xs' align='center'>
           <Title order={3}>Custodial arrest details</Title>
-          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/4</Badge>}
+          {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>3/5</Badge>}
         </Group>
         <Text c='dimmed' size='xl' lh='md' mb='xl'>Describe what you observed that justifies the arrest, and select charge type.</Text>
         <form onSubmit={form.onSubmit((values) => {

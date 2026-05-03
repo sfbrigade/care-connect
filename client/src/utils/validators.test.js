@@ -122,4 +122,19 @@ describe('validateSubstance', () => {
     });
     expect(errors).toHaveProperty('drugType');
   });
+
+  it('returns field-level errors for all three boolean groups when all are unanswered', () => {
+    const errors = validateSubstance({
+      narcoticsSubstance: null,
+      narcoticsParaphernalia: null,
+      drugUseEvidence: null,
+      drugType: null,
+    });
+
+    expect(errors).toMatchObject({
+      narcoticsSubstance: 'Select one',
+      narcoticsParaphernalia: 'Select one',
+      drugUseEvidence: 'Select one',
+    });
+  });
 });

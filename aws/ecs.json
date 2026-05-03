@@ -2,13 +2,31 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploy a simple ECS Fargate service with a specified image.",
   "Parameters": {
+    "ArrestsApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "The API key for the arrests API"
+    },
     "BaseName": {
       "Description": "Base name for the stack",
       "Type": "String"
     },
     "CapacityApiKey": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The API key for fetching facility status"
+    },
+    "EmailFromName": {
+      "Type": "String",
+      "Description": "The display name used in email from and reply-to headers"
+    },
+    "EmailSiteTitle": {
+      "Type": "String",
+      "Description": "The site title used in emails"
+    },
+    "EmailSubjectTitle": {
+      "Type": "String",
+      "Description": "The title used in email subject lines"
     },
     "ImageURL": {
       "Type": "String",
@@ -28,6 +46,7 @@
     },
     "SessionSecret": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The session secret for the application"
     },
     "SiteTitle": {
@@ -158,6 +177,12 @@
               "Ref": "ImageURL"
             },
             "Environment": [
+              {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
               {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
@@ -406,6 +431,24 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
                 }
               },
               {
@@ -660,6 +703,12 @@
             },
             "Environment": [
               {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
+              {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -907,6 +956,24 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
                 }
               },
               {

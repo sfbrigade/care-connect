@@ -1,14 +1,4 @@
-const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
-
-function hasSavedExitDraft (deflectionId) {
-  if (typeof window === 'undefined') return false;
-  try {
-    const draftMap = JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
-    return Boolean(draftMap?.[String(deflectionId)]?.exitDetailsSaved);
-  } catch {
-    return false;
-  }
-}
+import { hasSavedExitDraft } from '../care/careFlowUtils';
 
 function hasPersistedExitDetails (deflection) {
   return Boolean(
@@ -29,7 +19,7 @@ export function getCareDetailFooterState ({ viewerMode, deflection }) {
   if (deflection?.subjectStatus === 'ADMITTED') {
     return {
       showFooter: true,
-      primaryLabel: 'Update intake status',
+      primaryLabel: 'Update status',
       primaryAction: 'complete-intake',
       startExitPath,
     };

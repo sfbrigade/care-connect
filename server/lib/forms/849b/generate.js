@@ -57,7 +57,7 @@ export function transformData (deflection) {
     subjectDrugType: deflection.drugType || null,
     arrivedAtReset: deflection.arrivedAt?.toISOString() || null,
     transferredAt: deflection.transferredAt?.toISOString() || null,
-    releasedAt: deflection.releasedAt.toISOString(),
+    releasedAt: (deflection.releasedAt || deflection.exitedAt).toISOString(),
     releaseReason: deflection.releaseReason?.name || '',
     behavior: deflection.behavior || null,
     releaseNarrative: deflection.releaseNarrative || null,

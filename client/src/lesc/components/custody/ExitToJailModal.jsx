@@ -21,7 +21,7 @@ function ExitToJailModal ({
       <Stack gap='xl'>
         <Stack gap='sm'>
           <Group justify='space-between' align='center' wrap='nowrap'>
-            <Title order={4}>Exit this person to jail?</Title>
+            <Title order={4}>Confirm exit to jail</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -37,13 +37,15 @@ function ExitToJailModal ({
             </ActionIcon>
           </Group>
           <Text size='sm' c='dimmed'>
-            This step can&apos;t be undone. After you confirm:
+            This step cannot be undone.
             <br />
-            &bull; This person will move to &quot;Transferred to jail&quot; for 24 hours.
+            &bull; The person will not be recorded as released.
             <br />
-            &bull; They will be removed from in-custody lists and only appear under &quot;Legally released&quot;.
+            &bull; Property will be recorded as returned.
             <br />
-            &bull; Their property record will be marked as returned.
+            &bull; An 849(b) incident form will be prepared and sent to you and SFSO records.
+            <br />
+            &bull; The record will move to the &quot;Legally released&quot; tab, in the &quot;Transferred to jail&quot; section.
           </Text>
         </Stack>
 
@@ -53,13 +55,13 @@ function ExitToJailModal ({
             onClick={onClose}
             disabled={loading}
           >
-            No, cancel
+            Cancel
           </Button>
           <Button
             onClick={onConfirm}
             loading={loading}
           >
-            Yes, exit to jail
+            Confirm
           </Button>
         </Group>
       </Stack>

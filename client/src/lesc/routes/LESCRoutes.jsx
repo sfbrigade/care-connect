@@ -16,6 +16,7 @@ import Deflection from '../components/Deflection';
 import HandoffScreen from '../components/HandoffScreen';
 import DeflectionForm from '../components/DeflectionForm';
 import PropertyForm from '../components/PropertyForm';
+import CertifyInformation from '../components/CertifyInformation';
 import SubstanceForm from '../components/SubstanceForm';
 import ManageCapacity from '../components/ManageCapacity/ManageCapacity';
 import FormPage from '@/forms/FormPage';
@@ -29,6 +30,7 @@ function LESCRoutes () {
       <Route path='holds/:id/substance' element={<SubstanceForm />} />
       <Route path='holds/:id/deflection' element={<DeflectionForm />} />
       <Route path='holds/:id/property' element={<PropertyForm />} />
+      <Route path='holds/:id/certify' element={<CertifyInformation />} />
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />

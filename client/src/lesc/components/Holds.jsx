@@ -27,6 +27,7 @@ import HoldsHistory from './HoldsHistory';
 import {
   buildAdminCancelledHoldsMessage,
   detectAutoCancelledExpiredHolds,
+  getTransferCodeStatus,
 } from './holdsViewModel';
 import classes from './Holds.module.css';
 
@@ -419,6 +420,11 @@ function Holds () {
     isFull ||
     !primaryBedType
   );
+  const transferCodeStatus = getTransferCodeStatus({
+    incidents: myHolds?.incidents ?? [],
+    atFacility: myHolds?.atFacility,
+    canArrive: myHolds?.canArrive,
+  });
 
   return (
     <>
@@ -437,6 +443,7 @@ function Holds () {
             onArrivedClick={onArrivedClick}
             onLeftClick={onLeftClick}
             isArrivalPending={isArrivalPending}
+            transferCodeStatus={transferCodeStatus}
           />
           <SegmentedControl
             fullWidth

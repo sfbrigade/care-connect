@@ -41,6 +41,9 @@ export default {
       action: 'onLeftClick',
       description: 'Callback for when the "I\'ve left" button is clicked',
     },
+    transferCodeStatus: {
+      description: 'Transfer-code readiness status shown below the CTA',
+    },
   },
 };
 
@@ -96,6 +99,11 @@ export const Arrived = {
   args: {
     ...Default.args,
     arrivedAt: new Date().toISOString(),
+    atFacility: true,
+    transferCodeStatus: {
+      icon: 'ready',
+      label: 'Transfer codes ready',
+    },
   },
 };
 
@@ -103,6 +111,17 @@ export const Left = {
   args: {
     ...Default.args,
     arrivedAt: new Date().toISOString(),
-    leftAt: new Date().toISOString(),
+    atFacility: true,
+  },
+};
+
+export const ReadyToArrive = {
+  args: {
+    ...Default.args,
+    canArrive: true,
+    transferCodeStatus: {
+      icon: 'locked',
+      label: 'Tap to unlock transfer code',
+    },
   },
 };

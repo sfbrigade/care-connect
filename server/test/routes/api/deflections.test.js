@@ -51,6 +51,7 @@ test('/api/deflections', async (t) => {
         behaviorNarrative: 'Test narrative',
         chargeType: 'RWS_647F',
         property: 'NONE',
+        certifiedAt: new Date(),
       },
     });
   }
@@ -528,6 +529,16 @@ test('/api/deflections', async (t) => {
       assert.ok(data.exitedAt);
       assert.ok(data.completedAt);
       assert.ok(data.exitedById);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: testDeflection.id,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['849b'],
+        emailTemplate: 'incident-forms',
+        recipientEmail: 'sfsouser1@test.com',
+      });
 
       const bedType = await prisma.bedType.findUnique({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -1419,6 +1430,11 @@ test('/api/deflections', async (t) => {
         userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
+        recipientEmail: [
+          'SFPD.Data.Transfer.Authorized@sfgov.org',
+          'Andrew.bley@sfgov.org',
+          'Sfso-incidentreports@sfgov.org',
+        ],
       });
     });
 
@@ -2011,7 +2027,7 @@ test('/api/deflections', async (t) => {
       assert.ok(dbDeflection.exitedAt);
     });
 
-    await t.test('marks a subject as legally released (behavioral health evaluation)', async () => {
+    await t.test('marks a subject as legally released and exited (behavioral health evaluation)', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
@@ -2032,26 +2048,27 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReasonId: 'behavioral_health_evaluation',
+          exitDestinationId: 'other',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
 
-      assert.strictEqual(data.subjectStatus, 'RELEASED');
-      assert.strictEqual(data.status, 'ACTIVE');
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReasonId, 'behavioral_health_evaluation');
-      assert.strictEqual(data.exitDestinationId, null);
+      assert.strictEqual(data.exitDestinationId, 'other');
       assert.ok(data.releasedAt);
-      assert.strictEqual(data.completedAt, null);
-      assert.strictEqual(data.exitedAt, null);
+      assert.ok(data.completedAt);
+      assert.ok(data.exitedAt);
 
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
-      assert.strictEqual(dbDeflection.subjectStatus, 'RELEASED');
-      assert.strictEqual(dbDeflection.status, 'ACTIVE');
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.strictEqual(dbDeflection.releaseReasonId, 'behavioral_health_evaluation');
-      assert.strictEqual(dbDeflection.exitDestinationId, null);
-      assert.strictEqual(dbDeflection.completedAt, null);
-      assert.strictEqual(dbDeflection.exitedAt, null);
+      assert.strictEqual(dbDeflection.exitDestinationId, 'other');
+      assert.ok(dbDeflection.completedAt);
+      assert.ok(dbDeflection.exitedAt);
     });
 
     await t.test('marks a subject as legally released (other)', async () => {

@@ -379,7 +379,7 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  Obtain CAD number from dispatch.
+                  Obtain from dispatch.
                 </Text>
               </Stack>
               <Stack gap='xs'>
@@ -398,7 +398,7 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  Obtain case number from dispatch.
+                  Obtain from dispatch.
                 </Text>
               </Stack>
               <Stack gap='xs'>

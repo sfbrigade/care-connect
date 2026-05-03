@@ -236,6 +236,8 @@ model User {
   prop115Certified             Boolean                 @default(false)
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
+  adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")
+  adminSecurityEventsTargeting AdminSecurityEvent[]    @relation("AdminSecurityEventTarget")
 
   bedTypesCreated                      BedType[]                     @relation("CreatedBy")
   bedTypesUpdated                      BedType[]                     @relation("UpdatedBy")
@@ -433,6 +435,20 @@ model ServiceType {
   facilities Facility[]
 }
 
+model AdminSecurityEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  action       String
+  metadata     Json?
+  actor        User     @relation("AdminSecurityEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  actorUserId  String   @db.Uuid
+  target       User     @relation("AdminSecurityEventTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+  targetUserId String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+}
+
 model BedType {
   id                    String                    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility              Facility                  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
@@ -554,6 +570,7 @@ model Deflection {
   behavior                       String?
   behaviorNarrative              String?
   chargeType                     ChargeTypeEnum?
+  certifiedAt                    DateTime?
   property                       PropertyEnum?
   propertyDetails                String?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?

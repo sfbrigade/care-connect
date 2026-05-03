@@ -237,6 +237,7 @@ export default async function main (prisma) {
       transferredById: sfsoUser.id,
       admittedAt: pdfTestNow,
       admittedById: sfsoUser.id,
+      certifiedAt: pdfTestNow,
       releasedAt: pdfTestNow,
       releasedById: sfsoUser.id,
       releaseReasonId: releaseReason?.id || 'sobered',

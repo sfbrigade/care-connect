@@ -123,7 +123,7 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.queryByRole('button', { name: 'Edit narrative' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Choose a release reason.' })).toBeInTheDocument();
     expect(screen.getByText('Release reason')).toBeInTheDocument();
-    expect(screen.getByText('When you confirm release, the 849(b) will be sent to SFSO supervisors.')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm release' })).toBeInTheDocument();
 
@@ -145,16 +145,21 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.getByRole('radio', { name: 'Behavioral health evaluation' })).toBeInTheDocument();
   });
 
-  it('submits behavioral health evaluation as the selected release reason', async () => {
+  it('requires and submits an exit destination for behavioral health evaluation', async () => {
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm release' }));
+    expect(screen.getByText('This will also mark the person as exited from RESET.')).toBeInTheDocument();
+    expect(screen.getByText('Exit destination')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: 'Other' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm release and exit' }));
 
     await waitFor(() => {
       expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
         releaseReasonId: 'behavioral_health_evaluation',
+        exitDestinationId: 'other',
       });
     });
   });

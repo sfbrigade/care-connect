@@ -4,6 +4,21 @@ import { z } from 'zod';
 import Invite from '#models/invite.js';
 import { QUEUE_INVITE_EMAIL } from '#lib/jobQueue/queueNames.js';
 
+function validateInviteFields (data) {
+  const errors = [];
+  if (data.organizationId === 'sfpd' || data.organizationId === 'sfso') {
+    if (!data.badgeNumber) {
+      errors.push({ path: 'badgeNumber', message: 'Star number is required.' });
+    } else if (data.badgeNumber.length > 4) {
+      errors.push({ path: 'badgeNumber', message: 'Star number must be 4 characters or fewer.' });
+    }
+  }
+  if (data.organizationId === 'sfso' && !data.titleId) {
+    errors.push({ path: 'titleId', message: 'Rank is required.' });
+  }
+  return errors;
+}
+
 export default async function (fastify, opts) {
   fastify.post('/',
     {
@@ -13,6 +28,7 @@ export default async function (fastify, opts) {
         response: {
           [StatusCodes.CREATED]: Invite.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: fastify.ValidationErrorSchema,
         },
       },
       onRequest: fastify.requireRole('ORG_ADMIN')
@@ -34,6 +50,16 @@ export default async function (fastify, opts) {
       }
       if (data.titleId === '') {
         data.titleId = null;
+      }
+      if (data.badgeNumber === '') {
+        data.badgeNumber = null;
+      }
+      const validationErrors = validateInviteFields(data);
+      if (validationErrors.length) {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          errors: validationErrors,
+        });
       }
       data = await fastify.prisma.invite.create({
         data: {

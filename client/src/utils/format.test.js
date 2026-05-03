@@ -10,6 +10,7 @@ import {
   formatDob,
   formatInputDob,
   formatDateTime,
+  formatIntakeStartedAt,
   formatSmartDateTime,
 } from './format';
 
@@ -196,6 +197,17 @@ describe('format utils', () => {
 
     it('returns TBD for null date', () => {
       expect(formatDateTime(null)).toBe('TBD');
+    });
+  });
+
+  describe('formatIntakeStartedAt', () => {
+    it('formats intake start date and time', () => {
+      expect(formatIntakeStartedAt('2026-04-29T11:24:00.000Z')).toBe('Apr 29, 11:24 AM');
+    });
+
+    it('returns null for missing or invalid dates', () => {
+      expect(formatIntakeStartedAt(null)).toBeNull();
+      expect(formatIntakeStartedAt('not-a-date')).toBeNull();
     });
   });
 

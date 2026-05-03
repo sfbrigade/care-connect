@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getCareExitBackTo,
@@ -6,14 +6,21 @@ import {
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
   hasPersistedExitDetails,
+  getSavedExitDraft,
+  hasSavedExitDraft,
+  setSavedExitDraft,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
   getCareDetailFooterState,
 } from '../custody/careDetailFooterUtils';
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('Care flow unit tests', () => {
-  it('hides View details for all EXITED records', () => {
+  it('hides Details for all EXITED records', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
@@ -69,7 +76,7 @@ describe('Care flow unit tests', () => {
     });
     expect(admittedState).toEqual({
       showFooter: true,
-      primaryLabel: 'Update intake status',
+      primaryLabel: 'Update status',
       primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
@@ -107,8 +114,18 @@ describe('Care flow unit tests', () => {
 
   it('requires deputy property confirmation before enabling final exit confirmation', () => {
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: true,
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
+      propertyReturnHandledConfirmed: null,
+      isSaving: false,
+    })).toEqual({
+      label: 'Confirm exit',
+      disabled: true,
+    });
+
+    expect(getCareExitPrimaryActionState({
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
       propertyReturnHandledConfirmed: false,
       isSaving: false,
     })).toEqual({
@@ -117,8 +134,8 @@ describe('Care flow unit tests', () => {
     });
 
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: true,
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
       propertyReturnHandledConfirmed: true,
       isSaving: false,
     })).toEqual({
@@ -127,13 +144,48 @@ describe('Care flow unit tests', () => {
     });
 
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: false,
-      propertyReturnHandledConfirmed: false,
+      isExitFormComplete: true,
+      hasAssociatedProperty: false,
+      propertyReturnHandledConfirmed: null,
       isSaving: false,
     })).toEqual({
-      label: 'Save exit details',
+      label: 'Confirm exit',
       disabled: false,
     });
+  });
+
+  it('tracks edited exit forms in local storage', () => {
+    const storage = {};
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key) => storage[key] ?? null,
+        setItem: (key, value) => {
+          storage[key] = String(value);
+        },
+      },
+    });
+
+    expect(hasSavedExitDraft(44)).toBe(false);
+
+    setSavedExitDraft(44, {
+      exitDestinationId: 'home',
+      exitSFResident: 'YES',
+      exitHousingStatusId: 'temporary',
+      exitConnectedToCare: 'NO',
+      propertyReturnHandledConfirmed: false,
+    });
+    expect(hasSavedExitDraft(44)).toBe(true);
+    expect(getSavedExitDraft(44)).toMatchObject({
+      exitDestinationId: 'home',
+      exitSFResident: 'YES',
+      exitHousingStatusId: 'temporary',
+      exitConnectedToCare: 'NO',
+      propertyReturnHandledConfirmed: false,
+      exitFormEdited: true,
+    });
+
+    setSavedExitDraft(44, false);
+    expect(hasSavedExitDraft(44)).toBe(false);
+    expect(getSavedExitDraft(44)).toBe(null);
   });
 });
