@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 
 import User from '#models/user.js';
-import { EMAIL_BASE_URL, EMAIL_TITLE } from '#lib/mailer.js';
+import { EMAIL_BASE_URL, EMAIL_SUBJECT_TITLE, EMAIL_TITLE } from '#lib/mailer.js';
 import { build, nodemailerMock } from '#test/helper.js';
 
 test('/api/passwords', async (t) => {
@@ -27,7 +27,7 @@ test('/api/passwords', async (t) => {
       );
       assert.deepStrictEqual(
         mail.subject,
-        `Your ${EMAIL_TITLE} reset password request`
+        `Your ${EMAIL_SUBJECT_TITLE} reset password request`
       );
 
       const user = await prisma.user.findUnique({ where: { email: 'regular.user@test.com' } });

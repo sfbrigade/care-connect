@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('Care flow unit tests', () => {
-  it('hides View details for all EXITED records', () => {
+  it('hides Details for all EXITED records', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
@@ -76,7 +76,7 @@ describe('Care flow unit tests', () => {
     });
     expect(admittedState).toEqual({
       showFooter: true,
-      primaryLabel: 'Update intake status',
+      primaryLabel: 'Update status',
       primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
