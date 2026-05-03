@@ -25,13 +25,13 @@ function LegalReleaseQuestions () {
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReason, setReleaseReasonId] = useState(prefilledState.releaseReason);
+  const [releaseReason, setReleaseReason] = useState(prefilledState.releaseReason);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [hasReviewedNarrative, setHasReviewedNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [exitDestination, setExitDestinationId] = useState(prefilledState.exitDestination);
+  const [exitDestination, setExitDestination] = useState(prefilledState.exitDestination);
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
   const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
@@ -213,7 +213,7 @@ function LegalReleaseQuestions () {
                 <Title order={3}>Choose a release reason.</Title>
                 <Input.Wrapper label='Release reason' required>
                   <Box mt='md'>
-                    <Chip.Group value={releaseReason} onChange={setReleaseReasonId}>
+                    <Chip.Group value={releaseReason} onChange={setReleaseReason}>
                       <Stack gap='sm' align='flex-start'>
                         <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
                         <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
@@ -230,7 +230,7 @@ function LegalReleaseQuestions () {
                     </Text>
                     {(isMedicalRelease || isBehavioralHealthRelease) && (
                       <Input.Wrapper label='Exit destination' required>
-                        <Chip.Group value={exitDestination} onChange={setExitDestinationId}>
+                        <Chip.Group value={exitDestination} onChange={setExitDestination}>
                           <Group gap='sm'>
                             <Chip value='HOSPITAL'>Hospital</Chip>
                             <Chip value='OTHER'>Other</Chip>

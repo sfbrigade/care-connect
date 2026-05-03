@@ -37,9 +37,9 @@ function CareExitDetails () {
   const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
 
-  const [exitDestination, setExitDestinationId] = useState(null);
+  const [exitDestination, setExitDestination] = useState(null);
   const [exitSFResident, setExitSFResident] = useState(null);
-  const [exitHousingStatus, setExitHousingStatusId] = useState(null);
+  const [exitHousingStatus, setExitHousingStatus] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
   const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(null);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
@@ -61,9 +61,9 @@ function CareExitDetails () {
     if (!deflection || initialized) return;
     const draft = getSavedExitDraft(id);
 
-    setExitDestinationId(draft?.exitDestination ?? deflection.exitDestination ?? null);
+    setExitDestination(draft?.exitDestination ?? deflection.exitDestination ?? null);
     setExitSFResident(draft?.exitSFResident ?? deflection.exitSFResident ?? null);
-    setExitHousingStatusId(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
+    setExitHousingStatus(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
     setExitConnectedToCare(draft?.exitConnectedToCare ?? deflection.exitConnectedToCare ?? null);
     setPropertyReturnHandledConfirmed(draft?.propertyReturnHandledConfirmed ?? null);
     setInitialized(true);
@@ -161,7 +161,7 @@ function CareExitDetails () {
           </Stack>
 
           <Input.Wrapper label='Exit destination' required>
-            <Chip.Group value={exitDestination} onChange={setExitDestinationId}>
+            <Chip.Group value={exitDestination} onChange={setExitDestination}>
               <Group gap='xs'>
                 {exitDestinations.map((option) => (
                   <Chip
@@ -193,7 +193,7 @@ function CareExitDetails () {
           </Input.Wrapper>
 
           <Input.Wrapper label='Housing status' required>
-            <Chip.Group value={exitHousingStatus} onChange={setExitHousingStatusId}>
+            <Chip.Group value={exitHousingStatus} onChange={setExitHousingStatus}>
               <Group gap='xs'>
                 {exitHousingStatuses.map((option) => (
                   <Chip

@@ -19,7 +19,7 @@ function CancelHoldModal ({
   onConfirm,
   loading = false,
 }) {
-  const [cancelReason, setCancelReasonId] = useState();
+  const [cancelReason, setCancelReason] = useState();
 
   const list = deflections ?? [];
   const count = list.length;
@@ -81,7 +81,7 @@ function CancelHoldModal ({
           <Text size='sm' c='dimmed'>{explanation}</Text>
           <CancelReasonSelector
             value={cancelReason}
-            onChange={setCancelReasonId}
+            onChange={setCancelReason}
             enabled={reasonRequired}
           />
         </Stack>
