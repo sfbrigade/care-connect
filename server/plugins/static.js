@@ -30,7 +30,8 @@ export default fp(async (fastify) => {
   });
 
   // Only register static assets if the directory exists (client has been built)
-  const assetsPath = path.resolve(__dirname, '../../client/dist/client/assets');
+  const clientPath = path.resolve(__dirname, '../../client/dist/client');
+  const assetsPath = path.resolve(clientPath, 'assets');
   if (fs.existsSync(assetsPath)) {
     fastify.register(fastifyStatic, {
       root: assetsPath,
@@ -45,6 +46,19 @@ export default fp(async (fastify) => {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
       },
+    });
+
+    // VitePWA emits the manifest, service worker, and registration script at
+    // the dist root (not under /assets). The built index.html links to
+    // /manifest.webmanifest and /registerSW.js, and sw.js imports a hashed
+    // workbox-*.js sibling, so all four need to be reachable from `/`.
+    for (const file of ['manifest.webmanifest', 'sw.js', 'registerSW.js']) {
+      fastify.get(`/${file}`, { schema: { hide: true } }, (request, reply) => {
+        return reply.sendFile(file, clientPath);
+      });
+    }
+    fastify.get('/workbox-:hash.js', { schema: { hide: true } }, (request, reply) => {
+      return reply.sendFile(`workbox-${request.params.hash}.js`, clientPath);
     });
   }
 });
