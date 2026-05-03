@@ -55,8 +55,8 @@ describe('Care flow unit tests', () => {
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestination: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
-      { id: 3, subjectStatus: 'EXITED', exitDestination: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 2, subjectStatus: 'EXITED', exitDestination: 'HOSPITAL', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 3, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);

@@ -158,8 +158,8 @@ describe('LegalReleaseQuestions', () => {
 
     await waitFor(() => {
       expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
-        releaseReason: 'behavioral_health_evaluation',
-        exitDestination: 'other',
+        releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+        exitDestination: 'OTHER',
       });
     });
   });
