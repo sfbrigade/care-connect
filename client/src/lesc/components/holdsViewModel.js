@@ -1,3 +1,5 @@
+import { isValidDeflection, isValidIncident } from '../../utils/validators';
+
 export function isInitialLoading (isFetching, data) {
   return !!isFetching && data === undefined;
 }
@@ -42,6 +44,36 @@ export function buildAdminCancelledHoldsMessage ({ count, allCancelled, personNa
     return `${facilityName} cancelled hold for ${name}. Do not bring this person to ${facilityName}.`;
   }
   return `${facilityName} cancelled ${count} holds. Do not bring these persons to ${facilityName}.`;
+}
+
+export function getTransferCodeStatus ({ incidents = [], atFacility = false, canArrive = false }) {
+  const activeDeflections = incidents.flatMap((incident) =>
+    (incident?.deflections ?? []).map((deflection) => ({ incident, deflection }))
+  );
+
+  if (activeDeflections.length === 0) return null;
+
+  const allDetailsComplete = activeDeflections.every(({ incident, deflection }) =>
+    isValidIncident(incident) && isValidDeflection(deflection)
+  );
+
+  if (!allDetailsComplete) return null;
+
+  if (!atFacility && canArrive) {
+    return {
+      icon: 'locked',
+      label: activeDeflections.length === 1 ? 'Tap to unlock transfer code' : 'Tap to unlock transfer codes',
+    };
+  }
+
+  if (atFacility) {
+    return {
+      icon: 'ready',
+      label: 'Transfer codes ready',
+    };
+  }
+
+  return null;
 }
 
 function toMillis (value) {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticate, build } from '#test/helper.js';
+import { authenticate, build, makeFixturePreTransferDetailsComplete } from '#test/helper.js';
 
 const FACILITY_ID = '6d123d8f-edd5-4d14-9220-0508eb30b47b';
 const USER2_ID = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
@@ -17,6 +17,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
 
   await t.test('clears currentOfficerId on this officer\'s arrived holds', async () => {
     // Arrive first so there's something to leave.
+    await makeFixturePreTransferDetailsComplete(prisma);
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -71,6 +72,8 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
   });
 
   await t.test('remains consistent when left races with cancellation of the last active arrived hold', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
     await app.inject()
       .delete('/api/deflections/5?cancelReasonId=5150')
       .headers(userHeaders);
@@ -120,6 +123,8 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
   });
 
   await t.test('clears officer ownership when left races with transfer of the last active arrived hold', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
     await app.inject()
       .delete('/api/deflections/5?cancelReasonId=5150')
       .headers(userHeaders);
@@ -147,6 +152,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
         behaviorNarrative: 'Test narrative',
         chargeType: 'RWS_647F',
         property: 'NONE',
+        certifiedAt: new Date(),
       },
     });
 

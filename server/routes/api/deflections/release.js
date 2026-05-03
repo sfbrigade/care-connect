@@ -83,14 +83,15 @@ export default async function (fastify, opts) {
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
       const isMedicalRelease = releaseReasonId === 'medical_issue';
+      const isBehavioralHealthRelease = releaseReasonId === 'behavioral_health_evaluation';
       const isOtherRelease = releaseReasonId === 'other';
-      const isExitRelease = isMedicalRelease || isOtherRelease;
+      const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
-      if (isMedicalRelease && !exitDestinationId) {
+      if ((isMedicalRelease || isBehavioralHealthRelease) && !exitDestinationId) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
             path: 'exitDestinationId',
-            message: 'Exit destination is required for medical release.',
+            message: 'Exit destination is required for this release.',
           }],
         });
       }
@@ -134,10 +135,10 @@ export default async function (fastify, opts) {
 
           const now = new Date();
           const previousSubjectStatus = deflection.subjectStatus;
-          // Only `sobered` releases from a pre-chair hold finalize immediately
-          // as EXITED — there's no chair to vacate and no follow-up step.
-          // Sobered from IN_CHAIR and all other release reasons (e.g.
-          // behavioral_health_evaluation) linger as ACTIVE/RELEASED until the
+          // `sobered` releases from a pre-chair hold finalize immediately as
+          // EXITED. Medical, behavioral-health, and "other" releases also
+          // finalize immediately because they are automatic exit paths.
+          // Sobered from IN_CHAIR still lingers as ACTIVE/RELEASED until the
           // care team explicitly exits.
           const isPreChairHoldRelease =
             releaseReasonId === 'sobered' && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { transformData } from '#lib/forms/647f/generate.js';
+import { formatCertifiedAtDisplay, transformData } from '#lib/forms/647f/generate.js';
 
 const baseDeflection = {
   id: 1,
@@ -98,4 +98,30 @@ test('647f hospital cancellation appends the release narrative', () => {
     'The person was released at 10:35 on 04/15/2025 due to a medical need and was transported to hospital.'
   );
   assert.equal(data.charge, '11550 HS');
+});
+
+test('647f transformData includes certifiedAt and arresting officer last name', () => {
+  const certifiedAt = new Date('2025-04-15T17:35:00.000Z');
+  const data = transformData({
+    ...baseDeflection,
+    certifiedAt,
+    incident: {
+      createdBy: {
+        firstName: 'Jane',
+        lastName: 'Smith',
+        badgeNumber: '4321',
+        organization: { name: 'San Francisco Police Department' },
+      },
+    },
+  });
+
+  assert.equal(data.certifiedAt, certifiedAt.toISOString());
+  assert.equal(data.arrestingOfficerLastName, 'Smith');
+});
+
+test('647f formats certifiedAt for the PDF field', () => {
+  assert.equal(
+    formatCertifiedAtDisplay('2025-04-15T17:35:00.000Z'),
+    'At 10:35 on 04/15/2025'
+  );
 });

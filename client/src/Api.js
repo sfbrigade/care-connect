@@ -193,6 +193,12 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/users/${id}`, data).catch(handleError);
     },
+    setPassword (id, password) {
+      return instance.patch(`/api/users/${id}/password`, { password }).catch(handleError);
+    },
+    getMfaCode (id) {
+      return instance.get(`/api/users/${id}/mfa-code`);
+    },
   },
   facilities: {
     index (page = 1, include = '') {
@@ -471,6 +477,14 @@ const Api = {
     },
     create (data) {
       return instance.post('/api/service-types', data).catch(handleError);
+    },
+  },
+  canary: {
+    error () {
+      return instance.post('/api/canary/error');
+    },
+    job () {
+      return instance.post('/api/canary/job');
     },
   },
   feedback: {

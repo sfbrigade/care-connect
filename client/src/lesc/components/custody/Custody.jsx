@@ -28,8 +28,8 @@ const RELEASED_STATUSES = 'RELEASED,EXITED';
 const IN_CUSTODY_SECTIONS = [
   { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
   { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake', tooltip: 'Ready to start process of medical admission. Show the QR code to Connections staff.' },
-  { status: 'IN_MEDICAL_INTAKE', label: 'In Medical Intake', tooltip: 'Medical intake is in progress. Monitor status until intake is completed.' },
-  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying sobering chairs. Start legal release when they are ready.' },
+  { status: 'IN_MEDICAL_INTAKE', label: 'In Medical Intake', tooltip: 'Medical intake in progress. Monitor status until intake is completed.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying chairs. Start legal release when medical staff indicate person is ready.' },
 ];
 
 const RELEASED_SECTIONS = [

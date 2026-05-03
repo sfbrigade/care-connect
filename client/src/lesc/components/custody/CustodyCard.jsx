@@ -126,7 +126,7 @@ function CustodyCard ({ deflection, highlighted }) {
                   navigate(`/custody/${deflection.id}`);
                 }}
               >
-                View details
+                Details
               </Button>
             )}
             {showMarkComplete && (
@@ -134,7 +134,7 @@ function CustodyCard ({ deflection, highlighted }) {
                 size='md'
                 onClick={() => setSafetyCheckResultModalOpened(true)}
               >
-                Record result
+                Safety check
               </Button>
             )}
             {showLegalRelease && (

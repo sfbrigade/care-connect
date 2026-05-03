@@ -16,9 +16,17 @@
       "NoEcho": true,
       "Description": "The API key for fetching facility status"
     },
+    "EmailFromName": {
+      "Type": "String",
+      "Description": "The display name used in email from and reply-to headers"
+    },
     "EmailSiteTitle": {
       "Type": "String",
       "Description": "The site title used in emails"
+    },
+    "EmailSubjectTitle": {
+      "Type": "String",
+      "Description": "The title used in email subject lines"
     },
     "ImageURL": {
       "Type": "String",
@@ -426,9 +434,21 @@
                 }
               },
               {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
                 "Name": "EMAIL_SITE_TITLE",
                 "Value": {
                   "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
                 }
               },
               {
@@ -939,9 +959,21 @@
                 }
               },
               {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
                 "Name": "EMAIL_SITE_TITLE",
                 "Value": {
                   "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
                 }
               },
               {

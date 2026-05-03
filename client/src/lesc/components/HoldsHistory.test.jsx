@@ -161,7 +161,7 @@ describe('HoldsHistory', () => {
       ],
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /View Details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Details$/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/holds/42');
   });
 

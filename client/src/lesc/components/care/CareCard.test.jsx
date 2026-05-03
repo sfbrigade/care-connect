@@ -61,42 +61,42 @@ afterEach(() => {
 });
 
 describe('CareCard', () => {
-  it('shows View details and Update intake status for IN_MEDICAL_INTAKE', () => {
+  it('shows Details and Update status for IN_MEDICAL_INTAKE', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }) });
 
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Update intake status' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Update status' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
 
-  it('shows only View details for IN_CHAIR', () => {
+  it('shows only Details for IN_CHAIR', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'IN_CHAIR' }) });
 
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Update intake status' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update status' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
 
-  it('shows View details and Start exit for RELEASED without saved exit details', () => {
+  it('shows Details and Start exit for RELEASED without saved exit details', () => {
     renderCard({
       deflection: buildDeflection({ subjectStatus: 'RELEASED' }),
       hasExitDraft: false,
     });
 
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start exit' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
 
-  it('shows View details and Finish exit for RELEASED with saved exit details', () => {
+  it('shows Details and Finish exit for RELEASED with saved exit details', () => {
     renderCard({
       deflection: buildDeflection({ subjectStatus: 'RELEASED' }),
       hasExitDraft: true,
     });
 
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Finish exit' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
   });
@@ -106,12 +106,12 @@ describe('CareCard', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('calls onCompleteIntake when Update intake status is clicked', () => {
+  it('calls onCompleteIntake when Update status is clicked', () => {
     const { onCompleteIntake } = renderCard({
       deflection: buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }),
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Update intake status' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Update status' }));
     expect(onCompleteIntake).toHaveBeenCalledTimes(1);
   });
 

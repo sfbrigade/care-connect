@@ -51,6 +51,10 @@ const PropertySchema = z.object({
   property: z.enum(['NONE', 'SMALL', 'MEDIUM', 'LARGE'], ERROR_SELECT_ONE),
 });
 
+const CertificationSchema = z.object({
+  certifiedAt: z.iso.datetime(ERROR_REQUIRED),
+});
+
 const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
   z.object({
     subject: SubjectSchema,
@@ -59,6 +63,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     drugType: z.nullable(z.optional(DrugTypeSchema)),
     ...BehaviorSchema.shape,
     ...PropertySchema.shape,
+    ...CertificationSchema.shape,
   }),
   z.object({
     subject: SubjectSchema,
@@ -67,6 +72,7 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
     drugType: DrugTypeSchema,
     ...BehaviorSchema.shape,
     ...PropertySchema.shape,
+    ...CertificationSchema.shape,
   }),
 ], ERROR_SELECT_ONE);
 
@@ -88,25 +94,30 @@ export const isValidNarcotics = (obj) => {
   return !!NarcoticsSchema.safeParse(obj)?.success;
 };
 
-const SubstanceSchema = z.discriminatedUnion('drugUseEvidence', [
-  z.object({
-    narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
-    narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
-    drugUseEvidence: z.literal(false),
-    drugType: z.nullable(z.optional(DrugTypeSchema)),
-  }),
-  z.object({
-    narcoticsSubstance: z.boolean(ERROR_SELECT_ONE),
-    narcoticsParaphernalia: z.boolean(ERROR_SELECT_ONE),
-    drugUseEvidence: z.literal(true),
-    drugType: DrugTypeSchema,
-  }),
-], ERROR_SELECT_ONE);
+export const validateSubstance = (values = {}) => {
+  const errors = {};
 
-export const validateSubstance = zod4Resolver(SubstanceSchema);
+  if (typeof values.narcoticsSubstance !== 'boolean') {
+    errors.narcoticsSubstance = ERROR_SELECT_ONE;
+  }
+
+  if (typeof values.narcoticsParaphernalia !== 'boolean') {
+    errors.narcoticsParaphernalia = ERROR_SELECT_ONE;
+  }
+
+  if (typeof values.drugUseEvidence !== 'boolean') {
+    errors.drugUseEvidence = ERROR_SELECT_ONE;
+  }
+
+  if (values.drugUseEvidence === true && !DrugTypeSchema.safeParse(values.drugType)?.success) {
+    errors.drugType = ERROR_SELECT_ONE;
+  }
+
+  return errors;
+};
 
 export const isValidSubstance = (obj) => {
-  return !!SubstanceSchema.safeParse(obj)?.success;
+  return Object.keys(validateSubstance(obj)).length === 0;
 };
 
 export const validateBehavior = zod4Resolver(BehaviorSchema);
@@ -119,6 +130,10 @@ export const validateProperty = zod4Resolver(PropertySchema);
 
 export const isValidProperty = (obj) => {
   return !!PropertySchema.safeParse(obj)?.success;
+};
+
+export const isValidCertification = (obj) => {
+  return !!CertificationSchema.safeParse(obj)?.success;
 };
 
 export const isValidDeflection = (obj) => {
