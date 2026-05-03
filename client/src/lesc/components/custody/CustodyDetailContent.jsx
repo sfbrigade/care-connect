@@ -76,7 +76,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
-  const intakeStartedAt = formatIntakeStartedAt(deflection?.beginMedicalIntakeAt);
+  const intakeStartedAt = formatIntakeStartedAt(deflection?.medicalIntakeStartedAt);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 

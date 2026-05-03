@@ -258,7 +258,7 @@ model User {
   deflectionsCreated                   Deflection[]                  @relation("CreatedBy")
   deflectionsCurrentOfficer            Deflection[]                  @relation("CurrentOfficer")
   deflectionsTransferred               Deflection[]                  @relation("TransferredBy")
-  deflectionsMedicalIntakeStarted                  Deflection[]                  @relation("BeginMedicalIntakeBy")
+  deflectionsMedicalIntakeStarted                  Deflection[]                  @relation("MedicalIntakeStartedBy")
   deflectionsRejected                  Deflection[]                  @relation("RejectedBy")
   deflectionsReleased                  Deflection[]                  @relation("ReleasedBy")
   deflectionsPropertyReturned          Deflection[]                  @relation("PropertyReturnedBy")
@@ -604,9 +604,9 @@ model Deflection {
   transferredByUnit            Unit?                   @relation(fields: [transferredByOrganizationId, transferredByUnitId], references: [organizationId, id])
   transferredByTitleId         String?
   transferredByTitle           Title?                  @relation(fields: [transferredByOrganizationId, transferredByTitleId], references: [organizationId, id])
-  beginMedicalIntakeAt                   DateTime?
-  beginMedicalIntakeBy                   User?                   @relation("BeginMedicalIntakeBy", fields: [beginMedicalIntakeById], references: [id])
-  beginMedicalIntakeById                 String?                 @db.Uuid
+  medicalIntakeStartedAt                 DateTime?
+  medicalIntakeStartedBy                 User?                   @relation("MedicalIntakeStartedBy", fields: [medicalIntakeStartedById], references: [id])
+  medicalIntakeStartedById               String?                 @db.Uuid
   rejectedAt                   DateTime?
   rejectedBy                   User?                   @relation("RejectedBy", fields: [rejectedById], references: [id])
   rejectedById                 String?                 @db.Uuid

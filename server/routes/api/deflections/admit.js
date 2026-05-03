@@ -67,8 +67,8 @@ export default async function (fastify, opts) {
             where: { id },
             data: {
               subjectStatus: Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
-              beginMedicalIntakeAt: now,
-              beginMedicalIntakeById: request.user.id,
+              medicalIntakeStartedAt: now,
+              medicalIntakeStartedById: request.user.id,
               updatedAt: now,
             },
             include: {

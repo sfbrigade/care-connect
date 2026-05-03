@@ -133,7 +133,7 @@ export default async function main (prisma) {
         transferredAt: now,
         transferredById: sfsoUser.id,
         ...(['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'].includes(subjectStatus)
-          ? { beginMedicalIntakeAt: now, beginMedicalIntakeById: sfsoUser.id }
+          ? { medicalIntakeStartedAt: now, medicalIntakeStartedById: sfsoUser.id }
           : {}),
         ...(subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
           ? { releasedAt: now, releasedById: sfsoUser.id, completedAt: now }
@@ -235,8 +235,8 @@ export default async function main (prisma) {
       arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
       transferredAt: pdfTestNow,
       transferredById: sfsoUser.id,
-      beginMedicalIntakeAt: pdfTestNow,
-      beginMedicalIntakeById: sfsoUser.id,
+      medicalIntakeStartedAt: pdfTestNow,
+      medicalIntakeStartedById: sfsoUser.id,
       certifiedAt: pdfTestNow,
       releasedAt: pdfTestNow,
       releasedById: sfsoUser.id,

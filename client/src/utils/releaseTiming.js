@@ -5,17 +5,17 @@ const RELEASE_OVERDUE_HOURS = 24;
 
 /**
  * Determine release timing status for a deflection
- * @param {object} deflection - Deflection object with subjectStatus and beginMedicalIntakeAt
+ * @param {object} deflection - Deflection object with subjectStatus and medicalIntakeStartedAt
  * @param {DateTime} now - Current time (injectable for testing)
  * @returns {{ label: string, tone: string } | null} - Chip config or null
  */
 export function releaseTiming (deflection, now = DateTime.now()) {
   if (deflection?.subjectStatus !== 'IN_CHAIR') return null;
-  if (!deflection?.beginMedicalIntakeAt) return null;
+  if (!deflection?.medicalIntakeStartedAt) return null;
 
-  const intakeStartedAt = typeof deflection.beginMedicalIntakeAt === 'string'
-    ? DateTime.fromISO(deflection.beginMedicalIntakeAt)
-    : DateTime.fromJSDate(deflection.beginMedicalIntakeAt);
+  const intakeStartedAt = typeof deflection.medicalIntakeStartedAt === 'string'
+    ? DateTime.fromISO(deflection.medicalIntakeStartedAt)
+    : DateTime.fromJSDate(deflection.medicalIntakeStartedAt);
   if (!intakeStartedAt.isValid) return null;
 
   const hoursSinceAdmission = now.diff(intakeStartedAt, 'hours').hours;

@@ -289,7 +289,7 @@ describe('CustodyDetailContent', () => {
     const html = render(
       {
         subjectStatus: 'IN_MEDICAL_INTAKE',
-        beginMedicalIntakeAt: '2026-04-29T11:24:00.000',
+        medicalIntakeStartedAt: '2026-04-29T11:24:00.000',
         drugUseEvidence: true,
         drugType: 'ALCOHOL'
       },

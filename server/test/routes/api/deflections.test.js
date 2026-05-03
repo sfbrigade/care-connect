@@ -379,8 +379,8 @@ test('/api/deflections', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.subjectStatus, 'IN_MEDICAL_INTAKE');
-      assert.ok(data.beginMedicalIntakeAt);
-      assert.ok(data.beginMedicalIntakeById);
+      assert.ok(data.medicalIntakeStartedAt);
+      assert.ok(data.medicalIntakeStartedById);
       assertCareSubjectRedaction(data.subject);
 
       // Verify in database
@@ -388,8 +388,8 @@ test('/api/deflections', async (t) => {
         where: { id: 6 },
       });
       assert.deepStrictEqual(deflection.subjectStatus, 'IN_MEDICAL_INTAKE');
-      assert.ok(deflection.beginMedicalIntakeAt);
-      assert.ok(deflection.beginMedicalIntakeById);
+      assert.ok(deflection.medicalIntakeStartedAt);
+      assert.ok(deflection.medicalIntakeStartedById);
 
       // No bed type count changes: both READY_FOR_INTAKE and IN_MEDICAL_INTAKE are hold statuses
       bedType = await prisma.bedType.findUnique({
@@ -406,8 +406,8 @@ test('/api/deflections', async (t) => {
         where: { id: 6 },
         data: {
           subjectStatus: 'READY_FOR_INTAKE',
-          beginMedicalIntakeAt: null,
-          beginMedicalIntakeById: null,
+          medicalIntakeStartedAt: null,
+          medicalIntakeStartedById: null,
         },
       });
 
@@ -440,8 +440,8 @@ test('/api/deflections', async (t) => {
       });
 
       assert.deepStrictEqual(deflection.subjectStatus, 'IN_MEDICAL_INTAKE');
-      assert.ok(deflection.beginMedicalIntakeAt);
-      assert.ok(deflection.beginMedicalIntakeById);
+      assert.ok(deflection.medicalIntakeStartedAt);
+      assert.ok(deflection.medicalIntakeStartedById);
       assert.deepStrictEqual(afterAuditCount, beforeAuditCount + 1);
     });
   });
@@ -452,7 +452,7 @@ test('/api/deflections', async (t) => {
         where: { id: 6 },
         data: {
           subjectStatus: 'IN_MEDICAL_INTAKE',
-          beginMedicalIntakeAt: new Date(),
+          medicalIntakeStartedAt: new Date(),
         },
       });
 
@@ -475,7 +475,7 @@ test('/api/deflections', async (t) => {
         where: { id: 6 },
         data: {
           subjectStatus: 'IN_MEDICAL_INTAKE',
-          beginMedicalIntakeAt: new Date(),
+          medicalIntakeStartedAt: new Date(),
         },
       });
 
@@ -611,8 +611,8 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'IN_MEDICAL_INTAKE',
-          beginMedicalIntakeAt: new Date(),
-          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          medicalIntakeStartedAt: new Date(),
+          medicalIntakeStartedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           rejectedAt: null,
           rejectedById: null,
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
@@ -663,8 +663,8 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'FAILED_INTAKE',
-          beginMedicalIntakeAt: new Date(),
-          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          medicalIntakeStartedAt: new Date(),
+          medicalIntakeStartedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           rejectedAt: new Date(),
           rejectedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
@@ -705,8 +705,8 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'IN_CHAIR',
-          beginMedicalIntakeAt: new Date(),
-          beginMedicalIntakeById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          medicalIntakeStartedAt: new Date(),
+          medicalIntakeStartedById: '49acdf99-536f-49ac-8138-1c77e5087697',
           property: 'SMALL',
           propertyDetails: 'Black backpack',
           createdById: '49acdf99-536f-49ac-8138-1c77e5087697',

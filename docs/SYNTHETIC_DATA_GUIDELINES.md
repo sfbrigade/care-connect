@@ -542,7 +542,7 @@ incidentCreatedAt
   < arrivedAt (if set)
   < deflectionTransferredAt (if set)
   < safetyCheckAt (if set)
-  < beginMedicalIntakeAt (if set)
+  < medicalIntakeStartedAt (if set)
   < intakeCompletedAt (if set)
   < releasedAt (if set)
   < exitedAt (if set)
