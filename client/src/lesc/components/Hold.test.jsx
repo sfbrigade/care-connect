@@ -8,7 +8,11 @@ import Hold from './Hold';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key) => key === 'sex.FEMALE' ? 'Female' : key,
+    t: (key) => {
+      if (key === 'sex.FEMALE') return 'Female';
+      if (key === 'deflectionCancelReason.RELEASE_ON_SCENE') return 'Released on scene';
+      return key;
+    },
   }),
 }));
 
