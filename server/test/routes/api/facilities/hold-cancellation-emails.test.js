@@ -73,7 +73,7 @@ test('Hold cancellation email notifications', async (t) => {
       .headers(adminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Testing email notifications',
       });
 
@@ -96,7 +96,7 @@ test('Hold cancellation email notifications', async (t) => {
       .headers(adminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Closing for reopen test',
       });
 
@@ -129,8 +129,6 @@ test('Hold cancellation email notifications', async (t) => {
     await app.prisma.deflection.expire();
     nodemailerMock.mock.reset();
 
-    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
-
     // Set unavailable high enough to force hold cancellation
     // capacity=10, occupied=0, holds=4 (after expire). Setting unavailable to 7:
     // available = 10 - 7 - 0 - 0 - 4 = -1 → cancel 1 hold
@@ -139,7 +137,7 @@ test('Hold cancellation email notifications', async (t) => {
       .headers(adminHeaders)
       .payload({
         unavailableUnoccupied: 7,
-        unavailableReasonId: reason.id,
+        unavailableReason: 'SFSD_STAFFING',
       });
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);

@@ -211,10 +211,6 @@ export default async function main (prisma) {
     },
   });
 
-  const releaseReason = await prisma.deflectionReleaseReason.findFirst({
-    where: { id: 'sobered' },
-  });
-
   const pdfTestNow = new Date();
   const pdfTestDeflection = await prisma.deflection.create({
     data: {
@@ -240,7 +236,7 @@ export default async function main (prisma) {
       certifiedAt: pdfTestNow,
       releasedAt: pdfTestNow,
       releasedById: sfsoUser.id,
-      releaseReasonId: releaseReason?.id || 'sobered',
+      releaseReason: 'SOBERED',
       completedAt: pdfTestNow,
     },
   });

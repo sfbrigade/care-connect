@@ -119,7 +119,7 @@ export default async function (fastify, opts) {
         data: {
           status: Deflection.HoldStatus.ACTIVE,
           expiresAt: update.expiresAt,
-          cancelReasonId: null,
+          cancelReason: null,
         },
         include: {
           subject: true,

@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 
-export const HOSPITAL_CANCEL_REASON_ID = 'hospital';
+export const HOSPITAL_CANCEL_REASON = 'HOSPITAL';
 export const HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR = 'SFPD policy requires person details to be completed before a medical-related cancelation';
 export const HOSPITAL_CANCELLATION_ELIGIBLE_SUBJECT_STATUSES = new Set([
   'DETAINED',

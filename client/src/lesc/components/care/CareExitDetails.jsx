@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Checkbox, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -33,11 +34,12 @@ function CareExitDetails () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
 
-  const [exitDestinationId, setExitDestinationId] = useState(null);
+  const [exitDestination, setExitDestinationId] = useState(null);
   const [exitSFResident, setExitSFResident] = useState(null);
-  const [exitHousingStatusId, setExitHousingStatusId] = useState(null);
+  const [exitHousingStatus, setExitHousingStatusId] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
   const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(null);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
@@ -45,28 +47,23 @@ function CareExitDetails () {
   const fromDetail = searchParams.get('from') === 'detail';
   const backTo = getCareExitBackTo({ fromDetail, id });
 
+  const exitDestinations = Object.entries(t('deflectionExitDestination', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
+  const exitHousingStatuses = Object.entries(t('deflectionExitHousingStatus', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
+
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
-  });
-
-  const { data: exitDestinations } = useQuery({
-    queryKey: ['exitDestinations'],
-    queryFn: () => Api.deflections.exitDestinations.index().then(response => response.data),
-  });
-
-  const { data: exitHousingStatuses } = useQuery({
-    queryKey: ['exitHousingStatuses'],
-    queryFn: () => Api.deflections.exitHousingStatuses.index().then(response => response.data),
   });
 
   useEffect(() => {
     if (!deflection || initialized) return;
     const draft = getSavedExitDraft(id);
 
-    setExitDestinationId(draft?.exitDestinationId ?? deflection.exitDestinationId ?? null);
+    setExitDestinationId(draft?.exitDestination ?? deflection.exitDestination ?? null);
     setExitSFResident(draft?.exitSFResident ?? deflection.exitSFResident ?? null);
-    setExitHousingStatusId(draft?.exitHousingStatusId ?? deflection.exitHousingStatusId ?? null);
+    setExitHousingStatusId(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
     setExitConnectedToCare(draft?.exitConnectedToCare ?? deflection.exitConnectedToCare ?? null);
     setPropertyReturnHandledConfirmed(draft?.propertyReturnHandledConfirmed ?? null);
     setInitialized(true);
@@ -74,9 +71,9 @@ function CareExitDetails () {
 
   const completeExitMutation = useMutation({
     mutationFn: () => Api.deflections.exit(id, {
-      exitDestinationId,
+      exitDestination,
       exitSFResident,
-      exitHousingStatusId,
+      exitHousingStatus,
       exitConnectedToCare,
     }),
     onSuccess: () => {
@@ -97,21 +94,21 @@ function CareExitDetails () {
 
   const isSectionTwoComplete = useMemo(
     () => (
-      !!exitDestinationId &&
+      !!exitDestination &&
       !!exitSFResident &&
-      !!exitHousingStatusId &&
+      !!exitHousingStatus &&
       !!exitConnectedToCare
     ),
-    [exitDestinationId, exitSFResident, exitHousingStatusId, exitConnectedToCare]
+    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
   );
   const isExitFormEdited = useMemo(
     () => (
-      !!exitDestinationId ||
+      !!exitDestination ||
       !!exitSFResident ||
-      !!exitHousingStatusId ||
+      !!exitHousingStatus ||
       !!exitConnectedToCare
     ),
-    [exitDestinationId, exitSFResident, exitHousingStatusId, exitConnectedToCare]
+    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
   );
   const personHasAssociatedProperty = useMemo(
     () => hasAssociatedProperty(deflection),
@@ -122,9 +119,9 @@ function CareExitDetails () {
     if (!initialized) return;
     setSavedExitDraft(id, isExitFormEdited
       ? {
-          exitDestinationId,
+          exitDestination,
           exitSFResident,
-          exitHousingStatusId,
+          exitHousingStatus,
           exitConnectedToCare,
           propertyReturnHandledConfirmed,
         }
@@ -132,8 +129,8 @@ function CareExitDetails () {
     );
   }, [
     exitConnectedToCare,
-    exitDestinationId,
-    exitHousingStatusId,
+    exitDestination,
+    exitHousingStatus,
     exitSFResident,
     id,
     initialized,
@@ -164,9 +161,9 @@ function CareExitDetails () {
           </Stack>
 
           <Input.Wrapper label='Exit destination' required>
-            <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
+            <Chip.Group value={exitDestination} onChange={setExitDestinationId}>
               <Group gap='xs'>
-                {exitDestinations?.map((option) => (
+                {exitDestinations.map((option) => (
                   <Chip
                     key={option.id}
                     value={option.id}
@@ -196,9 +193,9 @@ function CareExitDetails () {
           </Input.Wrapper>
 
           <Input.Wrapper label='Housing status' required>
-            <Chip.Group value={exitHousingStatusId} onChange={setExitHousingStatusId}>
+            <Chip.Group value={exitHousingStatus} onChange={setExitHousingStatusId}>
               <Group gap='xs'>
-                {exitHousingStatuses?.map((option) => (
+                {exitHousingStatuses.map((option) => (
                   <Chip
                     key={option.id}
                     value={option.id}
@@ -233,7 +230,7 @@ function CareExitDetails () {
               <Checkbox
                 checked={propertyReturnHandledConfirmed === true}
                 disabled={!isSectionTwoComplete}
-                label='I’ve confirmed with the SFSO Deputy that property has been handled.'
+                label="I've confirmed with the SFSO Deputy that property has been handled."
                 onChange={(event) => setPropertyReturnHandledConfirmed(event.currentTarget.checked ? true : null)}
               />
             </>

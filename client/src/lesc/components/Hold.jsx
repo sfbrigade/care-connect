@@ -46,7 +46,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const showFooter = canAddDetails || canFinishDetails || canViewDetails;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
-  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
+  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReason;
 
   return (
     <Card bg='white' p='md' withBorder>

@@ -170,8 +170,8 @@ function exitData (careUser, exitDestId, housingStatusId, t) {
   return {
     exitedAt: t,
     exitedById: careUser.id,
-    exitDestinationId: exitDestId,
-    exitHousingStatusId: housingStatusId,
+    exitDestination: exitDestId,
+    exitHousingStatus: housingStatusId,
     exitConnectedToCare: weightedPick([
       { v: 'YES', w: 30 }, { v: 'NO', w: 50 }, { v: 'UNKNOWN', w: 20 },
     ]),
@@ -183,21 +183,21 @@ function exitData (careUser, exitDestId, housingStatusId, t) {
 }
 
 // Creates DeflectionUpdate audit rows for each state transition in a scenario.
-// Each entry in `steps` is { subjectStatus?, status?, releaseReasonId?, refusalReasonId?,
-//   exitDestinationId?, exitHousingStatusId?, exitConnectedToCare?, exitSFResident?,
-//   cancelReasonId?, updatedAt, updatedById }
+// Each entry in `steps` is { subjectStatus?, status?, releaseReason?, refusalReason?,
+//   exitDestination?, exitHousingStatus?, exitConnectedToCare?, exitSFResident?,
+//   cancelReason?, updatedAt, updatedById }
 async function createDeflectionUpdates (prisma, deflectionId, steps) {
   for (const step of steps) {
     const data = { deflectionId, updatedAt: step.updatedAt, updatedById: step.updatedById };
     if (step.subjectStatus != null) data.subjectStatus = step.subjectStatus;
     if (step.status != null) data.status = step.status;
-    if (step.releaseReasonId != null) data.releaseReasonId = step.releaseReasonId;
-    if (step.refusalReasonId != null) data.refusalReasonId = step.refusalReasonId;
-    if (step.exitDestinationId != null) data.exitDestinationId = step.exitDestinationId;
-    if (step.exitHousingStatusId != null) data.exitHousingStatusId = step.exitHousingStatusId;
+    if (step.releaseReason != null) data.releaseReason = step.releaseReason;
+    if (step.refusalReason != null) data.refusalReason = step.refusalReason;
+    if (step.exitDestination != null) data.exitDestination = step.exitDestination;
+    if (step.exitHousingStatus != null) data.exitHousingStatus = step.exitHousingStatus;
     if (step.exitConnectedToCare != null) data.exitConnectedToCare = step.exitConnectedToCare;
     if (step.exitSFResident != null) data.exitSFResident = step.exitSFResident;
-    if (step.cancelReasonId != null) data.cancelReasonId = step.cancelReasonId;
+    if (step.cancelReason != null) data.cancelReason = step.cancelReason;
     await prisma.deflectionUpdate.create({ data });
   }
 }
@@ -242,47 +242,35 @@ export default async function main (prisma) {
   // ── Look up lookup tables ──
   const sfsoUnit = await prisma.unit.findFirst({ where: { organizationId: 'sfso' } });
 
-  const cancelReasons = await prisma.deflectionCancelReason.findMany();
-  const releaseReasonSobered = await prisma.deflectionReleaseReason.findUnique({ where: { id: 'sobered' } });
-  const releaseReasonMedical = await prisma.deflectionReleaseReason.findUnique({ where: { id: 'medical_issue' } });
-  const releaseReasonOther = await prisma.deflectionReleaseReason.findUnique({ where: { id: 'other' } });
-  const releaseReasonDeathCustody = await prisma.deflectionReleaseReason.findUnique({ where: { id: 'death_in_custody' } });
-  const releaseReasonDeathFacility = await prisma.deflectionReleaseReason.findUnique({ where: { id: 'death_in_facility' } });
-  const refusalReasonMedical = await prisma.deflectionRefusalReason.findUnique({ where: { id: 'medical_issue' } });
-  const refusalReasonAggressive = await prisma.deflectionRefusalReason.findUnique({ where: { id: 'aggressive_behavior' } });
+  // Enum values (no longer from DB)
+  const cancelReasons = ['BEHAVIORAL_HEALTH_EVALUATION', 'JAIL', 'HOSPITAL', 'RELEASE_ON_SCENE', 'NO_CHAIRS_AVAILABLE', 'STAFFING_SHORTAGE'];
+  const releaseReasonSobered = 'SOBERED';
+  const releaseReasonMedical = 'MEDICAL_ISSUE';
+  const releaseReasonOther = 'OTHER';
+  const releaseReasonDeathCustody = 'DEATH_IN_CUSTODY';
+  const releaseReasonDeathFacility = 'DEATH_IN_FACILITY';
+  const refusalReasonMedical = 'MEDICAL_ISSUE';
+  const refusalReasonAggressive = 'AGGRESSIVE_BEHAVIOR';
 
-  const exitDestinations = await prisma.deflectionExitDestination.findMany();
-  const exitHousingStatuses = await prisma.deflectionExitHousingStatus.findMany();
+  const exitDestStreet = 'STREET';
+  const exitDestHome = 'HOME';
+  const exitDestServices = 'SERVICES_NON_HOSPITAL';
+  const exitDestHospital = 'HOSPITAL';
+  const exitDestDeclined = 'DECLINED_CONSENT';
+  const exitDestJail = 'JAIL';
+  const exitDestOther = 'OTHER';
 
-  const exitDestStreet = exitDestinations.find(d => d.id === 'street');
-  const exitDestHome = exitDestinations.find(d => d.id === 'home');
-  const exitDestServices = exitDestinations.find(d => d.id === 'services_non_hospital');
-  const exitDestHospital = exitDestinations.find(d => d.id === 'hospital');
-  const exitDestDeclined = exitDestinations.find(d => d.id === 'declined_consent');
-  const exitDestJail = exitDestinations.find(d => d.id === 'jail');
-  const exitDestOther = exitDestinations.find(d => d.id === 'other');
-
-  const housingStatusPermanent = exitHousingStatuses.find(s => s.id === 'permanent');
-  const housingStatusSheltered = exitHousingStatuses.find(s => s.id === 'sheltered');
-  const housingStatusTemporary = exitHousingStatuses.find(s => s.id === 'temporary');
-  const housingStatusUnknown = exitHousingStatuses.find(s => s.id === 'unknown');
-  const housingStatusDeclined = exitHousingStatuses.find(s => s.id === 'declined_consent');
+  const housingStatusPermanent = 'PERMANENT';
+  const housingStatusSheltered = 'SHELTERED';
+  const housingStatusTemporary = 'TEMPORARY';
+  const housingStatusUnknown = 'UNKNOWN';
+  const housingStatusDeclined = 'DECLINED_CONSENT';
 
   // All full-spectrum exit dests and housing statuses for varied coverage
-  const allExitDests = [
-    exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined, exitDestOther,
-  ].filter(Boolean);
-  const allHousingStatuses = [
-    housingStatusPermanent, housingStatusSheltered, housingStatusTemporary,
-    housingStatusUnknown, housingStatusDeclined,
-  ].filter(Boolean);
-  const housingStatuses = exitHousingStatuses;
-  const commonExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined].filter(Boolean);
-
-  if (!releaseReasonSobered || cancelReasons.length === 0) {
-    console.warn('Missing reference data; skipping historical data seed.');
-    return;
-  }
+  const allExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined, exitDestOther];
+  const allHousingStatuses = [housingStatusPermanent, housingStatusSheltered, housingStatusTemporary, housingStatusUnknown, housingStatusDeclined];
+  const housingStatuses = allHousingStatuses;
+  const commonExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined];
 
   // ── Create repeat-encounter subjects (5 subjects who appear multiple times) ──
   const repeatSubjects = [];
@@ -376,7 +364,7 @@ export default async function main (prisma) {
     if (type === 'full_exit') {
       const exitDest = pick(allExitDests) ?? exitDestStreet;
       const housingStatus = pick(allHousingStatuses) ?? housingStatusUnknown;
-      const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
+      const exitFields = exitData(careUser, exitDest ?? 'STREET', housingStatus ?? 'UNKNOWN', tExit);
       const incident = await prisma.incident.create({
         data: {
           ...makeIncidentData(facility.id, fieldUser, base, tArrived, tExit, tExit, idx),
@@ -394,7 +382,7 @@ export default async function main (prisma) {
           medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReasonId: releaseReasonSobered.id,
+          releaseReason: releaseReasonSobered,
           ...exitFields,
         },
       });
@@ -404,11 +392,11 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
+        { subjectStatus: 'RELEASED', releaseReason: releaseReasonSobered, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          exitDestinationId: exitDest?.id,
-          exitHousingStatusId: housingStatus?.id,
+          exitDestination: exitDest,
+          exitHousingStatus: housingStatus,
           exitConnectedToCare: exitFields.exitConnectedToCare,
           exitSFResident: exitFields.exitSFResident,
           updatedAt: tExit,
@@ -418,7 +406,7 @@ export default async function main (prisma) {
     } else if (type === 'handoff_full_exit') {
       const exitDest = pick(allExitDests) ?? exitDestStreet;
       const housingStatus = pick(allHousingStatuses) ?? housingStatusUnknown;
-      const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
+      const exitFields = exitData(careUser, exitDest ?? 'STREET', housingStatus ?? 'UNKNOWN', tExit);
       const incident = await prisma.incident.create({
         data: {
           ...makeIncidentData(facility.id, fieldUser, base, null, null, tExit, idx),
@@ -437,7 +425,7 @@ export default async function main (prisma) {
           medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReasonId: releaseReasonSobered.id,
+          releaseReason: releaseReasonSobered,
           ...exitFields
         },
       });
@@ -447,11 +435,11 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
+        { subjectStatus: 'RELEASED', releaseReason: releaseReasonSobered, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          exitDestinationId: exitDest?.id,
-          exitHousingStatusId: housingStatus?.id,
+          exitDestination: exitDest,
+          exitHousingStatus: housingStatus,
           exitConnectedToCare: exitFields.exitConnectedToCare,
           exitSFResident: exitFields.exitSFResident,
           updatedAt: tExit,
@@ -471,13 +459,13 @@ export default async function main (prisma) {
           subjectId: subject.id,
           subjectStatus: 'DETAINED',
           status: 'CANCELLED',
-          cancelReasonId: cancelReason.id,
+          cancelReason,
           cancelledAt: tCancel,
           cancelledById: fieldUser.id,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
-        { status: 'CANCELLED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: fieldUser.id },
+        { status: 'CANCELLED', cancelReason, updatedAt: tCancel, updatedById: fieldUser.id },
       ]);
     } else if (type === 'cancelled_after_transfer') {
       const tCancel = addMins(tTransfer, randInt(10, 90));
@@ -493,7 +481,7 @@ export default async function main (prisma) {
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'AWAITING_INTAKE',
           status: 'CANCELLED',
-          cancelReasonId: cancelReason.id,
+          cancelReason,
           cancelledAt: tCancel,
           cancelledById: custodyUser.id,
         },
@@ -501,7 +489,7 @@ export default async function main (prisma) {
       await createDeflectionUpdates(prisma, deflection.id, [
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
-        { status: 'CANCELLED', cancelReasonId: cancelReason.id, updatedAt: tCancel, updatedById: custodyUser.id },
+        { status: 'CANCELLED', cancelReason, updatedAt: tCancel, updatedById: custodyUser.id },
       ]);
     } else if (type === 'hospital_exit') {
       const tHospital = addMins(tSafetyCheck, randInt(5, 30));
@@ -515,12 +503,12 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          releaseReasonId: releaseReasonMedical?.id ?? releaseReasonSobered.id,
+          releaseReason: releaseReasonMedical ?? releaseReasonSobered,
           releasedAt: tHospital,
           releasedById: custodyUser.id,
           exitedAt: tHospital,
           exitedById: custodyUser.id,
-          exitDestinationId: exitDestHospital?.id ?? null,
+          exitDestination: exitDestHospital ?? null,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -529,8 +517,8 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          releaseReasonId: releaseReasonMedical?.id,
-          exitDestinationId: exitDestHospital?.id,
+          releaseReason: releaseReasonMedical,
+          exitDestination: exitDestHospital,
           updatedAt: tHospital,
           updatedById: custodyUser.id
         },
@@ -538,7 +526,7 @@ export default async function main (prisma) {
     } else if (type === 'failed_intake') {
       const exitDest = pick(commonExitDests) ?? exitDestStreet;
       const housingStatus = pick(housingStatuses) ?? housingStatusUnknown;
-      const exitFields = exitData(careUser, exitDest?.id ?? 'street', housingStatus?.id ?? 'unknown', tExit);
+      const exitFields = exitData(careUser, exitDest ?? 'STREET', housingStatus ?? 'UNKNOWN', tExit);
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tExit, tExit, idx),
       });
@@ -555,7 +543,7 @@ export default async function main (prisma) {
           rejectedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReasonId: releaseReasonSobered.id,
+          releaseReason: releaseReasonSobered,
           ...exitFields,
         },
       });
@@ -565,11 +553,11 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'FAILED_INTAKE', updatedAt: tIntake, updatedById: careUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
+        { subjectStatus: 'RELEASED', releaseReason: releaseReasonSobered, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          exitDestinationId: exitDest?.id,
-          exitHousingStatusId: housingStatus?.id,
+          exitDestination: exitDest,
+          exitHousingStatus: housingStatus,
           exitConnectedToCare: exitFields.exitConnectedToCare,
           exitSFResident: exitFields.exitSFResident,
           updatedAt: tExit,
@@ -592,10 +580,10 @@ export default async function main (prisma) {
           medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReasonId: releaseReasonMedical?.id ?? releaseReasonSobered.id,
+          releaseReason: releaseReasonMedical ?? releaseReasonSobered,
           exitedAt: tRelease,
           exitedById: custodyUser.id,
-          exitDestinationId: exitDestHospital?.id ?? null,
+          exitDestination: exitDestHospital ?? null,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -606,8 +594,8 @@ export default async function main (prisma) {
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         {
           subjectStatus: 'EXITED',
-          releaseReasonId: releaseReasonMedical?.id,
-          exitDestinationId: exitDestHospital?.id,
+          releaseReason: releaseReasonMedical,
+          exitDestination: exitDestHospital,
           updatedAt: tRelease,
           updatedById: custodyUser.id
         },
@@ -625,10 +613,10 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          refusalReasonId: refusalReasonAggressive?.id ?? null,
+          refusalReason: refusalReasonAggressive ?? null,
           exitedAt: tJail,
           exitedById: custodyUser.id,
-          exitDestinationId: exitDestJail?.id ?? 'jail',
+          exitDestination: exitDestJail,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -636,8 +624,8 @@ export default async function main (prisma) {
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          refusalReasonId: refusalReasonAggressive?.id,
-          exitDestinationId: exitDestJail?.id,
+          refusalReason: refusalReasonAggressive,
+          exitDestination: exitDestJail,
           updatedAt: tJail,
           updatedById: custodyUser.id
         },
@@ -655,10 +643,10 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          refusalReasonId: refusalReasonMedical?.id ?? null,
+          refusalReason: refusalReasonMedical ?? null,
           exitedAt: tJail,
           exitedById: custodyUser.id,
-          exitDestinationId: exitDestJail?.id ?? 'jail',
+          exitDestination: exitDestJail,
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -666,8 +654,8 @@ export default async function main (prisma) {
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         {
           subjectStatus: 'EXITED',
-          refusalReasonId: refusalReasonMedical?.id,
-          exitDestinationId: exitDestJail?.id,
+          refusalReason: refusalReasonMedical,
+          exitDestination: exitDestJail,
           updatedAt: tJail,
           updatedById: custodyUser.id
         },
@@ -705,7 +693,7 @@ export default async function main (prisma) {
           subjectStatus: 'DEATH_IN_CUSTODY',
           medicalIntakeStartedAt: tAdmit,
           medicalIntakeStartedById: careUser.id,
-          releaseReasonId: releaseReasonDeathCustody?.id ?? 'death_in_custody',
+          releaseReason: releaseReasonDeathCustody ?? 'death_in_custody',
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -716,7 +704,7 @@ export default async function main (prisma) {
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         {
           subjectStatus: 'DEATH_IN_CUSTODY',
-          releaseReasonId: releaseReasonDeathCustody?.id,
+          releaseReason: releaseReasonDeathCustody,
           updatedAt: tDeath,
           updatedById: custodyUser.id
         },
@@ -738,7 +726,7 @@ export default async function main (prisma) {
           medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReasonId: releaseReasonDeathFacility?.id ?? 'death_in_facility',
+          releaseReason: releaseReasonDeathFacility ?? 'death_in_facility',
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -747,10 +735,10 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
         { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
-        { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
+        { subjectStatus: 'RELEASED', releaseReason: releaseReasonSobered, updatedAt: tRelease, updatedById: custodyUser.id },
         {
           subjectStatus: 'DEATH_IN_FACILITY',
-          releaseReasonId: releaseReasonDeathFacility?.id,
+          releaseReason: releaseReasonDeathFacility,
           updatedAt: tDeath,
           updatedById: custodyUser.id
         },
@@ -769,7 +757,7 @@ export default async function main (prisma) {
       const recentHousing = recentHousingPool[recentIdx % recentHousingPool.length];
 
       // Cycle through refusal reasons for some (aggressive_behavior, medical_issue, none)
-      const isJailExit = recentExitDest?.id === 'jail';
+      const isJailExit = recentExitDest === 'jail';
       const refusalReason = isJailExit
         ? (recentIdx % 2 === 0 ? refusalReasonAggressive : refusalReasonMedical)
         : null;
@@ -784,7 +772,7 @@ export default async function main (prisma) {
         ? null
         : (releaseReasonCycle[recentIdx % releaseReasonCycle.length] ?? releaseReasonSobered);
 
-      const exitFields = isJailExit ? null : exitData(careUser, recentExitDest?.id ?? 'street', recentHousing?.id ?? 'unknown', tExit);
+      const exitFields = isJailExit ? null : exitData(careUser, recentExitDest ?? 'STREET', recentHousing ?? 'UNKNOWN', tExit);
 
       const incident = await prisma.incident.create({
         data: makeIncidentData(facility.id, fieldUser, base, tArrived, tExit, tExit, idx),
@@ -800,15 +788,15 @@ export default async function main (prisma) {
         exitedById: careUser.id,
         ...(isJailExit
           ? {
-              refusalReasonId: refusalReason?.id ?? null,
-              exitDestinationId: recentExitDest?.id ?? 'jail',
+              refusalReason: refusalReason ?? null,
+              exitDestination: recentExitDest ?? 'jail',
             }
           : {
               medicalIntakeStartedAt: tAdmit,
               medicalIntakeStartedById: careUser.id,
               releasedAt: tRelease,
               releasedById: custodyUser.id,
-              releaseReasonId: recentReleaseReason?.id,
+              releaseReason: recentReleaseReason,
               ...exitFields,
             }),
       };
@@ -827,22 +815,22 @@ export default async function main (prisma) {
       if (isJailExit) {
         updateSteps.push({
           subjectStatus: 'EXITED',
-          refusalReasonId: refusalReason?.id,
-          exitDestinationId: recentExitDest?.id,
+          refusalReason,
+          exitDestination: recentExitDest,
           updatedAt: tExit,
           updatedById: custodyUser.id
         });
       } else {
         updateSteps.push({
           subjectStatus: 'RELEASED',
-          releaseReasonId: recentReleaseReason?.id,
+          releaseReason: recentReleaseReason,
           updatedAt: tRelease,
           updatedById: custodyUser.id
         });
         updateSteps.push({
           subjectStatus: 'EXITED',
-          exitDestinationId: recentExitDest?.id,
-          exitHousingStatusId: recentHousing?.id,
+          exitDestination: recentExitDest,
+          exitHousingStatus: recentHousing,
           exitConnectedToCare: exitFields?.exitConnectedToCare,
           exitSFResident: exitFields?.exitSFResident,
           updatedAt: tExit,

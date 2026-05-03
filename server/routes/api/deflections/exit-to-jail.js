@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
+import { refusalReasonFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
 import { conflictError } from '#lib/httpErrors.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
@@ -92,7 +92,7 @@ export default async function (fastify, opts) {
           }
 
           const now = new Date();
-          const refusalReasonId = refusalReasonIdFromExitDestination('jail');
+          const refusalReason = refusalReasonFromExitDestination('JAIL');
 
           const previousSubjectStatus = deflection.subjectStatus;
           const shouldMarkPropertyReturned = hasAssociatedProperty(deflection);
@@ -111,7 +111,7 @@ export default async function (fastify, opts) {
               deflectionId: id,
               status: Deflection.HoldStatus.COMPLETED,
               subjectStatus: Deflection.SubjectStatus.EXITED,
-              exitDestinationId: 'jail',
+              exitDestination: 'JAIL',
               ...(shouldMarkPropertyReturned
                 ? {
                     propertyReturned: true,
@@ -119,7 +119,7 @@ export default async function (fastify, opts) {
                     propertyNotReturnedOtherReason: null,
                   }
                 : {}),
-              refusalReasonId,
+              refusalReason,
               updatedById: request.user.id,
               updatedAt: now,
             },
@@ -133,14 +133,13 @@ export default async function (fastify, opts) {
               completedAt: now,
               exitedAt: now,
               exitedById: request.user.id,
-              exitDestinationId: 'jail',
+              exitDestination: 'JAIL',
               ...propertyReturnData,
-              refusalReasonId,
+              refusalReason,
               updatedAt: now,
             },
             include: {
               subject: true,
-              exitDestination: true,
               propertyPhotos: true,
             },
           });

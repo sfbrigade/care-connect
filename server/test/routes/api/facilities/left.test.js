@@ -75,7 +75,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     await makeFixturePreTransferDetailsComplete(prisma);
 
     await app.inject()
-      .delete('/api/deflections/5?cancelReasonId=5150')
+      .delete('/api/deflections/5?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
       .headers(userHeaders);
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
@@ -86,7 +86,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
         .post(`/api/facilities/${FACILITY_ID}/left`)
         .headers(userHeaders),
       app.inject()
-        .delete('/api/deflections/4?cancelReasonId=5150')
+        .delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
         .headers(userHeaders),
     ]);
 
@@ -126,7 +126,7 @@ test('POST /api/facilities/:facilityId/left', async (t) => {
     await makeFixturePreTransferDetailsComplete(prisma);
 
     await app.inject()
-      .delete('/api/deflections/5?cancelReasonId=5150')
+      .delete('/api/deflections/5?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
       .headers(userHeaders);
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)

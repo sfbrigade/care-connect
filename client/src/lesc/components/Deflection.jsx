@@ -103,9 +103,9 @@ function Deflection () {
     },
   });
 
-  async function onCancelHoldConfirmed (cancelReasonId) {
+  async function onCancelHoldConfirmed (cancelReason) {
     await cancelDeflectionMutation.mutateAsync({
-      cancelReasonId,
+      cancelReason,
     });
   }
 

@@ -24,29 +24,29 @@ describe('Care flow unit tests', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestinationId: 'jail',
+        exitDestination: 'jail',
       })
     ).toBe(false);
 
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestinationId: 'hospital',
+        exitDestination: 'hospital',
       })
     ).toBe(false);
   });
 
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: 'temporary',
+      exitDestination: 'hospital',
+      exitHousingStatus: 'temporary',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
 
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: null,
+      exitDestination: 'hospital',
+      exitHousingStatus: null,
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(false);
@@ -55,8 +55,8 @@ describe('Care flow unit tests', () => {
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
-      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 2, subjectStatus: 'EXITED', exitDestination: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 3, subjectStatus: 'EXITED', exitDestination: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
@@ -168,17 +168,17 @@ describe('Care flow unit tests', () => {
     expect(hasSavedExitDraft(44)).toBe(false);
 
     setSavedExitDraft(44, {
-      exitDestinationId: 'home',
+      exitDestination: 'home',
       exitSFResident: 'YES',
-      exitHousingStatusId: 'temporary',
+      exitHousingStatus: 'temporary',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
     });
     expect(hasSavedExitDraft(44)).toBe(true);
     expect(getSavedExitDraft(44)).toMatchObject({
-      exitDestinationId: 'home',
+      exitDestination: 'home',
       exitSFResident: 'YES',
-      exitHousingStatusId: 'temporary',
+      exitHousingStatus: 'temporary',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
       exitFormEdited: true,

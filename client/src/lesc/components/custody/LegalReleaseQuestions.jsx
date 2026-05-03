@@ -25,17 +25,17 @@ function LegalReleaseQuestions () {
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReasonId, setReleaseReasonId] = useState(prefilledState.releaseReasonId);
+  const [releaseReason, setReleaseReasonId] = useState(prefilledState.releaseReason);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [hasReviewedNarrative, setHasReviewedNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
+  const [exitDestination, setExitDestinationId] = useState(prefilledState.exitDestination);
 
-  const isMedicalRelease = releaseReasonId === 'medical_issue';
-  const isBehavioralHealthRelease = releaseReasonId === 'behavioral_health_evaluation';
-  const isOtherRelease = releaseReasonId === 'other';
+  const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+  const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
+  const isOtherRelease = releaseReason === 'OTHER';
   const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
@@ -74,13 +74,13 @@ function LegalReleaseQuestions () {
   const releaseMutation = useMutation({
     mutationFn: () => {
       const payload = {
-        releaseReasonId,
+        releaseReason,
       };
       if (isMedicalRelease) {
-        payload.exitDestinationId = exitDestinationId;
+        payload.exitDestination = exitDestination;
       }
       if (isBehavioralHealthRelease) {
-        payload.exitDestinationId = exitDestinationId;
+        payload.exitDestination = exitDestination;
       }
       if (isOtherRelease) {
         payload.otherReleaseReason = otherReason.trim();
@@ -213,12 +213,12 @@ function LegalReleaseQuestions () {
                 <Title order={3}>Choose a release reason.</Title>
                 <Input.Wrapper label='Release reason' required>
                   <Box mt='md'>
-                    <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
+                    <Chip.Group value={releaseReason} onChange={setReleaseReasonId}>
                       <Stack gap='sm' align='flex-start'>
-                        <Chip data-testid='release-reason-sobered' value='sobered'>Can care for themselves</Chip>
-                        <Chip value='medical_issue'>Medical issue (physical)</Chip>
-                        <Chip value='behavioral_health_evaluation'>Behavioral health evaluation</Chip>
-                        <Chip value='other'>Other (please specify)</Chip>
+                        <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
+                        <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
+                        <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
+                        <Chip value='OTHER'>Other (please specify)</Chip>
                       </Stack>
                     </Chip.Group>
                   </Box>
@@ -230,10 +230,10 @@ function LegalReleaseQuestions () {
                     </Text>
                     {(isMedicalRelease || isBehavioralHealthRelease) && (
                       <Input.Wrapper label='Exit destination' required>
-                        <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
+                        <Chip.Group value={exitDestination} onChange={setExitDestinationId}>
                           <Group gap='sm'>
-                            <Chip value='hospital'>Hospital</Chip>
-                            <Chip value='other'>Other</Chip>
+                            <Chip value='HOSPITAL'>Hospital</Chip>
+                            <Chip value='OTHER'>Other</Chip>
                           </Group>
                         </Chip.Group>
                       </Input.Wrapper>
@@ -287,13 +287,13 @@ function LegalReleaseQuestions () {
                   }}
                   loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
                   disabled={
-                    !releaseReasonId ||
-                    ((releaseReasonId === 'medical_issue' || releaseReasonId === 'behavioral_health_evaluation') && !exitDestinationId) ||
-                    (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                    (releaseReasonId !== 'sobered' &&
-                      releaseReasonId !== 'medical_issue' &&
-                      releaseReasonId !== 'behavioral_health_evaluation' &&
-                      releaseReasonId !== 'other')
+                    !releaseReason ||
+                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') && !exitDestination) ||
+                    (releaseReason === 'OTHER' && (!otherReason.trim() || !otherDestination.trim())) ||
+                    (releaseReason !== 'SOBERED' &&
+                      releaseReason !== 'MEDICAL_ISSUE' &&
+                      releaseReason !== 'BEHAVIORAL_HEALTH_EVALUATION' &&
+                      releaseReason !== 'OTHER')
                   }
                 >
                   {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}

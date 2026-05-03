@@ -184,7 +184,7 @@ describe('Custody', () => {
         return Promise.resolve({
           data: [
             { id: 6, subjectStatus: 'RELEASED' },
-            { id: 7, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+            { id: 7, subjectStatus: 'EXITED', exitDestination: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
           ],
         });
       }
