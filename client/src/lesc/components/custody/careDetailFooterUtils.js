@@ -19,7 +19,7 @@ export function getCareDetailFooterState ({ viewerMode, deflection }) {
   if (deflection?.subjectStatus === 'ADMITTED') {
     return {
       showFooter: true,
-      primaryLabel: 'Update intake status',
+      primaryLabel: 'Update status',
       primaryAction: 'complete-intake',
       startExitPath,
     };

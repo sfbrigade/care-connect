@@ -95,11 +95,11 @@ afterEach(() => {
 });
 
 describe('CustodyCard', () => {
-  it('shows View details and Record result for awaiting intake', () => {
+  it('shows Details and Safety check for awaiting intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Record result' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Safety check' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
@@ -108,27 +108,27 @@ describe('CustodyCard', () => {
     renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
 
     expect(screen.getByText('Intake not completed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Safety check' })).not.toBeInTheDocument();
   });
 
-  it('shows qr code and only View details for ready for intake', () => {
+  it('shows qr code and only Details for ready for intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'READY_FOR_INTAKE' }));
 
     expect(screen.getByText('Transfer code: 123')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Safety check' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
   });
 
   it.each(['ADMITTED', 'IN_CHAIR', 'RELEASED'])(
-    'shows only View details for %s',
+    'shows only Details for %s',
     (status) => {
       renderCard(buildDeflection({ subjectStatus: status }));
 
-      expect(screen.getByRole('button', { name: 'View details' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Record result' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Safety check' })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     }
   );
@@ -139,10 +139,10 @@ describe('CustodyCard', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('navigates to details when View details is clicked', () => {
+  it('navigates to details when Details is clicked', () => {
     renderCard(buildDeflection({ subjectStatus: 'ADMITTED' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'View details' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123');
     expect(window.sessionStorage.getItem('custodyScrollTarget')).toBe('123');
@@ -159,8 +159,8 @@ describe('CustodyCard', () => {
   it('calls safety check mutation when Passed safety check is clicked', async () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Safety check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed' }));
 
     await waitFor(() => {
       expect(mockSafetyCheck).toHaveBeenCalledWith(123);
@@ -175,9 +175,9 @@ describe('CustodyCard', () => {
   it('opens the exit to jail flow when Failed safety check is clicked', async () => {
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Failed safety check' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Yes, exit to jail' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Safety check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Failed' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => {
       expect(mockExitToJail).toHaveBeenCalledWith(123);
@@ -191,8 +191,8 @@ describe('CustodyCard', () => {
     mockSafetyCheck.mockRejectedValueOnce(new Error('Network Error'));
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Safety check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed' }));
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
@@ -206,8 +206,8 @@ describe('CustodyCard', () => {
     mockSafetyCheck.mockRejectedValueOnce({ response: { status: 500 } });
     renderCard(buildDeflection({ subjectStatus: 'AWAITING_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Record result' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Passed safety check' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Safety check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Passed' }));
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith('Safety check not saved. Please try again.', 'error');

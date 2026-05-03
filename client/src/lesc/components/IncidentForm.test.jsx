@@ -174,4 +174,16 @@ describe('IncidentForm', () => {
       expect(getCadInput()).toHaveValue('NEW999');
     });
   });
+
+  it('shows simplified dispatch helper copy for CAD and case numbers', async () => {
+    mockIncidentsGet.mockResolvedValue({ data: buildIncident() });
+
+    renderForm(makeQueryClient());
+
+    await waitFor(() => {
+      expect(getCadInput()).toHaveValue('OLD123');
+    });
+
+    expect(screen.getAllByText('Obtain from dispatch.')).toHaveLength(2);
+  });
 });

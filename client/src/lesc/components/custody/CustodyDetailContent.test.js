@@ -276,13 +276,14 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
-  it('renders Record result as the safety check footer action', () => {
+  it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
     expect(html).toContain('Record result');
-    expect(html).toContain('Record safety check result');
-    expect(html).toContain('Passed safety check');
-    expect(html).toContain('Failed safety check');
+    expect(html).toContain('Record safety check');
+    expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
+    expect(html).toContain('Passed');
+    expect(html).toContain('Failed');
   });
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(

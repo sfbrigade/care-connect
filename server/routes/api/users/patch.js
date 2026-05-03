@@ -94,7 +94,7 @@ export default async function (fastify, opts) {
       if (id === User.BATCH_USER_ID) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      const { email, password, picture } = request.body;
+      const { email, picture } = request.body;
       if (email && await fastify.prisma.user.findFirst({
         where: { id: { not: id }, email },
       })) {
@@ -110,7 +110,9 @@ export default async function (fastify, opts) {
       if (error.validation.length) {
         throw error;
       }
+      // Convert empty strings to null for nullable fields
       const updateData = _.omit(request.body, ['password', 'picture', 'unitName']);
+      if (updateData.organizationId === '') updateData.organizationId = null;
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
@@ -163,9 +165,6 @@ export default async function (fastify, opts) {
           }
         }
 
-        if (password) {
-          await user.setPassword(password);
-        }
         const pictureHandler = user.setAsset('picture', picture);
 
         if (request.body.unitName && data.organizationId) {

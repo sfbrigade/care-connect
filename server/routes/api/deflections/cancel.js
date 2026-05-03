@@ -154,6 +154,11 @@ export default async function (fastify, opts) {
           userId: request.user.id,
           formIds: ['647f'],
           emailTemplate: 'transfer-form',
+          recipientEmail: [
+            'SFPD.Data.Transfer.Authorized@sfgov.org',
+            'Andrew.bley@sfgov.org',
+            'Sfso-incidentreports@sfgov.org',
+          ],
         });
       }
 

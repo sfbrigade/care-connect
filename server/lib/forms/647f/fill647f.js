@@ -40,6 +40,8 @@ const TEXT = {
   arrestingOfficerAgency:        'Arresting_Officer_Agency',
   supervisorBadgeNumber:         'Supervisor_Star_Number',
   custodyReleaseOfficerDisplay:  'Custody_Transfer_Officer',
+  officerDetails:                'officerDetails',
+  certifiedAt:                   'certifiedAt',
 
   // Additional
   deflectionId:                  'Hold_ID',
