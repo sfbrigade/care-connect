@@ -242,6 +242,52 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(data.deactivatedAt, new Date('2025-01-01T16:53:41.000Z'));
     });
 
+    await t.test('allows admin to add ORG_ADMIN to a user', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        roles: ['FIELD', 'ORG_ADMIN'],
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual([...data.roles].sort(), ['FIELD', 'ORG_ADMIN']);
+
+      const dbData = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
+      assert.deepStrictEqual([...dbData.roles].sort(), ['FIELD', 'ORG_ADMIN']);
+    });
+
+    await t.test('allows admin to add FACILITY_ADMIN preserving other roles', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        roles: ['FIELD', 'FACILITY_ADMIN'],
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual([...data.roles].sort(), ['FACILITY_ADMIN', 'FIELD']);
+    });
+
+    await t.test('allows admin to remove ORG_ADMIN preserving other roles', async (t) => {
+      // orgadmin@test.com starts with [CUSTODY, ORG_ADMIN]
+      const response = await app.inject().patch('/api/users/b1a2c3d4-e5f6-7890-abcd-ef1234567890').payload({
+        roles: ['CUSTODY'],
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.roles, ['CUSTODY']);
+    });
+
+    await t.test('disallows non-admin user from changing their own roles', async (t) => {
+      const response = await app.inject().patch('/api/users/dab5dff3-360d-4dbb-98dd-1990dfb5c4c5').payload({
+        roles: ['FIELD', 'FACILITY_ADMIN'],
+      }).headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('disallows org admin from changing roles of a teammate', async (t) => {
+      const orgAdminHeaders = await authenticate(app, 'orgadmin@test.com', 'test');
+      const response = await app.inject().patch('/api/users/49acdf99-536f-49ac-8138-1c77e5087697').payload({
+        roles: ['CUSTODY', 'ORG_ADMIN'],
+      }).headers(orgAdminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
     await t.test('updates badgeNumber and title', async (t) => {
       const response = await app.inject().patch('/api/users/49acdf99-536f-49ac-8138-1c77e5087697').payload({
         badgeNumber: 'BADGE-12345',
