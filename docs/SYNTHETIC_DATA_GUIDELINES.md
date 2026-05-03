@@ -322,10 +322,10 @@ No additional required fields (transitions `READY_FOR_INTAKE → IN_MEDICAL_INTA
 ### Release (`/release`)
 Role required: `CUSTODY`
 Required:
-- `releaseReasonId` (FK to `DeflectionReleaseReason`)
+- `releaseReason`
 
 Conditional:
-- If reason = `MEDICAL_ISSUE`: `exitDestinationId` required
+- If reason = `MEDICAL_ISSUE`: `exitDestination` required
 - If reason = `OTHER`: `otherReleaseReason` + `otherReleaseDestination` required
 
 Effects:
@@ -335,8 +335,8 @@ Effects:
 
 ### Exit (`/exit`)
 Required (from `IN_CHAIR` or `RELEASED`):
-- `exitDestinationId` (FK to `DeflectionExitDestination`)
-- `exitHousingStatusId` (FK to `DeflectionExitHousingStatus`)
+- `exitDestination`
+- `exitHousingStatus`
 - `exitConnectedToCare`: `YES`, `NO`, or `UNKNOWN`
 - `exitSFResident`: `YES`, `NO`, `UNKNOWN`, or `DECLINED_CONSENT`
 
@@ -349,10 +349,10 @@ No request body is currently required.
 
 Effects:
 - Sets `subjectStatus = EXITED`
-- Sets `exitDestinationId = JAIL`
-- Derives `refusalReasonId = MEDICAL_ISSUE` internally via destination mapping
+- Sets `exitDestination = JAIL`
+- Derives `refusalReason = MEDICAL_ISSUE` internally via destination mapping
 
-Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReasonId = MEDICAL_ISSUE` and `exitDestinationId = HOSPITAL`.
+Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReason = MEDICAL_ISSUE` and `exitDestination = HOSPITAL`.
 
 ### Record Death (`/record-death`)
 - No additional fields beyond identifying the deflection
@@ -447,7 +447,7 @@ Subjects can be created standalone or inline during deflection creation.
 #### Scenario D: Direct Hospital Exit
 ```
 1–5. Same as Scenario A steps 1–5 (up to READY_FOR_INTAKE)
-6. POST deflection /release with releaseReasonId="MEDICAL_ISSUE" and exitDestinationId="HOSPITAL"
+6. POST deflection /release with releaseReason="MEDICAL_ISSUE" and exitDestination="HOSPITAL"
    → subjectStatus: EXITED, holds-1, available+1
    → hold status typically remains ACTIVE in the current codebase
 ```

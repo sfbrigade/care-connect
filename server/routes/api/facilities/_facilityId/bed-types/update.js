@@ -136,13 +136,13 @@ export default async function (fastify, opts) {
           }
 
           // Require reason when marking chairs unavailable
-          const resolvedReasonId = data.unavailableReason ?? bedType.unavailableReason;
-          if (nextData.unavailableUnoccupied > 0 && !resolvedReasonId) {
+          const resolvedReason = data.unavailableReason ?? bedType.unavailableReason;
+          if (nextData.unavailableUnoccupied > 0 && !resolvedReason) {
             throw validationError('unavailableReason', 'Reason is required when chairs are unavailable');
           }
 
           // Clear unavailable reason fields when no chairs are unavailable
-          const unavailableReason = nextData.unavailableUnoccupied > 0 ? resolvedReasonId : null;
+          const unavailableReason = nextData.unavailableUnoccupied > 0 ? resolvedReason : null;
           const unavailableOther = nextData.unavailableUnoccupied > 0 ? (data.unavailableOther ?? bedType.unavailableOther) : null;
 
           // Create the update history record

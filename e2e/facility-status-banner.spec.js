@@ -9,8 +9,8 @@ async function loginAsAdmin (page) {
 }
 
 const STATUS_REASONS = {
-  'Not accepting new holds': { status: 'OPEN_NOT_ACCEPTING', statusReasonId: 'SAFETY_LOCKDOWN' },
-  Closed: { status: 'CLOSED', statusReasonId: 'SAFETY_LOCKDOWN' },
+  'Not accepting new holds': { status: 'OPEN_NOT_ACCEPTING', statusReason: 'SAFETY_LOCKDOWN' },
+  Closed: { status: 'CLOSED', statusReason: 'SAFETY_LOCKDOWN' },
   Open: { status: 'OPEN_ACCEPTING' },
 };
 
