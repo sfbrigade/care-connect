@@ -693,7 +693,7 @@ export default async function main (prisma) {
           subjectStatus: 'DEATH_IN_CUSTODY',
           medicalIntakeStartedAt: tAdmit,
           medicalIntakeStartedById: careUser.id,
-          releaseReason: releaseReasonDeathCustody ?? 'death_in_custody',
+          releaseReason: releaseReasonDeathCustody ?? 'DEATH_IN_CUSTODY',
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -726,7 +726,7 @@ export default async function main (prisma) {
           medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
-          releaseReason: releaseReasonDeathFacility ?? 'death_in_facility',
+          releaseReason: releaseReasonDeathFacility ?? 'DEATH_IN_FACILITY',
         },
       });
       await createDeflectionUpdates(prisma, deflection.id, [
@@ -757,7 +757,7 @@ export default async function main (prisma) {
       const recentHousing = recentHousingPool[recentIdx % recentHousingPool.length];
 
       // Cycle through refusal reasons for some (aggressive_behavior, medical_issue, none)
-      const isJailExit = recentExitDest === 'jail';
+      const isJailExit = recentExitDest === 'JAIL';
       const refusalReason = isJailExit
         ? (recentIdx % 2 === 0 ? refusalReasonAggressive : refusalReasonMedical)
         : null;
@@ -789,7 +789,7 @@ export default async function main (prisma) {
         ...(isJailExit
           ? {
               refusalReason: refusalReason ?? null,
-              exitDestination: recentExitDest ?? 'jail',
+              exitDestination: recentExitDest ?? 'JAIL',
             }
           : {
               medicalIntakeStartedAt: tAdmit,

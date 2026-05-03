@@ -24,28 +24,28 @@ describe('Care flow unit tests', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestination: 'jail',
+        exitDestination: 'JAIL',
       })
     ).toBe(false);
 
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestination: 'hospital',
+        exitDestination: 'HOSPITAL',
       })
     ).toBe(false);
   });
 
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
-      exitDestination: 'hospital',
-      exitHousingStatus: 'temporary',
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
 
     expect(hasPersistedExitDetails({
-      exitDestination: 'hospital',
+      exitDestination: 'HOSPITAL',
       exitHousingStatus: null,
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
@@ -168,17 +168,17 @@ describe('Care flow unit tests', () => {
     expect(hasSavedExitDraft(44)).toBe(false);
 
     setSavedExitDraft(44, {
-      exitDestination: 'home',
+      exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatus: 'temporary',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
     });
     expect(hasSavedExitDraft(44)).toBe(true);
     expect(getSavedExitDraft(44)).toMatchObject({
-      exitDestination: 'home',
+      exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatus: 'temporary',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
       exitFormEdited: true,
