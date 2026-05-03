@@ -25,13 +25,16 @@ const queues = [
     handler: async ([job], { send }) => {
       const skippedFormIds = await generateForms(job.data) || [];
       if (job.data.emailTemplate) {
-        const emailFormIds = job.data.formIds.filter((id) => !skippedFormIds.includes(id));
+        const emailFormIds = job.data.emailTemplate === 'release-forms'
+          ? job.data.formIds
+          : job.data.formIds.filter((id) => !skippedFormIds.includes(id));
         if (emailFormIds.length > 0) {
           await send(QUEUE_FORMS_EMAIL, {
             deflectionId: job.data.deflectionId,
             formIds: emailFormIds,
             template: job.data.emailTemplate,
             recipientEmail: job.data.recipientEmail,
+            userId: job.data.userId,
           });
         }
       }
