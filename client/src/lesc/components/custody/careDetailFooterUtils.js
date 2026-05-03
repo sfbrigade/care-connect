@@ -16,7 +16,7 @@ export function getCareDetailFooterState ({ viewerMode, deflection }) {
 
   const startExitPath = deflection?.id ? `/care/${deflection.id}/exit?from=detail` : null;
 
-  if (deflection?.subjectStatus === 'ADMITTED') {
+  if (deflection?.subjectStatus === 'IN_MEDICAL_INTAKE') {
     return {
       showFooter: true,
       primaryLabel: 'Update status',

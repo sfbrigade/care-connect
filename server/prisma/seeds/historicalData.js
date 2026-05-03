@@ -390,8 +390,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonSobered.id,
@@ -402,7 +402,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
@@ -433,8 +433,8 @@ export default async function main (prisma) {
           currentOfficerId: fieldUser2.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonSobered.id,
@@ -445,7 +445,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser2.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
@@ -549,8 +549,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           rejectedAt: tIntake,
           rejectedById: careUser.id,
           releasedAt: tRelease,
@@ -563,7 +563,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'FAILED_INTAKE', updatedAt: tIntake, updatedById: careUser.id },
         { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
@@ -588,8 +588,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'EXITED',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonMedical?.id ?? releaseReasonSobered.id,
@@ -602,7 +602,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         {
           subjectStatus: 'EXITED',
@@ -703,8 +703,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'DEATH_IN_CUSTODY',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           releaseReasonId: releaseReasonDeathCustody?.id ?? 'death_in_custody',
         },
       });
@@ -712,7 +712,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         {
           subjectStatus: 'DEATH_IN_CUSTODY',
@@ -734,8 +734,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTransfer),
           subjectStatus: 'DEATH_IN_FACILITY',
-          admittedAt: tAdmit,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdmit,
+          medicalIntakeStartedById: careUser.id,
           releasedAt: tRelease,
           releasedById: custodyUser.id,
           releaseReasonId: releaseReasonDeathFacility?.id ?? 'death_in_facility',
@@ -745,7 +745,7 @@ export default async function main (prisma) {
         { subjectStatus: 'ONSITE_AWAITING_TRANSFER', updatedAt: tArrived, updatedById: fieldUser.id },
         { subjectStatus: 'AWAITING_INTAKE', updatedAt: tTransfer, updatedById: custodyUser.id },
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
-        { subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id },
+        { subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id },
         { subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id },
         { subjectStatus: 'RELEASED', releaseReasonId: releaseReasonSobered.id, updatedAt: tRelease, updatedById: custodyUser.id },
         {
@@ -804,8 +804,8 @@ export default async function main (prisma) {
               exitDestinationId: recentExitDest?.id ?? 'jail',
             }
           : {
-              admittedAt: tAdmit,
-              admittedById: careUser.id,
+              medicalIntakeStartedAt: tAdmit,
+              medicalIntakeStartedById: careUser.id,
               releasedAt: tRelease,
               releasedById: custodyUser.id,
               releaseReasonId: recentReleaseReason?.id,
@@ -821,7 +821,7 @@ export default async function main (prisma) {
         { subjectStatus: 'READY_FOR_INTAKE', updatedAt: tSafetyCheck, updatedById: custodyUser.id },
       ];
       if (!isJailExit) {
-        updateSteps.push({ subjectStatus: 'ADMITTED', updatedAt: tAdmit, updatedById: careUser.id });
+        updateSteps.push({ subjectStatus: 'IN_MEDICAL_INTAKE', updatedAt: tAdmit, updatedById: careUser.id });
         updateSteps.push({ subjectStatus: 'IN_CHAIR', updatedAt: tIntake, updatedById: careUser.id });
       }
       if (isJailExit) {
@@ -930,8 +930,8 @@ export default async function main (prisma) {
           subjectId: subject.id,
           ...transferData(custodyUser, sfsoUnit, tTrans),
           subjectStatus: 'IN_CHAIR',
-          admittedAt: tAdm,
-          admittedById: careUser.id,
+          medicalIntakeStartedAt: tAdm,
+          medicalIntakeStartedById: careUser.id,
         },
       });
       occupiedAdded++;

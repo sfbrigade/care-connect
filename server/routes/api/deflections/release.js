@@ -11,7 +11,7 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
@@ -23,7 +23,7 @@ const PRE_CHAIR_HOLD_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
 ];
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -33,7 +33,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   ].includes(previousSubjectStatus);
 
   const isOccupiedRelease = [

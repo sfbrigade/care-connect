@@ -288,10 +288,10 @@ describe('CustodyDetailContent', () => {
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(
       {
-        subjectStatus: 'ADMITTED',
-        admittedAt: '2026-04-29T11:24:00.000',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
+        medicalIntakeStartedAt: '2026-04-29T11:24:00.000',
         drugUseEvidence: true,
-        drugType: 'ALCOHOL',
+        drugType: 'ALCOHOL'
       },
       { viewerMode: 'care' }
     );
@@ -317,7 +317,7 @@ describe('CustodyDetailContent', () => {
   it('hides behavioral observations in care personal details', () => {
     const html = render(
       {
-        subjectStatus: 'ADMITTED',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
         drugUseEvidence: true,
         drugType: 'ALCOHOL',
         behavior: 'Person was stumbling into traffic.',
@@ -333,7 +333,7 @@ describe('CustodyDetailContent', () => {
 
   it('shows no drug use status without a drug type in care personal details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
+      { subjectStatus: 'IN_MEDICAL_INTAKE', drugUseEvidence: false, drugType: null },
       { viewerMode: 'care' }
     );
 
@@ -346,7 +346,7 @@ describe('CustodyDetailContent', () => {
   it('does not show care behavioral observations without substance-related details', () => {
     const html = render(
       {
-        subjectStatus: 'ADMITTED',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
         drugUseEvidence: null,
         behavior: 'Person was stumbling into traffic.',
       },

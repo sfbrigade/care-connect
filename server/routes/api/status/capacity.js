@@ -4,7 +4,7 @@ import { z } from 'zod';
 const CACHE_TTL_MS = 30_000;
 
 const OccupantSchema = z.object({
-  admittedAt: z.string().datetime().nullable(),
+  medicalIntakeStartedAt: z.string().datetime().nullable(),
   releasedAt: z.string().datetime().nullable(),
   exitedAt: z.string().datetime().nullable(),
 });
@@ -62,7 +62,7 @@ async function computeCapacity (fastify, request) {
     },
   });
 
-  // Occupants list: anyone whose care-staff intake (admittedAt) started
+  // Occupants list: anyone whose care-staff intake (medicalIntakeStartedAt) started
   // within the lookback window, regardless of subsequent status. Some will
   // still be IN_CHAIR (releasedAt + exitedAt null), some released but still
   // onsite (releasedAt set, exitedAt null), some already departed (both set).
@@ -70,14 +70,14 @@ async function computeCapacity (fastify, request) {
   const occupants = await fastify.prisma.deflection.findMany({
     where: {
       facilityId: facility.id,
-      admittedAt: { gte: cutoff },
+      medicalIntakeStartedAt: { gte: cutoff },
     },
     select: {
-      admittedAt: true,
+      medicalIntakeStartedAt: true,
       releasedAt: true,
       exitedAt: true,
     },
-    orderBy: { admittedAt: 'asc' },
+    orderBy: { medicalIntakeStartedAt: 'asc' },
   });
 
   return {
@@ -90,7 +90,7 @@ async function computeCapacity (fastify, request) {
       inTransit: totals.inTransit,
     },
     occupants: occupants.map(d => ({
-      admittedAt: d.admittedAt ? d.admittedAt.toISOString() : null,
+      medicalIntakeStartedAt: d.medicalIntakeStartedAt ? d.medicalIntakeStartedAt.toISOString() : null,
       releasedAt: d.releasedAt ? d.releasedAt.toISOString() : null,
       exitedAt: d.exitedAt ? d.exitedAt.toISOString() : null,
     })),

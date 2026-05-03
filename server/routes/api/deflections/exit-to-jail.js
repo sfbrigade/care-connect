@@ -11,7 +11,7 @@ import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
   Deflection.SubjectStatus.RELEASED,
@@ -30,7 +30,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
   ].includes(previousSubjectStatus);
 
@@ -56,7 +56,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, or IN_CHAIR without legal release.',
+        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, FAILED_INTAKE, or IN_CHAIR without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),

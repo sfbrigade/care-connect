@@ -158,7 +158,7 @@ ONSITE_AWAITING_TRANSFER ONSITE_AWAITING_TRANSFER
 AWAITING_INTAKE AWAITING_INTAKE
 READY_FOR_INTAKE READY_FOR_INTAKE
 FAILED_INTAKE FAILED_INTAKE
-ADMITTED ADMITTED
+IN_MEDICAL_INTAKE IN_MEDICAL_INTAKE
 IN_CHAIR IN_CHAIR
 RELEASED RELEASED
 EXITED EXITED
@@ -475,8 +475,8 @@ DEPARTURE DEPARTURE
     String transferredByOrganizationId "❓"
     String transferredByUnitId "❓"
     String transferredByTitleId "❓"
-    DateTime admittedAt "❓"
-    String admittedById "❓"
+    DateTime medicalIntakeStartedAt "❓"
+    String medicalIntakeStartedById "❓"
     DateTime rejectedAt "❓"
     String rejectedById "❓"
     DateTime releasedAt "❓"
@@ -790,7 +790,7 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|o "Organization" : "transferredByOrganization"
     "Deflection" o|--|o "Unit" : "transferredByUnit"
     "Deflection" o|--|o "Title" : "transferredByTitle"
-    "Deflection" o|--|o "User" : "admittedBy"
+    "Deflection" o|--|o "User" : "medicalIntakeStartedBy"
     "Deflection" o|--|o "User" : "rejectedBy"
     "Deflection" o|--|o "User" : "releasedBy"
     "Deflection" o|--|o "DeflectionReleaseReason" : "releaseReason"
