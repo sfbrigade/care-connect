@@ -221,8 +221,8 @@ Direct Exit Paths (bypass release):
     └─ [/exit-to-jail] ────────────────────────────────────→ EXITED without release
 
 Release Short-Circuit (auto-exit on certain release reasons):
-  [/release] with reason = "medical_issue" or "other" ────→ RELEASED and EXITED immediately
-  [/release] with reason = "sobered" ─────────────────────→ RELEASED (then needs /exit)
+  [/release] with reason = "MEDICAL_ISSUE" or "OTHER" ────→ RELEASED and EXITED immediately
+  [/release] with reason = "SOBERED" ─────────────────────→ RELEASED (then needs /exit)
 
 Death Paths (from any in-custody or released state):
   AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, FAILED_INTAKE, IN_CHAIR
@@ -322,21 +322,21 @@ No additional required fields (transitions `READY_FOR_INTAKE → IN_MEDICAL_INTA
 ### Release (`/release`)
 Role required: `CUSTODY`
 Required:
-- `releaseReasonId` (FK to `DeflectionReleaseReason`)
+- `releaseReason`
 
 Conditional:
-- If reason = `medical_issue`: `exitDestinationId` required
-- If reason = `other`: `otherReleaseReason` + `otherReleaseDestination` required
+- If reason = `MEDICAL_ISSUE`: `exitDestination` required
+- If reason = `OTHER`: `otherReleaseReason` + `otherReleaseDestination` required
 
 Effects:
-- `sobered` → `RELEASED`
-- `medical_issue` → immediately records `RELEASED` and `EXITED`
-- `other` → immediately records `RELEASED` and `EXITED`
+- `SOBERED` → `RELEASED`
+- `MEDICAL_ISSUE` → immediately records `RELEASED` and `EXITED`
+- `OTHER` → immediately records `RELEASED` and `EXITED`
 
 ### Exit (`/exit`)
 Required (from `IN_CHAIR` or `RELEASED`):
-- `exitDestinationId` (FK to `DeflectionExitDestination`)
-- `exitHousingStatusId` (FK to `DeflectionExitHousingStatus`)
+- `exitDestination`
+- `exitHousingStatus`
 - `exitConnectedToCare`: `YES`, `NO`, or `UNKNOWN`
 - `exitSFResident`: `YES`, `NO`, `UNKNOWN`, or `DECLINED_CONSENT`
 
@@ -349,10 +349,10 @@ No request body is currently required.
 
 Effects:
 - Sets `subjectStatus = EXITED`
-- Sets `exitDestinationId = jail`
-- Derives `refusalReasonId = medical_issue` internally via destination mapping
+- Sets `exitDestination = JAIL`
+- Derives `refusalReason = MEDICAL_ISSUE` internally via destination mapping
 
-Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReasonId = medical_issue` and `exitDestinationId = hospital`.
+Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReason = MEDICAL_ISSUE` and `exitDestination = HOSPITAL`.
 
 ### Record Death (`/record-death`)
 - No additional fields beyond identifying the deflection
@@ -420,7 +420,7 @@ Subjects can be created standalone or inline during deflection creation.
    → subjectStatus: IN_MEDICAL_INTAKE
 7. POST deflection /intake-complete with completed=true (15–60 min after admit)
    → subjectStatus: IN_CHAIR, holds-1, occupied+1
-8. POST deflection /release with reason="sobered" (1–6 hours after intake-complete)
+8. POST deflection /release with reason="SOBERED" (1–6 hours after intake-complete)
    → subjectStatus: RELEASED
 9. POST deflection /exit (15–60 min after release)
    → subjectStatus: EXITED, occupied-1, available+1
@@ -447,7 +447,7 @@ Subjects can be created standalone or inline during deflection creation.
 #### Scenario D: Direct Hospital Exit
 ```
 1–5. Same as Scenario A steps 1–5 (up to READY_FOR_INTAKE)
-6. POST deflection /release with releaseReasonId="medical_issue" and exitDestinationId="hospital"
+6. POST deflection /release with releaseReason="MEDICAL_ISSUE" and exitDestination="HOSPITAL"
    → subjectStatus: EXITED, holds-1, available+1
    → hold status typically remains ACTIVE in the current codebase
 ```
@@ -493,7 +493,7 @@ Subjects can be created standalone or inline during deflection creation.
    → subjectStatus: IN_MEDICAL_INTAKE
 9. POST deflection /intake-complete with completed=true
    → subjectStatus: IN_CHAIR, holds-1, occupied+1
-10. POST deflection /release with reason="sobered"
+10. POST deflection /release with reason="SOBERED"
     → subjectStatus: RELEASED
 11. POST deflection /exit
     → subjectStatus: EXITED, occupied-1, available+1

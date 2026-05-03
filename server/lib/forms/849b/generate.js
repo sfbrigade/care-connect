@@ -4,6 +4,7 @@ import prismaPkg from '@prisma/client';
 import { formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
+import i18n from '#lib/i18n.js';
 const { DrugTypeEnum } = prismaPkg;
 
 export function transformData (deflection) {
@@ -58,7 +59,7 @@ export function transformData (deflection) {
     arrivedAtReset: deflection.arrivedAt?.toISOString() || null,
     transferredAt: deflection.transferredAt?.toISOString() || null,
     releasedAt: (deflection.releasedAt || deflection.exitedAt).toISOString(),
-    releaseReason: deflection.releaseReason?.name || '',
+    releaseReason: deflection.releaseReason ? i18n.t(`deflectionReleaseReason.${deflection.releaseReason}`) : '',
     behavior: deflection.behavior || null,
     releaseNarrative: deflection.releaseNarrative || null,
   };

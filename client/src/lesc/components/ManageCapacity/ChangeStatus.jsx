@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Chip, Group, Stack, Text, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
@@ -18,35 +19,40 @@ const STATUS_INFO = {
   CLOSED: 'Closed: All in-transit holds will be cancelled. No new holds can be created.',
 };
 
+const FACILITY_STATUS_REASON_FACILITY_TYPE = {
+  SFSO_STAFFING: 'LESC',
+  CONNECTIONS_STAFFING: 'LESC',
+};
+
 function ChangeStatus ({ facility, onCancel }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
-  const { data: reasons } = useQuery({
-    queryKey: ['facilityStatusReasons', facility.type],
-    queryFn: () => Api.facilities.statusReasons.index(facility.type).then(r => r.data),
-  });
+  const allReasons = Object.entries(t('facilityStatusReason', { returnObjects: true }))
+    .map(([id, description]) => ({ id, description }));
+  const reasons = allReasons.filter(r => !FACILITY_STATUS_REASON_FACILITY_TYPE[r.id] || FACILITY_STATUS_REASON_FACILITY_TYPE[r.id] === facility.type);
 
   const form = useForm({
     mode: 'controlled',
     initialValues: {
       status: facility.status || 'OPEN_ACCEPTING',
-      statusReasonId: facility.statusReasonId || null,
+      statusReason: facility.statusReason || null,
       statusOther: facility.statusOther || '',
     },
   });
 
-  const { status, statusReasonId } = form.getValues();
+  const { status, statusReason } = form.getValues();
   const needsReason = status !== 'OPEN_ACCEPTING';
   const hasChanged = status !== facility.status;
-  const hasReason = !!statusReasonId;
+  const hasReason = !!statusReason;
   const isValid = hasChanged && (!needsReason || hasReason);
 
   // Clear reason fields when switching back to Open
   useEffect(() => {
     if (status === 'OPEN_ACCEPTING') {
-      form.setFieldValue('statusReasonId', null);
+      form.setFieldValue('statusReason', null);
       form.setFieldValue('statusOther', '');
     }
   }, [status]);
@@ -89,7 +95,7 @@ function ChangeStatus ({ facility, onCancel }) {
             <Text fw={700}>Reason<Text span c='red'> *</Text></Text>
             <Chip.Group
               multiple={false}
-              {...form.getInputProps('statusReasonId')}
+              {...form.getInputProps('statusReason')}
             >
               <Stack gap='xs' align='flex-start'>
                 {reasons?.map((reason) => (

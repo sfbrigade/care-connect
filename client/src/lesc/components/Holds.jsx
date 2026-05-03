@@ -332,10 +332,10 @@ function Holds () {
   const [showArrivalConfirmationModal, setShowArrivalConfirmationModal] = useState(false);
 
   const cancelDeflectionMutation = useMutation({
-    mutationFn: async ({ cancelReasonId }) => {
+    mutationFn: async ({ cancelReason }) => {
       // Loop so a single reason can be applied across one-or-many holds.
       for (const deflection of selectedDeflections) {
-        await Api.deflections.cancel(deflection.id, { cancelReasonId });
+        await Api.deflections.cancel(deflection.id, { cancelReason });
       }
     },
     onSuccess: () => {
@@ -374,9 +374,9 @@ function Holds () {
     return () => window.clearTimeout(timerId);
   }, [holdsHighlighted]);
 
-  async function onCancelHoldConfirmed (cancelReasonId) {
+  async function onCancelHoldConfirmed (cancelReason) {
     await cancelDeflectionMutation.mutateAsync({
-      cancelReasonId,
+      cancelReason,
     });
   }
 

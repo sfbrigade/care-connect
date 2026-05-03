@@ -6,49 +6,49 @@ describe('getPrefilledLegalReleaseState', () => {
   it('prefills medical issue release to hospital from search params', () => {
     const params = new URLSearchParams({
       from: 'detail',
-      releaseReasonId: 'medical_issue',
-      exitDestinationId: 'hospital',
+      releaseReason: 'MEDICAL_ISSUE',
+      exitDestination: 'HOSPITAL',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
-      releaseReasonId: 'medical_issue',
-      exitDestinationId: 'hospital',
+      releaseReason: 'MEDICAL_ISSUE',
+      exitDestination: 'HOSPITAL',
     });
   });
 
   it('ignores exit destination presets for non-medical releases', () => {
     const params = new URLSearchParams({
-      releaseReasonId: 'sobered',
-      exitDestinationId: 'hospital',
+      releaseReason: 'SOBERED',
+      exitDestination: 'HOSPITAL',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
-      releaseReasonId: 'sobered',
-      exitDestinationId: null,
+      releaseReason: 'SOBERED',
+      exitDestination: null,
     });
   });
 
   it('accepts behavioral health evaluation as a valid preset with an exit destination', () => {
     const params = new URLSearchParams({
-      releaseReasonId: 'behavioral_health_evaluation',
-      exitDestinationId: 'hospital',
+      releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+      exitDestination: 'HOSPITAL',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
-      releaseReasonId: 'behavioral_health_evaluation',
-      exitDestinationId: 'hospital',
+      releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+      exitDestination: 'HOSPITAL',
     });
   });
 
   it('drops invalid preset values', () => {
     const params = new URLSearchParams({
-      releaseReasonId: 'not-real',
-      exitDestinationId: 'hospital',
+      releaseReason: 'NOT_REAL',
+      exitDestination: 'HOSPITAL',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
-      releaseReasonId: null,
-      exitDestinationId: null,
+      releaseReason: null,
+      exitDestination: null,
     });
   });
 });

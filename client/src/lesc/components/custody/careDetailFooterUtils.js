@@ -2,8 +2,8 @@ import { hasSavedExitDraft } from '../care/careFlowUtils';
 
 function hasPersistedExitDetails (deflection) {
   return Boolean(
-    deflection?.exitDestinationId &&
-    deflection?.exitHousingStatusId &&
+    deflection?.exitDestination &&
+    deflection?.exitHousingStatus &&
     deflection?.exitConnectedToCare &&
     deflection?.exitSFResident
   );

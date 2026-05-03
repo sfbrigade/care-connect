@@ -8,7 +8,7 @@ const baseDeflection = {
   behavior: null,
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
-  cancelReasonId: null,
+  cancelReason: null,
   cancelledAt: null,
   subject: null,
   incident: null,
@@ -69,7 +69,7 @@ test('647f hospital cancellation appends the release narrative', () => {
     behavior: 'Subject was unable to care for themself.',
     narcoticsSubstance: false,
     narcoticsParaphernalia: true,
-    cancelReasonId: 'hospital',
+    cancelReason: 'HOSPITAL',
     cancelledAt: new Date('2025-04-15T17:35:00.000Z'),
     subject: {
       firstName: 'Test',

@@ -27,8 +27,8 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          exitDestinationId: z.string(),
-          exitHousingStatusId: z.string(),
+          exitDestination: z.string(),
+          exitHousingStatus: z.string(),
           exitSFResident: ResidencyEnum,
           exitConnectedToCare: ConnectionToCareEnum,
         }),
@@ -42,8 +42,8 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const {
-        exitDestinationId,
-        exitHousingStatusId,
+        exitDestination,
+        exitHousingStatus,
         exitSFResident,
         exitConnectedToCare,
       } = request.body;
@@ -74,8 +74,8 @@ export default async function (fastify, opts) {
               deflectionId: id,
               status: Deflection.HoldStatus.COMPLETED,
               subjectStatus: Deflection.SubjectStatus.EXITED,
-              exitDestinationId,
-              exitHousingStatusId,
+              exitDestination,
+              exitHousingStatus,
               exitConnectedToCare,
               exitSFResident,
               updatedById: request.user.id,
@@ -91,8 +91,8 @@ export default async function (fastify, opts) {
               completedAt: now,
               exitedAt: now,
               exitedById: request.user.id,
-              exitDestinationId,
-              exitHousingStatusId,
+              exitDestination,
+              exitHousingStatus,
               exitConnectedToCare,
               exitSFResident,
               updatedAt: now,

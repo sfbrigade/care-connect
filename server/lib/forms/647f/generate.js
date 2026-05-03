@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { fill647f } from './fill647f.js';
-import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
+import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON } from '#lib/hospitalCancellation647f.js';
 import i18n from '#lib/i18n.js';
 import {
   FORM_TIMEZONE,
@@ -84,7 +84,7 @@ export function transformData (deflection) {
     custodyReleaseOfficerBadge,
     custodyReleaseOfficerUnit,
     justification: deflection.behavior || '',
-    hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
+    hospitalCancellationReleaseNarrative: deflection.cancelReason === HOSPITAL_CANCEL_REASON
       ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)
       : '',
     substanceFound: deflection.narcoticsSubstance === true,

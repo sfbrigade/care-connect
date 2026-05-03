@@ -81,7 +81,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
   }
 
   useEffect(() => {

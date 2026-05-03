@@ -54,14 +54,14 @@ function groupReleasedByStatus (deflections) {
   function isTransferredToJail (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestinationId === 'jail'
+      deflection?.exitDestination === 'JAIL'
     );
   }
 
   function isTransferredToHospital (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestinationId === 'hospital' &&
+      deflection?.exitDestination === 'HOSPITAL' &&
       !deflection?.releasedAt
     );
   }

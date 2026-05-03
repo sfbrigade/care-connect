@@ -10,7 +10,7 @@ test('849b form generation eligibility', async (t) => {
     const deflection = {
       releasedAt: null,
       exitedAt,
-      exitDestinationId: 'jail',
+      exitDestination: 'JAIL',
       incident: {},
       subject: null,
       releaseReason: null,
@@ -24,7 +24,7 @@ test('849b form generation eligibility', async (t) => {
     const check = form849b.canGenerate({
       releasedAt: null,
       exitedAt: new Date('2026-04-29T12:34:56.000Z'),
-      exitDestinationId: 'street',
+      exitDestination: 'STREET',
     });
 
     assert.deepStrictEqual(check, {
