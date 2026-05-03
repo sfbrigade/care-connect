@@ -59,6 +59,7 @@ vi.mock('@/FacilityContext', () => ({
 vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
   formatDateTime: () => 'formatted-date-time',
+  formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
 }));
 
 vi.mock('@/utils/releaseTiming', () => ({
@@ -275,26 +276,42 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
-  it('renders Record result as the safety check footer action', () => {
+  it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
     expect(html).toContain('Record result');
-    expect(html).toContain('Record safety check result');
-    expect(html).toContain('Passed safety check');
-    expect(html).toContain('Failed safety check');
+    expect(html).toContain('Record safety check');
+    expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
+    expect(html).toContain('Passed');
+    expect(html).toContain('Failed');
   });
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', drugUseEvidence: true, drugType: 'ALCOHOL' },
+      {
+        subjectStatus: 'ADMITTED',
+        admittedAt: '2026-04-29T11:24:00.000',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL',
+      },
       { viewerMode: 'care' }
     );
 
+    expect(html).toContain('Intake started: Apr 29, 11:24 AM');
     expect(html).toContain('Edit');
     expect(html).toContain('Substance-related details');
     expect(html).toContain('Signs of substance use');
     expect(html).toContain('Yes');
     expect(html).toContain('Substance used (suspected)');
     expect(html).toContain('drugType.ALCOHOL');
+  });
+
+  it('does not show intake started timestamp in custody details', () => {
+    const html = render({
+      subjectStatus: 'ADMITTED',
+      admittedAt: '2026-04-29T11:24:00.000',
+    });
+
+    expect(html).not.toContain('Intake started: Apr 29, 11:24 AM');
   });
 
   it('hides behavioral observations in care personal details', () => {

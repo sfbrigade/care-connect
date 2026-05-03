@@ -193,6 +193,12 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/users/${id}`, data).catch(handleError);
     },
+    setPassword (id, password) {
+      return instance.patch(`/api/users/${id}/password`, { password }).catch(handleError);
+    },
+    getMfaCode (id) {
+      return instance.get(`/api/users/${id}/mfa-code`);
+    },
   },
   facilities: {
     index (page = 1, include = '') {
