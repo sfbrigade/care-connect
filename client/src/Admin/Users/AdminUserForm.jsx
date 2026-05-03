@@ -33,6 +33,8 @@ function AdminUserForm () {
       picture: '',
       pictureUrl: '',
       isAdmin: false,
+      isOrgAdmin: false,
+      isFacilityAdmin: false,
       organizationId: '',
       badgeNumber: '',
       titleId: '',
@@ -72,13 +74,29 @@ function AdminUserForm () {
     if (data) {
       form.initialize({
         ...data,
+        isOrgAdmin: data.roles?.includes('ORG_ADMIN') ?? false,
+        isFacilityAdmin: data.roles?.includes('FACILITY_ADMIN') ?? false,
       });
       setOrganizationId(data.organizationId || '');
     }
   }, [data]);
 
   const onSubmitMutation = useMutation({
-    mutationFn: (values) => Api.users.update(userId, values),
+    mutationFn: (values) => {
+      const { isOrgAdmin: nextIsOrgAdmin, isFacilityAdmin: nextIsFacilityAdmin, ...rest } = values;
+      const payload = { ...rest };
+      if (user?.isAdmin) {
+        const preservedRoles = (data?.roles ?? []).filter(
+          r => r !== 'ORG_ADMIN' && r !== 'FACILITY_ADMIN'
+        );
+        payload.roles = [
+          ...preservedRoles,
+          ...(nextIsOrgAdmin ? ['ORG_ADMIN'] : []),
+          ...(nextIsFacilityAdmin ? ['FACILITY_ADMIN'] : []),
+        ];
+      }
+      return Api.users.update(userId, payload);
+    },
     onSuccess: (response) => {
       showToast('The user\'s profile has been updated', 'success');
       queryClient.setQueryData(['users', userId], response.data);
@@ -168,11 +186,26 @@ function AdminUserForm () {
                 />
               )}
               {user?.isAdmin && (
-                <Checkbox
-                  {...form.getInputProps('isAdmin', { type: 'checkbox' })}
-                  key={form.key('isAdmin')}
-                  label='Is an Administrator?'
-                />
+                <Stack gap='sm'>
+                  <Checkbox
+                    {...form.getInputProps('isAdmin', { type: 'checkbox' })}
+                    key={form.key('isAdmin')}
+                    label='Super Admin'
+                    description='Grants full platform-wide access.'
+                  />
+                  <Checkbox
+                    {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                    key={form.key('isOrgAdmin')}
+                    label='Org Admin'
+                    description='Can manage users within their organization.'
+                  />
+                  <Checkbox
+                    {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                    key={form.key('isFacilityAdmin')}
+                    label='Facility Admin'
+                    description='Can manage capacity at the facility.'
+                  />
+                </Stack>
               )}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
