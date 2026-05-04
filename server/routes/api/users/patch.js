@@ -151,6 +151,13 @@ export default async function (fastify, opts) {
         const user = new User(data);
         user.update(updateData);
 
+        // Self-protection: a user cannot change their own roles, even if they
+        // are a platform admin.
+        if (data.id === request.user.id && user.changes.has('roles')) {
+          lockedForbidden = true;
+          return;
+        }
+
         // Privileged-field guard: only platform admins can flip isAdmin or
         // change roles; org admins may flip deactivatedAt/deletedAt for users
         // in their org but never isAdmin or roles.

@@ -20,6 +20,7 @@ function AdminUserForm () {
   const queryClient = useQueryClient();
   const params = useParams();
   const userId = params.userId ?? user?.id;
+  const isEditingSelf = userId === user?.id;
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [organizationId, setOrganizationId] = useState('');
@@ -85,7 +86,7 @@ function AdminUserForm () {
     mutationFn: (values) => {
       const { isOrgAdmin: nextIsOrgAdmin, isFacilityAdmin: nextIsFacilityAdmin, ...rest } = values;
       const payload = { ...rest };
-      if (user?.isAdmin) {
+      if (user?.isAdmin && !isEditingSelf) {
         const preservedRoles = (data?.roles ?? []).filter(
           r => r !== 'ORG_ADMIN' && r !== 'FACILITY_ADMIN'
         );
@@ -193,18 +194,22 @@ function AdminUserForm () {
                     label='Super Admin'
                     description='Grants full platform-wide access.'
                   />
-                  <Checkbox
-                    {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
-                    key={form.key('isOrgAdmin')}
-                    label='Org Admin'
-                    description='Can manage users within their organization.'
-                  />
-                  <Checkbox
-                    {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
-                    key={form.key('isFacilityAdmin')}
-                    label='Facility Admin'
-                    description='Can manage capacity at the facility.'
-                  />
+                  {!isEditingSelf && (
+                    <>
+                      <Checkbox
+                        {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                        key={form.key('isOrgAdmin')}
+                        label='Org Admin'
+                        description='Can manage users within their organization.'
+                      />
+                      <Checkbox
+                        {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                        key={form.key('isFacilityAdmin')}
+                        label='Facility Admin'
+                        description='Can manage capacity at the facility.'
+                      />
+                    </>
+                  )}
                 </Stack>
               )}
               <Group>

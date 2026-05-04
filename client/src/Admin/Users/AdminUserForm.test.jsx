@@ -189,6 +189,37 @@ describe('AdminUserForm', () => {
     expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
   });
 
+  it('hides Org Admin and Facility Admin checkboxes when editing own profile', async () => {
+    authMock.user = {
+      id: 'user-1',
+      firstName: 'Self',
+      lastName: 'Editor',
+      isAdmin: true,
+    };
+    renderForm();
+
+    expect(await screen.findByLabelText('Super Admin')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Org Admin')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
+  });
+
+  it('does not submit roles when editing own profile', async () => {
+    authMock.user = {
+      id: 'user-1',
+      firstName: 'Self',
+      lastName: 'Editor',
+      isAdmin: true,
+    };
+    renderForm();
+
+    await screen.findByLabelText('Super Admin');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+    await waitFor(() => expect(apiMocks.updateUser).toHaveBeenCalled());
+    const [, payload] = apiMocks.updateUser.mock.calls[0];
+    expect(payload).not.toHaveProperty('roles');
+  });
+
   it('submits a roles array preserving non-managed roles when toggling Org Admin', async () => {
     apiMocks.getUser.mockResolvedValue({
       data: {
