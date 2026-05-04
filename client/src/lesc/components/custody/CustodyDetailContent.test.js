@@ -265,7 +265,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('Incident number: CASE-456');
     expect(html).toContain('Cad number: CAD-123');
-    expect(html).toContain('The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
+    expect(html).toContain('The Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
     expect(html).toContain('Behavior details');
   });
 
