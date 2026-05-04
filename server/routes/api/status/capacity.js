@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import Deflection from '#models/deflection.js';
+
 const CACHE_TTL_MS = 30_000;
 
 const OccupantSchema = z.object({
@@ -26,17 +28,23 @@ const CapacityResponseSchema = z.object({
 let cache = null;
 let inflight = null;
 
+export function _resetCacheForTests () {
+  cache = null;
+  inflight = null;
+}
+
 async function computeCapacity (fastify, request) {
   const { facility } = request;
 
-  // Bed totals: capacity, what's unavailable, and the inTransit count come
-  // straight from the denormalized bedType counters. occupied is computed
-  // separately below — see comment on the count query.
+  // Bed totals: capacity and what's unavailable come straight from the
+  // denormalized bedType counters (those track config, not lifecycle, so
+  // they don't drift). occupied and inTransit are computed live from row
+  // state below — the bedType.occupied / bedType.inTransit counters can
+  // drift from reality and are deliberately not used here.
   const totals = facility.bedTypes.reduce((acc, bt) => ({
     total: acc.total + bt.capacity,
     unavailable: acc.unavailable + bt.unavailableUnoccupied + bt.unavailableOccupied,
-    inTransit: acc.inTransit + bt.inTransit,
-  }), { total: 0, unavailable: 0, inTransit: 0 });
+  }), { total: 0, unavailable: 0 });
 
   // "Occupied" = people at the facility who are no longer in transit. We
   // compute this from deflection rows rather than summing bedType.occupied
@@ -46,6 +54,9 @@ async function computeCapacity (fastify, request) {
   // they're physically still in the facility.
   //
   // Boundary:
+  //   - status is ACTIVE: filters out cancelled-after-arrival rows and any
+  //     completed-but-no-exitedAt rows, so stale lifecycle artifacts don't
+  //     inflate the count.
   //   - arrivedAt is set: the officer has checked in at the facility. This
   //     matches the inTransit counter's exit point (facilities/:id/arrived
   //     decrements bedType.inTransit when DETAINED becomes
@@ -58,8 +69,23 @@ async function computeCapacity (fastify, request) {
   const occupied = await fastify.prisma.deflection.count({
     where: {
       facilityId: facility.id,
+      status: Deflection.HoldStatus.ACTIVE,
       arrivedAt: { not: null },
       exitedAt: null,
+    },
+  });
+
+  // "InTransit" = active holds where the officer hasn't yet arrived at the
+  // facility. Computed live from row state rather than summing
+  // bedType.inTransit — see bed-types/list.js for prior art applying the
+  // same workaround. The counter is incremented on create and decremented
+  // on arrived/cancel, but has been observed to drift when test data and
+  // edge-case lifecycle paths leave the counter and row state inconsistent.
+  const inTransit = await fastify.prisma.deflection.count({
+    where: {
+      facilityId: facility.id,
+      status: Deflection.HoldStatus.ACTIVE,
+      subjectStatus: Deflection.SubjectStatus.DETAINED,
     },
   });
 
@@ -88,7 +114,7 @@ async function computeCapacity (fastify, request) {
       total: totals.total,
       operational: totals.total - totals.unavailable,
       occupied,
-      inTransit: totals.inTransit,
+      inTransit,
     },
     occupants: occupants.map(d => ({
       medicalIntakeStartedAt: d.medicalIntakeStartedAt ? d.medicalIntakeStartedAt.toISOString() : null,
