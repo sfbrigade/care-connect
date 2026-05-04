@@ -1,13 +1,23 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Group, Loader, Modal, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Button, Card, Group, Loader, Modal, Stack, Text, Title } from '@mantine/core';
+import { DateTime } from 'luxon';
 import { Link } from 'react-router';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import useNow from '@/hooks/useNow';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { formatTimeRemaining } from '@/utils/format';
+
+function isCurrentlyActiveHold (hold, now) {
+  if (!hold || hold.status !== 'ACTIVE') return false;
+  if (!hold.expiresAt) return true;
+
+  const expiresAt = DateTime.fromISO(hold.expiresAt);
+  return !expiresAt.isValid || expiresAt >= now;
+}
 
 function HoldCard ({ deflection, facilityName, onCancelClick }) {
   const now = useNow(1000, deflection.status === 'ACTIVE' && !!deflection.expiresAt);
@@ -69,25 +79,31 @@ function ManageHolds ({ facility }) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [cancelTarget, setCancelTarget] = useState(null);
+  const now = useNow(1000, true);
 
   const { data: holds, isLoading } = useQuery({
     queryKey: ['deflections', facility.id, 'manage-holds'],
     queryFn: () => Api.deflections.list({
       facilityId: facility.id,
       active: 'true',
-      subjectStatus: 'DETAINED',
+      subjectStatus: 'DETAINED,ONSITE_AWAITING_TRANSFER',
+      perPage: 1000,
     }).then(r => r.data),
-    refetchOnMount: 'always',
+    ...facilityLiveQueryOptions,
   });
 
-  const activeHolds = (holds ?? []).filter(
-    hold => hold.status === 'ACTIVE' && hold.subjectStatus === 'DETAINED'
+  const inTransitHolds = (holds ?? []).filter(
+    hold => isCurrentlyActiveHold(hold, now) && hold.subjectStatus === 'DETAINED'
+  );
+  const awaitingCustodyTransferHolds = (holds ?? []).filter(
+    hold => isCurrentlyActiveHold(hold, now) && hold.subjectStatus === 'ONSITE_AWAITING_TRANSFER'
   );
 
   const cancelMutation = useMutation({
     mutationFn: (id) => Api.deflections.cancel(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id, 'in-transit'] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id, 'manage-holds'] });
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id, 'awaiting-custody-transfer'] });
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       showToast('Hold canceled', 'success', 4000, 'Officer notified.');
       setCancelTarget(null);
@@ -109,20 +125,56 @@ function ManageHolds ({ facility }) {
   return (
     <>
       <Stack>
-        <Title order={4}>Holds in transit</Title>
+        <Accordion
+          variant='contained'
+          chevronPosition='left'
+          multiple
+          defaultValue={['holds-in-transit', 'holds-awaiting-custody-transfer']}
+        >
+          <Accordion.Item value='holds-in-transit'>
+            <Accordion.Control>
+              <Title order={4}>Holds in transit</Title>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap='md'>
+                {inTransitHolds.length === 0 && (
+                  <Text c='dimmed'>No holds in transit.</Text>
+                )}
 
-        {activeHolds.length === 0 && (
-          <Text c='dimmed'>No holds in transit.</Text>
-        )}
+                {inTransitHolds.map((hold) => (
+                  <HoldCard
+                    key={hold.id}
+                    deflection={hold}
+                    facilityName={facility.name}
+                    onCancelClick={setCancelTarget}
+                  />
+                ))}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
 
-        {activeHolds.map((hold) => (
-          <HoldCard
-            key={hold.id}
-            deflection={hold}
-            facilityName={facility.name}
-            onCancelClick={setCancelTarget}
-          />
-        ))}
+          <Accordion.Item value='holds-awaiting-custody-transfer'>
+            <Accordion.Control>
+              <Title order={4}>Holds awaiting custody transfer</Title>
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Stack gap='md'>
+                {awaitingCustodyTransferHolds.length === 0 && (
+                  <Text c='dimmed'>No holds awaiting custody transfer.</Text>
+                )}
+
+                {awaitingCustodyTransferHolds.map((hold) => (
+                  <HoldCard
+                    key={hold.id}
+                    deflection={hold}
+                    facilityName={facility.name}
+                    onCancelClick={setCancelTarget}
+                  />
+                ))}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
       </Stack>
 
       <Modal
