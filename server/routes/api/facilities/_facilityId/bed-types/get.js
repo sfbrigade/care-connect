@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import BedType from '#models/bedType.js';
+import Deflection from '#models/deflection.js';
 
 export default async function (fastify, opts) {
   fastify.get('/:bedTypeId',
@@ -32,6 +33,18 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Bed type record not found' });
       }
 
-      return reply.send(bedType);
+      const inTransit = await fastify.prisma.deflection.count({
+        where: {
+          facilityId,
+          bedTypeId,
+          status: Deflection.HoldStatus.ACTIVE,
+          subjectStatus: Deflection.SubjectStatus.DETAINED,
+        },
+      });
+
+      return reply.send({
+        ...bedType,
+        inTransit,
+      });
     });
 }

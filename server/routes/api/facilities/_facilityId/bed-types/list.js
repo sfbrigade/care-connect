@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import BedType from '#models/bedType.js';
+import Deflection from '#models/deflection.js';
 
 export default async function (fastify, opts) {
   fastify.get('/',
@@ -34,6 +35,24 @@ export default async function (fastify, opts) {
       };
 
       const { records, total } = await fastify.prisma.bedType.paginate(options);
-      return reply.setPaginationHeaders(page, perPage, total).send(records);
+      const inTransitCounts = await fastify.prisma.deflection.groupBy({
+        by: ['bedTypeId'],
+        where: {
+          facilityId,
+          bedTypeId: { in: records.map(record => record.id) },
+          status: Deflection.HoldStatus.ACTIVE,
+          subjectStatus: Deflection.SubjectStatus.DETAINED,
+        },
+        _count: { _all: true },
+      });
+      const inTransitByBedTypeId = new Map(
+        inTransitCounts.map(row => [row.bedTypeId, row._count._all])
+      );
+      const hydratedRecords = records.map(record => ({
+        ...record,
+        inTransit: inTransitByBedTypeId.get(record.id) ?? 0,
+      }));
+
+      return reply.setPaginationHeaders(page, perPage, total).send(hydratedRecords);
     });
 }
