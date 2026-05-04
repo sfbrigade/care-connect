@@ -189,7 +189,7 @@ describe('AdminUserForm', () => {
     expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
   });
 
-  it('hides all privileged checkboxes when editing own profile', async () => {
+  it('disables all privileged checkboxes when editing own profile', async () => {
     authMock.user = {
       id: 'user-1',
       firstName: 'Self',
@@ -198,10 +198,9 @@ describe('AdminUserForm', () => {
     };
     renderForm();
 
-    await screen.findByLabelText('First name');
-    expect(screen.queryByLabelText('Super Admin')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Org Admin')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('Super Admin')).toBeDisabled();
+    expect(screen.getByLabelText('Org Admin')).toBeDisabled();
+    expect(screen.getByLabelText('Facility Admin')).toBeDisabled();
   });
 
   it('does not submit roles when editing own profile', async () => {
