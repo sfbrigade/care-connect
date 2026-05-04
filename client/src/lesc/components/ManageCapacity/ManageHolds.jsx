@@ -13,7 +13,7 @@ import { formatTimeRemaining } from '@/utils/format';
 
 function isCurrentlyActiveHold (hold, now) {
   if (!hold || hold.status !== 'ACTIVE') return false;
-  if (!hold.expiresAt) return true;
+  if (!hold.expiresAt || hold.subjectStatus === 'ONSITE_AWAITING_TRANSFER') return true;
 
   const expiresAt = DateTime.fromISO(hold.expiresAt);
   return !expiresAt.isValid || expiresAt >= now;
