@@ -31,7 +31,6 @@ export default async function (fastify, opts) {
         include: {
           subject: true,
           incident: true,
-          cancelReason: true,
           deflectionDocuments: true,
           propertyPhotos: true,
         },

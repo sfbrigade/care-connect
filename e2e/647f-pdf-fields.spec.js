@@ -34,8 +34,8 @@ test.describe('647(f) PDF field verification', () => {
 
   // ── Field-count sanity check ──
 
-  test('PDF has the expected 24 fields', () => {
-    expect(pdfForm.getFields().length).toBe(24);
+  test('PDF has the expected 26 fields', () => {
+    expect(pdfForm.getFields().length).toBe(26);
   });
 
   // ── Subject Information ──
@@ -120,6 +120,14 @@ test.describe('647(f) PDF field verification', () => {
   test('custody transfer officer falls back to arresting officer', () => {
     // No handoffs in the seed, so transferOfficer = arresting officer.
     expect(getFieldText('Custody_Transfer_Officer')).toBe('Test SFPD1 #1234');
+  });
+
+  test('officer details uses arresting officer last name and star number', () => {
+    expect(getFieldText('officerDetails')).toBe('Officer SFPD1, Star #1234');
+  });
+
+  test('certifiedAt uses the deflection certified timestamp', () => {
+    expect(getFieldText('certifiedAt')).toMatch(/^At \d{2}:\d{2} on \d{2}\/\d{2}\/\d{4}$/);
   });
 
   // ── Additional Information ──

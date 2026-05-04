@@ -29,8 +29,6 @@ test('Hold cancellation edge cases', async (t) => {
     });
     assert.ok(inTransitBefore >= 2, `Expected at least 2 in-transit holds, got ${inTransitBefore}`);
 
-    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
-
     // Set unavailable high enough to force cancellation of 1 in-transit hold
     // capacity=10, occupied=0, holds=4 (after expire). Setting unavailable to 7 means:
     // available = 10 - 7 - 0 - 0 - 4 = -1 → need to cancel 1 hold
@@ -39,7 +37,7 @@ test('Hold cancellation edge cases', async (t) => {
       .headers(facilityAdminHeaders)
       .payload({
         unavailableUnoccupied: 7,
-        unavailableReasonId: reason.id,
+        unavailableReason: 'SFSD_STAFFING',
       });
 
     assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -132,7 +130,7 @@ test('Hold cancellation edge cases', async (t) => {
       .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Emergency closure',
       });
 
@@ -176,7 +174,7 @@ test('Hold cancellation edge cases', async (t) => {
       .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.OPEN_NOT_ACCEPTING,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Pausing holds',
       });
 
@@ -209,7 +207,7 @@ test('Hold cancellation edge cases', async (t) => {
       .headers(facilityAdminHeaders)
       .payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Closed for testing',
       });
 
@@ -252,7 +250,7 @@ test('Hold cancellation edge cases', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.CLOSED,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Concurrent close',
         }),
       app.inject()
@@ -323,7 +321,7 @@ test('Hold cancellation edge cases', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.CLOSED,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Concurrent close',
         }),
       app.inject()
@@ -356,7 +354,7 @@ test('Hold cancellation edge cases', async (t) => {
 
   await t.test('concurrent facility close vs reopen never leaves closed facility with an active reopened hold', async () => {
     await app.prisma.deflection.expire();
-    await app.inject().delete('/api/deflections/4?cancelReasonId=5150').headers(userHeaders);
+    await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
 
     const deflectionBefore = await app.prisma.deflection.findUnique({
       where: { id: 4 },
@@ -376,7 +374,7 @@ test('Hold cancellation edge cases', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.CLOSED,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Concurrent close',
         }),
       app.inject()
@@ -401,21 +399,20 @@ test('Hold cancellation edge cases', async (t) => {
   await t.test('concurrent bed-type shrink vs facility close never drives counters negative or double-cancels holds', async () => {
     await app.prisma.deflection.expire();
 
-    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
     const [shrinkResponse, closeResponse] = await Promise.all([
       app.inject()
         .patch(`/api/facilities/${FACILITY_ID}/bed-types/${BED_TYPE_ID}`)
         .headers(facilityAdminHeaders)
         .payload({
           unavailableUnoccupied: 7,
-          unavailableReasonId: reason.id,
+          unavailableReason: 'SFSD_STAFFING',
         }),
       app.inject()
         .post(`/api/facilities/${FACILITY_ID}/status`)
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.CLOSED,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Concurrent close',
         }),
     ]);

@@ -93,8 +93,8 @@ test('/api/status/capacity', async (t) => {
     // routes/api/status/capacity.js for the full boundary definitions.
 
     for (const occ of body.occupants) {
-      assert.deepStrictEqual(Object.keys(occ).sort(), ['admittedAt', 'exitedAt', 'releasedAt']);
-      assert.ok(occ.admittedAt === null || typeof occ.admittedAt === 'string');
+      assert.deepStrictEqual(Object.keys(occ).sort(), ['medicalIntakeStartedAt', 'exitedAt', 'releasedAt']);
+      assert.ok(occ.medicalIntakeStartedAt === null || typeof occ.medicalIntakeStartedAt === 'string');
       assert.ok(occ.releasedAt === null || typeof occ.releasedAt === 'string');
       assert.ok(occ.exitedAt === null || typeof occ.exitedAt === 'string');
     }

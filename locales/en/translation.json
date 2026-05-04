@@ -56,5 +56,55 @@
     "YES": "Yes",
     "NO": "No",
     "UNKNOWN": "Unknown"
+  },
+  "deflectionCancelReason": {
+    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "JAIL": "Jail",
+    "HOSPITAL": "Hospital",
+    "RELEASE_ON_SCENE": "Released on scene",
+    "NO_CHAIRS_AVAILABLE": "No chairs available",
+    "STAFFING_SHORTAGE": "Staffing shortage"
+  },
+  "deflectionReleaseReason": {
+    "SOBERED": "Can care for themselves",
+    "MEDICAL_ISSUE": "Medical issue (physical)",
+    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "OTHER": "Other",
+    "DEATH_IN_FACILITY": "Death in facility",
+    "DEATH_IN_CUSTODY": "Death in custody"
+  },
+  "deflectionRefusalReason": {
+    "AGGRESSIVE_BEHAVIOR": "Aggressive behavior",
+    "MEDICAL_ISSUE": "Medical issue"
+  },
+  "deflectionExitDestination": {
+    "JAIL": "Jail",
+    "HOSPITAL": "Hospital",
+    "STREET": "Street",
+    "HOME": "Home",
+    "SERVICES_NON_HOSPITAL": "Services (non-hospital)",
+    "DECLINED_CONSENT": "Did not share",
+    "OTHER": "Other"
+  },
+  "deflectionExitHousingStatus": {
+    "PERMANENT": "Permanent",
+    "SHELTERED": "Sheltered",
+    "TEMPORARY": "Temporary",
+    "UNKNOWN": "Unknown",
+    "DECLINED_CONSENT": "Did not share"
+  },
+  "facilityStatusReason": {
+    "BUILDING_ISSUE": "Building Issue",
+    "SAFETY_LOCKDOWN": "Safety Lock-down",
+    "OTHER": "Other",
+    "SFSO_STAFFING": "Lack of SFSO Staffing",
+    "CONNECTIONS_STAFFING": "Lack of Connections Staffing"
+  },
+  "bedTypeUnavailableReason": {
+    "SFSD_STAFFING": "Lack of SFSD staffing",
+    "CONTRACTOR_STAFFING": "Lack of contractor staffing",
+    "BUILDING_ISSUE": "Building issue",
+    "SAFETY_LOCKDOWN": "Safety lock-down",
+    "OTHER": "Other (specify)"
   }
 }

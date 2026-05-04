@@ -54,12 +54,6 @@ function ColorSchemeWrapper ({
 const mockedQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
-mockedQueryClient.setQueryData(['deflection-cancel-reasons'],
-  [{ name: '5150', id: '5150' }, { name: 'Facility Emergency', id: 'facility_emergency' }, { name: 'Hospital', id: 'hospital' }, { name: 'Jail', id: 'jail' }, { name: 'Release on Scene', id: 'release_on_scene' }]
-);
-mockedQueryClient.setQueryData(['deflection-cancel-reasons', 'facility_emergency'],
-  { name: 'Facility Emergency', id: 'facility_emergency' }
-);
 
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {

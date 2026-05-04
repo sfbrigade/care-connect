@@ -141,9 +141,6 @@ export default async function (fastify) {
         include: {
           subject: true,
           createdBy: true,
-          cancelReason: true,
-          releaseReason: true,
-          refusalReason: true,
           propertyPhotos: true,
           ...(includeIncident === 'true' ? { incident: true } : {}),
         },

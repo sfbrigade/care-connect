@@ -98,7 +98,7 @@ beforeEach(() => {
   });
 
   mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
-    if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR') {
+    if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
       return Promise.resolve({
         data: [
           { id: 1, subjectStatus: 'AWAITING_INTAKE' },
@@ -176,7 +176,7 @@ describe('Custody', () => {
   it('groups jail exits under the Transferred to jail section on the released tab', async () => {
     mockSessionStateValue.current = 'released';
     mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
-      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR') {
+      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
         return Promise.resolve({ data: [] });
       }
 
@@ -184,7 +184,7 @@ describe('Custody', () => {
         return Promise.resolve({
           data: [
             { id: 6, subjectStatus: 'RELEASED' },
-            { id: 7, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+            { id: 7, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
           ],
         });
       }

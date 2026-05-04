@@ -109,6 +109,7 @@ function ScanCodeModal ({
   const hasAnyEmptyCodeField = trimmedCodes.some((code) => !code);
   const canSubmit = Boolean(trimmedCodes[0]);
   const canAddAnotherCode = manualEntryAllowMultiple && hasAtLeastOneCode && !hasAnyEmptyCodeField;
+  const showManualEntryLabelBlock = Boolean(manualEntryLabel || manualEntryDescription);
   return (
     <Modal
       opened={opened}
@@ -175,7 +176,7 @@ function ScanCodeModal ({
               {manualEntry && (
                 <Container>
                   <Stack gap='xl'>
-                    {manualEntryAllowMultiple
+                    {showManualEntryLabelBlock
                       ? (
                         <Box>
                           <Text size='xl' c='dimmed'>

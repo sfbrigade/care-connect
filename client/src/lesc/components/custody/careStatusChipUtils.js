@@ -1,6 +1,6 @@
 export function getCareStatusChip ({ deflection, careFooterState }) {
   switch (deflection?.subjectStatus) {
-    case 'ADMITTED':
+    case 'IN_MEDICAL_INTAKE':
       return { label: 'In medical intake', tone: 'info' };
     case 'IN_CHAIR':
       return { label: 'Awaiting legal release', tone: 'info' };

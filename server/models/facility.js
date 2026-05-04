@@ -6,10 +6,9 @@ import Amenity from './amenity.js';
 import BedType from './bedType.js';
 import FacilityContact from './facilityContact.js';
 import FacilityEligibility from './facilityEligibility.js';
-import FacilityStatusReason from './facilityStatusReason.js';
 import ServiceType from './serviceType.js';
 import User from './user.js';
-const { Prisma, FacilityStatusEnum, FacilityTypeEnum, FacilityUpdateMethodEnum } = prismaPkg;
+const { Prisma, FacilityStatusEnum, FacilityStatusReasonEnum, FacilityTypeEnum, FacilityUpdateMethodEnum } = prismaPkg;
 
 const FacilityAttributesSchema = z.object({
   name: z.string(),
@@ -36,8 +35,7 @@ const FacilityResponseSchema = FacilityAttributesSchema.extend({
   id: z.string().uuid(),
   serviceType: ServiceType.ResponseSchema.optional(),
   status: z.enum(Object.values(FacilityStatusEnum)),
-  statusReason: FacilityStatusReason.ResponseSchema.nullable().optional(),
-  statusReasonId: z.string().nullable(),
+  statusReason: z.enum(Object.values(FacilityStatusReasonEnum)).nullable(),
   statusOther: z.string().nullable(),
   updateMethod: z.enum(Object.values(FacilityUpdateMethodEnum)),
   updateNotes: z.string().nullable(),

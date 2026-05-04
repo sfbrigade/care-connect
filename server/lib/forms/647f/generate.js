@@ -1,18 +1,34 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { fill647f } from './fill647f.js';
-import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON_ID } from '#lib/hospitalCancellation647f.js';
+import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON } from '#lib/hospitalCancellation647f.js';
 import i18n from '#lib/i18n.js';
 import {
   FORM_TIMEZONE,
   firstLastName,
   formatDateOnly,
   formatDateTime24,
+  formatTime,
   joinWords,
   streetCityState,
   streetCityStateZip,
   titleCase,
 } from '#lib/forms/shared/formUtils.js';
+
+function officerLabel ({ rank, agency, lastName, badgeNumber }) {
+  const normalizedRank = rank || (agency?.toLowerCase().includes('sheriff') ? 'Deputy' : 'Officer');
+  return joinWords(
+    normalizedRank,
+    lastName && `${lastName},`,
+    badgeNumber && `Star #${badgeNumber}`
+  );
+}
+
+export function formatCertifiedAtDisplay (certifiedAt) {
+  const time = formatTime(certifiedAt);
+  const date = formatDateOnly(certifiedAt);
+  return time && date ? `At ${time} on ${date}` : '';
+}
 
 export function transformData (deflection) {
   const subject = deflection.subject;
@@ -55,8 +71,10 @@ export function transformData (deflection) {
     arrestLocation,
     charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
     cadNumber: incident?.cadNumber || '',
+    certifiedAt: deflection.certifiedAt?.toISOString() || null,
     arrestingOfficerRank,
     arrestingOfficerName,
+    arrestingOfficerLastName: arrestingOfficer?.lastName || '',
     arrestingOfficerBadge,
     arrestingOfficerUnit,
     arrestingOfficerAgency,
@@ -66,7 +84,7 @@ export function transformData (deflection) {
     custodyReleaseOfficerBadge,
     custodyReleaseOfficerUnit,
     justification: deflection.behavior || '',
-    hospitalCancellationReleaseNarrative: deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID
+    hospitalCancellationReleaseNarrative: deflection.cancelReason === HOSPITAL_CANCEL_REASON
       ? getHospitalCancellationReleaseNarrative(deflection.cancelledAt)
       : '',
     substanceFound: deflection.narcoticsSubstance === true,
@@ -90,6 +108,12 @@ export async function generatePdf (deflectionData) {
     deflectionData.custodyReleaseOfficerName,
     deflectionData.custodyReleaseOfficerBadge && `#${deflectionData.custodyReleaseOfficerBadge}`
   );
+  const officerDetails = officerLabel({
+    rank: deflectionData.arrestingOfficerRank,
+    agency: deflectionData.arrestingOfficerAgency,
+    lastName: deflectionData.arrestingOfficerLastName,
+    badgeNumber: deflectionData.arrestingOfficerBadge,
+  });
 
   const substanceNot = deflectionData.substanceFound ? '' : 'not ';
   const paraphernaliaNot = deflectionData.paraphernaliaFound ? '' : 'not ';
@@ -119,6 +143,8 @@ export async function generatePdf (deflectionData) {
     arrestingOfficerAgency: deflectionData.arrestingOfficerAgency,
     supervisorBadgeNumber: deflectionData.supervisorBadgeNumber,
     custodyReleaseOfficerDisplay,
+    officerDetails,
+    certifiedAt: formatCertifiedAtDisplay(deflectionData.certifiedAt),
 
     deflectionId: String(deflectionData.deflectionId),
     facilityName: deflectionData.facilityName,

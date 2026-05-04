@@ -4,7 +4,7 @@ import { z } from 'zod';
 const CACHE_TTL_MS = 30_000;
 
 const OccupantSchema = z.object({
-  admittedAt: z.string().datetime().nullable(),
+  medicalIntakeStartedAt: z.string().datetime().nullable(),
   releasedAt: z.string().datetime().nullable(),
   exitedAt: z.string().datetime().nullable(),
 });
@@ -46,10 +46,11 @@ async function computeCapacity (fastify, request) {
   // they're physically still in the facility.
   //
   // Boundary:
-  //   - transferredAt is set: SFSO has handed custody to care staff. This
-  //     matches the inTransit counter's exit point (deflections/transfer.js
-  //     decrements bedType.inTransit at the same moment), so anyone the
-  //     system calls "in transit" is excluded.
+  //   - arrivedAt is set: the officer has checked in at the facility. This
+  //     matches the inTransit counter's exit point (facilities/:id/arrived
+  //     decrements bedType.inTransit when DETAINED becomes
+  //     ONSITE_AWAITING_TRANSFER), so anyone the system calls "in transit"
+  //     is excluded.
   //   - exitedAt is null: the subject hasn't physically left the facility
   //     (deflections/exit.js sets exitedAt when they leave).
   //
@@ -57,12 +58,12 @@ async function computeCapacity (fastify, request) {
   const occupied = await fastify.prisma.deflection.count({
     where: {
       facilityId: facility.id,
-      transferredAt: { not: null },
+      arrivedAt: { not: null },
       exitedAt: null,
     },
   });
 
-  // Occupants list: anyone whose care-staff intake (admittedAt) started
+  // Occupants list: anyone whose care-staff intake (medicalIntakeStartedAt) started
   // within the lookback window, regardless of subsequent status. Some will
   // still be IN_CHAIR (releasedAt + exitedAt null), some released but still
   // onsite (releasedAt set, exitedAt null), some already departed (both set).
@@ -70,14 +71,14 @@ async function computeCapacity (fastify, request) {
   const occupants = await fastify.prisma.deflection.findMany({
     where: {
       facilityId: facility.id,
-      admittedAt: { gte: cutoff },
+      medicalIntakeStartedAt: { gte: cutoff },
     },
     select: {
-      admittedAt: true,
+      medicalIntakeStartedAt: true,
       releasedAt: true,
       exitedAt: true,
     },
-    orderBy: { admittedAt: 'asc' },
+    orderBy: { medicalIntakeStartedAt: 'asc' },
   });
 
   return {
@@ -90,7 +91,7 @@ async function computeCapacity (fastify, request) {
       inTransit: totals.inTransit,
     },
     occupants: occupants.map(d => ({
-      admittedAt: d.admittedAt ? d.admittedAt.toISOString() : null,
+      medicalIntakeStartedAt: d.medicalIntakeStartedAt ? d.medicalIntakeStartedAt.toISOString() : null,
       releasedAt: d.releasedAt ? d.releasedAt.toISOString() : null,
       exitedAt: d.exitedAt ? d.exitedAt.toISOString() : null,
     })),

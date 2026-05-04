@@ -95,8 +95,7 @@ export default async function (fastify, opts) {
           });
 
           // Person transitions from ONSITE_AWAITING_TRANSFER → AWAITING_INTAKE.
-          // Both are hold statuses, so holds/occupied/available don't change.
-          // But the person is no longer "in transit" (they've arrived at the facility).
+          // Both are onsite hold statuses, so bed-type counters do not change.
           const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
             capacity,
@@ -104,7 +103,7 @@ export default async function (fastify, opts) {
             unavailableOccupied,
             occupied,
             holds,
-            inTransit: Math.max(0, inTransit - 1),
+            inTransit,
             available,
             updateMethod: 'API',
             updatedById: request.user.id,
@@ -140,6 +139,11 @@ export default async function (fastify, opts) {
         userId: request.user.id,
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
+        recipientEmail: [
+          'SFPD.Data.Transfer.Authorized@sfgov.org',
+          'Andrew.bley@sfgov.org',
+          'Sfso-incidentreports@sfgov.org',
+        ],
       });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));

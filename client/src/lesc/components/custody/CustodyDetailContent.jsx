@@ -15,7 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -29,8 +29,8 @@ import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function isNetworkError (error) {
@@ -54,7 +54,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
-  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection?.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
@@ -76,11 +76,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
+  const intakeStartedAt = formatIntakeStartedAt(deflection?.medicalIntakeStartedAt);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
   }
 
   useEffect(() => {
@@ -260,6 +261,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {isCareView && (
               <Stack gap='xs' align='center'>
                 <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+                {intakeStartedAt && (
+                  <Text size='sm' c='dimmed' ta='center'>Intake started: {intakeStartedAt}</Text>
+                )}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
                 )}

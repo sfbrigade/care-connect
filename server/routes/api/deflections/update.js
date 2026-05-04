@@ -43,7 +43,6 @@ export default async function (fastify, opts) {
         data,
         include: {
           subject: true,
-          cancelReason: true,
           incident: true,
           propertyPhotos: true,
         },

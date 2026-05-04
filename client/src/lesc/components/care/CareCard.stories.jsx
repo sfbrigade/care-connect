@@ -26,7 +26,7 @@ const subject = {
 const baseDeflection = {
   id: 123,
   subject,
-  subjectStatus: 'ADMITTED',
+  subjectStatus: 'IN_MEDICAL_INTAKE',
 };
 
 export const Admitted = {
@@ -49,7 +49,7 @@ export const UnknownSubject = {
     deflection: {
       id: 456,
       subject: null,
-      subjectStatus: 'ADMITTED',
+      subjectStatus: 'IN_MEDICAL_INTAKE',
     },
   },
 };

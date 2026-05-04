@@ -11,7 +11,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireCare,
       schema: {
-        description: 'Admit a deflection subject, transitioning from READY_FOR_INTAKE to ADMITTED.',
+        description: 'Admit a deflection subject, transitioning from READY_FOR_INTAKE to IN_MEDICAL_INTAKE.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -52,13 +52,13 @@ export default async function (fastify, opts) {
             throw conflictError(`Deflection ${id} cannot be admitted: status is ${deflection.subjectStatus}, expected READY_FOR_INTAKE`);
           }
           // update deflection
-          // No bed type count changes: both READY_FOR_INTAKE and ADMITTED are hold statuses.
-          // The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR).
+          // No bed type count changes: both READY_FOR_INTAKE and IN_MEDICAL_INTAKE are hold statuses.
+          // The hold → occupied transition happens at intake-complete (IN_MEDICAL_INTAKE → IN_CHAIR).
           const now = new Date();
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
-              subjectStatus: Deflection.SubjectStatus.ADMITTED,
+              subjectStatus: Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
               updatedById: request.user.id,
               updatedAt: now,
             },
@@ -66,9 +66,9 @@ export default async function (fastify, opts) {
           deflection = await tx.deflection.update({
             where: { id },
             data: {
-              subjectStatus: Deflection.SubjectStatus.ADMITTED,
-              admittedAt: now,
-              admittedById: request.user.id,
+              subjectStatus: Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
+              medicalIntakeStartedAt: now,
+              medicalIntakeStartedById: request.user.id,
               updatedAt: now,
             },
             include: {

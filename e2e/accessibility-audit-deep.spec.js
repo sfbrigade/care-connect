@@ -70,7 +70,7 @@ async function loginWithContext (browser, email, password) {
 const SEED_DEFLECTIONS = {
   AWAITING_INTAKE: { id: 1 },
   READY_FOR_INTAKE: { id: 2 },
-  ADMITTED: { id: 3 },
+  IN_MEDICAL_INTAKE: { id: 3 },
   IN_CHAIR: { id: 4 },
   RELEASED: { id: 5 },
   EXITED: { id: 6 },
@@ -199,8 +199,8 @@ test.describe('Deep Audit: Care pages', () => {
     await auditPage(carePage, '/care', 'Care List');
   });
 
-  test('care detail — admitted', async () => {
-    await auditPage(carePage, `/care/${SEED_DEFLECTIONS.ADMITTED.id}`, 'Care Detail (Admitted)');
+  test('care detail — in medical intake', async () => {
+    await auditPage(carePage, `/care/${SEED_DEFLECTIONS.IN_MEDICAL_INTAKE.id}`, 'Care Detail (In Medical Intake)');
   });
 
   test('care exit details', async () => {

@@ -1,9 +1,10 @@
 import { Alert, Anchor, Button, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
-import { IconAlertTriangle, IconTallymark1 } from '@tabler/icons-react';
+import { IconAlertTriangle, IconQrcode, IconQrcodeOff, IconTallymark1 } from '@tabler/icons-react';
 import { inflect } from 'inflection';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 import FacilityAddressLinkFromParts from '../../components/facilityAddressLink/FacilityAddressLinkFromParts';
+import classes from './Facility.module.css';
 
 function Facility ({
   facility,
@@ -15,6 +16,7 @@ function Facility ({
   onArrivedClick,
   onLeftClick,
   isArrivalPending,
+  transferCodeStatus,
 }) {
   const { t } = useTranslation();
   const placeholderPhone = '(415) 555-7890';
@@ -31,15 +33,6 @@ function Facility ({
   ].some(Boolean);
   const phoneNumber = facility.phone || placeholderPhone;
   const hasLocationDetails = hasAddressParts || !!phoneNumber;
-  const contactLinkStyles = {
-    color: 'var(--mantine-color-indigo-6)',
-    textAlign: 'center',
-    fontFamily: 'Roboto, sans-serif',
-    fontSize: '16px',
-    fontStyle: 'normal',
-    fontWeight: 400,
-    lineHeight: '24px',
-  };
 
   return (
     <Card bg='white' p='xl' w='100%' withBorder>
@@ -66,12 +59,12 @@ function Facility ({
                   city={facility.city}
                   state={facility.state}
                   postalCode={facility.postalCode}
-                  style={contactLinkStyles}
+                  className={classes.contactLink}
                 />
               )}
               {hasAddressParts && phoneNumber && <IconTallymark1 color='var(--mantine-color-gray-3)' size={20} />}
               {phoneNumber && (
-                <Anchor href={`tel:${phoneNumber}`} style={contactLinkStyles}>
+                <Anchor href={`tel:${phoneNumber}`} className={classes.contactLink}>
                   {phoneNumber}
                 </Anchor>
               )}
@@ -101,7 +94,17 @@ function Facility ({
             </Button>
           )}
         </Group>
-        {atFacility && arrivedAt && (
+        {transferCodeStatus && (
+          <Group data-testid='transfer-code-status' gap='sm' justify='center' wrap='nowrap'>
+            {transferCodeStatus.icon === 'ready'
+              ? <IconQrcode data-testid='transfer-code-status-icon' className={classes.statusIcon} size={20} stroke={1.75} />
+              : <IconQrcodeOff data-testid='transfer-code-status-icon' className={classes.statusIcon} size={20} stroke={1.75} />}
+            <Text size='md' className={classes.statusText}>
+              {transferCodeStatus.label}
+            </Text>
+          </Group>
+        )}
+        {!transferCodeStatus && atFacility && arrivedAt && (
           <Text align='center' size='md' c='gray.5'>
             Arrived at {DateTime.fromISO(arrivedAt).toLocaleString(DateTime.TIME_SIMPLE)}
           </Text>

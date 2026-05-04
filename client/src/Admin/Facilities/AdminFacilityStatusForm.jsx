@@ -5,12 +5,19 @@ import { isNotEmpty, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+
+const FACILITY_STATUS_REASON_FACILITY_TYPE = {
+  SFSO_STAFFING: 'LESC',
+  CONNECTIONS_STAFFING: 'LESC',
+};
 
 function AdminFacilityStatusForm () {
   const { facilityId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [success, setSuccess] = useState(false);
 
@@ -18,13 +25,13 @@ function AdminFacilityStatusForm () {
     mode: 'uncontrolled',
     initialValues: {
       status: '',
-      statusReasonId: '',
+      statusReason: '',
       statusOther: '',
       updateNotes: '',
     },
     validate: {
       status: isNotEmpty('Status is required.'),
-      statusReasonId: (value, values) => {
+      statusReason: (value, values) => {
         if (values.status !== 'OPEN_ACCEPTING' && !value) {
           return 'Status reason is required when not Open & Accepting.';
         }
@@ -39,17 +46,17 @@ function AdminFacilityStatusForm () {
     enabled: !!facilityId,
   });
 
-  const { data: reasons, isLoading: reasonsLoading } = useQuery({
-    queryKey: ['facilityStatusReasons', facility?.type],
-    queryFn: () => Api.facilities.statusReasons.index(facility?.type).then(res => res.data),
-    enabled: !!facility,
-  });
+  const allReasons = Object.entries(t('facilityStatusReason', { returnObjects: true }))
+    .map(([id, description]) => ({ id, description }));
+  const reasons = facility
+    ? allReasons.filter(r => !FACILITY_STATUS_REASON_FACILITY_TYPE[r.id] || FACILITY_STATUS_REASON_FACILITY_TYPE[r.id] === facility.type)
+    : allReasons;
 
   useEffect(() => {
     if (facility) {
       form.initialize({
         status: facility.status,
-        statusReasonId: facility.statusReasonId || '',
+        statusReason: facility.statusReason || '',
         statusOther: facility.statusOther || '',
         updateNotes: '', // Reset notes for new update
       });
@@ -70,8 +77,6 @@ function AdminFacilityStatusForm () {
     navigate(-1);
   }
 
-  console.log('???', facility, facilityLoading, reasons, reasonsLoading, updateStatusMutation.isPending);
-
   return (
     <>
       <Head>
@@ -82,7 +87,7 @@ function AdminFacilityStatusForm () {
         <Title order={3} mb='lg'>{facility?.name}</Title>
 
         <form onSubmit={form.onSubmit((values) => updateStatusMutation.mutateAsync(values))}>
-          <Fieldset disabled={facilityLoading || reasonsLoading || updateStatusMutation.isPending} variant='unstyled'>
+          <Fieldset disabled={facilityLoading || updateStatusMutation.isPending} variant='unstyled'>
             <Stack>
               {form.errors?._form && <Alert color='red'>{form.errors._form}</Alert>}
               {success && <Alert color='green'>Facility status has been updated!</Alert>}
@@ -102,15 +107,15 @@ function AdminFacilityStatusForm () {
               {form.getValues().status !== 'OPEN_ACCEPTING' && form.getValues().status && (
                 <Stack>
                   <Select
-                    {...form.getInputProps('statusReasonId')}
-                    key={form.key('statusReasonId')}
+                    {...form.getInputProps('statusReason')}
+                    key={form.key('statusReason')}
                     label='Reason'
                     placeholder='Select reason'
-                    data={reasons?.map(r => ({ value: r.id, label: r.description })) || []}
+                    data={reasons.map(r => ({ value: r.id, label: r.description }))}
                     required
                   />
 
-                  {form.getValues().statusReasonId === 'other' && (
+                  {form.getValues().statusReason === 'OTHER' && (
                     <TextInput
                       {...form.getInputProps('statusOther')}
                       key={form.key('statusOther')}

@@ -87,7 +87,8 @@ function ScanAdmitCodeModal ({ opened, onClose, onSuccess, _debugScanPhase }) {
       onClose={onClose}
       onScan={handleScan}
       prompt={`Scan the person's QR code to transfer custody to ${facility?.name || 'this facility'}.`}
-      manualEntryTitle='Enter Transfer Code'
+      manualEntryLabel='Enter transfer code'
+      manualEntryDescription='If scanning is not working, ask the Deputy for the numerical transfer code.'
       loadingText='Transferring person into custody...'
       _debugScanPhase={_debugScanPhase}
     />

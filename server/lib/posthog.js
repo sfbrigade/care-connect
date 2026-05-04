@@ -8,7 +8,12 @@ const gitSha = process.env.VITE_GIT_SHA || null;
 let client = null;
 
 if (apiKey) {
-  client = new PostHog(apiKey, { host });
+  client = new PostHog(apiKey, {
+    host,
+    // on the server, we need to enable exception autocapture via code, while it's done
+    // on the Posthog site for the client
+    enableExceptionAutocapture: true
+  });
 }
 
 function withRelease (properties) {
