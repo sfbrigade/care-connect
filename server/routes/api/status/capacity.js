@@ -46,10 +46,11 @@ async function computeCapacity (fastify, request) {
   // they're physically still in the facility.
   //
   // Boundary:
-  //   - transferredAt is set: SFSO has handed custody to care staff. This
-  //     matches the inTransit counter's exit point (deflections/transfer.js
-  //     decrements bedType.inTransit at the same moment), so anyone the
-  //     system calls "in transit" is excluded.
+  //   - arrivedAt is set: the officer has checked in at the facility. This
+  //     matches the inTransit counter's exit point (facilities/:id/arrived
+  //     decrements bedType.inTransit when DETAINED becomes
+  //     ONSITE_AWAITING_TRANSFER), so anyone the system calls "in transit"
+  //     is excluded.
   //   - exitedAt is null: the subject hasn't physically left the facility
   //     (deflections/exit.js sets exitedAt when they leave).
   //
@@ -57,7 +58,7 @@ async function computeCapacity (fastify, request) {
   const occupied = await fastify.prisma.deflection.count({
     where: {
       facilityId: facility.id,
-      transferredAt: { not: null },
+      arrivedAt: { not: null },
       exitedAt: null,
     },
   });

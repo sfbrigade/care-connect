@@ -48,7 +48,8 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!canModifyDeflection(deflection, request.user)) {
+      const canCancelDeflection = canModifyDeflection(deflection, request.user) || request.user.isFacilityAdmin;
+      if (!canCancelDeflection) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
@@ -110,7 +111,6 @@ export default async function (fastify, opts) {
           });
           const isInTransit = [
             Deflection.SubjectStatus.DETAINED,
-            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
           ].includes(deflection.subjectStatus);
           const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {

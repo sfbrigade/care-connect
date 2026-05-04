@@ -28,6 +28,26 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       assert.deepStrictEqual(data.id, bedTypeId);
     });
 
+    await t.test('returns derived inTransit count instead of stale stored value', async () => {
+      await app.prisma.deflection.expire();
+      await app.prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+      await app.prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { inTransit: 99 },
+      });
+
+      const response = await app.inject()
+        .get(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.inTransit, 2);
+    });
+
     await t.test('returns 404 for non-existent bed type', async () => {
       const response = await app.inject()
         .get(`/api/facilities/${facilityId}/bed-types/00000000-0000-0000-0000-000000000000`)
