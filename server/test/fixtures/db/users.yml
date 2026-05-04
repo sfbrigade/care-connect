@@ -92,6 +92,19 @@ items:
     roles: [CARE, FACILITY_ADMIN]
     createdAt: '2024-12-27T09:53:41-07:00'
     organization: '@connections'
+  # Mirrors the prod facility-admin role combo that surfaced bug #851: this user
+  # has no CARE/CUSTODY, so the deflections list endpoint's facility-scope
+  # exemption only matches them when isFacilityAdmin is in the carve-out.
+  facilityadminuser2:
+    id: 'd1b2c3d4-e5f6-7890-abcd-fa1234567892'
+    firstName: BareFacilityAdmin
+    lastName: User
+    email: barefacilityadmin@test.com
+    hashedPassword: $2b$10$ICaCk3VVZUCtO9HySahquuQusQhEnRpXHdzxaceUUJPk0DTwN2e/W # test
+    isAdmin: false
+    roles: [ORG_ADMIN, FACILITY_ADMIN, FIELD]
+    createdAt: '2024-12-27T09:53:41-07:00'
+    organization: '@connections'
   orgadminuser1:
     id: 'b1a2c3d4-e5f6-7890-abcd-ef1234567890'
     firstName: OrgAdmin

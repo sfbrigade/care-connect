@@ -180,6 +180,22 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(ids, [6, 7]);
     });
 
+    await t.test('FACILITY_ADMIN-only user sees facility-wide active in-transit holds even when not assigned', async () => {
+      // Regression: a facility admin without CARE/CUSTODY (e.g. roles =
+      // [ORG_ADMIN, FACILITY_ADMIN, FIELD] — the prod combo that surfaced
+      // bug #851) was being scoped down to holds they personally owned, so
+      // the manage-capacity accordion came back empty.
+      const bareFacilityAdminHeaders = await authenticate(app, 'barefacilityadmin@test.com', 'test');
+      const response = await app.inject()
+        .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=DETAINED,ONSITE_AWAITING_TRANSFER')
+        .headers(bareFacilityAdminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      // Fixtures put DETAINED/ACTIVE holds at lescFacility1 owned by user2 and user4 — none owned
+      // by this user. With the facility-scope exemption they should still come back.
+      assert.ok(data.length >= 3, `expected facility admin to see >=3 facility-scoped holds, got ${data.length}`);
+    });
+
     await t.test('redacts restricted subject fields for care users', async () => {
       const response = await app.inject()
         .get('/api/deflections?facilityId=6d123d8f-edd5-4d14-9220-0508eb30b47b&subjectStatus=READY_FOR_INTAKE')

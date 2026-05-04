@@ -124,7 +124,16 @@ export default async function (fastify) {
         }
       }
 
-      if (!request.user.isAdmin && !((request.user.isCustody || request.user.isCare) && facilityId) && handedOff !== 'true') {
+      // Roles that operate in a facility view: their job needs visibility into all
+      // holds at the facility, not only ones they personally own. FACILITY_ADMIN is
+      // included so the manage-capacity flow can list and cancel holds across officers.
+      const isFacilityScopedRole = (
+        request.user.isCustody ||
+        request.user.isCare ||
+        request.user.isFacilityAdmin
+      ) && facilityId;
+
+      if (!request.user.isAdmin && !isFacilityScopedRole && handedOff !== 'true') {
         // A deflection is "mine" if I currently own it, created it, or ever received it via handoff.
         addOrGroup([
           { currentOfficerId: request.user.id },
