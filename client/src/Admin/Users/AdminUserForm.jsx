@@ -194,6 +194,12 @@ function AdminUserForm () {
                     label='Super Admin'
                     description='Grants full platform-wide access.'
                     disabled={isEditingSelf}
+                    onClick={(event) => {
+                      const action = event.currentTarget.checked ? 'grant' : 'revoke';
+                      if (!window.confirm(`Are you sure you want to ${action} super admin access for this user?`)) {
+                        event.preventDefault();
+                      }
+                    }}
                   />
                   <Checkbox
                     {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}

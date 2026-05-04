@@ -258,4 +258,38 @@ describe('AdminUserForm', () => {
     expect(payload).not.toHaveProperty('isOrgAdmin');
     expect(payload).not.toHaveProperty('isFacilityAdmin');
   });
+
+  it('confirms before granting Super Admin and reverts on cancel', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    renderForm();
+
+    const superAdminCheckbox = await screen.findByLabelText('Super Admin');
+    expect(superAdminCheckbox).not.toBeChecked();
+
+    await userEvent.click(superAdminCheckbox);
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/grant super admin/i)
+    );
+    expect(superAdminCheckbox).not.toBeChecked();
+
+    confirmSpy.mockRestore();
+  });
+
+  it('confirms before granting Super Admin and applies on accept', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderForm();
+
+    const superAdminCheckbox = await screen.findByLabelText('Super Admin');
+    await userEvent.click(superAdminCheckbox);
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/grant super admin/i)
+    );
+    expect(superAdminCheckbox).toBeChecked();
+
+    confirmSpy.mockRestore();
+  });
 });
