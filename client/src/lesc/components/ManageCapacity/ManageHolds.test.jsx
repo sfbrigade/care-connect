@@ -102,7 +102,7 @@ describe('ManageHolds', () => {
           status: 'ACTIVE',
           subjectStatus: 'ONSITE_AWAITING_TRANSFER',
           expiresAt: '2026-05-03T09:00:00.000Z',
-          subject: { firstName: 'Expired Onsite', lastName: 'Person' },
+          subject: { firstName: 'Onsite Doesnt Expire', lastName: 'Person' },
           createdBy: { firstName: 'Officer', lastName: 'Three' },
         },
         {
@@ -130,7 +130,7 @@ describe('ManageHolds', () => {
     expect(screen.getByText('Holds awaiting custody transfer')).toBeInTheDocument();
     expect(await screen.findByText('Active Person')).toBeInTheDocument();
     expect(screen.getByText('Onsite Person')).toBeInTheDocument();
-    expect(screen.queryByText('Expired Onsite Person')).not.toBeInTheDocument();
+    expect(screen.queryByText('Onsite Doesnt Expire Person')).toBeInTheDocument();
     expect(screen.queryByText('Cancelled Person')).not.toBeInTheDocument();
     expect(screen.queryByText('Expired Person')).not.toBeInTheDocument();
   });
