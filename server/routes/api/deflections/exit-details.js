@@ -1,10 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
-import { SFResidentEnum, TernaryEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+const { SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
@@ -25,8 +26,8 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          exitDestinationId: z.string(),
-          exitHousingStatusId: z.string(),
+          exitDestination: z.string(),
+          exitHousingStatus: z.string(),
           exitSFResident: ResidencyEnum,
           exitConnectedToCare: ConnectionToCareEnum,
         }),
@@ -40,8 +41,8 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const {
-        exitDestinationId,
-        exitHousingStatusId,
+        exitDestination,
+        exitHousingStatus,
         exitSFResident,
         exitConnectedToCare,
       } = request.body;
@@ -64,8 +65,8 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            exitDestinationId,
-            exitHousingStatusId,
+            exitDestination,
+            exitHousingStatus,
             exitConnectedToCare,
             exitSFResident,
             updatedById: request.user.id,
@@ -76,8 +77,8 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            exitDestinationId,
-            exitHousingStatusId,
+            exitDestination,
+            exitHousingStatus,
             exitConnectedToCare,
             exitSFResident,
             updatedAt: now,

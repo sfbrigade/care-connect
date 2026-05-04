@@ -3,7 +3,8 @@ import expireHolds from '../../jobs/expireHolds.js';
 import generateForms from '../../jobs/generateForms.js';
 import formsEmail from '../../jobs/formsEmail.js';
 import anonymizeSubjects from '../../jobs/anonymizeSubjects.js';
-import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS } from './queueNames.js';
+import canary from '../../jobs/canary.js';
+import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS, QUEUE_CANARY } from './queueNames.js';
 
 const queues = [
   {
@@ -24,12 +25,16 @@ const queues = [
     handler: async ([job], { send }) => {
       const skippedFormIds = await generateForms(job.data) || [];
       if (job.data.emailTemplate) {
-        const emailFormIds = job.data.formIds.filter((id) => !skippedFormIds.includes(id));
+        const emailFormIds = job.data.emailTemplate === 'release-forms'
+          ? job.data.formIds
+          : job.data.formIds.filter((id) => !skippedFormIds.includes(id));
         if (emailFormIds.length > 0) {
           await send(QUEUE_FORMS_EMAIL, {
             deflectionId: job.data.deflectionId,
             formIds: emailFormIds,
             template: job.data.emailTemplate,
+            recipientEmail: job.data.recipientEmail,
+            userId: job.data.userId,
           });
         }
       }
@@ -47,6 +52,11 @@ const queues = [
     options: { retryLimit: 1 },
     handler: async ([job]) => anonymizeSubjects(job.data),
     cron: '0 * * * *',
+  },
+  {
+    name: QUEUE_CANARY,
+    options: { retryLimit: 0 },
+    handler: async ([job]) => canary(job.data),
   },
 ];
 export default queues;

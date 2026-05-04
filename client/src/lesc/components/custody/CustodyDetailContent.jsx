@@ -15,7 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -29,8 +29,8 @@ import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function isNetworkError (error) {
@@ -43,7 +43,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
-  const [careAccordionValues, setCareAccordionValues] = useState(['substance', 'deflection']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -55,7 +54,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
-  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection?.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
@@ -77,12 +76,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
+  const intakeStartedAt = formatIntakeStartedAt(deflection?.medicalIntakeStartedAt);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
-  const hasBehavioralObservations = Boolean(deflection?.behavior);
 
   function navigateToHospitalReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
   }
 
   useEffect(() => {
@@ -262,6 +261,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {isCareView && (
               <Stack gap='xs' align='center'>
                 <DeflectionStatusChip label={careStatusChip?.label} tone={careStatusChip?.tone} />
+                {intakeStartedAt && (
+                  <Text size='sm' c='dimmed' ta='center'>Intake started: {intakeStartedAt}</Text>
+                )}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
                 )}
@@ -350,56 +352,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               </Group>
             )}
           </Stack>
-          {isCareView && (hasDrugUseEvidence || hasBehavioralObservations) && (
-            <Accordion
-              variant='section'
-              multiple
-              value={careAccordionValues}
-              onChange={setCareAccordionValues}
-            >
-              {hasDrugUseEvidence && (
-                <>
-                  <Divider />
-                  <Accordion.Item value='substance'>
-                    <Accordion.Control>
-                      <Title order={3}>Substance-related details</Title>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap='sm'>
-                        <Box>
-                          <Text c='dimmed'>Signs of substance use</Text>
-                          <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
-                        </Box>
-                        {deflection.drugUseEvidence === true && deflection?.drugType && (
-                          <Box>
-                            <Text c='dimmed'>Substance used (suspected)</Text>
-                            <Text>{t(`drugType.${deflection.drugType}`)}</Text>
-                          </Box>
-                        )}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                </>
-              )}
-              {hasBehavioralObservations && (
-                <>
-                  <Divider />
-                  <Accordion.Item value='deflection'>
-                    <Accordion.Control>
-                      <Title order={3}>Behavioral observations</Title>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap='sm'>
-                        <Box>
-                          <Text c='dimmed'>Arrestable behavior</Text>
-                          <Text>{deflection.behavior}</Text>
-                        </Box>
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                </>
-              )}
-            </Accordion>
+          {isCareView && hasDrugUseEvidence && (
+            <>
+              <Divider />
+              <Stack gap='sm'>
+                <Title order={3}>Substance-related details</Title>
+                <Box>
+                  <Text c='dimmed'>Signs of substance use</Text>
+                  <Text>{deflection.drugUseEvidence ? 'Yes' : 'No'}</Text>
+                </Box>
+                {deflection.drugUseEvidence === true && deflection?.drugType && (
+                  <Box>
+                    <Text c='dimmed'>Substance used (suspected)</Text>
+                    <Text>{t(`drugType.${deflection.drugType}`)}</Text>
+                  </Box>
+                )}
+              </Stack>
+            </>
           )}
           {!isCareView && (
             <>

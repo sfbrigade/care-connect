@@ -6,7 +6,7 @@ describe('getCustodyStatusChip', () => {
   it.each([
     ['AWAITING_INTAKE', { label: 'Pending safety check', tone: 'info' }],
     ['READY_FOR_INTAKE', { label: 'Ready for medical intake', tone: 'info' }],
-    ['ADMITTED', { label: 'In medical intake', tone: 'info' }],
+    ['IN_MEDICAL_INTAKE', { label: 'In medical intake', tone: 'info' }],
     ['IN_CHAIR', { label: 'Awaiting legal release', tone: 'info' }],
     ['FAILED_INTAKE', { label: 'Refused admission', tone: 'danger' }],
     ['RELEASED', { label: 'Legally released', tone: 'success' }],

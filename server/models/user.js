@@ -1,4 +1,4 @@
-import { Prisma, RoleEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import mailer from '#lib/mailer.js';
 import Organization from '#models/organization.js';
 import Title from '#models/title.js';
 import Unit from '#models/unit.js';
+const { Prisma, RoleEnum } = prismaPkg;
 
 const UserAttributesSchema = z.object({
   firstName: z
@@ -52,7 +53,7 @@ const UserResponseSchema = UserAttributesSchema.extend({
 
 const UserUpdateSchema = UserAttributesSchema.extend({
   unitName: z.string().trim().min(1).optional(),
-  password: UserPasswordSchema.or(z.literal('')),
+  password: z.never(),
   picture: z.string().nullable(),
   isAdmin: z.boolean(),
   deactivatedAt: z.coerce.date().nullable(),

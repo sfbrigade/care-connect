@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { notFoundError } from '#lib/httpErrors.js';
+
 export default async function (fastify) {
   fastify.post('/left',
     {
@@ -20,10 +22,16 @@ export default async function (fastify) {
       const officerId = request.user.id;
 
       await fastify.prisma.$transaction(async (tx) => {
+        const facility = await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
+        if (!facility) {
+          throw notFoundError(`Facility ${facilityId} not found`);
+        }
         const now = new Date();
 
-        // Clear currentOfficerId on all active holds where this officer
-        // has arrived (arrivedAt set). This makes atFacility flip to false.
+        // Clear currentOfficerId on this officer's currently-arrived holds.
+        // The facility lock serializes us against concurrent close; the WHERE
+        // is re-evaluated per row at commit time, so holds whose state changed
+        // under us (cancel / transfer / release) are filtered out automatically.
         await tx.deflection.updateMany({
           where: {
             facilityId,

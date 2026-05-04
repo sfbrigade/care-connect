@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
+import { Button, Checkbox, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
-import BooleanInput from '@/components/BooleanInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
-import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload } from './careFlowUtils';
+import { hasAssociatedProperty } from '../custody/propertyReturnUtils';
+import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload, getSavedExitDraft, setSavedExitDraft } from './careFlowUtils';
 
 const SF_RESIDENCY_OPTIONS = [
   { value: 'YES', label: 'Yes' },
@@ -33,72 +34,52 @@ function CareExitDetails () {
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
 
-  const [exitDestinationId, setExitDestinationId] = useState(null);
+  const [exitDestination, setExitDestination] = useState(null);
   const [exitSFResident, setExitSFResident] = useState(null);
-  const [exitHousingStatusId, setExitHousingStatusId] = useState(null);
+  const [exitHousingStatus, setExitHousingStatus] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
-  const [physicalLeftFinal, setPhysicalLeftFinal] = useState(null);
   const [propertyReturnHandledConfirmed, setPropertyReturnHandledConfirmed] = useState(null);
   const [confirmExitOpened, setConfirmExitOpened] = useState(false);
 
   const fromDetail = searchParams.get('from') === 'detail';
   const backTo = getCareExitBackTo({ fromDetail, id });
 
+  const exitDestinations = Object.entries(t('deflectionExitDestination', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
+  const exitHousingStatuses = Object.entries(t('deflectionExitHousingStatus', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
+
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
 
-  const { data: exitDestinations } = useQuery({
-    queryKey: ['exitDestinations'],
-    queryFn: () => Api.deflections.exitDestinations.index().then(response => response.data),
-  });
-
-  const { data: exitHousingStatuses } = useQuery({
-    queryKey: ['exitHousingStatuses'],
-    queryFn: () => Api.deflections.exitHousingStatuses.index().then(response => response.data),
-  });
-
   useEffect(() => {
     if (!deflection || initialized) return;
+    const draft = getSavedExitDraft(id);
 
-    setExitDestinationId(deflection.exitDestinationId ?? null);
-    setExitSFResident(deflection.exitSFResident ?? null);
-    setExitHousingStatusId(deflection.exitHousingStatusId ?? null);
-    setExitConnectedToCare(deflection.exitConnectedToCare ?? null);
+    setExitDestination(draft?.exitDestination ?? deflection.exitDestination ?? null);
+    setExitSFResident(draft?.exitSFResident ?? deflection.exitSFResident ?? null);
+    setExitHousingStatus(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
+    setExitConnectedToCare(draft?.exitConnectedToCare ?? deflection.exitConnectedToCare ?? null);
+    setPropertyReturnHandledConfirmed(draft?.propertyReturnHandledConfirmed ?? null);
     setInitialized(true);
-  }, [deflection, initialized]);
-
-  const saveExitDetailsMutation = useMutation({
-    mutationFn: () => Api.deflections.saveExitDetails(id, {
-      exitDestinationId,
-      exitSFResident,
-      exitHousingStatusId,
-      exitConnectedToCare,
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deflections', id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      showToast('Exit details saved', 'success', 4000, 'Person is still in RESET - mark them as exited once they leave.');
-      navigate(backTo);
-    },
-    onError: () => {
-      showToast('Exit details not saved. Please try again.', 'error');
-    },
-  });
+  }, [deflection, id, initialized]);
 
   const completeExitMutation = useMutation({
     mutationFn: () => Api.deflections.exit(id, {
-      exitDestinationId,
+      exitDestination,
       exitSFResident,
-      exitHousingStatusId,
+      exitHousingStatus,
       exitConnectedToCare,
     }),
     onSuccess: () => {
       const successPayload = getCareExitSuccessPayload(id);
       setConfirmExitOpened(false);
+      setSavedExitDraft(id, false);
       window.sessionStorage.setItem('careHighlightTarget', successPayload.highlightTarget);
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
@@ -113,22 +94,58 @@ function CareExitDetails () {
 
   const isSectionTwoComplete = useMemo(
     () => (
-      !!exitDestinationId &&
+      !!exitDestination &&
       !!exitSFResident &&
-      !!exitHousingStatusId &&
+      !!exitHousingStatus &&
       !!exitConnectedToCare
     ),
-    [exitDestinationId, exitSFResident, exitHousingStatusId, exitConnectedToCare]
+    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
   );
+  const isExitFormEdited = useMemo(
+    () => (
+      !!exitDestination ||
+      !!exitSFResident ||
+      !!exitHousingStatus ||
+      !!exitConnectedToCare
+    ),
+    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
+  );
+  const personHasAssociatedProperty = useMemo(
+    () => hasAssociatedProperty(deflection),
+    [deflection]
+  );
+
+  useEffect(() => {
+    if (!initialized) return;
+    setSavedExitDraft(id, isExitFormEdited
+      ? {
+          exitDestination,
+          exitSFResident,
+          exitHousingStatus,
+          exitConnectedToCare,
+          propertyReturnHandledConfirmed,
+        }
+      : false
+    );
+  }, [
+    exitConnectedToCare,
+    exitDestination,
+    exitHousingStatus,
+    exitSFResident,
+    id,
+    initialized,
+    isExitFormEdited,
+    propertyReturnHandledConfirmed,
+  ]);
 
   const {
     label: saveButtonLabel,
     disabled: saveButtonDisabled,
   } = getCareExitPrimaryActionState({
-    isSectionTwoComplete,
-    physicalLeftFinal,
+    isExitFormComplete: isSectionTwoComplete,
+    hasAssociatedProperty: personHasAssociatedProperty,
     propertyReturnHandledConfirmed,
-    isSaving: saveExitDetailsMutation.isPending || completeExitMutation.isPending,
+    isSaving: completeExitMutation.isPending,
   });
 
   return (
@@ -140,13 +157,13 @@ function CareExitDetails () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='gray.6'>Review and complete exit details</Text>
-            <Title order={3}>These answers will be saved to the person&apos;s exit record.</Title>
+            <Title order={3}>Must complete before exit.</Title>
           </Stack>
 
           <Input.Wrapper label='Exit destination' required>
-            <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
+            <Chip.Group value={exitDestination} onChange={setExitDestination}>
               <Group gap='xs'>
-                {exitDestinations?.map((option) => (
+                {exitDestinations.map((option) => (
                   <Chip
                     key={option.id}
                     value={option.id}
@@ -176,9 +193,9 @@ function CareExitDetails () {
           </Input.Wrapper>
 
           <Input.Wrapper label='Housing status' required>
-            <Chip.Group value={exitHousingStatusId} onChange={setExitHousingStatusId}>
+            <Chip.Group value={exitHousingStatus} onChange={setExitHousingStatus}>
               <Group gap='xs'>
-                {exitHousingStatuses?.map((option) => (
+                {exitHousingStatuses.map((option) => (
                   <Chip
                     key={option.id}
                     value={option.id}
@@ -207,24 +224,17 @@ function CareExitDetails () {
             </Chip.Group>
           </Input.Wrapper>
 
-          <Divider />
-          <BooleanInput
-            label='Person has physically left RESET?'
-            description='Select “Yes” when the person has left the building or is in transit.'
-            required
-            disabled={!isSectionTwoComplete}
-            value={physicalLeftFinal}
-            onChange={setPhysicalLeftFinal}
-          />
-
-          <Divider />
-          <BooleanInput
-            label='I&apos;ve confirmed with an SFSO Deputy that property return has been handled.'
-            required={physicalLeftFinal}
-            disabled={!physicalLeftFinal}
-            value={propertyReturnHandledConfirmed}
-            onChange={setPropertyReturnHandledConfirmed}
-          />
+          {personHasAssociatedProperty && (
+            <>
+              <Divider />
+              <Checkbox
+                checked={propertyReturnHandledConfirmed === true}
+                disabled={!isSectionTwoComplete}
+                label="I've confirmed with the SFSO Deputy that property has been handled."
+                onChange={(event) => setPropertyReturnHandledConfirmed(event.currentTarget.checked ? true : null)}
+              />
+            </>
+          )}
 
           <Group gap='sm'>
             <Button
@@ -235,14 +245,8 @@ function CareExitDetails () {
             </Button>
             <Button
               disabled={saveButtonDisabled}
-              loading={saveExitDetailsMutation.isPending || completeExitMutation.isPending}
-              onClick={() => {
-                if (physicalLeftFinal) {
-                  setConfirmExitOpened(true);
-                  return;
-                }
-                saveExitDetailsMutation.mutate();
-              }}
+              loading={completeExitMutation.isPending}
+              onClick={() => setConfirmExitOpened(true)}
             >
               {saveButtonLabel}
             </Button>

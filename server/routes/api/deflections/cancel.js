@@ -10,7 +10,7 @@ import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 import {
   hasCompleteHospitalCancellationDetails,
   HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
-  HOSPITAL_CANCEL_REASON_ID,
+  HOSPITAL_CANCEL_REASON,
   isHospitalCancellation647fEligible,
 } from '#lib/hospitalCancellation647f.js';
 
@@ -24,7 +24,7 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         querystring: z.object({
-          cancelReasonId: z.string().optional(),
+          cancelReason: z.string().optional(),
         }).nullable().optional(),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
@@ -38,7 +38,7 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const { cancelReasonId } = request.query || {};
+      const { cancelReason } = request.query || {};
 
       let deflection = await fastify.prisma.deflection.findUnique({
         where: { id },
@@ -48,11 +48,12 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!canModifyDeflection(deflection, request.user)) {
+      const canCancelDeflection = canModifyDeflection(deflection, request.user) || request.user.isFacilityAdmin;
+      if (!canCancelDeflection) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      if (cancelReasonId === HOSPITAL_CANCEL_REASON_ID) {
+      if (cancelReason === HOSPITAL_CANCEL_REASON) {
         const detailedDeflection = await fastify.prisma.deflection.findUnique({
           where: { id },
           include: {
@@ -81,7 +82,6 @@ export default async function (fastify, opts) {
           where: { id },
           include: {
             subject: true,
-            cancelReason: true,
             propertyPhotos: true,
           },
         });
@@ -90,7 +90,7 @@ export default async function (fastify, opts) {
             data: {
               deflectionId: id,
               status: Deflection.HoldStatus.CANCELLED,
-              cancelReasonId,
+              cancelReason,
               updatedById: request.user.id,
               updatedAt: new Date(),
             },
@@ -99,20 +99,18 @@ export default async function (fastify, opts) {
             where: { id },
             data: {
               status: Deflection.HoldStatus.CANCELLED,
-              cancelReasonId: update.cancelReasonId,
+              cancelReason: update.cancelReason,
               cancelledAt: update.updatedAt,
               cancelledById: update.updatedById,
               updatedAt: update.updatedAt,
             },
             include: {
               subject: true,
-              cancelReason: true,
               propertyPhotos: true,
             },
           });
           const isInTransit = [
             Deflection.SubjectStatus.DETAINED,
-            Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
           ].includes(deflection.subjectStatus);
           const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
           const updatedData = {
@@ -146,7 +144,7 @@ export default async function (fastify, opts) {
 
       if (
         deflection.status === Deflection.HoldStatus.CANCELLED &&
-        deflection.cancelReasonId === HOSPITAL_CANCEL_REASON_ID &&
+        deflection.cancelReason === HOSPITAL_CANCEL_REASON &&
         isHospitalCancellation647fEligible({ ...deflection, status: Deflection.HoldStatus.ACTIVE })
       ) {
         await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
@@ -154,6 +152,11 @@ export default async function (fastify, opts) {
           userId: request.user.id,
           formIds: ['647f'],
           emailTemplate: 'transfer-form',
+          recipientEmail: [
+            'SFPD.Data.Transfer.Authorized@sfgov.org',
+            'Andrew.bley@sfgov.org',
+            'Sfso-incidentreports@sfgov.org',
+          ],
         });
       }
 

@@ -37,7 +37,10 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
       if (data.id !== request.user.id && !request.user.isAdmin) {
-        return reply.code(StatusCodes.FORBIDDEN).send();
+        const requestUser = new User(request.user);
+        if (!requestUser.isOrgAdmin || data.organizationId !== request.user.organizationId) {
+          return reply.code(StatusCodes.FORBIDDEN).send();
+        }
       }
       reply.send(new User(data));
     }

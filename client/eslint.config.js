@@ -7,6 +7,7 @@ export default [
     ignores: [
       '!.storybook',
       'dist/*',
+      'dev-dist/*',
     ],
     semi: true
   }),

@@ -87,12 +87,16 @@ test('/api/status/capacity', async (t) => {
     assert.deepStrictEqual(typeof body.beds.occupied, 'number');
     assert.deepStrictEqual(typeof body.beds.inTransit, 'number');
     assert.ok(Array.isArray(body.occupants));
-    assert.deepStrictEqual(body.occupants.length, body.beds.occupied);
+    // Note: body.occupants and body.beds.occupied represent different sets and
+    // are not expected to be equal in general. Occupants is "admitted within
+    // last 24h"; occupied is "at the facility, not in transit." See
+    // routes/api/status/capacity.js for the full boundary definitions.
 
     for (const occ of body.occupants) {
-      assert.deepStrictEqual(Object.keys(occ).sort(), ['occupiedSince', 'substance']);
-      assert.ok(occ.occupiedSince === null || typeof occ.occupiedSince === 'string');
-      assert.ok(occ.substance === null || typeof occ.substance === 'string');
+      assert.deepStrictEqual(Object.keys(occ).sort(), ['medicalIntakeStartedAt', 'exitedAt', 'releasedAt']);
+      assert.ok(occ.medicalIntakeStartedAt === null || typeof occ.medicalIntakeStartedAt === 'string');
+      assert.ok(occ.releasedAt === null || typeof occ.releasedAt === 'string');
+      assert.ok(occ.exitedAt === null || typeof occ.exitedAt === 'string');
     }
   });
 

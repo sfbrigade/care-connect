@@ -21,7 +21,7 @@ import { readStoredWorkMode, writeStoredWorkMode } from './utils/workMode';
 
 const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
 const MODE_DESCRIPTION = {
-  FIELD: 'means you can create holds and complete arrests.',
+  FIELD: 'means you can create holds and complete custodial arrests.',
   CUSTODY: 'means you can receive custody and undertake other facility activities.',
 };
 const MODE_SHORT_LABEL = { FIELD: 'In the field', CUSTODY: 'At RESET' };

@@ -1,14 +1,10 @@
 import { Chip, Group, Stack, Text } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
-
-import Api from '@/Api';
+import { useTranslation } from 'react-i18next';
 
 function CancelReasonSelector ({ value, onChange, enabled = true, stacked = false, label = 'Select a reason for canceling the hold(s)' }) {
-  const { data: cancelReasons } = useQuery({
-    queryKey: ['deflection-cancel-reasons'],
-    queryFn: () => Api.deflections.cancelReasons.index().then(response => response.data),
-    enabled,
-  });
+  const { t } = useTranslation();
+  const cancelReasons = Object.entries(t('deflectionCancelReason', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
 
   if (!enabled) {
     return null;

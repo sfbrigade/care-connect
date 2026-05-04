@@ -1,9 +1,11 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { DrugTypeEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
+import i18n from '#lib/i18n.js';
+const { DrugTypeEnum } = prismaPkg;
 
 export function transformData (deflection) {
   const incident = deflection.incident;
@@ -56,8 +58,8 @@ export function transformData (deflection) {
     subjectDrugType: deflection.drugType || null,
     arrivedAtReset: deflection.arrivedAt?.toISOString() || null,
     transferredAt: deflection.transferredAt?.toISOString() || null,
-    releasedAt: deflection.releasedAt.toISOString(),
-    releaseReason: deflection.releaseReason?.name || '',
+    releasedAt: (deflection.releasedAt || deflection.exitedAt).toISOString(),
+    releaseReason: deflection.releaseReason ? i18n.t(`deflectionReleaseReason.${deflection.releaseReason}`) : '',
     behavior: deflection.behavior || null,
     releaseNarrative: deflection.releaseNarrative || null,
   };
