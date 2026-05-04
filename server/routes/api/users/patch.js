@@ -154,8 +154,8 @@ export default async function (fastify, opts) {
         // Self-protection: a user cannot change their own roles or admin
         // status, even if they are a platform admin.
         if (
-          data.id === request.user.id
-          && (user.changes.has('roles') || user.changes.has('isAdmin'))
+          data.id === request.user.id &&
+          (user.changes.has('roles') || user.changes.has('isAdmin'))
         ) {
           lockedForbidden = true;
           return;

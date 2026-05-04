@@ -192,8 +192,8 @@ function AdminUserForm () {
                 const facilityAdminTooltip = isEditingSelf
                   ? selfEditTooltip
                   : !isCareUser
-                    ? 'Facility Admin is only available for users with the Care role.'
-                    : null;
+                      ? 'Facility Admin is only available for users with the Care role.'
+                      : null;
                 const facilityAdminDisabled = isEditingSelf || !isCareUser;
                 return (
                   <Stack gap='sm'>
