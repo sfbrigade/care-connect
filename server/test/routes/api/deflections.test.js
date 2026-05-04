@@ -317,7 +317,7 @@ test('/api/deflections', async (t) => {
       });
       assert.deepStrictEqual(bedType.occupied, 0);
       assert.deepStrictEqual(bedType.holds, 4);
-      assert.deepStrictEqual(bedType.inTransit, 2); // in-transit decrements
+      assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
     });
 
@@ -1485,6 +1485,26 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 1);
       assert.deepStrictEqual(bedType.inTransit, 1); // deflection 6 is READY_FOR_INTAKE so is NOT considered in transit
       assert.deepStrictEqual(bedType.available, 7);
+    });
+
+    await t.test('allows facility admin to cancel an active hold', async () => {
+      await prisma.deflection.expire();
+
+      const response = await app.inject()
+        .delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
+        .headers(facilityAdminHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.status, 'CANCELLED');
+      assert.deepStrictEqual(data.cancelledById, 'a1b2c3d4-e5f6-7890-abcd-fa1234567890');
+
+      const deflection = await prisma.deflection.findUnique({
+        where: { id: 4 },
+      });
+      assert.deepStrictEqual(deflection.status, 'CANCELLED');
+      assert.deepStrictEqual(deflection.cancelledById, 'a1b2c3d4-e5f6-7890-abcd-fa1234567890');
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {

@@ -74,10 +74,15 @@ function ManageHolds ({ facility }) {
     queryKey: ['deflections', facility.id, 'manage-holds'],
     queryFn: () => Api.deflections.list({
       facilityId: facility.id,
-      subjectStatus: 'DETAINED,ONSITE_AWAITING_TRANSFER',
+      active: 'true',
+      subjectStatus: 'DETAINED',
     }).then(r => r.data),
     refetchOnMount: 'always',
   });
+
+  const activeHolds = (holds ?? []).filter(
+    hold => hold.status === 'ACTIVE' && hold.subjectStatus === 'DETAINED'
+  );
 
   const cancelMutation = useMutation({
     mutationFn: (id) => Api.deflections.cancel(id),
@@ -106,11 +111,11 @@ function ManageHolds ({ facility }) {
       <Stack>
         <Title order={4}>Holds in transit</Title>
 
-        {holds?.length === 0 && (
+        {activeHolds.length === 0 && (
           <Text c='dimmed'>No holds in transit.</Text>
         )}
 
-        {holds?.map((hold) => (
+        {activeHolds.map((hold) => (
           <HoldCard
             key={hold.id}
             deflection={hold}

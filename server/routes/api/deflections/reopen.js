@@ -75,7 +75,6 @@ export default async function (fastify, opts) {
       // check/update bed type availability
       const isInTransit = [
         Deflection.SubjectStatus.DETAINED,
-        Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
       ].includes(deflection.subjectStatus);
       const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
       const updatedData = {
