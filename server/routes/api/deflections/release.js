@@ -229,14 +229,12 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      if (!isExitRelease) {
-        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
-          deflectionId: deflection.id,
-          userId: request.user.id,
-          formIds: ['647f', '849b', 'cert'],
-          emailTemplate: 'release-forms',
-        });
-      }
+      await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+        deflectionId: deflection.id,
+        userId: request.user.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });
