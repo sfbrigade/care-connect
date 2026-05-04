@@ -146,8 +146,8 @@ describe('AdminUserForm', () => {
     renderForm();
 
     // Default mocked user has roles: ['FIELD'] — no CARE
-    const facilityCheckbox = await screen.findByLabelText('Facility Admin');
-    expect(facilityCheckbox).toBeDisabled();
+    await waitFor(() => expect(screen.getByLabelText('First name')).toBeEnabled());
+    expect(screen.getByLabelText('Facility Admin')).toBeDisabled();
     expect(screen.getByLabelText('Org Admin')).toBeEnabled();
     expect(screen.getByLabelText('Super Admin')).toBeEnabled();
   });
@@ -179,8 +179,7 @@ describe('AdminUserForm', () => {
     });
     renderForm();
 
-    const facilityCheckbox = await screen.findByLabelText('Facility Admin');
-    await waitFor(() => expect(facilityCheckbox).toBeEnabled());
+    await waitFor(() => expect(screen.getByLabelText('Facility Admin')).toBeEnabled());
   });
 
   it('reflects existing roles in the new checkboxes', async () => {
@@ -210,8 +209,7 @@ describe('AdminUserForm', () => {
     });
     renderForm();
 
-    const facilityCheckbox = await screen.findByLabelText('Facility Admin');
-    await waitFor(() => expect(facilityCheckbox).toBeChecked());
+    await waitFor(() => expect(screen.getByLabelText('Facility Admin')).toBeChecked());
     expect(screen.getByLabelText('Org Admin')).not.toBeChecked();
   });
 
@@ -288,8 +286,8 @@ describe('AdminUserForm', () => {
     });
     renderForm();
 
-    const orgAdminCheckbox = await screen.findByLabelText('Org Admin');
-    await userEvent.click(orgAdminCheckbox);
+    await waitFor(() => expect(screen.getByLabelText('First name')).toBeEnabled());
+    await userEvent.click(screen.getByLabelText('Org Admin'));
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
     await waitFor(() => expect(apiMocks.updateUser).toHaveBeenCalled());
@@ -305,15 +303,15 @@ describe('AdminUserForm', () => {
 
     renderForm();
 
-    const superAdminCheckbox = await screen.findByLabelText('Super Admin');
-    expect(superAdminCheckbox).not.toBeChecked();
+    await waitFor(() => expect(screen.getByLabelText('First name')).toBeEnabled());
+    expect(screen.getByLabelText('Super Admin')).not.toBeChecked();
 
-    await userEvent.click(superAdminCheckbox);
+    await userEvent.click(screen.getByLabelText('Super Admin'));
 
     expect(confirmSpy).toHaveBeenCalledWith(
       expect.stringMatching(/grant super admin/i)
     );
-    expect(superAdminCheckbox).not.toBeChecked();
+    expect(screen.getByLabelText('Super Admin')).not.toBeChecked();
 
     confirmSpy.mockRestore();
   });
@@ -323,13 +321,13 @@ describe('AdminUserForm', () => {
 
     renderForm();
 
-    const superAdminCheckbox = await screen.findByLabelText('Super Admin');
-    await userEvent.click(superAdminCheckbox);
+    await waitFor(() => expect(screen.getByLabelText('First name')).toBeEnabled());
+    await userEvent.click(screen.getByLabelText('Super Admin'));
 
     expect(confirmSpy).toHaveBeenCalledWith(
       expect.stringMatching(/grant super admin/i)
     );
-    expect(superAdminCheckbox).toBeChecked();
+    expect(screen.getByLabelText('Super Admin')).toBeChecked();
 
     confirmSpy.mockRestore();
   });

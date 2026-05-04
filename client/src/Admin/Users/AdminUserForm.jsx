@@ -84,10 +84,15 @@ function AdminUserForm () {
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => {
-      const { isOrgAdmin: nextIsOrgAdmin, isFacilityAdmin: nextIsFacilityAdmin, ...rest } = values;
+      const {
+        isOrgAdmin: nextIsOrgAdmin,
+        isFacilityAdmin: nextIsFacilityAdmin,
+        roles: existingRoles,
+        ...rest
+      } = values;
       const payload = { ...rest };
       if (user?.isAdmin && !isEditingSelf) {
-        const preservedRoles = (data?.roles ?? []).filter(
+        const preservedRoles = (existingRoles ?? []).filter(
           r => r !== 'ORG_ADMIN' && r !== 'FACILITY_ADMIN'
         );
         payload.roles = [
