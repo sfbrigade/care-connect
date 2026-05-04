@@ -115,8 +115,9 @@ jobs:
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
           build-args: |
             GIT_SHA=${{ github.sha }}
+            POSTHOG_CLI_PROJECT_IDS=${{ vars.POSTHOG_CLI_PROJECT_IDS }}
           secrets: |
-            posthog_cli_token=${{ secrets.POSTHOG_CLI_TOKEN }}
+            posthog_cli_api_key=${{ secrets.POSTHOG_CLI_API_KEY }}
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
