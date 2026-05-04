@@ -81,7 +81,7 @@ function ManageHolds ({ facility }) {
   const [cancelTarget, setCancelTarget] = useState(null);
   const now = useNow(1000, true);
 
-  const { data: holds, isLoading } = useQuery({
+  const { data: holds, isLoading, isFetching } = useQuery({
     queryKey: ['deflections', facility.id, 'manage-holds'],
     queryFn: () => Api.deflections.list({
       facilityId: facility.id,
@@ -98,6 +98,8 @@ function ManageHolds ({ facility }) {
   const awaitingCustodyTransferHolds = (holds ?? []).filter(
     hold => isCurrentlyActiveHold(hold, now) && hold.subjectStatus === 'ONSITE_AWAITING_TRANSFER'
   );
+  const showEmptyInTransit = !isLoading && !isFetching && inTransitHolds.length === 0;
+  const showEmptyAwaitingCustodyTransfer = !isLoading && !isFetching && awaitingCustodyTransferHolds.length === 0;
 
   const cancelMutation = useMutation({
     mutationFn: (id) => Api.deflections.cancel(id),
@@ -137,7 +139,7 @@ function ManageHolds ({ facility }) {
             </Accordion.Control>
             <Accordion.Panel>
               <Stack gap='md'>
-                {inTransitHolds.length === 0 && (
+                {showEmptyInTransit && (
                   <Text c='dimmed'>No holds in transit.</Text>
                 )}
 
@@ -159,7 +161,7 @@ function ManageHolds ({ facility }) {
             </Accordion.Control>
             <Accordion.Panel>
               <Stack gap='md'>
-                {awaitingCustodyTransferHolds.length === 0 && (
+                {showEmptyAwaitingCustodyTransfer && (
                   <Text c='dimmed'>No holds awaiting custody transfer.</Text>
                 )}
 
