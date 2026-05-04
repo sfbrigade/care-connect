@@ -296,6 +296,14 @@ test('/api/users', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
 
+    await t.test('disallows admin from toggling their own admin status', async (t) => {
+      // admin.user@test.com cannot self-revoke isAdmin
+      const response = await app.inject().patch('/api/users/555740af-17e9-48a3-93b8-d5236dfd2c29').payload({
+        isAdmin: false,
+      }).headers(adminHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
     await t.test('updates badgeNumber and title', async (t) => {
       const response = await app.inject().patch('/api/users/49acdf99-536f-49ac-8138-1c77e5087697').payload({
         badgeNumber: 'BADGE-12345',

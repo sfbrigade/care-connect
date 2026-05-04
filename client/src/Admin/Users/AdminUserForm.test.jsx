@@ -189,7 +189,7 @@ describe('AdminUserForm', () => {
     expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
   });
 
-  it('hides Org Admin and Facility Admin checkboxes when editing own profile', async () => {
+  it('hides all privileged checkboxes when editing own profile', async () => {
     authMock.user = {
       id: 'user-1',
       firstName: 'Self',
@@ -198,7 +198,8 @@ describe('AdminUserForm', () => {
     };
     renderForm();
 
-    expect(await screen.findByLabelText('Super Admin')).toBeInTheDocument();
+    await screen.findByLabelText('First name');
+    expect(screen.queryByLabelText('Super Admin')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Org Admin')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Facility Admin')).not.toBeInTheDocument();
   });
@@ -212,7 +213,7 @@ describe('AdminUserForm', () => {
     };
     renderForm();
 
-    await screen.findByLabelText('Super Admin');
+    await screen.findByLabelText('First name');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
     await waitFor(() => expect(apiMocks.updateUser).toHaveBeenCalled());

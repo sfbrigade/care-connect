@@ -186,7 +186,7 @@ function AdminUserForm () {
                   data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
                 />
               )}
-              {user?.isAdmin && (
+              {user?.isAdmin && !isEditingSelf && (
                 <Stack gap='sm'>
                   <Checkbox
                     {...form.getInputProps('isAdmin', { type: 'checkbox' })}
@@ -194,22 +194,18 @@ function AdminUserForm () {
                     label='Super Admin'
                     description='Grants full platform-wide access.'
                   />
-                  {!isEditingSelf && (
-                    <>
-                      <Checkbox
-                        {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
-                        key={form.key('isOrgAdmin')}
-                        label='Org Admin'
-                        description='Can manage users within their organization.'
-                      />
-                      <Checkbox
-                        {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
-                        key={form.key('isFacilityAdmin')}
-                        label='Facility Admin'
-                        description='Can manage capacity at the facility.'
-                      />
-                    </>
-                  )}
+                  <Checkbox
+                    {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                    key={form.key('isOrgAdmin')}
+                    label='Org Admin'
+                    description='Can manage users within their organization.'
+                  />
+                  <Checkbox
+                    {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                    key={form.key('isFacilityAdmin')}
+                    label='Facility Admin'
+                    description='Can manage capacity at the facility.'
+                  />
                 </Stack>
               )}
               <Group>

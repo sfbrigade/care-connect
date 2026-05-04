@@ -151,9 +151,12 @@ export default async function (fastify, opts) {
         const user = new User(data);
         user.update(updateData);
 
-        // Self-protection: a user cannot change their own roles, even if they
-        // are a platform admin.
-        if (data.id === request.user.id && user.changes.has('roles')) {
+        // Self-protection: a user cannot change their own roles or admin
+        // status, even if they are a platform admin.
+        if (
+          data.id === request.user.id
+          && (user.changes.has('roles') || user.changes.has('isAdmin'))
+        ) {
           lockedForbidden = true;
           return;
         }
