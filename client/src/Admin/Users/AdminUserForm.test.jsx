@@ -142,6 +142,47 @@ describe('AdminUserForm', () => {
     expect(screen.getByLabelText('Facility Admin')).toBeInTheDocument();
   });
 
+  it('disables Facility Admin checkbox for users without the Care role', async () => {
+    renderForm();
+
+    // Default mocked user has roles: ['FIELD'] — no CARE
+    const facilityCheckbox = await screen.findByLabelText('Facility Admin');
+    expect(facilityCheckbox).toBeDisabled();
+    expect(screen.getByLabelText('Org Admin')).toBeEnabled();
+    expect(screen.getByLabelText('Super Admin')).toBeEnabled();
+  });
+
+  it('enables Facility Admin checkbox for users with the Care role', async () => {
+    apiMocks.getUser.mockResolvedValue({
+      data: {
+        id: 'user-1',
+        firstName: 'Care',
+        lastName: 'Worker',
+        email: 'care.worker@test.com',
+        isAdmin: false,
+        roles: ['CARE'],
+        picture: null,
+        pictureUrl: null,
+        organizationId: null,
+        organization: null,
+        badgeNumber: null,
+        titleId: null,
+        title: null,
+        unitId: null,
+        unit: null,
+        prop115Certified: false,
+        deactivatedAt: null,
+        deletedAt: null,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    renderForm();
+
+    const facilityCheckbox = await screen.findByLabelText('Facility Admin');
+    await waitFor(() => expect(facilityCheckbox).toBeEnabled());
+  });
+
   it('reflects existing roles in the new checkboxes', async () => {
     apiMocks.getUser.mockResolvedValue({
       data: {

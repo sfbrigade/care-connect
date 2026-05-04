@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title, Tooltip } from '@mantine/core';
 import { isNotEmpty, useForm } from '@mantine/form';
 import { IconArrowLeft } from '@tabler/icons-react';
 
@@ -186,37 +186,53 @@ function AdminUserForm () {
                   data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
                 />
               )}
-              {user?.isAdmin && (
-                <Stack gap='sm'>
-                  <Checkbox
-                    {...form.getInputProps('isAdmin', { type: 'checkbox' })}
-                    key={form.key('isAdmin')}
-                    label='Super Admin'
-                    description='Grants full platform-wide access.'
-                    disabled={isEditingSelf}
-                    onClick={(event) => {
-                      const action = event.currentTarget.checked ? 'grant' : 'revoke';
-                      if (!window.confirm(`Are you sure you want to ${action} super admin access for this user?`)) {
-                        event.preventDefault();
-                      }
-                    }}
-                  />
-                  <Checkbox
-                    {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
-                    key={form.key('isOrgAdmin')}
-                    label='Org Admin'
-                    description='Can manage users within their organization.'
-                    disabled={isEditingSelf}
-                  />
-                  <Checkbox
-                    {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
-                    key={form.key('isFacilityAdmin')}
-                    label='Facility Admin'
-                    description='Can manage capacity at the facility.'
-                    disabled={isEditingSelf}
-                  />
-                </Stack>
-              )}
+              {user?.isAdmin && (() => {
+                const isCareUser = (data?.roles ?? []).includes('CARE');
+                const selfEditTooltip = 'You cannot change your own admin status.';
+                const facilityAdminTooltip = isEditingSelf
+                  ? selfEditTooltip
+                  : !isCareUser
+                    ? 'Facility Admin is only available for users with the Care role.'
+                    : null;
+                const facilityAdminDisabled = isEditingSelf || !isCareUser;
+                return (
+                  <Stack gap='sm'>
+                    <Tooltip label={facilityAdminTooltip} disabled={!facilityAdminTooltip} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                        key={form.key('isFacilityAdmin')}
+                        label='Facility Admin'
+                        description='Can manage capacity at the facility.'
+                        disabled={facilityAdminDisabled}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                        key={form.key('isOrgAdmin')}
+                        label='Org Admin'
+                        description='Can manage users within their organization.'
+                        disabled={isEditingSelf}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isAdmin', { type: 'checkbox' })}
+                        key={form.key('isAdmin')}
+                        label='Super Admin'
+                        description='Grants full platform-wide access.'
+                        disabled={isEditingSelf}
+                        onClick={(event) => {
+                          const action = event.currentTarget.checked ? 'grant' : 'revoke';
+                          if (!window.confirm(`Are you sure you want to ${action} super admin access for this user?`)) {
+                            event.preventDefault();
+                          }
+                        }}
+                      />
+                    </Tooltip>
+                  </Stack>
+                );
+              })()}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
               </Group>
