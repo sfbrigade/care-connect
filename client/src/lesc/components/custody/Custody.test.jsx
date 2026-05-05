@@ -108,7 +108,7 @@ beforeEach(() => {
       });
     }
 
-    if (subjectStatus === 'DETAINED' && status === 'ACTIVE') {
+    if (subjectStatus === 'DETAINED,ONSITE_AWAITING_TRANSFER' && status === 'ACTIVE') {
       return Promise.resolve({
         data: [
           {
@@ -145,7 +145,7 @@ beforeEach(() => {
           },
           {
             id: 5,
-            subjectStatus: 'DETAINED',
+            subjectStatus: 'ONSITE_AWAITING_TRANSFER',
             currentOfficer: { id: 'officer-2', firstName: 'Officer', lastName: 'Two', badgeNumber: '5678' },
             subject: { firstName: 'Incomplete', lastName: 'Person' },
             incident: {},
@@ -248,14 +248,14 @@ describe('Custody', () => {
     expect(screen.getByText('Details incomplete')).toBeInTheDocument();
   });
 
-  it('requests only active detained holds for Transit', async () => {
+  it('requests only active pre-transfer holds for Transit', async () => {
     mockSessionStateValue.current = 'transit';
 
     renderCustody();
 
     await screen.findByText('O. One #1234');
     expect(mockDeflectionsList).toHaveBeenCalledWith(expect.objectContaining({
-      subjectStatus: 'DETAINED',
+      subjectStatus: 'DETAINED,ONSITE_AWAITING_TRANSFER',
       status: 'ACTIVE',
       includeCurrentOfficer: true,
     }));
