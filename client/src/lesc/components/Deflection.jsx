@@ -53,7 +53,7 @@ function Deflection () {
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',
     'FAILED_INTAKE',
-    'ADMITTED',
+    'IN_MEDICAL_INTAKE',
     'IN_CHAIR',
     'RELEASED',
     'EXITED',
@@ -103,9 +103,9 @@ function Deflection () {
     },
   });
 
-  async function onCancelHoldConfirmed (cancelReasonId) {
+  async function onCancelHoldConfirmed (cancelReason) {
     await cancelDeflectionMutation.mutateAsync({
-      cancelReasonId,
+      cancelReason,
     });
   }
 

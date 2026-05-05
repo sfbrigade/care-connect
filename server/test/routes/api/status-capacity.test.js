@@ -3,6 +3,7 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { build } from '#test/helper.js';
+import { _resetCacheForTests } from '../../../routes/api/status/capacity.js';
 
 const TEST_API_KEY = 'test-capacity-api-key-do-not-use-in-prod';
 
@@ -14,8 +15,11 @@ test('/api/status/capacity', async (t) => {
 
   // The shared test fixtures don't include a facility with subdomain='reset',
   // and the helper's afterEach recreates the DB from template1 after every
-  // subtest — so we re-seed per test that needs it.
+  // subtest — so we re-seed per test that needs it. Also reset the
+  // module-level capacity response cache so a previous subtest's snapshot
+  // doesn't leak into the next subtest's freshly-seeded DB.
   t.beforeEach(async () => {
+    _resetCacheForTests();
     const user = await prisma.user.findFirst();
     const serviceType = await prisma.serviceType.findFirst();
     await prisma.facility.create({
@@ -93,8 +97,8 @@ test('/api/status/capacity', async (t) => {
     // routes/api/status/capacity.js for the full boundary definitions.
 
     for (const occ of body.occupants) {
-      assert.deepStrictEqual(Object.keys(occ).sort(), ['admittedAt', 'exitedAt', 'releasedAt']);
-      assert.ok(occ.admittedAt === null || typeof occ.admittedAt === 'string');
+      assert.deepStrictEqual(Object.keys(occ).sort(), ['medicalIntakeStartedAt', 'exitedAt', 'releasedAt']);
+      assert.ok(occ.medicalIntakeStartedAt === null || typeof occ.medicalIntakeStartedAt === 'string');
       assert.ok(occ.releasedAt === null || typeof occ.releasedAt === 'string');
       assert.ok(occ.exitedAt === null || typeof occ.exitedAt === 'string');
     }
@@ -119,5 +123,70 @@ test('/api/status/capacity', async (t) => {
       .get('/api/status/capacity')
       .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
     assert.ok(response.headers['cache-control'].includes('max-age=30'));
+  });
+
+  await t.test('beds.inTransit is computed from live row state, not the BedType counter', async () => {
+    // beforeEach seeded the bedType with inTransit=2, but no actual
+    // ACTIVE+DETAINED deflection rows exist. The response should report 0,
+    // proving the denormalized counter is no longer the source of truth.
+    const response = await app.inject()
+      .get('/api/status/capacity')
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+    const body = JSON.parse(response.body);
+    assert.deepStrictEqual(body.beds.inTransit, 0);
+  });
+
+  await t.test('beds.occupied excludes cancelled-after-arrival rows', async () => {
+    const user = await prisma.user.findFirst();
+    const facility = await prisma.facility.findUnique({ where: { subdomain: 'reset' } });
+    const bedType = await prisma.bedType.findFirst({ where: { facilityId: facility.id } });
+
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId: facility.id,
+        encounteredVia: 'ON_VIEW',
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+
+    // Stale row: arrived but never exited, then cancelled. Must not count.
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId: facility.id,
+        bedTypeId: bedType.id,
+        createdById: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        status: 'CANCELLED',
+        arrivedAt: new Date('2026-01-01T00:00:00Z'),
+        exitedAt: null,
+      },
+    });
+
+    // Real row: active, currently onsite. Must count.
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId: facility.id,
+        bedTypeId: bedType.id,
+        createdById: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        status: 'ACTIVE',
+        subjectStatus: 'IN_CHAIR',
+        arrivedAt: new Date(),
+        exitedAt: null,
+      },
+    });
+
+    const response = await app.inject()
+      .get('/api/status/capacity')
+      .headers({ authorization: `Bearer ${TEST_API_KEY}`, host: 'reset.localhost' });
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+    const body = JSON.parse(response.body);
+    assert.deepStrictEqual(body.beds.occupied, 1);
   });
 });

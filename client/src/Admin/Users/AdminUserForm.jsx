@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title, Tooltip } from '@mantine/core';
 import { isNotEmpty, useForm } from '@mantine/form';
 import { IconArrowLeft } from '@tabler/icons-react';
 
@@ -20,6 +20,7 @@ function AdminUserForm () {
   const queryClient = useQueryClient();
   const params = useParams();
   const userId = params.userId ?? user?.id;
+  const isEditingSelf = userId === user?.id;
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [organizationId, setOrganizationId] = useState('');
@@ -33,6 +34,8 @@ function AdminUserForm () {
       picture: '',
       pictureUrl: '',
       isAdmin: false,
+      isOrgAdmin: false,
+      isFacilityAdmin: false,
       organizationId: '',
       badgeNumber: '',
       titleId: '',
@@ -72,13 +75,34 @@ function AdminUserForm () {
     if (data) {
       form.initialize({
         ...data,
+        isOrgAdmin: data.roles?.includes('ORG_ADMIN') ?? false,
+        isFacilityAdmin: data.roles?.includes('FACILITY_ADMIN') ?? false,
       });
       setOrganizationId(data.organizationId || '');
     }
   }, [data]);
 
   const onSubmitMutation = useMutation({
-    mutationFn: (values) => Api.users.update(userId, values),
+    mutationFn: (values) => {
+      const {
+        isOrgAdmin: nextIsOrgAdmin,
+        isFacilityAdmin: nextIsFacilityAdmin,
+        roles: existingRoles,
+        ...rest
+      } = values;
+      const payload = { ...rest };
+      if (user?.isAdmin && !isEditingSelf) {
+        const preservedRoles = (existingRoles ?? []).filter(
+          r => r !== 'ORG_ADMIN' && r !== 'FACILITY_ADMIN'
+        );
+        payload.roles = [
+          ...preservedRoles,
+          ...(nextIsOrgAdmin ? ['ORG_ADMIN'] : []),
+          ...(nextIsFacilityAdmin ? ['FACILITY_ADMIN'] : []),
+        ];
+      }
+      return Api.users.update(userId, payload);
+    },
     onSuccess: (response) => {
       showToast('The user\'s profile has been updated', 'success');
       queryClient.setQueryData(['users', userId], response.data);
@@ -167,13 +191,53 @@ function AdminUserForm () {
                   data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
                 />
               )}
-              {user?.isAdmin && (
-                <Checkbox
-                  {...form.getInputProps('isAdmin', { type: 'checkbox' })}
-                  key={form.key('isAdmin')}
-                  label='Is an Administrator?'
-                />
-              )}
+              {user?.isAdmin && (() => {
+                const isCareUser = (data?.roles ?? []).includes('CARE');
+                const selfEditTooltip = 'You cannot change your own admin status.';
+                const facilityAdminTooltip = isEditingSelf
+                  ? selfEditTooltip
+                  : !isCareUser
+                      ? 'Facility Admin is only available for users with the Care role.'
+                      : null;
+                const facilityAdminDisabled = isEditingSelf || !isCareUser;
+                return (
+                  <Stack gap='sm'>
+                    <Tooltip label={facilityAdminTooltip} disabled={!facilityAdminTooltip} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                        key={form.key('isFacilityAdmin')}
+                        label='Facility Admin'
+                        description='Can manage capacity at the facility.'
+                        disabled={facilityAdminDisabled}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                        key={form.key('isOrgAdmin')}
+                        label='Org Admin'
+                        description='Can manage users within their organization.'
+                        disabled={isEditingSelf}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isAdmin', { type: 'checkbox' })}
+                        key={form.key('isAdmin')}
+                        label='Super Admin'
+                        description='Grants full platform-wide access.'
+                        disabled={isEditingSelf}
+                        onClick={(event) => {
+                          const action = event.currentTarget.checked ? 'grant' : 'revoke';
+                          if (!window.confirm(`Are you sure you want to ${action} super admin access for this user?`)) {
+                            event.preventDefault();
+                          }
+                        }}
+                      />
+                    </Tooltip>
+                  </Stack>
+                );
+              })()}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
               </Group>

@@ -122,7 +122,7 @@ describe('CustodyCard', () => {
     expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
   });
 
-  it.each(['ADMITTED', 'IN_CHAIR', 'RELEASED'])(
+  it.each(['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED'])(
     'shows only Details for %s',
     (status) => {
       renderCard(buildDeflection({ subjectStatus: status }));
@@ -133,14 +133,14 @@ describe('CustodyCard', () => {
     }
   );
 
-  it('shows no buttons for exited', () => {
+  it('shows Details for exited', () => {
     renderCard(buildDeflection({ subjectStatus: 'EXITED' }));
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
   });
 
   it('navigates to details when Details is clicked', () => {
-    renderCard(buildDeflection({ subjectStatus: 'ADMITTED' }));
+    renderCard(buildDeflection({ subjectStatus: 'IN_MEDICAL_INTAKE' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Details' }));
 

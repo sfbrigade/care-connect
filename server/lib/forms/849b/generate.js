@@ -1,9 +1,10 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import prismaPkg from '@prisma/client';
-import { formatDateTime24 } from '../shared/formUtils.js';
+import { firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
+import i18n from '#lib/i18n.js';
 const { DrugTypeEnum } = prismaPkg;
 
 export function transformData (deflection) {
@@ -22,11 +23,9 @@ export function transformData (deflection) {
   }
 
   const incidentCreator = incident?.createdBy;
-  const officerName = incidentCreator
-    ? `${incidentCreator.firstName} ${incidentCreator.lastName}`
-    : '';
+  const officerName = firstInitialLastName(incidentCreator);
   const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
-
+  const reportingDeputy = deflection.releasedBy || (deflection.exitDestination === 'JAIL' ? deflection.exitedBy : null);
   const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
     .filter(Boolean)
     .join(', ');
@@ -43,6 +42,7 @@ export function transformData (deflection) {
     locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
     officerName,
     officerBadge,
+    reportingDeputy,
     subjectName,
     subjectFullName,
     subjectRace: subject?.race || '',
@@ -58,16 +58,17 @@ export function transformData (deflection) {
     arrivedAtReset: deflection.arrivedAt?.toISOString() || null,
     transferredAt: deflection.transferredAt?.toISOString() || null,
     releasedAt: (deflection.releasedAt || deflection.exitedAt).toISOString(),
-    releaseReason: deflection.releaseReason?.name || '',
+    releaseReason: deflection.releaseReason ? i18n.t(`deflectionReleaseReason.${deflection.releaseReason}`) : '',
     behavior: deflection.behavior || null,
     releaseNarrative: deflection.releaseNarrative || null,
   };
 }
 
-export async function generatePdf (deflectionData, user) {
+export async function generatePdf (deflectionData) {
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
   const isDrugTypeAlcohol = deflectionData.subjectDrugType === DrugTypeEnum.ALCOHOL;
+  const reportingDeputy = deflectionData.reportingDeputy;
 
   // Map deflection data to 849b form fields
   const formData = {
@@ -91,13 +92,15 @@ export async function generatePdf (deflectionData, user) {
     prop115Years: '2',
     prop115Pages: '2',
 
-    // Prop 115 certified - from user profile
-    prop115Certified: user?.prop115Certified ?? false,
+    // Prop 115 certified and deputy fields are pinned to the deputy who
+    // performed the release or jail exit. If that persisted user is missing,
+    // leave these fields blank/unchecked instead of using the current user.
+    prop115Certified: reportingDeputy?.prop115Certified ?? false,
 
-    // Deputy fields - from user profile (not incident creator)
-    reportingDeputy: user ? `${user.firstName} ${user.lastName}` : '',
-    star: user?.badgeNumber || '',
-    divisionUnit: user?.unit?.name || '',
+    // Deputy fields - from persisted reporting deputy (not incident creator or current user)
+    reportingDeputy: firstInitialLastName(reportingDeputy),
+    star: reportingDeputy?.badgeNumber || '',
+    divisionUnit: reportingDeputy?.unit?.name || '',
     supervisorApproval: '',
     watch: '',
     assignTo: '',

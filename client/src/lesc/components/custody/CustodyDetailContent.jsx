@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
+import { IconAlarm, IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -14,8 +14,9 @@ import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
+import useNow from '../../../hooks/useNow';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime, formatIntakeStartedAt } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -28,9 +29,11 @@ import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from 
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
+import classes from './CustodyDetailContent.module.css';
 
-const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'IN_CHAIR'];
+const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function isNetworkError (error) {
@@ -54,12 +57,19 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   const isAwaitingSafetyCheck = deflection?.subjectStatus === 'AWAITING_INTAKE';
   const isReadyForIntake = deflection?.subjectStatus === 'READY_FOR_INTAKE';
-  const isInMedicalIntake = deflection?.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection?.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const isExited = deflection?.subjectStatus === 'EXITED';
+  const isPreTransfer = PRE_TRANSFER_STATUSES.includes(deflection?.subjectStatus);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const isPostRelease = isLegallyReleased || isExited;
+  const canEditCustodyDetails = !isCareView && !isPreTransfer && !isPostRelease;
+  const now = useNow(1000, isPreTransfer && !isArrived && !!deflection?.expiresAt);
+  const expiresIn = isPreTransfer && !isArrived && deflection?.expiresAt
+    ? formatTimeRemaining(deflection.expiresAt, now)
+    : null;
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
@@ -76,12 +86,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const custodyStatusChip = getCustodyStatusChip(deflection);
   const careStatusChip = getCareStatusChip({ deflection, careFooterState });
   const releaseTimingChip = releaseTiming(deflection);
-  const intakeStartedAt = formatIntakeStartedAt(deflection?.admittedAt);
+  const intakeStartedAt = formatIntakeStartedAt(deflection?.medicalIntakeStartedAt);
   const propertyReturnStatusText = getPropertyReturnStatusText(deflection);
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReasonId=medical_issue&exitDestinationId=hospital`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
   }
 
   useEffect(() => {
@@ -191,8 +201,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const name = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const careDisplayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const address = formatAddress(deflection?.subject ?? {});
-  const [releaseNarrative, setReleaseNarrative] = useState('');
-  const [isEditingReleaseNarrative, setIsEditingReleaseNarrative] = useState(false);
 
   const incidentQuery = useQuery({
     queryKey: ['incidents', deflection?.incidentId],
@@ -207,27 +215,19 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
   });
 
-  useEffect(() => {
-    if (!isEditingReleaseNarrative) {
-      setReleaseNarrative(resolvedReleaseNarrative);
-    }
-  }, [resolvedReleaseNarrative, isEditingReleaseNarrative]);
-
-  const saveReleaseNarrativeMutation = useMutation({
-    mutationFn: () => Api.deflections.update(deflection.id, { releaseNarrative: releaseNarrative.trim() || null }),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['deflections', String(deflection.id)], response.data);
-      queryClient.setQueryData(['deflections', deflection.id], response.data);
-      setIsEditingReleaseNarrative(false);
-      showToast('849(b) narrative saved', 'success');
-    },
-    onError: () => {
-      showToast('Narrative not saved. Please try again.', 'error');
-    },
-  });
-
   const doc849b = deflection?.deflectionDocuments?.find(d => d.formId === '849b');
   const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
+  const showPostReleaseNarrativeActions = !isCareView && isCustody && isPostRelease;
+
+  const email849bMutation = useMutation({
+    mutationFn: () => Api.deflections.email849b(deflection.id),
+    onSuccess: (response) => {
+      showToast('849(b) e-mail sent', 'success', 4000, `We sent the 849(b) PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
+    },
+    onError: () => {
+      showToast('849(b) e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
 
   function open849bPdf () {
     const url = doc849b?.fileUrl || `/api/forms/849b/pdf/${deflection.id}`;
@@ -242,6 +242,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
+            {expiresIn && (
+              <Group gap='xs' align='center'>
+                <IconAlarm size={20} />
+                <Text size='lg'>Expires in {expiresIn}</Text>
+              </Group>
+            )}
             <Group gap='xs'>
               {deflection?.incidentId && <Text size='md'>Incident {deflection.incidentId}</Text>}
               {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
@@ -249,7 +255,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             </Group>
             {!isCareView && (
               <Stack gap='xs' align='center'>
-                <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {isPreTransfer
+                  ? <DeflectionStatusChip label={isArrived ? 'Arrived' : 'Awaiting arrival'} tone='indigo' />
+                  : <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
                 )}
@@ -272,7 +280,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Stack gap='sm' align='center'>
-              <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
+              <Card bg='white' p='2xl' mx='auto' withBorder>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} variant={!isReadyForIntake ? 'locked' : undefined} />
                   <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
@@ -287,15 +295,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             </Stack>
           )}
           {!isCareView && isPostRelease && (
-            <Stack gap='xs' align='flex-start'>
+            <Group gap='sm' align='center'>
               <Button
                 onClick={open849bPdf}
                 variant='outline'
-                rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
+                rightSection={<IconExternalLink size={18} />}
               >
                 849(b).pdf
               </Button>
-            </Stack>
+              <Button
+                onClick={() => email849bMutation.mutate()}
+                loading={email849bMutation.isPending}
+                variant='outline'
+              >
+                E-mail me the 849(b)
+              </Button>
+            </Group>
           )}
           <Stack gap='sm'>
             <Title order={2}>{isCareView ? careDisplayName : name}</Title>
@@ -341,7 +356,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{address}</Text>
               </Box>
             )}
-            {!isCareView && !isPostRelease && (
+            {canEditCustodyDetails && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
@@ -409,7 +424,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}
-                      {!isPostRelease && (
+                      {canEditCustodyDetails && (
                         <Group mt='sm'>
                           <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
                         </Group>
@@ -509,62 +524,33 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item value='release-narrative'>
-                  <Accordion.Control>
-                    <Title order={3}>849(b) release narrative</Title>
-                    <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap='sm'>
-                      <Box>
-                        <Text c='dimmed'>Narrative</Text>
-                        {isEditingReleaseNarrative
-                          ? (
-                            <Textarea
-                              value={releaseNarrative}
-                              onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
-                              autosize
-                              minRows={4}
-                              mt='xs'
-                            />
-                            )
-                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
-                      </Box>
-                      {!isEditingReleaseNarrative && !isPostRelease && (
-                        <Group>
-                          <Button
-                            variant='secondary'
-                            size='md'
-                            onClick={() => setIsEditingReleaseNarrative(true)}
-                          >
-                            Edit
-                          </Button>
-                        </Group>
-                      )}
-                      {isEditingReleaseNarrative && (
-                        <Group>
-                          <Button
-                            variant='secondary'
-                            size='md'
-                            onClick={() => {
-                              setReleaseNarrative(resolvedReleaseNarrative);
-                              setIsEditingReleaseNarrative(false);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size='md'
-                            onClick={() => saveReleaseNarrativeMutation.mutate()}
-                            loading={saveReleaseNarrativeMutation.isPending}
-                          >
-                            Save narrative
-                          </Button>
-                        </Group>
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
+                {!isPreTransfer && (
+                  <Accordion.Item value='release-narrative'>
+                    <Accordion.Control>
+                      <Title order={3}>849(b) release narrative</Title>
+                      <Text c='gray.5' size='sm'>Any narrative edits will automatically update the 849(b) document.</Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>849(b) narrative</Text>
+                          <Text className={classes.narrativeText}>{resolvedReleaseNarrative}</Text>
+                        </Box>
+                        {showPostReleaseNarrativeActions && (
+                          <Group>
+                            <Button
+                              variant='secondary'
+                              size='md'
+                              onClick={() => navigate(`/custody/${deflection?.id}/release-narrative`)}
+                            >
+                              Edit narrative
+                            </Button>
+                          </Group>
+                        )}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
               </Accordion>
             </>
           )}
@@ -664,7 +650,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           radius='50%'
                           size={48}
                           aria-label='More actions'
-                          style={{ minWidth: 48, flex: '0 0 48px' }}
+                          className={classes.moreActionsButton}
                         >
                           <IconDots size={24} color='var(--mantine-color-indigo-6)' />
                         </ActionIcon>

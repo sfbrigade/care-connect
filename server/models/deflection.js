@@ -2,19 +2,29 @@ import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
-import DeflectionCancelReason from './deflectionCancelReason.js';
 import DeflectionDocument from './deflectionDocument.js';
-import DeflectionExitDestination from './deflectionExitDestination.js';
-import DeflectionExitHousingStatus from './deflectionExitHousingStatus.js';
-import DeflectionRefusalReason from './deflectionRefusalReason.js';
-import DeflectionReleaseReason from './deflectionReleaseReason.js';
 import Organization from './organization.js';
 import PropertyPhoto from './propertyPhoto.js';
 import Subject from './subject.js';
 import Title from './title.js';
 import Unit from './unit.js';
 import User from './user.js';
-const { Prisma, DrugTypeEnum, ChargeTypeEnum, HoldStatusEnum, PropertyEnum, PropertyNotReturnedReasonEnum, SFResidentEnum, SubjectStatusEnum, TernaryEnum } = prismaPkg;
+const {
+  Prisma,
+  DrugTypeEnum,
+  ChargeTypeEnum,
+  HoldStatusEnum,
+  PropertyEnum,
+  PropertyNotReturnedReasonEnum,
+  SFResidentEnum,
+  SubjectStatusEnum,
+  TernaryEnum,
+  DeflectionCancelReasonEnum,
+  DeflectionReleaseReasonEnum,
+  DeflectionRefusalReasonEnum,
+  DeflectionExitDestinationEnum,
+  DeflectionExitHousingStatusEnum,
+} = prismaPkg;
 
 const DeflectionAttributesSchema = z.object({
   behavior: z.string().nullable(),
@@ -71,10 +81,10 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   certifiedAt: z.coerce.date().nullable().optional(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
+  arrivedAt: z.coerce.date().nullable(),
   completedAt: z.coerce.date().nullable(),
   extensionCount: z.number().int().min(0),
-  cancelReasonId: z.string().nullable(),
-  cancelReason: DeflectionCancelReason.ResponseSchema.nullable().optional(),
+  cancelReason: z.enum(Object.values(DeflectionCancelReasonEnum)).nullable(),
   cancelledAt: z.coerce.date().nullable(),
   cancelledById: z.string().uuid().nullable(),
   cancelledBy: User.ResponseSchema.nullable().optional(),
@@ -89,31 +99,28 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   transferredByUnit: Unit.ResponseSchema.nullable().optional(),
   transferredByTitleId: z.string().nullable(),
   transferredByTitle: Title.ResponseSchema.nullable().optional(),
-  admittedAt: z.coerce.date().nullable(),
-  admittedById: z.string().uuid().nullable(),
-  admittedBy: User.ResponseSchema.nullable().optional(),
+  medicalIntakeStartedAt: z.coerce.date().nullable(),
+  medicalIntakeStartedById: z.string().uuid().nullable(),
+  medicalIntakeStartedBy: User.ResponseSchema.nullable().optional(),
   rejectedAt: z.coerce.date().nullable(),
   rejectedById: z.string().uuid().nullable(),
   rejectedBy: User.ResponseSchema.nullable().optional(),
   releasedAt: z.coerce.date().nullable(),
   releasedById: z.string().uuid().nullable(),
   releasedBy: User.ResponseSchema.nullable().optional(),
-  releaseReasonId: z.string().nullable(),
-  releaseReason: DeflectionReleaseReason.ResponseSchema.nullable().optional(),
+  releaseReason: z.enum(Object.values(DeflectionReleaseReasonEnum)).nullable(),
   otherReleaseReason: z.string().nullable().optional(),
   otherReleaseDestination: z.string().nullable().optional(),
-  refusalReasonId: z.string().nullable(),
-  refusalReason: DeflectionRefusalReason.ResponseSchema.nullable().optional(),
+  refusalReason: z.enum(Object.values(DeflectionRefusalReasonEnum)).nullable(),
   exitedAt: z.coerce.date().nullable(),
   exitedById: z.string().uuid().nullable(),
   exitedBy: User.ResponseSchema.nullable().optional(),
-  exitDestinationId: z.string().nullable(),
-  exitDestination: DeflectionExitDestination.ResponseSchema.nullable().optional(),
-  exitHousingStatusId: z.string().nullable(),
-  exitHousingStatus: DeflectionExitHousingStatus.ResponseSchema.nullable().optional(),
+  exitDestination: z.enum(Object.values(DeflectionExitDestinationEnum)).nullable(),
+  exitHousingStatus: z.enum(Object.values(DeflectionExitHousingStatusEnum)).nullable(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
   exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
   currentOfficerId: z.string().uuid().nullable().optional(),
+  currentOfficer: User.ResponseSchema.nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),

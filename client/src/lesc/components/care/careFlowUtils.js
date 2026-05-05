@@ -1,14 +1,14 @@
 function isTransferredToJail (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
-    deflection?.exitDestinationId === 'jail'
+    deflection?.exitDestination === 'JAIL'
   );
 }
 
 function isTransferredToHospital (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
-    deflection?.exitDestinationId === 'hospital' &&
+    deflection?.exitDestination === 'HOSPITAL' &&
     !deflection?.releasedAt
   );
 }
@@ -19,8 +19,8 @@ export function shouldShowCareCardViewDetails (deflection) {
 
 export function hasPersistedExitDetails (deflection) {
   return Boolean(
-    deflection?.exitDestinationId &&
-    deflection?.exitHousingStatusId &&
+    deflection?.exitDestination &&
+    deflection?.exitHousingStatus &&
     deflection?.exitConnectedToCare &&
     deflection?.exitSFResident
   );

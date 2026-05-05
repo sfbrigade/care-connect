@@ -33,6 +33,7 @@ const TEXT = {
   arrestLocation:                'Arrest_Location',
   charge:                        'Charge',
   cadNumber:                     'CAD_Number',
+  caseNumber:                    'Case_Number',
 
   // Officer
   arrestingOfficerDisplay:       'Arresting_Officer',

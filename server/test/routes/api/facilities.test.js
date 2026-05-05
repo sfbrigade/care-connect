@@ -236,7 +236,7 @@ test('/api/facilities', async (t) => {
     await t.test('returns 401 without authentication', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Other reasons',
       });
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
@@ -245,7 +245,7 @@ test('/api/facilities', async (t) => {
     await t.test('returns 403 for non-FACILITY_ADMIN user', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Other reasons',
       }).headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
@@ -254,7 +254,7 @@ test('/api/facilities', async (t) => {
     await t.test('allows FACILITY_ADMIN to update status', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Other reasons',
         updateNotes: 'Facility admin closing',
       }).headers(facilityAdminHeaders);
@@ -266,7 +266,7 @@ test('/api/facilities', async (t) => {
     await t.test('updates facility status', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.CLOSED,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Other reasons',
         updateNotes: 'Testing',
       }).headers(adminHeaders);
@@ -274,7 +274,7 @@ test('/api/facilities', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, Facility.Status.CLOSED);
-      assert.deepStrictEqual(data.statusReasonId, 'other');
+      assert.deepStrictEqual(data.statusReason, 'OTHER');
       assert.deepStrictEqual(data.statusOther, 'Other reasons');
       assert.deepStrictEqual(data.updateNotes, 'Testing');
 
@@ -282,7 +282,7 @@ test('/api/facilities', async (t) => {
         where: { id: '6d123d8f-edd5-4d14-9220-0508eb30b47b' },
       });
       assert.deepStrictEqual(facility.status, Facility.Status.CLOSED);
-      assert.deepStrictEqual(facility.statusReasonId, 'other');
+      assert.deepStrictEqual(facility.statusReason, 'OTHER');
       assert.deepStrictEqual(facility.statusOther, 'Other reasons');
       assert.deepStrictEqual(facility.updateNotes, 'Testing');
     });
@@ -290,7 +290,7 @@ test('/api/facilities', async (t) => {
     await t.test('ignores other fields if status is OPEN_ACCEPTING', async () => {
       const response = await app.inject().post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status').payload({
         status: Facility.Status.OPEN_ACCEPTING,
-        statusReasonId: 'other',
+        statusReason: 'OTHER',
         statusOther: 'Other reasons',
         updateNotes: 'Testing',
       }).headers(adminHeaders);
@@ -298,7 +298,7 @@ test('/api/facilities', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, Facility.Status.OPEN_ACCEPTING);
-      assert.deepStrictEqual(data.statusReasonId, null);
+      assert.deepStrictEqual(data.statusReason, null);
       assert.deepStrictEqual(data.statusOther, null);
       assert.deepStrictEqual(data.updateNotes, 'Testing');
 
@@ -306,7 +306,7 @@ test('/api/facilities', async (t) => {
         where: { id: '6d123d8f-edd5-4d14-9220-0508eb30b47b' },
       });
       assert.deepStrictEqual(facility.status, Facility.Status.OPEN_ACCEPTING);
-      assert.deepStrictEqual(facility.statusReasonId, null);
+      assert.deepStrictEqual(facility.statusReason, null);
       assert.deepStrictEqual(facility.statusOther, null);
       assert.deepStrictEqual(facility.updateNotes, 'Testing');
     });

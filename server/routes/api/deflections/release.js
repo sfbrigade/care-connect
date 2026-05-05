@@ -11,7 +11,7 @@ const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
@@ -23,7 +23,7 @@ const PRE_CHAIR_HOLD_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
 ];
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -33,7 +33,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   ].includes(previousSubjectStatus);
 
   const isOccupiedRelease = [
@@ -63,8 +63,8 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          releaseReasonId: z.string(),
-          exitDestinationId: z.string().nullable().optional(),
+          releaseReason: z.string(),
+          exitDestination: z.string().nullable().optional(),
           otherReleaseReason: z.string().trim().min(1).optional(),
           otherReleaseDestination: z.string().trim().min(1).optional(),
         }),
@@ -78,19 +78,19 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const releaseReasonId = request.body?.releaseReasonId || 'sobered';
-      const exitDestinationId = request.body?.exitDestinationId || null;
+      const releaseReason = request.body?.releaseReason || 'SOBERED';
+      const exitDestination = request.body?.exitDestination || null;
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
-      const isMedicalRelease = releaseReasonId === 'medical_issue';
-      const isBehavioralHealthRelease = releaseReasonId === 'behavioral_health_evaluation';
-      const isOtherRelease = releaseReasonId === 'other';
+      const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+      const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
+      const isOtherRelease = releaseReason === 'OTHER';
       const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
-      if ((isMedicalRelease || isBehavioralHealthRelease) && !exitDestinationId) {
+      if ((isMedicalRelease || isBehavioralHealthRelease) && !exitDestination) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({
           errors: [{
-            path: 'exitDestinationId',
+            path: 'exitDestination',
             message: 'Exit destination is required for this release.',
           }],
         });
@@ -141,14 +141,14 @@ export default async function (fastify, opts) {
           // Sobered from IN_CHAIR still lingers as ACTIVE/RELEASED until the
           // care team explicitly exits.
           const isPreChairHoldRelease =
-            releaseReasonId === 'sobered' && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
+            releaseReason === 'SOBERED' && PRE_CHAIR_HOLD_STATUSES.includes(previousSubjectStatus);
           const releaseFinalizesAsExited = isExitRelease || isPreChairHoldRelease;
 
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
               subjectStatus: Deflection.SubjectStatus.RELEASED,
-              releaseReasonId,
+              releaseReason,
               otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
               otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
               updatedById: request.user.id,
@@ -162,7 +162,7 @@ export default async function (fastify, opts) {
                 deflectionId: id,
                 status: Deflection.HoldStatus.COMPLETED,
                 subjectStatus: Deflection.SubjectStatus.EXITED,
-                exitDestinationId,
+                exitDestination,
                 updatedById: request.user.id,
                 updatedAt: now,
               },
@@ -183,14 +183,14 @@ export default async function (fastify, opts) {
                 : Deflection.SubjectStatus.RELEASED,
               releasedAt: now,
               releasedById: request.user.id,
-              releaseReasonId,
+              releaseReason,
               otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
               otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
               ...(releaseFinalizesAsExited
                 ? {
                     exitedAt: now,
                     exitedById: request.user.id,
-                    exitDestinationId,
+                    exitDestination,
                   }
                 : {}),
               updatedAt: now,
@@ -198,7 +198,6 @@ export default async function (fastify, opts) {
             include: {
               subject: true,
               propertyPhotos: true,
-              exitDestination: true,
             },
           });
 
@@ -230,14 +229,12 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      if (!isExitRelease) {
-        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
-          deflectionId: deflection.id,
-          userId: request.user.id,
-          formIds: ['647f', '849b', 'cert'],
-          emailTemplate: 'release-forms',
-        });
-      }
+      await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+        deflectionId: deflection.id,
+        userId: request.user.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

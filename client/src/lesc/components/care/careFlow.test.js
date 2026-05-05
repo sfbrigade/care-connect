@@ -24,29 +24,29 @@ describe('Care flow unit tests', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestinationId: 'jail',
+        exitDestination: 'JAIL',
       })
     ).toBe(false);
 
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestinationId: 'hospital',
+        exitDestination: 'HOSPITAL',
       })
     ).toBe(false);
   });
 
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: 'temporary',
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
 
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: null,
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: null,
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(false);
@@ -55,8 +55,8 @@ describe('Care flow unit tests', () => {
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
-      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 2, subjectStatus: 'EXITED', exitDestination: 'HOSPITAL', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 3, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
@@ -72,7 +72,7 @@ describe('Care flow unit tests', () => {
   it('builds care detail footer state by status/action mode', () => {
     const admittedState = getCareDetailFooterState({
       viewerMode: 'care',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(admittedState).toEqual({
       showFooter: true,
@@ -97,7 +97,7 @@ describe('Care flow unit tests', () => {
 
     const nonCareState = getCareDetailFooterState({
       viewerMode: 'custody',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(nonCareState.showFooter).toBe(false);
   });
@@ -168,17 +168,17 @@ describe('Care flow unit tests', () => {
     expect(hasSavedExitDraft(44)).toBe(false);
 
     setSavedExitDraft(44, {
-      exitDestinationId: 'home',
+      exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatusId: 'temporary',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
     });
     expect(hasSavedExitDraft(44)).toBe(true);
     expect(getSavedExitDraft(44)).toMatchObject({
-      exitDestinationId: 'home',
+      exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatusId: 'temporary',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
       exitFormEdited: true,

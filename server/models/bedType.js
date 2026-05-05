@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import Base from './base.js';
 import User from './user.js';
-const { Prisma, BedTypeEnum, FacilityUpdateMethodEnum } = prismaPkg;
+const { Prisma, BedTypeEnum, BedTypeUnavailableReasonEnum, FacilityUpdateMethodEnum } = prismaPkg;
 
 const BedTypeCreateSchema = z.object({
   facilityId: z.string().uuid(),
@@ -18,7 +18,7 @@ const BedTypeUpdateSchema = z.object({
   capacity: z.number().int().min(0).optional(),
   unavailableUnoccupied: z.number().int().min(0).optional(),
   unavailableOccupied: z.number().int().min(0).optional(),
-  unavailableReasonId: z.string().uuid().nullable().optional(),
+  unavailableReason: z.enum(Object.values(BedTypeUnavailableReasonEnum)).nullable().optional(),
   unavailableOther: z.string().nullable().optional(),
   updateNotes: z.string().nullable().optional(),
 });
@@ -35,7 +35,7 @@ const BedTypeResponseSchema = BedTypeCreateSchema.extend({
   updatedAt: z.coerce.date(),
   updatedBy: User.ResponseSchema.optional(),
   updatedById: z.string().uuid(),
-  unavailableReasonId: z.string().uuid().nullable().optional(),
+  unavailableReason: z.enum(Object.values(BedTypeUnavailableReasonEnum)).nullable().optional(),
   unavailableOther: z.string().nullable().optional(),
   updateMethod: z.enum(Object.values(FacilityUpdateMethodEnum)),
   updateNotes: z.string().nullable().optional(),

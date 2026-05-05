@@ -12,7 +12,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const subjectDetails = useSubjectDetails(deflection?.subject);
 
-  const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isReleased = deflection.subjectStatus === 'RELEASED';
   const releaseTimingChip = releaseTiming(deflection);
   const showViewDetails = shouldShowCareCardViewDetails(deflection);

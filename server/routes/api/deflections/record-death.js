@@ -10,7 +10,7 @@ const IN_CUSTODY_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
@@ -19,9 +19,9 @@ const ELIGIBLE_STATUSES = [
   Deflection.SubjectStatus.RELEASED,
 ];
 
-const DEATH_RELEASE_REASON_IDS = {
-  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: 'death_in_facility',
-  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: 'death_in_custody',
+const DEATH_RELEASE_REASONS = {
+  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: 'DEATH_IN_FACILITY',
+  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: 'DEATH_IN_CUSTODY',
 };
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -31,7 +31,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   ].includes(previousSubjectStatus);
 
   const isOccupiedRelease = [
@@ -83,7 +83,6 @@ export default async function (fastify, opts) {
             where: { id },
             include: {
               subject: true,
-              releaseReason: true,
               propertyPhotos: true,
             },
           });
@@ -98,14 +97,14 @@ export default async function (fastify, opts) {
             ? Deflection.SubjectStatus.DEATH_IN_FACILITY
             : Deflection.SubjectStatus.DEATH_IN_CUSTODY;
 
-          const releaseReasonId = DEATH_RELEASE_REASON_IDS[nextSubjectStatus];
+          const releaseReason = DEATH_RELEASE_REASONS[nextSubjectStatus];
 
           await tx.deflectionUpdate.create({
             data: {
               deflectionId: id,
               status: Deflection.HoldStatus.COMPLETED,
               subjectStatus: nextSubjectStatus,
-              releaseReasonId,
+              releaseReason,
               updatedById: request.user.id,
               updatedAt: now,
             },
@@ -117,12 +116,11 @@ export default async function (fastify, opts) {
               status: Deflection.HoldStatus.COMPLETED,
               subjectStatus: nextSubjectStatus,
               completedAt: now,
-              releaseReasonId,
+              releaseReason,
               updatedAt: now,
             },
             include: {
               subject: true,
-              releaseReason: true,
               propertyPhotos: true,
             },
           });

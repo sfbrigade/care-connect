@@ -6,3 +6,7 @@
 .label {
   padding-left: var(--mantine-spacing-md);
 }
+
+.description {
+  padding-left: var(--mantine-spacing-md);
+}

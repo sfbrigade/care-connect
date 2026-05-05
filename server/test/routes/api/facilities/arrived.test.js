@@ -65,6 +65,25 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
     assert.ok(afterCount >= beforeCount + 2, 'expected an update row per pre-transfer hold');
   });
 
+  await t.test('decrements inTransit when detained holds become awaiting transfer', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
+    const bedTypeBefore = await prisma.bedType.findUnique({
+      where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+    });
+
+    const response = await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+    const bedTypeAfter = await prisma.bedType.findUnique({
+      where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+    });
+    assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit - 2);
+  });
+
   await t.test('records an ARRIVAL FacilityCheckIn with the affected hold ids', async () => {
     await makeFixturePreTransferDetailsComplete(prisma);
 
@@ -183,7 +202,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
         .headers(userHeaders),
       app.inject()
-        .delete(`/api/deflections/${deflection.id}?cancelReasonId=5150`)
+        .delete(`/api/deflections/${deflection.id}?cancelReason=BEHAVIORAL_HEALTH_EVALUATION`)
         .headers(userHeaders),
     ]);
 

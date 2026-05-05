@@ -233,7 +233,7 @@ test('/api/incidents', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.OPEN_NOT_ACCEPTING,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Pausing holds',
         });
 
@@ -262,7 +262,7 @@ test('/api/incidents', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           status: Facility.Status.CLOSED,
-          statusReasonId: 'other',
+          statusReason: 'OTHER',
           statusOther: 'Closed for testing',
         });
 

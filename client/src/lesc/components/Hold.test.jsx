@@ -8,18 +8,12 @@ import Hold from './Hold';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key) => key === 'sex.FEMALE' ? 'Female' : key,
-  }),
-}));
-
-vi.mock('@/Api', () => ({
-  default: {
-    deflections: {
-      cancelReasons: {
-        get: vi.fn(),
-      },
+    t: (key) => {
+      if (key === 'sex.FEMALE') return 'Female';
+      if (key === 'deflectionCancelReason.RELEASE_ON_SCENE') return 'Released on scene';
+      return key;
     },
-  },
+  }),
 }));
 
 function renderHold (props) {
@@ -145,8 +139,7 @@ describe('Hold', () => {
         subjectStatus: 'DETAINED',
         createdAt: '2026-03-14T15:00:00.000Z',
         cancelledAt: '2026-03-14T16:00:00.000Z',
-        cancelReasonId: 'release_on_scene',
-        cancelReason: { id: 'release_on_scene', name: 'Released on scene' },
+        cancelReason: 'RELEASE_ON_SCENE',
         subject: { firstName: 'Person', lastName: 'X', sex: 'FEMALE', dateOfBirth: '1982-03-14' },
       },
     });

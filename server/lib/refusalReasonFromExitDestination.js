@@ -1,8 +1,8 @@
 const REFUSAL_REASON_BY_EXIT_DESTINATION = {
-  jail: 'aggressive_behavior',
-  hospital: 'medical_issue',
+  JAIL: 'AGGRESSIVE_BEHAVIOR',
+  HOSPITAL: 'MEDICAL_ISSUE',
 };
 
-export function refusalReasonIdFromExitDestination (exitDestinationId) {
-  return REFUSAL_REASON_BY_EXIT_DESTINATION[exitDestinationId] ?? null;
+export function refusalReasonFromExitDestination (exitDestination) {
+  return REFUSAL_REASON_BY_EXIT_DESTINATION[exitDestination] ?? null;
 }
