@@ -45,7 +45,6 @@ const TEXT = {
   assignTo:                'ASSIGN TO',
   assignedBy:              'ASSIGNED BY INITALSSTAR',
   copiesTo:                'COPIES TO DDL UNITSGENCIES',
-  prop115Pages:            'Text4',
 
   // Subject
   'subject.code':             'CODE',
