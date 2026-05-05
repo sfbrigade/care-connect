@@ -94,7 +94,12 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
     drugType: 'FENTANYL',
     behavior: null,
     releaseNarrative: 'Release narrative.',
-  }), { prop115Certified: false });
+  }), {
+    firstName: 'Generating',
+    lastName: 'Deputy',
+    badgeNumber: '9999',
+    prop115Certified: false,
+  });
 
   const doc = await PDFDocument.load(pdfBytes);
   const pdfForm = doc.getForm();
@@ -105,6 +110,7 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
     true
   );
   assert.strictEqual(pdfForm.getTextField('Text3').getText(), '2');
+  assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'G. Deputy');
   assert.strictEqual(pdfForm.getTextField('CODE_2').getText(), 'R1');
   assert.strictEqual(pdfForm.getTextField('NAME LAST FIRST MIDDLE_2').getText(), 'SFSO, T, #5678');
   assert.strictEqual(pdfForm.getTextField('CONTACT PHONE NUMBER_2').getText(), '415-575-6461');
