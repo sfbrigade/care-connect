@@ -62,10 +62,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const isExited = deflection?.subjectStatus === 'EXITED';
   const isPreTransfer = PRE_TRANSFER_STATUSES.includes(deflection?.subjectStatus);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const isPostRelease = isLegallyReleased || isExited;
   const canEditCustodyDetails = !isCareView && !isPreTransfer && !isPostRelease;
-  const now = useNow(1000, isPreTransfer && !!deflection?.expiresAt);
-  const expiresIn = isPreTransfer && deflection?.expiresAt
+  const now = useNow(1000, isPreTransfer && !isArrived && !!deflection?.expiresAt);
+  const expiresIn = isPreTransfer && !isArrived && deflection?.expiresAt
     ? formatTimeRemaining(deflection.expiresAt, now)
     : null;
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
@@ -264,7 +265,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             {!isCareView && (
               <Stack gap='xs' align='center'>
                 {isPreTransfer
-                  ? <DeflectionStatusChip label='Awaiting arrival' tone='indigo' />
+                  ? <DeflectionStatusChip label={isArrived ? 'Arrived' : 'Awaiting arrival'} tone='indigo' />
                   : <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />

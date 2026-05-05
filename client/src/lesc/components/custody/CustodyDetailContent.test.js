@@ -275,6 +275,16 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('>Edit<');
   });
 
+  it('shows Arrived chip and suppresses the expiry timer for ONSITE_AWAITING_TRANSFER holds', () => {
+    const html = render({ subjectStatus: 'ONSITE_AWAITING_TRANSFER' });
+
+    expect(html).toContain('Arrived');
+    expect(html).not.toContain('Awaiting arrival');
+    expect(html).not.toContain('Expires in');
+    expect(html).not.toContain('849(b) release narrative');
+    expect(html).not.toContain('>Edit<');
+  });
+
   it('builds the default 849(b) narrative from case number, cad number, and 647(f) narrative', () => {
     const html = render({ releaseNarrative: null });
 

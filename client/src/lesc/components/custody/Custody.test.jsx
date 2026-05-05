@@ -150,6 +150,39 @@ beforeEach(() => {
             subject: { firstName: 'Incomplete', lastName: 'Person' },
             incident: {},
           },
+          {
+            id: 8,
+            subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+            // expiresAt deliberately in the past — server #861 keeps these ACTIVE indefinitely once arrived.
+            expiresAt: '2024-01-01T00:00:00.000Z',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+            drugType: null,
+            behavior: 'Cooperative',
+            behaviorNarrative: 'Cooperative during transfer.',
+            chargeType: 'RWS_647F',
+            property: 'NONE',
+            certifiedAt: '2026-05-05T18:00:00.000Z',
+            currentOfficer: { id: 'officer-3', firstName: 'Officer', lastName: 'Three', badgeNumber: '9999' },
+            subject: {
+              firstName: 'Onsite',
+              lastName: 'Person',
+              dateOfBirth: '1990-01-01T00:00:00.000Z',
+              sex: 'MALE',
+              race: 'UNKNOWN',
+            },
+            incident: {
+              addressLine1: '2 Main St',
+              city: 'San Francisco',
+              state: 'CA',
+              arrestedAt: '2026-05-05T18:00:00.000Z',
+              encounteredVia: 'ON_VIEW',
+              cadNumber: 'CAD124',
+              caseNumber: 'CASE124',
+              supervisorBadgeNumber: '888',
+            },
+          },
         ],
       });
     }
@@ -235,17 +268,31 @@ describe('Custody', () => {
     expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
   });
 
-  it('shows detained persons grouped by owning officer in Transit', async () => {
+  it('shows transit persons grouped by owning officer', async () => {
     mockSessionStateValue.current = 'transit';
 
     renderCustody();
 
     expect(await screen.findByText('O. One #1234')).toBeInTheDocument();
     expect(screen.getByText('Complete Person')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /details/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /details/i }).length).toBeGreaterThan(0);
     expect(screen.getByText('O. Two #5678')).toBeInTheDocument();
     expect(screen.getByText('Incomplete Person')).toBeInTheDocument();
     expect(screen.getByText('Details incomplete')).toBeInTheDocument();
+    expect(screen.getByText('O. Three #9999')).toBeInTheDocument();
+    expect(screen.getByText('Onsite Person')).toBeInTheDocument();
+  });
+
+  it('shows an Arrived inline label on ONSITE_AWAITING_TRANSFER holds in place of the expiry countdown', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Onsite Person');
+    // Two ONSITE_AWAITING_TRANSFER holds in the fixture (ids 5 and 8) — each renders the inline label.
+    // Implementation gates the inline label and the expiry Title as mutually-exclusive,
+    // so label presence implies timer suppression on those cards.
+    expect(screen.getAllByText('Arrived')).toHaveLength(2);
   });
 
   it('requests only active pre-transfer holds for Transit', async () => {

@@ -118,7 +118,8 @@ function TransitCustodyCard ({ deflection, highlighted }) {
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const subjectDetails = useSubjectDetails(deflection?.subject);
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(deflection?.incident);
-  const now = useNow(1000, !!deflection?.expiresAt && detailsComplete);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const now = useNow(1000, !isArrived && !!deflection?.expiresAt && detailsComplete);
 
   return (
     <Card
@@ -138,6 +139,12 @@ function TransitCustodyCard ({ deflection, highlighted }) {
                 <Text size='md' c='red.6' truncate>Details incomplete</Text>
               </>
             )}
+            {isArrived && (
+              <>
+                <Text size='md' c='gray.4'>•</Text>
+                <Text size='md' c='indigo.6' truncate>Arrived</Text>
+              </>
+            )}
           </Group>
           <Stack gap={0}>
             <Title order={3}>{displayName}</Title>
@@ -147,10 +154,12 @@ function TransitCustodyCard ({ deflection, highlighted }) {
           </Stack>
         </Stack>
         {detailsComplete && (
-          <Group gap='md' wrap='nowrap' justify='space-between'>
-            <Title order={4} fw={400}>
-              {formatTimeRemaining(deflection.expiresAt, now) ?? ''}
-            </Title>
+          <Group gap='md' wrap='nowrap' justify={isArrived ? 'flex-end' : 'space-between'}>
+            {!isArrived && (
+              <Title order={4} fw={400}>
+                {formatTimeRemaining(deflection.expiresAt, now) ?? ''}
+              </Title>
+            )}
             <Button
               variant='secondary'
               size='md'
