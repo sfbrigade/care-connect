@@ -342,4 +342,17 @@ describe('Custody', () => {
     // Hold 5's incident is empty — no address link rendered for it.
     expect(screen.queryByRole('link', { name: /Incomplete Person/i })).not.toBeInTheDocument();
   });
+
+  it('renders the incident time alongside the address using the smart date/time format', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Onsite Person');
+    // Holds 4 and 8 each have an arrestedAt; Hold 5's incident is empty.
+    // formatSmartDateTime renders time-only when arrestedAt is today, otherwise full date+time —
+    // accept both shapes so the test is stable regardless of when it runs.
+    const incidentTimeMatcher = /^(\d{1,2}\/\d{1,2}\/\d{4} )?\d{1,2}:\d{2} (AM|PM)$/;
+    expect(screen.getAllByText(incidentTimeMatcher)).toHaveLength(2);
+  });
 });
