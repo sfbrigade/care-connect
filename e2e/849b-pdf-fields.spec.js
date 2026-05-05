@@ -93,6 +93,10 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('Text2')).toBe('2');
   });
 
+  test('reporting deputy uses first initial and last name', () => {
+    expect(getFieldText('REPORTING DEPUTY PRINT')).toBe('A. User');
+  });
+
   test('type of premise is blank', () => {
     const value = getFieldText('TYPE OF PREMISE');
     expect(value || '').toBe('');

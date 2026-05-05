@@ -105,8 +105,8 @@ test.describe('647(f) PDF field verification', () => {
 
   test('arresting officer combines name and badge', () => {
     // Seed sfpdUser has firstName='Test', lastName='SFPD1', badgeNumber='1234',
-    // and no title/unit set, so joinWords produces "Test SFPD1 #1234".
-    expect(getFieldText('Arresting_Officer')).toBe('Test SFPD1 #1234');
+    // and no title/unit set, so joinWords produces "T. SFPD1 #1234".
+    expect(getFieldText('Arresting_Officer')).toBe('T. SFPD1 #1234');
   });
 
   test('arresting officer agency', () => {
@@ -119,7 +119,7 @@ test.describe('647(f) PDF field verification', () => {
 
   test('custody transfer officer falls back to arresting officer', () => {
     // No handoffs in the seed, so transferOfficer = arresting officer.
-    expect(getFieldText('Custody_Transfer_Officer')).toBe('Test SFPD1 #1234');
+    expect(getFieldText('Custody_Transfer_Officer')).toBe('T. SFPD1 #1234');
   });
 
   test('officer details uses arresting officer last name and star number', () => {
