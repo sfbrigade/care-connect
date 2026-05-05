@@ -2045,6 +2045,15 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
     });
 
     await t.test('marks a subject as legally released and exited (behavioral health evaluation)', async () => {
@@ -2089,6 +2098,15 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.exitDestination, 'OTHER');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
     });
 
     await t.test('marks a subject as legally released (other)', async () => {
@@ -2116,6 +2134,15 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.otherReleaseReason, 'Friend picked them up');
       assert.strictEqual(data.otherReleaseDestination, 'Home address');
       assert.ok(data.completedAt);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
     });
 
     await t.test('returns 422 if medical release misses exit destination', async () => {
