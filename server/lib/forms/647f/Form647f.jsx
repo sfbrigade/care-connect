@@ -42,6 +42,7 @@ export default function Form647f ({ data = {} }) {
     arrestLocation = '',
     charge = '',
     cadNumber = '',
+    caseNumber = '',
     arrestingOfficerRank = '',
     arrestingOfficerName = '',
     arrestingOfficerBadge = '',
@@ -96,6 +97,7 @@ export default function Form647f ({ data = {} }) {
             <Row label='Location Arrested' value={arrestLocation} />
             <Row label='Charge' value={charge || '647(f) RWS'} />
             <Row label='CAD Number' value={cadNumber} />
+            <Row label='Case number' value={caseNumber} />
 
             <SectionHeader title='Officer Information' />
             <Row label='Arresting Officer' value={arrestingOfficerDisplay} />
