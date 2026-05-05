@@ -327,4 +327,19 @@ describe('Custody', () => {
       includeCurrentOfficer: true,
     }));
   });
+
+  it('renders the incident address as a tappable map link, omitting the city', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Onsite Person');
+    // Hold 4's incident address (addressLine1 only, city omitted).
+    const addressLink = screen.getByRole('link', { name: '1 Main St' });
+    expect(addressLink.getAttribute('href')).toMatch(/^(https:\/\/www\.google\.com\/maps|https:\/\/maps\.apple\.com|geo:)/);
+    // Hold 8's incident address.
+    expect(screen.getByRole('link', { name: '2 Main St' })).toBeInTheDocument();
+    // Hold 5's incident is empty — no address link rendered for it.
+    expect(screen.queryByRole('link', { name: /Incomplete Person/i })).not.toBeInTheDocument();
+  });
 });
