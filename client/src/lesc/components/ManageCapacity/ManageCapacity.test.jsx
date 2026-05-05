@@ -109,8 +109,8 @@ describe('ManageCapacity', () => {
 
     expect(await screen.findByText(/Held \(in transit\) –/)).toBeInTheDocument();
     expect(screen.getByText(hasExactTextContent('Held (in transit) – 2'))).toBeInTheDocument();
-    expect(screen.getByText(hasExactTextContent('Held (awaiting custody transfer) – 2'))).toBeInTheDocument();
-    expect(screen.getByText(hasExactTextContent('Held (in custody on site) – 2'))).toBeInTheDocument();
+    expect(screen.getByText(hasExactTextContent('Held (awaiting custody transfer) – 3'))).toBeInTheDocument();
+    expect(screen.getByText(hasExactTextContent('Held (in custody on site) – 1'))).toBeInTheDocument();
 
     await waitFor(() => {
       expect(mockDeflectionsList).toHaveBeenCalledWith({

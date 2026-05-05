@@ -14,9 +14,7 @@ export function transformData (deflection) {
   const deputyTitle = deputy?.title?.name || '';
   const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
   const deputyBadge = deputy?.badgeNumber || '';
-  const unitIdentifier = deflection.incident?.createdByUnit?.name ||
-    deputy?.unit?.name ||
-    '';
+  const unitIdentifier = deputy?.unit?.name || '';
 
   const detention = formatDateParts(deflection.createdAt?.toISOString());
   const release = formatDateParts(deflection.releasedAt.toISOString());
