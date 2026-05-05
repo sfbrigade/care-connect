@@ -11,16 +11,8 @@ export const metadata = {
 
   deflectionInclude: {
     subject: true,
-    incident: {
-      include: {
-        createdBy: {
-          include: {
-            organization: true,
-            unit: true,
-            title: true,
-          },
-        },
-      },
-    },
+    incident: true,
+    releasedBy: { include: { unit: true } },
+    exitedBy: { include: { unit: true } },
   },
 };

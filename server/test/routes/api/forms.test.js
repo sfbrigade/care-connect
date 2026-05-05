@@ -39,15 +39,14 @@ test('/api/forms', async (t) => {
   await t.test('GET /647f/pdf/:deflectionId', async (t) => {
     // canGenerate() always returns true for 647f — any deflection qualifies.
 
-    await t.test('returns a PDF with correct headers', async () => {
+    await t.test('redirects to a signed URL for the stored asset', async () => {
       const response = await app.inject()
         .get(`/api/forms/647f/pdf/${unreleasedDeflection.id}`)
         .headers(userHeaders);
-      assert.strictEqual(response.statusCode, StatusCodes.OK);
-      assert.strictEqual(response.headers['content-type'], 'application/pdf');
+      assert.strictEqual(response.statusCode, StatusCodes.MOVED_TEMPORARILY);
       assert.match(
-        response.headers['content-disposition'],
-        new RegExp(`647f-report-${unreleasedDeflection.id}\\.pdf`)
+        response.headers.location,
+        new RegExp(`deflection_documents/[a-f0-9-]+/file/647f-report-${unreleasedDeflection.id}\\.pdf`)
       );
     });
 
@@ -68,15 +67,14 @@ test('/api/forms', async (t) => {
   await t.test('GET /cert/pdf/:deflectionId', async (t) => {
     // canGenerate() requires releasedAt to be set.
 
-    await t.test('returns a PDF with correct headers for a released deflection', async () => {
+    await t.test('redirects to a signed URL for a released deflection', async () => {
       const response = await app.inject()
         .get(`/api/forms/cert/pdf/${releasedDeflection.id}`)
         .headers(userHeaders);
-      assert.strictEqual(response.statusCode, StatusCodes.OK);
-      assert.strictEqual(response.headers['content-type'], 'application/pdf');
+      assert.strictEqual(response.statusCode, StatusCodes.MOVED_TEMPORARILY);
       assert.match(
-        response.headers['content-disposition'],
-        new RegExp(`cert-${releasedDeflection.id}\\.pdf`)
+        response.headers.location,
+        new RegExp(`deflection_documents/[a-f0-9-]+/file/cert-${releasedDeflection.id}\\.pdf`)
       );
     });
 
@@ -97,15 +95,14 @@ test('/api/forms', async (t) => {
   await t.test('GET /849b/pdf/:deflectionId', async (t) => {
     // canGenerate() requires releasedAt to be set.
 
-    await t.test('returns a PDF with correct headers for a released deflection', async () => {
+    await t.test('redirects to a signed URL for a released deflection', async () => {
       const response = await app.inject()
         .get(`/api/forms/849b/pdf/${releasedDeflection.id}`)
         .headers(userHeaders);
-      assert.strictEqual(response.statusCode, StatusCodes.OK);
-      assert.strictEqual(response.headers['content-type'], 'application/pdf');
+      assert.strictEqual(response.statusCode, StatusCodes.MOVED_TEMPORARILY);
       assert.match(
-        response.headers['content-disposition'],
-        new RegExp(`849b-report-${releasedDeflection.id}\\.pdf`)
+        response.headers.location,
+        new RegExp(`deflection_documents/[a-f0-9-]+/file/849b-report-${releasedDeflection.id}\\.pdf`)
       );
     });
 
@@ -120,6 +117,31 @@ test('/api/forms', async (t) => {
       const response = await app.inject()
         .get(`/api/forms/849b/pdf/${releasedDeflection.id}`);
       assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('redirects to the same stored asset regardless of requesting user', async () => {
+      // Attribution must come from the deflection record (releasedBy), not
+      // the session user. Verify by hitting the same URL as two different
+      // authenticated users and confirming both redirect to the same
+      // DeflectionDocument asset path.
+      const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
+
+      const r1 = await app.inject()
+        .get(`/api/forms/849b/pdf/${releasedDeflection.id}`)
+        .headers(userHeaders);
+      const r2 = await app.inject()
+        .get(`/api/forms/849b/pdf/${releasedDeflection.id}`)
+        .headers(adminHeaders);
+
+      assert.strictEqual(r1.statusCode, StatusCodes.MOVED_TEMPORARILY);
+      assert.strictEqual(r2.statusCode, StatusCodes.MOVED_TEMPORARILY);
+
+      const assetPathRegex = new RegExp(`(deflection_documents/[a-f0-9-]+/file/849b-report-${releasedDeflection.id}\\.pdf)`);
+      const m1 = r1.headers.location.match(assetPathRegex);
+      const m2 = r2.headers.location.match(assetPathRegex);
+      assert.ok(m1, 'first response must include the asset path');
+      assert.ok(m2, 'second response must include the asset path');
+      assert.strictEqual(m1[1], m2[1]);
     });
   });
 });

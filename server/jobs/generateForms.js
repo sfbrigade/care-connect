@@ -11,8 +11,6 @@ export default async function generateForms (data, prismaClient = prisma) {
     ? Object.fromEntries(Object.entries(FORMS).filter(([id]) => formIds.includes(id)))
     : FORMS;
 
-  const user = await prismaClient.user.findUnique({ where: { id: userId }, include: { unit: true } });
-
   const skippedFormIds = [];
 
   for (const [formId, form] of Object.entries(forms)) {
@@ -38,7 +36,7 @@ export default async function generateForms (data, prismaClient = prisma) {
       continue;
     }
 
-    const pdfBuffer = await form.generatePdf(deflectionData, user);
+    const pdfBuffer = await form.generatePdf(deflectionData);
 
     const filename = form.downloadFilename(deflectionId);
 

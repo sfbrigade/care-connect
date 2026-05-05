@@ -22,11 +22,16 @@ export function transformData (deflection) {
       .join(' ');
   }
 
-  const incidentCreator = incident?.createdBy;
-  const officerName = incidentCreator
-    ? `${incidentCreator.firstName} ${incidentCreator.lastName}`
+  // Reporting deputy = the user who performed the release or exit-to-jail,
+  // sourced from the deflection record so the form's attribution is stable
+  // regardless of who later requests the PDF.
+  const reportingDeputy = deflection.releasedBy || deflection.exitedBy;
+  const reportingDeputyName = reportingDeputy
+    ? `${reportingDeputy.firstName} ${reportingDeputy.lastName}`
     : '';
-  const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
+  const reportingDeputyBadge = reportingDeputy?.badgeNumber || '';
+  const reportingDeputyUnit = reportingDeputy?.unit?.name || '';
+  const prop115Certified = reportingDeputy?.prop115Certified ?? false;
 
   const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
     .filter(Boolean)
@@ -42,8 +47,10 @@ export function transformData (deflection) {
     arrestedAt: formatDateTime24(incident?.arrestedAt?.toISOString()),
     arrestLocation,
     locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
-    officerName,
-    officerBadge,
+    reportingDeputyName,
+    reportingDeputyBadge,
+    reportingDeputyUnit,
+    prop115Certified,
     subjectName,
     subjectFullName,
     subjectRace: subject?.race || '',
@@ -65,7 +72,7 @@ export function transformData (deflection) {
   };
 }
 
-export async function generatePdf (deflectionData, user) {
+export async function generatePdf (deflectionData) {
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
   const isDrugTypeAlcohol = deflectionData.subjectDrugType === DrugTypeEnum.ALCOHOL;
@@ -92,13 +99,11 @@ export async function generatePdf (deflectionData, user) {
     prop115Years: '2',
     prop115Pages: '2',
 
-    // Prop 115 certified - from user profile
-    prop115Certified: user?.prop115Certified ?? false,
+    prop115Certified: deflectionData.prop115Certified,
 
-    // Deputy fields - from user profile (not incident creator)
-    reportingDeputy: user ? `${user.firstName} ${user.lastName}` : '',
-    star: user?.badgeNumber || '',
-    divisionUnit: user?.unit?.name || '',
+    reportingDeputy: deflectionData.reportingDeputyName,
+    star: deflectionData.reportingDeputyBadge,
+    divisionUnit: deflectionData.reportingDeputyUnit,
     supervisorApproval: '',
     watch: '',
     assignTo: '',
