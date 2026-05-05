@@ -26,10 +26,6 @@ export function transformData (deflection) {
   const officerName = firstInitialLastName(incidentCreator);
   const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
   const reportingDeputy = deflection.releasedBy || (deflection.exitDestination === 'JAIL' ? deflection.exitedBy : null);
-  const reportingDeputyName = reportingDeputy
-    ? `${reportingDeputy.firstName} ${reportingDeputy.lastName}`
-    : '';
-
   const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
     .filter(Boolean)
     .join(', ');
@@ -46,10 +42,7 @@ export function transformData (deflection) {
     locationSentTo: incident?.encounteredVia === 'ON_VIEW' ? 'Same/On View' : 'Other',
     officerName,
     officerBadge,
-    prop115Certified: reportingDeputy?.prop115Certified ?? null,
-    reportingDeputy: reportingDeputyName,
-    reportingDeputyStar: reportingDeputy?.badgeNumber || '',
-    reportingDeputyDivisionUnit: reportingDeputy?.unit?.name || '',
+    reportingDeputy,
     subjectName,
     subjectFullName,
     subjectRace: subject?.race || '',
@@ -75,6 +68,7 @@ export async function generatePdf (deflectionData) {
   const templatePath = join(process.cwd(), 'lib/forms/849b/template.pdf');
   const templateBytes = await readFile(templatePath);
   const isDrugTypeAlcohol = deflectionData.subjectDrugType === DrugTypeEnum.ALCOHOL;
+  const reportingDeputy = deflectionData.reportingDeputy;
 
   // Map deflection data to 849b form fields
   const formData = {
@@ -101,12 +95,12 @@ export async function generatePdf (deflectionData) {
     // Prop 115 certified and deputy fields are pinned to the deputy who
     // performed the release or jail exit. If that persisted user is missing,
     // leave these fields blank/unchecked instead of using the current user.
-    prop115Certified: deflectionData.prop115Certified ?? false,
+    prop115Certified: reportingDeputy?.prop115Certified ?? false,
 
-    // Deputy fields - from user profile (not incident creator)
-    reportingDeputy: firstInitialLastName(user),
-    star: user?.badgeNumber || '',
-    divisionUnit: user?.unit?.name || '',
+    // Deputy fields - from persisted reporting deputy (not incident creator or current user)
+    reportingDeputy: firstInitialLastName(reportingDeputy),
+    star: reportingDeputy?.badgeNumber || '',
+    divisionUnit: reportingDeputy?.unit?.name || '',
     supervisorApproval: '',
     watch: '',
     assignTo: '',

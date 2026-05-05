@@ -56,10 +56,11 @@ test('849b form generation eligibility', async (t) => {
       },
     });
 
-    assert.strictEqual(data.reportingDeputy, 'Release Deputy');
-    assert.strictEqual(data.reportingDeputyStar, 'R123');
-    assert.strictEqual(data.reportingDeputyDivisionUnit, 'Release Unit');
-    assert.strictEqual(data.prop115Certified, true);
+    assert.strictEqual(data.reportingDeputy.firstName, 'Release');
+    assert.strictEqual(data.reportingDeputy.lastName, 'Deputy');
+    assert.strictEqual(data.reportingDeputy.badgeNumber, 'R123');
+    assert.strictEqual(data.reportingDeputy.unit.name, 'Release Unit');
+    assert.strictEqual(data.reportingDeputy.prop115Certified, true);
   });
 
   await t.test('pins reporting deputy details to exitedBy for jail exits without legal release', () => {
@@ -80,10 +81,11 @@ test('849b form generation eligibility', async (t) => {
       },
     });
 
-    assert.strictEqual(data.reportingDeputy, 'Exit Deputy');
-    assert.strictEqual(data.reportingDeputyStar, 'E456');
-    assert.strictEqual(data.reportingDeputyDivisionUnit, 'Exit Unit');
-    assert.strictEqual(data.prop115Certified, false);
+    assert.strictEqual(data.reportingDeputy.firstName, 'Exit');
+    assert.strictEqual(data.reportingDeputy.lastName, 'Deputy');
+    assert.strictEqual(data.reportingDeputy.badgeNumber, 'E456');
+    assert.strictEqual(data.reportingDeputy.unit.name, 'Exit Unit');
+    assert.strictEqual(data.reportingDeputy.prop115Certified, false);
   });
 
   await t.test('leaves reporting deputy details blank when no persisted officer exists', () => {
@@ -98,10 +100,7 @@ test('849b form generation eligibility', async (t) => {
       exitedBy: null,
     });
 
-    assert.strictEqual(data.reportingDeputy, '');
-    assert.strictEqual(data.reportingDeputyStar, '');
-    assert.strictEqual(data.reportingDeputyDivisionUnit, '');
-    assert.strictEqual(data.prop115Certified, null);
+    assert.strictEqual(data.reportingDeputy, null);
   });
 });
 
