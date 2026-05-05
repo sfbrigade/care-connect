@@ -295,6 +295,24 @@ describe('Custody', () => {
     expect(screen.getAllByText('Arrived')).toHaveLength(2);
   });
 
+  it('orders officer groups with arrived holds before officer groups with only detained holds', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('O. One #1234');
+    // Server returns holds in order [4 DETAINED → officer-1, 5 ONSITE_AWAITING_TRANSFER → officer-2,
+    // 8 ONSITE_AWAITING_TRANSFER → officer-3]. Without the sort, DOM order would be One, Two, Three.
+    // After sorting groups with arrived holds to the top, expect Two and Three before One,
+    // with stable ordering preserving Two before Three.
+    const officerHeaders = screen.getAllByText(/^O\. /);
+    expect(officerHeaders.map(el => el.textContent)).toEqual([
+      'O. Two #5678',
+      'O. Three #9999',
+      'O. One #1234',
+    ]);
+  });
+
   it('requests only active pre-transfer holds for Transit', async () => {
     mockSessionStateValue.current = 'transit';
 

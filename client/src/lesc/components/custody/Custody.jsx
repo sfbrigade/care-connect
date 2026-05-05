@@ -112,6 +112,29 @@ function groupTransitByOfficer (deflections) {
   return Array.from(grouped.values());
 }
 
+// Bubble groups containing any ONSITE_AWAITING_TRANSFER hold to the top, and
+// within a (defensively-mixed) group, surface arrived holds first. Both sorts
+// are stable, so existing newest-first ordering is preserved within each tier.
+function sortByArrivedFirst (groups) {
+  const isArrivedDeflection = (d) => d.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const compareArrivedFirst = (a, b) => {
+    const aArrived = isArrivedDeflection(a);
+    const bArrived = isArrivedDeflection(b);
+    if (aArrived === bArrived) return 0;
+    return aArrived ? -1 : 1;
+  };
+  const groupsWithSortedDeflections = groups.map(group => ({
+    ...group,
+    deflections: [...group.deflections].sort(compareArrivedFirst),
+  }));
+  return groupsWithSortedDeflections.sort((a, b) => {
+    const aHas = a.deflections.some(isArrivedDeflection);
+    const bHas = b.deflections.some(isArrivedDeflection);
+    if (aHas === bHas) return 0;
+    return aHas ? -1 : 1;
+  });
+}
+
 function TransitCustodyCard ({ deflection, highlighted }) {
   const displayId = String(deflection.id);
   const navigate = useNavigate();
@@ -332,7 +355,7 @@ function Custody () {
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
-  const transitGrouped = groupTransitByOfficer(transitDeflections);
+  const transitGrouped = sortByArrivedFirst(groupTransitByOfficer(transitDeflections));
   const hasTransit = (transitDeflections?.length ?? 0) > 0;
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
