@@ -180,12 +180,12 @@ describe('Custody', () => {
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
   });
 
-  it('shows the scan transfer code button on the Released tab', async () => {
+  it('shows the Take custody button on the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
 
-    expect(await screen.findByRole('button', { name: /scan transfer code/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /take custody/i })).toBeInTheDocument();
   });
 
   it('switches to Custody when transfer scan succeeds from the Released tab', async () => {
@@ -193,7 +193,7 @@ describe('Custody', () => {
 
     renderCustody();
 
-    fireEvent.click(await screen.findByRole('button', { name: /scan transfer code/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
     fireEvent.click(screen.getByRole('button', { name: /scan success/i }));
 
     expect(mockSetSessionState).toHaveBeenCalledWith('custody');
@@ -204,7 +204,7 @@ describe('Custody', () => {
 
     renderCustody();
 
-    fireEvent.click(await screen.findByRole('button', { name: /scan transfer code/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
     fireEvent.click(screen.getByRole('button', { name: /cancel scan/i }));
 
     expect(mockSetSessionState).not.toHaveBeenCalled();
