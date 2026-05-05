@@ -33,6 +33,7 @@ describe('Api', () => {
       subjectStatus: 'DETAINED',
       status: 'ACTIVE',
       includeIncident: true,
+      includeCurrentOfficer: true,
       perPage: 200,
     });
 
@@ -40,9 +41,26 @@ describe('Api', () => {
       params: {
         facilityId: 'facility-1',
         includeIncident: 'true',
+        includeCurrentOfficer: 'true',
         subjectStatus: 'DETAINED',
         status: 'ACTIVE',
         perPage: 200,
+      },
+    });
+  });
+
+  it('omits includeCurrentOfficer from deflections list params when not requested', async () => {
+    const Api = (await import('./Api')).default;
+
+    await Api.deflections.list({
+      facilityId: 'facility-1',
+      subjectStatus: 'AWAITING_INTAKE,IN_CHAIR',
+    });
+
+    expect(mockGet).toHaveBeenCalledWith('/api/deflections', {
+      params: {
+        facilityId: 'facility-1',
+        subjectStatus: 'AWAITING_INTAKE,IN_CHAIR',
       },
     });
   });

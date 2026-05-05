@@ -191,7 +191,7 @@ function Custody () {
 
   const { data: transitDeflections, dataUpdatedAt: transitDataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'transit'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: TRANSIT_STATUSES, status: 'ACTIVE', includeIncident: true, perPage: 200 }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: TRANSIT_STATUSES, status: 'ACTIVE', includeIncident: true, includeCurrentOfficer: true, perPage: 200 }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

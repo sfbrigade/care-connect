@@ -257,6 +257,7 @@ describe('Custody', () => {
     expect(mockDeflectionsList).toHaveBeenCalledWith(expect.objectContaining({
       subjectStatus: 'DETAINED',
       status: 'ACTIVE',
+      includeCurrentOfficer: true,
     }));
   });
 });
