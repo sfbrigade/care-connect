@@ -177,6 +177,7 @@ test('/api/arrests', async (t) => {
     for (const arrest of body) {
       assert.deepStrictEqual(Object.keys(arrest).sort(), [
         'address',
+        'arrestedAt',
         'arrivedAt',
         'caseNumber',
         'dateOfBirth',
@@ -184,11 +185,10 @@ test('/api/arrests', async (t) => {
         'lastName',
         'race',
         'sex',
-        'timestamp',
         'transferredAt',
       ]);
-      assert.strictEqual(typeof arrest.timestamp, 'string');
-      assert.match(arrest.timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      assert.strictEqual(typeof arrest.arrestedAt, 'string');
+      assert.match(arrest.arrestedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     }
   });
 

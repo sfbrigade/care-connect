@@ -12,7 +12,7 @@ const QuerySchema = z.object({
 });
 
 const ArrestSchema = z.object({
-  timestamp: z.string().datetime(),
+  arrestedAt: z.string().datetime(),
   address: z.string(),
   caseNumber: z.string().nullable(),
   firstName: z.string().nullable(),
@@ -89,7 +89,7 @@ export default async function (fastify) {
         const deflection = i.deflections[0] ?? null;
         const subject = deflection?.subject ?? null;
         return {
-          timestamp: i.arrestedAt.toISOString(),
+          arrestedAt: i.arrestedAt.toISOString(),
           address: streetCityState(i),
           caseNumber: i.caseNumber ?? null,
           firstName: subject?.firstName ?? null,
