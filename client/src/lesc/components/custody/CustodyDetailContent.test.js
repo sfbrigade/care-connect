@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         get: vi.fn(async () => ({ data: incident })),
       },
       deflections: {
+        email849b: vi.fn(async () => ({ data: { queued: true, email: 'sfsouser1@test.com' } })),
         exitToJail: vi.fn(async () => ({ data: {} })),
         safetyCheck: vi.fn(async () => ({ data: {} })),
         release: vi.fn(async () => ({ data: {} })),
@@ -65,6 +66,12 @@ vi.mock('@/utils/format', () => ({
 
 vi.mock('@/utils/releaseTiming', () => ({
   releaseTiming: () => null,
+}));
+
+vi.mock('../../../hooks/useUserRole', () => ({
+  useUserRole: () => ({
+    isCustody: true,
+  }),
 }));
 
 vi.mock('@/utils/pdfGenerator', () => ({
@@ -258,8 +265,8 @@ describe('CustodyDetailContent', () => {
     const html = render();
 
     expect(html).toContain('849(b) release narrative');
-    expect(html).toContain('This text will appear in the narrative block on the 849(b) form');
-    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
+    expect(html).toContain('Any narrative edits will automatically update the 849(b) document.');
+    expect((html.match(/>Edit</g) || [])).toHaveLength(2);
     expect(html).not.toContain('<textarea');
   });
 
@@ -283,6 +290,18 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Expires in');
     expect(html).not.toContain('849(b) release narrative');
     expect(html).not.toContain('>Edit<');
+  });
+
+  it('shows post-release 849(b) PDF, e-mail, and narrative edit actions', () => {
+    const html = render({
+      subjectStatus: 'EXITED',
+      releasedAt: '2026-01-01T11:00:00.000Z',
+      exitedAt: '2026-01-01T12:00:00.000Z',
+    });
+
+    expect(html).toContain('849(b).pdf');
+    expect(html).toContain('E-mail me the 849(b)');
+    expect(html).toContain('Edit narrative');
   });
 
   it('builds the default 849(b) narrative from case number, cad number, and 647(f) narrative', () => {

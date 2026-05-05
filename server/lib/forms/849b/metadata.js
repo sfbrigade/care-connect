@@ -24,5 +24,19 @@ export const metadata = {
         },
       },
     },
+    releasedBy: {
+      include: {
+        organization: true,
+        unit: true,
+        title: true,
+      },
+    },
+    exitedBy: {
+      include: {
+        organization: true,
+        unit: true,
+        title: true,
+      },
+    },
   },
 };

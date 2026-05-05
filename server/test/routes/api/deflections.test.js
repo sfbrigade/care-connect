@@ -288,6 +288,24 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.chargeType, 'HS_11550');
     });
 
+    await t.test('queues only 849b regeneration when release narrative changes', async () => {
+      const response = await app.inject().patch('/api/deflections/6').payload({
+        releaseNarrative: 'Updated 849(b) release narrative.',
+      }).headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.releaseNarrative, 'Updated 849(b) release narrative.');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['849b'],
+      });
+    });
+
     await t.test('returns 404 for non-existent deflection', async () => {
       const nonExistentId = '0';
       const response = await app.inject().patch(`/api/deflections/${nonExistentId}`).payload({
@@ -295,6 +313,46 @@ test('/api/deflections', async (t) => {
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('POST /:id/849b-email', async (t) => {
+    await t.test('queues 849b regeneration and self e-mail for custody user', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          exitedAt: new Date(),
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/849b-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(JSON.parse(response.body), {
+        queued: true,
+        email: 'sfsouser1@test.com',
+      });
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        formIds: ['849b'],
+        emailTemplate: 'self-849b',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+    });
+
+    await t.test('forbids non-custody users', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/849b-email')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 
