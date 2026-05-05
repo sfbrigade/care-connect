@@ -97,7 +97,7 @@ beforeEach(() => {
     data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],
   });
 
-  mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
+  mockDeflectionsList.mockImplementation(({ subjectStatus, status }) => {
     if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
       return Promise.resolve({
         data: [
@@ -108,11 +108,48 @@ beforeEach(() => {
       });
     }
 
-    if (subjectStatus === 'DETAINED,ONSITE_AWAITING_TRANSFER') {
+    if (subjectStatus === 'DETAINED' && status === 'ACTIVE') {
       return Promise.resolve({
         data: [
-          { id: 4, subjectStatus: 'DETAINED' },
-          { id: 5, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+          {
+            id: 4,
+            subjectStatus: 'DETAINED',
+            expiresAt: '2026-05-05T19:00:00.000Z',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+            drugType: null,
+            behavior: 'Cooperative',
+            behaviorNarrative: 'Cooperative during transfer.',
+            chargeType: 'RWS_647F',
+            property: 'NONE',
+            certifiedAt: '2026-05-05T18:00:00.000Z',
+            currentOfficer: { id: 'officer-1', firstName: 'Officer', lastName: 'One', badgeNumber: '1234' },
+            subject: {
+              firstName: 'Complete',
+              lastName: 'Person',
+              dateOfBirth: '1990-01-01T00:00:00.000Z',
+              sex: 'MALE',
+              race: 'UNKNOWN',
+            },
+            incident: {
+              addressLine1: '1 Main St',
+              city: 'San Francisco',
+              state: 'CA',
+              arrestedAt: '2026-05-05T18:00:00.000Z',
+              encounteredVia: 'ON_VIEW',
+              cadNumber: 'CAD123',
+              caseNumber: 'CASE123',
+              supervisorBadgeNumber: '777',
+            },
+          },
+          {
+            id: 5,
+            subjectStatus: 'DETAINED',
+            currentOfficer: { id: 'officer-2', firstName: 'Officer', lastName: 'Two', badgeNumber: '5678' },
+            subject: { firstName: 'Incomplete', lastName: 'Person' },
+            incident: {},
+          },
         ],
       });
     }
@@ -143,31 +180,31 @@ describe('Custody', () => {
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
   });
 
-  it('shows the Take custody button on the Legally released tab', async () => {
+  it('shows the scan transfer code button on the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
 
-    expect(await screen.findByRole('button', { name: /take custody/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /scan transfer code/i })).toBeInTheDocument();
   });
 
-  it('switches to In custody when transfer scan succeeds from the Legally released tab', async () => {
+  it('switches to Custody when transfer scan succeeds from the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
 
-    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /scan transfer code/i }));
     fireEvent.click(screen.getByRole('button', { name: /scan success/i }));
 
-    expect(mockSetSessionState).toHaveBeenCalledWith('in-custody');
+    expect(mockSetSessionState).toHaveBeenCalledWith('custody');
   });
 
-  it('leaves the user on the Legally released tab when transfer scan is canceled', async () => {
+  it('leaves the user on the Released tab when transfer scan is canceled', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
 
-    fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /scan transfer code/i }));
     fireEvent.click(screen.getByRole('button', { name: /cancel scan/i }));
 
     expect(mockSetSessionState).not.toHaveBeenCalled();
@@ -196,5 +233,30 @@ describe('Custody', () => {
 
     expect(await screen.findByText('Transferred to jail: 1')).toBeInTheDocument();
     expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
+  });
+
+  it('shows detained persons grouped by owning officer in Transit', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    expect(await screen.findByText('O. One #1234')).toBeInTheDocument();
+    expect(screen.getByText('Complete Person')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /details/i })).toBeInTheDocument();
+    expect(screen.getByText('O. Two #5678')).toBeInTheDocument();
+    expect(screen.getByText('Incomplete Person')).toBeInTheDocument();
+    expect(screen.getByText('Details incomplete')).toBeInTheDocument();
+  });
+
+  it('requests only active detained holds for Transit', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('O. One #1234');
+    expect(mockDeflectionsList).toHaveBeenCalledWith(expect.objectContaining({
+      subjectStatus: 'DETAINED',
+      status: 'ACTIVE',
+    }));
   });
 });

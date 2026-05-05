@@ -1,0 +1,7 @@
+.label {
+  padding-inline: 2px;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+  line-height: var(--mantine-line-height-sm);
+  text-transform: none;
+}

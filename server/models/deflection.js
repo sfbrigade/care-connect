@@ -119,6 +119,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
   exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
   currentOfficerId: z.string().uuid().nullable().optional(),
+  currentOfficer: User.ResponseSchema.nullable().optional(),
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),
