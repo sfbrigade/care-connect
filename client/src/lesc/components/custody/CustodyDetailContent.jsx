@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
+import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
 import { IconAlarm, IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -29,6 +29,7 @@ import { getPropertyReturnStatusText, shouldShowPropertyReturnEntryPoint } from 
 import ExitToJailModal from './ExitToJailModal';
 import RecordDeathModal from './RecordDeathModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
+import classes from './CustodyDetailContent.module.css';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
@@ -279,7 +280,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
           </Stack>
           {!isCareView && (isAwaitingSafetyCheck || isReadyForIntake) && (
             <Stack gap='sm' align='center'>
-              <Card bg='white' p={32} withBorder style={{ alignSelf: 'center' }}>
+              <Card bg='white' p='2xl' mx='auto' withBorder>
                 <Stack gap='md' align='center'>
                   <LockedQRCode value={transferUrl} variant={!isReadyForIntake ? 'locked' : undefined} />
                   <Text fw={500}>Transfer code: {isReadyForIntake ? deflection.id : '******'}</Text>
@@ -298,7 +299,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               <Button
                 onClick={open849bPdf}
                 variant='outline'
-                rightSection={<IconExternalLink size={18} style={{ flexShrink: 0, marginLeft: 4 }} />}
+                rightSection={<IconExternalLink size={18} />}
               >
                 849(b).pdf
               </Button>
@@ -527,53 +528,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   <Accordion.Item value='release-narrative'>
                     <Accordion.Control>
                       <Title order={3}>849(b) release narrative</Title>
-                      <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
+                      <Text c='gray.5' size='sm'>Any narrative edits will automatically update the 849(b) document.</Text>
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap='sm'>
                         <Box>
-                          <Text c='dimmed'>Narrative</Text>
-                          {isEditingReleaseNarrative
-                            ? (
-                              <Textarea
-                                value={releaseNarrative}
-                                onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
-                                autosize
-                                minRows={4}
-                                mt='xs'
-                              />
-                              )
-                            : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
+                          <Text c='dimmed'>849(b) narrative</Text>
+                          <Text className={classes.narrativeText}>{resolvedReleaseNarrative}</Text>
                         </Box>
-                        {!isEditingReleaseNarrative && canEditCustodyDetails && (
+                        {showPostReleaseNarrativeActions && (
                           <Group>
                             <Button
                               variant='secondary'
                               size='md'
-                              onClick={() => setIsEditingReleaseNarrative(true)}
+                              onClick={() => navigate(`/custody/${deflection?.id}/release-narrative`)}
                             >
-                              Edit
-                            </Button>
-                          </Group>
-                        )}
-                        {isEditingReleaseNarrative && (
-                          <Group>
-                            <Button
-                              variant='secondary'
-                              size='md'
-                              onClick={() => {
-                                setReleaseNarrative(resolvedReleaseNarrative);
-                                setIsEditingReleaseNarrative(false);
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              size='md'
-                              onClick={() => saveReleaseNarrativeMutation.mutate()}
-                              loading={saveReleaseNarrativeMutation.isPending}
-                            >
-                              Save narrative
+                              Edit narrative
                             </Button>
                           </Group>
                         )}
@@ -680,7 +650,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           radius='50%'
                           size={48}
                           aria-label='More actions'
-                          style={{ minWidth: 48, flex: '0 0 48px' }}
+                          className={classes.moreActionsButton}
                         >
                           <IconDots size={24} color='var(--mantine-color-indigo-6)' />
                         </ActionIcon>

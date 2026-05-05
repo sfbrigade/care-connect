@@ -269,7 +269,6 @@ describe('Custody', () => {
     expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
   });
 
-
   it('shows transit persons grouped by owning officer', async () => {
     mockSessionStateValue.current = 'transit';
 
