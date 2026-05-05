@@ -197,4 +197,5 @@ describe('Custody', () => {
     expect(await screen.findByText('Transferred to jail: 1')).toBeInTheDocument();
     expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
   });
+
 });
