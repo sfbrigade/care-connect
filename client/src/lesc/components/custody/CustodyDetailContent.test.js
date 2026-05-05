@@ -61,6 +61,7 @@ vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
   formatDateTime: () => 'formatted-date-time',
   formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
+  formatTimeRemaining: () => '59:57',
 }));
 
 vi.mock('@/utils/releaseTiming', () => ({
@@ -97,6 +98,7 @@ vi.mock('@/components/LockedQRCode', () => ({
 
 vi.mock('@tabler/icons-react', () => ({
   IconAlertCircle: () => null,
+  IconAlarm: () => null,
   IconArrowLeft: () => null,
   IconBuildingHospital: () => null,
   IconDoorExit: () => null,
@@ -136,7 +138,7 @@ vi.mock('@mantine/core', async () => {
   //   return createElement('div', null, children);
   // };
 
-  const passthrough = (tag) => ({ children, ...props }) => createElement(tag, props, children);
+  const passthrough = (tag) => ({ children, classNames, styles, ...props }) => createElement(tag, props, children);
 
   const Menu = passthrough('div');
   Menu.Target = passthrough('div');
@@ -214,6 +216,7 @@ describe('CustodyDetailContent', () => {
     id: 123456,
     incidentId: 789,
     subjectStatus: 'READY_FOR_INTAKE',
+    expiresAt: '2026-01-01T11:00:00.000Z',
     releaseNarrative: 'Initial narrative',
     behavior: 'Behavior details',
     property: 'BACKPACK',
@@ -265,6 +268,28 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Any narrative edits will automatically update the 849(b) document.');
     expect((html.match(/>Edit</g) || [])).toHaveLength(2);
     expect(html).not.toContain('<textarea');
+  });
+
+  it('renders pre-transfer custody details read-only without the 849(b) narrative', () => {
+    const html = render({ subjectStatus: 'DETAINED' });
+
+    expect(html).toContain('Expires in');
+    expect(html).toContain('Awaiting arrival');
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Behavioral observations');
+    expect(html).toContain('Incident details');
+    expect(html).not.toContain('849(b) release narrative');
+    expect(html).not.toContain('>Edit<');
+  });
+
+  it('shows Arrived chip and suppresses the expiry timer for ONSITE_AWAITING_TRANSFER holds', () => {
+    const html = render({ subjectStatus: 'ONSITE_AWAITING_TRANSFER' });
+
+    expect(html).toContain('Arrived');
+    expect(html).not.toContain('Awaiting arrival');
+    expect(html).not.toContain('Expires in');
+    expect(html).not.toContain('849(b) release narrative');
+    expect(html).not.toContain('>Edit<');
   });
 
   it('shows post-release 849(b) PDF, e-mail, and narrative edit actions', () => {

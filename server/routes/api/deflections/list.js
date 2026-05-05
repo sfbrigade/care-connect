@@ -19,6 +19,7 @@ export default async function (fastify) {
           handedOff: z.enum(['true']).optional(),
           scope: z.enum(['history']).optional(),
           includeIncident: z.enum(['true']).optional(),
+          includeCurrentOfficer: z.enum(['true']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
           subjectStatus: z.string().regex(new RegExp(`^(${Object.values(Deflection.SubjectStatus).join('|')})(,(${Object.values(Deflection.SubjectStatus).join('|')}))*$`)).optional(),
           page: z.coerce.number().optional(),
@@ -30,7 +31,7 @@ export default async function (fastify) {
       },
     },
     async function (request, reply) {
-      const { page = '1', perPage = '25', active, handedOff, scope, includeIncident, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
+      const { page = '1', perPage = '25', active, handedOff, scope, includeIncident, includeCurrentOfficer, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
       const where = {
         subject: { isNot: { anonymizedAt: { not: null } } },
       };
@@ -142,6 +143,7 @@ export default async function (fastify) {
           subject: true,
           createdBy: true,
           propertyPhotos: true,
+          ...(includeCurrentOfficer === 'true' ? { currentOfficer: true } : {}),
           ...(includeIncident === 'true' ? { incident: true } : {}),
         },
       };

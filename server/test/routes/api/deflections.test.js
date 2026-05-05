@@ -134,6 +134,29 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.length, 0);
     });
 
+    await t.test('omits currentOfficer from response by default', async () => {
+      const response = await app.inject().get('/api/deflections').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.length > 0);
+      for (const deflection of data) {
+        assert.ok(!('currentOfficer' in deflection), `expected currentOfficer to be absent, got ${JSON.stringify(deflection.currentOfficer)}`);
+      }
+    });
+
+    await t.test('includes currentOfficer when includeCurrentOfficer=true', async () => {
+      const response = await app.inject().get('/api/deflections?includeCurrentOfficer=true').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.length > 0);
+      const withOfficer = data.find(d => d.currentOfficerId);
+      assert.ok(withOfficer, 'expected at least one deflection with a currentOfficerId for the assertion to be meaningful');
+      assert.ok(withOfficer.currentOfficer, 'expected currentOfficer to be populated when includeCurrentOfficer=true');
+      assert.deepStrictEqual(withOfficer.currentOfficer.id, withOfficer.currentOfficerId);
+    });
+
     await t.test('handoff receiver sees holds in history after they no longer own them', async () => {
       // Simulate: deflection4 was originally user2's. A handoff moves it to fielduser1.
       // Then fielduser1 taps "I've left" which clears currentOfficerId.
