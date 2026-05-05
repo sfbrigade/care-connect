@@ -117,6 +117,23 @@ test('formsEmail job handler', async (t) => {
     assert.deepStrictEqual(sentMail[0].attachments.map(a => a.filename), ['849b.pdf']);
   });
 
+  await t.test('sends self-requested 849b only to the current user', async () => {
+    await formsEmail({
+      deflectionId: 4,
+      formIds: ['849b'],
+      template: 'self-849b',
+      userId: 'test-user-id',
+      recipientEmail: 'fallback.user@test.com',
+    }, mockPrisma);
+
+    const sentMail = nodemailerMock.mock.getSentMail();
+    assert.deepStrictEqual(sentMail.length, 1);
+    assert.deepStrictEqual(sentMail[0].to, 'releasing.user@test.com');
+    assert.deepStrictEqual(sentMail[0].cc, undefined);
+    assert.deepStrictEqual(sentMail[0].subject, '849(b) form for Jane Doe');
+    assert.deepStrictEqual(sentMail[0].attachments.map(a => a.filename), ['849b.pdf']);
+  });
+
   await t.test('sends release forms as one email to swaps supervisors and the releasing user', async () => {
     await formsEmail({
       deflectionId: 4,

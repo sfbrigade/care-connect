@@ -390,6 +390,9 @@ const Api = {
     recordPropertyReturn (id, data) {
       return instance.post(`/api/deflections/${id}/property-return`, data).catch(handleError);
     },
+    email849b (id) {
+      return instance.post(`/api/deflections/${id}/849b-email`).catch(handleError);
+    },
     cancel (id, { cancelReason } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReason ? `?cancelReason=${cancelReason}` : ''}`);
     },
