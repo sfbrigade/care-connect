@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import prismaPkg from '@prisma/client';
-import { formatDateTime24 } from '../shared/formUtils.js';
+import { firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 import i18n from '#lib/i18n.js';
@@ -23,9 +23,7 @@ export function transformData (deflection) {
   }
 
   const incidentCreator = incident?.createdBy;
-  const officerName = incidentCreator
-    ? `${incidentCreator.firstName} ${incidentCreator.lastName}`
-    : '';
+  const officerName = firstInitialLastName(incidentCreator);
   const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
   const reportingDeputy = deflection.releasedBy || (deflection.exitDestination === 'JAIL' ? deflection.exitedBy : null);
   const reportingDeputyName = reportingDeputy
@@ -105,9 +103,10 @@ export async function generatePdf (deflectionData) {
     // leave these fields blank/unchecked instead of using the current user.
     prop115Certified: deflectionData.prop115Certified ?? false,
 
-    reportingDeputy: deflectionData.reportingDeputy,
-    star: deflectionData.reportingDeputyStar,
-    divisionUnit: deflectionData.reportingDeputyDivisionUnit,
+    // Deputy fields - from user profile (not incident creator)
+    reportingDeputy: firstInitialLastName(user),
+    star: user?.badgeNumber || '',
+    divisionUnit: user?.unit?.name || '',
     supervisorApproval: '',
     watch: '',
     assignTo: '',

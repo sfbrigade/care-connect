@@ -29,6 +29,7 @@ test('cert unitIdentifier uses releasedBy.unit before incident.createdByUnit', (
   });
 
   assert.equal(data.unitIdentifier, 'SFSO Intake');
+  assert.equal(data.deputyName, 'S. Deputy');
 });
 
 test('cert unitIdentifier is blank when releasedBy has no unit', () => {
@@ -46,4 +47,17 @@ test('cert unitIdentifier is blank when releasedBy has no unit', () => {
   });
 
   assert.equal(data.unitIdentifier, '');
+});
+
+test('cert deputyName falls back to createdBy and uses first initial', () => {
+  const data = transformData({
+    ...baseDeflection,
+    createdBy: {
+      firstName: 'Ryan',
+      lastName: 'Johnson',
+      badgeNumber: '1234',
+    },
+  });
+
+  assert.equal(data.deputyName, 'R. Johnson');
 });
