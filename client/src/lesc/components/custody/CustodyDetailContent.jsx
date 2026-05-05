@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Textarea, Title } from '@mantine/core';
-import { IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
+import { IconAlarm, IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -14,8 +14,9 @@ import LockedQRCode from '@/components/LockedQRCode';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
+import useNow from '../../../hooks/useNow';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime, formatIntakeStartedAt } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -31,6 +32,7 @@ import SafetyCheckResultModal from './SafetyCheckResultModal';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function isNetworkError (error) {
@@ -59,7 +61,14 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const isLegallyReleased = deflection?.subjectStatus === 'RELEASED';
   const isExited = deflection?.subjectStatus === 'EXITED';
+  const isPreTransfer = PRE_TRANSFER_STATUSES.includes(deflection?.subjectStatus);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const isPostRelease = isLegallyReleased || isExited;
+  const canEditCustodyDetails = !isCareView && !isPreTransfer && !isPostRelease;
+  const now = useNow(1000, isPreTransfer && !isArrived && !!deflection?.expiresAt);
+  const expiresIn = isPreTransfer && !isArrived && deflection?.expiresAt
+    ? formatTimeRemaining(deflection.expiresAt, now)
+    : null;
   const transferUrl = deflection ? `${window.location.origin}/admit/${deflection.id}` : '';
   const showCustodyActionFooter = !isCareView && CUSTODY_ACTION_FOOTER_STATUSES.includes(deflection?.subjectStatus);
   const showMoreActionsPrimaryOnly = isReadyForIntake || isInMedicalIntake;
@@ -242,6 +251,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       <Container>
         <Stack gap='xl'>
           <Stack gap='sm' align='center'>
+            {expiresIn && (
+              <Group gap='xs' align='center'>
+                <IconAlarm size={20} />
+                <Text size='lg'>Expires in {expiresIn}</Text>
+              </Group>
+            )}
             <Group gap='xs'>
               {deflection?.incidentId && <Text size='md'>Incident {deflection.incidentId}</Text>}
               {deflection?.incidentId && <Text c='gray.5' size='md'>&middot;</Text>}
@@ -249,7 +264,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
             </Group>
             {!isCareView && (
               <Stack gap='xs' align='center'>
-                <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />
+                {isPreTransfer
+                  ? <DeflectionStatusChip label={isArrived ? 'Arrived' : 'Awaiting arrival'} tone='indigo' />
+                  : <DeflectionStatusChip label={custodyStatusChip?.label} tone={custodyStatusChip?.tone} />}
                 {releaseTimingChip && (
                   <DeflectionStatusChip label={releaseTimingChip.label} tone={releaseTimingChip.tone} />
                 )}
@@ -341,7 +358,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 <Text>{address}</Text>
               </Box>
             )}
-            {!isCareView && !isPostRelease && (
+            {canEditCustodyDetails && (
               <Group mt='md'>
                 <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject`)}>Edit</Button>
               </Group>
@@ -409,7 +426,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                           <Text>{t(`drugType.${deflection.drugType}`)}</Text>
                         </Box>
                       )}
-                      {!isPostRelease && (
+                      {canEditCustodyDetails && (
                         <Group mt='sm'>
                           <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/subject?section=narcotics`)}>Edit</Button>
                         </Group>
@@ -509,62 +526,64 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item value='release-narrative'>
-                  <Accordion.Control>
-                    <Title order={3}>849(b) release narrative</Title>
-                    <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap='sm'>
-                      <Box>
-                        <Text c='dimmed'>Narrative</Text>
-                        {isEditingReleaseNarrative
-                          ? (
-                            <Textarea
-                              value={releaseNarrative}
-                              onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
-                              autosize
-                              minRows={4}
-                              mt='xs'
-                            />
-                            )
-                          : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
-                      </Box>
-                      {!isEditingReleaseNarrative && !isPostRelease && (
-                        <Group>
-                          <Button
-                            variant='secondary'
-                            size='md'
-                            onClick={() => setIsEditingReleaseNarrative(true)}
-                          >
-                            Edit
-                          </Button>
-                        </Group>
-                      )}
-                      {isEditingReleaseNarrative && (
-                        <Group>
-                          <Button
-                            variant='secondary'
-                            size='md'
-                            onClick={() => {
-                              setReleaseNarrative(resolvedReleaseNarrative);
-                              setIsEditingReleaseNarrative(false);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size='md'
-                            onClick={() => saveReleaseNarrativeMutation.mutate()}
-                            loading={saveReleaseNarrativeMutation.isPending}
-                          >
-                            Save narrative
-                          </Button>
-                        </Group>
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
+                {!isPreTransfer && (
+                  <Accordion.Item value='release-narrative'>
+                    <Accordion.Control>
+                      <Title order={3}>849(b) release narrative</Title>
+                      <Text c='gray.5' size='sm'>This text will appear in the narrative block on the 849(b) form</Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap='sm'>
+                        <Box>
+                          <Text c='dimmed'>Narrative</Text>
+                          {isEditingReleaseNarrative
+                            ? (
+                              <Textarea
+                                value={releaseNarrative}
+                                onChange={(event) => setReleaseNarrative(event.currentTarget.value)}
+                                autosize
+                                minRows={4}
+                                mt='xs'
+                              />
+                              )
+                            : <Text style={{ whiteSpace: 'pre-wrap' }}>{resolvedReleaseNarrative}</Text>}
+                        </Box>
+                        {!isEditingReleaseNarrative && canEditCustodyDetails && (
+                          <Group>
+                            <Button
+                              variant='secondary'
+                              size='md'
+                              onClick={() => setIsEditingReleaseNarrative(true)}
+                            >
+                              Edit
+                            </Button>
+                          </Group>
+                        )}
+                        {isEditingReleaseNarrative && (
+                          <Group>
+                            <Button
+                              variant='secondary'
+                              size='md'
+                              onClick={() => {
+                                setReleaseNarrative(resolvedReleaseNarrative);
+                                setIsEditingReleaseNarrative(false);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size='md'
+                              onClick={() => saveReleaseNarrativeMutation.mutate()}
+                              loading={saveReleaseNarrativeMutation.isPending}
+                            >
+                              Save narrative
+                            </Button>
+                          </Group>
+                        )}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
               </Accordion>
             </>
           )}
