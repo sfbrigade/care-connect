@@ -26,7 +26,7 @@ test('647f transferOfficer: no handoffs — falls back to incident.createdBy', (
     incident: { createdBy: incidentCreator },
   });
 
-  assert.equal(data.custodyReleaseOfficerName, 'Jane Smith');
+  assert.equal(data.custodyReleaseOfficerName, 'J. Smith');
   assert.equal(data.custodyReleaseOfficerBadge, 'B001');
   assert.equal(data.custodyReleaseOfficerRank, 'Officer');
   assert.equal(data.custodyReleaseOfficerUnit, 'Unit 1');
@@ -39,7 +39,7 @@ test('647f transferOfficer: no handoffs and no incident — falls back to deflec
     createdBy: creator,
   });
 
-  assert.equal(data.custodyReleaseOfficerName, 'Jane Smith');
+  assert.equal(data.custodyReleaseOfficerName, 'J. Smith');
 });
 
 test('647f transferOfficer: handoff exists — uses toOfficer from the most recent Handoff', () => {
@@ -56,7 +56,7 @@ test('647f transferOfficer: handoff exists — uses toOfficer from the most rece
     ],
   });
 
-  assert.equal(data.custodyReleaseOfficerName, 'Al Vega');
+  assert.equal(data.custodyReleaseOfficerName, 'A. Vega');
   assert.equal(data.custodyReleaseOfficerBadge, 'F100');
   assert.equal(data.custodyReleaseOfficerRank, 'Deputy');
   assert.equal(data.custodyReleaseOfficerUnit, 'Field Unit');
@@ -118,6 +118,7 @@ test('647f transformData includes certifiedAt and arresting officer last name', 
   });
 
   assert.equal(data.certifiedAt, certifiedAt.toISOString());
+  assert.equal(data.arrestingOfficerName, 'J. Smith');
   assert.equal(data.arrestingOfficerLastName, 'Smith');
 });
 

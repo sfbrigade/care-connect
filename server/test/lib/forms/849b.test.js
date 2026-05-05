@@ -32,3 +32,23 @@ test('849b form generation eligibility', async (t) => {
     });
   });
 });
+
+test('849b transformData uses first initial for incident officer name', () => {
+  const exitedAt = new Date('2026-04-29T12:34:56.000Z');
+  const data = form849b.transformData({
+    releasedAt: null,
+    exitedAt,
+    exitDestination: 'JAIL',
+    incident: {
+      createdBy: {
+        firstName: 'Ryan',
+        lastName: 'Johnson',
+        badgeNumber: '1234',
+      },
+    },
+    subject: null,
+    releaseReason: null,
+  });
+
+  assert.strictEqual(data.officerName, 'R. Johnson');
+});
