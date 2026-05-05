@@ -31,6 +31,77 @@ test('849b form generation eligibility', async (t) => {
       message: 'The SFSO 849(b) Report can only be generated after the subject has been released or exited to jail.',
     });
   });
+
+  await t.test('pins reporting deputy details to releasedBy instead of generating user', () => {
+    const data = form849b.transformData({
+      releasedAt: new Date('2026-04-29T12:34:56.000Z'),
+      exitedAt: null,
+      exitDestination: null,
+      releaseReason: null,
+      incident: {},
+      subject: null,
+      releasedBy: {
+        firstName: 'Release',
+        lastName: 'Deputy',
+        badgeNumber: 'R123',
+        prop115Certified: true,
+        unit: { name: 'Release Unit' },
+      },
+      exitedBy: {
+        firstName: 'Exit',
+        lastName: 'Deputy',
+        badgeNumber: 'E456',
+        prop115Certified: false,
+        unit: { name: 'Exit Unit' },
+      },
+    });
+
+    assert.strictEqual(data.reportingDeputy.firstName, 'Release');
+    assert.strictEqual(data.reportingDeputy.lastName, 'Deputy');
+    assert.strictEqual(data.reportingDeputy.badgeNumber, 'R123');
+    assert.strictEqual(data.reportingDeputy.unit.name, 'Release Unit');
+    assert.strictEqual(data.reportingDeputy.prop115Certified, true);
+  });
+
+  await t.test('pins reporting deputy details to exitedBy for jail exits without legal release', () => {
+    const data = form849b.transformData({
+      releasedAt: null,
+      exitedAt: new Date('2026-04-29T12:34:56.000Z'),
+      exitDestination: 'JAIL',
+      releaseReason: null,
+      incident: {},
+      subject: null,
+      releasedBy: null,
+      exitedBy: {
+        firstName: 'Exit',
+        lastName: 'Deputy',
+        badgeNumber: 'E456',
+        prop115Certified: false,
+        unit: { name: 'Exit Unit' },
+      },
+    });
+
+    assert.strictEqual(data.reportingDeputy.firstName, 'Exit');
+    assert.strictEqual(data.reportingDeputy.lastName, 'Deputy');
+    assert.strictEqual(data.reportingDeputy.badgeNumber, 'E456');
+    assert.strictEqual(data.reportingDeputy.unit.name, 'Exit Unit');
+    assert.strictEqual(data.reportingDeputy.prop115Certified, false);
+  });
+
+  await t.test('leaves reporting deputy details blank when no persisted officer exists', () => {
+    const data = form849b.transformData({
+      releasedAt: new Date('2026-04-29T12:34:56.000Z'),
+      exitedAt: null,
+      exitDestination: null,
+      releaseReason: null,
+      incident: {},
+      subject: null,
+      releasedBy: null,
+      exitedBy: null,
+    });
+
+    assert.strictEqual(data.reportingDeputy, null);
+  });
 });
 
 test('849b transformData uses first initial for incident officer name', () => {

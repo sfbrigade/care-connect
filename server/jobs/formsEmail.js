@@ -111,6 +111,14 @@ export default async function formsEmail (data, prismaClient = prisma) {
     return;
   }
 
+  if (template === 'self-849b') {
+    await sendFormsMessage({
+      targetFormIds: ['849b'],
+      to: sendingUser?.email || recipientEmail,
+    });
+    return;
+  }
+
   if (formIds.includes('849b')) {
     await sendFormsMessage({
       targetFormIds: ['849b'],
