@@ -1,0 +1,8 @@
+.transitGroup {
+  border-radius: var(--mantine-radius-xl);
+}
+
+.transitCardHighlighted {
+  border-color: var(--mantine-color-indigo-6);
+  animation: cardHighlight 3s ease-out;
+}

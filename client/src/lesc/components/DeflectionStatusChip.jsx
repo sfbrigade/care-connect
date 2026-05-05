@@ -1,10 +1,13 @@
 import React from 'react';
 import { Badge } from '@mantine/core';
 
+import classes from './DeflectionStatusChip.module.css';
+
 const CHIP_COLOR_BY_TONE = {
   warning: 'yellow',
   neutral: 'gray',
   info: 'blue',
+  indigo: 'indigo',
   success: 'teal',
   danger: 'red',
 };
@@ -18,15 +21,7 @@ function DeflectionStatusChip ({ label, tone = 'neutral' }) {
       color={CHIP_COLOR_BY_TONE[tone] || CHIP_COLOR_BY_TONE.neutral}
       radius='xl'
       size='lg'
-      styles={{
-        label: {
-          textTransform: 'none',
-          fontWeight: 500,
-          fontSize: '14px',
-          lineHeight: '20px',
-          paddingInline: '2px',
-        },
-      }}
+      classNames={classes}
       px='md'
       py={6}
     >
