@@ -34,6 +34,26 @@ test('849b form generation eligibility', async (t) => {
   });
 });
 
+test('849b transformData uses first initial for incident officer name', () => {
+  const exitedAt = new Date('2026-04-29T12:34:56.000Z');
+  const data = form849b.transformData({
+    releasedAt: null,
+    exitedAt,
+    exitDestination: 'JAIL',
+    incident: {
+      createdBy: {
+        firstName: 'Ryan',
+        lastName: 'Johnson',
+        badgeNumber: '1234',
+      },
+    },
+    subject: null,
+    releaseReason: null,
+  });
+
+  assert.strictEqual(data.officerName, 'R. Johnson');
+});
+
 test('849b PDF fills release reporting party fields and leaves citation text blank', async () => {
   const releasedAt = new Date('2026-05-05T20:00:00.000Z');
   const pdfBytes = await form849b.generatePdf(form849b.transformData({
