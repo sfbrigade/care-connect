@@ -81,6 +81,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   certifiedAt: z.coerce.date().nullable().optional(),
   createdAt: z.coerce.date(),
   expiresAt: z.coerce.date(),
+  arrivedAt: z.coerce.date().nullable(),
   completedAt: z.coerce.date().nullable(),
   extensionCount: z.number().int().min(0),
   cancelReason: z.enum(Object.values(DeflectionCancelReasonEnum)).nullable(),

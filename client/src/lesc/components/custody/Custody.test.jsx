@@ -155,6 +155,7 @@ beforeEach(() => {
             subjectStatus: 'ONSITE_AWAITING_TRANSFER',
             // expiresAt deliberately in the past — server #861 keeps these ACTIVE indefinitely once arrived.
             expiresAt: '2024-01-01T00:00:00.000Z',
+            arrivedAt: '2026-05-05T18:30:00.000Z',
             narcoticsSubstance: false,
             narcoticsParaphernalia: false,
             drugUseEvidence: false,
@@ -289,10 +290,11 @@ describe('Custody', () => {
     renderCustody();
 
     await screen.findByText('Onsite Person');
-    // Two ONSITE_AWAITING_TRANSFER holds in the fixture (ids 5 and 8) — each renders the inline label.
+    // Hold 8 has arrivedAt → "Arrived at HH:MM"; Hold 5 has no arrivedAt → plain "Arrived" (defensive fallback).
     // Implementation gates the inline label and the expiry Title as mutually-exclusive,
     // so label presence implies timer suppression on those cards.
-    expect(screen.getAllByText('Arrived')).toHaveLength(2);
+    expect(screen.getByText(/^Arrived at \d{1,2}:\d{2} (AM|PM)$/)).toBeInTheDocument();
+    expect(screen.getByText('Arrived')).toBeInTheDocument();
   });
 
   it('orders officer groups with arrived holds before officer groups with only detained holds', async () => {

@@ -165,7 +165,9 @@ function TransitCustodyCard ({ deflection, highlighted }) {
             {isArrived && (
               <>
                 <Text size='md' c='gray.4'>•</Text>
-                <Text size='md' c='indigo.6' truncate>Arrived</Text>
+                <Text size='md' c='indigo.6' truncate>
+                  {deflection.arrivedAt ? `Arrived at ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                </Text>
               </>
             )}
           </Group>
