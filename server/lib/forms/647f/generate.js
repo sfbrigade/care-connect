@@ -71,6 +71,7 @@ export function transformData (deflection) {
     arrestLocation,
     charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
     cadNumber: incident?.cadNumber || '',
+    caseNumber: incident?.caseNumber || '',
     certifiedAt: deflection.certifiedAt?.toISOString() || null,
     arrestingOfficerRank,
     arrestingOfficerName,
@@ -137,6 +138,7 @@ export async function generatePdf (deflectionData) {
     arrestLocation: deflectionData.arrestLocation,
     charge: deflectionData.charge || '647(f) RWS',
     cadNumber: deflectionData.cadNumber,
+    caseNumber: deflectionData.caseNumber,
 
     arrestingOfficerDisplay,
     arrestingOfficerUnit: deflectionData.arrestingOfficerUnit,
