@@ -24,6 +24,12 @@ test('/api/deflections', async (t) => {
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+  const regularUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'regular.user@test.com' },
+  });
+  const custodyUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'sfsouser1@test.com' },
+  });
 
   // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
   // deflections.yml). Tests opt into completeness when they exercise endpoints
@@ -358,7 +364,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
       });
     });
@@ -374,13 +380,14 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('POST /:id/849b-email', async (t) => {
-    await t.test('queues 849b regeneration and self e-mail for custody user', async () => {
+    await t.test('queues live 849b regeneration and self e-mail for custody user', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
           subjectStatus: 'EXITED',
           releasedAt: new Date(),
           exitedAt: new Date(),
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
         },
       });
 
@@ -397,7 +404,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
         emailTemplate: 'self-849b',
         recipientEmail: 'sfsouser1@test.com',
@@ -650,7 +657,7 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'AWAITING_INTAKE',
-          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: custodyUser.id,
         },
       });
 
@@ -672,7 +679,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: testDeflection.id,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
         emailTemplate: 'incident-forms',
         recipientEmail: 'sfsouser1@test.com',
@@ -1565,7 +1572,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 4,
-        userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        userId: regularUser.id,
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
         recipientEmail: [
@@ -1889,6 +1896,38 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
       assert.strictEqual(lastUpdate.exitSFResident, 'YES');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('rejects JAIL as exit destination — care users record jail outcomes via custody', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'JAIL',
+          exitHousingStatus: 'TEMPORARY',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
+      assert.strictEqual(dbDeflection.exitDestination, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
     await t.test('requires care user role', async () => {
@@ -2028,7 +2067,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
     });
 
-    await t.test('records sobered release from a pre-chair hold and finalizes the deflection', async () => {
+    await t.test('records sobered release from pending safety checks, finalizes the deflection, and queues release email', async () => {
       await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -2037,7 +2076,7 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'READY_FOR_INTAKE',
+          subjectStatus: 'AWAITING_INTAKE',
           releasedAt: null,
           releasedById: null,
           releaseReason: null,
@@ -2088,6 +2127,59 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
+    });
+
+    await t.test('records sobered release from awaiting medical intake and queues release email', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'SOBERED',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReason, 'SOBERED');
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
     });
 
     await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {
@@ -2188,7 +2280,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2241,7 +2333,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2277,7 +2369,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });

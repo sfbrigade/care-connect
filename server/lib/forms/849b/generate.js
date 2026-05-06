@@ -7,6 +7,23 @@ import { build849bReleaseNarrative } from './releaseNarrative.js';
 import i18n from '#lib/i18n.js';
 const { DrugTypeEnum } = prismaPkg;
 
+function formatDeputyNameForReportingParty (deputy) {
+  if (!deputy) return '';
+
+  const firstInitial = deputy.firstName?.trim()?.charAt(0)?.toUpperCase();
+  const lastName = deputy.lastName?.trim();
+  const star = deputy.badgeNumber?.trim();
+
+  const nameParts = [];
+  if (lastName) nameParts.push(lastName);
+  if (firstInitial) nameParts.push(firstInitial);
+  if (star) nameParts.push(`#${star}`);
+
+  if (nameParts.length > 0) return nameParts.join(', ');
+
+  return [deputy.firstName, deputy.lastName].filter(Boolean).join(' ');
+}
+
 export function transformData (deflection) {
   const incident = deflection.incident;
   const subject = deflection.subject;
@@ -33,6 +50,7 @@ export function transformData (deflection) {
   const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
     .filter(Boolean)
     .join(', ');
+  const releasingDeputy = deflection.releasedBy || deflection.exitedBy || null;
 
   return {
     cadNumber: incident?.cadNumber || '',
@@ -59,6 +77,8 @@ export function transformData (deflection) {
     transferredAt: deflection.transferredAt?.toISOString() || null,
     releasedAt: (deflection.releasedAt || deflection.exitedAt).toISOString(),
     releaseReason: deflection.releaseReason ? i18n.t(`deflectionReleaseReason.${deflection.releaseReason}`) : '',
+    releasingDeputyReportingPartyName: formatDeputyNameForReportingParty(releasingDeputy),
+    releasingDeputyProp115Certified: releasingDeputy?.prop115Certified ?? false,
     behavior: deflection.behavior || null,
     releaseNarrative: deflection.releaseNarrative || null,
   };
@@ -86,16 +106,17 @@ export async function generatePdf (deflectionData) {
     location: deflectionData.arrestLocation,
     premiseType: '',
     locationSentTo: deflectionData.locationSentTo,
+    dispositionCode: 'DET/REL',
     reportedTo: '', // TBC
 
     // Page info
     prop115Years: '2',
-    prop115Pages: '2',
 
     // Prop 115 certified and deputy fields are pinned to the deputy who
     // performed the release or jail exit. If that persisted user is missing,
     // leave these fields blank/unchecked instead of using the current user.
     prop115Certified: reportingDeputy?.prop115Certified ?? false,
+    postTraining: !(reportingDeputy?.prop115Certified ?? false),
 
     // Deputy fields - from persisted reporting deputy (not incident creator or current user)
     reportingDeputy: firstInitialLastName(reportingDeputy),
@@ -138,6 +159,14 @@ export async function generatePdf (deflectionData) {
     incidentCodes: isDrugTypeAlcohol
       ? ['19090', '64085']
       : ['19095', '64085'],
+
+    reportingParty: {
+      code: 'R1',
+      name: deflectionData.releasingDeputyReportingPartyName,
+      contactPhone: '415-575-6461',
+      businessAddress: '70 Oak Grove St.',
+      businessZip: '94107',
+    },
 
     narrative: deflectionData.releaseNarrative || build849bReleaseNarrative({
       caseNumber: deflectionData.caseNumber,
