@@ -169,7 +169,7 @@ test.describe('849(b) PDF field verification', () => {
   test('reporting party business address', () => {
     expect(
       getFieldText('BUSINESS ADDRESSNAME OF SCHOOL IF JUVENILECITY IF NOT SAN FRANCISCO_2')
-    ).toBe('70 Oak Grove St');
+    ).toBe('70 Oak Grove St.');
   });
 
   test('reporting party business zipcode', () => {
@@ -178,6 +178,10 @@ test.describe('849(b) PDF field verification', () => {
 
   test('citation area does not contain stray text', () => {
     expect(getFieldText('Text4') || '').toBe('');
+  });
+
+  test('post training is checked', () => {
+    expect(getCheckboxChecked('POST TRAINING')).toBe(true);
   });
 
   // ── Narrative ──

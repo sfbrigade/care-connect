@@ -180,14 +180,15 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
     pdfForm.getCheckBox('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED').isChecked(),
     true
   );
+  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
   assert.strictEqual(pdfForm.getTextField('Text3').getText(), '2');
-  assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'G. Deputy');
+  assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'T. SFSO');
   assert.strictEqual(pdfForm.getTextField('CODE_2').getText(), 'R1');
   assert.strictEqual(pdfForm.getTextField('NAME LAST FIRST MIDDLE_2').getText(), 'SFSO, T, #5678');
   assert.strictEqual(pdfForm.getTextField('CONTACT PHONE NUMBER_2').getText(), '415-575-6461');
   assert.strictEqual(
     pdfForm.getTextField('BUSINESS ADDRESSNAME OF SCHOOL IF JUVENILECITY IF NOT SAN FRANCISCO_2').getText(),
-    '70 Oak Grove St'
+    '70 Oak Grove St.'
   );
   assert.strictEqual(pdfForm.getTextField('ZIP CODE_4').getText(), '94107');
   assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');

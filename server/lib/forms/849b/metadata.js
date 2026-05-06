@@ -11,8 +11,6 @@ export const metadata = {
 
   deflectionInclude: {
     subject: true,
-    releasedBy: true,
-    exitedBy: true,
     incident: {
       include: {
         createdBy: {

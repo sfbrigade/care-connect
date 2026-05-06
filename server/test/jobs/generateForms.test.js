@@ -124,4 +124,38 @@ test('generateForms 647f hash logic', async (t) => {
     });
     assert.notStrictEqual(docAfterSecond.sourceDataHash, firstHash, 'hash should have changed');
   });
+
+  await t.test('always regenerates existing 849b before e-mail attachments are sent', async () => {
+    const { user, deflection } = await createDeflection();
+    await prisma.deflection.update({
+      where: { id: deflection.id },
+      data: {
+        subjectStatus: 'RELEASED',
+        releasedAt: new Date(),
+        releasedById: user.id,
+      },
+    });
+    await prisma.deflectionDocument.create({
+      data: {
+        deflectionId: deflection.id,
+        formId: '849b',
+        file: 'stale-849b.pdf',
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+
+    const skipped = await generateForms(
+      { deflectionId: deflection.id, userId: user.id, formIds: ['849b'] },
+      prisma
+    );
+
+    assert.deepStrictEqual(skipped, []);
+
+    const docAfterRegeneration = await prisma.deflectionDocument.findUnique({
+      where: { deflectionId_formId: { deflectionId: deflection.id, formId: '849b' } },
+    });
+    assert.strictEqual(docAfterRegeneration.file, `849b-report-${deflection.id}.pdf`);
+    assert.strictEqual(docAfterRegeneration.sourceDataHash, null);
+  });
 });

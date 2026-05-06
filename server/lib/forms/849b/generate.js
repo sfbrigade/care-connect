@@ -116,6 +116,7 @@ export async function generatePdf (deflectionData) {
     // performed the release or jail exit. If that persisted user is missing,
     // leave these fields blank/unchecked instead of using the current user.
     prop115Certified: reportingDeputy?.prop115Certified ?? false,
+    postTraining: true,
 
     // Deputy fields - from persisted reporting deputy (not incident creator or current user)
     reportingDeputy: firstInitialLastName(reportingDeputy),
@@ -163,7 +164,7 @@ export async function generatePdf (deflectionData) {
       code: 'R1',
       name: deflectionData.releasingDeputyReportingPartyName,
       contactPhone: '415-575-6461',
-      businessAddress: '70 Oak Grove St',
+      businessAddress: '70 Oak Grove St.',
       businessZip: '94107',
     },
 
