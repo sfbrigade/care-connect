@@ -25,6 +25,7 @@
     "@tabler/icons-react": "^3.35.0",
     "@tanstack/react-query": "^5.89.0",
     "@unhead/react": "^2.0.17",
+    "@zxing/browser": "^0.2.0",
     "axios": "^1.12.2",
     "classnames": "^2.5.1",
     "html5-qrcode": "^2.3.8",

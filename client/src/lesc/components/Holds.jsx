@@ -433,6 +433,10 @@ function Holds () {
       </Head>
       <Container>
         <Stack gap='xl'>
+          {/* PoC launcher — throwaway. */}
+          <Button variant='light' onClick={() => navigate('/scan-barcode-poc')}>
+            Scan ID barcode (PoC)
+          </Button>
           <Facility
             facility={currentFacility}
             bedTypes={currentBedTypes}

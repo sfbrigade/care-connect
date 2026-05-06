@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router';
 import { useAuthContext } from '@/AuthContext';
 import { getDefaultPathForUser } from '@/AppRedirectsConfig';
 import Holds from '../components/Holds';
+import BarcodeScanPoc from '../components/BarcodeScanPoc';
 import Care from '../components/care/Care';
 import CareExitDetails from '../components/care/CareExitDetails';
 import CareSubjectForm from '../components/care/CareSubjectForm';
@@ -35,6 +36,8 @@ function LESCRoutes () {
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
+      {/* Throwaway PoC route — see BarcodeScanPoc.jsx. */}
+      <Route path='scan-barcode-poc' element={<BarcodeScanPoc />} />
       <Route path='incident/:id' element={<IncidentForm />} />
       <Route path='incident' element={<IncidentForm />} />
       <Route path='incident/handoff' element={<HandoffScreen />} />
