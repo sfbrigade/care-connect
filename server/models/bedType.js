@@ -1,3 +1,7 @@
+// BedType counters partition every chair into available / held / occupied / two
+// offline buckets. The invariant and per-transition mutations live in
+// docs/holds-state-machine.md — read it before changing the schema or any
+// counter-touching route.
 import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 

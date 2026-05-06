@@ -128,3 +128,7 @@ care-connect/
 For production, point a wildcard subdomain to the server
 
 - `*.example.com` → Care Connect app
+
+## Further reading
+
+- [`docs/holds-state-machine.md`](docs/holds-state-machine.md) — deflection lifecycle, `BedType` counter invariants, and how the chair-state UI maps onto subject statuses. Read before changing a lifecycle transition or any view that summarizes capacity.
