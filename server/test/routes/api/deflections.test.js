@@ -30,9 +30,6 @@ test('/api/deflections', async (t) => {
   const custodyUser = await prisma.user.findUniqueOrThrow({
     where: { email: 'sfsouser1@test.com' },
   });
-  const careUser = await prisma.user.findUniqueOrThrow({
-    where: { email: 'careuser1@test.com' },
-  });
 
   // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
   // deflections.yml). Tests opt into completeness when they exercise endpoints
@@ -1903,7 +1900,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
-    await t.test('queues 849b email when final exit destination is jail', async () => {
+    await t.test('rejects JAIL as exit destination — care users record jail outcomes via custody', async () => {
       await app.prisma.deflection.update({
         where: { id: 6 },
         data: {
@@ -1926,20 +1923,11 @@ test('/api/deflections', async (t) => {
           exitConnectedToCare: 'NO',
         });
 
-      assert.strictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-
-      assert.strictEqual(data.subjectStatus, 'EXITED');
-      assert.strictEqual(data.exitDestination, 'JAIL');
-      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
-      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
-      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
-        deflectionId: 6,
-        userId: careUser.id,
-        formIds: ['849b'],
-        emailTemplate: 'incident-forms',
-        recipientEmail: 'careuser1@test.com',
-      });
+      assert.strictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
+      assert.strictEqual(dbDeflection.exitDestination, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
     await t.test('requires care user role', async () => {
