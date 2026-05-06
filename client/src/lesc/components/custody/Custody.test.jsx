@@ -214,6 +214,30 @@ describe('Custody', () => {
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
   });
 
+  it('shows a count next to the Transit tab matching the number of in-transit deflections', async () => {
+    renderCustody();
+    await screen.findByText('17 chairs available');
+
+    // Fixture returns 3 deflections under DETAINED,ONSITE_AWAITING_TRANSFER.
+    expect(screen.getByText(/^Transit\s*·\s*3$/)).toBeInTheDocument();
+  });
+
+  it('hides the Transit tab badge when there are no in-transit deflections', async () => {
+    mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
+      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+
+    renderCustody();
+    await screen.findByText('17 chairs available');
+
+    const transitLabel = screen.getByText('Transit').closest('label');
+    // textContent should be exactly "Transit" — no trailing badge digit.
+    expect(transitLabel?.textContent?.trim()).toBe('Transit');
+  });
+
   it('shows the Take custody button on the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
