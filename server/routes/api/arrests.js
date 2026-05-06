@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { DateTime } from 'luxon';
 import { z } from 'zod';
 
-import { streetCityState } from '#lib/forms/shared/formUtils.js';
+import { firstInitialLastName, streetCityState } from '#lib/forms/shared/formUtils.js';
 
 const TIMEZONE = 'America/Los_Angeles';
 const FACILITY_NAME = 'RESET';
@@ -22,6 +22,8 @@ const ArrestSchema = z.object({
   race: z.string().nullable(),
   arrivedAt: z.string().datetime().nullable(),
   transferredAt: z.string().datetime().nullable(),
+  arrestingOfficerName: z.string().nullable(),
+  arrestingOfficerBadge: z.string().nullable(),
 });
 
 const ArrestsResponseSchema = z.array(ArrestSchema);
@@ -63,6 +65,8 @@ export default async function (fastify) {
           city: true,
           state: true,
           caseNumber: true,
+          createdByBadgeNumber: true,
+          createdBy: { select: { firstName: true, lastName: true } },
           deflections: {
             where: { cancelledAt: null },
             orderBy: { createdAt: 'asc' },
@@ -101,6 +105,8 @@ export default async function (fastify) {
           race: subject?.race ?? null,
           arrivedAt: deflection?.arrivedAt?.toISOString() ?? null,
           transferredAt: deflection?.transferredAt?.toISOString() ?? null,
+          arrestingOfficerName: firstInitialLastName(i.createdBy) || null,
+          arrestingOfficerBadge: i.createdByBadgeNumber ?? null,
         };
       });
     }

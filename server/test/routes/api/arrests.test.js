@@ -71,6 +71,7 @@ test('/api/arrests', async (t) => {
     subject = null,
     arrivedAt = null,
     transferredAt = null,
+    createdByBadgeNumber = null,
   }) {
     const incident = await prisma.incident.create({
       data: {
@@ -82,6 +83,7 @@ test('/api/arrests', async (t) => {
         encounteredVia: 'ON_VIEW',
         caseNumber,
         createdById: user.id,
+        createdByBadgeNumber,
         updatedById: user.id,
       },
     });
@@ -178,6 +180,8 @@ test('/api/arrests', async (t) => {
       assert.deepStrictEqual(Object.keys(arrest).sort(), [
         'address',
         'arrestedAt',
+        'arrestingOfficerBadge',
+        'arrestingOfficerName',
         'arrivedAt',
         'caseNumber',
         'dateOfBirth',
@@ -383,5 +387,76 @@ test('/api/arrests', async (t) => {
     assert.strictEqual(body.length, 1);
     assert.strictEqual(body[0].firstName, 'First');
     assert.strictEqual(body[0].lastName, 'Deflection');
+  });
+
+  // ── Arresting officer fields ──
+
+  await t.test('returns arresting officer first-initial-last-name and badge snapshot', async () => {
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+      createdByBadgeNumber: '1234',
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    // user.firstName/lastName from prisma.user.findFirst() — first seeded user is the admin (Admin User)
+    assert.strictEqual(body[0].arrestingOfficerName, 'A. User');
+    assert.strictEqual(body[0].arrestingOfficerBadge, '1234');
+  });
+
+  await t.test('arrestingOfficerBadge is null when no badge snapshot was captured on the incident', async () => {
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].arrestingOfficerBadge, null);
+  });
+
+  await t.test('arrestingOfficerBadge does not fall back to the live user badgeNumber', async () => {
+    // Find a seeded user that has a badgeNumber set, then create an incident as that user
+    // without snapshotting their badge. The response should still return null — no fallback.
+    const badgedUser = await prisma.user.findFirst({ where: { badgeNumber: { not: null } } });
+    assert.ok(badgedUser, 'expected at least one seeded user with a badgeNumber');
+
+    await prisma.incident.create({
+      data: {
+        facilityId: resetFacility.id,
+        addressLine1: '100 Market St',
+        city: 'San Francisco',
+        state: 'CA',
+        arrestedAt: inDayMorning,
+        encounteredVia: 'ON_VIEW',
+        createdById: badgedUser.id,
+        updatedById: badgedUser.id,
+        deflections: {
+          create: {
+            facilityId: resetFacility.id,
+            bedTypeId: resetBedType.id,
+            createdById: badgedUser.id,
+          },
+        },
+      },
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].arrestingOfficerBadge, null, 'should NOT fall back to user.badgeNumber');
   });
 });
