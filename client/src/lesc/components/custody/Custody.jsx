@@ -144,8 +144,6 @@ function TransitCustodyCard ({ deflection, highlighted }) {
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(deflection?.incident);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const now = useNow(1000, !isArrived && !!deflection?.expiresAt && detailsComplete);
-  // City omitted on display per product (always SF in current scope); buildAddressQuery
-  // backfills "San Francisco, CA" so the underlying map link still resolves correctly.
   const incidentAddressDisplay = [deflection?.incident?.addressLine1, deflection?.incident?.addressLine2].filter(Boolean).join(', ');
 
   return (
