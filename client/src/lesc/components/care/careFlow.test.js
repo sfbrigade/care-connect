@@ -20,20 +20,41 @@ afterEach(() => {
 });
 
 describe('Care flow unit tests', () => {
-  it('hides Details for all EXITED records', () => {
+  it('shows Details for pre-release and post-release care records', () => {
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'IN_MEDICAL_INTAKE',
+      })
+    ).toBe(true);
+
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'IN_CHAIR',
+      })
+    ).toBe(true);
+
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'RELEASED',
+        releasedAt: '2026-05-05T12:00:00.000Z',
+      })
+    ).toBe(true);
+
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
         exitDestination: 'JAIL',
       })
-    ).toBe(false);
+    ).toBe(true);
 
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
         exitDestination: 'HOSPITAL',
+        releasedAt: '2026-05-05T12:00:00.000Z',
+        exitedAt: '2026-05-05T18:00:00.000Z',
       })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('detects persisted exit details only when all required fields exist', () => {
