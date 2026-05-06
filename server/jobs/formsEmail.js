@@ -2,6 +2,7 @@ import prisma from '#prisma/client.js';
 import mailer from '#lib/mailer.js';
 import { generateLive849bPdf, storeLive849bPdf } from '#lib/forms/849b/livePdf.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
+import { captureException } from '#lib/posthog.js';
 
 const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
 const INCIDENT_REPORTS_RECIPIENT = 'Sfso-incidentreports@sfgov.org';
@@ -85,12 +86,27 @@ export default async function formsEmail (data, prismaClient = prisma) {
     });
 
     if (live849bAttachment && targetFormIds.includes('849b')) {
+      // Storage of the audit copy must not block delivery: the email has
+      // already gone out. Surface failures via logs + PostHog instead so
+      // missing audit records are noticeable.
       await storeLive849bPdf(prismaClient, {
         deflectionId,
         userId,
         content: live849bAttachment.content,
         filename: live849bAttachment.filename,
-      }).catch(() => {});
+      }).catch((error) => {
+        console.error(JSON.stringify({
+          event: '849b/store-failed',
+          deflectionId,
+          template,
+          error: error.message,
+        }));
+        captureException(error, 'care-connect-worker', {
+          event: '849b/store-failed',
+          deflectionId,
+          template,
+        });
+      });
     }
   }
 
