@@ -5,6 +5,7 @@ import formsEmail from '../../jobs/formsEmail.js';
 import anonymizeSubjects from '../../jobs/anonymizeSubjects.js';
 import canary from '../../jobs/canary.js';
 import { LIVE_EMAIL_FORM_IDS } from '#lib/forms/liveEmailForms.js';
+import { captureException } from '#lib/posthog.js';
 import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS, QUEUE_CANARY } from './queueNames.js';
 
 function normalizeGenerateFormsResult (result) {
@@ -54,6 +55,16 @@ const queues = [
           : normalizeGenerateFormsResult();
       } catch (error) {
         if (!job.data.emailTemplate) throw error;
+        // If there's a form generation error, don't block the whole email,
+        // but do log the issue to make it visible.
+        const context = {
+          event: 'generate-forms/failed',
+          deflectionId: job.data.deflectionId,
+          formIds: job.data.formIds,
+          emailTemplate: job.data.emailTemplate,
+        };
+        console.error(JSON.stringify({ ...context, error: error.message }));
+        captureException(error, 'care-connect-worker', context);
         generationFailed = true;
       }
       if (job.data.emailTemplate) {
