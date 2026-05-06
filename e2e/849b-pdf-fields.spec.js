@@ -184,6 +184,10 @@ test.describe('849(b) PDF field verification', () => {
     expect(getCheckboxChecked('POST TRAINING')).toBe(true);
   });
 
+  test('prop 115 certification follows releasing deputy profile', () => {
+    expect(getCheckboxChecked('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED')).toBe(false);
+  });
+
   // ── Narrative ──
 
   test('narrative uses release narrative', () => {

@@ -180,7 +180,7 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
     pdfForm.getCheckBox('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED').isChecked(),
     true
   );
-  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
+  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), false);
   assert.strictEqual(pdfForm.getTextField('Text3').getText(), '2');
   assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'T. SFSO');
   assert.strictEqual(pdfForm.getTextField('CODE_2').getText(), 'R1');
@@ -192,4 +192,43 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
   );
   assert.strictEqual(pdfForm.getTextField('ZIP CODE_4').getText(), '94107');
   assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
+});
+
+test('849b PDF leaves prop 115 unchecked but checks post training when reporting deputy is not certified', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Noncertified',
+      lastName: 'Deputy',
+      badgeNumber: '1357',
+      prop115Certified: false,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD849B',
+      caseNumber: 'CS849B',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.strictEqual(
+    pdfForm.getCheckBox('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED').isChecked(),
+    false
+  );
+  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
 });
