@@ -38,7 +38,7 @@ describe('EnvironmentBanner', () => {
     expect(screen.getByText(/this is a test site/i)).toBeInTheDocument();
   });
 
-  it('renders the production URL as a link when configured', () => {
+  it('uses VITE_PRODUCTION_URL as the link target when configured', () => {
     renderWithEnv({
       VITE_ENVIRONMENT_LABEL: 'STAGING',
       VITE_PRODUCTION_URL: 'https://reset.careconnect.example.com',
@@ -47,9 +47,14 @@ describe('EnvironmentBanner', () => {
     expect(link).toHaveAttribute('href', 'https://reset.careconnect.example.com');
   });
 
-  it('omits the link when no production URL is configured', () => {
+  it('falls back to a hardcoded URL when no override is configured', () => {
+    // Defense in depth: a misconfigured deploy without VITE_PRODUCTION_URL must
+    // still surface a working escape link, otherwise users get stranded on a
+    // banner that says "go to prod" with no way to actually get there.
     renderWithEnv({ VITE_ENVIRONMENT_LABEL: 'DEV' });
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /go to careconnect/i });
+    expect(link).toHaveAttribute('href', expect.stringMatching(/^https?:\/\//));
+    expect(link.getAttribute('href')).not.toBe('');
   });
 
   // Anything that's not the literal string PROD must show the banner. This

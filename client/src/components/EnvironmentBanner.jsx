@@ -8,6 +8,12 @@ import { useStaticContext } from '@/StaticContext';
 // rendered behind it on mobile.
 export const ENVIRONMENT_BANNER_HEIGHT = 40;
 
+// Fallback production URL surfaced in the banner. We accept VITE_PRODUCTION_URL
+// as an override (e.g. for staging environments that should point to a
+// different "prod"), but fall back to this constant so a misconfigured deploy
+// never strands users on a non-prod page without a link out.
+const DEFAULT_PRODUCTION_URL = 'https://reset.careconnect.sf.gov/login';
+
 // Single source of truth for the visibility check. AppLayout uses this to
 // decide whether to add the banner's height to the AppShell header config;
 // the component itself short-circuits to null with the same predicate.
@@ -22,7 +28,7 @@ export function shouldShowEnvironmentBanner (env) {
 // failure mode we want.
 function EnvironmentBanner () {
   const { env } = useStaticContext();
-  const prodUrl = env?.VITE_PRODUCTION_URL;
+  const prodUrl = env?.VITE_PRODUCTION_URL || DEFAULT_PRODUCTION_URL;
 
   if (!shouldShowEnvironmentBanner(env)) return null;
 
@@ -40,18 +46,16 @@ function EnvironmentBanner () {
         <Text fw={700} c='dark.9' size='sm' style={{ flexShrink: 0 }}>
           This is a test site.
         </Text>
-        {prodUrl && (
-          <Anchor
-            href={prodUrl}
-            fw={700}
-            c='dark.9'
-            size='sm'
-            td='underline'
-            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
-          >
-            Go to CareConnect →
-          </Anchor>
-        )}
+        <Anchor
+          href={prodUrl}
+          fw={700}
+          c='dark.9'
+          size='sm'
+          td='underline'
+          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}
+        >
+          Go to CareConnect →
+        </Anchor>
       </Group>
     </Box>
   );
