@@ -139,7 +139,7 @@ describe('Care', () => {
     renderCare();
 
     expect(await screen.findByText('17 chairs available')).toBeInTheDocument();
-    expect(screen.getByText('2 reserved')).toBeInTheDocument();
+    expect(screen.getByText('2 held')).toBeInTheDocument();
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Manage capacity' })).toBeInTheDocument();
   });

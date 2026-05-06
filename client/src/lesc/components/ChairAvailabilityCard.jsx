@@ -4,7 +4,7 @@ import { inflect } from 'inflection';
 
 function ChairAvailabilityCard ({
   availableChairs,
-  reservedCount,
+  heldCount,
   occupiedCount,
   actionLabel,
   onActionClick,
@@ -19,7 +19,7 @@ function ChairAvailabilityCard ({
           </Title>
           <Group gap={4} justify='center' wrap='wrap'>
             <Text size='md' c='gray.6' ta='center'>
-              {reservedCount} reserved
+              {heldCount} held
             </Text>
             <IconTallymark1 color='var(--mantine-color-gray-3)' size={20} />
             <Text size='md' c='gray.6' ta='center'>
