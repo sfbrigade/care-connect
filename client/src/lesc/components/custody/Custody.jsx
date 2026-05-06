@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Container, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Card, Container, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
 import { useNavigate } from 'react-router';
@@ -397,8 +397,21 @@ function Custody () {
             value={activeTab}
             onChange={setTab}
             withItemsBorders={false}
+            styles={{ label: { paddingInline: 4 } }}
             data={[
-              { label: 'Transit', value: 'transit' },
+              {
+                label: (
+                  <Group gap={6} justify='center' wrap='nowrap'>
+                    <span>Transit</span>
+                    {transitDeflections && transitDeflections.length > 0 && (
+                      <Badge size='sm' variant='filled' color='gray.6'>
+                        {transitDeflections.length}
+                      </Badge>
+                    )}
+                  </Group>
+                ),
+                value: 'transit',
+              },
               { label: 'Custody', value: 'custody' },
               { label: 'Released', value: 'released' },
             ]}
