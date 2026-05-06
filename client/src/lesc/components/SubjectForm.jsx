@@ -18,7 +18,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { validateSubject } from '@/utils/validators';
+import { normalizeDobInput, validateSubject } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -97,10 +97,7 @@ function SubjectForm () {
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubject({
-            ...normalized,
-            dateOfBirth: deflection.subject.dateOfBirth,
-          });
+          const errors = validateSubject(normalized);
           form.setErrors(errors);
         }
       } else {
@@ -296,6 +293,7 @@ function SubjectForm () {
                 maxLength={10}
                 placeholder='MM/DD/YYYY'
                 {...form.getInputProps('dateOfBirth')}
+                defaultValue={undefined}
                 value={dobInput}
                 onChange={(event) => {
                   const formatted = formatInputDob(event.currentTarget.value);
@@ -303,6 +301,13 @@ function SubjectForm () {
                   form.setFieldValue('dateOfBirth', formatted);
                   if (!isCustodyContext) {
                     scheduleAutoSave(form.getValues(), formatted);
+                  }
+                }}
+                onBlur={(event) => {
+                  const expanded = normalizeDobInput(event.currentTarget.value);
+                  if (expanded !== dobInput) {
+                    setDobInput(expanded);
+                    form.setFieldValue('dateOfBirth', expanded);
                   }
                 }}
               />
