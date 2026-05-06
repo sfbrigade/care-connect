@@ -24,6 +24,15 @@ test('/api/deflections', async (t) => {
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+  const regularUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'regular.user@test.com' },
+  });
+  const custodyUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'sfsouser1@test.com' },
+  });
+  const careUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'careuser1@test.com' },
+  });
 
   // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
   // deflections.yml). Tests opt into completeness when they exercise endpoints
@@ -301,7 +310,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
       });
     });
@@ -592,7 +601,7 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'AWAITING_INTAKE',
-          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: custodyUser.id,
         },
       });
 
@@ -614,7 +623,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: testDeflection.id,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
         emailTemplate: 'incident-forms',
         recipientEmail: 'sfsouser1@test.com',
@@ -1507,7 +1516,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 4,
-        userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        userId: regularUser.id,
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
         recipientEmail: [
@@ -1867,7 +1876,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: 'e2deed87-2733-41d7-b9f1-3c66869d5c2f',
+        userId: careUser.id,
         formIds: ['849b'],
         emailTemplate: 'incident-forms',
         recipientEmail: 'careuser1@test.com',
@@ -2076,7 +2085,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2120,7 +2129,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2224,7 +2233,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2277,7 +2286,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2313,7 +2322,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
