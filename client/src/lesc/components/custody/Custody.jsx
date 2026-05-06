@@ -361,7 +361,7 @@ function Custody () {
   const hasTransit = (transitDeflections?.length ?? 0) > 0;
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
-  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const reservedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.holds ?? 0), 0);
   const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   useEffect(() => {
@@ -389,7 +389,7 @@ function Custody () {
         <Stack gap='xl'>
           <ChairAvailabilityCard
             availableChairs={availableChairs}
-            inTransitCount={inTransitCount}
+            reservedCount={reservedCount}
             occupiedCount={occupiedCount}
           />
           <SegmentedControl

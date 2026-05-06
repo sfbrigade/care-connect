@@ -39,7 +39,7 @@ vi.mock('@/FacilityContext', () => ({
     facility: {
       id: 6,
       status: 'OPEN',
-      bedTypes: [{ id: 1, available: 3, inTransit: 2, occupied: 2, type: 'CHAIR' }],
+      bedTypes: [{ id: 1, available: 3, holds: 2, occupied: 2, type: 'CHAIR' }],
     },
   }),
 }));
@@ -94,7 +94,7 @@ beforeEach(() => {
   mockSessionStateValue.current = 'in-custody';
 
   mockBedTypesIndex.mockResolvedValue({
-    data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],
+    data: [{ id: 1, available: 17, holds: 2, occupied: 2, type: 'CHAIR' }],
   });
 
   mockDeflectionsList.mockImplementation(({ subjectStatus, status }) => {
@@ -210,7 +210,7 @@ describe('Custody', () => {
     renderCustody();
 
     expect(await screen.findByText('17 chairs available')).toBeInTheDocument();
-    expect(screen.getByText('2 in transit')).toBeInTheDocument();
+    expect(screen.getByText('2 reserved')).toBeInTheDocument();
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
   });
 
