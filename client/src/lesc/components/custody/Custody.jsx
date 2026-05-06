@@ -398,12 +398,7 @@ function Custody () {
             onChange={setTab}
             withItemsBorders={false}
             data={[
-              {
-                label: transitDeflections && transitDeflections.length > 0
-                  ? `Transit · ${transitDeflections.length}`
-                  : 'Transit',
-                value: 'transit',
-              },
+              { label: 'Transit', value: 'transit' },
               { label: 'Custody', value: 'custody' },
               { label: 'Released', value: 'released' },
             ]}
