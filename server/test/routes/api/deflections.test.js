@@ -1923,7 +1923,7 @@ test('/api/deflections', async (t) => {
           exitConnectedToCare: 'NO',
         });
 
-      assert.strictEqual(response.statusCode, StatusCodes.BAD_REQUEST);
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
       const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(dbDeflection.exitDestination, null);
