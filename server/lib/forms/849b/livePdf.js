@@ -1,7 +1,7 @@
 import { FORMS } from '#lib/forms/index.js';
 import { storeFormPdf } from '#lib/forms/storeFormPdf.js';
 
-export async function generateLive849bPdf (prismaClient, deflectionId) {
+export async function validateLive849bPdf (prismaClient, deflectionId) {
   const form = FORMS['849b'];
   const deflection = await prismaClient.deflection.findUnique({
     where: { id: deflectionId },
@@ -20,10 +20,18 @@ export async function generateLive849bPdf (prismaClient, deflectionId) {
     return { status: 'unprocessable', error: check.message, deflection };
   }
 
-  const content = await form.generatePdf(form.transformData(deflection));
+  return { status: 'ok', deflection };
+}
+
+export async function generateLive849bPdf (prismaClient, deflectionId) {
+  const validation = await validateLive849bPdf(prismaClient, deflectionId);
+  if (validation.status !== 'ok') return validation;
+
+  const form = FORMS['849b'];
+  const content = await form.generatePdf(form.transformData(validation.deflection));
   return {
     status: 'ok',
-    deflection,
+    deflection: validation.deflection,
     attachment: {
       formId: '849b',
       filename: form.downloadFilename(deflectionId),

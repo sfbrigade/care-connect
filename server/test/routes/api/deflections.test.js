@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticate, build, nodemailerMock } from '#test/helper.js';
+import { authenticate, build } from '#test/helper.js';
 import Facility from '#models/facility.js';
 
 function assertCareSubjectRedaction (subject) {
@@ -383,7 +383,7 @@ test('/api/deflections', async (t) => {
   });
 
   await t.test('POST /:id/849b-email', async (t) => {
-    await t.test('generates and e-mails a live 849b PDF to custody user', async () => {
+    await t.test('queues live 849b regeneration and self e-mail for custody user', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
@@ -400,16 +400,18 @@ test('/api/deflections', async (t) => {
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       assert.deepStrictEqual(JSON.parse(response.body), {
-        queued: false,
+        queued: true,
         email: 'sfsouser1@test.com',
       });
-      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
-      const sentMail = nodemailerMock.mock.getSentMail();
-      assert.deepStrictEqual(sentMail.length, 1);
-      assert.deepStrictEqual(sentMail[0].to, 'sfsouser1@test.com');
-      assert.deepStrictEqual(sentMail[0].attachments.map(a => a.filename), ['849b-report-6.pdf']);
-      assert.ok(sentMail[0].attachments[0].content, '849b should be generated live for self-email attachment');
-      assert.strictEqual(sentMail[0].attachments[0].path, undefined);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['849b'],
+        emailTemplate: 'self-849b',
+        recipientEmail: 'sfsouser1@test.com',
+      });
     });
 
     await t.test('forbids non-custody users', async () => {

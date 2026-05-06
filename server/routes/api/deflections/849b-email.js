@@ -1,8 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { generateLive849bPdf, storeLive849bPdf } from '#lib/forms/849b/livePdf.js';
-import mailer from '#lib/mailer.js';
+import { validateLive849bPdf } from '#lib/forms/849b/livePdf.js';
+import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify) {
   fastify.post('/:id/849b-email',
@@ -25,43 +25,24 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const live849b = await generateLive849bPdf(fastify.prisma, id);
+      const validation = await validateLive849bPdf(fastify.prisma, id);
 
-      if (live849b.status === 'not_found') {
+      if (validation.status === 'not_found') {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (live849b.status !== 'ok') {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: live849b.error });
+      if (validation.status !== 'ok') {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: validation.error });
       }
 
-      const { deflection, attachment } = live849b;
-      const subjectName = deflection.subject
-        ? [deflection.subject.firstName, deflection.subject.lastName].filter(Boolean).join(' ')
-        : 'Person X';
-
-      await mailer.send({
-        template: 'self-849b',
-        message: {
-          to: request.user.email,
-          attachments: [{
-            filename: attachment.filename,
-            content: attachment.content,
-          }],
-        },
-        locals: {
-          subjectName,
-          facilityName: deflection.facility.name,
-        },
-      });
-
-      await storeLive849bPdf(fastify.prisma, {
+      await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
         deflectionId: id,
         userId: request.user.id,
-        content: attachment.content,
-        filename: attachment.filename,
-      }).catch(() => {});
+        formIds: ['849b'],
+        emailTemplate: 'self-849b',
+        recipientEmail: request.user.email,
+      });
 
-      return reply.send({ queued: false, email: request.user.email });
+      return reply.send({ queued: true, email: request.user.email });
     });
 }

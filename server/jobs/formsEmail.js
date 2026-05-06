@@ -30,10 +30,11 @@ export default async function formsEmail (data, prismaClient = prisma) {
   const emailAttachments = [];
   if (formIds.includes('849b')) {
     const live849b = await generateLive849bPdf(prismaClient, deflectionId);
-    if (live849b.status === 'ok') {
-      live849bAttachment = live849b.attachment;
-      emailAttachments.push(live849bAttachment);
+    if (live849b.status !== 'ok') {
+      throw new Error(`Live 849(b) generation failed for deflection ${deflectionId}: ${live849b.status}${live849b.error ? ` (${live849b.error})` : ''}`);
     }
+    live849bAttachment = live849b.attachment;
+    emailAttachments.push(live849bAttachment);
   }
 
   for (const doc of deflection.deflectionDocuments) {

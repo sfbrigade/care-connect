@@ -146,6 +146,32 @@ test('formsEmail job handler', async (t) => {
     assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
   });
 
+  await t.test('throws when live 849b cannot be generated so the queue can retry / dead-letter', async () => {
+    const ungeneratablePrisma = {
+      ...mockPrisma,
+      deflection: {
+        findUnique: async () => ({
+          ...mockDeflection,
+          releasedAt: null,
+          exitedAt: null,
+          exitDestination: null,
+        }),
+      },
+    };
+
+    await assert.rejects(
+      () => formsEmail({
+        deflectionId: 4,
+        formIds: ['849b'],
+        template: 'self-849b',
+        userId: 'test-user-id',
+      }, ungeneratablePrisma),
+      /Live 849\(b\) generation failed for deflection 4/
+    );
+
+    assert.deepStrictEqual(nodemailerMock.mock.getSentMail(), []);
+  });
+
   await t.test('sends self-requested 849b only to the current user', async () => {
     await formsEmail({
       deflectionId: 4,
