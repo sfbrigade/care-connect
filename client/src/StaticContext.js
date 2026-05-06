@@ -10,7 +10,7 @@ export const defaultValue = {
     VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
     VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
     VITE_ENVIRONMENT_LABEL: import.meta.env.VITE_ENVIRONMENT_LABEL,
-    VITE_PRODUCTION_URL: import.meta.env.VITE_PRODUCTION_URL,
+    VITE_PRODUCTION_URL_OVERRIDE: import.meta.env.VITE_PRODUCTION_URL_OVERRIDE,
   },
   facility: {},
 };

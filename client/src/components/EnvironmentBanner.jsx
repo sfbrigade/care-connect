@@ -8,10 +8,10 @@ import { useStaticContext } from '@/StaticContext';
 // rendered behind it on mobile.
 export const ENVIRONMENT_BANNER_HEIGHT = 40;
 
-// Fallback production URL surfaced in the banner. We accept VITE_PRODUCTION_URL
-// as an override (e.g. for staging environments that should point to a
-// different "prod"), but fall back to this constant so a misconfigured deploy
-// never strands users on a non-prod page without a link out.
+// Fallback production URL surfaced in the banner. VITE_PRODUCTION_URL_OVERRIDE
+// can override this at deploy time (e.g. a staging environment that wants to
+// point users at a different "prod"), but the fallback ensures a misconfigured
+// deploy never strands users on a non-prod page without a link out.
 const DEFAULT_PRODUCTION_URL = 'https://reset.careconnect.sf.gov/login';
 
 // Single source of truth for the visibility check. AppLayout uses this to
@@ -28,7 +28,7 @@ export function shouldShowEnvironmentBanner (env) {
 // failure mode we want.
 function EnvironmentBanner () {
   const { env } = useStaticContext();
-  const prodUrl = env?.VITE_PRODUCTION_URL || DEFAULT_PRODUCTION_URL;
+  const prodUrl = env?.VITE_PRODUCTION_URL_OVERRIDE || DEFAULT_PRODUCTION_URL;
 
   if (!shouldShowEnvironmentBanner(env)) return null;
 

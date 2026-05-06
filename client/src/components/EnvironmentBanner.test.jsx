@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe('EnvironmentBanner', () => {
   it('renders nothing when label is PROD', () => {
-    renderWithEnv({ VITE_ENVIRONMENT_LABEL: 'PROD', VITE_PRODUCTION_URL: 'https://reset.example.com' });
+    renderWithEnv({ VITE_ENVIRONMENT_LABEL: 'PROD', VITE_PRODUCTION_URL_OVERRIDE: 'https://reset.example.com' });
     expect(screen.queryByTestId('environment-banner')).not.toBeInTheDocument();
   });
 
@@ -38,17 +38,18 @@ describe('EnvironmentBanner', () => {
     expect(screen.getByText(/this is a test site/i)).toBeInTheDocument();
   });
 
-  it('uses VITE_PRODUCTION_URL as the link target when configured', () => {
+  it('uses VITE_PRODUCTION_URL_OVERRIDE as the link target when configured', () => {
+    // (sanity: the override wins over the hardcoded fallback)
     renderWithEnv({
       VITE_ENVIRONMENT_LABEL: 'STAGING',
-      VITE_PRODUCTION_URL: 'https://reset.careconnect.example.com',
+      VITE_PRODUCTION_URL_OVERRIDE: 'https://reset.careconnect.example.com',
     });
     const link = screen.getByRole('link', { name: /go to careconnect/i });
     expect(link).toHaveAttribute('href', 'https://reset.careconnect.example.com');
   });
 
   it('falls back to a hardcoded URL when no override is configured', () => {
-    // Defense in depth: a misconfigured deploy without VITE_PRODUCTION_URL must
+    // Defense in depth: a misconfigured deploy without VITE_PRODUCTION_URL_OVERRIDE must
     // still surface a working escape link, otherwise users get stranded on a
     // banner that says "go to prod" with no way to actually get there.
     renderWithEnv({ VITE_ENVIRONMENT_LABEL: 'DEV' });
