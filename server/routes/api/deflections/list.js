@@ -145,12 +145,19 @@ export default async function (fastify) {
           propertyPhotos: true,
           ...(includeCurrentOfficer === 'true' ? { currentOfficer: true } : {}),
           ...(includeIncident === 'true' ? { incident: true } : {}),
+          ...(scope === 'history' ? { handoffs: { where: { fromOfficerId: request.user.id }, select: { id: true } } } : {}),
         },
       };
 
       const { records, total } = await fastify.prisma.deflection.paginate(options);
       records.forEach(record => {
         record.propertyPhotos = record.propertyPhotos.map(photo => new PropertyPhoto(photo));
+        if (scope === 'history') {
+          // Determine whether user previously handed off this hold.
+          // Only keep boolean; don't need to ship detailed handoff history over wire.
+          record.wasHandedOffByMe = (record.handoffs?.length ?? 0) > 0;
+          delete record.handoffs;
+        }
       });
       return reply.setPaginationHeaders(page, perPage, total).send(redactDeflectionsForUser(records, request.user));
     });

@@ -124,6 +124,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   createdById: z.string().uuid(),
   createdBy: User.ResponseSchema.optional(),
   updatedAt: z.coerce.date(),
+  wasHandedOffByMe: z.boolean().optional(),
 });
 
 export class Deflection extends Base {
