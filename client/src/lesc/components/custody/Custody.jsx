@@ -15,7 +15,7 @@ import useSessionState from '@/hooks/useSessionState';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import useNow from '@/hooks/useNow';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
-import { formatSmartDateTime, formatTime, formatTimeRemaining } from '@/utils/format';
+import { formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
@@ -147,9 +147,6 @@ function TransitCustodyCard ({ deflection, highlighted }) {
   // City omitted on display per product (always SF in current scope); buildAddressQuery
   // backfills "San Francisco, CA" so the underlying map link still resolves correctly.
   const incidentAddressDisplay = [deflection?.incident?.addressLine1, deflection?.incident?.addressLine2].filter(Boolean).join(', ');
-  const incidentTimeDisplay = deflection?.incident?.arrestedAt
-    ? formatSmartDateTime(deflection.incident.arrestedAt)
-    : null;
 
   return (
     <Card
@@ -173,7 +170,15 @@ function TransitCustodyCard ({ deflection, highlighted }) {
               <>
                 <Text size='md' c='gray.4'>•</Text>
                 <Text size='md' c='indigo.6' truncate>
-                  {deflection.arrivedAt ? `Arrived at ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                  {deflection.arrivedAt ? `Arrived ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                </Text>
+              </>
+            )}
+            {!isArrived && deflection.incident?.arrestedAt && (
+              <>
+                <Text size='md' c='gray.4'>•</Text>
+                <Text size='md' c='gray.6' truncate>
+                  Detained {formatTime(deflection.incident.arrestedAt)}
                 </Text>
               </>
             )}
@@ -184,31 +189,21 @@ function TransitCustodyCard ({ deflection, highlighted }) {
               <Text size='md'>{subjectDetails.join(', ')}</Text>
             )}
           </Stack>
-          {(incidentAddressDisplay || incidentTimeDisplay) && (
-            <Group gap='xs' wrap='nowrap'>
-              {incidentAddressDisplay && (
-                <FacilityAddressLinkFromParts
-                  addressLine1={deflection.incident?.addressLine1}
-                  addressLine2={deflection.incident?.addressLine2}
-                  city={deflection.incident?.city}
-                  state={deflection.incident?.state}
-                  postalCode={deflection.incident?.postalCode}
-                  style={{
-                    color: 'var(--mantine-color-gray-6)',
-                    textDecoration: 'none',
-                    fontSize: 'var(--mantine-font-size-md)',
-                  }}
-                >
-                  {incidentAddressDisplay}
-                </FacilityAddressLinkFromParts>
-              )}
-              {incidentAddressDisplay && incidentTimeDisplay && (
-                <Text size='md' c='gray.4'>•</Text>
-              )}
-              {incidentTimeDisplay && (
-                <Text size='md' c='gray.6'>{incidentTimeDisplay}</Text>
-              )}
-            </Group>
+          {incidentAddressDisplay && (
+            <FacilityAddressLinkFromParts
+              addressLine1={deflection.incident?.addressLine1}
+              addressLine2={deflection.incident?.addressLine2}
+              city={deflection.incident?.city}
+              state={deflection.incident?.state}
+              postalCode={deflection.incident?.postalCode}
+              style={{
+                color: 'var(--mantine-color-gray-6)',
+                textDecoration: 'none',
+                fontSize: 'var(--mantine-font-size-md)',
+              }}
+            >
+              {incidentAddressDisplay}
+            </FacilityAddressLinkFromParts>
           )}
         </Stack>
         {detailsComplete && (
