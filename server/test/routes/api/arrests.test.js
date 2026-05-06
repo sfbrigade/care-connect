@@ -427,36 +427,27 @@ test('/api/arrests', async (t) => {
   });
 
   await t.test('arrestingOfficerBadge does not fall back to the live user badgeNumber', async () => {
-    // Find a seeded user that has a badgeNumber set, then create an incident as that user
-    // without snapshotting their badge. The response should still return null — no fallback.
-    const badgedUser = await prisma.user.findFirst({ where: { badgeNumber: { not: null } } });
-    assert.ok(badgedUser, 'expected at least one seeded user with a badgeNumber');
-
-    await prisma.incident.create({
-      data: {
-        facilityId: resetFacility.id,
-        addressLine1: '100 Market St',
-        city: 'San Francisco',
-        state: 'CA',
+    // Give the test user a live badgeNumber, then create an incident without
+    // snapshotting it. The response should still be null — proves the route
+    // sources only from incident.createdByBadgeNumber, not the live user.
+    const originalBadge = user.badgeNumber ?? null;
+    await prisma.user.update({ where: { id: user.id }, data: { badgeNumber: 'LIVE-9999' } });
+    try {
+      await seedArrest({
+        facility: resetFacility,
+        bedTypeId: resetBedType.id,
         arrestedAt: inDayMorning,
-        encounteredVia: 'ON_VIEW',
-        createdById: badgedUser.id,
-        updatedById: badgedUser.id,
-        deflections: {
-          create: {
-            facilityId: resetFacility.id,
-            bedTypeId: resetBedType.id,
-            createdById: badgedUser.id,
-          },
-        },
-      },
-    });
+        addressLine1: '100 Market St',
+      });
 
-    const response = await app.inject()
-      .get(`/api/arrests?date=${TARGET_DATE}`)
-      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
-    const body = JSON.parse(response.body);
-    assert.strictEqual(body.length, 1);
-    assert.strictEqual(body[0].arrestingOfficerBadge, null, 'should NOT fall back to user.badgeNumber');
+      const response = await app.inject()
+        .get(`/api/arrests?date=${TARGET_DATE}`)
+        .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      const body = JSON.parse(response.body);
+      assert.strictEqual(body.length, 1);
+      assert.strictEqual(body[0].arrestingOfficerBadge, null, 'should NOT fall back to user.badgeNumber');
+    } finally {
+      await prisma.user.update({ where: { id: user.id }, data: { badgeNumber: originalBadge } });
+    }
   });
 });
