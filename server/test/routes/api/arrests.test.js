@@ -60,7 +60,19 @@ test('/api/arrests', async (t) => {
   });
 
   // Create an incident + (optionally cancelled) deflection at the given facility.
-  async function seedArrest ({ facility, bedTypeId, arrestedAt, addressLine1, caseNumber = null, cancelled = false }) {
+  // Optional `subject` data and `arrivedAt`/`transferredAt` are persisted on the deflection.
+  async function seedArrest ({
+    facility,
+    bedTypeId,
+    arrestedAt,
+    addressLine1,
+    caseNumber = null,
+    cancelled = false,
+    subject = null,
+    arrivedAt = null,
+    transferredAt = null,
+    createdByBadgeNumber = null,
+  }) {
     const incident = await prisma.incident.create({
       data: {
         facilityId: facility.id,
@@ -71,19 +83,24 @@ test('/api/arrests', async (t) => {
         encounteredVia: 'ON_VIEW',
         caseNumber,
         createdById: user.id,
+        createdByBadgeNumber,
         updatedById: user.id,
       },
     });
-    await prisma.deflection.create({
+    const subjectRecord = subject ? await prisma.subject.create({ data: subject }) : null;
+    const deflection = await prisma.deflection.create({
       data: {
         incidentId: incident.id,
         facilityId: facility.id,
         bedTypeId,
         createdById: user.id,
         cancelledAt: cancelled ? new Date() : null,
+        subjectId: subjectRecord?.id ?? null,
+        arrivedAt,
+        transferredAt,
       },
     });
-    return incident;
+    return { incident, deflection, subject: subjectRecord };
   }
 
   // ── Authentication ──
@@ -158,11 +175,24 @@ test('/api/arrests', async (t) => {
     assert.strictEqual(body[0].caseNumber, 'CS-2026-001');
     assert.strictEqual(body[1].address, '200 Mission St, San Francisco, CA');
     assert.strictEqual(body[1].caseNumber, 'CS-2026-002');
-    // Each entry has timestamp + address + caseNumber, no extra fields
+    // Each entry has the full documented field set
     for (const arrest of body) {
-      assert.deepStrictEqual(Object.keys(arrest).sort(), ['address', 'caseNumber', 'timestamp']);
-      assert.strictEqual(typeof arrest.timestamp, 'string');
-      assert.match(arrest.timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      assert.deepStrictEqual(Object.keys(arrest).sort(), [
+        'address',
+        'arrestedAt',
+        'arrestingOfficerBadge',
+        'arrestingOfficerName',
+        'arrivedAt',
+        'caseNumber',
+        'dateOfBirth',
+        'firstName',
+        'lastName',
+        'race',
+        'sex',
+        'transferredAt',
+      ]);
+      assert.strictEqual(typeof arrest.arrestedAt, 'string');
+      assert.match(arrest.arrestedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     }
   });
 
@@ -216,5 +246,208 @@ test('/api/arrests', async (t) => {
     const body = JSON.parse(response.body);
     assert.strictEqual(body.length, 1);
     assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+  });
+
+  // ── Subject and deflection-timing fields ──
+
+  await t.test('returns subject PII and deflection arrival/transfer timestamps', async () => {
+    const arrivedAt = DateTime.fromISO(TARGET_DATE, { zone: TIMEZONE }).set({ hour: 10, minute: 30 }).toJSDate();
+    const transferredAt = DateTime.fromISO(TARGET_DATE, { zone: TIMEZONE }).set({ hour: 11 }).toJSDate();
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+      caseNumber: 'CS-2026-001',
+      arrivedAt,
+      transferredAt,
+      subject: {
+        firstName: 'Jane',
+        lastName: 'Doe',
+        dateOfBirth: new Date('1990-05-15T00:00:00.000Z'),
+        sex: 'FEMALE',
+        race: 'WHITE',
+      },
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].firstName, 'Jane');
+    assert.strictEqual(body[0].lastName, 'Doe');
+    assert.strictEqual(body[0].dateOfBirth, '1990-05-15');
+    assert.strictEqual(body[0].sex, 'FEMALE');
+    assert.strictEqual(body[0].race, 'WHITE');
+    assert.strictEqual(body[0].arrivedAt, arrivedAt.toISOString());
+    assert.strictEqual(body[0].transferredAt, transferredAt.toISOString());
+  });
+
+  await t.test('returns null PII fields when subject has been anonymized but keeps incident and deflection fields', async () => {
+    const arrivedAt = DateTime.fromISO(TARGET_DATE, { zone: TIMEZONE }).set({ hour: 10, minute: 30 }).toJSDate();
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+      caseNumber: 'CS-2026-001',
+      arrivedAt,
+      subject: {
+        firstName: null,
+        lastName: null,
+        dateOfBirth: null,
+        sex: null,
+        race: null,
+        anonymizedAt: new Date(),
+      },
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].firstName, null);
+    assert.strictEqual(body[0].lastName, null);
+    assert.strictEqual(body[0].dateOfBirth, null);
+    assert.strictEqual(body[0].sex, null);
+    assert.strictEqual(body[0].race, null);
+    assert.strictEqual(body[0].caseNumber, 'CS-2026-001');
+    assert.strictEqual(body[0].arrivedAt, arrivedAt.toISOString());
+    assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+  });
+
+  await t.test('returns null subject and timing fields when no subject is attached and deflection has no arrival/transfer', async () => {
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].firstName, null);
+    assert.strictEqual(body[0].lastName, null);
+    assert.strictEqual(body[0].dateOfBirth, null);
+    assert.strictEqual(body[0].sex, null);
+    assert.strictEqual(body[0].race, null);
+    assert.strictEqual(body[0].arrivedAt, null);
+    assert.strictEqual(body[0].transferredAt, null);
+  });
+
+  await t.test('uses the first-created non-cancelled deflection when an incident has multiple', async () => {
+    const firstSubject = await prisma.subject.create({
+      data: { firstName: 'First', lastName: 'Deflection', sex: 'MALE', race: 'BLACK' },
+    });
+    const secondSubject = await prisma.subject.create({
+      data: { firstName: 'Second', lastName: 'Deflection', sex: 'FEMALE', race: 'WHITE' },
+    });
+    const incident = await prisma.incident.create({
+      data: {
+        facilityId: resetFacility.id,
+        addressLine1: '100 Market St',
+        city: 'San Francisco',
+        state: 'CA',
+        arrestedAt: inDayMorning,
+        encounteredVia: 'ON_VIEW',
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId: resetFacility.id,
+        bedTypeId: resetBedType.id,
+        createdById: user.id,
+        subjectId: firstSubject.id,
+        createdAt: new Date('2026-04-30T08:00:00.000Z'),
+      },
+    });
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId: resetFacility.id,
+        bedTypeId: resetBedType.id,
+        createdById: user.id,
+        subjectId: secondSubject.id,
+        createdAt: new Date('2026-04-30T09:00:00.000Z'),
+      },
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].firstName, 'First');
+    assert.strictEqual(body[0].lastName, 'Deflection');
+  });
+
+  // ── Arresting officer fields ──
+
+  await t.test('returns arresting officer first-initial-last-name and badge snapshot', async () => {
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+      createdByBadgeNumber: '1234',
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    // user.firstName/lastName from prisma.user.findFirst() — first seeded user is the admin (Admin User)
+    assert.strictEqual(body[0].arrestingOfficerName, 'A. User');
+    assert.strictEqual(body[0].arrestingOfficerBadge, '1234');
+  });
+
+  await t.test('arrestingOfficerBadge is null when no badge snapshot was captured on the incident', async () => {
+    await seedArrest({
+      facility: resetFacility,
+      bedTypeId: resetBedType.id,
+      arrestedAt: inDayMorning,
+      addressLine1: '100 Market St',
+    });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].arrestingOfficerBadge, null);
+  });
+
+  await t.test('arrestingOfficerBadge does not fall back to the live user badgeNumber', async () => {
+    // Give the test user a live badgeNumber, then create an incident without
+    // snapshotting it. The response should still be null — proves the route
+    // sources only from incident.createdByBadgeNumber, not the live user.
+    const originalBadge = user.badgeNumber ?? null;
+    await prisma.user.update({ where: { id: user.id }, data: { badgeNumber: 'LIVE-9999' } });
+    try {
+      await seedArrest({
+        facility: resetFacility,
+        bedTypeId: resetBedType.id,
+        arrestedAt: inDayMorning,
+        addressLine1: '100 Market St',
+      });
+
+      const response = await app.inject()
+        .get(`/api/arrests?date=${TARGET_DATE}`)
+        .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+      const body = JSON.parse(response.body);
+      assert.strictEqual(body.length, 1);
+      assert.strictEqual(body[0].arrestingOfficerBadge, null, 'should NOT fall back to user.badgeNumber');
+    } finally {
+      await prisma.user.update({ where: { id: user.id }, data: { badgeNumber: originalBadge } });
+    }
   });
 });
