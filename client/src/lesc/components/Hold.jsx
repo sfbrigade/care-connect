@@ -75,16 +75,16 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
                 <Text size='md' c='red.6'>Canceled after expiry</Text>
               </>
             )}
-            {isHandedOff && (
-              <>
-                <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='indigo.6'>Handed off</Text>
-              </>
-            )}
-            {!isHandedOff && isCustodyTransferred && (
+            {isCustodyTransferred && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='teal.5'>Transferred</Text>
+              </>
+            )}
+            {!isCustodyTransferred && isHandedOff && (
+              <>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='indigo.6'>Handed off</Text>
               </>
             )}
           </Group>
