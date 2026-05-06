@@ -190,6 +190,63 @@ test('/api/deflections', async (t) => {
       });
     });
 
+    await t.test('scope=history attaches wasHandedOffByMe based on the Handoff table (issue #880)', async () => {
+      // Pre-fix the History view inferred "Handed off" from currentOfficerId mismatch,
+      // which lied for admins and for currentOfficerId=null after departure. The route
+      // now attaches a real per-user signal: wasHandedOffByMe = exists Handoff where
+      // fromOfficerId = viewer.id. We assert all three relevant cases.
+      const USER2_ID = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5'; // regular.user@test.com
+      const FIELDUSER1_ID = '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d'; // field.noholds@test.com
+
+      // Case A: user2 hands off deflection 7 → fielduser1, then fielduser1 hands it back.
+      // Both users have a Handoff row authored by them, so both should see wasHandedOffByMe=true.
+      await prisma.handoff.create({
+        data: { deflectionId: 7, fromOfficerId: USER2_ID, toOfficerId: FIELDUSER1_ID },
+      });
+      await prisma.handoff.create({
+        data: { deflectionId: 7, fromOfficerId: FIELDUSER1_ID, toOfficerId: USER2_ID },
+      });
+
+      try {
+        const userResponse = await app.inject().get('/api/deflections?scope=history').headers(userHeaders);
+        assert.deepStrictEqual(userResponse.statusCode, StatusCodes.OK);
+        const userData = JSON.parse(userResponse.body);
+
+        const handedOffOne = userData.find(d => d.id === 7);
+        assert.ok(handedOffOne, 'expected deflection 7 in user2 history');
+        assert.strictEqual(handedOffOne.wasHandedOffByMe, true, 'user2 authored a handoff on 7');
+
+        // Deflection 6: ACTIVE/READY_FOR_INTAKE owned by user2 — appears in History
+        // (post-transfer active state), and user2 has never handed it off.
+        const neverHandedOff = userData.find(d => d.id === 6);
+        assert.ok(neverHandedOff, 'expected deflection 6 in user2 history');
+        assert.strictEqual(neverHandedOff.wasHandedOffByMe, false, 'user2 never handed off 6');
+
+        // fielduser1 also handed off 7 (back to user2) — they should also see the flag.
+        const fieldResponse = await app.inject().get('/api/deflections?scope=history').headers(cleanFieldHeaders);
+        assert.deepStrictEqual(fieldResponse.statusCode, StatusCodes.OK);
+        const fieldData = JSON.parse(fieldResponse.body);
+        const sevenForFielduser = fieldData.find(d => d.id === 7);
+        assert.ok(sevenForFielduser, 'expected deflection 7 in fielduser1 history (via Handoff relation)');
+        assert.strictEqual(sevenForFielduser.wasHandedOffByMe, true, 'fielduser1 authored a handoff on 7');
+
+        // The raw `handoffs` array used to derive the flag should be stripped from the response.
+        assert.ok(!('handoffs' in handedOffOne), 'handoffs include should not leak to clients');
+      } finally {
+        await prisma.handoff.deleteMany({ where: { deflectionId: 7 } });
+      }
+    });
+
+    await t.test('wasHandedOffByMe is omitted outside scope=history', async () => {
+      const response = await app.inject().get('/api/deflections').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(data.length > 0);
+      for (const d of data) {
+        assert.ok(!('wasHandedOffByMe' in d), `wasHandedOffByMe leaked outside scope=history: ${JSON.stringify(d)}`);
+      }
+    });
+
     await t.test('active=true + subjectStatus filter: ownership OR does not clobber the subjectStatus OR', async () => {
       // user2 owns four active holds across subjectStatus DETAINED (4, 5), READY_FOR_INTAKE (6), RELEASED (7).
       // Asking for only the post-transfer ones must exclude the DETAINED holds — a regression test for the
