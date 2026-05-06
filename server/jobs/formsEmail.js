@@ -1,5 +1,6 @@
 import prisma from '#prisma/client.js';
 import mailer from '#lib/mailer.js';
+import { generateLive849bPdf, storeLive849bPdf } from '#lib/forms/849b/livePdf.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 
 const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
@@ -12,7 +13,8 @@ const TRANSFER_RECIPIENTS = [
 ];
 
 export default async function formsEmail (data, prismaClient = prisma) {
-  const { deflectionId, formIds, template, recipientEmail, userId } = data;
+  const { deflectionId, formIds, template, recipientEmail, userId, regeneratedFormIds = [] } = data;
+  let live849bAttachment = null;
 
   const deflection = await prismaClient.deflection.findUnique({
     where: { id: deflectionId },
@@ -26,7 +28,16 @@ export default async function formsEmail (data, prismaClient = prisma) {
   if (!deflection) return;
 
   const emailAttachments = [];
+  if (formIds.includes('849b')) {
+    const live849b = await generateLive849bPdf(prismaClient, deflectionId);
+    if (live849b.status === 'ok') {
+      live849bAttachment = live849b.attachment;
+      emailAttachments.push(live849bAttachment);
+    }
+  }
+
   for (const doc of deflection.deflectionDocuments) {
+    if (doc.formId === '849b') continue;
     const document = new DeflectionDocument(doc);
     const filePath = await document.getAsset('file');
     emailAttachments.push({
@@ -51,7 +62,10 @@ export default async function formsEmail (data, prismaClient = prisma) {
   async function sendFormsMessage ({ targetFormIds, to, cc = [] }) {
     const attachments = emailAttachments
       .filter((attachment) => targetFormIds.includes(attachment.formId))
-      .map(({ filename, path }) => ({ filename, path }));
+      .map(({ filename, path, content }) => ({
+        filename,
+        ...(path ? { path } : { content }),
+      }));
 
     if (attachments.length === 0) return;
 
@@ -68,18 +82,15 @@ export default async function formsEmail (data, prismaClient = prisma) {
         facilityName: deflection.facility.name,
       },
     });
-  }
 
-  function was647fRegeneratedSinceTransfer () {
-    const doc647f = deflection.deflectionDocuments.find((doc) => doc.formId === '647f');
-    if (!doc647f || !deflection.transferredAt) return false;
-
-    const baseline = Math.max(
-      new Date(deflection.transferredAt).getTime(),
-      new Date(doc647f.createdAt).getTime()
-    );
-
-    return new Date(doc647f.updatedAt).getTime() > baseline;
+    if (live849bAttachment && targetFormIds.includes('849b')) {
+      await storeLive849bPdf(prismaClient, {
+        deflectionId,
+        userId,
+        content: live849bAttachment.content,
+        filename: live849bAttachment.filename,
+      }).catch(() => {});
+    }
   }
 
   if (template === 'release-forms') {
@@ -91,7 +102,7 @@ export default async function formsEmail (data, prismaClient = prisma) {
       ].filter(Boolean),
     });
 
-    if (formIds.includes('647f') && was647fRegeneratedSinceTransfer()) {
+    if (formIds.includes('647f') && regeneratedFormIds.includes('647f')) {
       await mailer.send({
         template: 'transfer-form',
         message: {

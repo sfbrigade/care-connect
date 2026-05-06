@@ -74,12 +74,13 @@ test('generateForms 647f hash logic', async (t) => {
     const firstUpdatedAt = docAfterFirst.updatedAt;
 
     // Second generation with same data
-    const skipped = await generateForms(
+    const result = await generateForms(
       { deflectionId: deflection.id, userId: user.id, formIds: ['647f'] },
       prisma
     );
 
-    assert.deepStrictEqual(skipped, ['647f']);
+    assert.deepStrictEqual(result.skippedFormIds, ['647f']);
+    assert.deepStrictEqual(result.generatedFormIds, []);
 
     const docAfterSecond = await prisma.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId: deflection.id, formId: '647f' } },
@@ -112,12 +113,13 @@ test('generateForms 647f hash logic', async (t) => {
     });
 
     // Second generation with changed data
-    const skipped = await generateForms(
+    const result = await generateForms(
       { deflectionId: deflection.id, userId: user.id, formIds: ['647f'] },
       prisma
     );
 
-    assert.deepStrictEqual(skipped, []);
+    assert.deepStrictEqual(result.skippedFormIds, []);
+    assert.deepStrictEqual(result.generatedFormIds, ['647f']);
 
     const docAfterSecond = await prisma.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId: deflection.id, formId: '647f' } },
@@ -145,12 +147,13 @@ test('generateForms 647f hash logic', async (t) => {
       },
     });
 
-    const skipped = await generateForms(
+    const result = await generateForms(
       { deflectionId: deflection.id, userId: user.id, formIds: ['849b'] },
       prisma
     );
 
-    assert.deepStrictEqual(skipped, []);
+    assert.deepStrictEqual(result.skippedFormIds, []);
+    assert.deepStrictEqual(result.generatedFormIds, ['849b']);
 
     const docAfterRegeneration = await prisma.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId: deflection.id, formId: '849b' } },

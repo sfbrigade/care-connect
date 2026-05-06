@@ -6,6 +6,7 @@ import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
+import { queue849bIncidentEmail } from '#lib/forms/formEmailJobs.js';
 const { SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
@@ -136,6 +137,14 @@ export default async function (fastify, opts) {
       }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      if (exitDestination === 'JAIL') {
+        await queue849bIncidentEmail(fastify, {
+          deflectionId: deflection.id,
+          userId: request.user.id,
+          recipientEmail: request.user.email,
+        });
+      }
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     }

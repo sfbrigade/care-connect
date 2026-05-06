@@ -232,3 +232,39 @@ test('849b PDF leaves prop 115 unchecked but checks post training when reporting
   );
   assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
 });
+
+test('849b PDF truncates overlong text fields to template max lengths', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+      prop115Certified: false,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD-TOO-LONG',
+      caseNumber: 'CASE-TOO-LONG',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.strictEqual(pdfForm.getTextField('INCIDENT NUMBER').getText(), 'CASE-TOO-');
+  assert.strictEqual(pdfForm.getTextField('CAD NUMBER').getText(), 'CAD-TOO-L');
+});
