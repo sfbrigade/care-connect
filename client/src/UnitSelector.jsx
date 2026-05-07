@@ -17,6 +17,7 @@ import { useLocation, useNavigate } from 'react-router';
 import Api from './Api';
 import { useAuthContext } from './AuthContext';
 import { useUserRole } from './hooks/useUserRole';
+import { formatUnitName } from './utils/unit';
 import { readStoredWorkMode, writeStoredWorkMode } from './utils/workMode';
 
 const MODE_HOME_PATH = { FIELD: '/holds', CUSTODY: '/custody' };
@@ -74,23 +75,24 @@ function UnitSelector () {
   });
 
   const autocompleteData = units.map((unit) => ({
-    value: unit.id,
-    label: unit.name,
+    value: formatUnitName(unit.name),
+    label: formatUnitName(unit.name),
   }));
   const hasUnit = unitName.trim().length >= 3;
   const canConfirm = hasUnit && (!needsModeSelection || !!mode);
 
   function handleOptionSubmit (value) {
-    setUnitName(value);
-    const normalizedValue = value.trim().toLowerCase();
-    const selectedUnit = units.find((unit) => unit.name.trim().toLowerCase() === normalizedValue);
+    const nextUnitName = formatUnitName(value);
+    setUnitName(nextUnitName);
+    const normalizedValue = nextUnitName.toLowerCase();
+    const selectedUnit = units.find((unit) => formatUnitName(unit.name).toLowerCase() === normalizedValue);
     setUnitId(selectedUnit?.id ?? null);
   }
 
   function onConfirm () {
     onSubmitMutation.mutate({
       unitId,
-      unitName: unitName.trim(),
+      unitName: formatUnitName(unitName),
     });
   }
 

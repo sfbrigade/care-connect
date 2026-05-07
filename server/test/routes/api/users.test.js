@@ -447,7 +447,7 @@ test('/api/users', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.unitId, 'car_42');
-      assert.deepStrictEqual(data.unit.name, 'Car 42');
+      assert.deepStrictEqual(data.unit.name, 'CAR 42');
 
       const unit = await prisma.unit.findUnique({
         where: {
@@ -458,7 +458,7 @@ test('/api/users', async (t) => {
         },
       });
       assert.ok(unit);
-      assert.deepStrictEqual(unit.name, 'Car 42');
+      assert.deepStrictEqual(unit.name, 'CAR 42');
 
       const user = await prisma.user.findUnique({ where: { id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' } });
       assert.deepStrictEqual(user.unitId, 'car_42');
@@ -472,7 +472,7 @@ test('/api/users', async (t) => {
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.unitId, 'option-1');
-      assert.deepStrictEqual(data.unit.name, 'Option 1');
+      assert.deepStrictEqual(data.unit.name, 'OPTION 1');
 
       const matchingUnits = await prisma.unit.findMany({
         where: {
