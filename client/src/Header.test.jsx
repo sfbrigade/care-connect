@@ -215,7 +215,7 @@ describe('Header — subtitle', () => {
       { id: '1', firstName: 'A', lastName: 'B', roles: ['FIELD', 'CUSTODY'], unit: { name: 'K-9 Unit' } },
       '/holds'
     );
-    expect(await screen.findByText(/K-9 Unit/)).toBeInTheDocument();
+    expect(await screen.findByText(/K-9 UNIT/)).toBeInTheDocument();
   });
 
   it('omits subtitle entirely when no unit is set', async () => {

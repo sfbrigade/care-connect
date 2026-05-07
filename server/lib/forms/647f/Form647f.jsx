@@ -65,7 +65,7 @@ export default function Form647f ({ data = {} }) {
   const custodyReleaseOfficerDisplay = joinWords(custodyReleaseOfficerRank, custodyReleaseOfficerName, custodyReleaseOfficerBadge && `#${custodyReleaseOfficerBadge}`);
   const substanceNot = substanceFound ? '' : 'not ';
   const paraphernaliaNot = paraphernaliaFound ? '' : 'not ';
-  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
+  const narcoticsStatement = `Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
 
   const narrative = [justification, narcoticsStatement, hospitalCancellationReleaseNarrative]
     .filter(Boolean)

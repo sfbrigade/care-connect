@@ -3,6 +3,7 @@ import { join } from 'path';
 import { fill647f } from './fill647f.js';
 import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON } from '#lib/hospitalCancellation647f.js';
 import i18n from '#lib/i18n.js';
+import { formatUnitName } from '#lib/unitName.js';
 import {
   FORM_TIMEZONE,
   firstInitialLastName,
@@ -41,7 +42,7 @@ export function transformData (deflection) {
   const arrestingOfficerRank = incident?.createdByTitle?.name || arrestingOfficer?.title?.name || '';
   const arrestingOfficerName = firstInitialLastName(arrestingOfficer);
   const arrestingOfficerBadge = incident?.createdByBadgeNumber || arrestingOfficer?.badgeNumber || '';
-  const arrestingOfficerUnit = incident?.createdByUnit?.name || arrestingOfficer?.unit?.name || '';
+  const arrestingOfficerUnit = formatUnitName(incident?.createdByUnit?.name || arrestingOfficer?.unit?.name);
   const arrestingOfficerAgency = incident?.createdByOrganization?.name || arrestingOfficer?.organization?.name || '';
 
   // find the field officer who handed the subject to RESET:
@@ -51,7 +52,7 @@ export function transformData (deflection) {
   const custodyReleaseOfficerRank = custodyReleaseOfficer?.title?.name || '';
   const custodyReleaseOfficerName = firstInitialLastName(custodyReleaseOfficer);
   const custodyReleaseOfficerBadge = custodyReleaseOfficer?.badgeNumber || '';
-  const custodyReleaseOfficerUnit = custodyReleaseOfficer?.unit?.name || '';
+  const custodyReleaseOfficerUnit = formatUnitName(custodyReleaseOfficer?.unit?.name);
 
   const facility = deflection.facility;
   const facilityAddress = streetCityStateZip(facility);
@@ -118,7 +119,7 @@ export async function generatePdf (deflectionData) {
 
   const substanceNot = deflectionData.substanceFound ? '' : 'not ';
   const paraphernaliaNot = deflectionData.paraphernaliaFound ? '' : 'not ';
-  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
+  const narcoticsStatement = `Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
   const narrative = [deflectionData.justification, narcoticsStatement, deflectionData.hospitalCancellationReleaseNarrative]
     .filter(Boolean)
     .join('\n\n');
@@ -141,7 +142,7 @@ export async function generatePdf (deflectionData) {
     caseNumber: deflectionData.caseNumber,
 
     arrestingOfficerDisplay,
-    arrestingOfficerUnit: deflectionData.arrestingOfficerUnit,
+    arrestingOfficerUnit: formatUnitName(deflectionData.arrestingOfficerUnit),
     arrestingOfficerAgency: deflectionData.arrestingOfficerAgency,
     supervisorBadgeNumber: deflectionData.supervisorBadgeNumber,
     custodyReleaseOfficerDisplay,

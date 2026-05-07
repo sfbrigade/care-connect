@@ -26,7 +26,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
 
       const unit = data.find(u => u.id === 'option-1');
       assert.ok(unit);
-      assert.deepStrictEqual(unit.name, 'Option 1');
+      assert.deepStrictEqual(unit.name, 'OPTION 1');
       assert.deepStrictEqual(unit.organizationId, organizationId);
     });
   });
@@ -40,7 +40,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.id, 'option-1');
-      assert.deepStrictEqual(data.name, 'Option 1');
+      assert.deepStrictEqual(data.name, 'OPTION 1');
       assert.deepStrictEqual(data.organizationId, organizationId);
     });
 
@@ -67,7 +67,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.CREATED);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.id, newUnitId);
-      assert.deepStrictEqual(data.name, 'New Unit');
+      assert.deepStrictEqual(data.name, 'NEW UNIT');
       assert.deepStrictEqual(data.organizationId, organizationId);
 
       // Verify in database
@@ -80,7 +80,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
         },
       });
       assert.ok(unit);
-      assert.deepStrictEqual(unit.name, 'New Unit');
+      assert.deepStrictEqual(unit.name, 'NEW UNIT');
     });
 
     await t.test('returns 403 for non-admin user', async () => {
@@ -119,7 +119,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.name, 'Updated Unit');
+      assert.deepStrictEqual(data.name, 'UPDATED UNIT');
 
       // Verify in database
       const unit = await prisma.unit.findUnique({
@@ -130,7 +130,7 @@ test('/api/organizations/:organizationId/units', async (t) => {
           },
         },
       });
-      assert.deepStrictEqual(unit.name, 'Updated Unit');
+      assert.deepStrictEqual(unit.name, 'UPDATED UNIT');
     });
 
     await t.test('returns 403 for non-admin user', async () => {
