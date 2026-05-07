@@ -5,6 +5,7 @@ import { Head } from '@unhead/react';
 import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { formatUnitName } from '@/utils/unit';
 
 function UserProfilePage () {
   const { user } = useAuthContext();
@@ -23,7 +24,7 @@ function UserProfilePage () {
         <Stack>
           <Box>
             <Title order={2}>{user.firstName} {user.lastName}</Title>
-            {user.unit && <Text c='gray.6' size='sm'>{user.unit?.name}</Text>}
+            {user.unit && <Text c='gray.6' size='sm'>{formatUnitName(user.unit?.name)}</Text>}
           </Box>
           <Stack gap='sm'>
             <Title order={3}>Personal Information</Title>
@@ -50,7 +51,7 @@ function UserProfilePage () {
                 </Box>
                 <Box>
                   <Text size='md' c='gray.6'>Unit</Text>
-                  <Text size='md'>{user.unit?.name}</Text>
+                  <Text size='md'>{formatUnitName(user.unit?.name)}</Text>
                 </Box>
                 {user.organizationId === 'sfso' && (
                   <>
