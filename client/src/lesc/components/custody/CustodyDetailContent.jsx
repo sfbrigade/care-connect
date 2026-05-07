@@ -17,6 +17,7 @@ import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative'
 import useNow from '../../../hooks/useNow';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
+import { openInBrowser } from '@/utils/openInBrowser';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -50,7 +51,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
   const { isCustody } = useUserRole();
   const isCareView = viewerMode === 'care';
   const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
@@ -215,7 +216,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
   });
 
-  const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
   const showPostReleaseNarrativeActions = !isCareView && isCustody && isPostRelease;
 
   const email849bMutation = useMutation({
@@ -229,7 +229,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
+    const toastId = showToast('Downloading 849(b) form…', 'success', 0, 'This may take a moment.');
+    openInBrowser(`/api/forms/849b/pdf/${deflection.id}`, `849b-${deflection.id}.pdf`)
+      .then(() => {
+        removeToast(toastId);
+        showToast('849(b) form ready', 'success', 4000, 'Open it from your downloads to view or print.');
+      })
+      .catch(() => {
+        removeToast(toastId);
+        showToast('Couldn’t download 849(b) form', 'error', 4000, 'Please try again.');
+      });
   }
 
   return (
@@ -697,8 +706,17 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        const url = docCert?.fileUrl || `/api/forms/cert/pdf/${deflection.id}`;
-                        window.open(url, '_blank');
+                        const url = `/api/forms/cert/pdf/${deflection.id}`;
+                        const toastId = showToast('Downloading release certificate…', 'success', 0, 'This may take a moment.');
+                        openInBrowser(url, `cert-${deflection.id}.pdf`)
+                          .then(() => {
+                            removeToast(toastId);
+                            showToast('Release certificate ready', 'success', 4000, 'Open it from your downloads to view or print.');
+                          })
+                          .catch(() => {
+                            removeToast(toastId);
+                            showToast('Couldn’t download release certificate', 'error', 4000, 'Please try again.');
+                          });
                       }
                     }}
                   >
