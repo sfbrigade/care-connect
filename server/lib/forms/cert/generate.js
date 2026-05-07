@@ -3,6 +3,7 @@ import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { firstInitialLastName, formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
+import { formatUnitName } from '#lib/unitName.js';
 
 export function transformData (deflection) {
   const subject = deflection.subject;
@@ -14,7 +15,7 @@ export function transformData (deflection) {
   const deputyTitle = deputy?.title?.name || '';
   const deputyName = firstInitialLastName(deputy);
   const deputyBadge = deputy?.badgeNumber || '';
-  const unitIdentifier = deputy?.unit?.name || '';
+  const unitIdentifier = formatUnitName(deputy?.unit?.name);
 
   const detention = formatDateParts(deflection.createdAt?.toISOString());
   const release = formatDateParts(deflection.releasedAt.toISOString());
@@ -60,7 +61,7 @@ export async function generatePdf (deflectionData, user) {
     releaseYear: deflectionData.releaseYear,
     releaseTime: deflectionData.releaseTime,
     deputyPrint,
-    unitIdentifier: deflectionData.unitIdentifier,
+    unitIdentifier: formatUnitName(deflectionData.unitIdentifier),
     signature: `${deflectionData.deputyName} #${deflectionData.deputyBadge}`,
   };
 

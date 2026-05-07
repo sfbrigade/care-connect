@@ -7,6 +7,7 @@ import { useParams } from 'react-router';
 import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { formatUnitName } from '@/utils/unit';
 
 function DetailItem ({ label, value }) {
   return (
@@ -47,7 +48,7 @@ function ManagedUserDetailsPage () {
           <Stack>
             <Box>
               <Title order={2}>{user.firstName} {user.lastName}</Title>
-              {user.unit && <Text c='gray.6' size='sm'>{user.unit.name}</Text>}
+              {user.unit && <Text c='gray.6' size='sm'>{formatUnitName(user.unit.name)}</Text>}
             </Box>
             <Stack gap='sm'>
               <Group justify='space-between' wrap='nowrap'>
@@ -66,7 +67,7 @@ function ManagedUserDetailsPage () {
                     <IconButtonLink icon={IconPencilMinus} to={`/manage-users/${user.id}/edit/position`} aria-label='Edit position details' />
                   </Group>
                   <DetailItem label='Star number' value={user.badgeNumber} />
-                  <DetailItem label='Unit' value={user.unit?.name} />
+                  <DetailItem label='Unit' value={formatUnitName(user.unit?.name)} />
                   {user.organizationId === 'sfso' && (
                     <>
                       <DetailItem label='Rank' value={user.title?.name} />
