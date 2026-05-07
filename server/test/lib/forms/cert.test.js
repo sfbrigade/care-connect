@@ -28,7 +28,7 @@ test('cert unitIdentifier uses releasedBy.unit before incident.createdByUnit', (
     },
   });
 
-  assert.equal(data.unitIdentifier, 'SFSO Intake');
+  assert.equal(data.unitIdentifier, 'SFSO INTAKE');
   assert.equal(data.deputyName, 'S. Deputy');
 });
 

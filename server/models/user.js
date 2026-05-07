@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import Base from './base.js';
 import mailer from '#lib/mailer.js';
+import { formatUnitName } from '#lib/unitName.js';
 import Organization from '#models/organization.js';
 import Title from '#models/title.js';
 import Unit from '#models/unit.js';
@@ -70,6 +71,15 @@ export class User extends Base {
   static Role = RoleEnum;
 
   constructor (data) {
+    if (data?.unit?.name) {
+      data = {
+        ...data,
+        unit: {
+          ...data.unit,
+          name: formatUnitName(data.unit.name),
+        },
+      };
+    }
     super(Prisma.UserScalarFieldEnum, data);
   }
 
