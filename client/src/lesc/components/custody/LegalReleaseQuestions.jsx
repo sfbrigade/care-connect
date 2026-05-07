@@ -42,6 +42,15 @@ function LegalReleaseQuestions () {
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
+  const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
+  const canReleaseAsSobered = isInChair;
+  const isDefaultSoberedReleaseFlow = isInChair && !prefilledState.releaseReason;
+
+  useEffect(() => {
+    if (isDefaultSoberedReleaseFlow && !releaseReason) {
+      setReleaseReason('SOBERED');
+    }
+  }, [isDefaultSoberedReleaseFlow, releaseReason]);
 
   const incidentQuery = useQuery({
     queryKey: ['incidents', deflection?.incidentId],
@@ -134,7 +143,7 @@ function LegalReleaseQuestions () {
       <Container>
         <Stack gap='xl'>
           <Stack gap={0}>
-            <Text size='xl' c='dimmed'>Confirm legal release</Text>
+            <Text size='xl' c='dimmed'>{isExitRelease ? 'Confirm legal release and exit' : 'Confirm legal release'}</Text>
             <Title order={3}>Review the 849(b).</Title>
           </Stack>
 
@@ -210,19 +219,34 @@ function LegalReleaseQuestions () {
           {hasReviewedNarrative && (
             <>
               <Stack gap='xl'>
-                <Title order={3}>Choose a release reason.</Title>
-                <Input.Wrapper label='Release reason' required>
-                  <Box mt='md'>
-                    <Chip.Group value={releaseReason} onChange={setReleaseReason}>
-                      <Stack gap='sm' align='flex-start'>
-                        <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
-                        <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
-                        <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
-                        <Chip value='OTHER'>Other (please specify)</Chip>
-                      </Stack>
-                    </Chip.Group>
-                  </Box>
-                </Input.Wrapper>
+                {isDefaultSoberedReleaseFlow
+                  ? (
+                    <Stack gap='xs'>
+                      <Title order={3}>Release reason: can care for themselves</Title>
+                      <Text size='md' c='dimmed'>
+                        If this person cannot care for themselves and instead needs to be exited to jail, to hospital, or for another reason, go back and choose a different option via the overflow menu.
+                      </Text>
+                    </Stack>
+                    )
+                  : (
+                    <>
+                      <Title order={3}>Choose a release reason.</Title>
+                      <Input.Wrapper label='Release reason' required>
+                        <Box mt='md'>
+                          <Chip.Group value={releaseReason} onChange={setReleaseReason}>
+                            <Stack gap='sm' align='flex-start'>
+                              {canReleaseAsSobered && (
+                                <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
+                              )}
+                              <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
+                              <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
+                              <Chip value='OTHER'>Other (please specify)</Chip>
+                            </Stack>
+                          </Chip.Group>
+                        </Box>
+                      </Input.Wrapper>
+                    </>
+                    )}
                 {(isMedicalRelease || isBehavioralHealthRelease) && (
                   <>
                     <Text size='md' c='dimmed'>
@@ -267,7 +291,11 @@ function LegalReleaseQuestions () {
 
               <Group gap='md' wrap='nowrap' align='flex-start'>
                 <IconAlertCircle size={24} color='var(--mantine-color-indigo-6)' stroke={1.75} />
-                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.</Text>
+                <Text size='md'>
+                  {isExitRelease
+                    ? 'When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.'
+                    : 'When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.'}
+                </Text>
               </Group>
 
               <Group>
@@ -288,6 +316,7 @@ function LegalReleaseQuestions () {
                   loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
                   disabled={
                     !releaseReason ||
+                    (releaseReason === 'SOBERED' && !canReleaseAsSobered) ||
                     ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') && !exitDestination) ||
                     (releaseReason === 'OTHER' && (!otherReason.trim() || !otherDestination.trim())) ||
                     (releaseReason !== 'SOBERED' &&

@@ -12,6 +12,7 @@ const {
   mockDeflectionRelease,
   mockDeflectionUpdate,
   mockIncidentGet,
+  mockSearchParams,
 } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShowToast: vi.fn(),
@@ -19,6 +20,7 @@ const {
   mockDeflectionRelease: vi.fn(),
   mockDeflectionUpdate: vi.fn(),
   mockIncidentGet: vi.fn(),
+  mockSearchParams: { value: new URLSearchParams() },
 }));
 
 vi.mock('@/Api', () => ({
@@ -37,7 +39,7 @@ vi.mock('@/Api', () => ({
 vi.mock('react-router', () => ({
   useNavigate: () => mockNavigate,
   useParams: () => ({ id: '123' }),
-  useSearchParams: () => [new URLSearchParams()],
+  useSearchParams: () => [mockSearchParams.value],
 }));
 
 vi.mock('@unhead/react', () => ({
@@ -87,6 +89,7 @@ describe('LegalReleaseQuestions', () => {
       data: {
         id: '123',
         incidentId: 'incident-1',
+        subjectStatus: 'READY_FOR_INTAKE',
       },
     });
     mockIncidentGet.mockResolvedValue({
@@ -96,6 +99,7 @@ describe('LegalReleaseQuestions', () => {
     });
     mockDeflectionRelease.mockResolvedValue({ data: {} });
     mockDeflectionUpdate.mockResolvedValue({ data: {} });
+    mockSearchParams.value = new URLSearchParams();
   });
 
   afterEach(() => {
@@ -150,8 +154,10 @@ describe('LegalReleaseQuestions', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
+    expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
     expect(screen.getByText('This will also mark the person as exited from RESET.')).toBeInTheDocument();
     expect(screen.getByText('Exit destination')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
     fireEvent.click(screen.getByRole('radio', { name: 'Other' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm release and exit' }));
@@ -161,6 +167,57 @@ describe('LegalReleaseQuestions', () => {
         releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
         exitDestination: 'OTHER',
       });
+    });
+  });
+
+  it('preselects other release and shows supplemental fields from search params', async () => {
+    mockSearchParams.value = new URLSearchParams({
+      from: 'detail',
+      releaseReason: 'OTHER',
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Other (please specify)' })).toBeChecked();
+    expect(screen.getByText('Other release reason')).toBeInTheDocument();
+    expect(screen.getByText('Other release destination')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
+  });
+
+  it('hides can care for themselves when the person is not in chair', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.queryByRole('radio', { name: 'Can care for themselves' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Other (please specify)' })).toBeInTheDocument();
+  });
+
+  it('shows fixed can-care-for-themselves reason when the person is in chair', async () => {
+    mockDeflectionGet.mockResolvedValue({
+      data: {
+        id: '123',
+        incidentId: 'incident-1',
+        subjectStatus: 'IN_CHAIR',
+      },
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.getByText('Confirm legal release')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Release reason: can care for themselves' })).toBeInTheDocument();
+    expect(screen.getByText('If this person cannot care for themselves and instead needs to be exited to jail, to hospital, or for another reason, go back and choose a different option via the overflow menu.')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
+    expect(screen.queryByText('Release reason')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Can care for themselves' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Medical issue (physical)' })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirm release' })).not.toBeDisabled();
     });
   });
 });
