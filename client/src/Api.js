@@ -296,7 +296,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, subjectStatus, perPage } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, includeCurrentOfficer, status, subjectStatus, perPage } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -315,6 +315,12 @@ const Api = {
       }
       if (includeIncident) {
         params.includeIncident = 'true';
+      }
+      if (includeCurrentOfficer) {
+        params.includeCurrentOfficer = 'true';
+      }
+      if (status) {
+        params.status = status;
       }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
@@ -383,6 +389,9 @@ const Api = {
     },
     recordPropertyReturn (id, data) {
       return instance.post(`/api/deflections/${id}/property-return`, data).catch(handleError);
+    },
+    email849b (id) {
+      return instance.post(`/api/deflections/${id}/849b-email`).catch(handleError);
     },
     cancel (id, { cancelReason } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReason ? `?cancelReason=${cancelReason}` : ''}`);

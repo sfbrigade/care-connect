@@ -4,8 +4,8 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 import { conflictError } from '#lib/httpErrors.js';
+import { queueReleaseFormsEmail } from '#lib/forms/formEmailJobs.js';
 
 const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -229,14 +229,10 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      if (!isExitRelease) {
-        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
-          deflectionId: deflection.id,
-          userId: request.user.id,
-          formIds: ['647f', '849b', 'cert'],
-          emailTemplate: 'release-forms',
-        });
-      }
+      await queueReleaseFormsEmail(fastify, {
+        deflectionId: deflection.id,
+        userId: request.user.id,
+      });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

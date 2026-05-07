@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
-import { formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
+import { firstInitialLastName, formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
 
 export function transformData (deflection) {
@@ -12,11 +12,9 @@ export function transformData (deflection) {
 
   const deputy = deflection.releasedBy || deflection.createdBy;
   const deputyTitle = deputy?.title?.name || '';
-  const deputyName = deputy ? `${deputy.firstName} ${deputy.lastName}` : '';
+  const deputyName = firstInitialLastName(deputy);
   const deputyBadge = deputy?.badgeNumber || '';
-  const unitIdentifier = deflection.incident?.createdByUnit?.name ||
-    deputy?.unit?.name ||
-    '';
+  const unitIdentifier = deputy?.unit?.name || '';
 
   const detention = formatDateParts(deflection.createdAt?.toISOString());
   const release = formatDateParts(deflection.releasedAt.toISOString());

@@ -5,7 +5,7 @@ import { getHospitalCancellationReleaseNarrative, HOSPITAL_CANCEL_REASON } from 
 import i18n from '#lib/i18n.js';
 import {
   FORM_TIMEZONE,
-  firstLastName,
+  firstInitialLastName,
   formatDateOnly,
   formatDateTime24,
   formatTime,
@@ -39,7 +39,7 @@ export function transformData (deflection) {
 
   const arrestingOfficer = incident?.createdBy || deflection.createdBy;
   const arrestingOfficerRank = incident?.createdByTitle?.name || arrestingOfficer?.title?.name || '';
-  const arrestingOfficerName = firstLastName(arrestingOfficer);
+  const arrestingOfficerName = firstInitialLastName(arrestingOfficer);
   const arrestingOfficerBadge = incident?.createdByBadgeNumber || arrestingOfficer?.badgeNumber || '';
   const arrestingOfficerUnit = incident?.createdByUnit?.name || arrestingOfficer?.unit?.name || '';
   const arrestingOfficerAgency = incident?.createdByOrganization?.name || arrestingOfficer?.organization?.name || '';
@@ -49,7 +49,7 @@ export function transformData (deflection) {
   const mostRecentHandoff = deflection.handoffs?.toSorted((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
   const custodyReleaseOfficer = mostRecentHandoff?.toOfficer || arrestingOfficer;
   const custodyReleaseOfficerRank = custodyReleaseOfficer?.title?.name || '';
-  const custodyReleaseOfficerName = firstLastName(custodyReleaseOfficer);
+  const custodyReleaseOfficerName = firstInitialLastName(custodyReleaseOfficer);
   const custodyReleaseOfficerBadge = custodyReleaseOfficer?.badgeNumber || '';
   const custodyReleaseOfficerUnit = custodyReleaseOfficer?.unit?.name || '';
 
@@ -71,6 +71,7 @@ export function transformData (deflection) {
     arrestLocation,
     charge: i18n.t(`chargeType.${deflection.chargeType || 'RWS_647F'}`),
     cadNumber: incident?.cadNumber || '',
+    caseNumber: incident?.caseNumber || '',
     certifiedAt: deflection.certifiedAt?.toISOString() || null,
     arrestingOfficerRank,
     arrestingOfficerName,
@@ -137,6 +138,7 @@ export async function generatePdf (deflectionData) {
     arrestLocation: deflectionData.arrestLocation,
     charge: deflectionData.charge || '647(f) RWS',
     cadNumber: deflectionData.cadNumber,
+    caseNumber: deflectionData.caseNumber,
 
     arrestingOfficerDisplay,
     arrestingOfficerUnit: deflectionData.arrestingOfficerUnit,
