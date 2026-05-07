@@ -5,12 +5,10 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 import { captureException } from '#lib/posthog.js';
 
 const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
-const INCIDENT_REPORTS_RECIPIENT = 'Sfso-incidentreports@sfgov.org';
 const SWAPSUPS_RECIPIENT = 'sfso-swapsups@sfgov.org';
 const TRANSFER_RECIPIENTS = [
   'SFPD.Data.Transfer.Authorized@sfgov.org',
   'Andrew.bley@sfgov.org',
-  INCIDENT_REPORTS_RECIPIENT,
 ];
 
 export default async function formsEmail (data, prismaClient = prisma) {
@@ -165,7 +163,6 @@ export default async function formsEmail (data, prismaClient = prisma) {
       to = uniqueEmails([...recipientEmail, arrestingOfficerEmail]);
     } else if (remainingFormIds.includes('647f') && !recipientEmail) {
       if (arrestingOfficerEmail) cc.push(arrestingOfficerEmail);
-      cc.push(INCIDENT_REPORTS_RECIPIENT);
     }
 
     await sendFormsMessage({

@@ -101,9 +101,27 @@ describe('CareCard', () => {
     expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
   });
 
-  it('shows no buttons for EXITED', () => {
+  it('shows Details for EXITED without legal release', () => {
     renderCard({ deflection: buildDeflection({ subjectStatus: 'EXITED' }) });
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update status' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
+  });
+
+  it('shows Details for EXITED after legal release', () => {
+    renderCard({
+      deflection: buildDeflection({
+        subjectStatus: 'EXITED',
+        releasedAt: '2026-05-05T12:00:00.000Z',
+        exitedAt: '2026-05-05T18:00:00.000Z',
+      }),
+    });
+
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start exit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finish exit' })).not.toBeInTheDocument();
   });
 
   it('calls onCompleteIntake when Update status is clicked', () => {
