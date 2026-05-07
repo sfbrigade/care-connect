@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
+import { formatUnitName } from '@/utils/unit';
 
 function AdminUnitForm () {
   const location = useLocation();
@@ -47,10 +48,14 @@ function AdminUnitForm () {
 
   const onSubmitMutation = useMutation({
     mutationFn: (values) => {
+      const payload = {
+        ...values,
+        name: formatUnitName(values.name),
+      };
       if (isNew) {
-        return Api.organizations.units.create(organizationId, values);
+        return Api.organizations.units.create(organizationId, payload);
       } else {
-        return Api.organizations.units.update(organizationId, unitId, values);
+        return Api.organizations.units.update(organizationId, unitId, payload);
       }
     },
     onMutate: () => setSuccess(false),
@@ -108,6 +113,7 @@ function AdminUnitForm () {
                 key={form.key('name')}
                 label='Name'
                 placeholder='e.g. Patrol'
+                onChange={(event) => form.setFieldValue('name', formatUnitName(event.currentTarget.value))}
               />
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>

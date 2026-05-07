@@ -215,7 +215,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
   });
 
-  const doc849b = deflection?.deflectionDocuments?.find(d => d.formId === '849b');
   const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
   const showPostReleaseNarrativeActions = !isCareView && isCustody && isPostRelease;
 
@@ -230,8 +229,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    const url = doc849b?.fileUrl || `/api/forms/849b/pdf/${deflection.id}`;
-    window.open(url, '_blank');
+    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
   }
 
   return (

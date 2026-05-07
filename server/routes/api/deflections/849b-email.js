@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { FORMS } from '#lib/forms/index.js';
+import { validateLive849bPdf } from '#lib/forms/849b/livePdf.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify) {
@@ -25,19 +25,14 @@ export default async function (fastify) {
     },
     async function (request, reply) {
       const { id } = request.params;
-      const form = FORMS['849b'];
-      const deflection = await fastify.prisma.deflection.findUnique({
-        where: { id },
-        include: form.deflectionInclude,
-      });
+      const validation = await validateLive849bPdf(fastify.prisma, id);
 
-      if (!deflection) {
+      if (validation.status === 'not_found') {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      const check = form.canGenerate(deflection);
-      if (check !== true) {
-        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
+      if (validation.status !== 'ok') {
+        return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: validation.error });
       }
 
       await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {

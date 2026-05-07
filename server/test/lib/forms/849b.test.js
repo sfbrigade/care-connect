@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
+import { PDFDocument } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
 
@@ -122,4 +123,148 @@ test('849b transformData uses first initial for incident officer name', () => {
   });
 
   assert.strictEqual(data.officerName, 'R. Johnson');
+});
+
+test('849b PDF fills release reporting party fields and leaves citation text blank', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+      prop115Certified: true,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD849B',
+      caseNumber: 'CS849B',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: {
+      firstName: 'Swilly',
+      middleInitial: 'Q',
+      lastName: 'Willy',
+      race: 'WHITE',
+      sex: 'MALE',
+      dateOfBirth: new Date('2001-10-01T00:00:00.000Z'),
+      addressLine1: '123 Test St',
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: '94103',
+      driverLicense: 'D1234567',
+      localId: 'SF123',
+    },
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }), {
+    firstName: 'Generating',
+    lastName: 'Deputy',
+    badgeNumber: '9999',
+    prop115Certified: false,
+  });
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.deepStrictEqual(pdfForm.getDropdown('Dropdown4').getSelected(), ['DET/REL']);
+  assert.strictEqual(
+    pdfForm.getCheckBox('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED').isChecked(),
+    true
+  );
+  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), false);
+  assert.strictEqual(pdfForm.getTextField('Text3').getText(), '2');
+  assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'T. SFSO');
+  assert.strictEqual(pdfForm.getTextField('CODE_2').getText(), 'R1');
+  assert.strictEqual(pdfForm.getTextField('NAME LAST FIRST MIDDLE_2').getText(), 'SFSO, T, #5678');
+  assert.strictEqual(pdfForm.getTextField('CONTACT PHONE NUMBER_2').getText(), '415-575-6461');
+  assert.strictEqual(
+    pdfForm.getTextField('BUSINESS ADDRESSNAME OF SCHOOL IF JUVENILECITY IF NOT SAN FRANCISCO_2').getText(),
+    '70 Oak Grove St.'
+  );
+  assert.strictEqual(pdfForm.getTextField('ZIP CODE_4').getText(), '94107');
+  assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
+});
+
+test('849b PDF leaves prop 115 unchecked but checks post training when reporting deputy is not certified', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Noncertified',
+      lastName: 'Deputy',
+      badgeNumber: '1357',
+      prop115Certified: false,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD849B',
+      caseNumber: 'CS849B',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.strictEqual(
+    pdfForm.getCheckBox('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED').isChecked(),
+    false
+  );
+  assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
+});
+
+test('849b PDF truncates overlong text fields to template max lengths', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+      prop115Certified: false,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD-TOO-LONG',
+      caseNumber: 'CASE-TOO-LONG',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.strictEqual(pdfForm.getTextField('INCIDENT NUMBER').getText(), 'CASE-TOO-');
+  assert.strictEqual(pdfForm.getTextField('CAD NUMBER').getText(), 'CAD-TOO-L');
 });

@@ -6,7 +6,7 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { refusalReasonFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
 import { conflictError } from '#lib/httpErrors.js';
-import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import { queue849bIncidentEmail } from '#lib/forms/formEmailJobs.js';
 
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -172,11 +172,9 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+      await queue849bIncidentEmail(fastify, {
         deflectionId: deflection.id,
         userId: request.user.id,
-        formIds: ['849b'],
-        emailTemplate: 'incident-forms',
         recipientEmail: request.user.email,
       });
 

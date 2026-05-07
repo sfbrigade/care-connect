@@ -45,7 +45,6 @@ const TEXT = {
   assignTo:                'ASSIGN TO',
   assignedBy:              'ASSIGNED BY INITALSSTAR',
   copiesTo:                'COPIES TO DDL UNITSGENCIES',
-  prop115Pages:            'Text4',
 
   // Subject
   'subject.code':             'CODE',
@@ -223,7 +222,7 @@ function applyDobAge (form, pdfField, data, prefix) {
   if (dob && age) value = `${dob} / ${age}`;
   else value = dob || age;
 
-  form.getTextField(pdfField).setText(String(value));
+  setTextField(form, pdfField, value);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -239,6 +238,13 @@ function get (obj, path) {
     cur = cur[p];
   }
   return cur;
+}
+
+function setTextField (form, pdfField, value) {
+  const field = form.getTextField(pdfField);
+  const text = String(value);
+  const maxLength = field.getMaxLength();
+  field.setText(maxLength == null ? text : text.slice(0, maxLength));
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -260,15 +266,15 @@ export async function fill849b (pdfBytes, data) {
   for (const [key, pdfField] of Object.entries(TEXT)) {
     const val = get(data, key);
     if (val != null && val !== '') {
-      form.getTextField(pdfField).setText(String(val));
+      setTextField(form, pdfField, val);
     }
   }
 
   // ── Page numbers (always 1 and 2) and totalPages default ──
-  form.getTextField('Text1').setText('1');
-  form.getTextField('Text1_2').setText('2');
+  setTextField(form, 'Text1', '1');
+  setTextField(form, 'Text1_2', '2');
   if (get(data, 'totalPages') == null) {
-    form.getTextField('Text2').setText('2');
+    setTextField(form, 'Text2', '2');
   }
 
   // ── Checkboxes ──
@@ -319,7 +325,7 @@ export async function fill849b (pdfBytes, data) {
     for (let i = 0; i < pdfFields.length; i++) {
       const val = arr[i];
       if (val != null && val !== '') {
-        form.getTextField(pdfFields[i]).setText(String(val));
+        setTextField(form, pdfFields[i], val);
       }
     }
   }

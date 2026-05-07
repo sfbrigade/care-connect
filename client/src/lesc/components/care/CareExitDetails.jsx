@@ -47,7 +47,11 @@ function CareExitDetails () {
   const fromDetail = searchParams.get('from') === 'detail';
   const backTo = getCareExitBackTo({ fromDetail, id });
 
+  // Mirrors CARE_EXIT_DESTINATIONS in server/lib/careExitDestinations.js.
+  // Server rejects JAIL on /exit and /exit-details; this filter keeps the
+  // UI honest so users don't pick a destination that will 400.
   const exitDestinations = Object.entries(t('deflectionExitDestination', { returnObjects: true }))
+    .filter(([id]) => id !== 'JAIL')
     .map(([id, name]) => ({ id, name }));
   const exitHousingStatuses = Object.entries(t('deflectionExitHousingStatus', { returnObjects: true }))
     .map(([id, name]) => ({ id, name }));
