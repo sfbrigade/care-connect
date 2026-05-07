@@ -1,10 +1,8 @@
-import { hasSavedExitDraft } from '../care/careFlowUtils';
-
 function hasPersistedExitDetails (deflection) {
   return Boolean(
-    deflection?.exitDestination &&
-    deflection?.exitHousingStatus &&
-    deflection?.exitConnectedToCare &&
+    deflection?.exitDestination ||
+    deflection?.exitHousingStatus ||
+    deflection?.exitConnectedToCare ||
     deflection?.exitSFResident
   );
 }
@@ -26,8 +24,7 @@ export function getCareDetailFooterState ({ viewerMode, deflection }) {
   }
 
   if (deflection?.subjectStatus === 'RELEASED') {
-    const hasExitDraft = hasSavedExitDraft(deflection?.id);
-    const hasExitDetails = hasExitDraft || hasPersistedExitDetails(deflection);
+    const hasExitDetails = hasPersistedExitDetails(deflection);
     return {
       showFooter: true,
       primaryLabel: hasExitDetails ? 'Finish exit' : 'Start exit',

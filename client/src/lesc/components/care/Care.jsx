@@ -23,7 +23,7 @@ import StatusAccordion from '@/components/StatusAccordion';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
-import { groupCareNotInCustodySections, hasPersistedExitDetails, hasSavedExitDraft } from './careFlowUtils';
+import { groupCareNotInCustodySections, hasAnyPersistedExitDetails } from './careFlowUtils';
 
 const IN_CUSTODY_STATUSES = 'IN_MEDICAL_INTAKE,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
@@ -45,10 +45,6 @@ function groupByStatus (deflections) {
     grouped[d.subjectStatus].push(d);
   }
   return grouped;
-}
-
-function hasSavedOrPersistedExitDetails (deflection) {
-  return hasSavedExitDraft(deflection.id) || hasPersistedExitDetails(deflection);
 }
 
 function Care () {
@@ -186,7 +182,7 @@ function Care () {
                       deflection={d}
                       highlighted={String(d.id) === highlightedId}
                       onCompleteIntake={() => setIntakeModalDeflection(d)}
-                      hasExitDraft={hasSavedOrPersistedExitDetails(d)}
+                      hasExitDraft={hasAnyPersistedExitDetails(d)}
                       onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                     />}
                 />
@@ -208,7 +204,7 @@ function Care () {
                   deflection={d}
                   highlighted={String(d.id) === highlightedId}
                   onCompleteIntake={() => setIntakeModalDeflection(d)}
-                  hasExitDraft={hasSavedOrPersistedExitDetails(d)}
+                  hasExitDraft={hasAnyPersistedExitDetails(d)}
                   onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                 />}
             />

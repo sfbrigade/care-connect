@@ -19,6 +19,13 @@ const EXIT_DETAIL_EDITABLE_STATUSES = [
   Deflection.SubjectStatus.RELEASED,
 ];
 
+const ExitDetailsBodySchema = z.object({
+  exitDestination: CareExitDestinationEnum.nullable().optional(),
+  exitHousingStatus: z.string().nullable().optional(),
+  exitSFResident: ResidencyEnum.nullable().optional(),
+  exitConnectedToCare: ConnectionToCareEnum.nullable().optional(),
+});
+
 export default async function (fastify, opts) {
   fastify.post('/:id/exit-details',
     {
@@ -28,12 +35,7 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.coerce.number(),
         }),
-        body: z.object({
-          exitDestination: CareExitDestinationEnum,
-          exitHousingStatus: z.string(),
-          exitSFResident: ResidencyEnum,
-          exitConnectedToCare: ConnectionToCareEnum,
-        }),
+        body: ExitDetailsBodySchema,
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -63,6 +65,13 @@ export default async function (fastify, opts) {
       }
 
       const now = new Date();
+      const updateData = {
+        exitDestination,
+        exitHousingStatus,
+        exitConnectedToCare,
+        exitSFResident,
+        updatedAt: now,
+      };
 
       await fastify.prisma.$transaction(async (tx) => {
         await tx.deflectionUpdate.create({
@@ -79,13 +88,7 @@ export default async function (fastify, opts) {
 
         deflection = await tx.deflection.update({
           where: { id },
-          data: {
-            exitDestination,
-            exitHousingStatus,
-            exitConnectedToCare,
-            exitSFResident,
-            updatedAt: now,
-          },
+          data: updateData,
           include: {
             subject: true,
             propertyPhotos: true,
