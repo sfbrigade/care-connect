@@ -232,6 +232,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
   }
 
+  // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
+  // releases. Buttons are gated on the same predicate the server enforces.
+  const can5150 = deflection?.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION' && !!deflection?.releasedAt;
+  const email5150Mutation = useMutation({
+    mutationFn: () => Api.deflections.email5150(deflection.id),
+    onSuccess: (response) => {
+      showToast('5150 e-mail sent', 'success', 4000, `We sent the 5150 PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
+    },
+    onError: () => {
+      showToast('5150 e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  function open5150Pdf () {
+    window.open(`/api/forms/5150/pdf/${deflection.id}`, '_blank');
+  }
+
   return (
     <>
       <Header>
@@ -308,6 +325,24 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               >
                 E-mail me the 849(b)
               </Button>
+              {can5150 && (
+                <>
+                  <Button
+                    onClick={open5150Pdf}
+                    variant='outline'
+                    rightSection={<IconExternalLink size={18} />}
+                  >
+                    5150.pdf
+                  </Button>
+                  <Button
+                    onClick={() => email5150Mutation.mutate()}
+                    loading={email5150Mutation.isPending}
+                    variant='outline'
+                  >
+                    E-mail me the 5150
+                  </Button>
+                </>
+              )}
             </Group>
           )}
           <Stack gap='sm'>

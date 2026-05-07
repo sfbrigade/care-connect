@@ -420,6 +420,66 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/5150-email', async (t) => {
+    await t.test('queues live 5150 regeneration and self e-mail for behavioral-health-evaluation releases', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(JSON.parse(response.body), {
+        queued: true,
+        email: 'sfsouser1@test.com',
+      });
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['5150'],
+        emailTemplate: 'self-5150',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+    });
+
+    await t.test('rejects releases whose reason is not behavioral health evaluation', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          releaseReason: 'SOBERED',
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('forbids non-custody users', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
   await t.test('POST /:id/transfer', async (t) => {
     await t.test('transfers custody of a deflection', async () => {
       await prisma.deflection.expire();
@@ -2133,7 +2193,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2177,7 +2237,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2281,7 +2341,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2334,7 +2394,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2370,7 +2430,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
