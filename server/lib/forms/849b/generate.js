@@ -5,6 +5,7 @@ import { firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 import i18n from '#lib/i18n.js';
+import { formatUnitName } from '#lib/unitName.js';
 const { DrugTypeEnum } = prismaPkg;
 
 function formatDeputyNameForReportingParty (deputy) {
@@ -121,7 +122,7 @@ export async function generatePdf (deflectionData) {
     // Deputy fields - from persisted reporting deputy (not incident creator or current user)
     reportingDeputy: firstInitialLastName(reportingDeputy),
     star: reportingDeputy?.badgeNumber || '',
-    divisionUnit: reportingDeputy?.unit?.name || '',
+    divisionUnit: formatUnitName(reportingDeputy?.unit?.name),
     supervisorApproval: '',
     watch: '',
     assignTo: '',

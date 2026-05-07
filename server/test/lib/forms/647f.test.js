@@ -29,7 +29,7 @@ test('647f transferOfficer: no handoffs — falls back to incident.createdBy', (
   assert.equal(data.custodyReleaseOfficerName, 'J. Smith');
   assert.equal(data.custodyReleaseOfficerBadge, 'B001');
   assert.equal(data.custodyReleaseOfficerRank, 'Officer');
-  assert.equal(data.custodyReleaseOfficerUnit, 'Unit 1');
+  assert.equal(data.custodyReleaseOfficerUnit, 'UNIT 1');
 });
 
 test('647f transferOfficer: no handoffs and no incident — falls back to deflection.createdBy', () => {
@@ -59,7 +59,7 @@ test('647f transferOfficer: handoff exists — uses toOfficer from the most rece
   assert.equal(data.custodyReleaseOfficerName, 'A. Vega');
   assert.equal(data.custodyReleaseOfficerBadge, 'F100');
   assert.equal(data.custodyReleaseOfficerRank, 'Deputy');
-  assert.equal(data.custodyReleaseOfficerUnit, 'Field Unit');
+  assert.equal(data.custodyReleaseOfficerUnit, 'FIELD UNIT');
 });
 
 test('647f hospital cancellation appends the release narrative', () => {

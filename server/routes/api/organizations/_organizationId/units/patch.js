@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import { normalizeUnitName } from '#lib/unitName.js';
 import Unit from '#models/unit.js';
 
 export default async function (fastify, opts) {
@@ -24,7 +25,10 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { organizationId, id } = request.params;
-      const data = request.body;
+      const data = {
+        ...request.body,
+        ...(request.body.name === undefined ? {} : { name: normalizeUnitName(request.body.name) }),
+      };
 
       try {
         const unit = await fastify.prisma.unit.update({
