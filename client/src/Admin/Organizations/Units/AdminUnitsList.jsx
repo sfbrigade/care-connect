@@ -8,6 +8,7 @@ import { IconTrash } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import Pagination from '@/components/Pagination';
+import { formatUnitName } from '@/utils/unit';
 
 function AdminUnitsList () {
   const { organizationId } = useParams();
@@ -47,7 +48,7 @@ function AdminUnitsList () {
       centered: true,
       children: (
         <Text>
-          Are you sure you want to delete <b>{unit.name}</b>? This action cannot be undone.
+          Are you sure you want to delete <b>{formatUnitName(unit.name)}</b>? This action cannot be undone.
         </Text>
       ),
       labels: { confirm: 'Delete', cancel: 'Cancel' },
@@ -106,7 +107,7 @@ function AdminUnitsList () {
               {!isLoading && units?.map((unit) => (
                 <Table.Tr key={unit.id}>
                   <Table.Td>{unit.id}</Table.Td>
-                  <Table.Td>{unit.name}</Table.Td>
+                  <Table.Td>{formatUnitName(unit.name)}</Table.Td>
                   <Table.Td>
                     <Group gap='xs'>
                       <Anchor component={Link} to={`${unit.id}`}>Edit</Anchor>

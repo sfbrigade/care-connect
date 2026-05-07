@@ -19,6 +19,7 @@ import {
   readStoredWorkMode,
   writeStoredWorkMode,
 } from './utils/workMode';
+import { formatUnitName } from './utils/unit';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -143,7 +144,7 @@ function Header ({ opened, close, toggle, logout }) {
           </Group>
           {user?.unit?.name && (
             <Text size='sm' color='dimmed' truncate>
-              {user.unit.name}
+              {formatUnitName(user.unit.name)}
             </Text>
           )}
         </Box>
