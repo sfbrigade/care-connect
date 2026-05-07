@@ -233,7 +233,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     openInBrowser(`/api/forms/849b/pdf/${deflection.id}`, `849b-${deflection.id}.pdf`)
       .then(() => {
         removeToast(toastId);
-        showToast('849(b) form ready', 'success', 4000, 'Open it from your downloads to view or print.');
+        showToast('849(b) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
       })
       .catch(() => {
         removeToast(toastId);
@@ -711,7 +711,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         openInBrowser(url, `cert-${deflection.id}.pdf`)
                           .then(() => {
                             removeToast(toastId);
-                            showToast('Release certificate ready', 'success', 4000, 'Open it from your downloads to view or print.');
+                            showToast('Release certificate ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
                           })
                           .catch(() => {
                             removeToast(toastId);

@@ -123,7 +123,7 @@ function Deflection () {
     openInBrowser(url, `647f-${deflection.id}.pdf`)
       .then(() => {
         removeToast(toastId);
-        showToast('647(f) form ready', 'success', 4000, 'Open it from your downloads to view or print.');
+        showToast('647(f) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
       })
       .catch(() => {
         removeToast(toastId);
