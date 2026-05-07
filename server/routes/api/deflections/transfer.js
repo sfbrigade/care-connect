@@ -142,7 +142,6 @@ export default async function (fastify, opts) {
         recipientEmail: [
           'SFPD.Data.Transfer.Authorized@sfgov.org',
           'Andrew.bley@sfgov.org',
-          'Sfso-incidentreports@sfgov.org',
         ],
       });
 
