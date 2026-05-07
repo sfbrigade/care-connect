@@ -119,7 +119,7 @@ export async function generatePdf (deflectionData) {
 
   const substanceNot = deflectionData.substanceFound ? '' : 'not ';
   const paraphernaliaNot = deflectionData.paraphernaliaFound ? '' : 'not ';
-  const narcoticsStatement = `SFPD Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
+  const narcoticsStatement = `Officer searched for narcotics. Subject was ${substanceNot}found to be in possession of a controlled substance. Subject was ${paraphernaliaNot}found to be in possession of narcotics paraphernalia.`;
   const narrative = [deflectionData.justification, narcoticsStatement, deflectionData.hospitalCancellationReleaseNarrative]
     .filter(Boolean)
     .join('\n\n');
