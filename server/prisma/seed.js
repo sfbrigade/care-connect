@@ -20,15 +20,12 @@ try {
 
   await seedAdminUser(prisma);
   await seedOrganizations(prisma);
-  // Titles + Units must run before Users because User has a compound foreign
-  // key (organizationId, titleId) → Title and (organizationId, unitId) → Unit.
-  // Both seeds only need adminUser + organizations to be in place.
-  await seedTitles(prisma);
-  await seedUnits(prisma);
   await seedUsers(prisma);
   await seedFacilities(prisma);
   await seedServiceTypes(prisma);
   await seedResetCenter(prisma);
+  await seedTitles(prisma);
+  await seedUnits(prisma);
   await seedTestDeflections(prisma);
   await seedHistoricalData(prisma);
 } catch (error) {

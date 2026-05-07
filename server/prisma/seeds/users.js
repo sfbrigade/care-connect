@@ -30,7 +30,6 @@ export default async function main (prisma) {
       lastName: 'SFSO',
       isAdmin: false,
       organizationId: 'sfso',
-      titleId: 'deputy',
       roles: ['FIELD', 'CUSTODY', 'ORG_ADMIN'],
       badgeNumber: '5678',
       mfaEnabled: false,
