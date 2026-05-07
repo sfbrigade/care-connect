@@ -322,10 +322,16 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
-  it('shows record exit to other for failed intake', () => {
+  it('only shows exit to jail in overflow actions for failed intake', () => {
     const html = render({ subjectStatus: 'FAILED_INTAKE' });
 
-    expect(html).toContain('Record exit to other');
+    expect(html).toContain('>Exit to jail</a>');
+    expect(html).not.toContain('>Record exit to jail</a>');
+    expect(html).not.toContain('>Record exit to hospital</a>');
+    expect(html).not.toContain('>Record exit to other</a>');
+    expect(html).not.toContain('>Record death</a>');
+    expect(html).toContain('Release and exit');
+    expect(html).not.toContain('Start legal release');
   });
 
   it('renders the updated safety check modal copy in the footer action flow', () => {

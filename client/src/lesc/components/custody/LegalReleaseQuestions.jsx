@@ -43,8 +43,10 @@ function LegalReleaseQuestions () {
     queryFn: () => Api.deflections.get(id).then(response => response.data),
   });
   const isInChair = deflection?.subjectStatus === 'IN_CHAIR';
+  const isFailedIntake = deflection?.subjectStatus === 'FAILED_INTAKE';
   const canReleaseAsSobered = isInChair;
   const isDefaultSoberedReleaseFlow = isInChair && !prefilledState.releaseReason;
+  const usesReleaseAndExitCopy = isExitRelease || isFailedIntake;
 
   useEffect(() => {
     if (isDefaultSoberedReleaseFlow && !releaseReason) {
@@ -143,7 +145,7 @@ function LegalReleaseQuestions () {
       <Container>
         <Stack gap='xl'>
           <Stack gap={0}>
-            <Text size='xl' c='dimmed'>{isExitRelease ? 'Confirm legal release and exit' : 'Confirm legal release'}</Text>
+            <Text size='xl' c='dimmed'>{usesReleaseAndExitCopy ? 'Confirm legal release and exit' : 'Confirm legal release'}</Text>
             <Title order={3}>Review the 849(b).</Title>
           </Stack>
 
@@ -292,7 +294,7 @@ function LegalReleaseQuestions () {
               <Group gap='md' wrap='nowrap' align='flex-start'>
                 <IconAlertCircle size={24} color='var(--mantine-color-indigo-6)' stroke={1.75} />
                 <Text size='md'>
-                  {isExitRelease
+                  {usesReleaseAndExitCopy
                     ? 'When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.'
                     : 'When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.'}
                 </Text>
@@ -325,7 +327,7 @@ function LegalReleaseQuestions () {
                       releaseReason !== 'OTHER')
                   }
                 >
-                  {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}
+                  {usesReleaseAndExitCopy ? 'Confirm release and exit' : 'Confirm release'}
                 </Button>
               </Group>
             </>

@@ -197,6 +197,23 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.getByRole('radio', { name: 'Other (please specify)' })).toBeInTheDocument();
   });
 
+  it('uses release-and-exit copy for failed intake', async () => {
+    mockDeflectionGet.mockResolvedValue({
+      data: {
+        id: '123',
+        incidentId: 'incident-1',
+        subjectStatus: 'FAILED_INTAKE',
+      },
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
+  });
+
   it('shows fixed can-care-for-themselves reason when the person is in chair', async () => {
     mockDeflectionGet.mockResolvedValue({
       data: {
