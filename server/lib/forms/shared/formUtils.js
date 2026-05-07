@@ -50,6 +50,11 @@ export function firstLastName (obj) {
   return [obj?.firstName, obj?.lastName].filter(Boolean).join(' ');
 }
 
+export function firstInitialLastName (obj) {
+  const firstInitial = obj?.firstName?.trim()?.charAt(0);
+  return [firstInitial && `${firstInitial}.`, obj?.lastName].filter(Boolean).join(' ');
+}
+
 export function streetCityState (obj) {
   return [obj?.addressLine1, obj?.city, obj?.state].filter(Boolean).join(', ');
 }

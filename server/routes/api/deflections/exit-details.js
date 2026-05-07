@@ -5,11 +5,14 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { CARE_EXIT_DESTINATIONS } from '#lib/careExitDestinations.js';
 const { SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
 const ConnectionToCareEnum = z.enum(Object.values(TernaryEnum));
+
+const CareExitDestinationEnum = z.enum(CARE_EXIT_DESTINATIONS);
 
 const EXIT_DETAIL_EDITABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
@@ -26,7 +29,7 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          exitDestination: z.string(),
+          exitDestination: CareExitDestinationEnum,
           exitHousingStatus: z.string(),
           exitSFResident: ResidencyEnum,
           exitConnectedToCare: ConnectionToCareEnum,

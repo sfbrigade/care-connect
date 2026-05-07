@@ -8,6 +8,7 @@ import CareExitDetails from '../components/care/CareExitDetails';
 import CareSubjectForm from '../components/care/CareSubjectForm';
 import Custody from '../components/custody/Custody';
 import CustodyDetail from '../components/custody/CustodyDetail';
+import CustodyReleaseNarrativeForm from '../components/custody/CustodyReleaseNarrativeForm';
 import LegalReleaseQuestions from '../components/custody/LegalReleaseQuestions';
 import RecordPropertyReturn from '../components/custody/RecordPropertyReturn';
 import IncidentForm from '../components/IncidentForm';
@@ -40,6 +41,7 @@ function LESCRoutes () {
       <Route path='custody/:id/subject' element={<SubjectForm />} />
       <Route path='custody/:id/legal-release' element={<LegalReleaseQuestions />} />
       <Route path='custody/:id/property-return' element={<RecordPropertyReturn />} />
+      <Route path='custody/:id/release-narrative' element={<CustodyReleaseNarrativeForm />} />
       <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
       <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />

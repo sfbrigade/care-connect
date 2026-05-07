@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { DateTime } from 'luxon';
 import { z } from 'zod';
 
-import { streetCityState } from '#lib/forms/shared/formUtils.js';
+import { firstInitialLastName, streetCityState } from '#lib/forms/shared/formUtils.js';
 
 const TIMEZONE = 'America/Los_Angeles';
 const FACILITY_NAME = 'RESET';
@@ -12,9 +12,18 @@ const QuerySchema = z.object({
 });
 
 const ArrestSchema = z.object({
-  timestamp: z.string().datetime(),
+  arrestedAt: z.string().datetime(),
   address: z.string(),
   caseNumber: z.string().nullable(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  sex: z.string().nullable(),
+  race: z.string().nullable(),
+  arrivedAt: z.string().datetime().nullable(),
+  transferredAt: z.string().datetime().nullable(),
+  arrestingOfficerName: z.string().nullable(),
+  arrestingOfficerBadge: z.string().nullable(),
 });
 
 const ArrestsResponseSchema = z.array(ArrestSchema);
@@ -56,15 +65,50 @@ export default async function (fastify) {
           city: true,
           state: true,
           caseNumber: true,
+          createdByBadgeNumber: true,
+          createdBy: { select: { firstName: true, lastName: true } },
+          deflections: {
+            where: { cancelledAt: null },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+            select: {
+              arrivedAt: true,
+              transferredAt: true,
+              subject: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  dateOfBirth: true,
+                  sex: true,
+                  race: true,
+                },
+              },
+            },
+          },
         },
         orderBy: { arrestedAt: 'asc' },
       });
 
-      return incidents.map((i) => ({
-        timestamp: i.arrestedAt.toISOString(),
-        address: streetCityState(i),
-        caseNumber: i.caseNumber ?? null,
-      }));
+      return incidents.map((i) => {
+        const deflection = i.deflections[0] ?? null;
+        const subject = deflection?.subject ?? null;
+        return {
+          arrestedAt: i.arrestedAt.toISOString(),
+          address: streetCityState(i),
+          caseNumber: i.caseNumber ?? null,
+          firstName: subject?.firstName ?? null,
+          lastName: subject?.lastName ?? null,
+          dateOfBirth: subject?.dateOfBirth
+            ? subject.dateOfBirth.toISOString().slice(0, 10)
+            : null,
+          sex: subject?.sex ?? null,
+          race: subject?.race ?? null,
+          arrivedAt: deflection?.arrivedAt?.toISOString() ?? null,
+          transferredAt: deflection?.transferredAt?.toISOString() ?? null,
+          arrestingOfficerName: firstInitialLastName(i.createdBy) || null,
+          arrestingOfficerBadge: i.createdByBadgeNumber ?? null,
+        };
+      });
     }
   );
 }

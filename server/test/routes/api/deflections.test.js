@@ -24,6 +24,12 @@ test('/api/deflections', async (t) => {
   const cleanFieldHeaders = await authenticate(app, 'field.noholds@test.com', 'test');
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
   const careUserHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+  const regularUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'regular.user@test.com' },
+  });
+  const custodyUser = await prisma.user.findUniqueOrThrow({
+    where: { email: 'sfsouser1@test.com' },
+  });
 
   // Fixtures are intentionally incomplete (see fixtures/db/incidents.yml,
   // deflections.yml). Tests opt into completeness when they exercise endpoints
@@ -134,6 +140,29 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.length, 0);
     });
 
+    await t.test('omits currentOfficer from response by default', async () => {
+      const response = await app.inject().get('/api/deflections').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.length > 0);
+      for (const deflection of data) {
+        assert.ok(!('currentOfficer' in deflection), `expected currentOfficer to be absent, got ${JSON.stringify(deflection.currentOfficer)}`);
+      }
+    });
+
+    await t.test('includes currentOfficer when includeCurrentOfficer=true', async () => {
+      const response = await app.inject().get('/api/deflections?includeCurrentOfficer=true').headers(anotherUserHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.length > 0);
+      const withOfficer = data.find(d => d.currentOfficerId);
+      assert.ok(withOfficer, 'expected at least one deflection with a currentOfficerId for the assertion to be meaningful');
+      assert.ok(withOfficer.currentOfficer, 'expected currentOfficer to be populated when includeCurrentOfficer=true');
+      assert.deepStrictEqual(withOfficer.currentOfficer.id, withOfficer.currentOfficerId);
+    });
+
     await t.test('handoff receiver sees holds in history after they no longer own them', async () => {
       // Simulate: deflection4 was originally user2's. A handoff moves it to fielduser1.
       // Then fielduser1 taps "I've left" which clears currentOfficerId.
@@ -165,6 +194,63 @@ test('/api/deflections', async (t) => {
         where: { id: 4 },
         data: { currentOfficerId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5' },
       });
+    });
+
+    await t.test('scope=history attaches wasHandedOffByMe based on the Handoff table (issue #880)', async () => {
+      // Pre-fix the History view inferred "Handed off" from currentOfficerId mismatch,
+      // which lied for admins and for currentOfficerId=null after departure. The route
+      // now attaches a real per-user signal: wasHandedOffByMe = exists Handoff where
+      // fromOfficerId = viewer.id. We assert all three relevant cases.
+      const USER2_ID = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5'; // regular.user@test.com
+      const FIELDUSER1_ID = '7a8b9c0d-1e2f-4a4b-8c6d-7e8f9a0b1c2d'; // field.noholds@test.com
+
+      // Case A: user2 hands off deflection 7 → fielduser1, then fielduser1 hands it back.
+      // Both users have a Handoff row authored by them, so both should see wasHandedOffByMe=true.
+      await prisma.handoff.create({
+        data: { deflectionId: 7, fromOfficerId: USER2_ID, toOfficerId: FIELDUSER1_ID },
+      });
+      await prisma.handoff.create({
+        data: { deflectionId: 7, fromOfficerId: FIELDUSER1_ID, toOfficerId: USER2_ID },
+      });
+
+      try {
+        const userResponse = await app.inject().get('/api/deflections?scope=history').headers(userHeaders);
+        assert.deepStrictEqual(userResponse.statusCode, StatusCodes.OK);
+        const userData = JSON.parse(userResponse.body);
+
+        const handedOffOne = userData.find(d => d.id === 7);
+        assert.ok(handedOffOne, 'expected deflection 7 in user2 history');
+        assert.strictEqual(handedOffOne.wasHandedOffByMe, true, 'user2 authored a handoff on 7');
+
+        // Deflection 6: ACTIVE/READY_FOR_INTAKE owned by user2 — appears in History
+        // (post-transfer active state), and user2 has never handed it off.
+        const neverHandedOff = userData.find(d => d.id === 6);
+        assert.ok(neverHandedOff, 'expected deflection 6 in user2 history');
+        assert.strictEqual(neverHandedOff.wasHandedOffByMe, false, 'user2 never handed off 6');
+
+        // fielduser1 also handed off 7 (back to user2) — they should also see the flag.
+        const fieldResponse = await app.inject().get('/api/deflections?scope=history').headers(cleanFieldHeaders);
+        assert.deepStrictEqual(fieldResponse.statusCode, StatusCodes.OK);
+        const fieldData = JSON.parse(fieldResponse.body);
+        const sevenForFielduser = fieldData.find(d => d.id === 7);
+        assert.ok(sevenForFielduser, 'expected deflection 7 in fielduser1 history (via Handoff relation)');
+        assert.strictEqual(sevenForFielduser.wasHandedOffByMe, true, 'fielduser1 authored a handoff on 7');
+
+        // The raw `handoffs` array used to derive the flag should be stripped from the response.
+        assert.ok(!('handoffs' in handedOffOne), 'handoffs include should not leak to clients');
+      } finally {
+        await prisma.handoff.deleteMany({ where: { deflectionId: 7 } });
+      }
+    });
+
+    await t.test('wasHandedOffByMe is omitted outside scope=history', async () => {
+      const response = await app.inject().get('/api/deflections').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.ok(data.length > 0);
+      for (const d of data) {
+        assert.ok(!('wasHandedOffByMe' in d), `wasHandedOffByMe leaked outside scope=history: ${JSON.stringify(d)}`);
+      }
     });
 
     await t.test('active=true + subjectStatus filter: ownership OR does not clobber the subjectStatus OR', async () => {
@@ -265,6 +351,24 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(deflection.chargeType, 'HS_11550');
     });
 
+    await t.test('queues only 849b regeneration when release narrative changes', async () => {
+      const response = await app.inject().patch('/api/deflections/6').payload({
+        releaseNarrative: 'Updated 849(b) release narrative.',
+      }).headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.releaseNarrative, 'Updated 849(b) release narrative.');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['849b'],
+      });
+    });
+
     await t.test('returns 404 for non-existent deflection', async () => {
       const nonExistentId = '0';
       const response = await app.inject().patch(`/api/deflections/${nonExistentId}`).payload({
@@ -272,6 +376,47 @@ test('/api/deflections', async (t) => {
       }).headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.NOT_FOUND);
+    });
+  });
+
+  await t.test('POST /:id/849b-email', async (t) => {
+    await t.test('queues live 849b regeneration and self e-mail for custody user', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          exitedAt: new Date(),
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/849b-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(JSON.parse(response.body), {
+        queued: true,
+        email: 'sfsouser1@test.com',
+      });
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['849b'],
+        emailTemplate: 'self-849b',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+    });
+
+    await t.test('forbids non-custody users', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/849b-email')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
   });
 
@@ -512,7 +657,7 @@ test('/api/deflections', async (t) => {
           incidentId: 1,
           bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76',
           subjectStatus: 'AWAITING_INTAKE',
-          createdById: '49acdf99-536f-49ac-8138-1c77e5087697',
+          createdById: custodyUser.id,
         },
       });
 
@@ -534,7 +679,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: testDeflection.id,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['849b'],
         emailTemplate: 'incident-forms',
         recipientEmail: 'sfsouser1@test.com',
@@ -1427,7 +1572,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 4,
-        userId: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        userId: regularUser.id,
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
         recipientEmail: [
@@ -1751,6 +1896,38 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
       assert.strictEqual(lastUpdate.exitSFResident, 'YES');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('rejects JAIL as exit destination — care users record jail outcomes via custody', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'JAIL',
+          exitHousingStatus: 'TEMPORARY',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
+      assert.strictEqual(dbDeflection.exitDestination, null);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
     await t.test('requires care user role', async () => {
@@ -1890,7 +2067,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 5);
     });
 
-    await t.test('records sobered release from a pre-chair hold and finalizes the deflection', async () => {
+    await t.test('records sobered release from pending safety checks, finalizes the deflection, and queues release email', async () => {
       await prisma.deflection.expire();
       await prisma.bedType.update({
         where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
@@ -1899,7 +2076,7 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'READY_FOR_INTAKE',
+          subjectStatus: 'AWAITING_INTAKE',
           releasedAt: null,
           releasedById: null,
           releaseReason: null,
@@ -1950,6 +2127,59 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
+    });
+
+    await t.test('records sobered release from awaiting medical intake and queues release email', async () => {
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { occupied: 0, holds: 5, inTransit: 3, available: 3 },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'SOBERED',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReason, 'SOBERED');
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert'],
+        emailTemplate: 'release-forms',
+      });
     });
 
     await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {
@@ -2050,7 +2280,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2103,7 +2333,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });
@@ -2139,7 +2369,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
-        userId: '49acdf99-536f-49ac-8138-1c77e5087697',
+        userId: custodyUser.id,
         formIds: ['647f', '849b', 'cert'],
         emailTemplate: 'release-forms',
       });

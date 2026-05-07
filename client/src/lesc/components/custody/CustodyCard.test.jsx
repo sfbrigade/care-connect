@@ -133,10 +133,10 @@ describe('CustodyCard', () => {
     }
   );
 
-  it('shows no buttons for exited', () => {
+  it('shows Details for exited', () => {
     renderCard(buildDeflection({ subjectStatus: 'EXITED' }));
 
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
   });
 
   it('navigates to details when Details is clicked', () => {

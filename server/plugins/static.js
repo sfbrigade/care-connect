@@ -48,6 +48,24 @@ export default fp(async (fastify) => {
       },
     });
 
+    // Icons live under /icons/ in the built output (Vite copies client/public/
+    // verbatim to dist root) and are referenced by index.html for favicon and
+    // PWA artwork. Filenames are stable (not hashed), so use a shorter cache.
+    const iconsPath = path.resolve(clientPath, 'icons');
+    if (fs.existsSync(iconsPath)) {
+      fastify.register(fastifyStatic, {
+        root: iconsPath,
+        prefix: '/icons/',
+        decorateReply: false,
+        index: false,
+        setHeaders: (res, p) => {
+          if (p.match(/\.(png|svg|ico|webp)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+          }
+        },
+      });
+    }
+
     // VitePWA emits the manifest, service worker, and registration script at
     // the dist root (not under /assets). The built index.html links to
     // /manifest.webmanifest and /registerSW.js, and sw.js imports a hashed
