@@ -32,7 +32,17 @@ export default async function (fastify, opts) {
           subject: true,
           incident: true,
           deflectionDocuments: true,
+          deflectionUpdates: {
+            include: { updatedBy: true },
+            orderBy: { updatedAt: 'asc' },
+          },
           propertyPhotos: true,
+          createdBy: true,
+          transferredBy: true,
+          medicalIntakeStartedBy: true,
+          rejectedBy: true,
+          releasedBy: true,
+          exitedBy: true,
         },
       });
 

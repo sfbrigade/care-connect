@@ -22,6 +22,7 @@ import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
+import PersonStatusTimeline from '../PersonStatusTimeline.jsx';
 
 import { getCareDetailFooterState } from './careDetailFooterUtils';
 import { getCareStatusChip } from './careStatusChipUtils';
@@ -561,6 +562,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               </Accordion>
             </>
           )}
+          <PersonStatusTimeline deflection={deflection} viewerMode={viewerMode} />
         </Stack>
       </Container>
       {careFooterState.showFooter && (

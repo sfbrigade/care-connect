@@ -61,6 +61,7 @@ vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
   formatDateTime: () => 'formatted-date-time',
   formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
+  formatTimelineTimestamp: (date) => (date ? 'timeline-timestamp' : null),
   formatTimeRemaining: () => '59:57',
 }));
 
@@ -105,6 +106,8 @@ vi.mock('@tabler/icons-react', () => ({
   IconAlarm: () => null,
   IconArrowLeft: () => null,
   IconBuildingHospital: () => null,
+  IconChevronDown: () => null,
+  IconChevronUp: () => null,
   IconDoorExit: () => null,
   IconDots: () => null,
   IconExternalLink: () => null,
@@ -256,6 +259,9 @@ describe('CustodyDetailContent', () => {
   it('renders updated custody labels', () => {
     const html = render();
 
+    expect(html).toContain('Timeline');
+    expect(html).toContain('Detained');
+    expect(html).toContain('Arrived at RESET');
     expect(html).toContain('Intake staff can scan this code to start full intake.');
     expect(html).toContain('Legal release');
     expect(html).toContain('Behavioral observations');

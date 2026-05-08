@@ -49,6 +49,18 @@ const DeflectionCreateSchema = DeflectionAttributesSchema.partial().extend({
 
 const DeflectionUpdateSchema = DeflectionAttributesSchema.partial();
 
+const DeflectionUpdateResponseSchema = z.object({
+  id: z.string().uuid(),
+  deflectionId: z.number(),
+  status: z.enum(Object.values(HoldStatusEnum)).nullable().optional(),
+  subjectStatus: z.enum(Object.values(SubjectStatusEnum)).nullable().optional(),
+  releaseReason: z.enum(Object.values(DeflectionReleaseReasonEnum)).nullable().optional(),
+  exitDestination: z.enum(Object.values(DeflectionExitDestinationEnum)).nullable().optional(),
+  updatedAt: z.coerce.date(),
+  updatedById: z.string().uuid(),
+  updatedBy: User.ResponseSchema.optional(),
+});
+
 const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   id: z.number(),
   status: z.enum(Object.values(HoldStatusEnum)),
@@ -72,6 +84,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   }).optional(),
   subjectStatus: z.enum(Object.values(SubjectStatusEnum)),
   deflectionDocuments: z.array(DeflectionDocument.ResponseSchema).optional(),
+  deflectionUpdates: z.array(DeflectionUpdateResponseSchema).optional(),
   propertyPhotos: z.array(PropertyPhoto.ResponseSchema).optional(),
   propertyReturned: z.boolean().nullable().optional(),
   propertyNotReturnedReason: z.string().nullable().optional(),
