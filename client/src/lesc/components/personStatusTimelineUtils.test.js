@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { DateTime } from 'luxon';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DateTime, Settings } from 'luxon';
 
 import { formatTimelineTimestamp } from '../../utils/format';
 import { buildPersonStatusTimeline } from './personStatusTimelineUtils';
@@ -9,6 +9,14 @@ const now = DateTime.fromISO('2026-05-08T12:00:00.000-07:00');
 function user (firstName, lastName) {
   return { firstName, lastName };
 }
+
+beforeEach(() => {
+  Settings.defaultZone = 'America/Los_Angeles';
+});
+
+afterEach(() => {
+  Settings.defaultZone = 'system';
+});
 
 describe('formatTimelineTimestamp', () => {
   it('formats today, yesterday, and older dates', () => {
