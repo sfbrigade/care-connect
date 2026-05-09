@@ -721,7 +721,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     }}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Record result'
+                      ? 'Safety check'
                       : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
