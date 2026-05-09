@@ -55,13 +55,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.meta.outputs.tag_exists == 'false' }}
     container: node:22.19.0-bookworm
-    services:
-      db:
-        image: postgres:17.6
-        env:
-          POSTGRES_PASSWORD: postgres
-      minio:
-        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4

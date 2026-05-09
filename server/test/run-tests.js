@@ -210,7 +210,9 @@ async function main () {
     // ignore
   }
 
-  process.exit(passAExitCode || passBExitCode);
+  const exitCode = passAExitCode || passBExitCode;
+  console.log(`Test pass exit codes: passA=${passAExitCode}, passB=${passBExitCode}, final=${exitCode}`);
+  process.exit(exitCode);
 }
 
 main().catch((err) => {
