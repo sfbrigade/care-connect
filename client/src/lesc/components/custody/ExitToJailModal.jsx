@@ -20,7 +20,6 @@ function ExitToJailModal ({
     mutationFn: () => Api.deflections.exitToJail(deflectionId),
     onSuccess: () => {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
-      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
       queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
       queryClient.invalidateQueries({ queryKey: ['deflections'] });
       showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Released".');

@@ -20,7 +20,6 @@ function SafetyCheckResultModal ({
     mutationFn: () => Api.deflections.safetyCheck(deflectionId),
     onSuccess: () => {
       window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
-      window.sessionStorage.setItem('custodyInCustodySectionTarget', 'READY_FOR_INTAKE');
       queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
       showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
       onConfirmPassed();

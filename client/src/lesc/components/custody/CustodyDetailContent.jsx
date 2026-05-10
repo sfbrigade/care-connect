@@ -15,7 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import useNow from '../../../hooks/useNow';
-import useSessionState from '@/hooks/useSessionState';
+import useSessionState from '../../../hooks/useSessionState';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
 import { openInBrowser } from '@/utils/openInBrowser';

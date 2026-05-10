@@ -257,8 +257,6 @@ function Custody () {
     // define targets from session storage
     const scrollTarget = window.sessionStorage.getItem('custodyScrollTarget');
     const highlightTarget = window.sessionStorage.getItem('custodyHighlightTarget');
-    const inCustodySectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
-    const releasedSectionTarget = window.sessionStorage.getItem('custodyReleasedSectionTarget');
 
     // handle card highlighting (state update)
     if (highlightTarget) {
@@ -266,13 +264,11 @@ function Custody () {
     }
 
     window.requestAnimationFrame(() => {
-      let found = false;
-      // priority 1: specific Card (either via 'scrollTarget' or 'highlightTarget')
-      const cardId = scrollTarget || highlightTarget;
+      const cardId = highlightTarget || scrollTarget;
       if (cardId) {
         const el = document.getElementById(`custody-card-${cardId}`);
         if (el) {
-          found = true;
+          // seems to need timeout to ensure content is laid out
           setTimeout(() => {
             const scrollBehavior = (tab === 'released' || highlightTarget) ? 'smooth' : 'auto';
             const rect = el.getBoundingClientRect();
@@ -281,27 +277,10 @@ function Custody () {
               el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
             }
           }, 100);
+          // cleanup only after successfully finding the element
+          window.sessionStorage.removeItem('custodyHighlightTarget');
+          window.sessionStorage.removeItem('custodyScrollTarget');
         }
-      }
-
-      // priority 2: sections
-      const sectionId = tab === 'custody' ? inCustodySectionTarget : releasedSectionTarget;
-      if (!found && sectionId) {
-        const el = document.getElementById(`custody-section-${sectionId}`);
-        if (el) {
-          found = true;
-          setTimeout(() => {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 100);
-        }
-      }
-
-      if (found) {
-        // cleanup only after successfully finding the element
-        window.sessionStorage.removeItem('custodyHighlightTarget');
-        window.sessionStorage.removeItem('custodyScrollTarget');
-        window.sessionStorage.removeItem('custodyInCustodySectionTarget');
-        window.sessionStorage.removeItem('custodyReleasedSectionTarget');
       }
     });
   }, [transitDeflections, inCustodyDeflections, releasedDeflections, tab]);
