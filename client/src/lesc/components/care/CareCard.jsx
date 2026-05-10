@@ -12,7 +12,7 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
   const subjectDetails = useSubjectDetails(deflection?.subject);
 
-  const isInMedicalIntake = deflection.subjectStatus === 'ADMITTED';
+  const isInMedicalIntake = deflection.subjectStatus === 'IN_MEDICAL_INTAKE';
   const isReleased = deflection.subjectStatus === 'RELEASED';
   const releaseTimingChip = releaseTiming(deflection);
   const showViewDetails = shouldShowCareCardViewDetails(deflection);
@@ -57,11 +57,11 @@ function CareCard ({ deflection, highlighted, onCompleteIntake, onExitDetails, h
               size='md'
               onClick={() => navigate(`/care/${deflection.id}`)}
             >
-              View details
+              Details
             </Button>
           )}
           {isInMedicalIntake && (
-            <Button size='md' data-testid='update-intake-status-btn' onClick={onCompleteIntake}>Update intake status</Button>
+            <Button size='md' data-testid='update-intake-status-btn' onClick={onCompleteIntake}>Update status</Button>
           )}
           {isReleased && (
             <Button size='md' onClick={onExitDetails}>{hasExitDraft ? 'Finish exit' : 'Start exit'}</Button>

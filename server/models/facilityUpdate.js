@@ -1,20 +1,19 @@
-import { Prisma, FacilityStatusEnum, FacilityUpdateMethodEnum } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
-import FacilityStatusReason from './facilityStatusReason.js';
 import User from './user.js';
+const { Prisma, FacilityStatusEnum, FacilityStatusReasonEnum, FacilityUpdateMethodEnum } = prismaPkg;
 
 const FacilityUpdateAttributesSchema = z.object({
   status: z.enum(Object.values(FacilityStatusEnum)),
-  statusReasonId: z.string().nullable().optional(),
+  statusReason: z.enum(Object.values(FacilityStatusReasonEnum)).nullable().optional(),
   statusOther: z.string().nullable().optional(),
   updateNotes: z.string().nullable().optional(),
 });
 
 const FacilityUpdateResponseSchema = FacilityUpdateAttributesSchema.extend({
   id: z.string().uuid(),
-  statusReason: FacilityStatusReason.ResponseSchema.optional(),
   updateMethod: z.enum(Object.values(FacilityUpdateMethodEnum)),
   updatedAt: z.coerce.date(),
   updatedBy: User.ResponseSchema.optional(),

@@ -193,6 +193,12 @@ const Api = {
     update (id, data) {
       return instance.patch(`/api/users/${id}`, data).catch(handleError);
     },
+    setPassword (id, password) {
+      return instance.patch(`/api/users/${id}/password`, { password }).catch(handleError);
+    },
+    getMfaCode (id) {
+      return instance.get(`/api/users/${id}/mfa-code`);
+    },
   },
   facilities: {
     index (page = 1, include = '') {
@@ -251,32 +257,6 @@ const Api = {
         return instance.get(`/api/facilities/${facilityId}/bed-types/${bedTypeId}`);
       },
     },
-    bedTypeUnavailableReasons: {
-      index () {
-        return instance.get('/api/facilities/bed-type-unavailable-reasons');
-      },
-    },
-    statusReasons: {
-      index (type = '') {
-        const params = {};
-        if (type) {
-          params.type = type;
-        }
-        return instance.get('/api/facilities/status-reasons', { params });
-      },
-      get (id) {
-        return instance.get(`/api/facilities/status-reasons/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/facilities/status-reasons', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/facilities/status-reasons/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/facilities/status-reasons/${id}`).catch(handleError);
-      },
-    },
   },
   holds: {
     list () {
@@ -316,7 +296,7 @@ const Api = {
     },
   },
   deflections: {
-    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, subjectStatus, perPage } = {}) {
+    list ({ incidentId, facilityId, active, handedOff, scope, includeIncident, includeCurrentOfficer, status, subjectStatus, perPage } = {}) {
       const params = {};
       if (incidentId) {
         params.incidentId = incidentId;
@@ -335,6 +315,12 @@ const Api = {
       }
       if (includeIncident) {
         params.includeIncident = 'true';
+      }
+      if (includeCurrentOfficer) {
+        params.includeCurrentOfficer = 'true';
+      }
+      if (status) {
+        params.status = status;
       }
       if (subjectStatus) {
         params.subjectStatus = subjectStatus;
@@ -364,6 +350,8 @@ const Api = {
             throw { _form: 'This transfer code is not valid. Check the number and try again.' };
           case StatusCodes.CONFLICT:
             throw { _form: 'This transfer code was already used. Confirm chair status or contact staff.' };
+          case StatusCodes.UNPROCESSABLE_ENTITY:
+            throw { _form: 'Some required details are missing. Ask the officer to finish them before transferring.' };
           default:
             throw { _form: error.message };
         }
@@ -402,8 +390,11 @@ const Api = {
     recordPropertyReturn (id, data) {
       return instance.post(`/api/deflections/${id}/property-return`, data).catch(handleError);
     },
-    cancel (id, { cancelReasonId } = {}) {
-      return instance.delete(`/api/deflections/${id}${cancelReasonId ? `?cancelReasonId=${cancelReasonId}` : ''}`);
+    email849b (id) {
+      return instance.post(`/api/deflections/${id}/849b-email`).catch(handleError);
+    },
+    cancel (id, { cancelReason } = {}) {
+      return instance.delete(`/api/deflections/${id}${cancelReason ? `?cancelReason=${cancelReason}` : ''}`);
     },
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
@@ -414,57 +405,6 @@ const Api = {
     extend (deflectionIds) {
       return instance.patch('/api/deflections/extend', { deflectionIds }).catch(handleError);
     },
-    cancelReasons: {
-      index () {
-        return instance.get('/api/deflections/cancel-reasons');
-      },
-      get (id) {
-        return instance.get(`/api/deflections/cancel-reasons/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/deflections/cancel-reasons', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/deflections/cancel-reasons/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/deflections/cancel-reasons/${id}`).catch(handleError);
-      },
-    },
-    exitDestinations: {
-      index () {
-        return instance.get('/api/deflections/exit-destinations');
-      },
-      get (id) {
-        return instance.get(`/api/deflections/exit-destinations/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/deflections/exit-destinations', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/deflections/exit-destinations/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/deflections/exit-destinations/${id}`).catch(handleError);
-      },
-    },
-    exitHousingStatuses: {
-      index () {
-        return instance.get('/api/deflections/exit-housing-statuses');
-      },
-      get (id) {
-        return instance.get(`/api/deflections/exit-housing-statuses/${id}`);
-      },
-      create (data) {
-        return instance.post('/api/deflections/exit-housing-statuses', data).catch(handleError);
-      },
-      update (id, data) {
-        return instance.patch(`/api/deflections/exit-housing-statuses/${id}`, data).catch(handleError);
-      },
-      delete (id) {
-        return instance.delete(`/api/deflections/exit-housing-statuses/${id}`).catch(handleError);
-      },
-    },
   },
   serviceTypes: {
     list () {
@@ -472,6 +412,14 @@ const Api = {
     },
     create (data) {
       return instance.post('/api/service-types', data).catch(handleError);
+    },
+  },
+  canary: {
+    error () {
+      return instance.post('/api/canary/error');
+    },
+    job () {
+      return instance.post('/api/canary/job');
     },
   },
   feedback: {

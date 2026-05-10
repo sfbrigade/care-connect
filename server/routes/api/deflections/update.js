@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
+import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
@@ -43,18 +44,24 @@ export default async function (fastify, opts) {
         data,
         include: {
           subject: true,
-          cancelReason: true,
           incident: true,
+          deflectionDocuments: true,
           propertyPhotos: true,
         },
       });
 
+      updated.deflectionDocuments = updated.deflectionDocuments.map(doc => new DeflectionDocument(doc));
       updated.propertyPhotos = updated.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      const hasDocument = await fastify.prisma.deflectionDocument.findUnique({
+      if (Object.prototype.hasOwnProperty.call(data, 'releaseNarrative')) {
+        await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
+          deflectionId: id,
+          userId: request.user.id,
+          formIds: ['849b'],
+        });
+      } else if (await fastify.prisma.deflectionDocument.findUnique({
         where: { deflectionId_formId: { deflectionId: id, formId: '647f' } },
-      });
-      if (hasDocument) {
+      })) {
         await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
           deflectionId: id,
           userId: request.user.id,

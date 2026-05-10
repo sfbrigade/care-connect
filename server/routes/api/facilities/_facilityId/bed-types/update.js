@@ -5,6 +5,19 @@ import BedType from '#models/bedType.js';
 import Deflection from '#models/deflection.js';
 import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 
+function badRequestError (message) {
+  const error = new Error(message);
+  error.statusCode = StatusCodes.BAD_REQUEST;
+  return error;
+}
+
+function validationError (path, message) {
+  const error = new Error(message);
+  error.statusCode = StatusCodes.UNPROCESSABLE_ENTITY;
+  error.validationErrors = [{ path, message }];
+  return error;
+}
+
 export default async function (fastify, opts) {
   fastify.patch('/:bedTypeId',
     {
@@ -39,142 +52,151 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Bed type record not found' });
       }
 
-      // Validate unavailableReasonId references a real record if provided
-      if (data.unavailableReasonId) {
-        const reason = await fastify.prisma.bedTypeUnavailableReason.findUnique({
-          where: { id: data.unavailableReasonId },
-        });
-        if (!reason) {
-          return reply.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            errors: [{ path: 'unavailableReasonId', message: 'Unavailable reason not found' }],
-          });
-        }
-      }
-
       let bedType;
       let cancelledHolds = [];
-      await fastify.prisma.$transaction(async (tx) => {
-        // refetch with lock
-        bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        // Merge existing data with updates to calculate new metrics
-        const nextData = { ...bedType, ...data };
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          await fastify.prisma.facility.findByIdForUpdate(tx, facilityId);
 
-        // Calculate available before any hold cancellations
-        let available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
+          // refetch with lock
+          bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          // Merge existing data with updates to calculate new metrics
+          const nextData = { ...bedType, ...data };
 
-        // Auto-cancel in-transit holds (LIFO) if available would go negative
-        if (available < 0) {
-          const holdsToCancel = Math.abs(available);
+          // Calculate available before any hold cancellations
+          let available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
 
-          // Only cancel in-transit holds (ACTIVE + DETAINED = not yet arrived)
-          const inTransitHolds = await tx.deflection.findMany({
-            where: {
-              bedTypeId,
+          // Auto-cancel in-transit holds (LIFO) if available would go negative
+          if (available < 0) {
+            const holdsToCancel = Math.abs(available);
+
+            // Only cancel in-transit holds (ACTIVE + DETAINED = not yet arrived)
+            const inTransitHolds = await tx.deflection.findMany({
+              where: {
+                bedTypeId,
+                facilityId,
+                status: Deflection.HoldStatus.ACTIVE,
+                subjectStatus: Deflection.SubjectStatus.DETAINED,
+              },
+              include: {
+                createdBy: true,
+                subject: true,
+              },
+              orderBy: { createdAt: 'desc' }, // LIFO: newest first
+              take: holdsToCancel,
+            });
+
+            if (inTransitHolds.length < holdsToCancel) {
+              throw badRequestError('Cannot make that many chairs unavailable. Not enough in-transit holds to cancel.');
+            }
+
+            const now = new Date();
+            const actuallyCancelledHolds = [];
+            for (const hold of inTransitHolds) {
+              const cancelled = await tx.deflection.updateMany({
+                where: {
+                  id: hold.id,
+                  status: Deflection.HoldStatus.ACTIVE,
+                  subjectStatus: Deflection.SubjectStatus.DETAINED,
+                },
+                data: {
+                  status: Deflection.HoldStatus.CANCELLED,
+                  cancelledAt: now,
+                  cancelledById: userId,
+                  updatedAt: now,
+                },
+              });
+              if (cancelled.count === 0) {
+                continue;
+              }
+
+              // Create deflection update audit record
+              await tx.deflectionUpdate.create({
+                data: {
+                  deflectionId: hold.id,
+                  status: Deflection.HoldStatus.CANCELLED,
+                  updatedById: userId,
+                  updatedAt: now,
+                },
+              });
+
+              actuallyCancelledHolds.push(hold);
+            }
+
+            if (actuallyCancelledHolds.length < holdsToCancel) {
+              throw badRequestError('Cannot make that many chairs unavailable. Not enough in-transit holds to cancel.');
+            }
+
+            cancelledHolds = actuallyCancelledHolds;
+
+            // Adjust holds count and recalculate available
+            nextData.holds = Math.max(0, nextData.holds - actuallyCancelledHolds.length);
+            nextData.inTransit = Math.max(0, nextData.inTransit - actuallyCancelledHolds.length);
+            available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
+          }
+
+          // Require reason when marking chairs unavailable
+          const resolvedReason = data.unavailableReason ?? bedType.unavailableReason;
+          if (nextData.unavailableUnoccupied > 0 && !resolvedReason) {
+            throw validationError('unavailableReason', 'Reason is required when chairs are unavailable');
+          }
+
+          // Clear unavailable reason fields when no chairs are unavailable
+          const unavailableReason = nextData.unavailableUnoccupied > 0 ? resolvedReason : null;
+          const unavailableOther = nextData.unavailableUnoccupied > 0 ? (data.unavailableOther ?? bedType.unavailableOther) : null;
+
+          // Create the update history record
+          await tx.bedTypeUpdate.create({
+            data: {
               facilityId,
-              status: Deflection.HoldStatus.ACTIVE,
-              subjectStatus: Deflection.SubjectStatus.DETAINED,
+              bedTypeId,
+              capacity: nextData.capacity,
+              unavailableUnoccupied: nextData.unavailableUnoccupied,
+              unavailableOccupied: nextData.unavailableOccupied,
+              occupied: nextData.occupied,
+              holds: nextData.holds,
+              inTransit: nextData.inTransit,
+              available,
+              unavailableReason,
+              unavailableOther,
+              updateMethod: BedType.UpdateMethod.MANUAL,
+              updateNotes: data.updateNotes,
+              updatedById: userId,
             },
-            include: {
-              createdBy: true,
-              subject: true,
-            },
-            orderBy: { createdAt: 'desc' }, // LIFO: newest first
-            take: holdsToCancel,
           });
 
-          if (inTransitHolds.length < holdsToCancel) {
-            // Not enough in-transit holds to cancel — reject the update
-            return reply.code(StatusCodes.BAD_REQUEST).send({
-              error: 'Cannot make that many chairs unavailable. Not enough in-transit holds to cancel.',
-            });
-          }
-
-          const now = new Date();
-          for (const hold of inTransitHolds) {
-            // Create deflection update audit record
-            await tx.deflectionUpdate.create({
-              data: {
-                deflectionId: hold.id,
-                status: Deflection.HoldStatus.CANCELLED,
-                updatedById: userId,
-                updatedAt: now,
-              },
-            });
-
-            // Cancel the deflection
-            await tx.deflection.update({
-              where: { id: hold.id },
-              data: {
-                status: Deflection.HoldStatus.CANCELLED,
-                cancelledAt: now,
-                cancelledById: userId,
-                updatedAt: now,
-              },
-            });
-          }
-
-          cancelledHolds = inTransitHolds;
-
-          // Adjust holds count and recalculate available
-          nextData.holds -= inTransitHolds.length;
-          nextData.inTransit -= inTransitHolds.length;
-          available = nextData.capacity - nextData.unavailableUnoccupied - nextData.unavailableOccupied - nextData.occupied - nextData.holds;
+          // Update the actual bed type record
+          bedType = await tx.bedType.update({
+            where: { id: bedTypeId },
+            data: {
+              type: nextData.type,
+              capacity: nextData.capacity,
+              unavailableUnoccupied: nextData.unavailableUnoccupied,
+              unavailableOccupied: nextData.unavailableOccupied,
+              occupied: nextData.occupied,
+              holds: nextData.holds,
+              inTransit: nextData.inTransit,
+              available,
+              unavailableReason,
+              unavailableOther,
+              updateMethod: BedType.UpdateMethod.MANUAL,
+              updateNotes: data.updateNotes,
+              updatedById: userId,
+            },
+          });
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.BAD_REQUEST) {
+          return reply.code(StatusCodes.BAD_REQUEST).send({ error: error.message });
         }
-
-        // Require reason when marking chairs unavailable
-        const resolvedReasonId = data.unavailableReasonId ?? bedType.unavailableReasonId;
-        if (nextData.unavailableUnoccupied > 0 && !resolvedReasonId) {
+        if (error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
           return reply.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
             statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            errors: [{ path: 'unavailableReasonId', message: 'Reason is required when chairs are unavailable' }],
+            errors: error.validationErrors,
           });
         }
-
-        // Clear unavailable reason fields when no chairs are unavailable
-        const unavailableReasonId = nextData.unavailableUnoccupied > 0 ? resolvedReasonId : null;
-        const unavailableOther = nextData.unavailableUnoccupied > 0 ? (data.unavailableOther ?? bedType.unavailableOther) : null;
-
-        // Create the update history record
-        await tx.bedTypeUpdate.create({
-          data: {
-            facilityId,
-            bedTypeId,
-            capacity: nextData.capacity,
-            unavailableUnoccupied: nextData.unavailableUnoccupied,
-            unavailableOccupied: nextData.unavailableOccupied,
-            occupied: nextData.occupied,
-            holds: nextData.holds,
-            inTransit: nextData.inTransit,
-            available,
-            unavailableReasonId,
-            unavailableOther,
-            updateMethod: BedType.UpdateMethod.MANUAL,
-            updateNotes: data.updateNotes,
-            updatedById: userId,
-          },
-        });
-
-        // Update the actual bed type record
-        bedType = await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: {
-            type: nextData.type,
-            capacity: nextData.capacity,
-            unavailableUnoccupied: nextData.unavailableUnoccupied,
-            unavailableOccupied: nextData.unavailableOccupied,
-            occupied: nextData.occupied,
-            holds: nextData.holds,
-            inTransit: nextData.inTransit,
-            available,
-            unavailableReasonId,
-            unavailableOther,
-            updateMethod: BedType.UpdateMethod.MANUAL,
-            updateNotes: data.updateNotes,
-            updatedById: userId,
-          },
-        });
-      });
+        throw error;
+      }
 
       // Send email notifications for auto-cancelled holds
       if (cancelledHolds.length > 0) {

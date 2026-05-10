@@ -18,16 +18,16 @@ const TEST_SUBJECTS = [
   { firstName: 'Pat', lastName: 'Brown', middleInitial: null, dateOfBirth: new Date('1988-12-05'), sex: 'MALE', race: 'WHITE' },
 ];
 
-// Holds = chair reserved, person not yet formally in a chair (DETAINED through ADMITTED)
+// Holds = chair reserved, person not yet formally in a chair (DETAINED through IN_MEDICAL_INTAKE)
 // Occupied = person formally in a chair (IN_CHAIR, RELEASED)
-// The hold → occupied transition happens at intake-complete (ADMITTED → IN_CHAIR)
-const HOLD_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER', 'AWAITING_INTAKE', 'READY_FOR_INTAKE', 'ADMITTED', 'FAILED_INTAKE'];
+// The hold → occupied transition happens at intake-complete (IN_MEDICAL_INTAKE → IN_CHAIR)
+const HOLD_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER', 'AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'FAILED_INTAKE'];
 const OCCUPIED_STATUSES = ['IN_CHAIR'];
 
 const TEST_STATUSES = [
   'AWAITING_INTAKE',
   'READY_FOR_INTAKE',
-  'ADMITTED',
+  'IN_MEDICAL_INTAKE',
   'IN_CHAIR',
   'RELEASED',
   'EXITED',
@@ -132,8 +132,8 @@ export default async function main (prisma) {
         property: 'SMALL',
         transferredAt: now,
         transferredById: sfsoUser.id,
-        ...(['ADMITTED', 'IN_CHAIR', 'RELEASED', 'EXITED'].includes(subjectStatus)
-          ? { admittedAt: now, admittedById: sfsoUser.id }
+        ...(['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'].includes(subjectStatus)
+          ? { medicalIntakeStartedAt: now, medicalIntakeStartedById: sfsoUser.id }
           : {}),
         ...(subjectStatus === 'RELEASED' || subjectStatus === 'EXITED'
           ? { releasedAt: now, releasedById: sfsoUser.id, completedAt: now }
@@ -211,10 +211,6 @@ export default async function main (prisma) {
     },
   });
 
-  const releaseReason = await prisma.deflectionReleaseReason.findFirst({
-    where: { id: 'sobered' },
-  });
-
   const pdfTestNow = new Date();
   const pdfTestDeflection = await prisma.deflection.create({
     data: {
@@ -232,13 +228,15 @@ export default async function main (prisma) {
       behavior: 'Officer encountered this individual at 100 Market St, San Francisco, CA. Officer observed the following behaviors: Disoriented to person/place/time. Officer observed that drugs were recently used: Fentanyl.',
       releaseNarrative: 'Incident number: CS849B\nCad number: CAD849B\nSubject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
       property: 'SMALL',
+      arrivedAt: new Date(Date.now() - 60 * 60 * 1000),
       transferredAt: pdfTestNow,
       transferredById: sfsoUser.id,
-      admittedAt: pdfTestNow,
-      admittedById: sfsoUser.id,
+      medicalIntakeStartedAt: pdfTestNow,
+      medicalIntakeStartedById: sfsoUser.id,
+      certifiedAt: pdfTestNow,
       releasedAt: pdfTestNow,
       releasedById: sfsoUser.id,
-      releaseReasonId: releaseReason?.id || 'sobered',
+      releaseReason: 'SOBERED',
       completedAt: pdfTestNow,
     },
   });

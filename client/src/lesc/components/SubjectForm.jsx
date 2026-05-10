@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft, IconScan } from '@tabler/icons-react';
+import { IconArrowLeft, IconScan, IconX } from '@tabler/icons-react';
 import { Accordion, Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { formatInputDob } from '@/utils/format';
-import { validateSubject } from '@/utils/validators';
+import { normalizeDobInput, validateSubject } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
 import File647fModal from './custody/File647fModal';
@@ -97,10 +97,7 @@ function SubjectForm () {
         setDobInput(normalized.dateOfBirth ?? '');
         form.initialize(normalized);
         if (!isNew) {
-          const errors = validateSubject({
-            ...normalized,
-            dateOfBirth: deflection.subject.dateOfBirth,
-          });
+          const errors = validateSubject(normalized);
           form.setErrors(errors);
         }
       } else {
@@ -238,6 +235,7 @@ function SubjectForm () {
         <Group w='100%' justify='space-between'>
           <IconButtonLink icon={IconArrowLeft} to={isCustodyContext ? `/custody/${id}` : (isNew ? '/holds' : `/holds/${id}`)} aria-label='Go back' />
           {header}
+          {!isCustodyContext && <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />}
         </Group>
       </Header>
       <Container>
@@ -249,7 +247,7 @@ function SubjectForm () {
 
         <Group gap='sm' mb='xs' align='center'>
           <Title order={2}>Personal details</Title>
-          {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/4</Badge>}
+          {isNew && !isCustodyContext && <Badge variant='light' color='gray' size='lg' radius='xl'>1/5</Badge>}
         </Group>
         <Text c='dimmed' size='md' mb='md'>Scan an ID to fill details faster, or enter them manually.</Text>
         <Button
@@ -295,6 +293,7 @@ function SubjectForm () {
                 maxLength={10}
                 placeholder='MM/DD/YYYY'
                 {...form.getInputProps('dateOfBirth')}
+                defaultValue={undefined}
                 value={dobInput}
                 onChange={(event) => {
                   const formatted = formatInputDob(event.currentTarget.value);
@@ -302,6 +301,13 @@ function SubjectForm () {
                   form.setFieldValue('dateOfBirth', formatted);
                   if (!isCustodyContext) {
                     scheduleAutoSave(form.getValues(), formatted);
+                  }
+                }}
+                onBlur={(event) => {
+                  const expanded = normalizeDobInput(event.currentTarget.value);
+                  if (expanded !== dobInput) {
+                    setDobInput(expanded);
+                    form.setFieldValue('dateOfBirth', expanded);
                   }
                 }}
               />

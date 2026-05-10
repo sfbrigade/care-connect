@@ -112,3 +112,15 @@ export function formatDateTime (date) {
   if (!date) return 'TBD';
   return dateTime(date).toLocaleString(DateTime.DATETIME_SHORT);
 }
+
+/**
+ * Format the medical intake start timestamp.
+ * @param {string|Date} date - Date to format
+ * @returns {string|null} - Formatted string like "Apr 29, 11:24 AM" or null if invalid
+ */
+export function formatIntakeStartedAt (date) {
+  if (!date) return null;
+  const dt = dateTime(date);
+  if (!dt.isValid) return null;
+  return dt.toFormat('MMM dd, h:mm a');
+}

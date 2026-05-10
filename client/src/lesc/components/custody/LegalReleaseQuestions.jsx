@@ -26,21 +26,22 @@ function LegalReleaseQuestions () {
     ? `/custody/${id}`
     : '/custody';
 
-  const [releaseReasonId, setReleaseReasonId] = useState(prefilledState.releaseReasonId);
+  const [releaseReason, setReleaseReason] = useState(prefilledState.releaseReason);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
   const [hasReviewedNarrative, setHasReviewedNarrative] = useState(false);
   const [narrativeDraft, setNarrativeDraft] = useState('');
   const [otherReason, setOtherReason] = useState('');
   const [otherDestination, setOtherDestination] = useState('');
-  const [exitDestinationId, setExitDestinationId] = useState(prefilledState.exitDestinationId);
+  const [exitDestination, setExitDestination] = useState(prefilledState.exitDestination);
 
   const { navigateWithOptionalSurvey } = useSatisfactionSurvey(navigate, id, {
     department: 'SFSO',
   });
 
-  const isMedicalRelease = releaseReasonId === 'medical_issue';
-  const isOtherRelease = releaseReasonId === 'other';
-  const isExitRelease = isMedicalRelease || isOtherRelease;
+  const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+  const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
+  const isOtherRelease = releaseReason === 'OTHER';
+  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -78,10 +79,13 @@ function LegalReleaseQuestions () {
   const releaseMutation = useMutation({
     mutationFn: () => {
       const payload = {
-        releaseReasonId,
+        releaseReason,
       };
       if (isMedicalRelease) {
-        payload.exitDestinationId = exitDestinationId;
+        payload.exitDestination = exitDestination;
+      }
+      if (isBehavioralHealthRelease) {
+        payload.exitDestination = exitDestination;
       }
       if (isOtherRelease) {
         payload.otherReleaseReason = otherReason.trim();
@@ -136,7 +140,7 @@ function LegalReleaseQuestions () {
         <Stack gap='xl'>
           <Stack gap={0}>
             <Text size='xl' c='dimmed'>Confirm legal release</Text>
-            <Title order={3}>Review the 849(b) before continuing.</Title>
+            <Title order={3}>Review the 849(b).</Title>
           </Stack>
 
           <Card bg='gray.1' p='md' radius='md'>
@@ -214,28 +218,31 @@ function LegalReleaseQuestions () {
                 <Title order={3}>Choose a release reason.</Title>
                 <Input.Wrapper label='Release reason' required>
                   <Box mt='md'>
-                    <Chip.Group value={releaseReasonId} onChange={setReleaseReasonId}>
+                    <Chip.Group value={releaseReason} onChange={setReleaseReason}>
                       <Stack gap='sm' align='flex-start'>
-                        <Chip data-testid='release-reason-sobered' value='sobered'>Can care for themselves</Chip>
-                        <Chip value='medical_issue'>Medical issue</Chip>
-                        <Chip value='other'>Other (please specify)</Chip>
+                        <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
+                        <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
+                        <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
+                        <Chip value='OTHER'>Other (please specify)</Chip>
                       </Stack>
                     </Chip.Group>
                   </Box>
                 </Input.Wrapper>
-                {isMedicalRelease && (
+                {(isMedicalRelease || isBehavioralHealthRelease) && (
                   <>
                     <Text size='md' c='dimmed'>
-                      This &lsquo;Medical issue&rsquo; release will also mark the person as exited from RESET
+                      This will also mark the person as exited from RESET.
                     </Text>
-                    <Input.Wrapper label='Exit destination' required>
-                      <Chip.Group value={exitDestinationId} onChange={setExitDestinationId}>
-                        <Group gap='sm'>
-                          <Chip value='hospital'>Hospital</Chip>
-                          <Chip value='other'>Other</Chip>
-                        </Group>
-                      </Chip.Group>
-                    </Input.Wrapper>
+                    {(isMedicalRelease || isBehavioralHealthRelease) && (
+                      <Input.Wrapper label='Exit destination' required>
+                        <Chip.Group value={exitDestination} onChange={setExitDestination}>
+                          <Group gap='sm'>
+                            <Chip value='HOSPITAL'>Hospital</Chip>
+                            <Chip value='OTHER'>Other</Chip>
+                          </Group>
+                        </Chip.Group>
+                      </Input.Wrapper>
+                    )}
                   </>
                 )}
                 {isOtherRelease && (
@@ -265,7 +272,7 @@ function LegalReleaseQuestions () {
 
               <Group gap='md' wrap='nowrap' align='flex-start'>
                 <IconAlertCircle size={24} color='var(--mantine-color-indigo-6)' stroke={1.75} />
-                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO supervisors.</Text>
+                <Text size='md'>When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.</Text>
               </Group>
 
               <Group>
@@ -285,10 +292,13 @@ function LegalReleaseQuestions () {
                   }}
                   loading={releaseMutation.isPending || saveNarrativeMutation.isPending}
                   disabled={
-                    !releaseReasonId ||
-                    (releaseReasonId === 'medical_issue' && !exitDestinationId) ||
-                    (releaseReasonId === 'other' && (!otherReason.trim() || !otherDestination.trim())) ||
-                    (releaseReasonId !== 'sobered' && releaseReasonId !== 'medical_issue' && releaseReasonId !== 'other')
+                    !releaseReason ||
+                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') && !exitDestination) ||
+                    (releaseReason === 'OTHER' && (!otherReason.trim() || !otherDestination.trim())) ||
+                    (releaseReason !== 'SOBERED' &&
+                      releaseReason !== 'MEDICAL_ISSUE' &&
+                      releaseReason !== 'BEHAVIORAL_HEALTH_EVALUATION' &&
+                      releaseReason !== 'OTHER')
                   }
                 >
                   {isExitRelease ? 'Confirm release and exit' : 'Confirm release'}

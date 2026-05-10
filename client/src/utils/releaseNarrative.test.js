@@ -15,7 +15,7 @@ describe('releaseNarrative', () => {
       'Cad number: CAD-456',
       'Subject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
       '',
-      'The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
+      'The Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
       'Subject was unsteady on their feet.',
     ].join('\n'));
   });
@@ -29,7 +29,7 @@ describe('releaseNarrative', () => {
       'Cad number: SEE ABOVE',
       'Subject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
       '',
-      'The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
+      'The Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
       'SEE ABOVE',
     ].join('\n'));
   });

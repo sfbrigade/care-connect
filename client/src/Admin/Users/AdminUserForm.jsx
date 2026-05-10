@@ -1,13 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title } from '@mantine/core';
-import { hasLength, isEmail, isNotEmpty, useForm } from '@mantine/form';
+import { Alert, Button, Checkbox, Container, Fieldset, Group, Select, Stack, TextInput, Title, Tooltip } from '@mantine/core';
+import { isNotEmpty, useForm } from '@mantine/form';
+import { IconArrowLeft } from '@tabler/icons-react';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
+import Header from '@/components/Header';
+import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
+import { formatUnitName } from '@/utils/unit';
 
 function AdminUserForm () {
   const { user } = useAuthContext();
@@ -15,8 +21,10 @@ function AdminUserForm () {
   const queryClient = useQueryClient();
   const params = useParams();
   const userId = params.userId ?? user?.id;
+  const isEditingSelf = userId === user?.id;
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const [organizationId, setOrganizationId] = useState('');
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -24,10 +32,11 @@ function AdminUserForm () {
       firstName: '',
       lastName: '',
       email: '',
-      password: '',
       picture: '',
       pictureUrl: '',
       isAdmin: false,
+      isOrgAdmin: false,
+      isFacilityAdmin: false,
       organizationId: '',
       badgeNumber: '',
       titleId: '',
@@ -38,7 +47,6 @@ function AdminUserForm () {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
-      password: (value) => value ? hasLength({ min: 12 }, 'Passwords must be at least 12 characters.') : null,
     },
   });
 
@@ -47,35 +55,55 @@ function AdminUserForm () {
     queryFn: () => Api.users.get(userId).then(response => response.data),
   });
 
-  const { data: organization } = useQuery({
-    queryKey: ['organization', form.getValues().organizationId],
-    queryFn: () => Api.organizations.get(form.getValues().organizationId).then(response => response.data),
-    enabled: !!form.getValues().organizationId,
+  const { data: organizations } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => Api.organizations.index().then(response => response.data),
   });
 
   const { data: titles } = useQuery({
-    queryKey: ['organizations', form.getValues().organizationId, 'titles'],
-    queryFn: () => Api.organizations.titles.index(form.getValues().organizationId).then(response => response.data),
-    enabled: !!form.getValues().organizationId,
+    queryKey: ['organizations', organizationId, 'titles'],
+    queryFn: () => Api.organizations.titles.index(organizationId).then(response => response.data),
+    enabled: !!organizationId,
   });
 
   const { data: units } = useQuery({
-    queryKey: ['organizations', form.getValues().organizationId, 'units'],
-    queryFn: () => Api.organizations.units.index(form.getValues().organizationId, 1, 1000).then(response => response.data),
-    enabled: !!form.getValues().organizationId,
+    queryKey: ['organizations', organizationId, 'units'],
+    queryFn: () => Api.organizations.units.index(organizationId, 1, 1000).then(response => response.data),
+    enabled: !!organizationId,
   });
 
   useEffect(() => {
     if (data) {
       form.initialize({
         ...data,
-        password: '',
+        isOrgAdmin: data.roles?.includes('ORG_ADMIN') ?? false,
+        isFacilityAdmin: data.roles?.includes('FACILITY_ADMIN') ?? false,
       });
+      setOrganizationId(data.organizationId || '');
     }
   }, [data]);
 
   const onSubmitMutation = useMutation({
-    mutationFn: (values) => Api.users.update(userId, values),
+    mutationFn: (values) => {
+      const {
+        isOrgAdmin: nextIsOrgAdmin,
+        isFacilityAdmin: nextIsFacilityAdmin,
+        roles: existingRoles,
+        ...rest
+      } = values;
+      const payload = { ...rest };
+      if (user?.isAdmin && !isEditingSelf) {
+        const preservedRoles = (existingRoles ?? []).filter(
+          r => r !== 'ORG_ADMIN' && r !== 'FACILITY_ADMIN'
+        );
+        payload.roles = [
+          ...preservedRoles,
+          ...(nextIsOrgAdmin ? ['ORG_ADMIN'] : []),
+          ...(nextIsFacilityAdmin ? ['FACILITY_ADMIN'] : []),
+        ];
+      }
+      return Api.users.update(userId, payload);
+    },
     onSuccess: (response) => {
       showToast('The user\'s profile has been updated', 'success');
       queryClient.setQueryData(['users', userId], response.data);
@@ -93,6 +121,9 @@ function AdminUserForm () {
       <Head>
         <title>Edit Profile</title>
       </Head>
+      <Header>
+        <IconButtonLink icon={IconArrowLeft} to='/admin/users' aria-label='Go back' />
+      </Header>
       <Container>
         <Title mb='md'>Edit Profile</Title>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
@@ -104,31 +135,33 @@ function AdminUserForm () {
                 {...form.getInputProps('firstName')}
                 key={form.key('firstName')}
                 label='First name'
-                disabled
               />
               <TextInput
                 {...form.getInputProps('lastName')}
                 key={form.key('lastName')}
                 label='Last name'
-                disabled
               />
               <TextInput
                 {...form.getInputProps('email')}
                 key={form.key('email')}
                 label='Email'
                 type='email'
-                disabled
               />
-              {!!organization && (
-                <Select
-                  {...form.getInputProps('organizationId')}
-                  key='organizationId'
-                  label='Organization'
-                  data={[{ value: organization.id, label: organization.name }]}
-                  disabled
-                />
-              )}
-              {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+              <Select
+                {...form.getInputProps('organizationId')}
+                key={form.key('organizationId')}
+                label='Organization'
+                data={[{ value: '', label: 'None' }, ...(organizations?.map((o) => ({ value: o.id, label: o.name })) || [])]}
+                value={organizationId}
+                onChange={(value) => {
+                  const nextOrganizationId = value || '';
+                  form.setFieldValue('organizationId', nextOrganizationId);
+                  form.setFieldValue('titleId', '');
+                  form.setFieldValue('unitId', '');
+                  setOrganizationId(nextOrganizationId);
+                }}
+              />
+              {(organizationId === 'sfpd' || organizationId === 'sfso') && (
                 <TextInput
                   {...form.getInputProps('badgeNumber')}
                   key={form.key('badgeNumber')}
@@ -136,7 +169,7 @@ function AdminUserForm () {
                   placeholder='Enter badge or star number'
                 />
               )}
-              {form.getValues().organizationId === 'sfso' && (
+              {organizationId === 'sfso' && (
                 <Select
                   {...form.getInputProps('titleId')}
                   key='titleId'
@@ -144,35 +177,68 @@ function AdminUserForm () {
                   data={titles?.map((title) => ({ value: title.id, label: title.name })) || []}
                 />
               )}
-              {form.getValues().organizationId === 'sfso' && (
+              {organizationId === 'sfso' && (
                 <Checkbox
                   {...form.getInputProps('prop115Certified', { type: 'checkbox' })}
                   key={form.key('prop115Certified')}
                   label='Prop 115 certified'
                 />
               )}
-              {(form.getValues().organizationId === 'sfpd' || form.getValues().organizationId === 'sfso') && (
+              {(organizationId === 'sfpd' || organizationId === 'sfso') && (
                 <Select
                   {...form.getInputProps('unitId')}
                   key={form.key('unitId')}
                   label='Unit'
-                  data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
+                  data={units?.map((unit) => ({ value: unit.id, label: formatUnitName(unit.name) })) || []}
                 />
               )}
-              <TextInput
-                {...form.getInputProps('password')}
-                key={form.key('password')}
-                label='Password'
-                type='password'
-                autoComplete='new-password'
-              />
-              {user?.isAdmin && (
-                <Checkbox
-                  {...form.getInputProps('isAdmin', { type: 'checkbox' })}
-                  key={form.key('isAdmin')}
-                  label='Is an Administrator?'
-                />
-              )}
+              {user?.isAdmin && (() => {
+                const isCareUser = (data?.roles ?? []).includes('CARE');
+                const selfEditTooltip = 'You cannot change your own admin status.';
+                const facilityAdminTooltip = isEditingSelf
+                  ? selfEditTooltip
+                  : !isCareUser
+                      ? 'Facility Admin is only available for users with the Care role.'
+                      : null;
+                const facilityAdminDisabled = isEditingSelf || !isCareUser;
+                return (
+                  <Stack gap='sm'>
+                    <Tooltip label={facilityAdminTooltip} disabled={!facilityAdminTooltip} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isFacilityAdmin', { type: 'checkbox' })}
+                        key={form.key('isFacilityAdmin')}
+                        label='Facility Admin'
+                        description='Can manage capacity at the facility.'
+                        disabled={facilityAdminDisabled}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isOrgAdmin', { type: 'checkbox' })}
+                        key={form.key('isOrgAdmin')}
+                        label='Org Admin'
+                        description='Can manage users within their organization.'
+                        disabled={isEditingSelf}
+                      />
+                    </Tooltip>
+                    <Tooltip label={selfEditTooltip} disabled={!isEditingSelf} withArrow position='right'>
+                      <Checkbox
+                        {...form.getInputProps('isAdmin', { type: 'checkbox' })}
+                        key={form.key('isAdmin')}
+                        label='Super Admin'
+                        description='Grants full platform-wide access.'
+                        disabled={isEditingSelf}
+                        onClick={(event) => {
+                          const action = event.currentTarget.checked ? 'grant' : 'revoke';
+                          if (!window.confirm(`Are you sure you want to ${action} super admin access for this user?`)) {
+                            event.preventDefault();
+                          }
+                        }}
+                      />
+                    </Tooltip>
+                  </Stack>
+                );
+              })()}
               <Group>
                 <Button disabled={onSubmitMutation.isPending} type='submit'>Submit</Button>
               </Group>
