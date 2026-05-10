@@ -72,6 +72,10 @@ vi.mock('@/utils/openInBrowser', () => ({
   openInBrowser: vi.fn(),
 }));
 
+vi.mock('../../../hooks/useSessionState', () => ({
+  default: () => (['', vi.fn()]),
+}));
+
 vi.mock('../../../hooks/useUserRole', () => ({
   useUserRole: () => ({
     isCustody: true,
