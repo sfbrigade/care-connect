@@ -266,33 +266,42 @@ function Custody () {
     }
 
     window.requestAnimationFrame(() => {
+      let found = false;
       // priority 1: specific Card (either via 'scrollTarget' or 'highlightTarget')
       const cardId = scrollTarget || highlightTarget;
       if (cardId) {
         const el = document.getElementById(`custody-card-${cardId}`);
         if (el) {
-          const scrollBehavior = (tab === 'released' || highlightTarget) ? 'smooth' : 'auto';
-          const rect = el.getBoundingClientRect();
-          const isVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
-          if (!isVisible) {
-            el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
-          }
-          // cleanup only after successfully finding the element
-          window.sessionStorage.removeItem('custodyHighlightTarget');
-          window.sessionStorage.removeItem('custodyScrollTarget');
-          return;
+          found = true;
+          setTimeout(() => {
+            const scrollBehavior = (tab === 'released' || highlightTarget) ? 'smooth' : 'auto';
+            const rect = el.getBoundingClientRect();
+            const isVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
+            if (!isVisible) {
+              el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+            }
+          }, 100);
         }
       }
 
       // priority 2: sections
       const sectionId = tab === 'custody' ? inCustodySectionTarget : releasedSectionTarget;
-      if (sectionId) {
+      if (!found && sectionId) {
         const el = document.getElementById(`custody-section-${sectionId}`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          window.sessionStorage.removeItem('custodyInCustodySectionTarget');
-          window.sessionStorage.removeItem('custodyReleasedSectionTarget');
+          found = true;
+          setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
         }
+      }
+
+      if (found) {
+        // cleanup only after successfully finding the element
+        window.sessionStorage.removeItem('custodyHighlightTarget');
+        window.sessionStorage.removeItem('custodyScrollTarget');
+        window.sessionStorage.removeItem('custodyInCustodySectionTarget');
+        window.sessionStorage.removeItem('custodyReleasedSectionTarget');
       }
     });
   }, [transitDeflections, inCustodyDeflections, releasedDeflections, tab]);
@@ -404,7 +413,7 @@ function Custody () {
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
                     groupedItems={inCustodyGrouped}
-                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} onExitToJail={() => setTab('released')} />}
                   />
                   )
                 : (
