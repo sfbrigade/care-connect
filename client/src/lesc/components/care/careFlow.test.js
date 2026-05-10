@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getCareExitBackTo,
@@ -6,40 +6,68 @@ import {
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
   hasPersistedExitDetails,
+  getSavedExitDraft,
+  hasSavedExitDraft,
+  setSavedExitDraft,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
   getCareDetailFooterState,
 } from '../custody/careDetailFooterUtils';
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('Care flow unit tests', () => {
-  it('hides View details for all EXITED records', () => {
+  it('shows Details for pre-release and post-release care records', () => {
     expect(
       shouldShowCareCardViewDetails({
-        subjectStatus: 'EXITED',
-        exitDestinationId: 'jail',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
       })
-    ).toBe(false);
+    ).toBe(true);
+
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'IN_CHAIR',
+      })
+    ).toBe(true);
+
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'RELEASED',
+        releasedAt: '2026-05-05T12:00:00.000Z',
+      })
+    ).toBe(true);
 
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestinationId: 'hospital',
+        exitDestination: 'JAIL',
       })
-    ).toBe(false);
+    ).toBe(true);
+
+    expect(
+      shouldShowCareCardViewDetails({
+        subjectStatus: 'EXITED',
+        exitDestination: 'HOSPITAL',
+        releasedAt: '2026-05-05T12:00:00.000Z',
+        exitedAt: '2026-05-05T18:00:00.000Z',
+      })
+    ).toBe(true);
   });
 
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: 'temporary',
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: 'TEMPORARY',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
 
     expect(hasPersistedExitDetails({
-      exitDestinationId: 'hospital',
-      exitHousingStatusId: null,
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: null,
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(false);
@@ -48,8 +76,8 @@ describe('Care flow unit tests', () => {
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestinationId: 'hospital', releasedAt: '2026-01-01T00:00:00.000Z' },
-      { id: 3, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 2, subjectStatus: 'EXITED', exitDestination: 'HOSPITAL', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 3, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
     ]);
 
     expect(grouped.STILL_ONSITE.map(d => d.id)).toEqual([1]);
@@ -65,11 +93,11 @@ describe('Care flow unit tests', () => {
   it('builds care detail footer state by status/action mode', () => {
     const admittedState = getCareDetailFooterState({
       viewerMode: 'care',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(admittedState).toEqual({
       showFooter: true,
-      primaryLabel: 'Update intake status',
+      primaryLabel: 'Update status',
       primaryAction: 'complete-intake',
       startExitPath: '/care/55/exit?from=detail',
     });
@@ -90,7 +118,7 @@ describe('Care flow unit tests', () => {
 
     const nonCareState = getCareDetailFooterState({
       viewerMode: 'custody',
-      deflection: { id: 55, subjectStatus: 'ADMITTED' },
+      deflection: { id: 55, subjectStatus: 'IN_MEDICAL_INTAKE' },
     });
     expect(nonCareState.showFooter).toBe(false);
   });
@@ -107,8 +135,18 @@ describe('Care flow unit tests', () => {
 
   it('requires deputy property confirmation before enabling final exit confirmation', () => {
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: true,
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
+      propertyReturnHandledConfirmed: null,
+      isSaving: false,
+    })).toEqual({
+      label: 'Confirm exit',
+      disabled: true,
+    });
+
+    expect(getCareExitPrimaryActionState({
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
       propertyReturnHandledConfirmed: false,
       isSaving: false,
     })).toEqual({
@@ -117,8 +155,8 @@ describe('Care flow unit tests', () => {
     });
 
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: true,
+      isExitFormComplete: true,
+      hasAssociatedProperty: true,
       propertyReturnHandledConfirmed: true,
       isSaving: false,
     })).toEqual({
@@ -127,13 +165,48 @@ describe('Care flow unit tests', () => {
     });
 
     expect(getCareExitPrimaryActionState({
-      isSectionTwoComplete: true,
-      physicalLeftFinal: false,
-      propertyReturnHandledConfirmed: false,
+      isExitFormComplete: true,
+      hasAssociatedProperty: false,
+      propertyReturnHandledConfirmed: null,
       isSaving: false,
     })).toEqual({
-      label: 'Save exit details',
+      label: 'Confirm exit',
       disabled: false,
     });
+  });
+
+  it('tracks edited exit forms in local storage', () => {
+    const storage = {};
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key) => storage[key] ?? null,
+        setItem: (key, value) => {
+          storage[key] = String(value);
+        },
+      },
+    });
+
+    expect(hasSavedExitDraft(44)).toBe(false);
+
+    setSavedExitDraft(44, {
+      exitDestination: 'HOME',
+      exitSFResident: 'YES',
+      exitHousingStatus: 'TEMPORARY',
+      exitConnectedToCare: 'NO',
+      propertyReturnHandledConfirmed: false,
+    });
+    expect(hasSavedExitDraft(44)).toBe(true);
+    expect(getSavedExitDraft(44)).toMatchObject({
+      exitDestination: 'HOME',
+      exitSFResident: 'YES',
+      exitHousingStatus: 'TEMPORARY',
+      exitConnectedToCare: 'NO',
+      propertyReturnHandledConfirmed: false,
+      exitFormEdited: true,
+    });
+
+    setSavedExitDraft(44, false);
+    expect(hasSavedExitDraft(44)).toBe(false);
+    expect(getSavedExitDraft(44)).toBe(null);
   });
 });

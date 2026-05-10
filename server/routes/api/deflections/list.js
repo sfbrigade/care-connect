@@ -19,6 +19,7 @@ export default async function (fastify) {
           handedOff: z.enum(['true']).optional(),
           scope: z.enum(['history']).optional(),
           includeIncident: z.enum(['true']).optional(),
+          includeCurrentOfficer: z.enum(['true']).optional(),
           status: z.enum(Object.values(Deflection.HoldStatus)).optional(),
           subjectStatus: z.string().regex(new RegExp(`^(${Object.values(Deflection.SubjectStatus).join('|')})(,(${Object.values(Deflection.SubjectStatus).join('|')}))*$`)).optional(),
           page: z.coerce.number().optional(),
@@ -30,7 +31,7 @@ export default async function (fastify) {
       },
     },
     async function (request, reply) {
-      const { page = '1', perPage = '25', active, handedOff, scope, includeIncident, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
+      const { page = '1', perPage = '25', active, handedOff, scope, includeIncident, includeCurrentOfficer, facilityId, incidentId, subjectId, status, subjectStatus } = request.query;
       const where = {
         subject: { isNot: { anonymizedAt: { not: null } } },
       };
@@ -141,17 +142,22 @@ export default async function (fastify) {
         include: {
           subject: true,
           createdBy: true,
-          cancelReason: true,
-          releaseReason: true,
-          refusalReason: true,
           propertyPhotos: true,
+          ...(includeCurrentOfficer === 'true' ? { currentOfficer: true } : {}),
           ...(includeIncident === 'true' ? { incident: true } : {}),
+          ...(scope === 'history' ? { handoffs: { where: { fromOfficerId: request.user.id }, select: { id: true } } } : {}),
         },
       };
 
       const { records, total } = await fastify.prisma.deflection.paginate(options);
       records.forEach(record => {
         record.propertyPhotos = record.propertyPhotos.map(photo => new PropertyPhoto(photo));
+        if (scope === 'history') {
+          // Determine whether user previously handed off this hold.
+          // Only keep boolean; don't need to ship detailed handoff history over wire.
+          record.wasHandedOffByMe = (record.handoffs?.length ?? 0) > 0;
+          delete record.handoffs;
+        }
       });
       return reply.setPaginationHeaders(page, perPage, total).send(redactDeflectionsForUser(records, request.user));
     });

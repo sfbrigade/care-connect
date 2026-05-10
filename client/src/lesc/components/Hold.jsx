@@ -1,5 +1,7 @@
 import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
+import { useTranslation } from 'react-i18next';
+
 import LockedQRCode from '@/components/LockedQRCode';
 import useNow from '@/hooks/useNow';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
@@ -10,6 +12,7 @@ import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg'
 import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
 function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false, isHandedOff = false }) {
+  const { t } = useTranslation();
   const displayId = String(deflection.id);
   const displayName =
     [
@@ -46,7 +49,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
   const showFooter = canAddDetails || canFinishDetails || canViewDetails;
   const transferUrl = `${window.location.origin}/transfer/${deflection.id}`;
 
-  const cancelReasonLabel = deflection?.cancelReason?.name ?? deflection?.cancelReasonId;
+  const cancelReasonLabel = t(`deflectionCancelReason.${deflection?.cancelReason}`);
 
   return (
     <Card bg='white' p='md' withBorder>
@@ -72,16 +75,16 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
                 <Text size='md' c='red.6'>Canceled after expiry</Text>
               </>
             )}
-            {isHandedOff && (
-              <>
-                <Text size='md' c='gray.5'>•</Text>
-                <Text size='md' c='indigo.6'>Handed off</Text>
-              </>
-            )}
-            {!isHandedOff && isCustodyTransferred && (
+            {isCustodyTransferred && (
               <>
                 <Text size='md' c='gray.5'>•</Text>
                 <Text size='md' c='teal.5'>Transferred</Text>
+              </>
+            )}
+            {!isCustodyTransferred && isHandedOff && (
+              <>
+                <Text size='md' c='gray.5'>•</Text>
+                <Text size='md' c='indigo.6'>Handed off</Text>
               </>
             )}
           </Group>
@@ -135,7 +138,7 @@ function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClic
               <Button size='md' onClick={onDetailsClick}>Finish Details</Button>
             )}
             {canViewDetails && (
-              <Button size='md' variant='secondary' onClick={onDetailsClick}>View Details</Button>
+              <Button size='md' variant='secondary' onClick={onDetailsClick}>Details</Button>
             )}
           </Group>
         )}

@@ -19,6 +19,7 @@ import {
   readStoredWorkMode,
   writeStoredWorkMode,
 } from './utils/workMode';
+import { formatUnitName } from './utils/unit';
 import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -143,7 +144,7 @@ function Header ({ opened, close, toggle, logout }) {
           </Group>
           {user?.unit?.name && (
             <Text size='sm' color='dimmed' truncate>
-              {user.unit.name}
+              {formatUnitName(user.unit.name)}
             </Text>
           )}
         </Box>
@@ -223,7 +224,7 @@ function Header ({ opened, close, toggle, logout }) {
                   <>
                     <Menu.Divider />
                     <Menu.Label>Admin</Menu.Label>
-                    <Menu.Item component={Link} to='/admin/enums' onClick={close}>Enums</Menu.Item>
+                    <Menu.Item component={Link} to='/admin/canary' onClick={close}>Canary</Menu.Item>
                     <Menu.Item component={Link} to='/admin/facilities' onClick={close}>Facilities</Menu.Item>
                     <Menu.Item component={Link} to='/admin/invites' onClick={close}>Invites</Menu.Item>
                     <Menu.Item component={Link} to='/admin/organizations' onClick={close}>Organizations</Menu.Item>

@@ -8,6 +8,7 @@ import CareExitDetails from '../components/care/CareExitDetails';
 import CareSubjectForm from '../components/care/CareSubjectForm';
 import Custody from '../components/custody/Custody';
 import CustodyDetail from '../components/custody/CustodyDetail';
+import CustodyReleaseNarrativeForm from '../components/custody/CustodyReleaseNarrativeForm';
 import LegalReleaseQuestions from '../components/custody/LegalReleaseQuestions';
 import RecordPropertyReturn from '../components/custody/RecordPropertyReturn';
 import IncidentForm from '../components/IncidentForm';
@@ -16,6 +17,7 @@ import Deflection from '../components/Deflection';
 import HandoffScreen from '../components/HandoffScreen';
 import DeflectionForm from '../components/DeflectionForm';
 import PropertyForm from '../components/PropertyForm';
+import CertifyInformation from '../components/CertifyInformation';
 import SubstanceForm from '../components/SubstanceForm';
 import ManageCapacity from '../components/ManageCapacity/ManageCapacity';
 import FormPage from '@/forms/FormPage';
@@ -29,6 +31,7 @@ function LESCRoutes () {
       <Route path='holds/:id/substance' element={<SubstanceForm />} />
       <Route path='holds/:id/deflection' element={<DeflectionForm />} />
       <Route path='holds/:id/property' element={<PropertyForm />} />
+      <Route path='holds/:id/certify' element={<CertifyInformation />} />
       <Route path='holds/:id/subject' element={<SubjectForm />} />
       <Route path='holds/:id' element={<Deflection />} />
       <Route path='holds' element={<Holds />} />
@@ -38,6 +41,7 @@ function LESCRoutes () {
       <Route path='custody/:id/subject' element={<SubjectForm />} />
       <Route path='custody/:id/legal-release' element={<LegalReleaseQuestions />} />
       <Route path='custody/:id/property-return' element={<RecordPropertyReturn />} />
+      <Route path='custody/:id/release-narrative' element={<CustodyReleaseNarrativeForm />} />
       <Route path='custody/:id' element={<CustodyDetail />} />
       <Route path='custody' element={<Custody />} />
       <Route path='care/:id' element={<CustodyDetail viewerMode='care' />} />

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticate, build } from '#test/helper.js';
+import { authenticate, build, makeFixturePreTransferDetailsComplete } from '#test/helper.js';
 
 // lescFacility1 hosts user2's active pre-transfer holds (deflections 4 and 5 are DETAINED;
 // deflection 6 is READY_FOR_INTAKE and deflection 7 is RELEASED, both post-transfer).
@@ -19,6 +19,8 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   const custodyUserHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
 
   await t.test('sets arrivedAt and flips subjectStatus on pre-transfer holds', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
     const response = await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -47,6 +49,8 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
   });
 
   await t.test('writes a deflectionUpdate audit row per affected hold', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
     const beforeCount = await prisma.deflectionUpdate.count({
       where: { updatedById: USER2_ID, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
     });
@@ -61,7 +65,28 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
     assert.ok(afterCount >= beforeCount + 2, 'expected an update row per pre-transfer hold');
   });
 
+  await t.test('decrements inTransit when detained holds become awaiting transfer', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
+    const bedTypeBefore = await prisma.bedType.findUnique({
+      where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+    });
+
+    const response = await app.inject()
+      .post(`/api/facilities/${FACILITY_ID}/arrived`)
+      .headers(userHeaders);
+
+    assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+
+    const bedTypeAfter = await prisma.bedType.findUnique({
+      where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+    });
+    assert.deepStrictEqual(bedTypeAfter.inTransit, bedTypeBefore.inTransit - 2);
+  });
+
   await t.test('records an ARRIVAL FacilityCheckIn with the affected hold ids', async () => {
+    await makeFixturePreTransferDetailsComplete(prisma);
+
     await app.inject()
       .post(`/api/facilities/${FACILITY_ID}/arrived`)
       .headers(userHeaders);
@@ -86,8 +111,22 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         encounteredVia: 'DISPATCHED',
         cadNumber: `CAD-ARRIVED-${Date.now()}`,
         caseNumber: `CASE-ARRIVED-${Date.now()}`,
+        addressLine1: '123 Test St',
+        city: 'San Francisco',
+        state: 'CA',
+        arrestedAt: new Date('2024-01-01T07:00:00.000Z'),
+        supervisorBadgeNumber: '1234',
         createdById: USER2_ID,
         updatedById: USER2_ID,
+      },
+    });
+    const subject = await prisma.subject.create({
+      data: {
+        firstName: 'Test',
+        lastName: 'Arrived',
+        dateOfBirth: new Date('2000-01-01T00:00:00.000Z'),
+        sex: 'MALE',
+        race: 'WHITE',
       },
     });
     const deflection = await prisma.deflection.create({
@@ -95,9 +134,18 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         facilityId: OTHER_FACILITY_ID,
         incidentId: incident.id,
         bedTypeId: bedType.id,
+        subjectId: subject.id,
         currentOfficerId: USER2_ID,
         subjectStatus: 'ONSITE_AWAITING_TRANSFER',
         arrivedAt: originalArrivedAt,
+        narcoticsSubstance: false,
+        narcoticsParaphernalia: false,
+        drugUseEvidence: false,
+        behavior: 'Cooperative',
+        behaviorNarrative: 'Test narrative',
+        chargeType: 'RWS_647F',
+        property: 'NONE',
+        certifiedAt: new Date(),
         createdById: USER2_ID,
       },
     });
@@ -154,7 +202,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
         .headers(userHeaders),
       app.inject()
-        .delete(`/api/deflections/${deflection.id}?cancelReasonId=5150`)
+        .delete(`/api/deflections/${deflection.id}?cancelReason=BEHAVIORAL_HEALTH_EVALUATION`)
         .headers(userHeaders),
     ]);
 
@@ -225,6 +273,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         behaviorNarrative: 'Test narrative',
         chargeType: 'RWS_647F',
         property: 'NONE',
+        certifiedAt: new Date(),
         createdById: USER2_ID,
       },
     });

@@ -14,11 +14,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
   assert.ok(facility, 'No facility found in database');
   const facilityId = facility.id;
 
-  // Helper to get an unavailable reason
-  const getReasonId = async () => {
-    const reason = await app.prisma.bedTypeUnavailableReason.findFirst();
-    return reason.id;
-  };
+  const DEFAULT_UNAVAILABLE_REASON = 'SFSD_STAFFING';
 
   await t.test('GET /:id', async (t) => {
     await t.test('returns bed type details', async () => {
@@ -30,6 +26,26 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.id, bedTypeId);
+    });
+
+    await t.test('returns derived inTransit count instead of stale stored value', async () => {
+      await app.prisma.deflection.expire();
+      await app.prisma.deflection.update({
+        where: { id: 5 },
+        data: { subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+      });
+      await app.prisma.bedType.update({
+        where: { id: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
+        data: { inTransit: 99 },
+      });
+
+      const response = await app.inject()
+        .get(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+      assert.deepStrictEqual(data.inTransit, 2);
     });
 
     await t.test('returns 404 for non-existent bed type', async () => {
@@ -98,11 +114,10 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       // fixtures contain one expired deflection, this will create 1 update record
       await app.prisma.deflection.expire();
 
-      const reasonId = await getReasonId();
       const updateData = {
         unavailableUnoccupied: 1,
         unavailableOccupied: 1,
-        unavailableReasonId: reasonId,
+        unavailableReason: DEFAULT_UNAVAILABLE_REASON,
         updateNotes: 'Updated occupied manually',
       };
 
@@ -130,14 +145,9 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
     await t.test('updates with unavailable reason and other text', async () => {
       await app.prisma.deflection.expire();
 
-      const reason = await app.prisma.bedTypeUnavailableReason.findFirst({
-        where: { description: 'Lack of SFSD staffing' },
-      });
-      assert.ok(reason, 'Unavailable reason fixture not found');
-
       const updateData = {
         unavailableUnoccupied: 3,
-        unavailableReasonId: reason.id,
+        unavailableReason: 'SFSD_STAFFING',
         unavailableOther: 'Short staffed today',
       };
 
@@ -149,7 +159,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const updated = JSON.parse(response.body);
       assert.deepStrictEqual(updated.unavailableUnoccupied, 3);
-      assert.deepStrictEqual(updated.unavailableReasonId, reason.id);
+      assert.deepStrictEqual(updated.unavailableReason, 'SFSD_STAFFING');
       assert.deepStrictEqual(updated.unavailableOther, 'Short staffed today');
 
       // Check audit record has the reason fields
@@ -157,14 +167,12 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
         where: { bedTypeId: '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76' },
         orderBy: { updatedAt: 'desc' },
       });
-      assert.deepStrictEqual(latestUpdate.unavailableReasonId, reason.id);
+      assert.deepStrictEqual(latestUpdate.unavailableReason, 'SFSD_STAFFING');
       assert.deepStrictEqual(latestUpdate.unavailableOther, 'Short staffed today');
     });
 
     await t.test('clears unavailable reason when unavailableUnoccupied is 0', async () => {
       await app.prisma.deflection.expire();
-
-      const reasonId = await getReasonId();
 
       // First set a reason
       await app.inject()
@@ -172,7 +180,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
         .headers(facilityAdminHeaders)
         .payload({
           unavailableUnoccupied: 2,
-          unavailableReasonId: reasonId,
+          unavailableReason: DEFAULT_UNAVAILABLE_REASON,
           unavailableOther: 'Testing',
         });
 
@@ -185,7 +193,7 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
       const updated = JSON.parse(response.body);
       assert.deepStrictEqual(updated.unavailableUnoccupied, 0);
-      assert.deepStrictEqual(updated.unavailableReasonId, null);
+      assert.deepStrictEqual(updated.unavailableReason, null);
       assert.deepStrictEqual(updated.unavailableOther, null);
     });
 
@@ -199,21 +207,21 @@ test('/api/facilities/:facilityId/bed-types', async (t) => {
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
       const body = JSON.parse(response.body);
-      assert.deepStrictEqual(body.errors[0].path, 'unavailableReasonId');
+      assert.deepStrictEqual(body.errors[0].path, 'unavailableReason');
     });
 
-    await t.test('rejects invalid unavailableReasonId', async () => {
+    await t.test('rejects invalid unavailableReason', async () => {
       const response = await app.inject()
         .patch(`/api/facilities/${facilityId}/bed-types/2347510d-5fd0-4c5c-8a14-82bfd3ef2c76`)
         .headers(facilityAdminHeaders)
         .payload({
           unavailableUnoccupied: 1,
-          unavailableReasonId: '00000000-0000-0000-0000-000000000000',
+          unavailableReason: 'INVALID_REASON',
         });
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
       const body = JSON.parse(response.body);
-      assert.deepStrictEqual(body.errors[0].path, 'unavailableReasonId');
+      assert.deepStrictEqual(body.errors[0].path, 'unavailableReason');
     });
 
     await t.test('returns 404 if bed type not found', async () => {

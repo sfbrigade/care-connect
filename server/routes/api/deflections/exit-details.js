@@ -5,11 +5,14 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { CARE_EXIT_DESTINATIONS } from '#lib/careExitDestinations.js';
 const { SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
 const ConnectionToCareEnum = z.enum(Object.values(TernaryEnum));
+
+const CareExitDestinationEnum = z.enum(CARE_EXIT_DESTINATIONS);
 
 const EXIT_DETAIL_EDITABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
@@ -26,8 +29,8 @@ export default async function (fastify, opts) {
           id: z.coerce.number(),
         }),
         body: z.object({
-          exitDestinationId: z.string(),
-          exitHousingStatusId: z.string(),
+          exitDestination: CareExitDestinationEnum,
+          exitHousingStatus: z.string(),
           exitSFResident: ResidencyEnum,
           exitConnectedToCare: ConnectionToCareEnum,
         }),
@@ -41,8 +44,8 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const {
-        exitDestinationId,
-        exitHousingStatusId,
+        exitDestination,
+        exitHousingStatus,
         exitSFResident,
         exitConnectedToCare,
       } = request.body;
@@ -65,8 +68,8 @@ export default async function (fastify, opts) {
         await tx.deflectionUpdate.create({
           data: {
             deflectionId: id,
-            exitDestinationId,
-            exitHousingStatusId,
+            exitDestination,
+            exitHousingStatus,
             exitConnectedToCare,
             exitSFResident,
             updatedById: request.user.id,
@@ -77,8 +80,8 @@ export default async function (fastify, opts) {
         deflection = await tx.deflection.update({
           where: { id },
           data: {
-            exitDestinationId,
-            exitHousingStatusId,
+            exitDestination,
+            exitHousingStatus,
             exitConnectedToCare,
             exitSFResident,
             updatedAt: now,

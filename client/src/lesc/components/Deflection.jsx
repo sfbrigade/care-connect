@@ -17,7 +17,8 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
+import { openInBrowser } from '@/utils/openInBrowser';
+import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidCertification, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -27,7 +28,7 @@ function Deflection () {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
   const { user } = useAuthContext();
 
   const { data: deflection } = useQuery({
@@ -53,7 +54,7 @@ function Deflection () {
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',
     'FAILED_INTAKE',
-    'ADMITTED',
+    'IN_MEDICAL_INTAKE',
     'IN_CHAIR',
     'RELEASED',
     'EXITED',
@@ -103,17 +104,31 @@ function Deflection () {
     },
   });
 
-  async function onCancelHoldConfirmed (cancelReasonId) {
+  async function onCancelHoldConfirmed (cancelReason) {
     await cancelDeflectionMutation.mutateAsync({
-      cancelReasonId,
+      cancelReason,
     });
   }
 
   const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
 
+  function formatCertificationTimestamp (certifiedAt) {
+    const dateTime = DateTime.fromISO(certifiedAt);
+    return `${dateTime.toLocaleString(DateTime.TIME_SIMPLE)} on ${dateTime.toLocaleString(DateTime.DATE_SHORT)}`;
+  }
+
   function on647fClick () {
-    const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
-    window.open(url, '_blank');
+    const url = `/api/forms/647f/pdf/${deflection.id}`;
+    const toastId = showToast('Downloading 647(f) form…', 'success', 0, 'This may take a moment.');
+    openInBrowser(url, `647f-${deflection.id}.pdf`)
+      .then(() => {
+        removeToast(toastId);
+        showToast('647(f) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+      })
+      .catch(() => {
+        removeToast(toastId);
+        showToast('Couldn’t download 647(f) form', 'error', 4000, 'Please try again.');
+      });
   }
 
   return (
@@ -197,7 +212,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'certification', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
@@ -330,6 +345,28 @@ function Deflection () {
                 )}
               </Accordion.Panel>
             </Accordion.Item>
+            <Accordion.Item value='certification'>
+              <Accordion.Control>
+                <Title order={3}>Certification</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  <Box>
+                    <Text c='dimmed'>Declaration</Text>
+                    {deflection?.certifiedAt
+                      ? (
+                        <Text>Certified as true and correct at {formatCertificationTimestamp(deflection.certifiedAt)}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                </Stack>
+                {isActionableActiveHold && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/certify`)}>{isValidCertification(deflection) ? 'Edit certification' : 'Finish certification'}</Button>
+                  </Group>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
             <Accordion.Item value='incident'>
               <Accordion.Control>
                 <Title order={3}>Incident details</Title>
@@ -431,6 +468,10 @@ function Deflection () {
                 }
                 if (!isValidProperty(deflection)) {
                   navigate(`${detailPath}/property`);
+                  return;
+                }
+                if (!isValidCertification(deflection)) {
+                  navigate(`${detailPath}/certify`);
                   return;
                 }
                 navigate(detailPath);

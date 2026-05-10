@@ -2,7 +2,7 @@ import './config.js';
 
 import { createBoss } from '#lib/jobQueue/pgBoss.js';
 import queues from '#lib/jobQueue/queueConfig.js';
-import { captureEvent, shutdown as shutdownPosthog } from '#lib/posthog.js';
+import { captureEvent, captureException, shutdown as shutdownPosthog } from '#lib/posthog.js';
 
 const boss = createBoss();
 
@@ -27,7 +27,16 @@ for (const queue of queues) {
 
   await boss.work(queue.name, async ([job]) => {
     const send = (name, data, opts) => boss.send(name, data, opts);
-    return queue.handler([job], { send });
+    try {
+      return await queue.handler([job], { send });
+    } catch (err) {
+      captureException(err, 'care-connect-worker', {
+        queue: queue.name,
+        jobId: job.id,
+        attempt: job.retrycount ?? 0,
+      });
+      throw err;
+    }
   });
 
   await boss.work(deadLetter, async ([job]) => {

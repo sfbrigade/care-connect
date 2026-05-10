@@ -52,19 +52,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Bed type record not found' });
       }
 
-      // Validate unavailableReasonId references a real record if provided
-      if (data.unavailableReasonId) {
-        const reason = await fastify.prisma.bedTypeUnavailableReason.findUnique({
-          where: { id: data.unavailableReasonId },
-        });
-        if (!reason) {
-          return reply.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            errors: [{ path: 'unavailableReasonId', message: 'Unavailable reason not found' }],
-          });
-        }
-      }
-
       let bedType;
       let cancelledHolds = [];
       try {
@@ -149,13 +136,13 @@ export default async function (fastify, opts) {
           }
 
           // Require reason when marking chairs unavailable
-          const resolvedReasonId = data.unavailableReasonId ?? bedType.unavailableReasonId;
-          if (nextData.unavailableUnoccupied > 0 && !resolvedReasonId) {
-            throw validationError('unavailableReasonId', 'Reason is required when chairs are unavailable');
+          const resolvedReason = data.unavailableReason ?? bedType.unavailableReason;
+          if (nextData.unavailableUnoccupied > 0 && !resolvedReason) {
+            throw validationError('unavailableReason', 'Reason is required when chairs are unavailable');
           }
 
           // Clear unavailable reason fields when no chairs are unavailable
-          const unavailableReasonId = nextData.unavailableUnoccupied > 0 ? resolvedReasonId : null;
+          const unavailableReason = nextData.unavailableUnoccupied > 0 ? resolvedReason : null;
           const unavailableOther = nextData.unavailableUnoccupied > 0 ? (data.unavailableOther ?? bedType.unavailableOther) : null;
 
           // Create the update history record
@@ -170,7 +157,7 @@ export default async function (fastify, opts) {
               holds: nextData.holds,
               inTransit: nextData.inTransit,
               available,
-              unavailableReasonId,
+              unavailableReason,
               unavailableOther,
               updateMethod: BedType.UpdateMethod.MANUAL,
               updateNotes: data.updateNotes,
@@ -190,7 +177,7 @@ export default async function (fastify, opts) {
               holds: nextData.holds,
               inTransit: nextData.inTransit,
               available,
-              unavailableReasonId,
+              unavailableReason,
               unavailableOther,
               updateMethod: BedType.UpdateMethod.MANUAL,
               updateNotes: data.updateNotes,

@@ -11,6 +11,7 @@ import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
+import { formatUnitName } from '@/utils/unit';
 
 function EditUserProfilePage () {
   const { user } = useAuthContext();
@@ -55,20 +56,21 @@ function EditUserProfilePage () {
         ...data,
         password: '',
       });
-      setUnitName(data.unit?.name || '');
+      setUnitName(formatUnitName(data.unit?.name));
       setUnitId(data.unitId || '');
     }
   }, [data]);
 
   const autocompleteData = units?.map((unit) => ({
-    value: unit.id,
-    label: unit.name,
+    value: formatUnitName(unit.name),
+    label: formatUnitName(unit.name),
   })) || [];
 
   function handleUnitChange (value) {
-    setUnitName(value);
-    const normalizedValue = value.trim().toLowerCase();
-    const selectedUnit = units?.find((unit) => unit.name.trim().toLowerCase() === normalizedValue);
+    const nextUnitName = formatUnitName(value);
+    setUnitName(nextUnitName);
+    const normalizedValue = nextUnitName.toLowerCase();
+    const selectedUnit = units?.find((unit) => formatUnitName(unit.name).toLowerCase() === normalizedValue);
     const nextUnitId = selectedUnit?.id || '';
     setUnitId(nextUnitId);
     form.setFieldValue('unitId', nextUnitId);
@@ -79,7 +81,7 @@ function EditUserProfilePage () {
       const payload = {
         badgeNumber: values.badgeNumber,
         unitId,
-        unitName: unitName.trim(),
+        unitName: formatUnitName(unitName),
       };
 
       if (values.organizationId === 'sfso') {

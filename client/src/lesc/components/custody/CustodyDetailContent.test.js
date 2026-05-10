@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
         get: vi.fn(async () => ({ data: incident })),
       },
       deflections: {
+        email849b: vi.fn(async () => ({ data: { queued: true, email: 'sfsouser1@test.com' } })),
         exitToJail: vi.fn(async () => ({ data: {} })),
         safetyCheck: vi.fn(async () => ({ data: {} })),
         release: vi.fn(async () => ({ data: {} })),
@@ -59,10 +60,22 @@ vi.mock('@/FacilityContext', () => ({
 vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
   formatDateTime: () => 'formatted-date-time',
+  formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
+  formatTimeRemaining: () => '59:57',
 }));
 
 vi.mock('@/utils/releaseTiming', () => ({
   releaseTiming: () => null,
+}));
+
+vi.mock('@/utils/openInBrowser', () => ({
+  openInBrowser: vi.fn(),
+}));
+
+vi.mock('../../../hooks/useUserRole', () => ({
+  useUserRole: () => ({
+    isCustody: true,
+  }),
 }));
 
 vi.mock('@/utils/pdfGenerator', () => ({
@@ -89,6 +102,7 @@ vi.mock('@/components/LockedQRCode', () => ({
 
 vi.mock('@tabler/icons-react', () => ({
   IconAlertCircle: () => null,
+  IconAlarm: () => null,
   IconArrowLeft: () => null,
   IconBuildingHospital: () => null,
   IconDoorExit: () => null,
@@ -128,7 +142,7 @@ vi.mock('@mantine/core', async () => {
   //   return createElement('div', null, children);
   // };
 
-  const passthrough = (tag) => ({ children, ...props }) => createElement(tag, props, children);
+  const passthrough = (tag) => ({ children, classNames, styles, ...props }) => createElement(tag, props, children);
 
   const Menu = passthrough('div');
   Menu.Target = passthrough('div');
@@ -206,6 +220,7 @@ describe('CustodyDetailContent', () => {
     id: 123456,
     incidentId: 789,
     subjectStatus: 'READY_FOR_INTAKE',
+    expiresAt: '2026-01-01T11:00:00.000Z',
     releaseNarrative: 'Initial narrative',
     behavior: 'Behavior details',
     property: 'BACKPACK',
@@ -254,9 +269,43 @@ describe('CustodyDetailContent', () => {
     const html = render();
 
     expect(html).toContain('849(b) release narrative');
-    expect(html).toContain('This text will appear in the narrative block on the 849(b) form');
-    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
+    expect(html).toContain('Any narrative edits will automatically update the 849(b) document.');
+    expect((html.match(/>Edit</g) || [])).toHaveLength(2);
     expect(html).not.toContain('<textarea');
+  });
+
+  it('renders pre-transfer custody details read-only without the 849(b) narrative', () => {
+    const html = render({ subjectStatus: 'DETAINED' });
+
+    expect(html).toContain('Expires in');
+    expect(html).toContain('Awaiting arrival');
+    expect(html).toContain('Substance-related details');
+    expect(html).toContain('Behavioral observations');
+    expect(html).toContain('Incident details');
+    expect(html).not.toContain('849(b) release narrative');
+    expect(html).not.toContain('>Edit<');
+  });
+
+  it('shows Arrived chip and suppresses the expiry timer for ONSITE_AWAITING_TRANSFER holds', () => {
+    const html = render({ subjectStatus: 'ONSITE_AWAITING_TRANSFER' });
+
+    expect(html).toContain('Arrived');
+    expect(html).not.toContain('Awaiting arrival');
+    expect(html).not.toContain('Expires in');
+    expect(html).not.toContain('849(b) release narrative');
+    expect(html).not.toContain('>Edit<');
+  });
+
+  it('shows post-release 849(b) PDF, e-mail, and narrative edit actions', () => {
+    const html = render({
+      subjectStatus: 'EXITED',
+      releasedAt: '2026-01-01T11:00:00.000Z',
+      exitedAt: '2026-01-01T12:00:00.000Z',
+    });
+
+    expect(html).toContain('849(b).pdf');
+    expect(html).toContain('E-mail me the 849(b)');
+    expect(html).toContain('Edit narrative');
   });
 
   it('builds the default 849(b) narrative from case number, cad number, and 647(f) narrative', () => {
@@ -264,7 +313,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('Incident number: CASE-456');
     expect(html).toContain('Cad number: CAD-123');
-    expect(html).toContain('The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
+    expect(html).toContain('The Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:');
     expect(html).toContain('Behavior details');
   });
 
@@ -275,20 +324,27 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
-  it('renders Record result as the safety check footer action', () => {
+  it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
     expect(html).toContain('Record result');
-    expect(html).toContain('Record safety check result');
-    expect(html).toContain('Passed safety check');
-    expect(html).toContain('Failed safety check');
+    expect(html).toContain('Record safety check');
+    expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
+    expect(html).toContain('Passed');
+    expect(html).toContain('Failed');
   });
   it('shows drug use status and selected drug type in care personal details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', drugUseEvidence: true, drugType: 'ALCOHOL' },
+      {
+        subjectStatus: 'IN_MEDICAL_INTAKE',
+        medicalIntakeStartedAt: '2026-04-29T11:24:00.000',
+        drugUseEvidence: true,
+        drugType: 'ALCOHOL'
+      },
       { viewerMode: 'care' }
     );
 
+    expect(html).toContain('Intake started: Apr 29, 11:24 AM');
     expect(html).toContain('Edit');
     expect(html).toContain('Substance-related details');
     expect(html).toContain('Signs of substance use');
@@ -297,10 +353,19 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('drugType.ALCOHOL');
   });
 
+  it('does not show intake started timestamp in custody details', () => {
+    const html = render({
+      subjectStatus: 'ADMITTED',
+      admittedAt: '2026-04-29T11:24:00.000',
+    });
+
+    expect(html).not.toContain('Intake started: Apr 29, 11:24 AM');
+  });
+
   it('hides behavioral observations in care personal details', () => {
     const html = render(
       {
-        subjectStatus: 'ADMITTED',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
         drugUseEvidence: true,
         drugType: 'ALCOHOL',
         behavior: 'Person was stumbling into traffic.',
@@ -316,7 +381,7 @@ describe('CustodyDetailContent', () => {
 
   it('shows no drug use status without a drug type in care personal details', () => {
     const html = render(
-      { subjectStatus: 'ADMITTED', drugUseEvidence: false, drugType: null },
+      { subjectStatus: 'IN_MEDICAL_INTAKE', drugUseEvidence: false, drugType: null },
       { viewerMode: 'care' }
     );
 
@@ -329,7 +394,7 @@ describe('CustodyDetailContent', () => {
   it('does not show care behavioral observations without substance-related details', () => {
     const html = render(
       {
-        subjectStatus: 'ADMITTED',
+        subjectStatus: 'IN_MEDICAL_INTAKE',
         drugUseEvidence: null,
         behavior: 'Person was stumbling into traffic.',
       },

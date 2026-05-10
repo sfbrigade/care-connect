@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { notFoundError } from '#lib/httpErrors.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 
@@ -36,6 +37,7 @@ export default async function (fastify) {
             throw notFoundError(`Facility ${facilityId} not found`);
           }
           const now = new Date();
+          let transitionedFromDetainedCount = 0;
 
           // Snapshot candidate pre-transfer holds for this officer under the facility lock.
           const candidateHolds = await tx.deflection.findMany({
@@ -47,8 +49,20 @@ export default async function (fastify) {
             },
             select: {
               id: true,
+              bedTypeId: true,
               arrivedAt: true,
               subjectStatus: true,
+              incident: true,
+              subject: true,
+              narcoticsSubstance: true,
+              narcoticsParaphernalia: true,
+              drugUseEvidence: true,
+              drugType: true,
+              behavior: true,
+              behaviorNarrative: true,
+              chargeType: true,
+              property: true,
+              certifiedAt: true,
             },
           });
 
@@ -60,6 +74,10 @@ export default async function (fastify) {
           const holdsNeedingArrivalUpdate = [];
 
           for (const hold of candidateHolds.sort((a, b) => a.id - b.id)) {
+            if (!isIncidentDetailsComplete(hold.incident) || !isDeflectionDetailsComplete(hold)) {
+              throw badRequestError('Required details must be complete before arrival');
+            }
+
             const updated = await tx.deflection.updateMany({
               where: {
                 id: hold.id,
@@ -77,6 +95,9 @@ export default async function (fastify) {
 
             if (updated.count === 1) {
               holdIds.push(hold.id);
+              if (hold.subjectStatus === 'DETAINED') {
+                transitionedFromDetainedCount++;
+              }
               if (hold.subjectStatus !== 'ONSITE_AWAITING_TRANSFER' || hold.arrivedAt === null) {
                 holdsNeedingArrivalUpdate.push(hold);
               }
@@ -96,6 +117,46 @@ export default async function (fastify) {
                 updatedAt: now,
               })),
             });
+          }
+
+          if (transitionedFromDetainedCount > 0) {
+            const decrementCounts = new Map();
+
+            for (const hold of candidateHolds) {
+              if (holdIds.includes(hold.id) && hold.subjectStatus === 'DETAINED') {
+                const current = decrementCounts.get(hold.bedTypeId) ?? 0;
+                decrementCounts.set(hold.bedTypeId, current + 1);
+              }
+            }
+
+            for (const [bedTypeId, decrementCount] of decrementCounts) {
+              const bedType = await tx.bedType.findByIdForUpdate(tx, bedTypeId);
+              if (!bedType) continue;
+
+              const updatedData = {
+                capacity: bedType.capacity,
+                unavailableUnoccupied: bedType.unavailableUnoccupied,
+                unavailableOccupied: bedType.unavailableOccupied,
+                occupied: bedType.occupied,
+                holds: bedType.holds,
+                inTransit: Math.max(0, bedType.inTransit - decrementCount),
+                available: bedType.available,
+                updateMethod: 'API',
+                updatedById: officerId,
+              };
+
+              await tx.bedTypeUpdate.create({
+                data: {
+                  ...updatedData,
+                  bedTypeId,
+                  facilityId,
+                },
+              });
+              await tx.bedType.update({
+                where: { id: bedTypeId },
+                data: updatedData,
+              });
+            }
           }
 
           // Record the facility check-in event for the holds that were still eligible at commit time.

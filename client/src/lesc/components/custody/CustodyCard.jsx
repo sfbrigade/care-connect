@@ -30,7 +30,6 @@ function CustodyCard ({ deflection, highlighted }) {
 
   const isFailedIntake = deflection.subjectStatus === 'FAILED_INTAKE';
   const isInChair = deflection.subjectStatus === 'IN_CHAIR';
-  const showViewDetails = deflection.subjectStatus !== 'EXITED';
   const showMarkComplete = deflection.subjectStatus === 'AWAITING_INTAKE';
   const showLegalRelease = deflection.subjectStatus === 'FAILED_INTAKE';
   const showStartRelease = isInChair;
@@ -117,24 +116,22 @@ function CustodyCard ({ deflection, highlighted }) {
             </Stack>
           )}
           <Group wrap='nowrap' justify='flex-end'>
-            {showViewDetails && (
-              <Button
-                variant='secondary'
-                size='md'
-                onClick={() => {
-                  window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
-                  navigate(`/custody/${deflection.id}`);
-                }}
-              >
-                View details
-              </Button>
-            )}
+            <Button
+              variant='secondary'
+              size='md'
+              onClick={() => {
+                window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
+                navigate(`/custody/${deflection.id}`);
+              }}
+            >
+              Details
+            </Button>
             {showMarkComplete && (
               <Button
                 size='md'
                 onClick={() => setSafetyCheckResultModalOpened(true)}
               >
-                Record result
+                Safety check
               </Button>
             )}
             {showLegalRelease && (

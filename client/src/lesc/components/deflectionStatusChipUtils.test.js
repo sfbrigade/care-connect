@@ -38,6 +38,7 @@ function buildDeflection (overrides = {}) {
     behavior: 'Observed unsafe behavior',
     behaviorNarrative: 'Observed unsafe behavior',
     property: 'NONE',
+    certifiedAt: '2026-03-04T10:05:00.000Z',
     ...overrides,
   };
 }
@@ -86,6 +87,14 @@ describe('getSfpdDeflectionStatusChip', () => {
   it('returns Details incomplete when charge type is missing', () => {
     const chip = getSfpdDeflectionStatusChip({
       deflection: buildDeflection({ chargeType: null }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when certification is missing', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ certifiedAt: null }),
       incident: buildIncident(),
     });
     expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });

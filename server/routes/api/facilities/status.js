@@ -36,18 +36,8 @@ export default async function (fastify, opts) {
       }
 
       if (data.status === Facility.Status.OPEN_ACCEPTING) {
-        data.statusReasonId = null;
+        data.statusReason = null;
         data.statusOther = null;
-      } else {
-        const statusReason = await fastify.prisma.facilityStatusReason.findUnique({
-          where: { id: data.statusReasonId },
-        });
-        if (!statusReason) {
-          return reply.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            errors: [{ path: 'statusReasonId', message: 'Status reason not found' }],
-          });
-        }
       }
       if (data.updateNotes === '') {
         data.updateNotes = null;
@@ -142,7 +132,7 @@ export default async function (fastify, opts) {
             });
           }
         }
-      });
+      }, { timeout: 30000 });
 
       // Send email notifications after transaction completes
       if (data.status === Facility.Status.CLOSED) {

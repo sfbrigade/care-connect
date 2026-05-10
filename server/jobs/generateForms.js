@@ -2,18 +2,25 @@ import { createHash } from 'node:crypto';
 
 import prisma from '#prisma/client.js';
 import { FORMS } from '#lib/forms/index.js';
-import DeflectionDocument from '#models/deflectionDocument.js';
+import { LIVE_EMAIL_FORM_IDS } from '#lib/forms/liveEmailForms.js';
+import { storeFormPdf } from '#lib/forms/storeFormPdf.js';
 
 export default async function generateForms (data, prismaClient = prisma) {
-  const { deflectionId, userId, formIds } = data;
+  const { deflectionId, userId, formIds, emailTemplate } = data;
 
   const forms = formIds
-    ? Object.fromEntries(Object.entries(FORMS).filter(([id]) => formIds.includes(id)))
+    ? Object.fromEntries(Object.entries(FORMS).filter(([id]) =>
+      formIds.includes(id) && !(emailTemplate && LIVE_EMAIL_FORM_IDS.has(id))
+    ))
     : FORMS;
 
   const user = await prismaClient.user.findUnique({ where: { id: userId }, include: { unit: true } });
 
-  const skippedFormIds = [];
+  const result = {
+    skippedFormIds: [],
+    generatedFormIds: [],
+    updatedSinceTransferFormIds: [],
+  };
 
   for (const [formId, form] of Object.entries(forms)) {
     const deflection = await prismaClient.deflection.findUnique({
@@ -24,7 +31,7 @@ export default async function generateForms (data, prismaClient = prisma) {
 
     const check = form.canGenerate(deflection);
     if (check !== true) {
-      skippedFormIds.push(formId);
+      result.skippedFormIds.push(formId);
       continue;
     }
 
@@ -33,39 +40,36 @@ export default async function generateForms (data, prismaClient = prisma) {
     const existing = await prismaClient.deflectionDocument.findUnique({
       where: { deflectionId_formId: { deflectionId, formId } },
     });
+    if (
+      formId === '647f' &&
+      existing?.createdAt &&
+      existing?.updatedAt &&
+      deflection.transferredAt &&
+      new Date(existing.updatedAt).getTime() > Math.max(
+        new Date(deflection.transferredAt).getTime(),
+        new Date(existing.createdAt).getTime()
+      )
+    ) {
+      result.updatedSinceTransferFormIds.push(formId);
+    }
     if (dataHash && existing?.sourceDataHash === dataHash) {
-      skippedFormIds.push(formId);
+      result.skippedFormIds.push(formId);
       continue;
     }
 
     const pdfBuffer = await form.generatePdf(deflectionData, user);
 
     const filename = form.downloadFilename(deflectionId);
-
-    if (existing) {
-      const doc = new DeflectionDocument(existing);
-      const assetHandler = doc.setAsset('file', filename, { buffer: pdfBuffer });
-      await prismaClient.deflectionDocument.update({
-        where: { id: existing.id },
-        data: { file: filename, updatedById: userId, ...(dataHash && { sourceDataHash: dataHash }) },
-      });
-      await assetHandler();
-    } else {
-      const doc = new DeflectionDocument({ formId, deflectionId });
-      const assetHandler = doc.setAsset('file', filename, { buffer: pdfBuffer });
-      const record = await prismaClient.deflectionDocument.create({
-        data: {
-          deflectionId,
-          formId,
-          file: filename,
-          createdById: userId,
-          updatedById: userId,
-          ...(dataHash && { sourceDataHash: dataHash }),
-        },
-      });
-      await assetHandler({ id: record.id });
-    }
+    await storeFormPdf(prismaClient, {
+      deflectionId,
+      formId,
+      filename,
+      content: pdfBuffer,
+      userId,
+      sourceDataHash: dataHash,
+    });
+    result.generatedFormIds.push(formId);
   }
 
-  return skippedFormIds;
+  return result;
 }

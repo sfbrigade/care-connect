@@ -16,7 +16,7 @@ const {
 } = vi.hoisted(() => ({
   mockBedTypesIndex: vi.fn(),
   mockDeflectionsList: vi.fn(),
-  mockSessionStateValue: { current: 'in-custody' },
+  mockSessionStateValue: { current: 'custody' },
   mockSetSessionState: vi.fn(),
   mockShowToast: vi.fn(),
 }));
@@ -91,14 +91,14 @@ function renderCustody () {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSessionStateValue.current = 'in-custody';
+  mockSessionStateValue.current = 'custody';
 
   mockBedTypesIndex.mockResolvedValue({
     data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],
   });
 
-  mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
-    if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR') {
+  mockDeflectionsList.mockImplementation(({ subjectStatus, status }) => {
+    if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
       return Promise.resolve({
         data: [
           { id: 1, subjectStatus: 'AWAITING_INTAKE' },
@@ -108,11 +108,82 @@ beforeEach(() => {
       });
     }
 
-    if (subjectStatus === 'DETAINED,ONSITE_AWAITING_TRANSFER') {
+    if (subjectStatus === 'DETAINED,ONSITE_AWAITING_TRANSFER' && status === 'ACTIVE') {
       return Promise.resolve({
         data: [
-          { id: 4, subjectStatus: 'DETAINED' },
-          { id: 5, subjectStatus: 'ONSITE_AWAITING_TRANSFER' },
+          {
+            id: 4,
+            subjectStatus: 'DETAINED',
+            expiresAt: '2026-05-05T19:00:00.000Z',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+            drugType: null,
+            behavior: 'Cooperative',
+            behaviorNarrative: 'Cooperative during transfer.',
+            chargeType: 'RWS_647F',
+            property: 'NONE',
+            certifiedAt: '2026-05-05T18:00:00.000Z',
+            currentOfficer: { id: 'officer-1', firstName: 'Officer', lastName: 'One', badgeNumber: '1234' },
+            subject: {
+              firstName: 'Complete',
+              lastName: 'Person',
+              dateOfBirth: '1990-01-01T00:00:00.000Z',
+              sex: 'MALE',
+              race: 'UNKNOWN',
+            },
+            incident: {
+              addressLine1: '1 Main St',
+              city: 'San Francisco',
+              state: 'CA',
+              arrestedAt: '2026-05-05T18:00:00.000Z',
+              encounteredVia: 'ON_VIEW',
+              cadNumber: 'CAD123',
+              caseNumber: 'CASE123',
+              supervisorBadgeNumber: '777',
+            },
+          },
+          {
+            id: 5,
+            subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+            currentOfficer: { id: 'officer-2', firstName: 'Officer', lastName: 'Two', badgeNumber: '5678' },
+            subject: { firstName: 'Incomplete', lastName: 'Person' },
+            incident: {},
+          },
+          {
+            id: 8,
+            subjectStatus: 'ONSITE_AWAITING_TRANSFER',
+            // expiresAt deliberately in the past — server #861 keeps these ACTIVE indefinitely once arrived.
+            expiresAt: '2024-01-01T00:00:00.000Z',
+            arrivedAt: '2026-05-05T18:30:00.000Z',
+            narcoticsSubstance: false,
+            narcoticsParaphernalia: false,
+            drugUseEvidence: false,
+            drugType: null,
+            behavior: 'Cooperative',
+            behaviorNarrative: 'Cooperative during transfer.',
+            chargeType: 'RWS_647F',
+            property: 'NONE',
+            certifiedAt: '2026-05-05T18:00:00.000Z',
+            currentOfficer: { id: 'officer-3', firstName: 'Officer', lastName: 'Three', badgeNumber: '9999' },
+            subject: {
+              firstName: 'Onsite',
+              lastName: 'Person',
+              dateOfBirth: '1990-01-01T00:00:00.000Z',
+              sex: 'MALE',
+              race: 'UNKNOWN',
+            },
+            incident: {
+              addressLine1: '2 Main St',
+              city: 'San Francisco',
+              state: 'CA',
+              arrestedAt: '2026-05-05T18:00:00.000Z',
+              encounteredVia: 'ON_VIEW',
+              cadNumber: 'CAD124',
+              caseNumber: 'CASE124',
+              supervisorBadgeNumber: '888',
+            },
+          },
         ],
       });
     }
@@ -143,7 +214,7 @@ describe('Custody', () => {
     expect(screen.getByText('2 occupied')).toBeInTheDocument();
   });
 
-  it('shows the Take custody button on the Legally released tab', async () => {
+  it('shows the Take custody button on the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
@@ -151,7 +222,7 @@ describe('Custody', () => {
     expect(await screen.findByRole('button', { name: /take custody/i })).toBeInTheDocument();
   });
 
-  it('switches to In custody when transfer scan succeeds from the Legally released tab', async () => {
+  it('switches to Custody when transfer scan succeeds from the Released tab', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
@@ -159,10 +230,10 @@ describe('Custody', () => {
     fireEvent.click(await screen.findByRole('button', { name: /take custody/i }));
     fireEvent.click(screen.getByRole('button', { name: /scan success/i }));
 
-    expect(mockSetSessionState).toHaveBeenCalledWith('in-custody');
+    expect(mockSetSessionState).toHaveBeenCalledWith('custody');
   });
 
-  it('leaves the user on the Legally released tab when transfer scan is canceled', async () => {
+  it('leaves the user on the Released tab when transfer scan is canceled', async () => {
     mockSessionStateValue.current = 'released';
 
     renderCustody();
@@ -176,7 +247,7 @@ describe('Custody', () => {
   it('groups jail exits under the Transferred to jail section on the released tab', async () => {
     mockSessionStateValue.current = 'released';
     mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
-      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR') {
+      if (subjectStatus === 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR') {
         return Promise.resolve({ data: [] });
       }
 
@@ -184,7 +255,7 @@ describe('Custody', () => {
         return Promise.resolve({
           data: [
             { id: 6, subjectStatus: 'RELEASED' },
-            { id: 7, subjectStatus: 'EXITED', exitDestinationId: 'jail', releasedAt: '2026-01-01T00:00:00.000Z' },
+            { id: 7, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
           ],
         });
       }
@@ -196,5 +267,64 @@ describe('Custody', () => {
 
     expect(await screen.findByText('Transferred to jail: 1')).toBeInTheDocument();
     expect(screen.getByText('Exited facility: 0')).toBeInTheDocument();
+  });
+
+  it('shows transit persons grouped by owning officer', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    expect(await screen.findByText('O. One #1234')).toBeInTheDocument();
+    expect(screen.getByText('Complete Person')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /details/i }).length).toBeGreaterThan(0);
+    expect(screen.getByText('O. Two #5678')).toBeInTheDocument();
+    expect(screen.getByText('Incomplete Person')).toBeInTheDocument();
+    expect(screen.getByText('Details incomplete')).toBeInTheDocument();
+    expect(screen.getByText('O. Three #9999')).toBeInTheDocument();
+    expect(screen.getByText('Onsite Person')).toBeInTheDocument();
+  });
+
+  it('shows an Arrived inline label on ONSITE_AWAITING_TRANSFER holds in place of the expiry countdown', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Onsite Person');
+    // Hold 8 has arrivedAt → "Arrived at HH:MM"; Hold 5 has no arrivedAt → plain "Arrived" (defensive fallback).
+    // Implementation gates the inline label and the expiry Title as mutually-exclusive,
+    // so label presence implies timer suppression on those cards.
+    expect(screen.getByText(/^Arrived at \d{1,2}:\d{2} (AM|PM)$/)).toBeInTheDocument();
+    expect(screen.getByText('Arrived')).toBeInTheDocument();
+  });
+
+  it('orders officer groups with arrived holds before officer groups with only detained holds', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('O. One #1234');
+    // Server returns holds in order [4 DETAINED → officer-1, 5 ONSITE_AWAITING_TRANSFER → officer-2,
+    // 8 ONSITE_AWAITING_TRANSFER → officer-3]. Without the sort, DOM order would be One, Two, Three.
+    // After sorting groups with arrived holds to the top, expect Two and Three before One,
+    // with stable ordering preserving Two before Three.
+    const officerHeaders = screen.getAllByText(/^O\. /);
+    expect(officerHeaders.map(el => el.textContent)).toEqual([
+      'O. Two #5678',
+      'O. Three #9999',
+      'O. One #1234',
+    ]);
+  });
+
+  it('requests only active pre-transfer holds for Transit', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('O. One #1234');
+    expect(mockDeflectionsList).toHaveBeenCalledWith(expect.objectContaining({
+      subjectStatus: 'DETAINED,ONSITE_AWAITING_TRANSFER',
+      status: 'ACTIVE',
+      includeCurrentOfficer: true,
+    }));
   });
 });

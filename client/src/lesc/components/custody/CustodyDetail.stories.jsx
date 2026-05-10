@@ -44,7 +44,7 @@ export const MinimalDetails = {
   args: {
     deflection: {
       id: 456,
-      subjectStatus: 'ADMITTED',
+      subjectStatus: 'IN_MEDICAL_INTAKE',
       narcoticsSubstance: null,
       narcoticsParaphernalia: null,
       behavior: null,

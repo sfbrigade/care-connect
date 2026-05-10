@@ -14,13 +14,12 @@ import useNow from '@/hooks/useNow';
 import PasswordInput from '@/components/PasswordInput';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useAuthContext } from '@/AuthContext';
-import { useFacilityContext } from '@/FacilityContext';
+import resetCenterLogo from '@/assets/careconnect-reset-logo.svg';
 
 import { useToast } from '@/components/ToastContext';
 
 function Login () {
   const authContext = useAuthContext();
-  const { facility } = useFacilityContext();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -136,19 +135,22 @@ function Login () {
           <Fieldset disabled={loginMutation.isPending} variant='unstyled'>
             <Container>
               <Stack align='stretch'>
-                <Stack align='center'>
-                  <Stack
-                    justify='center'
-                    w='134px'
-                    h='134px'
-                    bdrs='50%'
-                    bg='gray.3'
-                  >
-                    <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+                <Stack align='center' gap='2xl'>
+                  <img
+                    src={resetCenterLogo}
+                    alt=''
+                    aria-hidden='true'
+                    width='47'
+                    height='63'
+                  />
+                  <Stack align='center' gap='xs'>
+                    <Title order={3} ta='center'>
+                      Sign in to CareConnect
+                    </Title>
+                    <Text c='dimmed' size='md' lh='md' ta='center'>
+                      Supporting the RESET Center
+                    </Text>
                   </Stack>
-                  <Title order={3}>
-                    Login
-                  </Title>
                 </Stack>
                 {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
                 {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
