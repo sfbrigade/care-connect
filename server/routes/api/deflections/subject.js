@@ -70,12 +70,7 @@ export default async function (fastify, opts) {
       }
 
       const deflectionData = isCareSubjectEdit
-        ? {
-            narcoticsSubstance: deflection.narcoticsSubstance,
-            narcoticsParaphernalia: deflection.narcoticsParaphernalia,
-            drugUseEvidence: deflection.drugUseEvidence,
-            drugType: deflection.drugUseEvidence === true ? deflection.drugType ?? null : null,
-          }
+        ? null
         : {
             narcoticsSubstance: data.narcoticsSubstance ?? null,
             narcoticsParaphernalia: data.narcoticsParaphernalia ?? null,
@@ -84,7 +79,27 @@ export default async function (fastify, opts) {
           };
 
       await fastify.prisma.$transaction(async (tx) => {
-        if (!deflection.subjectId) {
+        await fastify.prisma.deflection.findByIdForUpdate(tx, id);
+
+        const currentDeflection = await tx.deflection.findUnique({
+          where: { id },
+          include: {
+            subject: true,
+            incident: true,
+            propertyPhotos: true,
+          },
+        });
+
+        const lockedDeflectionData = isCareSubjectEdit
+          ? {
+              narcoticsSubstance: currentDeflection.narcoticsSubstance,
+              narcoticsParaphernalia: currentDeflection.narcoticsParaphernalia,
+              drugUseEvidence: currentDeflection.drugUseEvidence,
+              drugType: currentDeflection.drugUseEvidence === true ? currentDeflection.drugType ?? null : null,
+            }
+          : deflectionData;
+
+        if (!currentDeflection.subjectId) {
           const subject = await tx.subject.create({
             data: subjectData,
           });
@@ -92,7 +107,7 @@ export default async function (fastify, opts) {
           deflection = await tx.deflection.update({
             where: { id },
             data: {
-              ...deflectionData,
+              ...lockedDeflectionData,
               subjectId: subject.id,
             },
             include: {
@@ -103,13 +118,13 @@ export default async function (fastify, opts) {
           });
         } else {
           await tx.subject.update({
-            where: { id: deflection.subjectId },
+            where: { id: currentDeflection.subjectId },
             data: subjectData,
           });
           deflection = await tx.deflection.update({
             where: { id },
             data: {
-              ...deflectionData,
+              ...lockedDeflectionData,
             },
             include: {
               subject: true,

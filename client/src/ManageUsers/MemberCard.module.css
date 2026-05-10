@@ -1,0 +1,33 @@
+.card {
+  background-color: var(--mantine-color-white);
+  border: 0;
+  border-radius: var(--mantine-radius-lg);
+  padding: var(--mantine-spacing-lg) var(--mantine-spacing-xl);
+}
+
+.card[role='button'] {
+  cursor: pointer;
+}
+
+.card[role='button']:focus-visible {
+  outline: 2px solid var(--mantine-color-indigo-6);
+  outline-offset: 2px;
+}
+
+.role {
+  color: var(--mantine-color-gray-9);
+  font-size: var(--mantine-font-size-md);
+  line-height: var(--mantine-line-height-md);
+}
+
+.name {
+  color: var(--mantine-color-gray-9);
+  font-size: 24px;
+  line-height: 32px;
+}
+
+.email {
+  color: var(--mantine-color-gray-5);
+  font-size: var(--mantine-font-size-md);
+  line-height: var(--mantine-line-height-md);
+}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -123,7 +123,7 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.queryByRole('button', { name: 'Edit narrative' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Choose a release reason.' })).toBeInTheDocument();
     expect(screen.getByText('Release reason')).toBeInTheDocument();
-    expect(screen.getByText('When you confirm release, the 849(b) will be sent to SFSO supervisors.')).toBeInTheDocument();
+    expect(screen.getByText('When you confirm release, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Confirm release' })).toBeInTheDocument();
 
@@ -134,5 +134,33 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.queryByRole('button', { name: 'Undo review' })).not.toBeInTheDocument();
     expect(screen.queryByText('Release reason')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Confirm release' })).not.toBeInTheDocument();
+  });
+
+  it('renders the updated release reason labels', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+
+    expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Behavioral health evaluation' })).toBeInTheDocument();
+  });
+
+  it('requires and submits an exit destination for behavioral health evaluation', async () => {
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
+    expect(screen.getByText('This will also mark the person as exited from RESET.')).toBeInTheDocument();
+    expect(screen.getByText('Exit destination')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: 'Other' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm release and exit' }));
+
+    await waitFor(() => {
+      expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
+        releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+        exitDestination: 'OTHER',
+      });
+    });
   });
 });

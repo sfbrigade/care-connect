@@ -1,14 +1,34 @@
 import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
 
 function SafetyCheckResultModal ({
+  deflectionId,
+  facilityId,
   opened,
   onClose,
   onConfirmPassed,
   onConfirmFailed,
-  loading = false,
 }) {
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const safetyCheckMutation = useMutation({
+    mutationFn: () => Api.deflections.safetyCheck(deflectionId),
+    onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+      queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
+      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
+      onConfirmPassed();
+    },
+    onError: () => {
+      showToast('Safety check not saved. Please try again.', 'error');
+    },
+  });
+
   return (
     <Modal
       opened={opened}
@@ -22,7 +42,7 @@ function SafetyCheckResultModal ({
       <Stack gap='xl'>
         <Stack gap='xs'>
           <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <Title order={3}>Record safety check result</Title>
+            <Title order={3}>Record safety check</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -31,7 +51,7 @@ function SafetyCheckResultModal ({
               w={40}
               h={40}
               ml='auto'
-              disabled={loading}
+              disabled={safetyCheckMutation.isPending}
               aria-label='Close'
               styles={{
                 root: {
@@ -49,22 +69,22 @@ function SafetyCheckResultModal ({
               <IconX size={16} />
             </ActionIcon>
           </Group>
-          <Text size='md'>Choose the result of the safety check.</Text>
+          <Text size='md'>Indicate a failed check if you have a safety concern that would require an exit to jail.</Text>
         </Stack>
 
-        <Group gap='sm' justify='flex-start' wrap='wrap'>
+        <Group gap='sm' justify='flex-start' wrap='nowrap' grow>
           <Button
             variant='destructive'
             onClick={onConfirmFailed}
-            disabled={loading}
+            disabled={safetyCheckMutation.isPending}
           >
-            Failed safety check
+            Failed
           </Button>
           <Button
-            onClick={onConfirmPassed}
-            loading={loading}
+            onClick={() => safetyCheckMutation.mutate()}
+            disabled={safetyCheckMutation.isPending}
           >
-            Passed safety check
+            Passed
           </Button>
         </Group>
       </Stack>

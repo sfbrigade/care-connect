@@ -48,7 +48,7 @@ export const Admitted = {
   args: {
     deflection: {
       ...baseDeflection,
-      subjectStatus: 'ADMITTED',
+      subjectStatus: 'IN_MEDICAL_INTAKE',
     },
   },
 };

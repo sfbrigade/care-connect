@@ -4,7 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import Incident from '#models/incident.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
-import { isIncidentDetailsComplete } from '#lib/incidentPermissions.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 import { redactDeflectionsForUser } from '#lib/deflectionVisibility.js';
 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
@@ -65,9 +65,6 @@ export default async function (fastify) {
           },
           subject: true,
           createdBy: true,
-          cancelReason: true,
-          releaseReason: true,
-          refusalReason: true,
           propertyPhotos: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -104,13 +101,18 @@ export default async function (fastify) {
       // Build response incidents with permissions
       const hasPreTransferHolds = deflections.length > 0;
       const hasDETAINEDHolds = deflections.some(d => d.subjectStatus === 'DETAINED');
+      const allPreTransferDetailsComplete = deflections.every(deflection => (
+        isIncidentDetailsComplete(deflection.incident) && isDeflectionDetailsComplete(deflection)
+      ));
 
       let activeIncidentId = null;
       const incidents = [];
 
       for (const [, { incident, deflections: incidentDeflections }] of incidentMap) {
         const isCreator = incident.createdById === officerId;
-        const canHandoff = incidentDeflections.length > 0 && isIncidentDetailsComplete(incident);
+        const canHandoff = incidentDeflections.length > 0 &&
+          isIncidentDetailsComplete(incident) &&
+          incidentDeflections.every(deflection => isDeflectionDetailsComplete(deflection));
 
         if (isCreator && activeIncidentId === null) {
           activeIncidentId = incident.id;
@@ -127,7 +129,7 @@ export default async function (fastify) {
       return reply.send({
         atFacility,
         arrivedAt,
-        canArrive: hasPreTransferHolds && !atFacility,
+        canArrive: hasPreTransferHolds && allPreTransferDetailsComplete && !atFacility,
         canLeave: atFacility && !hasPreTransferHolds,
         canExtend: hasDETAINEDHolds,
         canCreateHold: !atFacility,

@@ -134,7 +134,7 @@ describe('HoldsHistory', () => {
     expect(screen.getByText(/200 Main St/)).toBeInTheDocument();
   });
 
-  it('shows the "Handed off" badge when currentOfficerId is not the viewer', () => {
+  it('shows the "Handed off" badge when the viewer authored a handoff and no longer owns the hold', () => {
     renderHoldsHistory({
       currentUserId: 'alice',
       deflections: [
@@ -143,12 +143,53 @@ describe('HoldsHistory', () => {
           status: 'ACTIVE',
           subjectStatus: 'DETAINED',
           currentOfficerId: 'bob',
+          wasHandedOffByMe: true,
           incident: { id: 100, addressLine1: '1 A St', arrestedAt: '2026-03-14T12:00:00.000Z' },
         }),
       ],
     });
 
     expect(screen.getByText('Handed off')).toBeInTheDocument();
+  });
+
+  it('does not show the "Handed off" badge when the viewer never handed it off (regression for issue #880)', () => {
+    // Pre-fix, the badge fired purely on currentOfficerId mismatch — so admins
+    // (who see every deflection) and post-departure rows (currentOfficerId=null)
+    // would get false "Handed off" labels. The badge now requires a real Handoff
+    // row authored by the viewer.
+    renderHoldsHistory({
+      currentUserId: 'alice',
+      deflections: [
+        makeDeflection({
+          id: 1,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          currentOfficerId: 'bob',
+          wasHandedOffByMe: false,
+          incident: { id: 100, addressLine1: '1 A St', arrestedAt: '2026-03-14T12:00:00.000Z' },
+        }),
+      ],
+    });
+
+    expect(screen.queryByText('Handed off')).not.toBeInTheDocument();
+  });
+
+  it('does not show "Handed off" if the viewer handed off and got the hold back', () => {
+    renderHoldsHistory({
+      currentUserId: 'alice',
+      deflections: [
+        makeDeflection({
+          id: 1,
+          status: 'ACTIVE',
+          subjectStatus: 'DETAINED',
+          currentOfficerId: 'alice',
+          wasHandedOffByMe: true,
+          incident: { id: 100, addressLine1: '1 A St', arrestedAt: '2026-03-14T12:00:00.000Z' },
+        }),
+      ],
+    });
+
+    expect(screen.queryByText('Handed off')).not.toBeInTheDocument();
   });
 
   it('navigates to /holds/{id} when a history row is clicked', () => {
@@ -161,7 +202,7 @@ describe('HoldsHistory', () => {
       ],
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /View Details/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Details$/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/holds/42');
   });
 

@@ -3,11 +3,13 @@ import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
+import Facility from '#models/facility.js';
 
 test('/api/incidents', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const userHeaders = await authenticate(app, 'regular.user@test.com', 'test');
+  const facilityAdminHeaders = await authenticate(app, 'facilityadmin@test.com', 'test');
 
   await t.test('POST /', async (t) => {
     await t.test('creates a new incident', async () => {
@@ -103,6 +105,184 @@ test('/api/incidents', async (t) => {
       assert.deepStrictEqual(bedType.holds, 5);
       assert.deepStrictEqual(bedType.inTransit, 4);
       assert.deepStrictEqual(bedType.available, 3);
+    });
+
+    await t.test('does not persist incident rows when bed allocation fails', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+      const caseNumber = `ROLLBACK-${Date.now()}`;
+
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: bedTypeId },
+        data: {
+          holds: 0,
+          inTransit: 0,
+          available: 0,
+        },
+      });
+
+      const response = await app.inject().post(`/api/incidents?bedTypeId=${bedTypeId}`).payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-${caseNumber}`,
+        caseNumber,
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.GONE);
+
+      const incidentsCreated = await prisma.incident.count({
+        where: { caseNumber },
+      });
+      const deflectionsCreated = await prisma.deflection.count({
+        where: {
+          incident: {
+            caseNumber,
+          },
+        },
+      });
+
+      assert.deepStrictEqual(incidentsCreated, 0);
+      assert.deepStrictEqual(deflectionsCreated, 0);
+    });
+
+    await t.test('creates exactly one incident and deflection under concurrent contention for one bed', async () => {
+      const bedTypeId = '2347510d-5fd0-4c5c-8a14-82bfd3ef2c76';
+      const caseNumber = `RACE-${Date.now()}`;
+
+      await prisma.deflection.expire();
+      await prisma.bedType.update({
+        where: { id: bedTypeId },
+        data: {
+          holds: 0,
+          inTransit: 0,
+          available: 1,
+        },
+      });
+
+      const beforeBedTypeUpdates = await prisma.bedTypeUpdate.count({
+        where: { bedTypeId },
+      });
+
+      const payload = {
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: `CAD-${caseNumber}`,
+        caseNumber,
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      };
+
+      const responses = await Promise.all(
+        Array.from({ length: 5 }, () => app.inject()
+          .post(`/api/incidents?bedTypeId=${bedTypeId}`)
+          .payload(payload)
+          .headers(userHeaders))
+      );
+
+      const successfulCreates = responses.filter((response) => response.statusCode === StatusCodes.CREATED).length;
+      const goneResponses = responses.filter((response) => response.statusCode === StatusCodes.GONE).length;
+
+      assert.deepStrictEqual(successfulCreates, 1);
+      assert.deepStrictEqual(goneResponses, 4);
+
+      const incidentsCreated = await prisma.incident.count({
+        where: { caseNumber },
+      });
+      const deflectionsCreated = await prisma.deflection.count({
+        where: {
+          incident: {
+            caseNumber,
+          },
+        },
+      });
+      const bedTypeUpdatesCreated = await prisma.bedTypeUpdate.count({
+        where: { bedTypeId },
+      }) - beforeBedTypeUpdates;
+      const bedType = await prisma.bedType.findUnique({
+        where: { id: bedTypeId },
+      });
+
+      assert.deepStrictEqual(incidentsCreated, successfulCreates);
+      assert.deepStrictEqual(deflectionsCreated, successfulCreates);
+      assert.deepStrictEqual(bedTypeUpdatesCreated, successfulCreates);
+      assert.ok(bedType);
+      assert.deepStrictEqual(bedType.holds, 1);
+      assert.deepStrictEqual(bedType.inTransit, 1);
+      assert.deepStrictEqual(bedType.available, 0);
+    });
+
+    await t.test('rejects hold creation when facility is open but not accepting', async () => {
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.OPEN_NOT_ACCEPTING,
+          statusReason: 'OTHER',
+          statusOther: 'Pausing holds',
+        });
+
+      const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: 'CAD-NOT-ACCEPTING',
+        caseNumber: 'CASE-NOT-ACCEPTING',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
+    });
+
+    await t.test('rejects hold creation when facility is closed', async () => {
+      await app.inject()
+        .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
+        .headers(facilityAdminHeaders)
+        .payload({
+          status: Facility.Status.CLOSED,
+          statusReason: 'OTHER',
+          statusOther: 'Closed for testing',
+        });
+
+      const response = await app.inject().post('/api/incidents?bedTypeId=2347510d-5fd0-4c5c-8a14-82bfd3ef2c76').payload({
+        facilityId: '6d123d8f-edd5-4d14-9220-0508eb30b47b',
+        encounteredVia: 'DISPATCHED',
+        cadNumber: 'CAD-CLOSED',
+        caseNumber: 'CASE-CLOSED',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        latitude: 0,
+        longitude: 0,
+        arrestedAt: '',
+        supervisorBadgeNumber: '',
+      }).headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.CONFLICT);
     });
 
     await t.test('requires encounteredVia', async () => {

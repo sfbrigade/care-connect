@@ -39,7 +39,6 @@ export default async function (fastify, opts) {
           amenities: !!include?.includes('amenities'),
           eligibility: !!include?.includes('eligibility'),
           contacts: !!include?.includes('contacts'),
-          statusReason: !!include?.includes('statusReason'),
         },
       };
 

@@ -4,12 +4,14 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { refusalReasonIdFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
+import { refusalReasonFromExitDestination } from '#lib/refusalReasonFromExitDestination.js';
+import { conflictError } from '#lib/httpErrors.js';
+import { queue849bIncidentEmail } from '#lib/forms/formEmailJobs.js';
 
 const EXIT_TO_JAIL_ELIGIBLE_STATUSES = new Set([
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
   Deflection.SubjectStatus.RELEASED,
@@ -28,7 +30,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.ONSITE_AWAITING_TRANSFER,
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
   ].includes(previousSubjectStatus);
 
@@ -54,7 +56,7 @@ export default async function (fastify, opts) {
     {
       onRequest: fastify.requireCustody,
       schema: {
-        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, ADMITTED, FAILED_INTAKE, or IN_CHAIR without legal release.',
+        description: 'Record direct exit to jail from AWAITING_INTAKE, READY_FOR_INTAKE, IN_MEDICAL_INTAKE, FAILED_INTAKE, or IN_CHAIR without legal release.',
         params: z.object({
           id: z.coerce.number(),
         }),
@@ -73,100 +75,108 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const { bedTypeId } = deflection;
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const { bedTypeId } = deflection;
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              propertyPhotos: true,
+            },
+          });
 
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            propertyPhotos: true,
-          },
+          if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
+            throw conflictError(`Deflection ${id} cannot be exited to jail: status is ${deflection.subjectStatus}, expected one of [${[...EXIT_TO_JAIL_ELIGIBLE_STATUSES].join(', ')}]`);
+          }
+
+          const now = new Date();
+          const refusalReason = refusalReasonFromExitDestination('JAIL');
+
+          const previousSubjectStatus = deflection.subjectStatus;
+          const shouldMarkPropertyReturned = hasAssociatedProperty(deflection);
+          const propertyReturnData = shouldMarkPropertyReturned
+            ? {
+                propertyReturned: true,
+                propertyNotReturnedReason: null,
+                propertyNotReturnedOtherReason: null,
+                propertyReturnedAt: now,
+                propertyReturnedById: request.user.id,
+              }
+            : {};
+
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              exitDestination: 'JAIL',
+              ...(shouldMarkPropertyReturned
+                ? {
+                    propertyReturned: true,
+                    propertyNotReturnedReason: null,
+                    propertyNotReturnedOtherReason: null,
+                  }
+                : {}),
+              refusalReason,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
+          });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: Deflection.SubjectStatus.EXITED,
+              completedAt: now,
+              exitedAt: now,
+              exitedById: request.user.id,
+              exitDestination: 'JAIL',
+              ...propertyReturnData,
+              refusalReason,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          const updatedBedTypeData = buildBedTypeUpdate({
+            previousSubjectStatus,
+            bedType,
+            userId: request.user.id,
+          });
+
+          await tx.bedTypeUpdate.create({
+            data: {
+              ...updatedBedTypeData,
+              bedTypeId,
+              facilityId: deflection.facilityId,
+            },
+          });
+
+          await tx.bedType.update({
+            where: { id: bedTypeId },
+            data: updatedBedTypeData,
+          });
         });
-
-        if (!EXIT_TO_JAIL_ELIGIBLE_STATUSES.has(deflection.subjectStatus)) {
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
           return reply.code(StatusCodes.CONFLICT).send();
         }
-
-        const now = new Date();
-        const refusalReasonId = refusalReasonIdFromExitDestination('jail');
-
-        const previousSubjectStatus = deflection.subjectStatus;
-        const shouldMarkPropertyReturned = hasAssociatedProperty(deflection);
-        const propertyReturnData = shouldMarkPropertyReturned
-          ? {
-              propertyReturned: true,
-              propertyNotReturnedReason: null,
-              propertyNotReturnedOtherReason: null,
-              propertyReturnedAt: now,
-              propertyReturnedById: request.user.id,
-            }
-          : {};
-
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: Deflection.SubjectStatus.EXITED,
-            exitDestinationId: 'jail',
-            ...(shouldMarkPropertyReturned
-              ? {
-                  propertyReturned: true,
-                  propertyNotReturnedReason: null,
-                  propertyNotReturnedOtherReason: null,
-                }
-              : {}),
-            refusalReasonId,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: Deflection.SubjectStatus.EXITED,
-            completedAt: now,
-            exitedAt: now,
-            exitedById: request.user.id,
-            exitDestinationId: 'jail',
-            ...propertyReturnData,
-            refusalReasonId,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            exitDestination: true,
-            propertyPhotos: true,
-          },
-        });
-
-        const updatedBedTypeData = buildBedTypeUpdate({
-          previousSubjectStatus,
-          bedType,
-          userId: request.user.id,
-        });
-
-        await tx.bedTypeUpdate.create({
-          data: {
-            ...updatedBedTypeData,
-            bedTypeId,
-            facilityId: deflection.facilityId,
-          },
-        });
-
-        await tx.bedType.update({
-          where: { id: bedTypeId },
-          data: updatedBedTypeData,
-        });
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      await queue849bIncidentEmail(fastify, {
+        deflectionId: deflection.id,
+        userId: request.user.id,
+        recipientEmail: request.user.email,
+      });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

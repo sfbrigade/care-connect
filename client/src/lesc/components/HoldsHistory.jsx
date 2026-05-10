@@ -45,7 +45,7 @@ function HoldsHistory ({ deflections, isFetchingDeflections = false, currentUser
                   key={deflection.id}
                   deflection={deflection}
                   isHistory
-                  isHandedOff={!!currentUserId && !!deflection.currentOfficerId && deflection.currentOfficerId !== currentUserId}
+                  isHandedOff={!!deflection.wasHandedOffByMe && deflection.currentOfficerId !== currentUserId}
                   onDetailsClick={() => {
                     navigate(`/holds/${deflection.id}`);
                   }}

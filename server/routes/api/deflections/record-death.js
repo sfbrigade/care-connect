@@ -4,12 +4,13 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { conflictError } from '#lib/httpErrors.js';
 
 const IN_CUSTODY_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
   Deflection.SubjectStatus.FAILED_INTAKE,
   Deflection.SubjectStatus.READY_FOR_INTAKE,
-  Deflection.SubjectStatus.ADMITTED,
+  Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   Deflection.SubjectStatus.IN_CHAIR,
 ];
 
@@ -18,9 +19,9 @@ const ELIGIBLE_STATUSES = [
   Deflection.SubjectStatus.RELEASED,
 ];
 
-const DEATH_RELEASE_REASON_IDS = {
-  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: 'death_in_facility',
-  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: 'death_in_custody',
+const DEATH_RELEASE_REASONS = {
+  [Deflection.SubjectStatus.DEATH_IN_FACILITY]: 'DEATH_IN_FACILITY',
+  [Deflection.SubjectStatus.DEATH_IN_CUSTODY]: 'DEATH_IN_CUSTODY',
 };
 
 function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
@@ -30,7 +31,7 @@ function buildBedTypeUpdate ({ previousSubjectStatus, bedType, userId }) {
     Deflection.SubjectStatus.AWAITING_INTAKE,
     Deflection.SubjectStatus.FAILED_INTAKE,
     Deflection.SubjectStatus.READY_FOR_INTAKE,
-    Deflection.SubjectStatus.ADMITTED,
+    Deflection.SubjectStatus.IN_MEDICAL_INTAKE,
   ].includes(previousSubjectStatus);
 
   const isOccupiedRelease = [
@@ -74,82 +75,83 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!ELIGIBLE_STATUSES.includes(deflection.subjectStatus)) {
-        return reply.code(StatusCodes.CONFLICT).send();
-      }
+      try {
+        await fastify.prisma.$transaction(async (tx) => {
+          const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId);
 
-      await fastify.prisma.$transaction(async (tx) => {
-        const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, deflection.bedTypeId);
-
-        deflection = await tx.deflection.findUnique({
-          where: { id },
-          include: {
-            subject: true,
-            releaseReason: true,
-            propertyPhotos: true,
-          },
-        });
-
-        if (!ELIGIBLE_STATUSES.includes(deflection.subjectStatus)) {
-          return reply.code(StatusCodes.CONFLICT).send();
-        }
-
-        const now = new Date();
-        const previousSubjectStatus = deflection.subjectStatus;
-        const nextSubjectStatus = previousSubjectStatus === Deflection.SubjectStatus.RELEASED
-          ? Deflection.SubjectStatus.DEATH_IN_FACILITY
-          : Deflection.SubjectStatus.DEATH_IN_CUSTODY;
-
-        const releaseReasonId = DEATH_RELEASE_REASON_IDS[nextSubjectStatus];
-
-        await tx.deflectionUpdate.create({
-          data: {
-            deflectionId: id,
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: nextSubjectStatus,
-            releaseReasonId,
-            updatedById: request.user.id,
-            updatedAt: now,
-          },
-        });
-
-        deflection = await tx.deflection.update({
-          where: { id },
-          data: {
-            status: Deflection.HoldStatus.COMPLETED,
-            subjectStatus: nextSubjectStatus,
-            completedAt: now,
-            releaseReasonId,
-            updatedAt: now,
-          },
-          include: {
-            subject: true,
-            releaseReason: true,
-            propertyPhotos: true,
-          },
-        });
-
-        const bedTypeUpdateData = buildBedTypeUpdate({
-          previousSubjectStatus,
-          bedType,
-          userId: request.user.id,
-        });
-
-        if (bedTypeUpdateData) {
-          await tx.bedTypeUpdate.create({
-            data: {
-              ...bedTypeUpdateData,
-              bedTypeId: deflection.bedTypeId,
-              facilityId: deflection.facilityId,
+          deflection = await tx.deflection.findUnique({
+            where: { id },
+            include: {
+              subject: true,
+              propertyPhotos: true,
             },
           });
 
-          await tx.bedType.update({
-            where: { id: deflection.bedTypeId },
-            data: bedTypeUpdateData,
+          if (!ELIGIBLE_STATUSES.includes(deflection.subjectStatus)) {
+            throw conflictError(`Deflection ${id} cannot have death recorded: status is ${deflection.subjectStatus}, expected one of [${ELIGIBLE_STATUSES.join(', ')}]`);
+          }
+
+          const now = new Date();
+          const previousSubjectStatus = deflection.subjectStatus;
+          const nextSubjectStatus = previousSubjectStatus === Deflection.SubjectStatus.RELEASED
+            ? Deflection.SubjectStatus.DEATH_IN_FACILITY
+            : Deflection.SubjectStatus.DEATH_IN_CUSTODY;
+
+          const releaseReason = DEATH_RELEASE_REASONS[nextSubjectStatus];
+
+          await tx.deflectionUpdate.create({
+            data: {
+              deflectionId: id,
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: nextSubjectStatus,
+              releaseReason,
+              updatedById: request.user.id,
+              updatedAt: now,
+            },
           });
+
+          deflection = await tx.deflection.update({
+            where: { id },
+            data: {
+              status: Deflection.HoldStatus.COMPLETED,
+              subjectStatus: nextSubjectStatus,
+              completedAt: now,
+              releaseReason,
+              updatedAt: now,
+            },
+            include: {
+              subject: true,
+              propertyPhotos: true,
+            },
+          });
+
+          const bedTypeUpdateData = buildBedTypeUpdate({
+            previousSubjectStatus,
+            bedType,
+            userId: request.user.id,
+          });
+
+          if (bedTypeUpdateData) {
+            await tx.bedTypeUpdate.create({
+              data: {
+                ...bedTypeUpdateData,
+                bedTypeId: deflection.bedTypeId,
+                facilityId: deflection.facilityId,
+              },
+            });
+
+            await tx.bedType.update({
+              where: { id: deflection.bedTypeId },
+              data: bedTypeUpdateData,
+            });
+          }
+        });
+      } catch (error) {
+        if (error.statusCode === StatusCodes.CONFLICT) {
+          return reply.code(StatusCodes.CONFLICT).send();
         }
-      });
+        throw error;
+      }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 

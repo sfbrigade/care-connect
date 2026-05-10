@@ -35,6 +35,20 @@ export default async function (fastify, opts) {
 
       const user = new User(data);
 
+      if (!user.isActive) {
+        await fastify.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            mfaCode: null,
+            mfaToken: null,
+            mfaExpiresAt: null,
+            mfaAttempts: 0,
+            mfaLastSentAt: null,
+          },
+        });
+        return reply.code(StatusCodes.FORBIDDEN).send();
+      }
+
       // Check if too many attempts
       if (user.mfaAttempts >= 5) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: 'Too many attempts. Please wait and try again.' });

@@ -1,22 +1,40 @@
-import { Alert, Button, Stack, TextInput } from '@mantine/core';
-import { isEmail, isNotEmpty, useForm } from '@mantine/form';
-import { useMutation } from '@tanstack/react-query';
+import { Alert, Button, Select, Stack, TextInput } from '@mantine/core';
+import { isNotEmpty, useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import FullScreenModal from './FullScreenModal';
 
 function InviteUserModal ({ opened, onClose, organizationId, onSuccess, onError }) {
+  const requiresBadgeNumber = organizationId === 'sfpd' || organizationId === 'sfso';
+  const requiresRank = organizationId === 'sfso';
   const form = useForm({
     initialValues: {
       firstName: '',
       lastName: '',
       email: '',
+      badgeNumber: '',
+      titleId: '',
     },
     validate: {
       firstName: isNotEmpty('First name is required.'),
       lastName: isNotEmpty('Last name is required.'),
       email: isEmail('Please enter a valid email address.'),
+      badgeNumber: (value) => {
+        if (!requiresBadgeNumber) return null;
+        if (!value) return 'Star number is required.';
+        return value.length > 4 ? 'Star number must be 4 characters or fewer.' : null;
+      },
+      titleId: requiresRank ? isNotEmpty('Rank is required.') : undefined,
     },
+  });
+
+  const { data: titles } = useQuery({
+    queryKey: ['organizations', organizationId, 'titles'],
+    queryFn: () => Api.organizations.titles.index(organizationId).then(response => response.data),
+    enabled: requiresRank,
   });
 
   const mutation = useMutation({
@@ -29,7 +47,7 @@ function InviteUserModal ({ opened, onClose, organizationId, onSuccess, onError 
       onSuccess();
     },
     onError: (error) => {
-      if (error.email || error.firstName || error.lastName) {
+      if (error.email || error.firstName || error.lastName || error.badgeNumber || error.titleId) {
         form.setErrors(error);
       } else {
         onError();
@@ -47,7 +65,7 @@ function InviteUserModal ({ opened, onClose, organizationId, onSuccess, onError 
       opened={opened}
       onClose={handleClose}
       subtitle='Invite user'
-      title='Invite a new user.'
+      title='Invite a new user. You can only invite users from your own organization.'
       actions={
         <>
           <Button variant='destructive' onClick={handleClose}>
@@ -78,6 +96,28 @@ function InviteUserModal ({ opened, onClose, organizationId, onSuccess, onError 
             type='email'
             required
           />
+          {requiresBadgeNumber && (
+            <TextInput
+              {...form.getInputProps('badgeNumber')}
+              label='Star number'
+              maxLength={4}
+              inputMode='numeric'
+              onKeyDown={(event) => {
+                if (!/[0-9]/.test(event.key) && event.key !== 'Backspace') {
+                  event.preventDefault();
+                }
+              }}
+              required
+            />
+          )}
+          {requiresRank && (
+            <Select
+              {...form.getInputProps('titleId')}
+              label='Rank'
+              data={titles?.map((title) => ({ value: title.id, label: title.name })) || []}
+              required
+            />
+          )}
         </Stack>
       </form>
     </FullScreenModal>

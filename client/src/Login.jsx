@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router';
 import { Alert, Button, Container, Fieldset, Input, PinInput, Stack, Text, TextInput, Title } from '@mantine/core';
-import { isEmail, useForm } from '@mantine/form';
+import { useForm } from '@mantine/form';
+
+import { isEmail } from '@/utils/email';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconMail, IconLock, IconArrowLeft } from '@tabler/icons-react';
@@ -12,13 +14,12 @@ import useNow from '@/hooks/useNow';
 import PasswordInput from '@/components/PasswordInput';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useAuthContext } from '@/AuthContext';
-import { useFacilityContext } from '@/FacilityContext';
+import resetCenterLogo from '@/assets/careconnect-reset-logo.svg';
 
 import { useToast } from '@/components/ToastContext';
 
 function Login () {
   const authContext = useAuthContext();
-  const { facility } = useFacilityContext();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ function Login () {
   });
 
   const onLoginSuccess = useCallback((userData) => {
-    queryClient.setQueryData(['users', 'me'], userData);
+    queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...userData }));
     if (userData.organizationId === 'sfpd' || userData.organizationId === 'sfso') {
       navigate('/units', { replace: true, state: { from } });
     } else {
@@ -134,19 +135,22 @@ function Login () {
           <Fieldset disabled={loginMutation.isPending} variant='unstyled'>
             <Container>
               <Stack align='stretch'>
-                <Stack align='center'>
-                  <Stack
-                    justify='center'
-                    w='134px'
-                    h='134px'
-                    bdrs='50%'
-                    bg='gray.3'
-                  >
-                    <Title align='center' order={3} fw='bold'>{facility?.name}</Title>
+                <Stack align='center' gap='2xl'>
+                  <img
+                    src={resetCenterLogo}
+                    alt=''
+                    aria-hidden='true'
+                    width='47'
+                    height='63'
+                  />
+                  <Stack align='center' gap='xs'>
+                    <Title order={3} ta='center'>
+                      Sign in to CareConnect
+                    </Title>
+                    <Text c='dimmed' size='md' lh='md' ta='center'>
+                      Supporting the RESET Center
+                    </Text>
                   </Stack>
-                  <Title order={3}>
-                    Login
-                  </Title>
                 </Stack>
                 {location.state?.flash && <Alert>{location.state?.flash}</Alert>}
                 {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}
@@ -209,21 +213,21 @@ function Login () {
 
                   <Stack mt='md' gap='sm' align='flex-start'>
                     <Button
-                      variant={resendCooldown > 0 ? 'default' : 'secondary'}
+                      type='submit'
+                      loading={verifyMutation.isPending}
+                      disabled={verifyForm.getValues().code.length !== 6}
+                    >
+                      Verify and continue
+                    </Button>
+
+                    <Button
+                      variant='white'
                       onClick={handleResend}
                       disabled={resendCooldown > 0 || resendMutation.isPending}
                     >
                       {resendCooldown > 0
                         ? `Resend code in ${String(Math.floor(resendCooldown / 60)).padStart(2, '0')}:${String(resendCooldown % 60).padStart(2, '0')}`
                         : 'Resend code'}
-                    </Button>
-
-                    <Button
-                      type='submit'
-                      loading={verifyMutation.isPending}
-                      disabled={verifyForm.getValues().code.length !== 6}
-                    >
-                      Verify and continue
                     </Button>
                   </Stack>
                 </Stack>

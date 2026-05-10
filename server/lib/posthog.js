@@ -7,7 +7,12 @@ const host = process.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
 let client = null;
 
 if (apiKey) {
-  client = new PostHog(apiKey, { host });
+  client = new PostHog(apiKey, {
+    host,
+    // on the server, we need to enable exception autocapture via code, while it's done
+    // on the Posthog site for the client
+    enableExceptionAutocapture: true
+  });
 }
 
 export function captureEvent (event, properties = {}) {
@@ -17,6 +22,11 @@ export function captureEvent (event, properties = {}) {
     event,
     properties,
   });
+}
+
+export function captureException (error, distinctId = 'care-connect-server', properties = {}) {
+  if (!client) return;
+  client.captureException(error, distinctId, properties);
 }
 
 export async function shutdown () {

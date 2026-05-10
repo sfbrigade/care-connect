@@ -17,7 +17,7 @@ export default {
 export const NoneInCustody = {
   args: {
     title: 'No persons In Custody',
-    description: "When you receive a person from SFPD, they'll appear here.",
+    description: "When you receive a person from an arresting officer, they'll appear here.",
   },
 };
 

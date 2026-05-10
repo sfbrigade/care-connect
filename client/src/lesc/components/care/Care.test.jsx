@@ -99,10 +99,10 @@ beforeEach(() => {
   });
 
   mockDeflectionsList.mockImplementation(({ subjectStatus }) => {
-    if (subjectStatus === 'ADMITTED,IN_CHAIR') {
+    if (subjectStatus === 'IN_MEDICAL_INTAKE,IN_CHAIR') {
       return Promise.resolve({
         data: [
-          { id: 1, subjectStatus: 'ADMITTED' },
+          { id: 1, subjectStatus: 'IN_MEDICAL_INTAKE' },
           { id: 2, subjectStatus: 'IN_CHAIR' },
         ],
       });

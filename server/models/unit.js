@@ -1,7 +1,9 @@
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
+import { formatUnitName } from '#lib/unitName.js';
+const { Prisma } = prismaPkg;
 
 const UnitAttributesSchema = z.object({
   name: z.string(),
@@ -26,6 +28,12 @@ export class Unit extends Base {
   static ResponseSchema = UnitResponseSchema;
 
   constructor (data) {
+    if (data?.name) {
+      data = {
+        ...data,
+        name: formatUnitName(data.name),
+      };
+    }
     super(Prisma.UnitScalarFieldEnum, data);
   }
 }

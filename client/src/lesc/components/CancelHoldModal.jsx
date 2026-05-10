@@ -19,7 +19,7 @@ function CancelHoldModal ({
   onConfirm,
   loading = false,
 }) {
-  const [cancelReasonId, setCancelReasonId] = useState();
+  const [cancelReason, setCancelReason] = useState();
 
   const list = deflections ?? [];
   const count = list.length;
@@ -80,16 +80,16 @@ function CancelHoldModal ({
           )}
           <Text size='sm' c='dimmed'>{explanation}</Text>
           <CancelReasonSelector
-            value={cancelReasonId}
-            onChange={setCancelReasonId}
+            value={cancelReason}
+            onChange={setCancelReason}
             enabled={reasonRequired}
           />
         </Stack>
         <Group grow preventGrowOverflow={false}>
           <Button
             variant='destructive'
-            onClick={() => onConfirm(cancelReasonId)}
-            disabled={loading || (reasonRequired && !cancelReasonId)}
+            onClick={() => onConfirm(cancelReason)}
+            disabled={loading || (reasonRequired && !cancelReason)}
           >
             Yes, cancel
           </Button>

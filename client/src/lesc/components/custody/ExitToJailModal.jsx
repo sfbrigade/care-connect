@@ -1,13 +1,35 @@
 import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useToast } from '@/components/ToastContext';
+import Api from '@/Api';
 
 function ExitToJailModal ({
+  deflectionId,
+  facilityId,
   opened,
   onClose,
   onConfirm,
-  loading = false,
 }) {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
+  const exitToJailMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToJail(deflectionId),
+    onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+      queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Released".');
+      onConfirm();
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
   return (
     <Modal
       opened={opened}
@@ -21,7 +43,7 @@ function ExitToJailModal ({
       <Stack gap='xl'>
         <Stack gap='sm'>
           <Group justify='space-between' align='center' wrap='nowrap'>
-            <Title order={4}>Exit this person to jail?</Title>
+            <Title order={4}>Confirm exit to jail</Title>
             <ActionIcon
               onClick={onClose}
               bg='rgba(134, 142, 150, 0.1)'
@@ -30,20 +52,22 @@ function ExitToJailModal ({
               w={40}
               h={40}
               ml='auto'
-              disabled={loading}
+              disabled={exitToJailMutation.isPending}
               aria-label='Close'
             >
               <IconX size={16} />
             </ActionIcon>
           </Group>
           <Text size='sm' c='dimmed'>
-            This step can&apos;t be undone. After you confirm:
+            This step cannot be undone.
             <br />
-            &bull; This person will move to &quot;Transferred to jail&quot; for 24 hours.
+            &bull; The person will not be recorded as released.
             <br />
-            &bull; They will be removed from in-custody lists and only appear under &quot;Legally released&quot;.
+            &bull; Property will be recorded as returned.
             <br />
-            &bull; Their property record will be marked as returned.
+            &bull; An 849(b) incident form will be prepared and sent to you and SFSO records.
+            <br />
+            &bull; The record will move to the &quot;Legally released&quot; tab, in the &quot;Transferred to jail&quot; section.
           </Text>
         </Stack>
 
@@ -51,15 +75,15 @@ function ExitToJailModal ({
           <Button
             variant='destructive'
             onClick={onClose}
-            disabled={loading}
+            disabled={exitToJailMutation.isPending}
           >
-            No, cancel
+            Cancel
           </Button>
           <Button
-            onClick={onConfirm}
-            loading={loading}
+            onClick={() => exitToJailMutation.mutate()}
+            loading={exitToJailMutation.isPending}
           >
-            Yes, exit to jail
+            Confirm
           </Button>
         </Group>
       </Stack>

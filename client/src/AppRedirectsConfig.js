@@ -1,6 +1,7 @@
 import { matchPath } from 'react-router';
 
 import { UserRole } from '@/hooks/useUserRole';
+import { readStoredWorkMode } from './utils/workMode';
 
 export const ADMIN_AUTH_PROTECTED_PATHS = [
   '/admin/*',
@@ -17,6 +18,7 @@ export const ROLE_PROTECTED_PATHS = [
   { pattern: '/custody/*', roles: [UserRole.CUSTODY] },
   { pattern: '/care', roles: [UserRole.CARE] },
   { pattern: '/care/*', roles: [UserRole.CARE] },
+  { pattern: '/manage-users/*', roles: [UserRole.ORG_ADMIN] },
   { pattern: '/manage-users', roles: [UserRole.ORG_ADMIN] },
   { pattern: '/manage-capacity', roles: [UserRole.FACILITY_ADMIN] },
 ];
@@ -27,12 +29,36 @@ export const REDIRECTS = [
 
 export function getDefaultPathForUser (user) {
   const roles = user?.roles ?? [];
+  // Dual-role users route to their remembered mode so they don't land on
+  // /custody and leave it in browser history when their current mode is
+  // FIELD (or vice-versa).
+  if (roles.includes(UserRole.FIELD) && roles.includes(UserRole.CUSTODY)) {
+    const stored = readStoredWorkMode();
+    if (stored === 'FIELD') return '/holds';
+    if (stored === 'CUSTODY') return '/custody';
+  }
   if (roles.includes(UserRole.CUSTODY)) return '/custody';
   if (roles.includes(UserRole.CARE)) return '/care';
   return '/holds';
 }
 
-export function handleRedirects (authContext, location, pathname, handler) {
+function isCustodyPath (pathname) {
+  return pathname === '/custody' || pathname.startsWith('/custody/');
+}
+
+export function handleRedirects (authContext, location, pathname, handler, { hasActiveHolds = false } = {}) {
+  // Work-mode block: a dual-role user with active holds cannot enter custody
+  // routes. Route guards otherwise let them through because they hold the
+  // CUSTODY role.
+  if (
+    authContext.user &&
+    isCustodyPath(pathname) &&
+    authContext.user.roles?.includes(UserRole.FIELD) &&
+    authContext.user.roles?.includes(UserRole.CUSTODY) &&
+    hasActiveHolds
+  ) {
+    return handler('/holds');
+  }
   let match;
   for (const pattern of ADMIN_AUTH_PROTECTED_PATHS) {
     match = matchPath(pattern, pathname);

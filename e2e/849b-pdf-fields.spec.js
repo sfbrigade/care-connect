@@ -93,6 +93,10 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('Text2')).toBe('2');
   });
 
+  test('reporting deputy uses first initial and last name', () => {
+    expect(getFieldText('REPORTING DEPUTY PRINT')).toBe('A. User');
+  });
+
   test('type of premise is blank', () => {
     const value = getFieldText('TYPE OF PREMISE');
     expect(value || '').toBe('');
@@ -108,6 +112,11 @@ test.describe('849(b) PDF field verification', () => {
     // encounteredVia is ON_VIEW, so should be "Same/On View"
     const dropdown = pdfForm.getDropdown('Dropdown2');
     expect(dropdown.getSelected()).toContain('Same/On View');
+  });
+
+  test('disposition code is detained and released', () => {
+    const dropdown = pdfForm.getDropdown('Dropdown4');
+    expect(dropdown.getSelected()).toContain('DET/REL');
   });
 
   // ── Subject fields ──
@@ -143,6 +152,42 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('ID NO SOCSECOPLICFBICII')).toBe('D1234567');
   });
 
+  // ── Reporting party fields ──
+
+  test('reporting party code is R1', () => {
+    expect(getFieldText('CODE_2')).toBe('R1');
+  });
+
+  test('reporting party name uses releasing deputy', () => {
+    expect(getFieldText('NAME LAST FIRST MIDDLE_2')).toBe('SFSO, T, #5678');
+  });
+
+  test('reporting party contact phone number', () => {
+    expect(getFieldText('CONTACT PHONE NUMBER_2')).toBe('415-575-6461');
+  });
+
+  test('reporting party business address', () => {
+    expect(
+      getFieldText('BUSINESS ADDRESSNAME OF SCHOOL IF JUVENILECITY IF NOT SAN FRANCISCO_2')
+    ).toBe('70 Oak Grove St.');
+  });
+
+  test('reporting party business zipcode', () => {
+    expect(getFieldText('ZIP CODE_4')).toBe('94107');
+  });
+
+  test('citation area does not contain stray text', () => {
+    expect(getFieldText('Text4') || '').toBe('');
+  });
+
+  test('post training is checked', () => {
+    expect(getCheckboxChecked('POST TRAINING')).toBe(true);
+  });
+
+  test('prop 115 certification follows releasing deputy profile', () => {
+    expect(getCheckboxChecked('BELIEF FOLLOWING AN INVESTIGATION OF THE EVENTS AND PARTIES INVOLVED')).toBe(false);
+  });
+
   // ── Narrative ──
 
   test('narrative uses release narrative', () => {
@@ -150,11 +195,5 @@ test.describe('849(b) PDF field verification', () => {
     expect(narrative).toContain('Incident number: CS849B');
     expect(narrative).toContain('Cad number: CAD849B');
     expect(narrative).toContain('Subject was brought to RESET');
-  });
-
-  // ── Prop 115 ──
-
-  test('prop 115 pages is 2', () => {
-    expect(getFieldText('Text4')).toBe('2');
   });
 });

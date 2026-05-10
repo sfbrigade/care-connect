@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Container, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Button, Card, Container, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
+import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
@@ -12,7 +13,10 @@ import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
 import useSessionState from '@/hooks/useSessionState';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
-import { formatTime } from '@/utils/format';
+import useNow from '@/hooks/useNow';
+import useSubjectDetails from '@/hooks/useSubjectDetails';
+import { formatTime, formatTimeRemaining } from '@/utils/format';
+import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
@@ -21,15 +25,17 @@ import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
+import classes from './Custody.module.css';
 
-const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,ADMITTED,IN_CHAIR';
+const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR';
 const RELEASED_STATUSES = 'RELEASED,EXITED';
+const TRANSIT_STATUSES = 'DETAINED,ONSITE_AWAITING_TRANSFER';
 
 const IN_CUSTODY_SECTIONS = [
   { status: 'AWAITING_INTAKE', label: 'Pending Safety Checks', tooltip: 'People waiting for a safety check. Mark complete when safety check is done.' },
   { status: 'READY_FOR_INTAKE', label: 'Ready for Medical Intake', tooltip: 'Ready to start process of medical admission. Show the QR code to Connections staff.' },
-  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'Medical admission in process. Monitor status until person is admitted.' },
-  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying sobering chairs. Start legal release when they are ready.' },
+  { status: 'IN_MEDICAL_INTAKE', label: 'In Medical Intake', tooltip: 'Medical intake in progress. Monitor status until intake is completed.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying chairs. Start legal release when medical staff indicate person is ready.' },
 ];
 
 const RELEASED_SECTIONS = [
@@ -54,14 +60,14 @@ function groupReleasedByStatus (deflections) {
   function isTransferredToJail (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestinationId === 'jail'
+      deflection?.exitDestination === 'JAIL'
     );
   }
 
   function isTransferredToHospital (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestinationId === 'hospital' &&
+      deflection?.exitDestination === 'HOSPITAL' &&
       !deflection?.releasedAt
     );
   }
@@ -82,8 +88,122 @@ function groupReleasedByStatus (deflections) {
   };
 }
 
+function officerDisplayName (officer) {
+  const firstInitial = officer?.firstName ? `${officer.firstName.charAt(0)}.` : '';
+  const name = [firstInitial, officer?.lastName].filter(Boolean).join(' ');
+  if (!name) return 'Unknown officer';
+  return officer?.badgeNumber ? `${name} #${officer.badgeNumber}` : name;
+}
+
+function groupTransitByOfficer (deflections) {
+  const grouped = new Map();
+  for (const deflection of deflections ?? []) {
+    const officer = deflection.currentOfficer ?? deflection.createdBy;
+    const officerId = officer?.id ?? 'unknown';
+    if (!grouped.has(officerId)) {
+      grouped.set(officerId, {
+        officerId,
+        officerName: officerDisplayName(officer),
+        deflections: [],
+      });
+    }
+    grouped.get(officerId).deflections.push(deflection);
+  }
+  return Array.from(grouped.values());
+}
+
+// Bubble groups containing any ONSITE_AWAITING_TRANSFER hold to the top, and
+// within a (defensively-mixed) group, surface arrived holds first. Both sorts
+// are stable, so existing newest-first ordering is preserved within each tier.
+function sortByArrivedFirst (groups) {
+  const isArrivedDeflection = (d) => d.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const compareArrivedFirst = (a, b) => {
+    const aArrived = isArrivedDeflection(a);
+    const bArrived = isArrivedDeflection(b);
+    if (aArrived === bArrived) return 0;
+    return aArrived ? -1 : 1;
+  };
+  const groupsWithSortedDeflections = groups.map(group => ({
+    ...group,
+    deflections: [...group.deflections].sort(compareArrivedFirst),
+  }));
+  return groupsWithSortedDeflections.sort((a, b) => {
+    const aHas = a.deflections.some(isArrivedDeflection);
+    const bHas = b.deflections.some(isArrivedDeflection);
+    if (aHas === bHas) return 0;
+    return aHas ? -1 : 1;
+  });
+}
+
+function TransitCustodyCard ({ deflection, highlighted }) {
+  const displayId = String(deflection.id);
+  const navigate = useNavigate();
+  const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
+  const subjectDetails = useSubjectDetails(deflection?.subject);
+  const detailsComplete = isValidDeflection(deflection) && isValidIncident(deflection?.incident);
+  const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
+  const now = useNow(1000, !isArrived && !!deflection?.expiresAt && detailsComplete);
+
+  return (
+    <Card
+      bg='white'
+      p='xl'
+      radius='lg'
+      id={`custody-card-${deflection.id}`}
+      className={highlighted ? classes.transitCardHighlighted : undefined}
+    >
+      <Stack gap='xl'>
+        <Stack gap='xs'>
+          <Group gap='xs' wrap='nowrap'>
+            <Text size='md' c='gray.6'>Hold {displayId}</Text>
+            {!detailsComplete && (
+              <>
+                <Text size='md' c='gray.4'>•</Text>
+                <Text size='md' c='red.6' truncate>Details incomplete</Text>
+              </>
+            )}
+            {isArrived && (
+              <>
+                <Text size='md' c='gray.4'>•</Text>
+                <Text size='md' c='indigo.6' truncate>
+                  {deflection.arrivedAt ? `Arrived at ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                </Text>
+              </>
+            )}
+          </Group>
+          <Stack gap={0}>
+            <Title order={3}>{displayName}</Title>
+            {subjectDetails.length > 0 && (
+              <Text size='md'>{subjectDetails.join(', ')}</Text>
+            )}
+          </Stack>
+        </Stack>
+        {detailsComplete && (
+          <Group gap='md' wrap='nowrap' justify={isArrived ? 'flex-end' : 'space-between'}>
+            {!isArrived && (
+              <Title order={4} fw={400}>
+                {formatTimeRemaining(deflection.expiresAt, now) ?? ''}
+              </Title>
+            )}
+            <Button
+              variant='secondary'
+              size='md'
+              onClick={() => {
+                window.sessionStorage.setItem('custodyScrollTarget', deflection.id);
+                navigate(`/custody/${deflection.id}`);
+              }}
+            >
+              Details
+            </Button>
+          </Group>
+        )}
+      </Stack>
+    </Card>
+  );
+}
+
 function Custody () {
-  const [tab, setTab] = useSessionState('custody', 'in-custody');
+  const [tab, setTab] = useSessionState('custody', 'transit');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
@@ -91,7 +211,6 @@ function Custody () {
   const { showToast } = useToast();
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
-  const sectionScrolledRef = useRef(false);
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -102,9 +221,18 @@ function Custody () {
     refetchOnMount: 'always',
   });
 
+  const { data: transitDeflections, dataUpdatedAt: transitDataUpdatedAt } = useQuery({
+    queryKey: ['deflections', facility.id, 'transit'],
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: TRANSIT_STATUSES, status: 'ACTIVE', includeIncident: true, includeCurrentOfficer: true, perPage: 200 }).then(r => r.data),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: 'always',
+  });
+
   const { data: releasedDeflections, dataUpdatedAt: releasedDataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'released'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: RELEASED_STATUSES, perPage: 200 }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -118,70 +246,44 @@ function Custody () {
   });
 
   function handleScanSuccess () {
-    setTab('in-custody');
+    setTab('custody');
     queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
   }
 
   useEffect(() => {
-    if (!inCustodyDeflections && !releasedDeflections) return;
-    const targetId = window.sessionStorage.getItem('custodyScrollTarget');
-    if (!targetId) return;
-    window.sessionStorage.removeItem('custodyScrollTarget');
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-card-${targetId}`);
-      if (el) {
-        el.scrollIntoView({ block: 'center' });
-      }
-    });
-  }, [inCustodyDeflections, releasedDeflections]);
+    // wait until data is loaded
+    if (!transitDeflections && !inCustodyDeflections && !releasedDeflections) return;
 
-  useEffect(() => {
-    if (!inCustodyDeflections && !releasedDeflections) return;
-    const targetId = window.sessionStorage.getItem('custodyHighlightTarget');
-    if (!targetId) return;
-    window.sessionStorage.removeItem('custodyHighlightTarget');
-    setHighlightedId(targetId);
-    if (sectionScrolledRef.current) {
-      sectionScrolledRef.current = false;
-      return;
+    // define targets from session storage
+    const scrollTarget = window.sessionStorage.getItem('custodyScrollTarget');
+    const highlightTarget = window.sessionStorage.getItem('custodyHighlightTarget');
+
+    // handle card highlighting (state update)
+    if (highlightTarget) {
+      setHighlightedId(highlightTarget);
     }
+
     window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-card-${targetId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const cardId = highlightTarget || scrollTarget;
+      if (cardId) {
+        const el = document.getElementById(`custody-card-${cardId}`);
+        if (el) {
+          // seems to need timeout to ensure content is laid out
+          setTimeout(() => {
+            const scrollBehavior = (tab === 'released' || highlightTarget) ? 'smooth' : 'auto';
+            const rect = el.getBoundingClientRect();
+            const isVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
+            if (!isVisible) {
+              el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+            }
+          }, 100);
+          // cleanup only after successfully finding the element
+          window.sessionStorage.removeItem('custodyHighlightTarget');
+          window.sessionStorage.removeItem('custodyScrollTarget');
+        }
       }
     });
-  }, [inCustodyDeflections, releasedDeflections]);
-
-  useEffect(() => {
-    if (tab !== 'released' || !highlightedId) return;
-    const el = document.getElementById(`custody-card-${highlightedId}`);
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      const isVisible = (
-        rect.top >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-      );
-      // prevent page 'jumping' if the card is already visible and only scroll if not visible
-      if (!isVisible) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [tab, highlightedId, releasedDeflections]);
-
-  useEffect(() => {
-    if (!releasedDeflections) return;
-    const sectionTarget = window.sessionStorage.getItem('custodyReleasedSectionTarget');
-    if (!sectionTarget) return;
-    window.sessionStorage.removeItem('custodyReleasedSectionTarget');
-    sectionScrolledRef.current = true;
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-section-${sectionTarget}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }, [releasedDeflections]);
+  }, [transitDeflections, inCustodyDeflections, releasedDeflections, tab]);
 
   useEffect(() => {
     if (!highlightedId) return;
@@ -227,26 +329,12 @@ function Custody () {
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
+  const transitGrouped = sortByArrivedFirst(groupTransitByOfficer(transitDeflections));
+  const hasTransit = (transitDeflections?.length ?? 0) > 0;
   const hasInCustody = (inCustodyDeflections?.length ?? 0) > 0;
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
   const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
   const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
-
-  useEffect(() => {
-    if (!inCustodyDeflections) return;
-
-    const sectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
-    if (!sectionTarget) return;
-    window.sessionStorage.removeItem('custodyInCustodySectionTarget');
-
-    sectionScrolledRef.current = true;
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-section-${sectionTarget}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }, [inCustodyDeflections]);
 
   return (
     <>
@@ -264,26 +352,53 @@ function Custody () {
             fullWidth
             value={tab}
             onChange={setTab}
+            withItemsBorders={false}
             data={[
-              { label: 'In custody', value: 'in-custody' },
-              { label: 'Legally released', value: 'released' },
+              { label: 'Transit', value: 'transit' },
+              { label: 'Custody', value: 'custody' },
+              { label: 'Released', value: 'released' },
             ]}
           />
           <FacilityStatusBanner />
-          {tab === 'in-custody' && (
+          {tab === 'transit' && (
+            <Stack gap='md'>
+              {hasTransit
+                ? transitGrouped.map(group => (
+                  <Stack
+                    key={group.officerId}
+                    gap='xs'
+                    p='sm'
+                    bg='gray.1'
+                    className={classes.transitGroup}
+                  >
+                    <Text size='md' ta='center' truncate>{group.officerName}</Text>
+                    {group.deflections.map(d => (
+                      <TransitCustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />
+                    ))}
+                  </Stack>
+                ))
+                : (
+                  <EmptyState
+                    title='No persons in Transit'
+                    description='Detained persons on the way to this facility will appear here.'
+                  />
+                  )}
+            </Stack>
+          )}
+          {tab === 'custody' && (
             <Stack gap='md'>
               {hasInCustody
                 ? (
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
                     groupedItems={inCustodyGrouped}
-                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} onExitToJail={() => setTab('released')} />}
                   />
                   )
                 : (
                   <EmptyState
                     title='No persons In Custody'
-                    description="When you receive a person from SFPD, they'll appear here."
+                    description="When you receive a person from an arresting officer, they'll appear here."
                   />
                   )}
             </Stack>
@@ -307,7 +422,10 @@ function Custody () {
                   )}
             </Stack>
           )}
-          {tab === 'in-custody' && dataUpdatedAt > 0 && (
+          {tab === 'transit' && transitDataUpdatedAt > 0 && (
+            <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(transitDataUpdatedAt).toISO())}</Text>
+          )}
+          {tab === 'custody' && dataUpdatedAt > 0 && (
             <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
           )}
         </Stack>
