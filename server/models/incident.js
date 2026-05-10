@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
@@ -8,6 +8,7 @@ import Organization from './organization.js';
 import Title from './title.js';
 import Unit from './unit.js';
 import User from './user.js';
+const { Prisma } = prismaPkg;
 
 const IncidentAttributesSchema = z.object({
   cadNumber: z.string().nullable(),

@@ -34,9 +34,11 @@ function buildDeflection (overrides = {}) {
     narcoticsParaphernalia: false,
     drugUseEvidence: false,
     drugType: null,
+    chargeType: 'RWS_647F',
     behavior: 'Observed unsafe behavior',
     behaviorNarrative: 'Observed unsafe behavior',
     property: 'NONE',
+    certifiedAt: '2026-03-04T10:05:00.000Z',
     ...overrides,
   };
 }
@@ -80,6 +82,22 @@ describe('getSfpdDeflectionStatusChip', () => {
       incident: buildIncident(),
     });
     expect(chip).toEqual({ label: 'Awaiting arrival', tone: 'info' });
+  });
+
+  it('returns Details incomplete when charge type is missing', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ chargeType: null }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
+  });
+
+  it('returns Details incomplete when certification is missing', () => {
+    const chip = getSfpdDeflectionStatusChip({
+      deflection: buildDeflection({ certifiedAt: null }),
+      incident: buildIncident(),
+    });
+    expect(chip).toEqual({ label: 'Details incomplete', tone: 'danger' });
   });
 
   it('returns Ready for custody transfer after arrived signal', () => {

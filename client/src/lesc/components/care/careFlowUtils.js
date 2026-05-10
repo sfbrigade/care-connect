@@ -1,30 +1,70 @@
-function isTransferredToJailWithoutLegalRelease (deflection) {
+function isTransferredToJail (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
-    deflection?.exitDestinationId === 'jail' &&
-    !deflection?.releasedAt
+    deflection?.exitDestination === 'JAIL'
   );
 }
 
-function isTransferredToHospitalWithoutLegalRelease (deflection) {
+function isTransferredToHospital (deflection) {
   return (
     deflection?.subjectStatus === 'EXITED' &&
-    deflection?.exitDestinationId === 'hospital' &&
+    deflection?.exitDestination === 'HOSPITAL' &&
     !deflection?.releasedAt
   );
 }
 
 export function shouldShowCareCardViewDetails (deflection) {
-  return deflection?.subjectStatus !== 'EXITED';
+  return ['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'].includes(deflection?.subjectStatus);
 }
 
 export function hasPersistedExitDetails (deflection) {
   return Boolean(
-    deflection?.exitDestinationId &&
-    deflection?.exitHousingStatusId &&
+    deflection?.exitDestination &&
+    deflection?.exitHousingStatus &&
     deflection?.exitConnectedToCare &&
     deflection?.exitSFResident
   );
+}
+
+export const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
+
+export function getSavedExitDraftMap () {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+export function hasSavedExitDraft (deflectionId) {
+  const draft = getSavedExitDraftMap()?.[String(deflectionId)];
+  return Boolean(draft?.exitFormEdited || draft?.exitDetailsSaved);
+}
+
+export function getSavedExitDraft (deflectionId) {
+  return getSavedExitDraftMap()?.[String(deflectionId)] ?? null;
+}
+
+export function setSavedExitDraft (deflectionId, draft) {
+  if (typeof window === 'undefined' || !deflectionId) return;
+  const draftMap = getSavedExitDraftMap();
+  const key = String(deflectionId);
+
+  if (draft) {
+    window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify({
+      ...draftMap,
+      [key]: {
+        ...draftMap[key],
+        ...draft,
+        exitFormEdited: true,
+      },
+    }));
+    return;
+  }
+
+  const { [key]: _removed, ...nextDraftMap } = draftMap;
+  window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify(nextDraftMap));
 }
 
 export function groupCareNotInCustodySections (deflections = []) {
@@ -32,14 +72,14 @@ export function groupCareNotInCustodySections (deflections = []) {
     STILL_ONSITE: deflections.filter(d => d.subjectStatus === 'RELEASED'),
     EXITED_FACILITY: deflections.filter(
       d => d.subjectStatus === 'EXITED' &&
-        !isTransferredToJailWithoutLegalRelease(d) &&
-        !isTransferredToHospitalWithoutLegalRelease(d)
+        !isTransferredToJail(d) &&
+        !isTransferredToHospital(d)
     ),
     TRANSFERRED_TO_JAIL: deflections.filter(
-      d => isTransferredToJailWithoutLegalRelease(d)
+      d => isTransferredToJail(d)
     ),
     TRANSFERRED_TO_HOSPITAL: deflections.filter(
-      d => isTransferredToHospitalWithoutLegalRelease(d)
+      d => isTransferredToHospital(d)
     ),
   };
 }
@@ -59,18 +99,15 @@ export function getCareExitSuccessPayload (deflectionId) {
 }
 
 export function getCareExitPrimaryActionState ({
-  isSectionTwoComplete,
-  physicalLeftFinal,
+  isExitFormComplete,
+  hasAssociatedProperty,
   propertyReturnHandledConfirmed,
   isSaving,
 }) {
   return {
-    label: physicalLeftFinal
-      ? 'Confirm exit'
-      : 'Save exit details',
-    disabled: !isSectionTwoComplete ||
-      (physicalLeftFinal === null || physicalLeftFinal === undefined) ||
-      (!!physicalLeftFinal && !propertyReturnHandledConfirmed) ||
+    label: 'Confirm exit',
+    disabled: !isExitFormComplete ||
+      (hasAssociatedProperty && propertyReturnHandledConfirmed !== true) ||
       isSaving,
   };
 }

@@ -18,7 +18,7 @@ export function build849bReleaseNarrative ({ incident, behavior } = {}) {
     `Cad number: ${cadNumber}`,
     'Subject was brought to RESET because they were found to be under the influence of a controlled substance or alcohol in a public location. Upon being able to care for themselves, they were released from their detention.',
     '',
-    'The SFPD Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
+    'The Officer who brought the person to RESET recorded the following observations on the 647(f) documentation:',
     behaviorNarrative,
   ].join('\n');
 }

@@ -11,7 +11,7 @@
  *   const filledBytes = await fillCoR(templatePdfBytes, data);
  */
 
-import { PDFDocument, PDFName, PDFBool, rgb } from 'pdf-lib';
+import { PDFDocument, PDFName, StandardFonts, rgb } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -88,9 +88,12 @@ export async function fillCoR (pdfBytes, data) {
     });
   }
 
-  // ── Preserve the form's native fonts: let the viewer render appearances ──
-  const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'));
-  acroForm.set(PDFName.of('NeedAppearances'), PDFBool.True);
+  // ── Generate printable appearances while preserving fillable fields ──
+  const appearanceFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  form.updateFieldAppearances(appearanceFont);
 
-  return pdfDoc.save({ updateFieldAppearances: false });
+  const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'));
+  acroForm.delete(PDFName.of('NeedAppearances'));
+
+  return pdfDoc.save();
 }

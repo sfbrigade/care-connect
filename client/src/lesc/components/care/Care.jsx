@@ -23,21 +23,20 @@ import StatusAccordion from '@/components/StatusAccordion';
 import CareCard from './CareCard';
 import CompleteIntakeModal from './CompleteIntakeModal';
 import ScanAdmitCodeModal from './ScanAdmitCodeModal';
-import { groupCareNotInCustodySections, hasPersistedExitDetails } from './careFlowUtils';
+import { groupCareNotInCustodySections, hasPersistedExitDetails, hasSavedExitDraft } from './careFlowUtils';
 
-const IN_CUSTODY_STATUSES = 'ADMITTED,IN_CHAIR';
+const IN_CUSTODY_STATUSES = 'IN_MEDICAL_INTAKE,IN_CHAIR';
 const NOT_IN_CUSTODY_STATUSES = 'RELEASED,EXITED';
 
 const IN_CUSTODY_SECTIONS = [
-  { status: 'ADMITTED', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
-  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently in a sobering chair. If legally released, you can start their exit process.' },
+  { status: 'IN_MEDICAL_INTAKE', label: 'In Medical Intake', tooltip: 'People currently in the medical admission process. Complete intake to move them to a chair.' },
+  { status: 'IN_CHAIR', label: 'In-chair', tooltip: 'People currently occupying chairs.' },
 ];
 const NOT_IN_CUSTODY_SECTIONS = [
-  { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'People are legally released but still in chair or otherwise onsite.' },
+  { status: 'STILL_ONSITE', label: 'Still onsite', tooltip: 'Legally released but still in chair.' },
   { status: 'EXITED_FACILITY', label: 'Exited facility', tooltip: 'People who have left the facility within the last 24 hours.' },
-  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility but were not legally released.' },
+  { status: 'TRANSFERRED_TO_JAIL', label: 'Transferred to jail', tooltip: 'People who have left the facility for jail within the last 24 hours.' },
 ];
-const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
 
 function groupByStatus (deflections) {
   const grouped = {};
@@ -46,16 +45,6 @@ function groupByStatus (deflections) {
     grouped[d.subjectStatus].push(d);
   }
   return grouped;
-}
-
-function hasSavedExitDraft (deflectionId) {
-  if (typeof window === 'undefined') return false;
-  try {
-    const draftMap = JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
-    return Boolean(draftMap?.[String(deflectionId)]?.exitDetailsSaved);
-  } catch {
-    return false;
-  }
 }
 
 function hasSavedOrPersistedExitDetails (deflection) {
@@ -85,7 +74,7 @@ function Care () {
 
   const { data: notInCustodyDeflections = [] } = useQuery({
     queryKey: ['deflections', facility.id, 'care-not-in-custody'],
-    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES }).then(r => r.data),
+    queryFn: () => Api.deflections.list({ facilityId: facility.id, subjectStatus: NOT_IN_CUSTODY_STATUSES, perPage: 200 }).then(r => r.data),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -197,7 +186,7 @@ function Care () {
                       deflection={d}
                       highlighted={String(d.id) === highlightedId}
                       onCompleteIntake={() => setIntakeModalDeflection(d)}
-                      hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                      hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                       onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                     />}
                 />
@@ -219,7 +208,7 @@ function Care () {
                   deflection={d}
                   highlighted={String(d.id) === highlightedId}
                   onCompleteIntake={() => setIntakeModalDeflection(d)}
-                  hasExitDraft={hasSavedOrPersistedExitDetails(d.id)}
+                  hasExitDraft={hasSavedOrPersistedExitDetails(d)}
                   onExitDetails={() => navigate(`/care/${d.id}/exit?from=detail`)}
                 />}
             />

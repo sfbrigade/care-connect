@@ -36,24 +36,16 @@ export default async function (fastify, opts) {
       }
 
       if (data.status === Facility.Status.OPEN_ACCEPTING) {
-        data.statusReasonId = null;
+        data.statusReason = null;
         data.statusOther = null;
-      } else {
-        const statusReason = await fastify.prisma.facilityStatusReason.findUnique({
-          where: { id: data.statusReasonId },
-        });
-        if (!statusReason) {
-          return reply.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            errors: [{ path: 'statusReasonId', message: 'Status reason not found' }],
-          });
-        }
       }
       if (data.updateNotes === '') {
         data.updateNotes = null;
       }
 
       await fastify.prisma.$transaction(async (tx) => {
+        await fastify.prisma.facility.findByIdForUpdate(tx, id);
+
         const update = await tx.facilityUpdate.create({
           data: {
             ...data,
@@ -77,15 +69,31 @@ export default async function (fastify, opts) {
               status: Deflection.HoldStatus.ACTIVE,
               subjectStatus: Deflection.SubjectStatus.DETAINED,
             },
-            include: {
-              createdBy: true,
-              subject: true,
-            },
+            orderBy: [
+              { bedTypeId: 'asc' },
+              { createdAt: 'desc' },
+            ],
           });
 
           const now = new Date();
           for (const hold of activeHolds) {
             const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, hold.bedTypeId);
+            const cancelled = await tx.deflection.updateMany({
+              where: {
+                id: hold.id,
+                status: Deflection.HoldStatus.ACTIVE,
+                subjectStatus: Deflection.SubjectStatus.DETAINED,
+              },
+              data: {
+                status: Deflection.HoldStatus.CANCELLED,
+                cancelledAt: now,
+                cancelledById: userId,
+                updatedAt: now,
+              },
+            });
+            if (cancelled.count === 0) {
+              continue;
+            }
 
             // Create deflection update audit record
             await tx.deflectionUpdate.create({
@@ -97,23 +105,12 @@ export default async function (fastify, opts) {
               },
             });
 
-            // Cancel the deflection
-            await tx.deflection.update({
-              where: { id: hold.id },
-              data: {
-                status: Deflection.HoldStatus.CANCELLED,
-                cancelledAt: now,
-                cancelledById: userId,
-                updatedAt: now,
-              },
-            });
-
             // Update bed type counts
-            const updatedHolds = bedType.holds - 1;
+            const updatedHolds = Math.max(0, bedType.holds - 1);
             const updatedAvailable = bedType.capacity - bedType.unavailableUnoccupied - bedType.unavailableOccupied - bedType.occupied - updatedHolds;
             const bedTypeData = {
               holds: updatedHolds,
-              inTransit: bedType.inTransit - 1,
+              inTransit: Math.max(0, bedType.inTransit - 1),
               available: updatedAvailable,
               updateMethod: BedType.UpdateMethod.MANUAL,
               updatedById: userId,
@@ -135,7 +132,7 @@ export default async function (fastify, opts) {
             });
           }
         }
-      });
+      }, { timeout: 30000 });
 
       // Send email notifications after transaction completes
       if (data.status === Facility.Status.CLOSED) {

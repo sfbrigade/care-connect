@@ -103,6 +103,7 @@ function IncidentForm () {
   const initialNextPathRef = useRef(searchParams.get('next'));
   const nextPath = initialNextPathRef.current;
   const isConfirmIncidentFlow = !!nextPath;
+  const isRevisit = searchParams.get('revisit') === 'true';
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { facility } = useFacilityContext();
@@ -110,6 +111,7 @@ function IncidentForm () {
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const addressRef = useRef();
+  const autoGeolocationRequestedRef = useRef(false);
   const isEditing = !!incidentId;
 
   const form = useForm({
@@ -136,10 +138,20 @@ function IncidentForm () {
           ...data,
           arrestedAt,
         }));
-        if (!isConfirmIncidentFlow) {
+        if (!isConfirmIncidentFlow || isRevisit) {
           form.setErrors(validateIncident(data));
         }
         setInitialized(true);
+        // If this is a brand-new incident, and the incident doesn't already have an address,
+        // then try using device location to fill in the address/location data
+        if (isConfirmIncidentFlow && !data.addressLine1 && !autoGeolocationRequestedRef.current) {
+          autoGeolocationRequestedRef.current = true;
+          getCurrentLocationAddress().then((address) => {
+            if (address) {
+              form.setValues(address);
+            }
+          });
+        }
       }
     } else {
       const now = DateTime.now().toISO({
@@ -192,7 +204,11 @@ function IncidentForm () {
         : Api.incidents.create(formData, {
           bedTypeId: searchParams.get('bedTypeId'),
         }),
-    onSuccess: async () => {
+    onSuccess: async (response) => {
+      const updatedIncident = response?.data;
+      if (updatedIncident?.id != null) {
+        queryClient.setQueryData(['incidents', String(updatedIncident.id)], updatedIncident);
+      }
       await queryClient.invalidateQueries({
         queryKey: ['facilities', facility.id, 'bed-types'],
       });
@@ -248,7 +264,7 @@ function IncidentForm () {
                   data-testid='incident-arrest-location'
                   label={
                     <>
-                      Arrest location<span>*</span>
+                      Location<span>*</span>
                     </>
                   }
                   rightSection={
@@ -272,7 +288,7 @@ function IncidentForm () {
                     key={form.key('addressLine1')}
                     label={
                       <>
-                        Arrest address line 1<span>*</span>
+                        Address line 1<span>*</span>
                       </>
                     }
                     rightSection={
@@ -282,7 +298,7 @@ function IncidentForm () {
                   <TextInput
                     key={form.key('addressLine2')}
                     {...form.getInputProps('addressLine2')}
-                    label='Arrest address line 2'
+                    label='Address line 2'
                   />
                   <TextInput
                     data-testid='incident-city'
@@ -290,7 +306,7 @@ function IncidentForm () {
                     {...form.getInputProps('city')}
                     label={
                       <>
-                        Arrest city<span>*</span>
+                        City<span>*</span>
                       </>
                     }
                   />
@@ -301,14 +317,14 @@ function IncidentForm () {
                       {...form.getInputProps('state')}
                       label={
                         <>
-                          Arrest state<span>*</span>
+                          State<span>*</span>
                         </>
                       }
                     />
                     <TextInput
                       key={form.key('postalCode')}
                       {...form.getInputProps('postalCode')}
-                      label='Arrest ZIP code'
+                      label='ZIP code'
                       type='number'
                       inputMode='numeric'
                     />
@@ -320,7 +336,7 @@ function IncidentForm () {
                 {...form.getInputProps('arrestedAt')}
                 label={
                   <>
-                    Arrest date & time<span>*</span>
+                    Date & time<span>*</span>
                   </>
                 }
                 type='datetime-local'
@@ -363,7 +379,7 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  Obtain CAD number from dispatch.
+                  Obtain from dispatch.
                 </Text>
               </Stack>
               <Stack gap='xs'>
@@ -382,7 +398,7 @@ function IncidentForm () {
                   onFocus={() => setShowAddressForm(false)}
                 />
                 <Text size='md' c='gray.6'>
-                  Obtain case number from dispatch.
+                  Obtain from dispatch.
                 </Text>
               </Stack>
               <Stack gap='xs'>

@@ -2,9 +2,31 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploy a simple ECS Fargate service with a specified image.",
   "Parameters": {
+    "ArrestsApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "The API key for the arrests API"
+    },
     "BaseName": {
       "Description": "Base name for the stack",
       "Type": "String"
+    },
+    "CapacityApiKey": {
+      "Type": "String",
+      "NoEcho": true,
+      "Description": "The API key for fetching facility status"
+    },
+    "EmailFromName": {
+      "Type": "String",
+      "Description": "The display name used in email from and reply-to headers"
+    },
+    "EmailSiteTitle": {
+      "Type": "String",
+      "Description": "The site title used in emails"
+    },
+    "EmailSubjectTitle": {
+      "Type": "String",
+      "Description": "The title used in email subject lines"
     },
     "ImageURL": {
       "Type": "String",
@@ -24,13 +46,14 @@
     },
     "SessionSecret": {
       "Type": "String",
+      "NoEcho": true,
       "Description": "The session secret for the application"
     },
     "SiteTitle": {
       "Type": "String",
       "Description": "The title of the site"
     },
-    "SmtpFromEmailAddress": {
+    "SmtpReplyToEmailAddress": {
       "Type": "String",
       "Description": "Default reply-to email address"
     }
@@ -154,6 +177,12 @@
               "Ref": "ImageURL"
             },
             "Environment": [
+              {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
               {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
@@ -342,6 +371,12 @@
                 }
               },
               {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
+                }
+              },
+              {
                 "Name": "DATABASE_URL",
                 "Value": {
                   "Fn::Join": [
@@ -399,6 +434,24 @@
                 }
               },
               {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
+                }
+              },
+              {
                 "Name": "FASTIFY_ADDRESS",
                 "Value": "0.0.0.0"
               },
@@ -421,7 +474,23 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Ref": "SmtpFromEmailAddress"
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {
@@ -634,6 +703,12 @@
             },
             "Environment": [
               {
+                "Name": "ARRESTS_API_KEY",
+                "Value": {
+                  "Ref": "ArrestsApiKey"
+                }
+              },
+              {
                 "Name": "AWS_BEDROCK_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -821,6 +896,12 @@
                 }
               },
               {
+                "Name": "CAPACITY_API_KEY",
+                "Value": {
+                  "Ref": "CapacityApiKey"
+                }
+              },
+              {
                 "Name": "DATABASE_URL",
                 "Value": {
                   "Fn::Join": [
@@ -878,6 +959,24 @@
                 }
               },
               {
+                "Name": "EMAIL_FROM_NAME",
+                "Value": {
+                  "Ref": "EmailFromName"
+                }
+              },
+              {
+                "Name": "EMAIL_SITE_TITLE",
+                "Value": {
+                  "Ref": "EmailSiteTitle"
+                }
+              },
+              {
+                "Name": "EMAIL_SUBJECT_TITLE",
+                "Value": {
+                  "Ref": "EmailSubjectTitle"
+                }
+              },
+              {
                 "Name": "FASTIFY_ADDRESS",
                 "Value": "0.0.0.0"
               },
@@ -900,7 +999,23 @@
               {
                 "Name": "SMTP_FROM_EMAIL_ADDRESS",
                 "Value": {
-                  "Ref": "SmtpFromEmailAddress"
+                  "Fn::Join": [
+                    "@",
+                    [
+                      "no-reply",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-domain"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "SMTP_REPLY_TO_EMAIL_ADDRESS",
+                "Value": {
+                  "Ref": "SmtpReplyToEmailAddress"
                 }
               },
               {

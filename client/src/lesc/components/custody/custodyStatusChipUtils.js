@@ -4,7 +4,7 @@ export function getCustodyStatusChip (deflection) {
       return { label: 'Pending safety check', tone: 'info' };
     case 'READY_FOR_INTAKE':
       return { label: 'Ready for medical intake', tone: 'info' };
-    case 'ADMITTED':
+    case 'IN_MEDICAL_INTAKE':
       return { label: 'In medical intake', tone: 'info' };
     case 'IN_CHAIR':
       return { label: 'Awaiting legal release', tone: 'info' };

@@ -134,6 +134,7 @@ export const WithAllDetails = {
       },
       narcoticsSubstance: false,
       narcoticsParaphernalia: false,
+      chargeType: 'RWS_647F',
       behavior: 'This is the narrative',
       behaviorNarrative: 'This is the narrative',
       property: 'NONE',
@@ -186,7 +187,7 @@ export const CancelledWithSomeDetails = {
       ...WithSomeSubjectDetails.args.deflection,
       status: 'CANCELLED',
       cancelledAt: new Date().toISOString(),
-      cancelReasonId: 'staffing_shortage',
+      cancelReason: 'STAFFING_SHORTAGE',
     },
   }
 };

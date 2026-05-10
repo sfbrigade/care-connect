@@ -4,6 +4,7 @@ import Deflection from '#models/deflection.js';
 import Facility from '#models/facility.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
+import { facilityNotAcceptingError, noAvailableBedError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
   fastify.post('/',
@@ -22,63 +23,55 @@ export default async function (fastify, opts) {
 
       // TODO: check user authorization
 
-      // Block new holds if facility is not accepting
-      const facility = await fastify.prisma.facility.findUnique({
-        where: { id: data.facilityId },
-      });
-      if (!facility) {
-        return reply.code(StatusCodes.NOT_FOUND).send({ error: 'Facility not found' });
-      }
-      if (facility.status !== Facility.Status.OPEN_ACCEPTING) {
-        return reply.code(StatusCodes.CONFLICT).send({
-          error: 'Facility is not accepting new holds',
-        });
-      }
-
       let deflection;
       await fastify.prisma.$transaction(async (tx) => {
+        const lockedFacility = await fastify.prisma.facility.findByIdForUpdate(tx, data.facilityId);
+        if (!lockedFacility || lockedFacility.status !== Facility.Status.OPEN_ACCEPTING) {
+          throw facilityNotAcceptingError();
+        }
+
         const { bedTypeId } = data;
         const bedType = await fastify.prisma.bedType.findByIdForUpdate(tx, bedTypeId);
-        if (bedType.available > 0) {
-          deflection = await tx.deflection.create({
-            data: {
-              ...data,
-              createdById: request.user.id,
-              currentOfficerId: request.user.id,
-            },
-            include: {
-              subject: true,
-              propertyPhotos: true,
-            },
-          });
-          const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
-          const updatedData = {
-            capacity,
-            unavailableUnoccupied,
-            unavailableOccupied,
-            occupied,
-            holds: holds + 1,
-            inTransit: inTransit + 1,
-            available: available - 1,
-            updateMethod: 'API',
-            updatedById: request.user.id,
-          };
-          await tx.bedTypeUpdate.create({
-            data: {
-              ...updatedData,
-              bedTypeId,
-              facilityId: data.facilityId,
-            }
-          });
-          await tx.bedType.update({
-            where: {
-              id: bedTypeId,
-            },
-            data: updatedData,
-          });
-        } else {
-          return reply.code(StatusCodes.GONE).send();
+        if (bedType.available <= 0) {
+          throw noAvailableBedError();
         }
+
+        deflection = await tx.deflection.create({
+          data: {
+            ...data,
+            createdById: request.user.id,
+            currentOfficerId: request.user.id,
+          },
+          include: {
+            subject: true,
+            propertyPhotos: true,
+          },
+        });
+        const { capacity, unavailableUnoccupied, unavailableOccupied, occupied, holds, inTransit, available } = bedType;
+        const updatedData = {
+          capacity,
+          unavailableUnoccupied,
+          unavailableOccupied,
+          occupied,
+          holds: holds + 1,
+          inTransit: inTransit + 1,
+          available: available - 1,
+          updateMethod: 'API',
+          updatedById: request.user.id,
+        };
+        await tx.bedTypeUpdate.create({
+          data: {
+            ...updatedData,
+            bedTypeId,
+            facilityId: data.facilityId,
+          }
+        });
+        await tx.bedType.update({
+          where: {
+            id: bedTypeId,
+          },
+          data: updatedData,
+        });
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));

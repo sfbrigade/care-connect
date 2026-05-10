@@ -15,15 +15,31 @@ export const metadata = {
           include: {
             organization: true,
             unit: true,
+            title: true,
+          },
+        },
+        createdByTitle: true,
+        createdByUnit: true,
+        createdByOrganization: true,
+      },
+    },
+    facility: true,
+    handoffs: {
+      include: {
+        toOfficer: {
+          include: {
+            organization: true,
+            unit: true,
+            title: true,
           },
         },
       },
     },
-    facility: true,
     createdBy: {
       include: {
         organization: true,
         unit: true,
+        title: true,
       },
     },
   },

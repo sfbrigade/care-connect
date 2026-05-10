@@ -4,6 +4,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { IconInfoCircle, IconUserPlus } from '@tabler/icons-react';
+import { useNavigate } from 'react-router';
 
 import ActionFooter from '@/components/ActionFooter';
 import Api from '@/Api';
@@ -19,6 +20,7 @@ function ManageUsersPage () {
   const { user } = useAuthContext();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const organizationId = user.organizationId;
 
   const [inviteOpened, { open: openInvite, close: closeInvite }] = useDisclosure(false);
@@ -144,6 +146,7 @@ function ManageUsersPage () {
                             onCancelInvite: (m) => setConfirmAction({ type: 'cancel', member: m }),
                           })}
                           {...(key === 'active' && {
+                            onView: (m) => navigate(`/manage-users/${m.id}`),
                             onDisable: (m) => setConfirmAction({ type: 'disable', member: m }),
                           })}
                           {...(key === 'disabled' && {

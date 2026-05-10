@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { v4 as uuid } from 'uuid';
 
 import Deflection from '#models/deflection.js';
@@ -6,25 +6,41 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { PII_FIELDS } from '#models/subject.js';
 import User from '#models/user.js';
+const { Prisma, PrismaClient } = prismaPkg;
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DATABASE_URL
 }).$extends({
   name: 'paginate',
   model: {
+    facility: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "Facility" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      }
+    },
     bedType: {
       async findByIdForUpdate (tx, id) {
         let result;
         if (Array.isArray(id)) {
-          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ANY(${id}::uuid[]) FOR UPDATE`;
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ANY(${id}::uuid[]) FOR NO KEY UPDATE`;
           return result;
         } else {
-          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR UPDATE`;
+          result = await tx.$queryRaw`SELECT * FROM "BedType" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
           return result.length > 0 ? result[0] : null;
         }
       }
     },
     deflection: {
+      async findByIdForUpdate (tx, id) {
+        let result;
+        if (Array.isArray(id)) {
+          result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ANY(${id}::int[]) ORDER BY "id" FOR NO KEY UPDATE`;
+          return result;
+        }
+        result = await tx.$queryRaw`SELECT * FROM "Deflection" WHERE "id" = ${id} FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      },
       async expire (now = new Date()) {
         try {
           await prisma.user.findOrCreateBatchUser();
@@ -116,23 +132,15 @@ const prisma = new PrismaClient({
     },
     subject: {
       async anonymize (now = new Date()) {
+        // 96h = 24h max stay at RESET + 72h buffer for slippage
         const parsed = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS);
-        const hours = Number.isFinite(parsed) ? parsed : 72;
+        const hours = Number.isFinite(parsed) ? parsed : 96;
         const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
         const eligible = await prisma.$queryRaw`
           SELECT s."id"
           FROM "Subject" s
           WHERE s."anonymizedAt" IS NULL
-            AND NOT EXISTS (
-              SELECT 1 FROM "Deflection" d
-              WHERE d."subjectId" = s."id"
-                AND d."status" = 'ACTIVE'::"HoldStatusEnum"
-                AND d."subjectStatus" NOT IN ('EXITED'::"SubjectStatusEnum", 'DEATH_IN_FACILITY'::"SubjectStatusEnum", 'DEATH_IN_CUSTODY'::"SubjectStatusEnum")
-            )
-            AND COALESCE(
-              (SELECT MAX(d."updatedAt") FROM "Deflection" d WHERE d."subjectId" = s."id"),
-              s."createdAt"
-            ) <= ${cutoff}
+            AND s."createdAt" <= ${cutoff}
         `;
         if (eligible.length === 0) return;
         const ids = eligible.map((row) => row.id);
@@ -165,6 +173,10 @@ const prisma = new PrismaClient({
       }
     },
     user: {
+      async findByIdForUpdate (tx, id) {
+        const result = await tx.$queryRaw`SELECT * FROM "User" WHERE "id" = ${id}::uuid FOR NO KEY UPDATE`;
+        return result.length > 0 ? result[0] : null;
+      },
       async findOrCreateBatchUser () {
         let data = await prisma.user.findUnique({
           where: { id: User.BATCH_USER_ID },

@@ -189,7 +189,7 @@ function AudioRecorder ({ onResult, onBusyChange, disabled }) {
               onClick={startRecording}
               disabled={disabled}
             >
-              Record
+              Record voice
             </Button>
             )}
       </Group>

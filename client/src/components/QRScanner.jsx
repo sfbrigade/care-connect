@@ -322,7 +322,10 @@ export default function QRScanner ({ onScanSuccess, onScanError, className = '',
           scanner.stop()
             .catch(() => {})
             .finally(() => {
-              scanner.clear().catch(() => {});
+              // html5-qrcode's clear() can return undefined after stop() has already
+              // torn down internal state; the optional chain + try wrap keeps cleanup
+              // best-effort regardless of what shape (or whether) clear() returns.
+              try { scanner.clear()?.catch?.(() => {}); } catch {}
             });
         } catch {
           // stop() threw synchronously (scanner not fully started)

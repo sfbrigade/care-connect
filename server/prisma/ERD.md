@@ -96,6 +96,13 @@ OTHER OTHER
     
 
 
+        ChargeTypeEnum {
+            RWS_647F RWS_647F
+HS_11550 HS_11550
+        }
+    
+
+
         DrugTypeEnum {
             ALCOHOL ALCOHOL
 HEROIN HEROIN
@@ -135,6 +142,77 @@ UNKNOWN UNKNOWN
     
 
 
+        DeflectionCancelReasonEnum {
+            BEHAVIORAL_HEALTH_EVALUATION BEHAVIORAL_HEALTH_EVALUATION
+JAIL JAIL
+HOSPITAL HOSPITAL
+RELEASE_ON_SCENE RELEASE_ON_SCENE
+NO_CHAIRS_AVAILABLE NO_CHAIRS_AVAILABLE
+STAFFING_SHORTAGE STAFFING_SHORTAGE
+        }
+    
+
+
+        DeflectionReleaseReasonEnum {
+            SOBERED SOBERED
+MEDICAL_ISSUE MEDICAL_ISSUE
+BEHAVIORAL_HEALTH_EVALUATION BEHAVIORAL_HEALTH_EVALUATION
+OTHER OTHER
+DEATH_IN_FACILITY DEATH_IN_FACILITY
+DEATH_IN_CUSTODY DEATH_IN_CUSTODY
+        }
+    
+
+
+        DeflectionRefusalReasonEnum {
+            AGGRESSIVE_BEHAVIOR AGGRESSIVE_BEHAVIOR
+MEDICAL_ISSUE MEDICAL_ISSUE
+        }
+    
+
+
+        DeflectionExitDestinationEnum {
+            JAIL JAIL
+HOSPITAL HOSPITAL
+STREET STREET
+HOME HOME
+SERVICES_NON_HOSPITAL SERVICES_NON_HOSPITAL
+DECLINED_CONSENT DECLINED_CONSENT
+OTHER OTHER
+        }
+    
+
+
+        DeflectionExitHousingStatusEnum {
+            PERMANENT PERMANENT
+SHELTERED SHELTERED
+TEMPORARY TEMPORARY
+UNKNOWN UNKNOWN
+DECLINED_CONSENT DECLINED_CONSENT
+        }
+    
+
+
+        FacilityStatusReasonEnum {
+            BUILDING_ISSUE BUILDING_ISSUE
+SAFETY_LOCKDOWN SAFETY_LOCKDOWN
+OTHER OTHER
+SFSO_STAFFING SFSO_STAFFING
+CONNECTIONS_STAFFING CONNECTIONS_STAFFING
+        }
+    
+
+
+        BedTypeUnavailableReasonEnum {
+            SFSD_STAFFING SFSD_STAFFING
+CONTRACTOR_STAFFING CONTRACTOR_STAFFING
+BUILDING_ISSUE BUILDING_ISSUE
+SAFETY_LOCKDOWN SAFETY_LOCKDOWN
+OTHER OTHER
+        }
+    
+
+
         RoleEnum {
             FIELD FIELD
 CUSTODY CUSTODY
@@ -151,7 +229,7 @@ ONSITE_AWAITING_TRANSFER ONSITE_AWAITING_TRANSFER
 AWAITING_INTAKE AWAITING_INTAKE
 READY_FOR_INTAKE READY_FOR_INTAKE
 FAILED_INTAKE FAILED_INTAKE
-ADMITTED ADMITTED
+IN_MEDICAL_INTAKE IN_MEDICAL_INTAKE
 IN_CHAIR IN_CHAIR
 RELEASED RELEASED
 EXITED EXITED
@@ -252,7 +330,7 @@ DEPARTURE DEPARTURE
     FacilityTypeEnum type 
     String serviceTypeId 
     FacilityStatusEnum status 
-    String statusReasonId "❓"
+    FacilityStatusReasonEnum statusReason "❓"
     String statusOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
@@ -283,31 +361,10 @@ DEPARTURE DEPARTURE
     String id "🗝️"
     String facilityId 
     FacilityStatusEnum status 
-    String statusReasonId "❓"
+    FacilityStatusReasonEnum statusReason "❓"
     String statusOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "FacilityStatusReason" {
-    String id "🗝️"
-    FacilityTypeEnum type "❓"
-    String description 
-    DateTime createdAt 
-    String createdById 
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "BedTypeUnavailableReason" {
-    String id "🗝️"
-    String description 
-    DateTime createdAt 
-    String createdById 
     DateTime updatedAt 
     String updatedById 
     }
@@ -345,6 +402,16 @@ DEPARTURE DEPARTURE
     }
   
 
+  "AdminSecurityEvent" {
+    String id "🗝️"
+    String action 
+    Json metadata "❓"
+    String actorUserId 
+    String targetUserId 
+    DateTime createdAt 
+    }
+  
+
   "BedType" {
     String id "🗝️"
     String facilityId "🗝️"
@@ -358,7 +425,7 @@ DEPARTURE DEPARTURE
     Int available 
     DateTime createdAt 
     String createdById 
-    String unavailableReasonId "❓"
+    BedTypeUnavailableReasonEnum unavailableReason "❓"
     String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
@@ -378,7 +445,7 @@ DEPARTURE DEPARTURE
     Int holds 
     Int inTransit 
     Int available 
-    String unavailableReasonId "❓"
+    BedTypeUnavailableReasonEnum unavailableReason "❓"
     String unavailableOther "❓"
     FacilityUpdateMethodEnum updateMethod 
     String updateNotes "❓"
@@ -432,6 +499,8 @@ DEPARTURE DEPARTURE
     DrugTypeEnum drugType "❓"
     String behavior "❓"
     String behaviorNarrative "❓"
+    ChargeTypeEnum chargeType "❓"
+    DateTime certifiedAt "❓"
     PropertyEnum property "❓"
     String propertyDetails "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
@@ -446,7 +515,7 @@ DEPARTURE DEPARTURE
     DateTime completedAt "❓"
     HoldStatusEnum status 
     Int extensionCount 
-    String cancelReasonId "❓"
+    DeflectionCancelReasonEnum cancelReason "❓"
     DateTime cancelledAt "❓"
     String cancelledById "❓"
     DateTime transferredAt "❓"
@@ -456,21 +525,21 @@ DEPARTURE DEPARTURE
     String transferredByOrganizationId "❓"
     String transferredByUnitId "❓"
     String transferredByTitleId "❓"
-    DateTime admittedAt "❓"
-    String admittedById "❓"
+    DateTime medicalIntakeStartedAt "❓"
+    String medicalIntakeStartedById "❓"
     DateTime rejectedAt "❓"
     String rejectedById "❓"
     DateTime releasedAt "❓"
     String releasedById "❓"
-    String releaseReasonId "❓"
+    DeflectionReleaseReasonEnum releaseReason "❓"
     String otherReleaseReason "❓"
     String otherReleaseDestination "❓"
     String releaseNarrative "❓"
-    String refusalReasonId "❓"
+    DeflectionRefusalReasonEnum refusalReason "❓"
     DateTime exitedAt "❓"
     String exitedById "❓"
-    String exitDestinationId "❓"
-    String exitHousingStatusId "❓"
+    DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
     DateTime arrivedAt "❓"
@@ -485,69 +554,19 @@ DEPARTURE DEPARTURE
     HoldStatusEnum status "❓"
     DateTime expiresAt "❓"
     Int extensionCount "❓"
-    String cancelReasonId "❓"
+    DeflectionCancelReasonEnum cancelReason "❓"
     SubjectStatusEnum subjectStatus "❓"
-    String releaseReasonId "❓"
+    DeflectionReleaseReasonEnum releaseReason "❓"
     String otherReleaseReason "❓"
     String otherReleaseDestination "❓"
     Boolean propertyReturned "❓"
     PropertyNotReturnedReasonEnum propertyNotReturnedReason "❓"
     String propertyNotReturnedOtherReason "❓"
-    String refusalReasonId "❓"
-    String exitDestinationId "❓"
-    String exitHousingStatusId "❓"
+    DeflectionRefusalReasonEnum refusalReason "❓"
+    DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "DeflectionCancelReason" {
-    String id "🗝️"
-    String name 
-    DateTime createdAt 
-    String createdById 
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "DeflectionReleaseReason" {
-    String id "🗝️"
-    String name 
-    DateTime createdAt 
-    String createdById 
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "DeflectionRefusalReason" {
-    String id "🗝️"
-    String name 
-    DateTime createdAt 
-    String createdById 
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "DeflectionExitDestination" {
-    String id "🗝️"
-    String name 
-    DateTime createdAt 
-    String createdById 
-    DateTime updatedAt 
-    String updatedById 
-    }
-  
-
-  "DeflectionExitHousingStatus" {
-    String id "🗝️"
-    String name 
-    DateTime createdAt 
-    String createdById 
     DateTime updatedAt 
     String updatedById 
     }
@@ -654,21 +673,11 @@ DEPARTURE DEPARTURE
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
+    "User" o{--}o "AdminSecurityEvent" : ""
+    "User" o{--}o "AdminSecurityEvent" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
-    "User" o{--}o "BedTypeUnavailableReason" : ""
-    "User" o{--}o "BedTypeUnavailableReason" : ""
     "User" o{--}o "BedTypeUpdate" : ""
-    "User" o{--}o "DeflectionCancelReason" : ""
-    "User" o{--}o "DeflectionCancelReason" : ""
-    "User" o{--}o "DeflectionReleaseReason" : ""
-    "User" o{--}o "DeflectionReleaseReason" : ""
-    "User" o{--}o "DeflectionRefusalReason" : ""
-    "User" o{--}o "DeflectionRefusalReason" : ""
-    "User" o{--}o "DeflectionExitDestination" : ""
-    "User" o{--}o "DeflectionExitDestination" : ""
-    "User" o{--}o "DeflectionExitHousingStatus" : ""
-    "User" o{--}o "DeflectionExitHousingStatus" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
     "User" o{--}o "Deflection" : ""
@@ -681,8 +690,6 @@ DEPARTURE DEPARTURE
     "User" o{--}o "DeflectionUpdate" : ""
     "User" o{--}o "Facility" : ""
     "User" o{--}o "Facility" : ""
-    "User" o{--}o "FacilityStatusReason" : ""
-    "User" o{--}o "FacilityStatusReason" : ""
     "User" o{--}o "FacilityUpdate" : ""
     "User" o{--}o "FacilityCheckIn" : ""
     "User" o{--}o "Handoff" : ""
@@ -704,7 +711,7 @@ DEPARTURE DEPARTURE
     "Facility" o|--|| "FacilityTypeEnum" : "enum:type"
     "Facility" o|--|| "ServiceType" : "serviceType"
     "Facility" o|--|| "FacilityStatusEnum" : "enum:status"
-    "Facility" o|--|o "FacilityStatusReason" : "statusReason"
+    "Facility" o|--|o "FacilityStatusReasonEnum" : "enum:statusReason"
     "Facility" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "Facility" o|--|| "User" : "createdBy"
     "Facility" o|--|| "User" : "updatedBy"
@@ -719,28 +726,23 @@ DEPARTURE DEPARTURE
     "Facility" o{--}o "FacilityUpdate" : ""
     "FacilityUpdate" o|--|| "Facility" : "facility"
     "FacilityUpdate" o|--|| "FacilityStatusEnum" : "enum:status"
-    "FacilityUpdate" o|--|o "FacilityStatusReason" : "statusReason"
+    "FacilityUpdate" o|--|o "FacilityStatusReasonEnum" : "enum:statusReason"
     "FacilityUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "FacilityUpdate" o|--|| "User" : "updatedBy"
-    "FacilityStatusReason" o|--|o "FacilityTypeEnum" : "enum:type"
-    "FacilityStatusReason" o|--|| "User" : "createdBy"
-    "FacilityStatusReason" o|--|| "User" : "updatedBy"
-    "BedTypeUnavailableReason" o|--|| "User" : "createdBy"
-    "BedTypeUnavailableReason" o|--|| "User" : "updatedBy"
-    "BedTypeUnavailableReason" o{--}o "BedType" : ""
-    "BedTypeUnavailableReason" o{--}o "BedTypeUpdate" : ""
     "FacilityContact" o|--|| "Facility" : "facility"
+    "AdminSecurityEvent" o|--|| "User" : "actor"
+    "AdminSecurityEvent" o|--|| "User" : "target"
     "BedType" o|--|| "Facility" : "facility"
     "BedType" o|--|| "BedTypeEnum" : "enum:type"
     "BedType" o|--|| "User" : "createdBy"
-    "BedType" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
+    "BedType" o|--|o "BedTypeUnavailableReasonEnum" : "enum:unavailableReason"
     "BedType" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedType" o|--|| "User" : "updatedBy"
     "BedType" o{--}o "Deflection" : ""
     "BedType" o{--}o "BedTypeUpdate" : ""
     "BedTypeUpdate" o|--|| "BedType" : "bedType"
     "BedTypeUpdate" o|--|| "Facility" : "facility"
-    "BedTypeUpdate" o|--|o "BedTypeUnavailableReason" : "unavailableReason"
+    "BedTypeUpdate" o|--|o "BedTypeUnavailableReasonEnum" : "enum:unavailableReason"
     "BedTypeUpdate" o|--|| "FacilityUpdateMethodEnum" : "enum:updateMethod"
     "BedTypeUpdate" o|--|| "User" : "updatedBy"
     "FacilityEligibility" o|--|| "Facility" : "facility"
@@ -754,26 +756,27 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|o "Subject" : "subject"
     "Deflection" o|--|| "SubjectStatusEnum" : "enum:subjectStatus"
     "Deflection" o|--|o "DrugTypeEnum" : "enum:drugType"
+    "Deflection" o|--|o "ChargeTypeEnum" : "enum:chargeType"
     "Deflection" o|--|o "PropertyEnum" : "enum:property"
     "Deflection" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "Deflection" o|--|o "User" : "propertyReturnedBy"
     "Deflection" o|--|o "User" : "currentOfficer"
     "Deflection" o|--|| "User" : "createdBy"
     "Deflection" o|--|| "HoldStatusEnum" : "enum:status"
-    "Deflection" o|--|o "DeflectionCancelReason" : "cancelReason"
+    "Deflection" o|--|o "DeflectionCancelReasonEnum" : "enum:cancelReason"
     "Deflection" o|--|o "User" : "cancelledBy"
     "Deflection" o|--|o "User" : "transferredBy"
     "Deflection" o|--|o "Organization" : "transferredByOrganization"
     "Deflection" o|--|o "Unit" : "transferredByUnit"
     "Deflection" o|--|o "Title" : "transferredByTitle"
-    "Deflection" o|--|o "User" : "admittedBy"
+    "Deflection" o|--|o "User" : "medicalIntakeStartedBy"
     "Deflection" o|--|o "User" : "rejectedBy"
     "Deflection" o|--|o "User" : "releasedBy"
-    "Deflection" o|--|o "DeflectionReleaseReason" : "releaseReason"
-    "Deflection" o|--|o "DeflectionRefusalReason" : "refusalReason"
+    "Deflection" o|--|o "DeflectionReleaseReasonEnum" : "enum:releaseReason"
+    "Deflection" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
     "Deflection" o|--|o "User" : "exitedBy"
-    "Deflection" o|--|o "DeflectionExitDestination" : "exitDestination"
-    "Deflection" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
+    "Deflection" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "Deflection" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "Deflection" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "Deflection" o{--}o "DeflectionUpdate" : ""
@@ -782,26 +785,16 @@ DEPARTURE DEPARTURE
     "Deflection" o{--}o "Handoff" : ""
     "DeflectionUpdate" o|--|| "Deflection" : "deflection"
     "DeflectionUpdate" o|--|o "HoldStatusEnum" : "enum:status"
-    "DeflectionUpdate" o|--|o "DeflectionCancelReason" : "cancelReason"
+    "DeflectionUpdate" o|--|o "DeflectionCancelReasonEnum" : "enum:cancelReason"
     "DeflectionUpdate" o|--|o "SubjectStatusEnum" : "enum:subjectStatus"
-    "DeflectionUpdate" o|--|o "DeflectionReleaseReason" : "releaseReason"
+    "DeflectionUpdate" o|--|o "DeflectionReleaseReasonEnum" : "enum:releaseReason"
     "DeflectionUpdate" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
-    "DeflectionUpdate" o|--|o "DeflectionRefusalReason" : "refusalReason"
-    "DeflectionUpdate" o|--|o "DeflectionExitDestination" : "exitDestination"
-    "DeflectionUpdate" o|--|o "DeflectionExitHousingStatus" : "exitHousingStatus"
+    "DeflectionUpdate" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
+    "DeflectionUpdate" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "DeflectionUpdate" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "DeflectionUpdate" o|--|o "SFResidentEnum" : "enum:exitSFResident"
     "DeflectionUpdate" o|--|| "User" : "updatedBy"
-    "DeflectionCancelReason" o|--|| "User" : "createdBy"
-    "DeflectionCancelReason" o|--|| "User" : "updatedBy"
-    "DeflectionReleaseReason" o|--|| "User" : "createdBy"
-    "DeflectionReleaseReason" o|--|| "User" : "updatedBy"
-    "DeflectionRefusalReason" o|--|| "User" : "createdBy"
-    "DeflectionRefusalReason" o|--|| "User" : "updatedBy"
-    "DeflectionExitDestination" o|--|| "User" : "createdBy"
-    "DeflectionExitDestination" o|--|| "User" : "updatedBy"
-    "DeflectionExitHousingStatus" o|--|| "User" : "createdBy"
-    "DeflectionExitHousingStatus" o|--|| "User" : "updatedBy"
     "DeflectionDocument" o|--|| "Deflection" : "deflection"
     "DeflectionDocument" o|--|| "User" : "createdBy"
     "DeflectionDocument" o|--|| "User" : "updatedBy"

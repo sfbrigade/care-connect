@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Chip, Group, NumberInput, Stack, Text, Textarea } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
@@ -10,17 +11,16 @@ function AdjustAvailability ({ facility, bedType, onCancel }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
-  const { data: reasons } = useQuery({
-    queryKey: ['bed-type-unavailable-reasons'],
-    queryFn: () => Api.facilities.bedTypeUnavailableReasons.index().then(r => r.data),
-  });
+  const reasons = Object.entries(t('bedTypeUnavailableReason', { returnObjects: true }))
+    .map(([id, description]) => ({ id, description }));
 
   const form = useForm({
     mode: 'controlled',
     initialValues: {
       unavailableUnoccupied: bedType.unavailableUnoccupied || '',
-      unavailableReasonId: bedType.unavailableReasonId || null,
+      unavailableReason: bedType.unavailableReason || null,
       unavailableOther: bedType.unavailableOther || '',
     },
   });
@@ -43,12 +43,11 @@ function AdjustAvailability ({ facility, bedType, onCancel }) {
     },
   });
 
-  const { unavailableUnoccupied: unavailableCount, unavailableReasonId } = form.getValues();
-  const selectedReason = reasons?.find(r => r.id === unavailableReasonId);
-  const isOtherReason = selectedReason?.description === 'Other (specify)';
+  const { unavailableUnoccupied: unavailableCount, unavailableReason } = form.getValues();
+  const isOtherReason = unavailableReason === 'OTHER';
   const hasCount = typeof unavailableCount === 'number' && unavailableCount >= 0;
   const needsReason = hasCount && unavailableCount > 0;
-  const hasReason = !!unavailableReasonId;
+  const hasReason = !!unavailableReason;
 
   // Preview: how many holds would be cancelled
   const newAvailable = hasCount
@@ -78,10 +77,10 @@ function AdjustAvailability ({ facility, bedType, onCancel }) {
             <Text fw={700}>Reason<Text span c='red'> *</Text></Text>
             <Chip.Group
               multiple={false}
-              {...form.getInputProps('unavailableReasonId')}
+              {...form.getInputProps('unavailableReason')}
             >
               <Stack gap='xs' align='flex-start'>
-                {reasons?.map((reason) => (
+                {reasons.map((reason) => (
                   <Chip key={reason.id} value={reason.id}>{reason.description}</Chip>
                 ))}
               </Stack>

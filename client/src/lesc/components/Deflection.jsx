@@ -8,6 +8,7 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
+import { useAuthContext } from '@/AuthContext';
 import useNow from '@/hooks/useNow';
 import CancelHoldModal from './CancelHoldModal';
 import Header from '@/components/Header';
@@ -16,7 +17,8 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
-import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidIncident } from '@/utils/validators';
+import { openInBrowser } from '@/utils/openInBrowser';
+import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidCertification, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
 
@@ -26,7 +28,8 @@ function Deflection () {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
+  const { user } = useAuthContext();
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -37,7 +40,7 @@ function Deflection () {
   const address = formatAddress(deflection?.subject ?? {});
   const incident = deflection?.incident;
   const incidentAddress = formatAddress(incident ?? {});
-  const detailsComplete = deflection ? isValidDeflection(deflection) : false;
+  const allDetailsComplete = deflection ? isValidDeflection(deflection) && isValidIncident(incident) : false;
   const subjectDetailsComplete = deflection ? isValidSubject(deflection.subject) : false;
   const substanceComplete = deflection
     ? isValidSubstance({
@@ -51,7 +54,7 @@ function Deflection () {
     'AWAITING_INTAKE',
     'READY_FOR_INTAKE',
     'FAILED_INTAKE',
-    'ADMITTED',
+    'IN_MEDICAL_INTAKE',
     'IN_CHAIR',
     'RELEASED',
     'EXITED',
@@ -59,9 +62,10 @@ function Deflection () {
     'DEATH_IN_CUSTODY',
   ].includes(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
-  const isActionableActiveHold = !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
-  const showFinishDetailsFooter = isActionableActiveHold && !detailsComplete;
-  const showCancelOnlyFooter = isActionableActiveHold && detailsComplete;
+  const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
+  const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
+  const showFinishDetailsFooter = isActionableActiveHold && !allDetailsComplete;
+  const showCancelOnlyFooter = isActionableActiveHold && allDetailsComplete;
   const showActionFooter = showFinishDetailsFooter || showCancelOnlyFooter;
   const statusChip = getSfpdDeflectionStatusChip({ deflection, incident });
 
@@ -100,17 +104,31 @@ function Deflection () {
     },
   });
 
-  async function onCancelHoldConfirmed (cancelReasonId) {
+  async function onCancelHoldConfirmed (cancelReason) {
     await cancelDeflectionMutation.mutateAsync({
-      cancelReasonId,
+      cancelReason,
     });
   }
 
   const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
 
+  function formatCertificationTimestamp (certifiedAt) {
+    const dateTime = DateTime.fromISO(certifiedAt);
+    return `${dateTime.toLocaleString(DateTime.TIME_SIMPLE)} on ${dateTime.toLocaleString(DateTime.DATE_SHORT)}`;
+  }
+
   function on647fClick () {
-    const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
-    window.open(url, '_blank');
+    const url = `/api/forms/647f/pdf/${deflection.id}`;
+    const toastId = showToast('Downloading 647(f) form…', 'success', 0, 'This may take a moment.');
+    openInBrowser(url, `647f-${deflection.id}.pdf`)
+      .then(() => {
+        removeToast(toastId);
+        showToast('647(f) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+      })
+      .catch(() => {
+        removeToast(toastId);
+        showToast('Couldn’t download 647(f) form', 'error', 4000, 'Please try again.');
+      });
   }
 
   return (
@@ -194,7 +212,7 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'deflection', 'property', 'incident']}>
+          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'certification', 'incident']}>
             <Divider />
             <Accordion.Item value='substance'>
               <Accordion.Control>
@@ -260,22 +278,28 @@ function Deflection () {
             </Accordion.Item>
             <Accordion.Item value='deflection'>
               <Accordion.Control>
-                <Title order={3}>Behavioral observations</Title>
+                <Title order={3}>Custodial arrest details</Title>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrestable behavior</Text>
+                    <Text c='dimmed'>Behavioral observation</Text>
                     {deflection?.behaviorNarrative
                       ? (
                         <Text style={{ whiteSpace: 'pre-wrap' }}>{deflection.behaviorNarrative}</Text>
                         )
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
+                  <Box>
+                    <Text c='dimmed'>Charge type</Text>
+                    {deflection?.chargeType
+                      ? <Text>{t(`chargeType.${deflection.chargeType}`)}</Text>
+                      : <Text c='red.6'>Incomplete</Text>}
+                  </Box>
                 </Stack>
                 {isActionableActiveHold && (
                   <Group mt='md'>
-                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit arrest' : 'Finish arrest'}</Button>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/deflection`)}>{isValidBehavior(deflection) ? 'Edit details' : 'Finish details'}</Button>
                   </Group>
                 )}
               </Accordion.Panel>
@@ -321,6 +345,28 @@ function Deflection () {
                 )}
               </Accordion.Panel>
             </Accordion.Item>
+            <Accordion.Item value='certification'>
+              <Accordion.Control>
+                <Title order={3}>Certification</Title>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap='sm'>
+                  <Box>
+                    <Text c='dimmed'>Declaration</Text>
+                    {deflection?.certifiedAt
+                      ? (
+                        <Text>Certified as true and correct at {formatCertificationTimestamp(deflection.certifiedAt)}</Text>
+                        )
+                      : (<Text c='red.6'>Incomplete</Text>)}
+                  </Box>
+                </Stack>
+                {isActionableActiveHold && (
+                  <Group mt='md'>
+                    <Button variant='secondary' size='md' onClick={() => navigate(`/holds/${deflection?.id}/certify`)}>{isValidCertification(deflection) ? 'Edit certification' : 'Finish certification'}</Button>
+                  </Group>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
             <Accordion.Item value='incident'>
               <Accordion.Control>
                 <Title order={3}>Incident details</Title>
@@ -329,7 +375,7 @@ function Deflection () {
               <Accordion.Panel>
                 <Stack gap='sm'>
                   <Box>
-                    <Text c='dimmed'>Arrest location</Text>
+                    <Text c='dimmed'>Location</Text>
                     {incidentAddress
                       ? (
                         <Text>{incidentAddress}</Text>
@@ -337,7 +383,7 @@ function Deflection () {
                       : (<Text c='red.6'>Incomplete</Text>)}
                   </Box>
                   <Box>
-                    <Text c='dimmed'>Arrest date & time</Text>
+                    <Text c='dimmed'>Date & time</Text>
                     {incident?.arrestedAt
                       ? (
                         <Text>{formatDateTime(incident.arrestedAt)}</Text>
@@ -397,7 +443,39 @@ function Deflection () {
           </Button>
           {showFinishDetailsFooter && (
             <Button
-              onClick={() => navigate(`/holds/${deflection?.id}/subject`)}
+              onClick={() => {
+                const detailPath = `/holds/${deflection?.id}`;
+                if (!isValidIncident(incident)) {
+                  navigate(`/incident/${deflection?.incidentId}?next=${encodeURIComponent(detailPath)}&revisit=true`);
+                  return;
+                }
+                if (!isValidSubject(deflection.subject)) {
+                  navigate(`${detailPath}/subject`);
+                  return;
+                }
+                if (!isValidSubstance({
+                  narcoticsSubstance: deflection.narcoticsSubstance,
+                  narcoticsParaphernalia: deflection.narcoticsParaphernalia,
+                  drugUseEvidence: deflection.drugUseEvidence,
+                  drugType: deflection.drugType ?? null,
+                })) {
+                  navigate(`${detailPath}/substance`);
+                  return;
+                }
+                if (!isValidBehavior(deflection)) {
+                  navigate(`${detailPath}/deflection`);
+                  return;
+                }
+                if (!isValidProperty(deflection)) {
+                  navigate(`${detailPath}/property`);
+                  return;
+                }
+                if (!isValidCertification(deflection)) {
+                  navigate(`${detailPath}/certify`);
+                  return;
+                }
+                navigate(detailPath);
+              }}
             >
               Finish details
             </Button>
