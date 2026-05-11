@@ -5,7 +5,7 @@ import Deflection from '#models/deflection.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
-import { canModifyDeflection } from '#lib/incidentPermissions.js';
+import { canModifyDeflection, canModifyDeflectionProperty, isDeflectionPropertyUpdate } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
@@ -35,7 +35,11 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (!canModifyDeflection(deflection, request.user)) {
+      const canModify = isDeflectionPropertyUpdate(data)
+        ? canModifyDeflectionProperty(deflection, request.user)
+        : canModifyDeflection(deflection, request.user);
+
+      if (!canModify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
