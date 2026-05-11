@@ -114,7 +114,7 @@ test('formsEmail job handler', async (t) => {
       'regular.user@test.com',
     ]);
     assert.deepStrictEqual(sentMail[0].cc, undefined);
-    assert.deepStrictEqual(sentMail[0].subject, '647(f) RWS document for Jane Doe / RESET deflection');
+    assert.deepStrictEqual(sentMail[0].subject, '647(f) RWS document for Jane Doe / case #CASEMAIL (RESET)');
   });
 
   await t.test('sends 849b only to swaps supervisors and the releasing user', async () => {
@@ -286,7 +286,7 @@ test('formsEmail job handler', async (t) => {
       'regular.user@test.com',
     ]);
     assert.deepStrictEqual(sentMail[1].cc, undefined);
-    assert.deepStrictEqual(sentMail[1].subject, '647(f) RWS document for Jane Doe / RESET deflection');
+    assert.deepStrictEqual(sentMail[1].subject, '647(f) RWS document for Jane Doe / case #CASEMAIL (RESET)');
     assert.deepStrictEqual(sentMail[1].attachments.map(a => a.filename), ['647f.pdf']);
   });
 });
