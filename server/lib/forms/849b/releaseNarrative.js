@@ -1,4 +1,4 @@
-import { firstLastName } from '../shared/formUtils.js';
+import { firstInitialLastName, firstLastName } from '../shared/formUtils.js';
 
 const SEE_ABOVE = 'SEE ABOVE';
 const MEDICAL_STAFF_BLANK = '_'.repeat(30);
@@ -10,12 +10,6 @@ function normalizeValue (value) {
     normalized = value.trim();
   }
   return normalized || null;
-}
-
-function firstInitialLastNameNoPeriod (person) {
-  const firstInitial = person?.firstName?.trim()?.charAt(0)?.toUpperCase();
-  const lastName = normalizeValue(person?.lastName);
-  return [firstInitial, lastName].filter(Boolean).join(' ');
 }
 
 function formatReleaseTime (date) {
@@ -65,7 +59,7 @@ export function buildSobered849bReleaseNarrativeAppendix ({
   subject,
 } = {}) {
   const subjectName = firstLastName(subject);
-  const deputyName = firstInitialLastNameNoPeriod(releasingDeputy);
+  const deputyName = firstInitialLastName(releasingDeputy, { period: false });
   const deputyStar = normalizeValue(releasingDeputy?.badgeNumber) || '';
 
   return `At approximately ${formatReleaseTime(releasedAt)} hours on ${formatReleaseDate(releasedAt)}, Connections medical staff, ${MEDICAL_STAFF_BLANK} , determined that the subject, ${subjectName}, was able to care for themselves and voice their needs appropriately. Deputy ${deputyName}, #${deputyStar}, issued ${subjectName} a certificate of release stating that they were just detained and not under arrest.`;
