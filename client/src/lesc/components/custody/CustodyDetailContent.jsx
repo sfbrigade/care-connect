@@ -15,6 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import useNow from '../../../hooks/useNow';
+import useSessionState from '../../../hooks/useSessionState';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
 import { openInBrowser } from '@/utils/openInBrowser';
@@ -37,10 +38,6 @@ const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
-function isNetworkError (error) {
-  return !error?.response || window.navigator?.onLine === false;
-}
-
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
   const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
@@ -49,6 +46,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [, setCustodyTab] = useSessionState('custody');
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
   const { showToast, removeToast } = useToast();
@@ -119,25 +117,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     }, 100);
   }, [deflection?.id, isCareView, propertySectionId, showToast]);
 
-  const safetyCheckMutation = useMutation({
-    mutationFn: () => Api.deflections.safetyCheck(deflection.id),
-    onSuccess: () => {
-      setSafetyCheckResultModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
-    },
-    onError: (error) => {
-      setSafetyCheckResultModalOpened(false);
-      if (isNetworkError(error)) {
-        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
-        return;
-      }
-      showToast('Safety check not saved. Please try again.', 'error');
-    },
-  });
-
   const recordDeathMutation = useMutation({
     mutationFn: () => Api.deflections.recordDeath(deflection.id),
     onSuccess: () => {
@@ -153,22 +132,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
-  const exitToJailMutation = useMutation({
-    mutationFn: () => Api.deflections.exitToJail(deflection.id),
-    onSuccess: () => {
-      setExitToJailModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Legally released".');
-      navigate('/custody?tab=released');
-    },
-    onError: () => {
-      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
-    },
-  });
+  function onExitToJail () {
+    setExitToJailModalOpened(false);
+    setCustodyTab('released');
+    navigate('/custody');
+  }
 
   const completeIntakeMutation = useMutation({
     mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
@@ -721,8 +689,8 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     }}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Record result'
-                      : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      ? 'Safety check'
+                      : (showPrimaryPrintCertificate ? 'View release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
               </Stack>
@@ -739,20 +707,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         loading={recordDeathMutation.isPending}
       />
       <SafetyCheckResultModal
+        deflectionId={deflection?.id}
+        facilityId={facility.id}
         opened={safetyCheckResultModalOpened}
         onClose={() => setSafetyCheckResultModalOpened(false)}
-        loading={safetyCheckMutation.isPending}
-        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmPassed={() => setSafetyCheckResultModalOpened(false)}
         onConfirmFailed={() => {
           setSafetyCheckResultModalOpened(false);
           setExitToJailModalOpened(true);
         }}
       />
       <ExitToJailModal
+        deflectionId={deflection?.id}
+        facilityId={facility.id}
         opened={exitToJailModalOpened}
         onClose={() => setExitToJailModalOpened(false)}
-        onConfirm={() => exitToJailMutation.mutate()}
-        loading={exitToJailMutation.isPending}
+        onConfirm={() => onExitToJail()}
       />
       <CompleteIntakeModal
         opened={completeIntakeModalOpened}
