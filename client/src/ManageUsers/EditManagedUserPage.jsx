@@ -10,6 +10,7 @@ import Api from '@/Api';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
+import { formatUnitName } from '@/utils/unit';
 
 function EditManagedUserPage () {
   const { userId, section } = useParams();
@@ -63,19 +64,20 @@ function EditManagedUserPage () {
     };
     form.setValues(values);
     form.resetDirty(values);
-    setUnitName(user.unit?.name || '');
+    setUnitName(formatUnitName(user.unit?.name));
     setUnitId(user.unitId || '');
   }, [user]);
 
   const autocompleteData = units?.map((unit) => ({
-    value: unit.name,
-    label: unit.name,
+    value: formatUnitName(unit.name),
+    label: formatUnitName(unit.name),
   })) || [];
 
   function handleUnitChange (value) {
-    setUnitName(value);
-    const normalizedValue = value.trim().toLowerCase();
-    const selectedUnit = units?.find((unit) => unit.name.trim().toLowerCase() === normalizedValue);
+    const nextUnitName = formatUnitName(value);
+    setUnitName(nextUnitName);
+    const normalizedValue = nextUnitName.toLowerCase();
+    const selectedUnit = units?.find((unit) => formatUnitName(unit.name).toLowerCase() === normalizedValue);
     setUnitId(selectedUnit?.id || '');
   }
 
@@ -91,7 +93,7 @@ function EditManagedUserPage () {
     const positionPayload = {
       badgeNumber: form.values.badgeNumber,
       unitId,
-      unitName: unitName.trim(),
+      unitName: formatUnitName(unitName),
     };
 
     if (form.values.organizationId === 'sfso') {
@@ -102,7 +104,7 @@ function EditManagedUserPage () {
     return positionPayload;
   }, [form.values, section, unitId, unitName]);
 
-  const hasChanged = form.isDirty() || (section === 'position' && (unitId !== (user?.unitId || '') || unitName !== (user?.unit?.name || '')));
+  const hasChanged = form.isDirty() || (section === 'position' && (unitId !== (user?.unitId || '') || unitName !== formatUnitName(user?.unit?.name)));
   const isValidPersonalName = section !== 'personal' || (payload.firstName.length >= 2 && payload.lastName.length >= 2);
 
   const onSubmitMutation = useMutation({

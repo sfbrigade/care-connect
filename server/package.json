@@ -20,6 +20,8 @@
     "start": "fastify start app.js -l info",
     "test": "node test/run-tests.js",
     "test:sequential": "node --experimental-test-module-mocks --test-concurrency 1 --test $(find test -name '*.test.js')",
+    "loadtest": "node loadtest/index.js",
+    "loadtest:list": "node loadtest/index.js --list",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",
     "worker:dev": "npm run prisma:generate && node --watch worker.js"

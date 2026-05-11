@@ -13,6 +13,7 @@ import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
+import { formatUnitName } from '@/utils/unit';
 
 function AdminUserForm () {
   const { user } = useAuthContext();
@@ -188,7 +189,7 @@ function AdminUserForm () {
                   {...form.getInputProps('unitId')}
                   key={form.key('unitId')}
                   label='Unit'
-                  data={units?.map((unit) => ({ value: unit.id, label: unit.name })) || []}
+                  data={units?.map((unit) => ({ value: unit.id, label: formatUnitName(unit.name) })) || []}
                 />
               )}
               {user?.isAdmin && (() => {
