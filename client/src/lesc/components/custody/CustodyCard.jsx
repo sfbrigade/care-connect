@@ -95,7 +95,7 @@ function CustodyCard ({ deflection, highlighted, onExitToJail }) {
                 size='md'
                 onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
               >
-                Legal release
+                Release and exit
               </Button>
             )}
             {showStartRelease && (

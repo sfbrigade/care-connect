@@ -51,4 +51,16 @@ describe('getPrefilledLegalReleaseState', () => {
       exitDestination: null,
     });
   });
+
+  it('prefills other release without an exit destination', () => {
+    const params = new URLSearchParams({
+      releaseReason: 'OTHER',
+      exitDestination: 'HOSPITAL',
+    });
+
+    expect(getPrefilledLegalReleaseState(params)).toEqual({
+      releaseReason: 'OTHER',
+      exitDestination: null,
+    });
+  });
 });
