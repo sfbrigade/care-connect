@@ -139,9 +139,7 @@ export default async function (fastify, opts) {
           }
 
           const now = new Date();
-          const releasingDeputy = await tx.user.findUnique({
-            where: { id: request.user.id },
-          });
+          const releasingDeputy = request.user;
           const previousSubjectStatus = deflection.subjectStatus;
           // `sobered` releases from a pre-chair hold finalize immediately as
           // EXITED. Medical, behavioral-health, and "other" releases also
