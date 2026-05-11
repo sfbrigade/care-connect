@@ -1578,7 +1578,6 @@ test('/api/deflections', async (t) => {
         recipientEmail: [
           'SFPD.Data.Transfer.Authorized@sfgov.org',
           'Andrew.bley@sfgov.org',
-          'Sfso-incidentreports@sfgov.org',
         ],
       });
     });

@@ -131,7 +131,7 @@ function Login () {
         <title>{step === 'verify' ? 'Enter verification code' : 'Login'}</title>
       </Head>
       {step === 'credentials' && (
-        <form onSubmit={form.onSubmit(loginMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit(loginMutation.mutate)}>
           <Fieldset disabled={loginMutation.isPending} variant='unstyled'>
             <Container>
               <Stack align='stretch'>
@@ -195,7 +195,7 @@ function Login () {
               <Text fz={24} lh='32px'>We sent a 6-digit code to {mfaEmail}.</Text>
             </div>
 
-            <form onSubmit={verifyForm.onSubmit(() => verifyMutation.mutateAsync({ token: mfaToken, code: verifyForm.getValues().code }))}>
+            <form onSubmit={verifyForm.onSubmit(() => verifyMutation.mutate({ token: mfaToken, code: verifyForm.getValues().code }))}>
               <Fieldset disabled={verifyMutation.isPending} variant='unstyled'>
                 <Stack align='flex-start'>
                   <Input.Wrapper label='Verification code' error={verifyForm.errors.code} errorProps={{ size: 'lg', lh: 1.5 }}>

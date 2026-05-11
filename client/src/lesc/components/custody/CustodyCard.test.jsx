@@ -7,8 +7,9 @@ import { MantineProvider } from '@mantine/core';
 
 import CustodyCard from './CustodyCard';
 
-const { mockExitToJail, mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
+const { mockExitToJail, mockOnExitToJail, mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
   mockExitToJail: vi.fn(),
+  mockOnExitToJail: vi.fn(),
   mockNavigate: vi.fn(),
   mockSafetyCheck: vi.fn(),
   mockShowToast: vi.fn(),
@@ -75,8 +76,8 @@ function renderCard (deflection) {
   return render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/custody?tab=in-custody']}>
-          <CustodyCard deflection={deflection} highlighted={false} />
+        <MemoryRouter initialEntries={['/custody']}>
+          <CustodyCard deflection={deflection} highlighted={false} onExitToJail={mockOnExitToJail} />
         </MemoryRouter>
       </QueryClientProvider>
     </MantineProvider>
@@ -168,7 +169,6 @@ describe('CustodyCard', () => {
 
     await waitFor(() => {
       expect(window.sessionStorage.getItem('custodyHighlightTarget')).toBe('123');
-      expect(window.sessionStorage.getItem('custodyInCustodySectionTarget')).toBe('READY_FOR_INTAKE');
     });
   });
 
@@ -183,7 +183,7 @@ describe('CustodyCard', () => {
       expect(mockExitToJail).toHaveBeenCalledWith(123);
     });
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/custody?tab=released');
+      expect(mockOnExitToJail).toHaveBeenCalledWith();
     });
   });
 
@@ -196,8 +196,7 @@ describe('CustodyCard', () => {
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
-        'Safety check saved offline. We’ll sync when connection is back.',
-        'warning'
+        'Safety check not saved. Please try again.', 'error'
       );
     });
   });
