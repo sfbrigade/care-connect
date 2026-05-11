@@ -105,12 +105,13 @@ describe('CustodyCard', () => {
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
 
-  it('shows intake-not-completed banner and legal release for failed intake', () => {
+  it('shows intake-not-completed banner and release-and-exit action for failed intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
 
     expect(screen.getByText('Intake not completed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Release and exit' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Safety check' })).not.toBeInTheDocument();
   });
 
@@ -149,10 +150,10 @@ describe('CustodyCard', () => {
     expect(window.sessionStorage.getItem('custodyScrollTarget')).toBe('123');
   });
 
-  it('navigates to legal release when Legal release is clicked', () => {
+  it('navigates to legal release when Release and exit is clicked', () => {
     renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Legal release' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Release and exit' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123/legal-release');
   });
