@@ -54,7 +54,7 @@ function ResetPassword () {
         <title>Create a new password</title>
       </Head>
       <Container>
-        <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
+        <form onSubmit={form.onSubmit(onSubmitMutation.mutate)}>
           <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
             <Stack>
               {error?.response?.status === StatusCodes.GONE && (

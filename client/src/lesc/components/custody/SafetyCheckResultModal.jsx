@@ -1,14 +1,34 @@
 import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import Api from '@/Api';
+import { useToast } from '@/components/ToastContext';
 
 function SafetyCheckResultModal ({
+  deflectionId,
+  facilityId,
   opened,
   onClose,
   onConfirmPassed,
   onConfirmFailed,
-  loading = false,
 }) {
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+  const safetyCheckMutation = useMutation({
+    mutationFn: () => Api.deflections.safetyCheck(deflectionId),
+    onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+      queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
+      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
+      onConfirmPassed();
+    },
+    onError: () => {
+      showToast('Safety check not saved. Please try again.', 'error');
+    },
+  });
+
   return (
     <Modal
       opened={opened}
@@ -31,7 +51,7 @@ function SafetyCheckResultModal ({
               w={40}
               h={40}
               ml='auto'
-              disabled={loading}
+              disabled={safetyCheckMutation.isPending}
               aria-label='Close'
               styles={{
                 root: {
@@ -56,13 +76,13 @@ function SafetyCheckResultModal ({
           <Button
             variant='destructive'
             onClick={onConfirmFailed}
-            disabled={loading}
+            disabled={safetyCheckMutation.isPending}
           >
             Failed
           </Button>
           <Button
-            onClick={onConfirmPassed}
-            loading={loading}
+            onClick={() => safetyCheckMutation.mutate()}
+            disabled={safetyCheckMutation.isPending}
           >
             Passed
           </Button>
