@@ -1,3 +1,5 @@
+import { firstLastName } from '../shared/formUtils.js';
+
 const SEE_ABOVE = 'SEE ABOVE';
 const MEDICAL_STAFF_BLANK = '_'.repeat(30);
 const FORM_TIMEZONE = 'America/Los_Angeles';
@@ -14,10 +16,6 @@ function firstInitialLastNameNoPeriod (person) {
   const firstInitial = person?.firstName?.trim()?.charAt(0)?.toUpperCase();
   const lastName = normalizeValue(person?.lastName);
   return [firstInitial, lastName].filter(Boolean).join(' ');
-}
-
-function firstLastName (person) {
-  return [normalizeValue(person?.firstName), normalizeValue(person?.lastName)].filter(Boolean).join(' ');
 }
 
 function formatReleaseTime (date) {

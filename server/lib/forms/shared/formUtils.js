@@ -47,7 +47,7 @@ export function joinWords (...words) {
 }
 
 export function firstLastName (obj) {
-  return [obj?.firstName, obj?.lastName].filter(Boolean).join(' ');
+  return [obj?.firstName?.trim(), obj?.lastName?.trim()].filter(Boolean).join(' ');
 }
 
 export function firstInitialLastName (obj) {
