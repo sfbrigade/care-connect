@@ -24,7 +24,7 @@ const HOLD_SUBJECT_STATUSES = new Set([
   'ONSITE_AWAITING_TRANSFER',
   'AWAITING_INTAKE',
   'READY_FOR_INTAKE',
-  'ADMITTED',
+  'IN_MEDICAL_INTAKE',
   'FAILED_INTAKE',
 ]);
 
@@ -140,7 +140,7 @@ const SCENARIOS = {
     run: runReadyForIntakeTerminalRace,
   },
   'admitted-terminal-race': {
-    description: 'Multiple terminal transitions compete from ADMITTED.',
+    description: 'Multiple terminal transitions compete from IN_MEDICAL_INTAKE.',
     run: runAdmittedTerminalRace,
   },
   'in-chair-terminal-race': {
@@ -365,13 +365,6 @@ async function createContext (options) {
     });
   }
 
-  const unavailableReason = await prisma.bedTypeUnavailableReason.findFirst({
-    orderBy: { createdAt: 'asc' },
-  });
-  if (!unavailableReason) {
-    throw new Error('No bed type unavailable reasons were found. Run prisma seed first.');
-  }
-
   const cookiesByEmail = {};
   for (const email of Object.values(USER_EMAILS)) {
     cookiesByEmail[email] = await login(options.baseUrl, email, options.password);
@@ -384,14 +377,14 @@ async function createContext (options) {
     usersByEmail,
     cookiesByEmail,
     ids: {
-      unavailableReasonId: unavailableReason.id,
-      facilityClosedReasonId: 'other',
-      exitDestinationHome: 'home',
-      exitDestinationHospital: 'hospital',
-      exitDestinationJail: 'jail',
-      exitHousingStatus: 'permanent',
-      releaseReasonSobered: 'sobered',
-      releaseReasonMedical: 'medical_issue',
+      unavailableReason: 'OTHER',
+      facilityClosedReason: 'OTHER',
+      exitDestinationHome: 'HOME',
+      exitDestinationHospital: 'HOSPITAL',
+      exitDestinationJail: 'JAIL',
+      exitHousingStatus: 'PERMANENT',
+      releaseReasonSobered: 'SOBERED',
+      releaseReasonMedical: 'MEDICAL_ISSUE',
     },
   };
 }
@@ -541,7 +534,7 @@ async function runSafetyCheckVsAdmit (context, metadata) {
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/admit` },
     ],
     allowedStatuses: [200, 404, 409],
-    allowedFinalSubjectStatuses: ['READY_FOR_INTAKE', 'ADMITTED'],
+    allowedFinalSubjectStatuses: ['READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE'],
   });
 }
 
@@ -556,7 +549,7 @@ async function runAdmitVsIntakeComplete (context, metadata) {
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/intake-complete`, body: { completed: true } },
     ],
     allowedStatuses: [200, 404, 409],
-    allowedFinalSubjectStatuses: ['ADMITTED', 'IN_CHAIR'],
+    allowedFinalSubjectStatuses: ['IN_MEDICAL_INTAKE', 'IN_CHAIR'],
   });
 }
 
@@ -567,7 +560,7 @@ async function runReleaseVsExit (context, metadata) {
       status: 'ACTIVE',
     }),
     requests: (fixture) => [
-      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReasonId: context.ids.releaseReasonSobered } },
+      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReason: context.ids.releaseReasonSobered } },
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/exit`, body: exitBody(context) },
     ],
     allowedStatuses: [200, 404, 409, 422],
@@ -578,7 +571,7 @@ async function runReleaseVsExit (context, metadata) {
 async function runReleaseVsExitToJail (context, metadata) {
   return runDeflectionRequestRace(context, metadata, {
     setup: () => createDeflectionFixture(context, metadata, {
-      subjectStatus: 'ADMITTED',
+      subjectStatus: 'IN_MEDICAL_INTAKE',
       status: 'ACTIVE',
     }),
     requests: (fixture) => [
@@ -589,9 +582,9 @@ async function runReleaseVsExitToJail (context, metadata) {
     allowedFinalSubjectStatuses: ['EXITED'],
     finalCheck: async ({ deflection }) => {
       assertInvariant(
-        [context.ids.exitDestinationHospital, context.ids.exitDestinationJail].includes(deflection.exitDestinationId),
+        [context.ids.exitDestinationHospital, context.ids.exitDestinationJail].includes(deflection.exitDestination),
         'Exit destination did not match either competing terminal transition.',
-        { exitDestinationId: deflection.exitDestinationId }
+        { exitDestination: deflection.exitDestination }
       );
     },
   });
@@ -604,7 +597,7 @@ async function runReleaseVsRecordDeath (context, metadata) {
       status: 'ACTIVE',
     }),
     requests: (fixture) => [
-      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReasonId: context.ids.releaseReasonSobered } },
+      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReason: context.ids.releaseReasonSobered } },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/record-death` },
     ],
     allowedStatuses: [200, 404, 409, 422],
@@ -904,7 +897,7 @@ async function runAwaitingIntakeTerminalRace (context, metadata) {
     }),
     requests: (fixture) => [
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/safety-check` },
-      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReasonId: context.ids.releaseReasonSobered } },
+      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReason: context.ids.releaseReasonSobered } },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/exit-to-jail` },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/record-death` },
     ],
@@ -921,19 +914,19 @@ async function runReadyForIntakeTerminalRace (context, metadata) {
     }),
     requests: (fixture) => [
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/admit` },
-      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReasonId: context.ids.releaseReasonSobered } },
+      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReason: context.ids.releaseReasonSobered } },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/exit-to-jail` },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/record-death` },
     ],
     allowedStatuses: [200, 404, 409, 422],
-    allowedFinalSubjectStatuses: ['ADMITTED', 'RELEASED', 'EXITED', 'DEATH_IN_CUSTODY', 'DEATH_IN_FACILITY'],
+    allowedFinalSubjectStatuses: ['IN_MEDICAL_INTAKE', 'RELEASED', 'EXITED', 'DEATH_IN_CUSTODY', 'DEATH_IN_FACILITY'],
   });
 }
 
 async function runAdmittedTerminalRace (context, metadata) {
   return runDeflectionRequestRace(context, metadata, {
     setup: () => createDeflectionFixture(context, metadata, {
-      subjectStatus: 'ADMITTED',
+      subjectStatus: 'IN_MEDICAL_INTAKE',
       status: 'ACTIVE',
     }),
     requests: (fixture) => [
@@ -956,7 +949,7 @@ async function runInChairTerminalRace (context, metadata) {
     }),
     requests: (fixture) => [
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/exit`, body: exitBody(context) },
-      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReasonId: context.ids.releaseReasonSobered } },
+      { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/release`, body: { releaseReason: context.ids.releaseReasonSobered } },
       { email: USER_EMAILS.custody, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/record-death` },
     ],
     allowedStatuses: [200, 404, 409, 422],
@@ -969,7 +962,7 @@ async function runReleasedTerminalRace (context, metadata) {
     setup: () => createDeflectionFixture(context, metadata, {
       subjectStatus: 'RELEASED',
       status: 'ACTIVE',
-      releaseReasonId: context.ids.releaseReasonSobered,
+      releaseReason: context.ids.releaseReasonSobered,
     }),
     requests: (fixture) => [
       { email: USER_EMAILS.care, method: 'POST', path: `/api/deflections/${fixture.deflection.id}/exit`, body: exitBody(context) },
@@ -1092,7 +1085,7 @@ async function runDuplicateRelease (context, metadata) {
       email: USER_EMAILS.custody,
       method: 'POST',
       path: `/api/deflections/${fixture.deflection.id}/release`,
-      body: { releaseReasonId: context.ids.releaseReasonSobered },
+      body: { releaseReason: context.ids.releaseReasonSobered },
     })),
     allowedStatuses: [200, 404, 409, 422],
     allowedFinalSubjectStatuses: ['RELEASED'],
@@ -1248,7 +1241,7 @@ async function prepareEmptyFacilityState (context, options = {}) {
     where: { id: context.facilityId },
     data: {
       status: options.facilityStatus ?? FacilityStatusEnum.OPEN_ACCEPTING,
-      statusReasonId: options.facilityStatus === FacilityStatusEnum.CLOSED ? context.ids.facilityClosedReasonId : null,
+      statusReason: options.facilityStatus === FacilityStatusEnum.CLOSED ? context.ids.facilityClosedReason : null,
       statusOther: null,
       updateNotes: null,
       updatedById: admin.id,
@@ -1265,7 +1258,7 @@ async function prepareEmptyFacilityState (context, options = {}) {
       holds: 0,
       inTransit: 0,
       available: capacity - unavailableUnoccupied - unavailableOccupied,
-      unavailableReasonId: unavailableUnoccupied > 0 ? context.ids.unavailableReasonId : null,
+      unavailableReason: unavailableUnoccupied > 0 ? context.ids.unavailableReason : null,
       unavailableOther: null,
       updateMethod: 'MANUAL',
       updateNotes: null,
@@ -1359,14 +1352,14 @@ async function createDeflectionFixture (context, metadata, options) {
     data.property = 'SMALL';
     data.propertyDetails = 'Load test bag';
   }
-  if (['ADMITTED', 'IN_CHAIR', 'RELEASED'].includes(subjectStatus)) {
-    data.admittedAt = now;
-    data.admittedById = careUser.id;
+  if (['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED'].includes(subjectStatus)) {
+    data.medicalIntakeStartedAt = now;
+    data.medicalIntakeStartedById = careUser.id;
   }
   if (subjectStatus === 'RELEASED') {
     data.releasedAt = now;
     data.releasedById = custodyUser.id;
-    data.releaseReasonId = options.releaseReasonId ?? context.ids.releaseReasonSobered;
+    data.releaseReason = options.releaseReason ?? context.ids.releaseReasonSobered;
   }
   if (subjectStatus === 'EXITED') {
     data.status = 'COMPLETED';
@@ -1375,20 +1368,20 @@ async function createDeflectionFixture (context, metadata, options) {
     data.releasedById = custodyUser.id;
     data.exitedAt = now;
     data.exitedById = careUser.id;
-    data.exitDestinationId = context.ids.exitDestinationHome;
-    data.exitHousingStatusId = context.ids.exitHousingStatus;
+    data.exitDestination = context.ids.exitDestinationHome;
+    data.exitHousingStatus = context.ids.exitHousingStatus;
     data.exitConnectedToCare = 'YES';
     data.exitSFResident = 'YES';
   }
   if (subjectStatus === 'DEATH_IN_CUSTODY') {
     data.status = 'COMPLETED';
     data.completedAt = now;
-    data.releaseReasonId = 'death_in_custody';
+    data.releaseReason = 'death_in_custody';
   }
   if (subjectStatus === 'DEATH_IN_FACILITY') {
     data.status = 'COMPLETED';
     data.completedAt = now;
-    data.releaseReasonId = 'death_in_facility';
+    data.releaseReason = 'death_in_facility';
     data.releasedAt = now;
     data.releasedById = custodyUser.id;
   }
@@ -1751,7 +1744,7 @@ function createIncidentPayload (context, runTag, index) {
 function closedFacilityBody (context) {
   return {
     status: FacilityStatusEnum.CLOSED,
-    statusReasonId: context.ids.facilityClosedReasonId,
+    statusReason: context.ids.facilityClosedReason,
     updateNotes: 'Load test facility close',
   };
 }
@@ -1766,22 +1759,22 @@ function reopenedFacilityBody () {
 function shrinkBedTypeBody (context) {
   return {
     unavailableUnoccupied: 1,
-    unavailableReasonId: context.ids.unavailableReasonId,
+    unavailableReason: context.ids.unavailableReason,
     updateNotes: 'Load test shrink',
   };
 }
 
 function medicalReleaseBody (context) {
   return {
-    releaseReasonId: context.ids.releaseReasonMedical,
-    exitDestinationId: context.ids.exitDestinationHospital,
+    releaseReason: context.ids.releaseReasonMedical,
+    exitDestination: context.ids.exitDestinationHospital,
   };
 }
 
 function exitBody (context) {
   return {
-    exitDestinationId: context.ids.exitDestinationHome,
-    exitHousingStatusId: context.ids.exitHousingStatus,
+    exitDestination: context.ids.exitDestinationHome,
+    exitHousingStatus: context.ids.exitHousingStatus,
     exitSFResident: 'YES',
     exitConnectedToCare: 'YES',
   };
