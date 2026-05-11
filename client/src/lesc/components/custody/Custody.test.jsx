@@ -16,7 +16,7 @@ const {
 } = vi.hoisted(() => ({
   mockBedTypesIndex: vi.fn(),
   mockDeflectionsList: vi.fn(),
-  mockSessionStateValue: { current: 'in-custody' },
+  mockSessionStateValue: { current: 'custody' },
   mockSetSessionState: vi.fn(),
   mockShowToast: vi.fn(),
 }));
@@ -91,7 +91,7 @@ function renderCustody () {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSessionStateValue.current = 'in-custody';
+  mockSessionStateValue.current = 'custody';
 
   mockBedTypesIndex.mockResolvedValue({
     data: [{ id: 1, available: 17, inTransit: 2, occupied: 2, type: 'CHAIR' }],

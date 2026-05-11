@@ -72,6 +72,10 @@ vi.mock('@/utils/openInBrowser', () => ({
   openInBrowser: vi.fn(),
 }));
 
+vi.mock('../../../hooks/useSessionState', () => ({
+  default: () => (['', vi.fn()]),
+}));
+
 vi.mock('../../../hooks/useUserRole', () => ({
   useUserRole: () => ({
     isCustody: true,
@@ -327,7 +331,7 @@ describe('CustodyDetailContent', () => {
   it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
-    expect(html).toContain('Record result');
+    expect(html).toContain('Safety check');
     expect(html).toContain('Record safety check');
     expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
     expect(html).toContain('Passed');
