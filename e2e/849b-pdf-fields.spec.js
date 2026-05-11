@@ -97,6 +97,12 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('REPORTING DEPUTY PRINT')).toBe('A. User');
   });
 
+  test('watch and assignment routing fields are populated', () => {
+    expect(getFieldText('WATCH')).toMatch(/^(0700-1900|1900-0700)$/);
+    expect(getFieldText('ASSIGN TO')).toBe('COMMUNITY PROGRAMS');
+    expect(getFieldText('COPIES TO DDL UNITSGENCIES')).toBe('RECORDS');
+  });
+
   test('type of premise is blank', () => {
     const value = getFieldText('TYPE OF PREMISE');
     expect(value || '').toBe('');
@@ -162,8 +168,8 @@ test.describe('849(b) PDF field verification', () => {
     expect(getFieldText('NAME LAST FIRST MIDDLE_2')).toBe('SFSO, T, #5678');
   });
 
-  test('reporting party contact phone number', () => {
-    expect(getFieldText('CONTACT PHONE NUMBER_2')).toBe('415-575-6461');
+  test('reporting party phone number is business phone', () => {
+    expect(getFieldText('BUSINESS PHONE_2')).toBe('415-575-6461');
   });
 
   test('reporting party business address', () => {
@@ -174,6 +180,21 @@ test.describe('849(b) PDF field verification', () => {
 
   test('reporting party business zipcode', () => {
     expect(getFieldText('ZIP CODE_4')).toBe('94107');
+  });
+
+  test('reporting party notification fields default to no with releasing deputy star', () => {
+    expect(pdfForm.getRadioGroup('293 PC NOTIFICATION').getSelected()).toBe('NO_3');
+    expect(pdfForm.getRadioGroup('CONFIDENTIALITY REQUESTED').getSelected()).toBe('NO_4');
+    expect(getFieldText('STAR_3')).toBe('5678');
+    expect(pdfForm.getRadioGroup('VICTIM OF CRIME NOTIFICATION').getSelected()).toBe('NO_5');
+    expect(pdfForm.getRadioGroup('FOLLOW UP FORM').getSelected()).toBe('NO_6');
+    expect(pdfForm.getRadioGroup('STATEMENT_2').getSelected()).toBe('NO_7');
+  });
+
+  test('reporting party other information uses SFSO employment text', () => {
+    expect(
+      getFieldText('OTHER INFORMATION SUBJECT LAST SEEN WEARINGEMPLOYMENTACTIVITY AT TIME OF INCIDENT')
+    ).toBe('At the time of reporting, employed by SFSO');
   });
 
   test('citation area does not contain stray text', () => {
