@@ -1638,7 +1638,6 @@ test('/api/deflections', async (t) => {
         recipientEmail: [
           'SFPD.Data.Transfer.Authorized@sfgov.org',
           'Andrew.bley@sfgov.org',
-          'Sfso-incidentreports@sfgov.org',
         ],
       });
     });
@@ -2240,6 +2239,48 @@ test('/api/deflections', async (t) => {
         formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
+    });
+
+    await t.test('persists sobered release appendix before forms are queued', async () => {
+      await prisma.deflection.expire();
+      await prisma.user.update({
+        where: { id: custodyUser.id },
+        data: { badgeNumber: '8675' },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          releaseNarrative: 'Existing 849(b) release narrative.',
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'SOBERED',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.releaseNarrative.startsWith('Existing 849(b) release narrative.\n\n'));
+      assert.match(data.releaseNarrative, /At approximately \d{2}:\d{2} hours on \d{2}\/\d{2}\/\d{2}/);
+      assert.match(data.releaseNarrative, /Connections medical staff, _{30} , determined/);
+      assert.match(data.releaseNarrative, /subject, Test Client3, was able to care for themselves/);
+      assert.match(data.releaseNarrative, /Deputy S User 1, #8675, issued Test Client3 a certificate of release/);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.releaseNarrative, data.releaseNarrative);
     });
 
     await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {

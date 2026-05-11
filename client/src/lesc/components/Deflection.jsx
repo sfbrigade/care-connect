@@ -17,6 +17,7 @@ import ActionFooter from '@/components/ActionFooter';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/format';
+import { openInBrowser } from '@/utils/openInBrowser';
 import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidCertification, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
@@ -27,7 +28,7 @@ function Deflection () {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
   const { user } = useAuthContext();
 
   const { data: deflection } = useQuery({
@@ -117,8 +118,17 @@ function Deflection () {
   }
 
   function on647fClick () {
-    const url = doc647f?.fileUrl || `/api/forms/647f/pdf/${deflection.id}`;
-    window.open(url, '_blank');
+    const url = `/api/forms/647f/pdf/${deflection.id}`;
+    const toastId = showToast('Downloading 647(f) form…', 'success', 0, 'This may take a moment.');
+    openInBrowser(url, `647f-${deflection.id}.pdf`)
+      .then(() => {
+        removeToast(toastId);
+        showToast('647(f) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+      })
+      .catch(() => {
+        removeToast(toastId);
+        showToast('Couldn’t download 647(f) form', 'error', 4000, 'Please try again.');
+      });
   }
 
   return (

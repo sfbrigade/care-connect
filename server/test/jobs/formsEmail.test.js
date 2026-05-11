@@ -93,7 +93,7 @@ test('formsEmail job handler', async (t) => {
     },
   };
 
-  await t.test('sends custody-transfer 647f to the three fixed addresses plus the arresting officer', async () => {
+  await t.test('sends custody-transfer 647f to the two fixed addresses plus the arresting officer', async () => {
     await formsEmail({
       deflectionId: 4,
       formIds: ['647f'],
@@ -102,7 +102,6 @@ test('formsEmail job handler', async (t) => {
       recipientEmail: [
         'SFPD.Data.Transfer.Authorized@sfgov.org',
         'Andrew.bley@sfgov.org',
-        'Sfso-incidentreports@sfgov.org',
       ],
     }, mockPrisma);
 
@@ -112,7 +111,6 @@ test('formsEmail job handler', async (t) => {
     assert.deepStrictEqual(sentMail[0].to, [
       'SFPD.Data.Transfer.Authorized@sfgov.org',
       'Andrew.bley@sfgov.org',
-      'Sfso-incidentreports@sfgov.org',
       'regular.user@test.com',
     ]);
     assert.deepStrictEqual(sentMail[0].cc, undefined);
@@ -396,7 +394,6 @@ test('formsEmail job handler', async (t) => {
     assert.deepStrictEqual(sentMail[1].to, [
       'SFPD.Data.Transfer.Authorized@sfgov.org',
       'Andrew.bley@sfgov.org',
-      'Sfso-incidentreports@sfgov.org',
       'regular.user@test.com',
     ]);
     assert.deepStrictEqual(sentMail[1].cc, undefined);

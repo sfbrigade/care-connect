@@ -6,6 +6,7 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
 import { queueReleaseFormsEmail } from '#lib/forms/formEmailJobs.js';
+import { appendSobered849bReleaseNarrative } from '#lib/forms/849b/releaseNarrative.js';
 
 const RELEASABLE_STATUSES = [
   Deflection.SubjectStatus.AWAITING_INTAKE,
@@ -127,6 +128,10 @@ export default async function (fastify, opts) {
           // re-fetch deflection after lock
           deflection = await tx.deflection.findUnique({
             where: { id },
+            include: {
+              incident: true,
+              subject: true,
+            },
           });
 
           if (!RELEASABLE_STATUSES.includes(deflection.subjectStatus)) {
@@ -134,6 +139,7 @@ export default async function (fastify, opts) {
           }
 
           const now = new Date();
+          const releasingDeputy = request.user;
           const previousSubjectStatus = deflection.subjectStatus;
           // `sobered` releases from a pre-chair hold finalize immediately as
           // EXITED. Medical, behavioral-health, and "other" releases also
@@ -186,6 +192,19 @@ export default async function (fastify, opts) {
               releaseReason,
               otherReleaseReason: isOtherRelease ? otherReleaseReason : null,
               otherReleaseDestination: isOtherRelease ? otherReleaseDestination : null,
+              ...(releaseReason === 'SOBERED'
+                ? {
+                    releaseNarrative: appendSobered849bReleaseNarrative({
+                      releaseNarrative: deflection.releaseNarrative,
+                      caseNumber: deflection.incident?.caseNumber,
+                      cadNumber: deflection.incident?.cadNumber,
+                      behavior: deflection.behavior,
+                      releasedAt: now,
+                      releasingDeputy,
+                      subject: deflection.subject,
+                    }),
+                  }
+                : {}),
               ...(releaseFinalizesAsExited
                 ? {
                     exitedAt: now,

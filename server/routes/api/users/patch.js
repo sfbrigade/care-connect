@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 
 import slugifyUnitId from '#lib/slugifyUnitId.js';
+import { normalizeUnitName } from '#lib/unitName.js';
 import User from '#models/user.js';
 
 const ORG_ADMIN_ALLOWED_FIELDS = new Set([
@@ -21,7 +22,7 @@ const ORG_ADMIN_ALLOWED_FIELDS = new Set([
 ]);
 
 async function resolveUnitId (tx, { organizationId, userId, unitId, unitName }) {
-  const trimmedUnitName = unitName?.trim();
+  const trimmedUnitName = normalizeUnitName(unitName);
 
   if (!trimmedUnitName || unitId) {
     return unitId;

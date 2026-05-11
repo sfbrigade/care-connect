@@ -14,7 +14,7 @@ function isTransferredToHospital (deflection) {
 }
 
 export function shouldShowCareCardViewDetails (deflection) {
-  return deflection?.subjectStatus !== 'EXITED';
+  return ['IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'].includes(deflection?.subjectStatus);
 }
 
 export function hasPersistedExitDetails (deflection) {

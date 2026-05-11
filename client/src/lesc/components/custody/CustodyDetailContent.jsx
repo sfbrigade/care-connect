@@ -15,8 +15,10 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import useNow from '../../../hooks/useNow';
+import useSessionState from '../../../hooks/useSessionState';
 import { useUserRole } from '../../../hooks/useUserRole';
 import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
+import { openInBrowser } from '@/utils/openInBrowser';
 import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
@@ -32,13 +34,10 @@ import SafetyCheckResultModal from './SafetyCheckResultModal';
 import classes from './CustodyDetailContent.module.css';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const OTHER_EXIT_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
-
-function isNetworkError (error) {
-  return !error?.response || window.navigator?.onLine === false;
-}
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
   const [completeIntakeModalOpened, setCompleteIntakeModalOpened] = useState(false);
@@ -48,9 +47,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [, setCustodyTab] = useSessionState('custody');
   const { t } = useTranslation();
   const { facility } = useFacilityContext();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
   const { isCustody } = useUserRole();
   const isCareView = viewerMode === 'care';
   const careFooterState = getCareDetailFooterState({ viewerMode, deflection });
@@ -76,6 +76,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isPostRelease;
   const canExitToHospitalViaRelease = HOSPITAL_RELEASE_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
+  const canExitToOtherViaRelease = OTHER_EXIT_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
   const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
     viewerMode,
     isCustody,
@@ -92,6 +93,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
+  }
+
+  function navigateToOtherExitReleaseFlow () {
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=OTHER`);
   }
 
   useEffect(() => {
@@ -118,25 +123,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     }, 100);
   }, [deflection?.id, isCareView, propertySectionId, showToast]);
 
-  const safetyCheckMutation = useMutation({
-    mutationFn: () => Api.deflections.safetyCheck(deflection.id),
-    onSuccess: () => {
-      setSafetyCheckResultModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
-    },
-    onError: (error) => {
-      setSafetyCheckResultModalOpened(false);
-      if (isNetworkError(error)) {
-        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
-        return;
-      }
-      showToast('Safety check not saved. Please try again.', 'error');
-    },
-  });
-
   const recordDeathMutation = useMutation({
     mutationFn: () => Api.deflections.recordDeath(deflection.id),
     onSuccess: () => {
@@ -152,22 +138,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     },
   });
 
-  const exitToJailMutation = useMutation({
-    mutationFn: () => Api.deflections.exitToJail(deflection.id),
-    onSuccess: () => {
-      setExitToJailModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(deflection.id)] });
-      queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Legally released".');
-      navigate('/custody?tab=released');
-    },
-    onError: () => {
-      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
-    },
-  });
+  function onExitToJail () {
+    setExitToJailModalOpened(false);
+    setCustodyTab('released');
+    navigate('/custody');
+  }
 
   const completeIntakeMutation = useMutation({
     mutationFn: ({ completed }) => Api.deflections.completeIntake(deflection.id, { completed }),
@@ -215,7 +190,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     incidentReady: !deflection?.incidentId || incidentQuery.isFetched,
   });
 
-  const docCert = deflection?.deflectionDocuments?.find(d => d.formId === 'cert');
   const showPostReleaseNarrativeActions = !isCareView && isCustody && isPostRelease;
 
   const email849bMutation = useMutation({
@@ -229,7 +203,16 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   function open849bPdf () {
-    window.open(`/api/forms/849b/pdf/${deflection.id}`, '_blank');
+    const toastId = showToast('Downloading 849(b) form…', 'success', 0, 'This may take a moment.');
+    openInBrowser(`/api/forms/849b/pdf/${deflection.id}`, `849b-${deflection.id}.pdf`)
+      .then(() => {
+        removeToast(toastId);
+        showToast('849(b) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+      })
+      .catch(() => {
+        removeToast(toastId);
+        showToast('Couldn’t download 849(b) form', 'error', 4000, 'Please try again.');
+      });
   }
 
   // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
@@ -629,25 +612,25 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Item
-                    leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                    onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                  >
-                    Legal release
-                  </Menu.Item>
-                  <Menu.Item
                     leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setExitToJailModalOpened(true)}
                   >
-                    Exit to jail
+                    Record exit to jail
                   </Menu.Item>
                   {canExitToHospitalViaRelease && (
                     <Menu.Item
                       leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
                       onClick={navigateToHospitalReleaseFlow}
                     >
-                      Exit to hospital
+                      Record exit to hospital
                     </Menu.Item>
                   )}
+                  <Menu.Item
+                    leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={navigateToOtherExitReleaseFlow}
+                  >
+                    Record exit to other
+                  </Menu.Item>
                   <Menu.Item
                     leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setRecordDeathModalOpened(true)}
@@ -689,19 +672,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
-                        {isAwaitingSafetyCheck && (
-                          <Menu.Item
-                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                          >
-                            Legal release
-                          </Menu.Item>
-                        )}
                         <Menu.Item
                           leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setExitToJailModalOpened(true)}
                         >
-                          Record exit to jail
+                          {isFailedIntake ? 'Exit to jail' : 'Record exit to jail'}
                         </Menu.Item>
                         {canExitToHospitalViaRelease && (
                           <Menu.Item
@@ -711,12 +686,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             Record exit to hospital
                           </Menu.Item>
                         )}
-                        <Menu.Item
-                          leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => setRecordDeathModalOpened(true)}
-                        >
-                          Record death
-                        </Menu.Item>
+                        {canExitToOtherViaRelease && (
+                          <Menu.Item
+                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={navigateToOtherExitReleaseFlow}
+                          >
+                            Record exit to other
+                          </Menu.Item>
+                        )}
+                        {!isFailedIntake && (
+                          <Menu.Item
+                            leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => setRecordDeathModalOpened(true)}
+                          >
+                            Record death
+                          </Menu.Item>
+                        )}
                       </Menu.Dropdown>
                     </Menu>
                   )}
@@ -732,14 +717,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        const url = docCert?.fileUrl || `/api/forms/cert/pdf/${deflection.id}`;
-                        window.open(url, '_blank');
+                        const url = `/api/forms/cert/pdf/${deflection.id}`;
+                        const toastId = showToast('Downloading release certificate…', 'success', 0, 'This may take a moment.');
+                        openInBrowser(url, `cert-${deflection.id}.pdf`)
+                          .then(() => {
+                            removeToast(toastId);
+                            showToast('Release certificate ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+                          })
+                          .catch(() => {
+                            removeToast(toastId);
+                            showToast('Couldn’t download release certificate', 'error', 4000, 'Please try again.');
+                          });
                       }
                     }}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Record result'
-                      : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      ? 'Safety check'
+                      : (showPrimaryPrintCertificate ? 'View release certificate' : (isFailedIntake ? 'Release and exit' : 'Start legal release'))}
                   </Button>
                 </Group>
               </Stack>
@@ -756,20 +750,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
         loading={recordDeathMutation.isPending}
       />
       <SafetyCheckResultModal
+        deflectionId={deflection?.id}
+        facilityId={facility.id}
         opened={safetyCheckResultModalOpened}
         onClose={() => setSafetyCheckResultModalOpened(false)}
-        loading={safetyCheckMutation.isPending}
-        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmPassed={() => setSafetyCheckResultModalOpened(false)}
         onConfirmFailed={() => {
           setSafetyCheckResultModalOpened(false);
           setExitToJailModalOpened(true);
         }}
       />
       <ExitToJailModal
+        deflectionId={deflection?.id}
+        facilityId={facility.id}
         opened={exitToJailModalOpened}
         onClose={() => setExitToJailModalOpened(false)}
-        onConfirm={() => exitToJailMutation.mutate()}
-        loading={exitToJailMutation.isPending}
+        onConfirm={() => onExitToJail()}
       />
       <CompleteIntakeModal
         opened={completeIntakeModalOpened}
