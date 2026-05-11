@@ -61,7 +61,7 @@ function ForgotPassword () {
               <Text c='dimmed' size='lg'>Forgot password</Text>
               <Title order={3}>Enter the email associated with your account. We'll send you a link to reset your password.</Title>
             </div>
-            <form onSubmit={form.onSubmit((values) => onSubmitMutation.mutate(values))}>
+            <form onSubmit={form.onSubmit(onSubmitMutation.mutate)}>
               <Fieldset disabled={onSubmitMutation.isPending} variant='unstyled'>
                 <Stack align='flex-start'>
                   {form.errors._form && <Alert color='red'>{form.errors._form}</Alert>}

@@ -131,7 +131,7 @@ function Login () {
         <title>{step === 'verify' ? 'Enter verification code' : 'Login'}</title>
       </Head>
       {step === 'credentials' && (
-        <form onSubmit={form.onSubmit((values) => loginMutation.mutate(values))}>
+        <form onSubmit={form.onSubmit(loginMutation.mutate)}>
           <Fieldset disabled={loginMutation.isPending} variant='unstyled'>
             <Container>
               <Stack align='stretch'>
