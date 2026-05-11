@@ -690,7 +690,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                   >
                     {isAwaitingSafetyCheck
                       ? 'Safety check'
-                      : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      : (showPrimaryPrintCertificate ? 'View release certificate' : 'Start legal release')}
                   </Button>
                 </Group>
               </Stack>
