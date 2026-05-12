@@ -115,6 +115,7 @@ test('formsEmail job handler', async (t) => {
     ]);
     assert.deepStrictEqual(sentMail[0].cc, undefined);
     assert.deepStrictEqual(sentMail[0].subject, '647(f) RWS document for Jane Doe / case #CASEMAIL (RESET)');
+    assert.deepStrictEqual(sentMail[0].text.trim(), 'The 647(f) transfer form for Jane Doe, case #CASEMAIL, RESET center deflection, is attached.\n----');
   });
 
   await t.test('sends 849b only to swaps supervisors and the releasing user', async () => {
