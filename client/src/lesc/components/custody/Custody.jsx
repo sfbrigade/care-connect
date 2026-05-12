@@ -26,7 +26,7 @@ import CustodyCard from './CustodyCard';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from './SatisfactionSurveyModal';
+import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '../SatisfactionSurveyModal';
 import classes from './Custody.module.css';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR';

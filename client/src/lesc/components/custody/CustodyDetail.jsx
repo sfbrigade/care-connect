@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from './SatisfactionSurveyModal';
+import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '../SatisfactionSurveyModal';
 import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail ({ viewerMode = 'custody' }) {

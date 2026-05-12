@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '@/lesc/components/custody/SatisfactionSurveyModal';
+import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '@/lesc/components/SatisfactionSurveyModal';
 
 /** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
 export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
