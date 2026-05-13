@@ -7,7 +7,7 @@ const { mockIsSatisfactionSurveyEnabled } = vi.hoisted(() => ({
   mockIsSatisfactionSurveyEnabled: vi.fn(),
 }));
 
-vi.mock('@/lesc/components/custody/SatisfactionSurveyModal', () => ({
+vi.mock('@/lesc/components/SatisfactionSurveyModal', () => ({
   __esModule: true,
   default: () => null,
   isSatisfactionSurveyEnabled: mockIsSatisfactionSurveyEnabled,

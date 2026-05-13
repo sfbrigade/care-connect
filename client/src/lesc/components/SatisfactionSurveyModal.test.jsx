@@ -6,7 +6,7 @@ import Api from '@/Api';
 import SatisfactionSurveyModal, {
   isSatisfactionSurveyEnabled,
   SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY,
-} from '../SatisfactionSurveyModal';
+} from './SatisfactionSurveyModal';
 
 const { mockShowToast } = vi.hoisted(() => ({
   mockShowToast: vi.fn(),
