@@ -763,6 +763,66 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/5150-email', async (t) => {
+    await t.test('queues live 5150 regeneration and self e-mail for behavioral-health-evaluation releases', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(JSON.parse(response.body), {
+        queued: true,
+        email: 'sfsouser1@test.com',
+      });
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['5150'],
+        emailTemplate: 'self-5150',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+    });
+
+    await t.test('rejects releases whose reason is not behavioral health evaluation', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'EXITED',
+          releasedAt: new Date(),
+          releaseReason: 'SOBERED',
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('forbids non-custody users', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/5150-email')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
   await t.test('POST /:id/transfer', async (t) => {
     await t.test('transfers custody of a deflection', async () => {
       await prisma.deflection.expire();
@@ -2475,7 +2535,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2519,9 +2579,51 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
+    });
+
+    await t.test('persists sobered release appendix before forms are queued', async () => {
+      await prisma.deflection.expire();
+      await prisma.user.update({
+        where: { id: custodyUser.id },
+        data: { badgeNumber: '8675' },
+      });
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'READY_FOR_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          releaseNarrative: 'Existing 849(b) release narrative.',
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'SOBERED',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.ok(data.releaseNarrative.startsWith('Existing 849(b) release narrative.\n\n'));
+      assert.match(data.releaseNarrative, /At approximately \d{2}:\d{2} hours on \d{2}\/\d{2}\/\d{2}/);
+      assert.match(data.releaseNarrative, /Connections medical staff, _{30} , determined/);
+      assert.match(data.releaseNarrative, /subject, Test Client3, was able to care for themselves/);
+      assert.match(data.releaseNarrative, /Deputy S User 1, #8675, issued Test Client3 a certificate of release/);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.releaseNarrative, data.releaseNarrative);
     });
 
     await t.test('records sobered release from in-chair and lingers as ACTIVE/RELEASED', async () => {
@@ -2623,7 +2725,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2676,7 +2778,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });
@@ -2712,7 +2814,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['647f', '849b', 'cert'],
+        formIds: ['647f', '849b', 'cert', '5150'],
         emailTemplate: 'release-forms',
       });
     });

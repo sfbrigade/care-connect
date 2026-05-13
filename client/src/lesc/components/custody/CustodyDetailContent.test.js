@@ -261,12 +261,14 @@ describe('CustodyDetailContent', () => {
     const html = render();
 
     expect(html).toContain('Intake staff can scan this code to start full intake.');
-    expect(html).toContain('Legal release');
+    expect(html).toContain('Record exit to other');
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Substance-related details');
     expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
     expect(html).toContain('CASE-456');
+
+    expect(html.indexOf('Record exit to hospital')).toBeLessThan(html.indexOf('Record exit to other'));
   });
 
   it('renders 849(b) narrative in read-only mode by default with edit button', () => {
@@ -328,10 +330,22 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
+  it('only shows exit to jail in overflow actions for failed intake', () => {
+    const html = render({ subjectStatus: 'FAILED_INTAKE' });
+
+    expect(html).toContain('>Exit to jail</a>');
+    expect(html).not.toContain('>Record exit to jail</a>');
+    expect(html).not.toContain('>Record exit to hospital</a>');
+    expect(html).not.toContain('>Record exit to other</a>');
+    expect(html).not.toContain('>Record death</a>');
+    expect(html).toContain('Release and exit');
+    expect(html).not.toContain('Start legal release');
+  });
+
   it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
-    expect(html).toContain('Record result');
+    expect(html).toContain('Safety check');
     expect(html).toContain('Record safety check');
     expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
     expect(html).toContain('Passed');

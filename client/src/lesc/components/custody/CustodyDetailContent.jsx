@@ -34,7 +34,8 @@ import SafetyCheckResultModal from './SafetyCheckResultModal';
 import classes from './CustodyDetailContent.module.css';
 
 const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED', 'EXITED'];
-const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
+const OTHER_EXIT_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
@@ -75,6 +76,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const showPrimaryStartLegalRelease = isInChair || isFailedIntake;
   const showPrimaryPrintCertificate = isPostRelease;
   const canExitToHospitalViaRelease = HOSPITAL_RELEASE_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
+  const canExitToOtherViaRelease = OTHER_EXIT_ELIGIBLE_STATUSES.includes(deflection?.subjectStatus);
   const showAwaitingPropertyReturnChip = shouldShowPropertyReturnEntryPoint({
     viewerMode,
     isCustody,
@@ -91,6 +93,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   function navigateToHospitalReleaseFlow () {
     navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
+  }
+
+  function navigateToOtherExitReleaseFlow () {
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=OTHER`);
   }
 
   useEffect(() => {
@@ -209,6 +215,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       });
   }
 
+  // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
+  // releases. Buttons are gated on the same predicate the server enforces.
+  const can5150 = deflection?.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION' && !!deflection?.releasedAt;
+  const email5150Mutation = useMutation({
+    mutationFn: () => Api.deflections.email5150(deflection.id),
+    onSuccess: (response) => {
+      showToast('5150 e-mail sent', 'success', 4000, `We sent the 5150 PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
+    },
+    onError: () => {
+      showToast('5150 e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  function open5150Pdf () {
+    window.open(`/api/forms/5150/pdf/${deflection.id}`, '_blank');
+  }
+
   return (
     <>
       <Header>
@@ -285,6 +308,24 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               >
                 E-mail me the 849(b)
               </Button>
+              {can5150 && (
+                <>
+                  <Button
+                    onClick={open5150Pdf}
+                    variant='outline'
+                    rightSection={<IconExternalLink size={18} />}
+                  >
+                    5150.pdf
+                  </Button>
+                  <Button
+                    onClick={() => email5150Mutation.mutate()}
+                    loading={email5150Mutation.isPending}
+                    variant='outline'
+                  >
+                    E-mail me the 5150
+                  </Button>
+                </>
+              )}
             </Group>
           )}
           <Stack gap='sm'>
@@ -571,25 +612,25 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Item
-                    leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                    onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                  >
-                    Legal release
-                  </Menu.Item>
-                  <Menu.Item
                     leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setExitToJailModalOpened(true)}
                   >
-                    Exit to jail
+                    Record exit to jail
                   </Menu.Item>
                   {canExitToHospitalViaRelease && (
                     <Menu.Item
                       leftSection={<IconBuildingHospital size={18} color='var(--mantine-color-gray-5)' />}
                       onClick={navigateToHospitalReleaseFlow}
                     >
-                      Exit to hospital
+                      Record exit to hospital
                     </Menu.Item>
                   )}
+                  <Menu.Item
+                    leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                    onClick={navigateToOtherExitReleaseFlow}
+                  >
+                    Record exit to other
+                  </Menu.Item>
                   <Menu.Item
                     leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
                     onClick={() => setRecordDeathModalOpened(true)}
@@ -631,19 +672,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         </ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
-                        {isAwaitingSafetyCheck && (
-                          <Menu.Item
-                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
-                            onClick={() => navigate(`/custody/${deflection.id}/legal-release?from=detail`)}
-                          >
-                            Legal release
-                          </Menu.Item>
-                        )}
                         <Menu.Item
                           leftSection={<IconDoorExit size={18} color='var(--mantine-color-gray-5)' />}
                           onClick={() => setExitToJailModalOpened(true)}
                         >
-                          Record exit to jail
+                          {isFailedIntake ? 'Exit to jail' : 'Record exit to jail'}
                         </Menu.Item>
                         {canExitToHospitalViaRelease && (
                           <Menu.Item
@@ -653,12 +686,22 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                             Record exit to hospital
                           </Menu.Item>
                         )}
-                        <Menu.Item
-                          leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
-                          onClick={() => setRecordDeathModalOpened(true)}
-                        >
-                          Record death
-                        </Menu.Item>
+                        {canExitToOtherViaRelease && (
+                          <Menu.Item
+                            leftSection={<IconFileCheck size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={navigateToOtherExitReleaseFlow}
+                          >
+                            Record exit to other
+                          </Menu.Item>
+                        )}
+                        {!isFailedIntake && (
+                          <Menu.Item
+                            leftSection={<IconFileAlert size={18} color='var(--mantine-color-gray-5)' />}
+                            onClick={() => setRecordDeathModalOpened(true)}
+                          >
+                            Record death
+                          </Menu.Item>
+                        )}
                       </Menu.Dropdown>
                     </Menu>
                   )}
@@ -689,8 +732,8 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     }}
                   >
                     {isAwaitingSafetyCheck
-                      ? 'Record result'
-                      : (showPrimaryPrintCertificate ? 'Print release certificate' : 'Start legal release')}
+                      ? 'Safety check'
+                      : (showPrimaryPrintCertificate ? 'View release certificate' : (isFailedIntake ? 'Release and exit' : 'Start legal release'))}
                   </Button>
                 </Group>
               </Stack>
