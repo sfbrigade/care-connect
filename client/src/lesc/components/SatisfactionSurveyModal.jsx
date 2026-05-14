@@ -5,7 +5,7 @@ import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX, IconShieldChevron } f
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
 
-export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'satisfactionSurveyNextEligibleAt';
+export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'surveyNextEligibleAt';
 
 const INITIAL_ANSWERS = {
   careConnectRating: '',
