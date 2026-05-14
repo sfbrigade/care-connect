@@ -50,6 +50,7 @@ const UserResponseSchema = UserAttributesSchema.extend({
   updatedAt: z.coerce.date(),
   deactivatedAt: z.coerce.date().nullable(),
   deletedAt: z.coerce.date().nullable(),
+  surveyNextEligibleAt: z.coerce.date().nullable(),
 });
 
 const UserUpdateSchema = UserAttributesSchema.extend({

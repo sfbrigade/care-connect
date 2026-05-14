@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '@/lesc/components/SatisfactionSurveyModal';
+import SatisfactionSurveyModal from '@/lesc/components/SatisfactionSurveyModal';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
 
 /** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
 export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
 
 function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
-  const shouldShowSatisfactionSurvey = isSatisfactionSurveyEnabled();
+  const { isEligible: shouldShowSatisfactionSurvey } = useSatisfactionSurveyEligibility();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
   const [staySurveyScheduled, setStaySurveyScheduled] = useState(false);
   const [activeSurveyContextId, setActiveSurveyContextId] = useState(deflectionId);

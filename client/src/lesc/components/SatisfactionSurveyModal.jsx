@@ -4,8 +4,7 @@ import { IconMoodSad, IconMoodSmile, IconMoodEmpty, IconX, IconShieldChevron } f
 
 import Api from '@/Api';
 import { useToast } from '@/components/ToastContext';
-
-export const SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY = 'surveyNextEligibleAt';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
 
 const INITIAL_ANSWERS = {
   careConnectRating: '',
@@ -21,34 +20,6 @@ const SATISFACTION_OPTIONS = [
   { value: 'good', label: 'Good', Icon: IconMoodSmile },
 ];
 
-export function isSatisfactionSurveyEnabled () {
-  if (typeof window === 'undefined') return false;
-
-  const storedNextEligibleAt = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-  if (!storedNextEligibleAt) {
-    scheduleNextSatisfactionSurveyEligibility();
-    return false;
-  }
-
-  const nextEligibleAt = Number(storedNextEligibleAt);
-  if (!Number.isFinite(nextEligibleAt)) {
-    scheduleNextSatisfactionSurveyEligibility();
-    return false;
-  }
-
-  return Date.now() >= nextEligibleAt;
-}
-
-function scheduleNextSatisfactionSurveyEligibility (now = Date.now()) {
-  if (typeof window === 'undefined') return null;
-
-  const nextEligibleDate = new Date(now);
-  nextEligibleDate.setMonth(nextEligibleDate.getMonth() + 1);
-  const nextEligibleAt = nextEligibleDate.getTime();
-  window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(nextEligibleAt));
-  return nextEligibleAt;
-}
-
 function SatisfactionSurveyModal ({
   opened,
   deflectionId,
@@ -56,6 +27,7 @@ function SatisfactionSurveyModal ({
   department,
 }) {
   const { showToast } = useToast();
+  const { scheduleCooldown } = useSatisfactionSurveyEligibility();
   const [surveyStep, setSurveyStep] = useState(0);
   const [showImprovementSuggestions, setShowImprovementSuggestions] = useState(false);
   const [surveyAnswers, setSurveyAnswers] = useState(INITIAL_ANSWERS);
@@ -74,13 +46,13 @@ function SatisfactionSurveyModal ({
 
   useEffect(() => {
     if (!opened) return;
-    scheduleNextSatisfactionSurveyEligibility();
+    scheduleCooldown();
     setShowImprovementSuggestions(false);
     setSurveyStep(0);
     setSurveyAnswers(INITIAL_ANSWERS);
     setSubmitting(false);
     return () => clearAdvanceStepTimer();
-  }, [opened]);
+  }, [opened, scheduleCooldown]);
 
   const finish = async (didCompleteSurvey) => {
     if (didCompleteSurvey && deflectionId != null) {

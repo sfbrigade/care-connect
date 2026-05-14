@@ -5,7 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '../SatisfactionSurveyModal';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
+import SatisfactionSurveyModal from '../SatisfactionSurveyModal';
 import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail ({ viewerMode = 'custody' }) {
@@ -19,13 +20,14 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
 
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
   const surveyIntentDeflectionId = surveyIntent?.deflectionId;
+  const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   useEffect(() => {
     setIsPostNavigationSurveyOpen(false);
   }, [id]);
 
   useEffect(() => {
-    if (!isSatisfactionSurveyEnabled()) return;
+    if (!isSatisfactionSurveyEligible) return;
     if (!surveyIntentDeflectionId || String(surveyIntentDeflectionId) !== String(id)) return;
 
     const timeoutId = window.setTimeout(() => {
@@ -35,7 +37,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [id, surveyIntentDeflectionId, location.key]);
+  }, [id, surveyIntentDeflectionId, location.key, isSatisfactionSurveyEligible]);
 
   const clearSurveyLocationState = useCallback(() => {
     const current = location.state;

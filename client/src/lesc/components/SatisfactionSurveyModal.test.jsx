@@ -3,13 +3,18 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MantineProvider } from '@mantine/core';
 
 import Api from '@/Api';
-import SatisfactionSurveyModal, {
-  isSatisfactionSurveyEnabled,
-  SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY,
-} from './SatisfactionSurveyModal';
+import SatisfactionSurveyModal from './SatisfactionSurveyModal';
 
-const { mockShowToast } = vi.hoisted(() => ({
+const { mockScheduleCooldown, mockShowToast } = vi.hoisted(() => ({
+  mockScheduleCooldown: vi.fn(),
   mockShowToast: vi.fn(),
+}));
+
+vi.mock('@/hooks/useSatisfactionSurveyEligibility', () => ({
+  useSatisfactionSurveyEligibility: () => ({
+    isEligible: true,
+    scheduleCooldown: mockScheduleCooldown,
+  }),
 }));
 
 vi.mock('@/Api', () => ({
@@ -42,72 +47,50 @@ function renderSurveyModal (props = {}) {
   return { onFinished };
 }
 
-describe('SatisfactionSurveyModal eligibility', () => {
-  let dateNowSpy;
-
+describe('SatisfactionSurveyModal cooldown on open', () => {
   beforeEach(() => {
-    dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-04-15T12:00:00.000Z').getTime());
-    window.localStorage.clear();
+    mockScheduleCooldown.mockReset();
     mockShowToast.mockReset();
   });
 
   afterEach(() => {
     cleanup();
-    dateNowSpy.mockRestore();
-    window.localStorage.clear();
   });
 
-  it('returns false when no next eligible timestamp is stored and seeds localStorage', () => {
-    expect(isSatisfactionSurveyEnabled()).toBe(false);
-
-    const stored = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-    expect(stored).toBeTruthy();
-    const storedTimestamp = Number(stored);
-    const expected = new Date(Date.now());
-    expected.setMonth(expected.getMonth() + 1);
-    expect(storedTimestamp).toBe(expected.getTime());
-  });
-
-  it('returns false before the next eligible timestamp', () => {
-    const futureTimestamp = Date.now() + 60_000;
-    window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(futureTimestamp));
-
-    expect(isSatisfactionSurveyEnabled()).toBe(false);
-  });
-
-  it('returns true when the next eligible timestamp is in the past', () => {
-    const pastTimestamp = Date.now() - 60_000;
-    window.localStorage.setItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY, String(pastTimestamp));
-
-    expect(isSatisfactionSurveyEnabled()).toBe(true);
-  });
-
-  it('writes the next eligible timestamp about one month ahead when opened', async () => {
+  it('calls scheduleCooldown when opened', async () => {
     renderSurveyModal();
 
     await waitFor(() => {
-      const storedValue = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
-      expect(storedValue).toBeTruthy();
+      expect(mockScheduleCooldown).toHaveBeenCalled();
     });
-
-    const storedTimestamp = Number(window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY));
-    const expected = new Date(Date.now());
-    expected.setMonth(expected.getMonth() + 1);
-    expect(storedTimestamp).toBe(expected.getTime());
   });
 
-  it('keeps the updated timestamp when closed without submission', async () => {
+  it('does not call scheduleCooldown while closed', () => {
+    render(
+      <MantineProvider>
+        <SatisfactionSurveyModal
+          opened={false}
+          deflectionId={123}
+          onFinished={vi.fn()}
+          department='SFPD'
+        />
+      </MantineProvider>
+    );
+
+    expect(mockScheduleCooldown).not.toHaveBeenCalled();
+  });
+
+  it('invokes onFinished when closed without changing cooldown call count from reopen', async () => {
     const { onFinished } = renderSurveyModal();
 
     await waitFor(() => {
-      expect(window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY)).toBeTruthy();
+      expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
     });
 
-    const storedTimestampBeforeClose = window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY);
     fireEvent.click(screen.getByRole('button', { name: 'Close survey' }));
 
     expect(onFinished).toHaveBeenCalledTimes(1);
-    expect(window.localStorage.getItem(SATISFACTION_SURVEY_NEXT_ELIGIBLE_AT_KEY)).toBe(storedTimestampBeforeClose);
+    expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -117,6 +100,7 @@ describe('SatisfactionSurveyModal character limit validation', () => {
   beforeEach(() => {
     vi.mocked(Api.deflections.submitSatisfactionSurvey).mockReset();
     mockShowToast.mockReset();
+    mockScheduleCooldown.mockReset();
   });
 
   afterEach(() => {

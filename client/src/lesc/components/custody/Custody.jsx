@@ -26,7 +26,8 @@ import CustodyCard from './CustodyCard';
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
 import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
-import SatisfactionSurveyModal, { isSatisfactionSurveyEnabled } from '../SatisfactionSurveyModal';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
+import SatisfactionSurveyModal from '../SatisfactionSurveyModal';
 import classes from './Custody.module.css';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR';
@@ -219,6 +220,7 @@ function Custody () {
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
   const surveyIntentDeflectionId = surveyIntent?.deflectionId;
   const surveyIntentDepartment = surveyIntent?.department;
+  const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -336,7 +338,7 @@ function Custody () {
   }, [inCustodyDeflections, showToast]);
 
   useEffect(() => {
-    if (!isSatisfactionSurveyEnabled()) return;
+    if (!isSatisfactionSurveyEligible) return;
     if (!surveyIntentDeflectionId) return;
 
     const timeoutId = window.setTimeout(() => {
@@ -346,7 +348,7 @@ function Custody () {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [surveyIntentDeflectionId, location.key]);
+  }, [surveyIntentDeflectionId, location.key, isSatisfactionSurveyEligible]);
 
   const clearSurveyLocationState = useCallback(() => {
     const current = location.state;

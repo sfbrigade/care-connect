@@ -70,7 +70,8 @@ test('/api/users', async (t) => {
         createdAt: '2024-12-27T15:53:41.000Z',
         updatedAt,
         deactivatedAt: null,
-        deletedAt: null
+        deletedAt: null,
+        surveyNextEligibleAt: null,
       });
     });
 
@@ -124,6 +125,77 @@ test('/api/users', async (t) => {
     });
   });
 
+  await t.test('POST /me/satisfaction-survey-cooldown', async (t) => {
+    function addOneCalendarMonth (ms) {
+      const d = new Date(ms);
+      d.setMonth(d.getMonth() + 1);
+      return d.getTime();
+    }
+
+    await t.test('returns 401 when unauthenticated', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey-cooldown',
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('returns 403 when the user is deactivated', async () => {
+      const careHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+      const userId = '3f42ae6e-505d-499c-97f5-8fe712818f5b';
+      await prisma.user.update({
+        where: { id: userId },
+        data: { deactivatedAt: new Date() },
+      });
+      try {
+        const response = await app.inject({
+          method: 'POST',
+          url: '/api/users/me/satisfaction-survey-cooldown',
+        }).headers(careHeaders);
+        assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+      } finally {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { deactivatedAt: null },
+        });
+      }
+    });
+
+    await t.test('sets surveyNextEligibleAt to one calendar month ahead', async () => {
+      const userId = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
+      await prisma.user.update({
+        where: { id: userId },
+        data: { surveyNextEligibleAt: null },
+      });
+      const before = Date.now();
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey-cooldown',
+      }).headers(userHeaders);
+      const after = Date.now();
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const body = JSON.parse(response.body);
+      assert.ok(typeof body.surveyNextEligibleAt === 'string');
+      const storedMs = new Date(body.surveyNextEligibleAt).getTime();
+      const minExpected = addOneCalendarMonth(before) - 2000;
+      const maxExpected = addOneCalendarMonth(after) + 2000;
+      assert.ok(storedMs >= minExpected && storedMs <= maxExpected, `stored ${body.surveyNextEligibleAt} not within ~1 month window`);
+
+      const row = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { surveyNextEligibleAt: true },
+      });
+      assert.ok(row.surveyNextEligibleAt);
+      assert.strictEqual(row.surveyNextEligibleAt.toISOString(), body.surveyNextEligibleAt);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { surveyNextEligibleAt: null },
+      });
+    });
+  });
+
   await t.test('GET /:id', async (t) => {
     await t.test('returns a User by its id', async (t) => {
       const response = await app.inject({
@@ -158,6 +230,7 @@ test('/api/users', async (t) => {
         updatedAt: data.updatedAt,
         deactivatedAt: null,
         deletedAt: null,
+        surveyNextEligibleAt: null,
       });
     });
   });

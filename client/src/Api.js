@@ -187,6 +187,9 @@ const Api = {
     me () {
       return instance.get('/api/users/me');
     },
+    scheduleSatisfactionSurveyCooldown () {
+      return instance.post('/api/users/me/satisfaction-survey-cooldown');
+    },
     get (id) {
       return instance.get(`/api/users/${id}`);
     },

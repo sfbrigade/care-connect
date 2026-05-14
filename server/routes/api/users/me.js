@@ -7,6 +7,10 @@ const MeResponseSchema = User.ResponseSchema.extend({
   hasActiveHolds: z.boolean(),
 });
 
+const SatisfactionSurveyCooldownResponseSchema = z.object({
+  surveyNextEligibleAt: z.string().datetime(),
+});
+
 export default async function (fastify, opts) {
   fastify.get('/me',
     {
@@ -30,5 +34,34 @@ export default async function (fastify, opts) {
         });
       }
       return reply.status(StatusCodes.NO_CONTENT).send();
+    });
+
+  fastify.post('/me/satisfaction-survey-cooldown',
+    {
+      onRequest: fastify.requireUser,
+      schema: {
+        description:
+          "Sets the current user's satisfaction survey cooldown so the next eligibility is one calendar month from now.",
+        response: {
+          [StatusCodes.OK]: SatisfactionSurveyCooldownResponseSchema,
+          [StatusCodes.UNAUTHORIZED]: z.null(),
+          [StatusCodes.FORBIDDEN]: z.null(),
+        },
+      },
+    },
+    async function (request, reply) {
+      const now = new Date();
+      const surveyNextEligibleAt = new Date(now);
+      surveyNextEligibleAt.setMonth(surveyNextEligibleAt.getMonth() + 1);
+
+      const row = await fastify.prisma.user.update({
+        where: { id: request.user.id },
+        data: { surveyNextEligibleAt },
+        select: { surveyNextEligibleAt: true },
+      });
+
+      return reply.send({
+        surveyNextEligibleAt: row.surveyNextEligibleAt.toISOString(),
+      });
     });
 }
