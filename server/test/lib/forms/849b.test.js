@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
 import {
@@ -236,6 +236,9 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
   );
   assert.strictEqual(pdfForm.getTextField('ZIP CODE_4').getText(), '94107');
   assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
+
+  const acroForm = doc.catalog.lookup(PDFName.of('AcroForm'));
+  assert.strictEqual(acroForm.has(PDFName.of('NeedAppearances')), false);
 });
 
 test('849b PDF leaves prop 115 unchecked but checks post training when reporting deputy is not certified', async () => {
