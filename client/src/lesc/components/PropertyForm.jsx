@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { Accordion, Anchor, Badge, Box, Button, CloseButton, Container, Divider, Fieldset, Group, Image, Stack, Text, Textarea, Title } from '@mantine/core';
@@ -13,7 +13,6 @@ import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import PhotoInput from '@/components/PhotoInput';
-import { useToast } from '@/components/ToastContext';
 import { validateProperty } from '@/utils/validators';
 
 const initialValues = {
@@ -24,14 +23,11 @@ const maxPropertyPhotos = 5;
 
 function PropertyForm () {
   const navigate = useNavigate();
-  const location = useLocation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const isNew = searchParams.get('isNew') === 'true';
-  const isCustodyContext = location.pathname.startsWith('/custody');
   const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const { showToast } = useToast();
   const { t } = useTranslation();
   const [isLarge, setIsLarge] = useState(false);
   const autoSaveTimerRef = useRef(null);
@@ -46,7 +42,7 @@ function PropertyForm () {
     initialValues,
     onValuesChange: (values) => {
       setIsLarge(values.property === 'LARGE');
-      if (form.initialized && !isCustodyContext) {
+      if (form.initialized) {
         scheduleAutoSave(values);
       }
     },
@@ -93,11 +89,6 @@ function PropertyForm () {
   async function updateDeflectionCache (updatedDeflection) {
     await queryClient.setQueryData(['deflections', id], updatedDeflection);
     queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
-    if (isCustodyContext) {
-      queryClient.invalidateQueries({ queryKey: ['deflections', String(id)] });
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections'] });
-    }
   }
 
   const autoSaveMutation = useMutation({
@@ -111,17 +102,7 @@ function PropertyForm () {
     mutationFn: (data) => Api.deflections.update(id, data),
     onSuccess: async (response) => {
       await updateDeflectionCache(response.data);
-      if (isCustodyContext) {
-        showToast('Property details saved', 'success', 4000, 'Property details have been saved.');
-        navigate(`/custody/${id}`);
-        return;
-      }
       navigate(isNew ? `/holds/${id}/certify?isNew=true` : `/holds/${id}`);
-    },
-    onError: () => {
-      if (!isCustodyContext) return;
-      showToast('We couldn’t save property details', 'error', 4000, 'Please try again.');
-      navigate(`/custody/${id}`);
     },
   });
 
@@ -170,18 +151,13 @@ function PropertyForm () {
   const propertyPhotos = deflection?.propertyPhotos ?? [];
 
   let header;
-  if (onSubmitMutation.isPending || (!isCustodyContext && autoSaveMutation.isPending)) {
+  if (onSubmitMutation.isPending || autoSaveMutation.isPending) {
     header = <Text c='dimmed' size='lg'>Saving...</Text>;
-  } else if (!isCustodyContext && (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess)) {
+  } else if (onSubmitMutation.isSuccess || autoSaveMutation.isSuccess) {
     header = <Text c='teal.6' size='lg'>Changes saved</Text>;
-  } else if (!isCustodyContext && (onSubmitMutation.isError || autoSaveMutation.isError)) {
+  } else if (onSubmitMutation.isError || autoSaveMutation.isError) {
     header = <Text c='red.6' size='lg'>Save failed</Text>;
   }
-
-  const detailPath = isCustodyContext ? `/custody/${id}` : `/holds/${id}`;
-  const backPath = isCustodyContext ? detailPath : (isNew ? `/holds/${id}/deflection?isNew=true` : detailPath);
-  const closePath = isCustodyContext ? detailPath : '/holds';
-  const headerJustify = isCustodyContext ? 'flex-end' : 'space-between';
 
   return (
     <>
@@ -189,10 +165,10 @@ function PropertyForm () {
         <title>Personal property</title>
       </Head>
       <Header>
-        <Group w='100%' justify={headerJustify}>
-          {!isCustodyContext && <IconButtonLink icon={IconArrowLeft} to={backPath} aria-label='Go back' />}
+        <Group w='100%' justify='space-between'>
+          <IconButtonLink icon={IconArrowLeft} to={isNew ? `/holds/${id}/deflection?isNew=true` : `/holds/${id}`} aria-label='Go back' />
           {header}
-          <IconButtonLink icon={IconX} to={closePath} aria-label='Close' />
+          <IconButtonLink icon={IconX} to='/holds' aria-label='Close' />
         </Group>
       </Header>
       <Container>
@@ -205,16 +181,14 @@ function PropertyForm () {
           <Title order={2}>Personal property</Title>
           {isNew && <Badge variant='light' color='gray' size='lg' radius='xl'>4/5</Badge>}
         </Group>
-        <Text c='dimmed' size='md' mb='xl'>
-          {isCustodyContext ? 'Record the amount of personal property.' : 'Document any personal property the person is bringing.'}
-        </Text>
+        <Text c='dimmed' size='md' mb='xl'>Document any personal property the person is bringing.</Text>
         <form onSubmit={form.onSubmit(onSubmitMutation.mutateAsync)}>
           <Fieldset disabled={isLoading || onSubmitMutation.isPending} variant='unstyled'>
             <Stack gap='xl'>
               <ChipInput
                 {...form.getInputProps('property')}
                 key={form.key('property')}
-                label={<>{isCustodyContext ? 'How much personal property does the person have?' : 'How much property is the person bringing?'}<span>*</span></>}
+                label={<>How much property is the person bringing?<span>*</span></>}
                 options={['NONE', 'SMALL', 'MEDIUM', 'LARGE'].map(value => ({
                   value,
                   label: t(`property.${value}`),
@@ -285,7 +259,7 @@ function PropertyForm () {
                 </Accordion.Item>
               </Accordion>
               <Button type='submit' mb='xl'>
-                {isNew ? 'Next: Certify' : (isCustodyContext ? 'Save changes' : 'Save property')}
+                {isNew ? 'Next: Certify' : 'Save property'}
               </Button>
             </Stack>
           </Fieldset>

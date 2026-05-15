@@ -3,7 +3,6 @@ import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
-import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail ({ viewerMode = 'custody' }) {
@@ -14,7 +13,6 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
-    ...facilityLiveQueryOptions,
   });
 
   return (

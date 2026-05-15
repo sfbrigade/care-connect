@@ -124,20 +124,3 @@ export function formatIntakeStartedAt (date) {
   if (!dt.isValid) return null;
   return dt.toFormat('MMM dd, h:mm a');
 }
-
-/**
- * Format a timeline milestone timestamp with relative day context.
- * @param {string|Date} date - Date to format
- * @param {DateTime} [now] - Current time (for testing)
- * @returns {string|null} - "9:24 AM", "Yesterday, 9:24 AM", or "Apr 29, 9:24 AM"
- */
-export function formatTimelineTimestamp (date, now = DateTime.now()) {
-  if (!date) return null;
-  const dt = dateTime(date);
-  if (!dt.isValid) return null;
-
-  const time = dt.toLocaleString(DateTime.TIME_SIMPLE).replace(/\u202f|\u00a0/g, ' ');
-  if (dt.hasSame(now, 'day')) return time;
-  if (dt.hasSame(now.minus({ days: 1 }), 'day')) return `Yesterday, ${time}`;
-  return `${dt.toFormat('MMM d')}, ${time}`;
-}
