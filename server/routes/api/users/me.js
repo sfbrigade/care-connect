@@ -8,7 +8,7 @@ const MeResponseSchema = User.ResponseSchema.extend({
 });
 
 const SatisfactionSurveyCooldownResponseSchema = z.object({
-  surveyNextEligibleAt: z.string().datetime(),
+  satisfactionSurveyNextEligibleAt: z.string().datetime(),
 });
 
 export default async function (fastify, opts) {
@@ -51,17 +51,17 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const now = new Date();
-      const surveyNextEligibleAt = new Date(now);
-      surveyNextEligibleAt.setMonth(surveyNextEligibleAt.getMonth() + 1);
+      const satisfactionSurveyNextEligibleAt = new Date(now);
+      satisfactionSurveyNextEligibleAt.setMonth(satisfactionSurveyNextEligibleAt.getMonth() + 1);
 
       const row = await fastify.prisma.user.update({
         where: { id: request.user.id },
-        data: { surveyNextEligibleAt },
-        select: { surveyNextEligibleAt: true },
+        data: { satisfactionSurveyNextEligibleAt },
+        select: { satisfactionSurveyNextEligibleAt: true },
       });
 
       return reply.send({
-        surveyNextEligibleAt: row.surveyNextEligibleAt.toISOString(),
+        satisfactionSurveyNextEligibleAt: row.satisfactionSurveyNextEligibleAt.toISOString(),
       });
     });
 }

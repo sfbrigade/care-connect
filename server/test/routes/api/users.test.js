@@ -71,7 +71,7 @@ test('/api/users', async (t) => {
         updatedAt,
         deactivatedAt: null,
         deletedAt: null,
-        surveyNextEligibleAt: null,
+        satisfactionSurveyNextEligibleAt: null,
       });
     });
 
@@ -161,11 +161,11 @@ test('/api/users', async (t) => {
       }
     });
 
-    await t.test('sets surveyNextEligibleAt to one calendar month ahead', async () => {
+    await t.test('sets satisfactionSurveyNextEligibleAt to one calendar month ahead', async () => {
       const userId = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
       await prisma.user.update({
         where: { id: userId },
-        data: { surveyNextEligibleAt: null },
+        data: { satisfactionSurveyNextEligibleAt: null },
       });
       const before = Date.now();
       const response = await app.inject({
@@ -176,22 +176,22 @@ test('/api/users', async (t) => {
       assert.strictEqual(response.statusCode, StatusCodes.OK);
 
       const body = JSON.parse(response.body);
-      assert.ok(typeof body.surveyNextEligibleAt === 'string');
-      const storedMs = new Date(body.surveyNextEligibleAt).getTime();
+      assert.ok(typeof body.satisfactionSurveyNextEligibleAt === 'string');
+      const storedMs = new Date(body.satisfactionSurveyNextEligibleAt).getTime();
       const minExpected = addOneCalendarMonth(before) - 2000;
       const maxExpected = addOneCalendarMonth(after) + 2000;
-      assert.ok(storedMs >= minExpected && storedMs <= maxExpected, `stored ${body.surveyNextEligibleAt} not within ~1 month window`);
+      assert.ok(storedMs >= minExpected && storedMs <= maxExpected, `stored ${body.satisfactionSurveyNextEligibleAt} not within ~1 month window`);
 
       const row = await prisma.user.findUnique({
         where: { id: userId },
-        select: { surveyNextEligibleAt: true },
+        select: { satisfactionSurveyNextEligibleAt: true },
       });
-      assert.ok(row.surveyNextEligibleAt);
-      assert.strictEqual(row.surveyNextEligibleAt.toISOString(), body.surveyNextEligibleAt);
+      assert.ok(row.satisfactionSurveyNextEligibleAt);
+      assert.strictEqual(row.satisfactionSurveyNextEligibleAt.toISOString(), body.satisfactionSurveyNextEligibleAt);
 
       await prisma.user.update({
         where: { id: userId },
-        data: { surveyNextEligibleAt: null },
+        data: { satisfactionSurveyNextEligibleAt: null },
       });
     });
   });
@@ -230,7 +230,7 @@ test('/api/users', async (t) => {
         updatedAt: data.updatedAt,
         deactivatedAt: null,
         deletedAt: null,
-        surveyNextEligibleAt: null,
+        satisfactionSurveyNextEligibleAt: null,
       });
     });
   });

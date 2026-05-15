@@ -298,7 +298,7 @@ DEPARTURE DEPARTURE
     DateTime mfaLastSentAt "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
-    DateTime surveyNextEligibleAt "❓"
+    DateTime satisfactionSurveyNextEligibleAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }

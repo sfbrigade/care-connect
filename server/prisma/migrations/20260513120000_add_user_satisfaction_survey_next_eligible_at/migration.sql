@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "public"."User" ADD COLUMN "surveyNextEligibleAt" TIMESTAMP(3);
+ALTER TABLE "public"."User" ADD COLUMN "satisfactionSurveyNextEligibleAt" TIMESTAMP(3);

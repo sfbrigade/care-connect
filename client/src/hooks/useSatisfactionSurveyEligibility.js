@@ -6,7 +6,7 @@ import { useAuthContext } from '@/AuthContext';
 
 /**
  * Derives satisfaction-survey eligibility from GET /api/users/me and keeps
- * `surveyNextEligibleAt` initialized via POST when it is null.
+ * `satisfactionSurveyNextEligibleAt` initialized via POST when it is null.
  */
 export function useSatisfactionSurveyEligibility () {
   const { user } = useAuthContext();
@@ -14,7 +14,7 @@ export function useSatisfactionSurveyEligibility () {
   const initAttemptedRef = useRef(false);
 
   const userId = user?.id;
-  const surveyNextEligibleAt = user?.surveyNextEligibleAt ?? null;
+  const satisfactionSurveyNextEligibleAt = user?.satisfactionSurveyNextEligibleAt ?? null;
 
   useEffect(() => {
     initAttemptedRef.current = false;
@@ -29,18 +29,18 @@ export function useSatisfactionSurveyEligibility () {
 
   useEffect(() => {
     if (!userId) return;
-    if (surveyNextEligibleAt != null) return;
+    if (satisfactionSurveyNextEligibleAt != null) return;
     if (initAttemptedRef.current) return;
     initAttemptedRef.current = true;
     scheduleCooldownMutate();
-  }, [userId, surveyNextEligibleAt, scheduleCooldownMutate]);
+  }, [userId, satisfactionSurveyNextEligibleAt, scheduleCooldownMutate]);
 
   const isEligible = useMemo(() => {
     if (!user) return false;
-    if (surveyNextEligibleAt == null) return false;
-    const ts = new Date(surveyNextEligibleAt).getTime();
+    if (satisfactionSurveyNextEligibleAt == null) return false;
+    const ts = new Date(satisfactionSurveyNextEligibleAt).getTime();
     return Number.isFinite(ts) && Date.now() >= ts;
-  }, [user, surveyNextEligibleAt]);
+  }, [user, satisfactionSurveyNextEligibleAt]);
 
   const scheduleCooldown = useCallback(() => {
     scheduleCooldownMutate();
