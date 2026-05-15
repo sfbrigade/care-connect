@@ -161,26 +161,61 @@ test('/api/users', async (t) => {
       }
     });
 
-    await t.test('sets satisfactionSurveyNextEligibleAt to one calendar month ahead', async () => {
+    await t.test('sets satisfactionSurveyNextEligibleAt to one calendar month after createdAt when null', async () => {
       const userId = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
+      const { createdAt } = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { createdAt: true },
+      });
       await prisma.user.update({
         where: { id: userId },
         data: { satisfactionSurveyNextEligibleAt: null },
       });
-      const before = Date.now();
+      const expectedMs = addOneCalendarMonth(createdAt.getTime());
+
       const response = await app.inject({
         method: 'POST',
         url: '/api/users/me/satisfaction-survey-cooldown',
       }).headers(userHeaders);
-      const after = Date.now();
       assert.strictEqual(response.statusCode, StatusCodes.OK);
 
       const body = JSON.parse(response.body);
       assert.ok(typeof body.satisfactionSurveyNextEligibleAt === 'string');
       const storedMs = new Date(body.satisfactionSurveyNextEligibleAt).getTime();
-      const minExpected = addOneCalendarMonth(before) - 2000;
-      const maxExpected = addOneCalendarMonth(after) + 2000;
-      assert.ok(storedMs >= minExpected && storedMs <= maxExpected, `stored ${body.satisfactionSurveyNextEligibleAt} not within ~1 month window`);
+      assert.strictEqual(storedMs, expectedMs);
+
+      const row = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { satisfactionSurveyNextEligibleAt: true },
+      });
+      assert.ok(row.satisfactionSurveyNextEligibleAt);
+      assert.strictEqual(row.satisfactionSurveyNextEligibleAt.toISOString(), body.satisfactionSurveyNextEligibleAt);
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { satisfactionSurveyNextEligibleAt: null },
+      });
+    });
+
+    await t.test('sets satisfactionSurveyNextEligibleAt to one calendar month after existing value when set', async () => {
+      const userId = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
+      const existing = new Date('2025-03-15T12:00:00.000Z');
+      await prisma.user.update({
+        where: { id: userId },
+        data: { satisfactionSurveyNextEligibleAt: existing },
+      });
+      const expectedMs = addOneCalendarMonth(existing.getTime());
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey-cooldown',
+      }).headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      const body = JSON.parse(response.body);
+      assert.ok(typeof body.satisfactionSurveyNextEligibleAt === 'string');
+      const storedMs = new Date(body.satisfactionSurveyNextEligibleAt).getTime();
+      assert.strictEqual(storedMs, expectedMs);
 
       const row = await prisma.user.findUnique({
         where: { id: userId },
