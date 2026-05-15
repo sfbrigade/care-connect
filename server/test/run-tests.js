@@ -12,15 +12,6 @@ const POSTGRES_PORT = 5432;
 const MINIO_PORT = 9000;
 const TEST_CONTAINER_STARTUP_TIMEOUT_MS = Number(process.env.TESTCONTAINERS_STARTUP_TIMEOUT_MS ?? 120_000);
 
-async function stopContainer (label, container) {
-  try {
-    await container.stop();
-  } catch (err) {
-    console.error(`Failed to stop ${label} container:`);
-    console.error(err);
-  }
-}
-
 function testContainerAlias (prefix) {
   return `${prefix}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
@@ -199,10 +190,8 @@ async function main () {
   );
 
   console.log('Stopping containers...');
-  await Promise.all([
-    stopContainer('storage', storage),
-    stopContainer('database', db),
-  ]);
+  await storage.stop();
+  await db.stop();
 
   try {
     await fs.unlink(CONTAINER_INFO_PATH);
@@ -210,9 +199,7 @@ async function main () {
     // ignore
   }
 
-  const exitCode = passAExitCode || passBExitCode;
-  console.log(`Test pass exit codes: passA=${passAExitCode}, passB=${passBExitCode}, final=${exitCode}`);
-  process.exit(exitCode);
+  process.exit(passAExitCode || passBExitCode);
 }
 
 main().catch((err) => {
