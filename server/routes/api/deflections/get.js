@@ -6,6 +6,12 @@ import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { canReadDeflection, redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 
+const userNameSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+};
+
 export default async function (fastify, opts) {
   fastify.get('/:id',
     {
@@ -33,16 +39,16 @@ export default async function (fastify, opts) {
           incident: true,
           deflectionDocuments: true,
           deflectionUpdates: {
-            include: { updatedBy: true },
+            include: { updatedBy: { select: userNameSelect } },
             orderBy: { updatedAt: 'asc' },
           },
           propertyPhotos: true,
-          createdBy: true,
-          transferredBy: true,
-          medicalIntakeStartedBy: true,
-          rejectedBy: true,
-          releasedBy: true,
-          exitedBy: true,
+          createdBy: { select: userNameSelect },
+          transferredBy: { select: userNameSelect },
+          medicalIntakeStartedBy: { select: userNameSelect },
+          rejectedBy: { select: userNameSelect },
+          releasedBy: { select: userNameSelect },
+          exitedBy: { select: userNameSelect },
         },
       });
 

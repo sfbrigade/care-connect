@@ -308,6 +308,19 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, 'SF-123');
     });
 
+    await t.test('returns only name fields for timeline actor users', async () => {
+      const response = await app.inject().get('/api/deflections/4').headers(userHeaders);
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.deepStrictEqual(data.createdBy, {
+        id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
+        firstName: 'Regular',
+        lastName: 'User',
+      });
+      assert.ok(!('email' in data.createdBy), `expected createdBy.email to be omitted, got ${JSON.stringify(data.createdBy)}`);
+    });
+
     await t.test('redacts restricted subject fields for care users', async () => {
       const response = await app.inject().get('/api/deflections/4').headers(careUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
