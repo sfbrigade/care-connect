@@ -1,8 +1,52 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
+import {
+  appendSobered849bReleaseNarrative,
+  buildSobered849bReleaseNarrativeAppendix,
+} from '#lib/forms/849b/releaseNarrative.js';
+
+test('849b sobered release appendix includes medical staff blank and release details', () => {
+  const appendix = buildSobered849bReleaseNarrativeAppendix({
+    releasedAt: new Date('2026-05-05T20:15:00.000Z'),
+    subject: {
+      firstName: 'Swilly',
+      lastName: 'Willy',
+    },
+    releasingDeputy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+    },
+  });
+
+  assert.strictEqual(
+    appendix,
+    'At approximately 13:15 hours on 05/05/26, Connections medical staff, ______________________________ , determined that the subject, Swilly Willy, was able to care for themselves and voice their needs appropriately. Deputy T SFSO, #5678, issued Swilly Willy a certificate of release stating that they were just detained and not under arrest.'
+  );
+});
+
+test('849b sobered release appendix is appended to the stored release narrative', () => {
+  const narrative = appendSobered849bReleaseNarrative({
+    releaseNarrative: 'Existing release narrative.',
+    releasedAt: new Date('2026-05-05T20:15:00.000Z'),
+    subject: {
+      firstName: 'Swilly',
+      lastName: 'Willy',
+    },
+    releasingDeputy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+    },
+  });
+
+  assert.ok(narrative.startsWith('Existing release narrative.\n\nAt approximately 13:15 hours'));
+  assert.match(narrative, /_{30}/);
+  assert.match(narrative, /Deputy T SFSO, #5678/);
+});
 
 test('849b form generation eligibility', async (t) => {
   await t.test('allows jail exits without a legal release timestamp', () => {
@@ -205,6 +249,9 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
     'At the time of reporting, employed by SFSO'
   );
   assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
+
+  const acroForm = doc.catalog.lookup(PDFName.of('AcroForm'));
+  assert.strictEqual(acroForm.has(PDFName.of('NeedAppearances')), false);
 });
 
 test('849b PDF uses night watch for releases between 1900 and 0700 Pacific', async () => {
