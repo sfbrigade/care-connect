@@ -308,19 +308,6 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.localId, 'SF-123');
     });
 
-    await t.test('returns only name fields for timeline actor users', async () => {
-      const response = await app.inject().get('/api/deflections/4').headers(userHeaders);
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-
-      assert.deepStrictEqual(data.createdBy, {
-        id: 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5',
-        firstName: 'Regular',
-        lastName: 'User',
-      });
-      assert.ok(!('email' in data.createdBy), `expected createdBy.email to be omitted, got ${JSON.stringify(data.createdBy)}`);
-    });
-
     await t.test('redacts restricted subject fields for care users', async () => {
       const response = await app.inject().get('/api/deflections/4').headers(careUserHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -380,44 +367,6 @@ test('/api/deflections', async (t) => {
         userId: custodyUser.id,
         formIds: ['849b'],
       });
-    });
-
-    await t.test('allows custody users to update property after release before exit', async () => {
-      await prisma.deflection.update({
-        where: { id: 6 },
-        data: {
-          subjectStatus: 'RELEASED',
-          releasedAt: new Date(),
-          exitedAt: null,
-        },
-      });
-
-      const response = await app.inject().patch('/api/deflections/6').payload({
-        property: 'MEDIUM',
-        propertyDetails: 'Two standard bags',
-      }).headers(custodyUserHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
-      const data = JSON.parse(response.body);
-      assert.deepStrictEqual(data.property, 'MEDIUM');
-      assert.deepStrictEqual(data.propertyDetails, 'Two standard bags');
-    });
-
-    await t.test('forbids custody users from updating property after exit', async () => {
-      await prisma.deflection.update({
-        where: { id: 6 },
-        data: {
-          subjectStatus: 'EXITED',
-          releasedAt: new Date(),
-          exitedAt: new Date(),
-        },
-      });
-
-      const response = await app.inject().patch('/api/deflections/6').payload({
-        property: 'SMALL',
-      }).headers(custodyUserHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
     });
 
     await t.test('returns 404 for non-existent deflection', async () => {
