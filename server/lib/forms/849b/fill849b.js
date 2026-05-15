@@ -10,7 +10,7 @@
  *   const filledBytes = await fill849b(templatePdfBytes, data);
  */
 
-import { PDFDocument, PDFName, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFBool } from 'pdf-lib';
 
 // ═══════════════════════════════════════════════════════════════════
 //  1:1 TEXT FIELD MAPPINGS  { camelCaseKey → pdfFieldName }
@@ -334,12 +334,9 @@ export async function fill849b (pdfBytes, data) {
   applyDobAge(form, 'DOBAGE', data, 'subject');
   applyDobAge(form, 'DOBAGE_2', data, 'reportingParty');
 
-  // ── Bake printable appearances into the file instead of relying on the viewer ──
-  const appearanceFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  form.updateFieldAppearances(appearanceFont);
-
+  // ── Preserve the form's native fonts: let the viewer render appearances ──
   const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'));
-  acroForm.delete(PDFName.of('NeedAppearances'));
+  acroForm.set(PDFName.of('NeedAppearances'), PDFBool.True);
 
-  return pdfDoc.save();
+  return pdfDoc.save({ updateFieldAppearances: false });
 }

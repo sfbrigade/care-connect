@@ -264,8 +264,7 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Record exit to other');
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Substance-related details');
-    expect(html).toContain('Personal property');
-    expect(html).toContain('Linked to Hold 123456.');
+    expect(html).toContain('Property details');
     expect(html).toContain('Incident details');
     expect(html).toContain('CASE-456');
 
@@ -277,7 +276,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('849(b) release narrative');
     expect(html).toContain('Any narrative edits will automatically update the 849(b) document.');
-    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
+    expect((html.match(/>Edit</g) || [])).toHaveLength(2);
     expect(html).not.toContain('<textarea');
   });
 
@@ -312,29 +311,6 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('849(b).pdf');
     expect(html).toContain('E-mail me the 849(b)');
-    expect(html).toContain('Edit narrative');
-  });
-
-  it('allows property edits after legal release until exit', () => {
-    const html = render({
-      subjectStatus: 'RELEASED',
-      releasedAt: '2026-01-01T11:00:00.000Z',
-    });
-
-    expect(html).toContain('Personal property');
-    expect((html.match(/>Edit</g) || [])).toHaveLength(1);
-    expect(html).toContain('Edit narrative');
-  });
-
-  it('does not allow property edits after exit', () => {
-    const html = render({
-      subjectStatus: 'EXITED',
-      releasedAt: '2026-01-01T11:00:00.000Z',
-      exitedAt: '2026-01-01T12:00:00.000Z',
-    });
-
-    expect(html).toContain('Personal property');
-    expect(html).not.toContain('>Edit</button>');
     expect(html).toContain('Edit narrative');
   });
 

@@ -4,17 +4,7 @@
  *   isIncidentDetailsComplete — are all required incident fields filled in?
  *   isDeflectionDetailsComplete — are all required deflection fields filled in?
  *   canModifyDeflection       — can this user modify a deflection?
- *   canModifyDeflectionProperty — can this user modify personal property fields/photos?
  */
-
-const CUSTODY_PROPERTY_EDIT_STATUSES = [
-  'AWAITING_INTAKE',
-  'READY_FOR_INTAKE',
-  'FAILED_INTAKE',
-  'IN_MEDICAL_INTAKE',
-  'IN_CHAIR',
-  'RELEASED',
-];
 
 /**
  * Are all required incident fields filled in?
@@ -66,20 +56,4 @@ export function canModifyDeflection (deflection, user) {
   if (user.isAdmin) return true;
   if (user.isCustody) return true;
   return deflection.currentOfficerId === user.id;
-}
-
-/**
- * Can this user modify a deflection's personal property fields or photos?
- * Field users keep their existing hold-control access. Custody users can edit
- * only after custody transfer and before the person exits.
- */
-export function canModifyDeflectionProperty (deflection, user) {
-  if (user.isAdmin) return true;
-  if (deflection.currentOfficerId === user.id) return true;
-  return user.isCustody && CUSTODY_PROPERTY_EDIT_STATUSES.includes(deflection.subjectStatus);
-}
-
-export function isDeflectionPropertyUpdate (data) {
-  return Object.prototype.hasOwnProperty.call(data, 'property') ||
-    Object.prototype.hasOwnProperty.call(data, 'propertyDetails');
 }

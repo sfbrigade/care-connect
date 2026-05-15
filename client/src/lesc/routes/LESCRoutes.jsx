@@ -39,7 +39,6 @@ function LESCRoutes () {
       <Route path='incident' element={<IncidentForm />} />
       <Route path='incident/handoff' element={<HandoffScreen />} />
       <Route path='custody/:id/subject' element={<SubjectForm />} />
-      <Route path='custody/:id/property' element={<PropertyForm />} />
       <Route path='custody/:id/legal-release' element={<LegalReleaseQuestions />} />
       <Route path='custody/:id/property-return' element={<RecordPropertyReturn />} />
       <Route path='custody/:id/release-narrative' element={<CustodyReleaseNarrativeForm />} />
