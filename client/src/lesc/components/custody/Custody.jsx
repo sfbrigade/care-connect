@@ -204,7 +204,6 @@ function TransitCustodyCard ({ deflection, highlighted }) {
 
 function Custody () {
   const [tab, setTab] = useSessionState('custody', 'transit');
-  const activeTab = tab === 'in-custody' ? 'custody' : tab;
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
   const { facility } = useFacilityContext();
@@ -212,7 +211,6 @@ function Custody () {
   const { showToast } = useToast();
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
-  const sectionScrolledRef = useRef(false);
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -253,65 +251,39 @@ function Custody () {
   }
 
   useEffect(() => {
+    // wait until data is loaded
     if (!transitDeflections && !inCustodyDeflections && !releasedDeflections) return;
-    const targetId = window.sessionStorage.getItem('custodyScrollTarget');
-    if (!targetId) return;
-    window.sessionStorage.removeItem('custodyScrollTarget');
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-card-${targetId}`);
-      if (el) {
-        el.scrollIntoView({ block: 'center' });
-      }
-    });
-  }, [transitDeflections, inCustodyDeflections, releasedDeflections]);
 
-  useEffect(() => {
-    if (!transitDeflections && !inCustodyDeflections && !releasedDeflections) return;
-    const targetId = window.sessionStorage.getItem('custodyHighlightTarget');
-    if (!targetId) return;
-    window.sessionStorage.removeItem('custodyHighlightTarget');
-    setHighlightedId(targetId);
-    if (sectionScrolledRef.current) {
-      sectionScrolledRef.current = false;
-      return;
+    // define targets from session storage
+    const scrollTarget = window.sessionStorage.getItem('custodyScrollTarget');
+    const highlightTarget = window.sessionStorage.getItem('custodyHighlightTarget');
+
+    // handle card highlighting (state update)
+    if (highlightTarget) {
+      setHighlightedId(highlightTarget);
     }
+
     window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-card-${targetId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const cardId = highlightTarget || scrollTarget;
+      if (cardId) {
+        const el = document.getElementById(`custody-card-${cardId}`);
+        if (el) {
+          // seems to need timeout to ensure content is laid out
+          setTimeout(() => {
+            const scrollBehavior = (tab === 'released' || highlightTarget) ? 'smooth' : 'auto';
+            const rect = el.getBoundingClientRect();
+            const isVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
+            if (!isVisible) {
+              el.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+            }
+          }, 100);
+          // cleanup only after successfully finding the element
+          window.sessionStorage.removeItem('custodyHighlightTarget');
+          window.sessionStorage.removeItem('custodyScrollTarget');
+        }
       }
     });
-  }, [transitDeflections, inCustodyDeflections, releasedDeflections]);
-
-  useEffect(() => {
-    if (activeTab !== 'released' || !highlightedId) return;
-    const el = document.getElementById(`custody-card-${highlightedId}`);
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      const isVisible = (
-        rect.top >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-      );
-      // prevent page 'jumping' if the card is already visible and only scroll if not visible
-      if (!isVisible) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [activeTab, highlightedId, releasedDeflections]);
-
-  useEffect(() => {
-    if (!releasedDeflections) return;
-    const sectionTarget = window.sessionStorage.getItem('custodyReleasedSectionTarget');
-    if (!sectionTarget) return;
-    window.sessionStorage.removeItem('custodyReleasedSectionTarget');
-    sectionScrolledRef.current = true;
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-section-${sectionTarget}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }, [releasedDeflections]);
+  }, [transitDeflections, inCustodyDeflections, releasedDeflections, tab]);
 
   useEffect(() => {
     if (!highlightedId) return;
@@ -364,22 +336,6 @@ function Custody () {
   const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
   const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
-  useEffect(() => {
-    if (!inCustodyDeflections) return;
-
-    const sectionTarget = window.sessionStorage.getItem('custodyInCustodySectionTarget');
-    if (!sectionTarget) return;
-    window.sessionStorage.removeItem('custodyInCustodySectionTarget');
-
-    sectionScrolledRef.current = true;
-    window.requestAnimationFrame(() => {
-      const el = document.getElementById(`custody-section-${sectionTarget}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }, [inCustodyDeflections]);
-
   return (
     <>
       <Head>
@@ -394,7 +350,7 @@ function Custody () {
           />
           <SegmentedControl
             fullWidth
-            value={activeTab}
+            value={tab}
             onChange={setTab}
             withItemsBorders={false}
             data={[
@@ -404,7 +360,7 @@ function Custody () {
             ]}
           />
           <FacilityStatusBanner />
-          {activeTab === 'transit' && (
+          {tab === 'transit' && (
             <Stack gap='md'>
               {hasTransit
                 ? transitGrouped.map(group => (
@@ -429,14 +385,14 @@ function Custody () {
                   )}
             </Stack>
           )}
-          {activeTab === 'custody' && (
+          {tab === 'custody' && (
             <Stack gap='md'>
               {hasInCustody
                 ? (
                   <StatusAccordion
                     sections={IN_CUSTODY_SECTIONS}
                     groupedItems={inCustodyGrouped}
-                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} />}
+                    renderCard={(d) => <CustodyCard key={d.id} deflection={d} highlighted={String(d.id) === highlightedId} onExitToJail={() => setTab('released')} />}
                   />
                   )
                 : (
@@ -447,7 +403,7 @@ function Custody () {
                   )}
             </Stack>
           )}
-          {activeTab === 'released' && (
+          {tab === 'released' && (
             <Stack gap='md'>
               {(releasedDeflections?.length ?? 0) > 0
                 ? (
@@ -466,10 +422,10 @@ function Custody () {
                   )}
             </Stack>
           )}
-          {activeTab === 'transit' && transitDataUpdatedAt > 0 && (
+          {tab === 'transit' && transitDataUpdatedAt > 0 && (
             <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(transitDataUpdatedAt).toISO())}</Text>
           )}
-          {activeTab === 'custody' && dataUpdatedAt > 0 && (
+          {tab === 'custody' && dataUpdatedAt > 0 && (
             <Text size='xs' c='gray.5' ta='center'>Updated at {formatTime(DateTime.fromMillis(dataUpdatedAt).toISO())}</Text>
           )}
         </Stack>

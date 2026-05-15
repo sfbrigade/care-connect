@@ -1,13 +1,35 @@
 import React from 'react';
 import { ActionIcon, Button, Group, Modal, Stack, Text, Title } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useToast } from '@/components/ToastContext';
+import Api from '@/Api';
 
 function ExitToJailModal ({
+  deflectionId,
+  facilityId,
   opened,
   onClose,
   onConfirm,
-  loading = false,
 }) {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+
+  const exitToJailMutation = useMutation({
+    mutationFn: () => Api.deflections.exitToJail(deflectionId),
+    onSuccess: () => {
+      window.sessionStorage.setItem('custodyHighlightTarget', String(deflectionId));
+      queryClient.invalidateQueries({ queryKey: ['deflections', facilityId] });
+      queryClient.invalidateQueries({ queryKey: ['deflections'] });
+      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Released".');
+      onConfirm();
+    },
+    onError: () => {
+      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
   return (
     <Modal
       opened={opened}
@@ -30,7 +52,7 @@ function ExitToJailModal ({
               w={40}
               h={40}
               ml='auto'
-              disabled={loading}
+              disabled={exitToJailMutation.isPending}
               aria-label='Close'
             >
               <IconX size={16} />
@@ -53,13 +75,13 @@ function ExitToJailModal ({
           <Button
             variant='destructive'
             onClick={onClose}
-            disabled={loading}
+            disabled={exitToJailMutation.isPending}
           >
             Cancel
           </Button>
           <Button
-            onClick={onConfirm}
-            loading={loading}
+            onClick={() => exitToJailMutation.mutate()}
+            loading={exitToJailMutation.isPending}
           >
             Confirm
           </Button>

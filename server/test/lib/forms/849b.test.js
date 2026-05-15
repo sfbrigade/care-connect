@@ -1,8 +1,52 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFName } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
+import {
+  appendSobered849bReleaseNarrative,
+  buildSobered849bReleaseNarrativeAppendix,
+} from '#lib/forms/849b/releaseNarrative.js';
+
+test('849b sobered release appendix includes medical staff blank and release details', () => {
+  const appendix = buildSobered849bReleaseNarrativeAppendix({
+    releasedAt: new Date('2026-05-05T20:15:00.000Z'),
+    subject: {
+      firstName: 'Swilly',
+      lastName: 'Willy',
+    },
+    releasingDeputy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+    },
+  });
+
+  assert.strictEqual(
+    appendix,
+    'At approximately 13:15 hours on 05/05/26, Connections medical staff, ______________________________ , determined that the subject, Swilly Willy, was able to care for themselves and voice their needs appropriately. Deputy T SFSO, #5678, issued Swilly Willy a certificate of release stating that they were just detained and not under arrest.'
+  );
+});
+
+test('849b sobered release appendix is appended to the stored release narrative', () => {
+  const narrative = appendSobered849bReleaseNarrative({
+    releaseNarrative: 'Existing release narrative.',
+    releasedAt: new Date('2026-05-05T20:15:00.000Z'),
+    subject: {
+      firstName: 'Swilly',
+      lastName: 'Willy',
+    },
+    releasingDeputy: {
+      firstName: 'Test',
+      lastName: 'SFSO',
+      badgeNumber: '5678',
+    },
+  });
+
+  assert.ok(narrative.startsWith('Existing release narrative.\n\nAt approximately 13:15 hours'));
+  assert.match(narrative, /_{30}/);
+  assert.match(narrative, /Deputy T SFSO, #5678/);
+});
 
 test('849b form generation eligibility', async (t) => {
   await t.test('allows jail exits without a legal release timestamp', () => {
@@ -183,15 +227,66 @@ test('849b PDF fills release reporting party fields and leaves citation text bla
   assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), false);
   assert.strictEqual(pdfForm.getTextField('Text3').getText(), '2');
   assert.strictEqual(pdfForm.getTextField('REPORTING DEPUTY PRINT').getText(), 'T. SFSO');
+  assert.strictEqual(pdfForm.getTextField('WATCH').getText(), '0700-1900');
+  assert.strictEqual(pdfForm.getTextField('ASSIGN TO').getText(), 'COMMUNITY PROGRAMS');
+  assert.strictEqual(pdfForm.getTextField('COPIES TO DDL UNITSGENCIES').getText(), 'RECORDS');
   assert.strictEqual(pdfForm.getTextField('CODE_2').getText(), 'R1');
   assert.strictEqual(pdfForm.getTextField('NAME LAST FIRST MIDDLE_2').getText(), 'SFSO, T, #5678');
-  assert.strictEqual(pdfForm.getTextField('CONTACT PHONE NUMBER_2').getText(), '415-575-6461');
   assert.strictEqual(
     pdfForm.getTextField('BUSINESS ADDRESSNAME OF SCHOOL IF JUVENILECITY IF NOT SAN FRANCISCO_2').getText(),
     '70 Oak Grove St.'
   );
   assert.strictEqual(pdfForm.getTextField('ZIP CODE_4').getText(), '94107');
+  assert.strictEqual(pdfForm.getTextField('BUSINESS PHONE_2').getText(), '415-575-6461');
+  assert.strictEqual(pdfForm.getRadioGroup('293 PC NOTIFICATION').getSelected(), 'NO_3');
+  assert.strictEqual(pdfForm.getRadioGroup('CONFIDENTIALITY REQUESTED').getSelected(), 'NO_4');
+  assert.strictEqual(pdfForm.getTextField('STAR_3').getText(), '5678');
+  assert.strictEqual(pdfForm.getRadioGroup('VICTIM OF CRIME NOTIFICATION').getSelected(), 'NO_5');
+  assert.strictEqual(pdfForm.getRadioGroup('FOLLOW UP FORM').getSelected(), 'NO_6');
+  assert.strictEqual(pdfForm.getRadioGroup('STATEMENT_2').getSelected(), 'NO_7');
+  assert.strictEqual(
+    pdfForm.getTextField('OTHER INFORMATION SUBJECT LAST SEEN WEARINGEMPLOYMENTACTIVITY AT TIME OF INCIDENT').getText(),
+    'At the time of reporting, employed by SFSO'
+  );
   assert.strictEqual(pdfForm.getTextField('Text4').getText() || '', '');
+
+  const acroForm = doc.catalog.lookup(PDFName.of('AcroForm'));
+  assert.strictEqual(acroForm.has(PDFName.of('NeedAppearances')), false);
+});
+
+test('849b PDF uses night watch for releases between 1900 and 0700 Pacific', async () => {
+  const releasedAt = new Date('2026-05-06T03:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: {
+      firstName: 'Night',
+      lastName: 'Deputy',
+      badgeNumber: '2468',
+      prop115Certified: false,
+    },
+    exitedBy: null,
+    incident: {
+      cadNumber: 'CAD849B',
+      caseNumber: 'CS849B',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  const pdfForm = doc.getForm();
+
+  assert.strictEqual(pdfForm.getTextField('WATCH').getText(), '1900-0700');
 });
 
 test('849b PDF leaves prop 115 unchecked but checks post training when reporting deputy is not certified', async () => {

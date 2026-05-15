@@ -73,6 +73,10 @@ vi.mock('@/utils/openInBrowser', () => ({
   openInBrowser: vi.fn(),
 }));
 
+vi.mock('../../../hooks/useSessionState', () => ({
+  default: () => (['', vi.fn()]),
+}));
+
 vi.mock('../../../hooks/useUserRole', () => ({
   useUserRole: () => ({
     isCustody: true,
@@ -263,12 +267,15 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Detained');
     expect(html).toContain('Arrived at RESET');
     expect(html).toContain('Intake staff can scan this code to start full intake.');
-    expect(html).toContain('Legal release');
+    expect(html).toContain('Record exit to other');
     expect(html).toContain('Behavioral observations');
     expect(html).toContain('Substance-related details');
-    expect(html).toContain('Property details');
+    expect(html).toContain('Personal property');
+    expect(html).toContain('Linked to Hold 123456.');
     expect(html).toContain('Incident details');
     expect(html).toContain('CASE-456');
+
+    expect(html.indexOf('Record exit to hospital')).toBeLessThan(html.indexOf('Record exit to other'));
   });
 
   it('renders 849(b) narrative in read-only mode by default with edit button', () => {
@@ -276,7 +283,7 @@ describe('CustodyDetailContent', () => {
 
     expect(html).toContain('849(b) release narrative');
     expect(html).toContain('Any narrative edits will automatically update the 849(b) document.');
-    expect((html.match(/>Edit</g) || [])).toHaveLength(2);
+    expect((html.match(/>Edit</g) || [])).toHaveLength(3);
     expect(html).not.toContain('<textarea');
   });
 
@@ -314,6 +321,29 @@ describe('CustodyDetailContent', () => {
     expect(html).toContain('Edit narrative');
   });
 
+  it('allows property edits after legal release until exit', () => {
+    const html = render({
+      subjectStatus: 'RELEASED',
+      releasedAt: '2026-01-01T11:00:00.000Z',
+    });
+
+    expect(html).toContain('Personal property');
+    expect((html.match(/>Edit</g) || [])).toHaveLength(1);
+    expect(html).toContain('Edit narrative');
+  });
+
+  it('does not allow property edits after exit', () => {
+    const html = render({
+      subjectStatus: 'EXITED',
+      releasedAt: '2026-01-01T11:00:00.000Z',
+      exitedAt: '2026-01-01T12:00:00.000Z',
+    });
+
+    expect(html).toContain('Personal property');
+    expect(html).not.toContain('>Edit</button>');
+    expect(html).toContain('Edit narrative');
+  });
+
   it('builds the default 849(b) narrative from case number, cad number, and 647(f) narrative', () => {
     const html = render({ releaseNarrative: null });
 
@@ -330,10 +360,22 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('Record exit to hospital');
   });
 
+  it('only shows exit to jail in overflow actions for failed intake', () => {
+    const html = render({ subjectStatus: 'FAILED_INTAKE' });
+
+    expect(html).toContain('>Exit to jail</a>');
+    expect(html).not.toContain('>Record exit to jail</a>');
+    expect(html).not.toContain('>Record exit to hospital</a>');
+    expect(html).not.toContain('>Record exit to other</a>');
+    expect(html).not.toContain('>Record death</a>');
+    expect(html).toContain('Release and exit');
+    expect(html).not.toContain('Start legal release');
+  });
+
   it('renders the updated safety check modal copy in the footer action flow', () => {
     const html = render({ subjectStatus: 'AWAITING_INTAKE' });
 
-    expect(html).toContain('Record result');
+    expect(html).toContain('Safety check');
     expect(html).toContain('Record safety check');
     expect(html).toContain('Indicate a failed check if you have a safety concern that would require an exit to jail.');
     expect(html).toContain('Passed');

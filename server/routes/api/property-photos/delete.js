@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import PropertyPhoto from '#models/propertyPhoto.js';
+import { canModifyDeflectionProperty } from '#lib/incidentPermissions.js';
 
 export default async function (fastify, opts) {
   fastify.delete('/:id',
@@ -22,13 +23,14 @@ export default async function (fastify, opts) {
 
       const data = await fastify.prisma.propertyPhoto.findUnique({
         where: { id },
+        include: { deflection: true },
       });
 
       if (!data) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
 
-      if (data.createdById !== request.user.id && !request.user.isAdmin) {
+      if (!canModifyDeflectionProperty(data.deflection, request.user)) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 

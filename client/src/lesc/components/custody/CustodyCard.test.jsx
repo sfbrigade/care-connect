@@ -7,8 +7,9 @@ import { MantineProvider } from '@mantine/core';
 
 import CustodyCard from './CustodyCard';
 
-const { mockExitToJail, mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
+const { mockExitToJail, mockOnExitToJail, mockNavigate, mockSafetyCheck, mockShowToast } = vi.hoisted(() => ({
   mockExitToJail: vi.fn(),
+  mockOnExitToJail: vi.fn(),
   mockNavigate: vi.fn(),
   mockSafetyCheck: vi.fn(),
   mockShowToast: vi.fn(),
@@ -75,8 +76,8 @@ function renderCard (deflection) {
   return render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/custody?tab=in-custody']}>
-          <CustodyCard deflection={deflection} highlighted={false} />
+        <MemoryRouter initialEntries={['/custody']}>
+          <CustodyCard deflection={deflection} highlighted={false} onExitToJail={mockOnExitToJail} />
         </MemoryRouter>
       </QueryClientProvider>
     </MantineProvider>
@@ -104,12 +105,13 @@ describe('CustodyCard', () => {
     expect(screen.queryByText(/Transfer code:/)).not.toBeInTheDocument();
   });
 
-  it('shows intake-not-completed banner and legal release for failed intake', () => {
+  it('shows intake-not-completed banner and release-and-exit action for failed intake', () => {
     renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
 
     expect(screen.getByText('Intake not completed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Legal release' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Release and exit' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Legal release' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Safety check' })).not.toBeInTheDocument();
   });
 
@@ -148,10 +150,10 @@ describe('CustodyCard', () => {
     expect(window.sessionStorage.getItem('custodyScrollTarget')).toBe('123');
   });
 
-  it('navigates to legal release when Legal release is clicked', () => {
+  it('navigates to legal release when Release and exit is clicked', () => {
     renderCard(buildDeflection({ subjectStatus: 'FAILED_INTAKE' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Legal release' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Release and exit' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/custody/123/legal-release');
   });
@@ -168,7 +170,6 @@ describe('CustodyCard', () => {
 
     await waitFor(() => {
       expect(window.sessionStorage.getItem('custodyHighlightTarget')).toBe('123');
-      expect(window.sessionStorage.getItem('custodyInCustodySectionTarget')).toBe('READY_FOR_INTAKE');
     });
   });
 
@@ -183,7 +184,7 @@ describe('CustodyCard', () => {
       expect(mockExitToJail).toHaveBeenCalledWith(123);
     });
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/custody?tab=released');
+      expect(mockOnExitToJail).toHaveBeenCalledWith();
     });
   });
 
@@ -196,8 +197,7 @@ describe('CustodyCard', () => {
 
     await waitFor(() => {
       expect(mockShowToast).toHaveBeenCalledWith(
-        'Safety check saved offline. We’ll sync when connection is back.',
-        'warning'
+        'Safety check not saved. Please try again.', 'error'
       );
     });
   });

@@ -1,28 +1,19 @@
 import { useState } from 'react';
 import { Button, Card, Group, Stack, Text, Title, Box } from '@mantine/core';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 
-import Api from '../../../Api';
 import { useFacilityContext } from '../../../FacilityContext';
-import { useToast } from '../../../components/ToastContext';
 import useSubjectDetails from '@/hooks/useSubjectDetails';
 import { releaseTiming } from '../../../utils/releaseTiming';
 import ExitToJailModal from './ExitToJailModal';
 import SafetyCheckResultModal from './SafetyCheckResultModal';
 
-function isNetworkError (error) {
-  return !error?.response || window.navigator?.onLine === false;
-}
-
-function CustodyCard ({ deflection, highlighted }) {
+function CustodyCard ({ deflection, highlighted, onExitToJail }) {
   const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { facility } = useFacilityContext();
-  const { showToast } = useToast();
 
   const displayId = String(deflection.id);
   const displayName = [deflection?.subject?.firstName, deflection?.subject?.middleInitial, deflection?.subject?.lastName].filter(Boolean).join(' ') || 'Unknown person';
@@ -35,41 +26,6 @@ function CustodyCard ({ deflection, highlighted }) {
   const showStartRelease = isInChair;
   const showQrCode = deflection.subjectStatus === 'READY_FOR_INTAKE';
   const releaseTimingChip = releaseTiming(deflection);
-
-  const safetyCheckMutation = useMutation({
-    mutationFn: () => Api.deflections.safetyCheck(deflection.id),
-    onSuccess: () => {
-      setSafetyCheckResultModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      window.sessionStorage.setItem('custodyInCustodySectionTarget', 'READY_FOR_INTAKE');
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      showToast('Safety check completed', 'success', 4000, 'Person is ready for medical intake.');
-    },
-    onError: (error) => {
-      setSafetyCheckResultModalOpened(false);
-      if (isNetworkError(error)) {
-        showToast('Safety check saved offline. We’ll sync when connection is back.', 'warning');
-        return;
-      }
-      showToast('Safety check not saved. Please try again.', 'error');
-    },
-  });
-
-  const exitToJailMutation = useMutation({
-    mutationFn: () => Api.deflections.exitToJail(deflection.id),
-    onSuccess: () => {
-      setExitToJailModalOpened(false);
-      window.sessionStorage.setItem('custodyHighlightTarget', String(deflection.id));
-      window.sessionStorage.setItem('custodyReleasedSectionTarget', 'TRANSFERRED_TO_JAIL');
-      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
-      queryClient.invalidateQueries({ queryKey: ['deflections'] });
-      showToast('Exit recorded', 'success', 4000, 'Person moved to "Transferred to jail" under "Legally released".');
-      navigate('/custody?tab=released');
-    },
-    onError: () => {
-      showToast('Couldn\'t record exit', 'error', 4000, 'Please check your connection and try again.');
-    },
-  });
 
   return (
     <>
@@ -139,7 +95,7 @@ function CustodyCard ({ deflection, highlighted }) {
                 size='md'
                 onClick={() => navigate(`/custody/${deflection.id}/legal-release`)}
               >
-                Legal release
+                Release and exit
               </Button>
             )}
             {showStartRelease && (
@@ -154,20 +110,22 @@ function CustodyCard ({ deflection, highlighted }) {
         </Stack>
       </Card>
       <SafetyCheckResultModal
+        deflectionId={deflection.id}
+        facilityId={facility.id}
         opened={safetyCheckResultModalOpened}
         onClose={() => setSafetyCheckResultModalOpened(false)}
-        loading={safetyCheckMutation.isPending}
-        onConfirmPassed={() => safetyCheckMutation.mutate()}
+        onConfirmPassed={() => setSafetyCheckResultModalOpened(false)}
         onConfirmFailed={() => {
           setSafetyCheckResultModalOpened(false);
           setExitToJailModalOpened(true);
         }}
       />
       <ExitToJailModal
+        deflectionId={deflection.id}
+        facilityId={facility.id}
         opened={exitToJailModalOpened}
         onClose={() => setExitToJailModalOpened(false)}
-        onConfirm={() => exitToJailMutation.mutate()}
-        loading={exitToJailMutation.isPending}
+        onConfirm={() => onExitToJail()}
       />
     </>
   );
