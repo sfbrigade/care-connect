@@ -219,7 +219,7 @@ function Custody () {
   const initializedFailedIntakeRef = useRef(false);
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
   const surveyIntentDeflectionId = surveyIntent?.deflectionId;
-  const surveyIntentDepartment = surveyIntent?.department;
+  const surveyIntentOrganizationId = surveyIntent?.organizationId;
   const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
@@ -491,7 +491,7 @@ function Custody () {
         <SatisfactionSurveyModal
           opened={isPostNavigationSurveyOpen}
           deflectionId={surveyIntentDeflectionId}
-          department={surveyIntentDepartment}
+          organizationId={surveyIntentOrganizationId}
           onFinished={onPostNavigationSurveyFinished}
         />
       )}

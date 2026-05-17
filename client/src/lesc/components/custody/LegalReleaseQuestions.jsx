@@ -35,7 +35,7 @@ function LegalReleaseQuestions () {
   const [exitDestination, setExitDestination] = useState(prefilledState.exitDestination);
 
   const { navigateWithOptionalSurvey } = useSatisfactionSurvey(navigate, id, {
-    department: 'SFSO',
+    organizationId: 'sfso',
   });
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';

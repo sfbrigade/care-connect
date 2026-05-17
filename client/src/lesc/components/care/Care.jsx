@@ -64,7 +64,7 @@ function Care () {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate, '', {
-    department: 'CONNECTIONS',
+    organizationId: 'connections',
   });
 
   const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({

@@ -31,7 +31,7 @@ describe('useSatisfactionSurvey', () => {
 
   it('uses eligibility gate for navigation intent', () => {
     mockUseSatisfactionSurveyEligibility.mockReturnValueOnce({ isEligible: false, scheduleCooldown });
-    const { result, rerender } = renderHook(() => useSatisfactionSurvey(navigate, '42', { department: 'SFPD' }));
+    const { result, rerender } = renderHook(() => useSatisfactionSurvey(navigate, '42', { organizationId: 'sfpd' }));
 
     act(() => {
       result.current.navigateWithOptionalSurvey('/custody/42');
@@ -49,7 +49,7 @@ describe('useSatisfactionSurvey', () => {
       state: {
         [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
           deflectionId: '42',
-          department: 'SFPD',
+          organizationId: 'sfpd',
         },
       },
     });
@@ -59,7 +59,7 @@ describe('useSatisfactionSurvey', () => {
     vi.useFakeTimers();
 
     mockUseSatisfactionSurveyEligibility.mockReturnValue({ isEligible: false, scheduleCooldown });
-    const { result } = renderHook(() => useSatisfactionSurvey(navigate, '99', { department: 'SFSO' }));
+    const { result } = renderHook(() => useSatisfactionSurvey(navigate, '99', { organizationId: 'sfso' }));
 
     act(() => {
       result.current.scheduleOptionalSurveyWithoutNavigation('100');
@@ -68,7 +68,7 @@ describe('useSatisfactionSurvey', () => {
     expect(result.current.satisfactionSurveyModal.props.opened).toBe(false);
 
     mockUseSatisfactionSurveyEligibility.mockReturnValue({ isEligible: true, scheduleCooldown });
-    const enabledHook = renderHook(() => useSatisfactionSurvey(navigate, '99', { department: 'SFSO' }));
+    const enabledHook = renderHook(() => useSatisfactionSurvey(navigate, '99', { organizationId: 'sfso' }));
     act(() => {
       enabledHook.result.current.scheduleOptionalSurveyWithoutNavigation('100');
     });

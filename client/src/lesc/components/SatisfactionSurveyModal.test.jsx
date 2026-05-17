@@ -39,7 +39,7 @@ function renderSurveyModal (props = {}) {
         opened
         deflectionId={123}
         onFinished={onFinished}
-        department='SFPD'
+        organizationId='sfpd'
         {...props}
       />
     </MantineProvider>
@@ -72,7 +72,7 @@ describe('SatisfactionSurveyModal cooldown on open', () => {
           opened={false}
           deflectionId={123}
           onFinished={vi.fn()}
-          department='SFPD'
+          organizationId='sfpd'
         />
       </MantineProvider>
     );

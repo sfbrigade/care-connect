@@ -6,7 +6,7 @@ import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyE
 /** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
 export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
 
-function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
+function useSatisfactionSurvey (navigate, deflectionId, { organizationId } = {}) {
   const { isEligible: shouldShowSatisfactionSurvey } = useSatisfactionSurveyEligibility();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
   const [staySurveyScheduled, setStaySurveyScheduled] = useState(false);
@@ -33,14 +33,14 @@ function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
         state: {
           [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
             deflectionId,
-            department,
+            organizationId,
           },
         },
       });
       return;
     }
     navigate(path);
-  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, department]);
+  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, organizationId]);
 
   /**
    * Show the delayed survey without navigating afterward (e.g. after "I've left" on Holds).
@@ -62,7 +62,7 @@ function useSatisfactionSurvey (navigate, deflectionId, { department } = {}) {
     <SatisfactionSurveyModal
       opened={isSurveyModalOpen}
       deflectionId={activeSurveyContextId}
-      department={department}
+      organizationId={organizationId}
       onFinished={closeSurveyAndContinue}
     />
   );

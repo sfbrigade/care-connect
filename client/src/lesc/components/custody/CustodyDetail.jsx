@@ -71,7 +71,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
         <SatisfactionSurveyModal
           opened={isPostNavigationSurveyOpen}
           deflectionId={surveyIntentDeflectionId}
-          department={surveyIntent?.department}
+          organizationId={surveyIntent?.organizationId}
           onFinished={onPostNavigationSurveyFinished}
         />
       )}

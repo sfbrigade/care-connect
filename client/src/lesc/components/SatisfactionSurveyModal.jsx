@@ -24,7 +24,7 @@ function SatisfactionSurveyModal ({
   opened,
   deflectionId,
   onFinished,
-  department,
+  organizationId,
 }) {
   const { showToast } = useToast();
   const { scheduleCooldown } = useSatisfactionSurveyEligibility();
@@ -62,7 +62,7 @@ function SatisfactionSurveyModal ({
       try {
         setSubmitting(true);
         await Api.deflections.submitSatisfactionSurvey(deflectionId, {
-          department,
+          organizationId,
           answers: {
             careConnectRating: surveyAnswers.careConnectRating,
             ...(resetFacilityFeedbackTrimmed ? { resetFacilityFeedback: resetFacilityFeedbackTrimmed } : {}),

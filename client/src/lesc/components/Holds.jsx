@@ -126,7 +126,7 @@ function Holds () {
     navigate,
     allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId ?? '',
     {
-      department: 'SFPD',
+      organizationId: user?.organizationId,
     }
   );
 

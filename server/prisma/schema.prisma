@@ -221,12 +221,13 @@ model Organization {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  deflections Deflection[]
-  incidents   Incident[]
-  invites     Invite[]
-  titles      Title[]
-  units       Unit[]
-  users       User[]
+  deflections         Deflection[]
+  incidents           Incident[]
+  invites             Invite[]
+  titles              Title[]
+  units               Unit[]
+  users               User[]
+  satisfactionSurveys SatisfactionSurvey[]
 }
 
 model Unit {
@@ -691,14 +692,16 @@ model DeflectionDocument {
 }
 
 model SatisfactionSurvey {
-  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  department             String
+  id                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization           Organization @relation(fields: [organizationId], references: [id])
+  organizationId         String
   careConnectRating      String
   improvementSuggestions String?
   resetFacilityFeedback  String?
-  createdAt              DateTime   @default(now())
+  createdAt              DateTime     @default(now())
 
   @@index([createdAt])
+  @@index([organizationId])
   @@map("SatisfactionSurvey")
 }
 
