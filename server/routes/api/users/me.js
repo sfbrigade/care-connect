@@ -31,6 +31,7 @@ export default async function (fastify, opts) {
           ...request.user.toJSON(),
           pictureUrl: request.user.pictureUrl,
           hasActiveHolds,
+          satisfactionSurveyNextEligibleAt: request.user.satisfactionSurveyNextEligibleAt ?? null,
         });
       }
       return reply.status(StatusCodes.NO_CONTENT).send();
