@@ -54,6 +54,13 @@ vi.mock('@/hooks/useSessionState', () => ({
   default: () => [mockSessionStateValue.current, mockSetSessionState],
 }));
 
+vi.mock('@/hooks/useSatisfactionSurveyEligibility', () => ({
+  useSatisfactionSurveyEligibility: () => ({
+    isEligible: false,
+    scheduleCooldown: vi.fn(),
+  }),
+}));
+
 vi.mock('./ScanTransferCodeModal', async () => {
   const React = await import('react');
   return {

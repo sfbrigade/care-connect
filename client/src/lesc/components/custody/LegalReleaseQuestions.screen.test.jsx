@@ -64,6 +64,12 @@ vi.mock('../../../hooks/useEnsureReleaseNarrative', () => ({
   default: () => 'Narrative text for the 849(b).',
 }));
 
+vi.mock('../../../hooks/useSatisfactionSurvey', () => ({
+  default: () => ({
+    navigateWithOptionalSurvey: mockNavigate,
+  }),
+}));
+
 function renderPage () {
   const queryClient = new QueryClient({
     defaultOptions: {
