@@ -44,6 +44,7 @@ test('/api/auth', async (t) => {
         updatedAt,
         deactivatedAt: null,
         deletedAt: null,
+        satisfactionSurveyNextEligibleAt: null,
       });
     });
 
@@ -230,6 +231,7 @@ test('/api/auth', async (t) => {
         updatedAt: data.updatedAt,
         deactivatedAt: null,
         deletedAt: null,
+        satisfactionSurveyNextEligibleAt: null,
       });
     });
   });
