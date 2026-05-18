@@ -46,13 +46,12 @@ function SatisfactionSurveyModal ({
 
   useEffect(() => {
     if (!opened) return;
-    scheduleCooldown();
     setShowImprovementSuggestions(false);
     setSurveyStep(0);
     setSurveyAnswers(INITIAL_ANSWERS);
     setSubmitting(false);
     return () => clearAdvanceStepTimer();
-  }, [opened, scheduleCooldown]);
+  }, [opened]);
 
   const finish = async (didCompleteSurvey) => {
     if (didCompleteSurvey && deflectionId != null) {
@@ -69,13 +68,20 @@ function SatisfactionSurveyModal ({
             ...(improvementTrimmed ? { improvementSuggestions: improvementTrimmed } : {}),
           },
         });
+        scheduleCooldown();
         showToast('Thank you. Your feedback helps us improve your experience.', 'success');
+        onFinished();
+        return;
       } catch (err) {
         console.error(err);
         showToast('Feedback could not be saved. You can try again later.', 'error');
+        return;
       } finally {
         setSubmitting(false);
       }
+    }
+    if (!didCompleteSurvey) {
+      scheduleCooldown();
     }
     onFinished();
   };

@@ -47,22 +47,22 @@ function renderSurveyModal (props = {}) {
   return { onFinished };
 }
 
-describe('SatisfactionSurveyModal cooldown on open', () => {
+describe('SatisfactionSurveyModal cooldown scheduling', () => {
   beforeEach(() => {
     mockScheduleCooldown.mockReset();
     mockShowToast.mockReset();
+    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockReset();
+    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockResolvedValue({});
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it('calls scheduleCooldown when opened', async () => {
+  it('does not call scheduleCooldown when opened', () => {
     renderSurveyModal();
 
-    await waitFor(() => {
-      expect(mockScheduleCooldown).toHaveBeenCalled();
-    });
+    expect(mockScheduleCooldown).not.toHaveBeenCalled();
   });
 
   it('does not call scheduleCooldown while closed', () => {
@@ -80,17 +80,43 @@ describe('SatisfactionSurveyModal cooldown on open', () => {
     expect(mockScheduleCooldown).not.toHaveBeenCalled();
   });
 
-  it('invokes onFinished when closed without changing cooldown call count from reopen', async () => {
+  it('calls scheduleCooldown when dismissed without submitting', () => {
     const { onFinished } = renderSurveyModal();
-
-    await waitFor(() => {
-      expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
-    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Close survey' }));
 
     expect(onFinished).toHaveBeenCalledTimes(1);
     expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls scheduleCooldown after feedback is saved successfully', async () => {
+    const { onFinished } = renderSurveyModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
+
+    await waitFor(() => {
+      expect(Api.deflections.submitSatisfactionSurvey).toHaveBeenCalled();
+      expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
+      expect(onFinished).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('does not call scheduleCooldown when saving feedback fails', async () => {
+    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockRejectedValue(new Error('network error'));
+    const { onFinished } = renderSurveyModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bad' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
+
+    await waitFor(() => {
+      expect(Api.deflections.submitSatisfactionSurvey).toHaveBeenCalled();
+      expect(mockShowToast).toHaveBeenCalledWith('Feedback could not be saved. You can try again later.', 'error');
+    });
+    expect(mockScheduleCooldown).not.toHaveBeenCalled();
+    expect(onFinished).not.toHaveBeenCalled();
   });
 });
 
