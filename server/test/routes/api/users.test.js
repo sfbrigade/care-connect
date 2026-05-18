@@ -132,6 +132,12 @@ test('/api/users', async (t) => {
       return d.getTime();
     }
 
+    function addOneWeek (ms) {
+      const d = new Date(ms);
+      d.setDate(d.getDate() + 7);
+      return d.getTime();
+    }
+
     await t.test('returns 401 when unauthenticated', async () => {
       const response = await app.inject({
         method: 'POST',
@@ -161,7 +167,7 @@ test('/api/users', async (t) => {
       }
     });
 
-    await t.test('sets satisfactionSurveyNextEligibleAt to one calendar month after createdAt when null', async () => {
+    await t.test('sets satisfactionSurveyNextEligibleAt to one week after createdAt when null', async () => {
       const userId = 'dab5dff3-360d-4dbb-98dd-1990dfb5c4c5';
       const { createdAt } = await prisma.user.findUnique({
         where: { id: userId },
@@ -171,7 +177,7 @@ test('/api/users', async (t) => {
         where: { id: userId },
         data: { satisfactionSurveyNextEligibleAt: null },
       });
-      const expectedMs = addOneCalendarMonth(createdAt.getTime());
+      const expectedMs = addOneWeek(createdAt.getTime());
 
       const response = await app.inject({
         method: 'POST',

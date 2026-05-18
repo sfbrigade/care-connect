@@ -42,7 +42,7 @@ export default async function (fastify, opts) {
       onRequest: fastify.requireUser,
       schema: {
         description:
-          "Sets the current user's satisfaction survey cooldown so the next eligibility is one calendar month after createdAt (when unset) or after the existing next-eligible date.",
+          "Sets the current user's satisfaction survey cooldown so the next eligibility is one week after createdAt (when unset) or one calendar month after the existing next-eligible date.",
         response: {
           [StatusCodes.OK]: SatisfactionSurveyCooldownResponseSchema,
           [StatusCodes.UNAUTHORIZED]: z.null(),
@@ -51,9 +51,14 @@ export default async function (fastify, opts) {
       },
     },
     async function (request, reply) {
-      const base = request.user.satisfactionSurveyNextEligibleAt ?? request.user.createdAt;
-      const satisfactionSurveyNextEligibleAt = new Date(base);
-      satisfactionSurveyNextEligibleAt.setMonth(satisfactionSurveyNextEligibleAt.getMonth() + 1);
+      let satisfactionSurveyNextEligibleAt;
+      if (request.user.satisfactionSurveyNextEligibleAt == null) {
+        satisfactionSurveyNextEligibleAt = new Date(request.user.createdAt);
+        satisfactionSurveyNextEligibleAt.setDate(satisfactionSurveyNextEligibleAt.getDate() + 7);
+      } else {
+        satisfactionSurveyNextEligibleAt = new Date(request.user.satisfactionSurveyNextEligibleAt);
+        satisfactionSurveyNextEligibleAt.setMonth(satisfactionSurveyNextEligibleAt.getMonth() + 1);
+      }
 
       const row = await fastify.prisma.user.update({
         where: { id: request.user.id },
