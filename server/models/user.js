@@ -56,6 +56,12 @@ const UserResponseSchema = UserAttributesSchema.extend({
   ),
 });
 
+const UserNameResponseSchema = z.object({
+  id: z.string().uuid(),
+  firstName: z.string(),
+  lastName: z.string(),
+});
+
 const UserUpdateSchema = UserAttributesSchema.extend({
   unitName: z.string().trim().min(1).optional(),
   password: z.never(),
@@ -69,6 +75,7 @@ export class User extends Base {
   static BATCH_USER_ID = '00000000-0000-0000-0000-000000000000';
   static PasswordSchema = UserPasswordSchema;
   static RegisterSchema = UserRegisterSchema;
+  static NameResponseSchema = UserNameResponseSchema;
   static ResponseSchema = UserResponseSchema;
   static UpdateSchema = UserUpdateSchema;
 

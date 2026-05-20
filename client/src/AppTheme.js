@@ -17,6 +17,7 @@ const AppTheme = createTheme({
 
   // Font family - Roboto
   fontFamily: 'Roboto, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+  primaryColor: 'indigo',
 
   // Note: Custom colors are defined in component styles, not in theme colors
   // Mantine requires colors to be arrays of 10 shades
@@ -134,7 +135,7 @@ const AppTheme = createTheme({
       },
       styles: {
         root: {
-          backgroundColor: '#f8f9fa',
+          backgroundColor: 'var(--mantine-color-gray-0)',
         },
       },
     }),

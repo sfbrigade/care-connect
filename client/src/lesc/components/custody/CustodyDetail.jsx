@@ -7,6 +7,7 @@ import Api from '@/Api';
 import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
 import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
 import SatisfactionSurveyModal from '../SatisfactionSurveyModal';
+import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail ({ viewerMode = 'custody' }) {
@@ -59,6 +60,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
     queryFn: () => Api.deflections.get(id).then(response => response.data),
+    ...facilityLiveQueryOptions,
   });
 
   return (

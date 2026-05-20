@@ -98,11 +98,13 @@ export default async function formsEmail (data, prismaClient = prisma) {
         ...(cc.length > 0 && { cc }),
         attachments,
       },
-      locals: {
-        subjectName: `${deflection.subject.firstName} ${deflection.subject.lastName}`,
-        officerName: `${deflection.incident.createdBy.firstName} ${deflection.incident.createdBy.lastName}`,
-        facilityName: deflection.facility.name,
-      },
+      locals:
+        {
+          subjectName: `${deflection.subject.firstName} ${deflection.subject.lastName}`,
+          officerName: `${deflection.incident.createdBy.firstName} ${deflection.incident.createdBy.lastName}`,
+          facilityName: deflection.facility.name,
+          caseNumber: deflection.incident?.caseNumber,
+        }
     });
 
     if (live849bAttachment && targetFormIds.includes('849b')) {
@@ -169,11 +171,13 @@ export default async function formsEmail (data, prismaClient = prisma) {
             .filter((attachment) => attachment.formId === '647f')
             .map(({ filename, path }) => ({ filename, path })),
         },
-        locals: {
-          subjectName: `${deflection.subject.firstName} ${deflection.subject.lastName}`,
-          officerName: `${deflection.incident.createdBy.firstName} ${deflection.incident.createdBy.lastName}`,
-          facilityName: deflection.facility.name,
-        },
+        locals:
+          {
+            subjectName: `${deflection.subject.firstName} ${deflection.subject.lastName}`,
+            officerName: `${deflection.incident.createdBy.firstName} ${deflection.incident.createdBy.lastName}`,
+            facilityName: deflection.facility.name,
+            caseNumber: deflection.incident?.caseNumber,
+          }
       });
     }
 
