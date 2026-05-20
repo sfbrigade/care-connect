@@ -37,6 +37,7 @@ const CUSTODY_ACTION_FOOTER_STATUSES = ['AWAITING_INTAKE', 'FAILED_INTAKE', 'REA
 const HOSPITAL_RELEASE_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const OTHER_EXIT_ELIGIBLE_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR'];
 const PRE_TRANSFER_STATUSES = ['DETAINED', 'ONSITE_AWAITING_TRANSFER'];
+const CUSTODY_PROPERTY_EDIT_STATUSES = ['AWAITING_INTAKE', 'READY_FOR_INTAKE', 'FAILED_INTAKE', 'IN_MEDICAL_INTAKE', 'IN_CHAIR', 'RELEASED'];
 const PROPERTY_RETURN_TOAST_KEY = 'custodyPropertyReturnToast';
 
 function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = 'custody' }) {
@@ -66,6 +67,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const isPostRelease = isLegallyReleased || isExited;
   const canEditCustodyDetails = !isCareView && !isPreTransfer && !isPostRelease;
+  const canEditCustodyProperty = !isCareView && isCustody && CUSTODY_PROPERTY_EDIT_STATUSES.includes(deflection?.subjectStatus);
   const now = useNow(1000, isPreTransfer && !isArrived && !!deflection?.expiresAt);
   const expiresIn = isPreTransfer && !isArrived && deflection?.expiresAt
     ? formatTimeRemaining(deflection.expiresAt, now)
@@ -215,6 +217,23 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
       });
   }
 
+  // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
+  // releases. Buttons are gated on the same predicate the server enforces.
+  const can5150 = deflection?.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION' && !!deflection?.releasedAt;
+  const email5150Mutation = useMutation({
+    mutationFn: () => Api.deflections.email5150(deflection.id),
+    onSuccess: (response) => {
+      showToast('5150 e-mail sent', 'success', 4000, `We sent the 5150 PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
+    },
+    onError: () => {
+      showToast('5150 e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  function open5150Pdf () {
+    window.open(`/api/forms/5150/pdf/${deflection.id}`, '_blank');
+  }
+
   return (
     <>
       <Header>
@@ -291,6 +310,24 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               >
                 E-mail me the 849(b)
               </Button>
+              {can5150 && (
+                <>
+                  <Button
+                    onClick={open5150Pdf}
+                    variant='outline'
+                    rightSection={<IconExternalLink size={18} />}
+                  >
+                    5150.pdf
+                  </Button>
+                  <Button
+                    onClick={() => email5150Mutation.mutate()}
+                    loading={email5150Mutation.isPending}
+                    variant='outline'
+                  >
+                    E-mail me the 5150
+                  </Button>
+                </>
+              )}
             </Group>
           )}
           <Stack gap='sm'>
@@ -430,7 +467,10 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 </Accordion.Item>
                 <Accordion.Item value='property' id={propertySectionId}>
                   <Accordion.Control>
-                    <Title order={3}>Property details</Title>
+                    <Title order={3}>Personal property</Title>
+                    {deflection?.id && (
+                      <Text c='gray.5' size='sm'>Linked to Hold {deflection.id}.</Text>
+                    )}
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='sm'>
@@ -461,6 +501,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                       )}
                       {!!propertyReturnStatusText && (
                         <Text c={deflection?.propertyReturned ? 'teal.6' : 'yellow.8'}>{propertyReturnStatusText}</Text>
+                      )}
+                      {canEditCustodyProperty && (
+                        <Group mt='sm'>
+                          <Button variant='secondary' size='md' onClick={() => navigate(`/custody/${deflection?.id}/property`)}>Edit</Button>
+                        </Group>
                       )}
                     </Stack>
                   </Accordion.Panel>

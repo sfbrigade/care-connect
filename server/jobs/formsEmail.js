@@ -1,6 +1,7 @@
 import prisma from '#prisma/client.js';
 import mailer from '#lib/mailer.js';
 import { generateLive849bPdf, storeLive849bPdf } from '#lib/forms/849b/livePdf.js';
+import { generateLive5150Pdf, storeLive5150Pdf } from '#lib/forms/5150/livePdf.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 import { captureException } from '#lib/posthog.js';
 
@@ -14,6 +15,7 @@ const TRANSFER_RECIPIENTS = [
 export default async function formsEmail (data, prismaClient = prisma) {
   const { deflectionId, formIds, template, recipientEmail, userId, regeneratedFormIds = [] } = data;
   let live849bAttachment = null;
+  let live5150Attachment = null;
 
   const deflection = await prismaClient.deflection.findUnique({
     where: { id: deflectionId },
@@ -27,6 +29,11 @@ export default async function formsEmail (data, prismaClient = prisma) {
   if (!deflection) return;
 
   const emailAttachments = [];
+  // Track form IDs we already live-generated this run so the persisted-document
+  // loop below doesn't re-attach the same form a second time. (Without this,
+  // a release packet that follows an earlier email would attach both the
+  // freshly-generated PDF and the stored copy from the prior send.)
+  const liveGeneratedFormIds = new Set();
   if (formIds.includes('849b')) {
     const live849b = await generateLive849bPdf(prismaClient, deflectionId);
     if (live849b.status !== 'ok') {
@@ -34,10 +41,25 @@ export default async function formsEmail (data, prismaClient = prisma) {
     }
     live849bAttachment = live849b.attachment;
     emailAttachments.push(live849bAttachment);
+    liveGeneratedFormIds.add('849b');
+  }
+  if (formIds.includes('5150')) {
+    const live5150 = await generateLive5150Pdf(prismaClient, deflectionId);
+    if (live5150.status === 'unprocessable') {
+      // Expected for non-BHE releases — the release packet always asks for
+      // 5150 but the form only applies to behavioral-health releases.
+      // Silently skip; not an error.
+    } else if (live5150.status !== 'ok') {
+      throw new Error(`Live 5150 generation failed for deflection ${deflectionId}: ${live5150.status}${live5150.error ? ` (${live5150.error})` : ''}`);
+    } else {
+      live5150Attachment = live5150.attachment;
+      emailAttachments.push(live5150Attachment);
+      liveGeneratedFormIds.add('5150');
+    }
   }
 
   for (const doc of deflection.deflectionDocuments) {
-    if (doc.formId === '849b') continue;
+    if (liveGeneratedFormIds.has(doc.formId)) continue;
     const document = new DeflectionDocument(doc);
     const filePath = await document.getAsset('file');
     emailAttachments.push({
@@ -108,6 +130,27 @@ export default async function formsEmail (data, prismaClient = prisma) {
         });
       });
     }
+
+    if (live5150Attachment && targetFormIds.includes('5150')) {
+      await storeLive5150Pdf(prismaClient, {
+        deflectionId,
+        userId,
+        content: live5150Attachment.content,
+        filename: live5150Attachment.filename,
+      }).catch((error) => {
+        console.error(JSON.stringify({
+          event: '5150/store-failed',
+          deflectionId,
+          template,
+          error: error.message,
+        }));
+        captureException(error, 'care-connect-worker', {
+          event: '5150/store-failed',
+          deflectionId,
+          template,
+        });
+      });
+    }
   }
 
   if (template === 'release-forms') {
@@ -144,6 +187,14 @@ export default async function formsEmail (data, prismaClient = prisma) {
   if (template === 'self-849b') {
     await sendFormsMessage({
       targetFormIds: ['849b'],
+      to: sendingUser?.email || recipientEmail,
+    });
+    return;
+  }
+
+  if (template === 'self-5150') {
+    await sendFormsMessage({
+      targetFormIds: ['5150'],
       to: sendingUser?.email || recipientEmail,
     });
     return;

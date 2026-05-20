@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import prismaPkg from '@prisma/client';
-import { firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
+import { FORM_TIMEZONE, firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 import i18n from '#lib/i18n.js';
@@ -23,6 +23,21 @@ function formatDeputyNameForReportingParty (deputy) {
   if (nameParts.length > 0) return nameParts.join(', ');
 
   return [deputy.firstName, deputy.lastName].filter(Boolean).join(' ');
+}
+
+function watchForReleaseTimestamp (dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+
+  const hourText = new Intl.DateTimeFormat('en-US', {
+    timeZone: FORM_TIMEZONE,
+    hour: '2-digit',
+    hour12: false,
+  }).format(date);
+  const hour = Number(hourText.replace('24', '00'));
+
+  return hour >= 7 && hour < 19 ? '0700-1900' : '1900-0700';
 }
 
 export function transformData (deflection) {
@@ -124,10 +139,10 @@ export async function generatePdf (deflectionData) {
     star: reportingDeputy?.badgeNumber || '',
     divisionUnit: formatUnitName(reportingDeputy?.unit?.name),
     supervisorApproval: '',
-    watch: '',
-    assignTo: '',
+    watch: watchForReleaseTimestamp(deflectionData.releasedAt),
+    assignTo: 'COMMUNITY PROGRAMS',
     assignedBy: '',
-    copiesTo: '',
+    copiesTo: 'RECORDS',
 
     // Subject fields
     suspectStatus: 'known',
@@ -164,10 +179,17 @@ export async function generatePdf (deflectionData) {
     reportingParty: {
       code: 'R1',
       name: deflectionData.releasingDeputyReportingPartyName,
-      contactPhone: '415-575-6461',
       businessAddress: '70 Oak Grove St.',
       businessZip: '94107',
+      businessPhone: '415-575-6461',
     },
+    pcNotification: false,
+    confidentialityRequested: false,
+    victimNotificationStar: reportingDeputy?.badgeNumber || '',
+    victimCrimeNotification: false,
+    followUpForm: false,
+    rpStatement: false,
+    rpOtherInfo: 'At the time of reporting, employed by SFSO',
 
     narrative: deflectionData.releaseNarrative || build849bReleaseNarrative({
       caseNumber: deflectionData.caseNumber,
