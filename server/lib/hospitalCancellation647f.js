@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon';
 
+import { isIncidentLocationComplete } from './incidentPermissions.js';
+
 export const HOSPITAL_CANCEL_REASON = 'HOSPITAL';
 export const HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR = 'SFPD policy requires person details to be completed before a medical-related cancelation';
 export const HOSPITAL_CANCELLATION_ELIGIBLE_SUBJECT_STATUSES = new Set([
@@ -30,9 +32,7 @@ export function hasCompleteHospitalCancellationDetails (deflection) {
   );
 
   const incidentComplete = Boolean(
-    incident?.addressLine1 &&
-    incident?.city &&
-    incident?.state &&
+    isIncidentLocationComplete(incident) &&
     incident?.arrestedAt &&
     incident?.encounteredVia &&
     hasMinimumAlphanumericChars(incident?.cadNumber, 2) &&

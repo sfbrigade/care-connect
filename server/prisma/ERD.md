@@ -223,6 +223,13 @@ FACILITY_ADMIN FACILITY_ADMIN
     
 
 
+        IncidentLocationType {
+            ADDRESS ADDRESS
+INTERSECTION INTERSECTION
+        }
+    
+
+
         SubjectStatusEnum {
             DETAINED DETAINED
 ONSITE_AWAITING_TRANSFER ONSITE_AWAITING_TRANSFER
@@ -599,11 +606,15 @@ DEPARTURE DEPARTURE
   "Incident" {
     Int id "🗝️"
     String facilityId "🗝️"
+    IncidentLocationType locationType 
     String addressLine1 "❓"
     String addressLine2 "❓"
     String city "❓"
     String state "❓"
     String postalCode "❓"
+    String street1 "❓"
+    String street2 "❓"
+    String intersectionId "❓"
     Decimal latitude "❓"
     Decimal longitude "❓"
     DateTime arrestedAt "❓"
@@ -802,6 +813,7 @@ DEPARTURE DEPARTURE
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"
     "Incident" o|--|| "Facility" : "facility"
+    "Incident" o|--|| "IncidentLocationType" : "enum:locationType"
     "Incident" o|--|o "EncounteredViaEnum" : "enum:encounteredVia"
     "Incident" o|--|| "User" : "createdBy"
     "Incident" o|--|o "Organization" : "createdByOrganization"

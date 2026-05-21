@@ -442,6 +442,17 @@ const Api = {
         params: { latitude, longitude }
       }).catch(handleError);
     },
+    intersections (text, { signal, limit } = {}) {
+      return instance.get('/api/geocode/intersections', {
+        params: { text, limit },
+        signal,
+      });
+    },
+    intersectionsNearest (latitude, longitude, { n } = {}) {
+      return instance.get('/api/geocode/intersections/nearest', {
+        params: { latitude, longitude, n }
+      }).catch(handleError);
+    },
   },
   organizations: {
     index (page = 1) {
@@ -503,8 +514,10 @@ const Api = {
     },
   },
   ai: {
-    transcribe (audio, mediaType) {
-      return instance.post('/api/ai/transcribe', { audio, mediaType });
+    transcribe (audio, mediaType, { mode } = {}) {
+      return instance.post('/api/ai/transcribe', { audio, mediaType }, {
+        params: mode ? { mode } : undefined,
+      });
     },
     parseId (image, mediaType) {
       return instance.post('/api/ai/parse-id', { image, mediaType });

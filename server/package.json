@@ -60,6 +60,7 @@
     "lodash": "^4.17.21",
     "luxon": "^3.7.2",
     "mime-types": "^3.0.1",
+    "natural": "^8.1.1",
     "nodemailer": "^7.0.6",
     "pdf-lib": "^1.17.1",
     "pg-boss": "^12.14.0",

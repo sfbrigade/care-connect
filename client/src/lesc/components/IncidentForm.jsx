@@ -20,13 +20,14 @@ import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
-import AddressAutocomplete from '@/components/AddressAutocomplete';
 import ChipInput from '@/components/ChipInput';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import LocationAutocomplete from '@/components/LocationAutocomplete';
+import LocationVoiceButton, { LocationConfirmationChip } from '@/components/LocationVoiceButton';
 import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
-import { formatAddress } from '@/utils/format';
+import { formatLocation } from '@/utils/format';
 import { getCurrentLocationAddress } from '@/utils/geocoding';
 import { validateIncident } from '@/utils/validators';
 
@@ -34,11 +35,15 @@ const initialValues = {
   cadNumber: '',
   caseNumber: '',
   encounteredVia: '',
+  locationType: 'ADDRESS',
   addressLine1: '',
   addressLine2: '',
   city: '',
   state: '',
   postalCode: '',
+  street1: '',
+  street2: '',
+  intersectionId: '',
   latitude: '',
   longitude: '',
   arrestedAt: '',
@@ -52,11 +57,15 @@ function normalizeIncidentFormValues (values) {
     cadNumber: values?.cadNumber ?? '',
     caseNumber: values?.caseNumber ?? '',
     encounteredVia: values?.encounteredVia ?? '',
+    locationType: values?.locationType ?? 'ADDRESS',
     addressLine1: values?.addressLine1 ?? '',
     addressLine2: values?.addressLine2 ?? '',
     city: values?.city ?? '',
     state: values?.state ?? '',
     postalCode: values?.postalCode ?? '',
+    street1: values?.street1 ?? '',
+    street2: values?.street2 ?? '',
+    intersectionId: values?.intersectionId ?? '',
     latitude: values?.latitude ?? '',
     longitude: values?.longitude ?? '',
     arrestedAt: values?.arrestedAt ?? '',
@@ -78,11 +87,15 @@ function buildIncidentPayload (values) {
     cadNumber: emptyStringToNull(values.cadNumber),
     caseNumber: emptyStringToNull(values.caseNumber),
     encounteredVia: emptyStringToNull(values.encounteredVia),
+    locationType: values.locationType ?? 'ADDRESS',
     addressLine1: emptyStringToNull(values.addressLine1),
     addressLine2: emptyStringToNull(values.addressLine2),
     city: emptyStringToNull(values.city),
     state: emptyStringToNull(values.state),
     postalCode: emptyStringToNull(values.postalCode),
+    street1: emptyStringToNull(values.street1),
+    street2: emptyStringToNull(values.street2),
+    intersectionId: emptyStringToNull(values.intersectionId),
     latitude: emptyStringToNull(values.latitude),
     longitude: emptyStringToNull(values.longitude),
     arrestedAt: arrestedAt.isValid ? arrestedAt.toISO() : null,
@@ -110,6 +123,7 @@ function IncidentForm () {
   const { t } = useTranslation();
   const [isInitialized, setInitialized] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [voiceResult, setVoiceResult] = useState(null);
   const addressRef = useRef();
   const autoGeolocationRequestedRef = useRef(false);
   const isEditing = !!incidentId;
@@ -144,11 +158,11 @@ function IncidentForm () {
         setInitialized(true);
         // If this is a brand-new incident, and the incident doesn't already have an address,
         // then try using device location to fill in the address/location data
-        if (isConfirmIncidentFlow && !data.addressLine1 && !autoGeolocationRequestedRef.current) {
+        if (isConfirmIncidentFlow && !data.addressLine1 && !data.street1 && !autoGeolocationRequestedRef.current) {
           autoGeolocationRequestedRef.current = true;
           getCurrentLocationAddress().then((address) => {
             if (address) {
-              form.setValues(address);
+              form.setValues({ locationType: 'ADDRESS', ...address });
             }
           });
         }
@@ -162,6 +176,7 @@ function IncidentForm () {
         .then((address) => {
           form.initialize({
             ...initialValues,
+            locationType: 'ADDRESS',
             ...address,
             facilityId: facility.id,
             arrestedAt: now,
@@ -192,10 +207,37 @@ function IncidentForm () {
     getCurrentLocationAddress().then((address) => {
       setInitialized(true);
       form.setValues({
+        locationType: 'ADDRESS',
         ...address,
+        street1: null,
+        street2: null,
+        intersectionId: null,
       });
     });
   };
+
+  function handleVoiceResult (data) {
+    // Always show the confirmation chip — even a single high-confidence match
+    // gets a tap-to-confirm step. Officer-entered evidence shouldn't silently
+    // commit; the chip is the place where voice → field becomes deliberate.
+    setVoiceResult(data);
+  }
+
+  function applyIntersectionMatch (match) {
+    form.setValues({
+      locationType: 'INTERSECTION',
+      street1: match.street1Display,
+      street2: match.street2Display,
+      intersectionId: match.cnn,
+      city: 'San Francisco',
+      state: 'CA',
+      latitude: match.latitude,
+      longitude: match.longitude,
+      addressLine1: null,
+      addressLine2: null,
+      postalCode: null,
+    });
+  }
 
   const onSubmitMutation = useMutation({
     mutationFn: (formData) =>
@@ -260,75 +302,132 @@ function IncidentForm () {
           >
             <Stack gap='xl'>
               {!showAddressForm && (
-                <TextInput
-                  data-testid='incident-arrest-location'
-                  label={
-                    <>
-                      Location<span>*</span>
-                    </>
-                  }
-                  rightSection={
-                    !isInitialized ? <Loader size={24} /> : <LocationButton />
-                  }
-                  value={formatAddress(form.getValues())}
-                  readOnly
-                  onFocus={() => {
-                    setShowAddressForm(true);
-                    setTimeout(() => addressRef.current?.focus(), 100);
-                  }}
-                />
-              )}
-              {showAddressForm && (
-                <>
-                  <AddressAutocomplete
-                    data-testid='incident-address-line1'
-                    ref={addressRef}
-                    form={form}
-                    field='addressLine1'
-                    key={form.key('addressLine1')}
+                <Stack gap='xs'>
+                  <TextInput
+                    data-testid='incident-arrest-location'
                     label={
                       <>
-                        Address line 1<span>*</span>
+                        Location<span>*</span>
                       </>
                     }
                     rightSection={
-                      !isInitialized ? <Loader size={24} /> : <LocationButton />
+                      !isInitialized
+                        ? <Loader size={24} />
+                        : (
+                          <Group gap={4} wrap='nowrap'>
+                            <LocationVoiceButton onResult={handleVoiceResult} size='md' />
+                            <LocationButton />
+                          </Group>
+                          )
                     }
+                    rightSectionWidth={84}
+                    value={formatLocation(form.getValues())}
+                    readOnly
+                    onFocus={() => {
+                      setShowAddressForm(true);
+                      setTimeout(() => addressRef.current?.focus(), 100);
+                    }}
                   />
-                  <TextInput
-                    key={form.key('addressLine2')}
-                    {...form.getInputProps('addressLine2')}
-                    label='Address line 2'
+                  <LocationConfirmationChip
+                    result={voiceResult}
+                    onPick={(m) => { applyIntersectionMatch(m); setVoiceResult(null); }}
+                    onDismiss={() => setVoiceResult(null)}
                   />
-                  <TextInput
-                    data-testid='incident-city'
-                    key={form.key('city')}
-                    {...form.getInputProps('city')}
+                </Stack>
+              )}
+              {showAddressForm && (
+                <>
+                  <LocationAutocomplete
+                    data-testid='incident-address-line1'
+                    ref={addressRef}
+                    form={form}
+                    key={`${form.key('addressLine1')}-${form.key('street1')}`}
                     label={
                       <>
-                        City<span>*</span>
+                        Location<span>*</span>
                       </>
                     }
+                    placeholder='Address or cross-streets (e.g. "16th & Valencia")'
+                    rightSection={
+                      !isInitialized
+                        ? <Loader size={24} />
+                        : (
+                          <Group gap={4} wrap='nowrap'>
+                            <LocationVoiceButton onResult={handleVoiceResult} size='md' />
+                            <LocationButton />
+                          </Group>
+                          )
+                    }
+                    rightSectionWidth={84}
                   />
-                  <Group wrap='nowrap'>
-                    <TextInput
-                      data-testid='incident-state'
-                      key={form.key('state')}
-                      {...form.getInputProps('state')}
-                      label={
-                        <>
-                          State<span>*</span>
-                        </>
-                      }
-                    />
-                    <TextInput
-                      key={form.key('postalCode')}
-                      {...form.getInputProps('postalCode')}
-                      label='ZIP code'
-                      type='number'
-                      inputMode='numeric'
-                    />
-                  </Group>
+                  <LocationConfirmationChip
+                    result={voiceResult}
+                    onPick={(m) => { applyIntersectionMatch(m); setVoiceResult(null); }}
+                    onDismiss={() => setVoiceResult(null)}
+                  />
+                  {form.getValues().locationType === 'INTERSECTION'
+                    ? (
+                      <>
+                        <Group wrap='nowrap'>
+                          <TextInput
+                            data-testid='incident-street1'
+                            key={form.key('street1')}
+                            {...form.getInputProps('street1')}
+                            label={<>Street 1<span>*</span></>}
+                          />
+                          <TextInput
+                            data-testid='incident-street2'
+                            key={form.key('street2')}
+                            {...form.getInputProps('street2')}
+                            label={<>Street 2<span>*</span></>}
+                          />
+                        </Group>
+                        <TextInput
+                          data-testid='incident-city'
+                          key={form.key('city')}
+                          {...form.getInputProps('city')}
+                          label={<>City<span>*</span></>}
+                        />
+                      </>
+                      )
+                    : (
+                      <>
+                        <TextInput
+                          key={form.key('addressLine2')}
+                          {...form.getInputProps('addressLine2')}
+                          label='Address line 2'
+                        />
+                        <TextInput
+                          data-testid='incident-city'
+                          key={form.key('city')}
+                          {...form.getInputProps('city')}
+                          label={
+                            <>
+                              City<span>*</span>
+                            </>
+                          }
+                        />
+                        <Group wrap='nowrap'>
+                          <TextInput
+                            data-testid='incident-state'
+                            key={form.key('state')}
+                            {...form.getInputProps('state')}
+                            label={
+                              <>
+                                State<span>*</span>
+                              </>
+                            }
+                          />
+                          <TextInput
+                            key={form.key('postalCode')}
+                            {...form.getInputProps('postalCode')}
+                            label='ZIP code'
+                            type='number'
+                            inputMode='numeric'
+                          />
+                        </Group>
+                      </>
+                      )}
                 </>
               )}
               <TextInput

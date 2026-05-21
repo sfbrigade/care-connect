@@ -9,6 +9,36 @@ export function formatAddress ({ addressLine1, addressLine2, city, state, postal
 }
 
 /**
+ * Title-case a DataSF-style uppercase street name and strip zero-pad on
+ * numbered streets (e.g. "03RD ST" → "3rd St", "JUNIPERO SERRA BLVD" →
+ * "Junipero Serra Blvd"). Mirrors server/lib/streetNormalization.displayName.
+ */
+export function formatStreetName (raw) {
+  if (!raw) return '';
+  const stripped = String(raw).replace(/\b0(\d(ST|ND|RD|TH))\b/gi, '$1');
+  return stripped
+    .split(/\s+/)
+    .map(w => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(' ');
+}
+
+/**
+ * Format the location of an incident (or any record carrying a locationType
+ * discriminator). For INTERSECTION mode renders "Street1 & Street2"; for
+ * ADDRESS mode delegates to formatAddress. Defaults to ADDRESS when no
+ * locationType is set, for backward compatibility with pre-migration records.
+ */
+export function formatLocation (record) {
+  if (!record) return '';
+  if (record.locationType === 'INTERSECTION') {
+    const s1 = formatStreetName(record.street1);
+    const s2 = formatStreetName(record.street2);
+    return s1 && s2 ? `${s1} & ${s2}` : (s1 || s2);
+  }
+  return formatAddress(record);
+}
+
+/**
  * Convert date to DateTime object
  * @param {string|Date} date - Date to convert
  * @returns {DateTime} - DateTime object
