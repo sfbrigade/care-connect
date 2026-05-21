@@ -44,6 +44,11 @@ const initialValues = {
   street1: '',
   street2: '',
   intersectionId: '',
+  // `neighborhood` is a transient client-only hint sourced from autocomplete,
+  // voice match, or geolocation. It's never sent to the server (see
+  // buildIncidentPayload) — it's just used to render the "in X" confidence
+  // line under the field.
+  neighborhood: '',
   latitude: '',
   longitude: '',
   arrestedAt: '',
@@ -66,6 +71,7 @@ function normalizeIncidentFormValues (values) {
     street1: values?.street1 ?? '',
     street2: values?.street2 ?? '',
     intersectionId: values?.intersectionId ?? '',
+    neighborhood: values?.neighborhood ?? '',
     latitude: values?.latitude ?? '',
     longitude: values?.longitude ?? '',
     arrestedAt: values?.arrestedAt ?? '',
@@ -82,24 +88,28 @@ function buildIncidentPayload (values) {
     zone: 'local',
   });
 
+  // `neighborhood` is a transient client-only hint; strip it out so we don't
+  // send a non-schema field to the server.
+  const { neighborhood: _neighborhood, ...rest } = values;
+
   return {
-    ...values,
-    cadNumber: emptyStringToNull(values.cadNumber),
-    caseNumber: emptyStringToNull(values.caseNumber),
-    encounteredVia: emptyStringToNull(values.encounteredVia),
-    locationType: values.locationType ?? 'ADDRESS',
-    addressLine1: emptyStringToNull(values.addressLine1),
-    addressLine2: emptyStringToNull(values.addressLine2),
-    city: emptyStringToNull(values.city),
-    state: emptyStringToNull(values.state),
-    postalCode: emptyStringToNull(values.postalCode),
-    street1: emptyStringToNull(values.street1),
-    street2: emptyStringToNull(values.street2),
-    intersectionId: emptyStringToNull(values.intersectionId),
-    latitude: emptyStringToNull(values.latitude),
-    longitude: emptyStringToNull(values.longitude),
+    ...rest,
+    cadNumber: emptyStringToNull(rest.cadNumber),
+    caseNumber: emptyStringToNull(rest.caseNumber),
+    encounteredVia: emptyStringToNull(rest.encounteredVia),
+    locationType: rest.locationType ?? 'ADDRESS',
+    addressLine1: emptyStringToNull(rest.addressLine1),
+    addressLine2: emptyStringToNull(rest.addressLine2),
+    city: emptyStringToNull(rest.city),
+    state: emptyStringToNull(rest.state),
+    postalCode: emptyStringToNull(rest.postalCode),
+    street1: emptyStringToNull(rest.street1),
+    street2: emptyStringToNull(rest.street2),
+    intersectionId: emptyStringToNull(rest.intersectionId),
+    latitude: emptyStringToNull(rest.latitude),
+    longitude: emptyStringToNull(rest.longitude),
     arrestedAt: arrestedAt.isValid ? arrestedAt.toISO() : null,
-    supervisorBadgeNumber: emptyStringToNull(values.supervisorBadgeNumber),
+    supervisorBadgeNumber: emptyStringToNull(rest.supervisorBadgeNumber),
   };
 }
 
@@ -209,6 +219,7 @@ function IncidentForm () {
       form.setValues({
         locationType: 'ADDRESS',
         ...address,
+        neighborhood: address?.neighborhood ?? '',
         street1: null,
         street2: null,
         intersectionId: null,
@@ -217,9 +228,15 @@ function IncidentForm () {
   };
 
   function handleVoiceResult (data) {
-    // Always show the confirmation chip — even a single high-confidence match
-    // gets a tap-to-confirm step. Officer-entered evidence shouldn't silently
-    // commit; the chip is the place where voice → field becomes deliberate.
+    // Single confident match → auto-apply and stay silent (the field itself
+    // updates, which is feedback enough). Multi-match → show the picker chip.
+    // No match → keep voiceResult so the chip can show the "couldn't match"
+    // hint and surface the raw transcript.
+    if (data?.matches?.length === 1) {
+      applyIntersectionMatch(data.matches[0]);
+      setVoiceResult(null);
+      return;
+    }
     setVoiceResult(data);
   }
 
@@ -229,6 +246,7 @@ function IncidentForm () {
       street1: match.street1Display,
       street2: match.street2Display,
       intersectionId: match.cnn,
+      neighborhood: match.neighborhood ?? '',
       city: 'San Francisco',
       state: 'CA',
       latitude: match.latitude,
@@ -237,6 +255,28 @@ function IncidentForm () {
       addressLine2: null,
       postalCode: null,
     });
+  }
+
+  // Any manual edit of a location-defining field invalidates derived hints.
+  // We clear `neighborhood` (the confidence indicator) and `intersectionId`
+  // (which would otherwise point at a stale CNN). The setValues call also
+  // triggers a re-render so the hint disappears.
+  function invalidateDerivedLocationState () {
+    const v = form.getValues();
+    if (v.neighborhood || v.intersectionId) {
+      form.setValues({ neighborhood: '', intersectionId: '' });
+    }
+  }
+
+  function wrapInputForLocationField (field) {
+    const props = form.getInputProps(field);
+    return {
+      ...props,
+      onChange: (event) => {
+        props.onChange(event);
+        invalidateDerivedLocationState();
+      },
+    };
   }
 
   const onSubmitMutation = useMutation({
@@ -328,6 +368,11 @@ function IncidentForm () {
                       setTimeout(() => addressRef.current?.focus(), 100);
                     }}
                   />
+                  {form.getValues().neighborhood && (
+                    <Text c='dimmed' size='sm' mt={-4}>
+                      in {form.getValues().neighborhood}
+                    </Text>
+                  )}
                   <LocationConfirmationChip
                     result={voiceResult}
                     onPick={(m) => { applyIntersectionMatch(m); setVoiceResult(null); }}
@@ -360,6 +405,11 @@ function IncidentForm () {
                     }
                     rightSectionWidth={84}
                   />
+                  {form.getValues().neighborhood && (
+                    <Text c='dimmed' size='sm' mt={-4}>
+                      in {form.getValues().neighborhood}
+                    </Text>
+                  )}
                   <LocationConfirmationChip
                     result={voiceResult}
                     onPick={(m) => { applyIntersectionMatch(m); setVoiceResult(null); }}
@@ -372,13 +422,13 @@ function IncidentForm () {
                           <TextInput
                             data-testid='incident-street1'
                             key={form.key('street1')}
-                            {...form.getInputProps('street1')}
+                            {...wrapInputForLocationField('street1')}
                             label={<>Street 1<span>*</span></>}
                           />
                           <TextInput
                             data-testid='incident-street2'
                             key={form.key('street2')}
-                            {...form.getInputProps('street2')}
+                            {...wrapInputForLocationField('street2')}
                             label={<>Street 2<span>*</span></>}
                           />
                         </Group>

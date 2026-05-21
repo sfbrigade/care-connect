@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
 
 const SOCRATA_RESOURCE = 'https://data.sfgov.org/resource/jfxm-zeee.json';
+const NEIGHBORHOODS_GEOJSON = 'https://data.sfgov.org/resource/j2bu-swwd.geojson?$limit=200';
 const PAGE_SIZE = 5000;
 
 async function fetchAllRows () {
@@ -127,6 +128,69 @@ function buildIntersections (rows) {
   });
 }
 
+async function fetchNeighborhoodPolygons () {
+  const response = await fetch(NEIGHBORHOODS_GEOJSON);
+  if (!response.ok) {
+    throw new Error(`Neighborhood fetch failed: ${response.status}`);
+  }
+  const geojson = await response.json();
+  // Each feature has properties.nhood and a (Multi)Polygon geometry. Flatten
+  // MultiPolygon into one polygon ring list per feature; we only need the
+  // outer ring of each polygon for point-in-poly. SF neighborhoods have no
+  // holes in practice.
+  const polygons = [];
+  for (const feature of geojson.features ?? []) {
+    const name = feature?.properties?.nhood;
+    const geom = feature?.geometry;
+    if (!name || !geom) continue;
+    if (geom.type === 'Polygon') {
+      polygons.push({ name, rings: [geom.coordinates[0]] });
+    } else if (geom.type === 'MultiPolygon') {
+      const rings = geom.coordinates.map(poly => poly[0]);
+      polygons.push({ name, rings });
+    }
+  }
+  return polygons;
+}
+
+// Ray-casting point-in-polygon (lng, lat against ring of [lng, lat] points).
+function pointInRing (lng, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0];
+    const yi = ring[i][1];
+    const xj = ring[j][0];
+    const yj = ring[j][1];
+    const intersects = ((yi > lat) !== (yj > lat)) &&
+      (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function neighborhoodFor (lat, lng, polygons) {
+  for (const poly of polygons) {
+    for (const ring of poly.rings) {
+      if (pointInRing(lng, lat, ring)) return poly.name;
+    }
+  }
+  return null;
+}
+
+function annotateNeighborhoods (intersections, polygons) {
+  let matched = 0;
+  for (const row of intersections) {
+    const hood = neighborhoodFor(row.lat, row.lng, polygons);
+    if (hood) {
+      row.neighborhood = hood;
+      matched++;
+    } else {
+      row.neighborhood = null;
+    }
+  }
+  return matched;
+}
+
 async function main () {
   console.log('Fetching DataSF jfxm-zeee...');
   const rows = await fetchAllRows();
@@ -137,6 +201,12 @@ async function main () {
 
   const intersections = buildIntersections(rows);
   console.log(`Unique intersections: ${intersections.length}`);
+
+  console.log('Fetching SF Analysis Neighborhoods...');
+  const polygons = await fetchNeighborhoodPolygons();
+  console.log(`Neighborhood polygons: ${polygons.length}`);
+  const matched = annotateNeighborhoods(intersections, polygons);
+  console.log(`Intersections matched to a neighborhood: ${matched} / ${intersections.length}`);
 
   const streets = buildStreets(rows, aliases);
   console.log(`Unique street names: ${streets.length}`);

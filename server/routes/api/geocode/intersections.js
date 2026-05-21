@@ -13,6 +13,7 @@ const IntersectionResultSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   zipCode: z.string().nullable(),
+  neighborhood: z.string().nullable(),
 });
 
 const NearestResultSchema = IntersectionResultSchema.extend({

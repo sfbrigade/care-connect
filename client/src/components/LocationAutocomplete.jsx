@@ -39,6 +39,12 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
   const [loading, setLoading] = useState(false);
   const resultsRef = useRef({ mode: null, items: [] });
   const abortControllerRef = useRef(null);
+  // Set true at the top of handleOptionSubmit and cleared on the next tick.
+  // Any onChange that fires during this window is from the option-submit
+  // itself (Mantine echoes the picked value through onChange after the pick),
+  // so we skip the invalidation logic — the option-submit already set the
+  // values it wants.
+  const skipInvalidationRef = useRef(false);
   const [debounced] = useDebouncedValue(value, 300);
 
   useEffect(() => {
@@ -68,7 +74,10 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
         if (intersectionMode) {
           setData(items
             .filter((r) => r.cnn)
-            .map((r) => ({ value: r.cnn, label: `⌗  ${r.label}` })));
+            .map((r) => ({
+              value: r.cnn,
+              label: r.neighborhood ? `⌗  ${r.label} (${r.neighborhood})` : `⌗  ${r.label}`,
+            })));
         } else {
           setData(items
             .filter((r) => r.placeId && r.addressLine1)
@@ -93,6 +102,16 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
 
   function handleChange (val) {
     setValue(val);
+    if (skipInvalidationRef.current) {
+      return;
+    }
+    // Real user-typed change. Invalidate the cached neighborhood hint and
+    // intersectionId — both were tied to a prior selection that no longer
+    // matches what the user is typing.
+    const fv = form.getValues();
+    if (fv.neighborhood || fv.intersectionId) {
+      form.setValues({ neighborhood: '', intersectionId: '' });
+    }
   }
 
   function handleFocus (e) {
@@ -110,6 +129,9 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
     const match = items.find((r) => (mode === 'INTERSECTION' ? r.cnn : r.placeId) === key);
     if (!match) return;
 
+    skipInvalidationRef.current = true;
+    setTimeout(() => { skipInvalidationRef.current = false; }, 0);
+
     if (mode === 'INTERSECTION') {
       const label = `${match.street1Display} & ${match.street2Display}`;
       setValue(label);
@@ -118,6 +140,7 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
         street1: match.street1Display,
         street2: match.street2Display,
         intersectionId: match.cnn,
+        neighborhood: match.neighborhood ?? '',
         city: 'San Francisco',
         state: 'CA',
         latitude: match.latitude,
@@ -134,6 +157,7 @@ const LocationAutocomplete = forwardRef(function LocationAutocomplete ({ form, r
         city: match.city ?? '',
         state: match.state ?? '',
         postalCode: match.postalCode?.split('-')[0] ?? '',
+        neighborhood: match.neighborhood ?? '',
         latitude: match.latitude ?? '',
         longitude: match.longitude ?? '',
         street1: null,

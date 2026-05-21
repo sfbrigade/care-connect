@@ -69,17 +69,17 @@ Pattern tags emerging so far:
 
 ---
 
-## #4 — Confirmation chip never appeared after a successful voice match
+## #4 — Confirmation chip never appeared after a successful voice match  *(later reverted in #9)*
 
 **Observed:** User reported: "I don't see a chip anywhere after I successfully enter an intersection."
 
-**Diagnosis:** Mid-implementation I'd added a "if exactly 1 match, auto-fill and skip the chip" optimization in `IncidentForm.jsx:handleVoiceResult`. For the *common* case (e.g. "16th and Valencia" → 1 clean match), this meant zero feedback that voice was processed — the field silently updated. This directly contradicted what the implementation plan called for ("show a confirmation chip before commit. CAD systems do this. It's cheap, prevents silent misroutes.").
+**Diagnosis:** Mid-implementation I'd added a "if exactly 1 match, auto-fill and skip the chip" optimization in `IncidentForm.jsx:handleVoiceResult`. For the *common* case (e.g. "16th and Valencia" → 1 clean match), this meant zero feedback that voice was processed — the field silently updated.
 
 **Fix:** removed the shortcut. Chip always shows when there's at least one match. Tightened the wording: single match reads "Tap to confirm:", multi reads "Did you mean:" (`client/src/components/LocationVoiceButton.jsx:LocationConfirmationChip`).
 
 **Pattern tag:** `ux-feedback`
 
-**Notes:** This was a self-inflicted optimization that I added without thinking through the implications for evidence integrity (officer-entered data). Worth a reminder to myself: don't optimize away verification steps in officer/evidence flows.
+**Notes:** **This change was reversed in #9 once the user tried it in practice.** See #9 for the final state. The lesson here is in the spread between *theory* (CAD-style verification is the cautious default) and *use* (one extra tap on the happy path felt like friction, and the field updating *is* feedback).
 
 ---
 
@@ -160,12 +160,32 @@ Tests added for ordinal expansion (`expandOrdinalWords`) and ordinal-aware `toPr
 
 ---
 
+## #9 — Reverted #4: single-match voice should auto-apply silently
+
+**Observed:** After using the always-show-chip behavior from #4 in practice, the user said:
+> "I don't like the 'show a confirmation, then user taps to confirm'. I don't mind the other panel (when we can't match the voice to something, we at least display what we heard, and encourage the user to type it in). But I find that when the system is able to transcribe my audio to a real intersection, I don't want a separate tap, I just want it to populate the field."
+
+**Diagnosis:** The chip's value is genuine on multi-match (real ambiguity that needs a choice) and no-match (failure mode that needs explanation + the raw transcript). On a clean single match, the field itself updating is sufficient feedback — adding a confirmation tap on the *happy path* is friction without value.
+
+**Fix:** restored the single-match auto-apply shortcut in `IncidentForm.jsx:handleVoiceResult`. New three-way logic:
+- **1 match** → `applyIntersectionMatch(matches[0])`, clear `voiceResult` (no chip)
+- **2+ matches** → `setVoiceResult(data)` so the chip shows the picker
+- **0 matches / unparseable** → `setVoiceResult(data)` so the chip shows the "couldn't match" hint with the raw transcript
+
+**Pattern tag:** `ux-feedback`
+
+**Notes:** This is a meta-lesson about my earlier reasoning in #4. I framed the chip as protecting "evidence integrity," but in practice the verification CAD systems do is for *dispatchers* coordinating with field officers over radio — different context. For a field officer self-entering, the field's own value display is the verification. Default to the lighter UX; add friction only where ambiguity or failure genuinely requires it.
+
+The previous chip wording change ("Tap to confirm:" vs "Did you mean:") stays — it's still relevant for the multi-match case the chip *does* render in. Single match just doesn't render the chip at all anymore.
+
+---
+
 ## Pattern summary so far
 
 - **`data-shape-assumption`** (3 occurrences): #1, #2, #3. Each was a code path that assumed address-only and didn't know about the locationType discriminator. **If another shows up, lean on a typed read-side wrapper** (e.g. `getIncidentLocation(incident) → { type: 'address'|'intersection', text, lat, lng }`) and migrate call sites to it rather than continuing inline branching.
 - **`ranking-bug`** (1 occurrence): #6. Test coverage gap — popular base names with compound siblings need integration tests.
 - **`stt-fusion`** (2 occurrences): #7, #8. Both handled with focused fixes in the normalization/recovery pipeline. **If 3+ more such fixes pile up, escalate the STT strategy** to Deepgram Nova-3 per the implementation plan's Part 7 gate. #8 in particular suggests a more general principle: anywhere a canonical name has a non-phonetic transformation from speech (digits ↔ words, abbreviations, leading "THE"), we need explicit normalization — phonetic match alone won't bridge it.
-- **`ux-feedback`** (2 occurrences): #4, #5. Both were my misses, not systemic. Manual UX review would have caught both before user found them.
+- **`ux-feedback`** (3 occurrences): #4, #5, #9. #5 was a genuine miss. #4 + #9 together form one back-and-forth: I built the cautious-by-default UX, the user tried it and preferred the lighter one. Lesson: when defaulting cautious vs. light on a UX call where I'm guessing, prefer light + escalate friction only where ambiguity/failure requires it — and surface the choice early instead of letting it ship and bounce.
 
 ---
 

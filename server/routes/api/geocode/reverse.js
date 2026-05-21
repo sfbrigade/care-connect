@@ -19,6 +19,7 @@ export default async function (fastify, opts) {
             city: z.string().nullable(),
             state: z.string().nullable(),
             postalCode: z.string().nullable(),
+            neighborhood: z.string().nullable(),
           }),
         },
       },

@@ -58,6 +58,7 @@ async function reverseGeocode (latitude, longitude) {
     city: address?.Locality || null,
     state: address?.Region?.Code || null,
     postalCode: address?.PostalCode || null,
+    neighborhood: address?.District || null,
   };
 }
 

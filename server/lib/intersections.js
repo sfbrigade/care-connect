@@ -245,6 +245,7 @@ function toApiResult (row) {
     latitude: row.lat,
     longitude: row.lng,
     zipCode: row.zip ?? null,
+    neighborhood: row.neighborhood ?? null,
   };
 }
 

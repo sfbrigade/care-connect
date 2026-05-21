@@ -53,6 +53,7 @@ export default async function (fastify) {
               latitude: z.number(),
               longitude: z.number(),
               zipCode: z.string().nullable(),
+              neighborhood: z.string().nullable(),
             })).optional(),
             parsed: z.object({
               side1: z.string(),
