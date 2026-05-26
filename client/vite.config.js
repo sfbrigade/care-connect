@@ -60,6 +60,11 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
       ...(isSSRBuild
         ? []
         : [VitePWA({
+            // injectManifest lets us maintain a hand-written sw.js that gets
+            // the Workbox precache manifest injected at build time.
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.js',
             registerType: 'autoUpdate',
             includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon-32.png'],
             manifest: {
@@ -78,13 +83,8 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
                 { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
               ],
             },
-            workbox: {
-              navigateFallback: '/index.html',
-              navigateFallbackDenylist: [/^\/api\//, /^\/static-data\//],
-              // Aggressive update propagation: new SW activates and claims clients
-              // immediately so deploys land within minutes on long-lived tablet sessions.
-              skipWaiting: true,
-              clientsClaim: true,
+            injectManifest: {
+              globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
             },
             devOptions: {
               // Serve manifest + SW in vite dev so DevTools → Application shows them.

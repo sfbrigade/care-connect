@@ -1,23 +1,47 @@
 import { useEffect } from 'react';
-import { AppShell } from '@mantine/core';
+import { AppShell, Button, CloseButton, Group, Paper, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { matchPath, useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { IconBell } from '@tabler/icons-react';
 
 import Header from './Header';
 
 import Api from './Api';
 import AppRoutes from './AppRoutes';
 import { useFacilityContext } from './FacilityContext';
+import { useAuthContext } from './AuthContext';
+import { usePushNotifications } from './hooks/usePushNotifications';
+
+function PushPromptBanner ({ onAllow, onDismiss }) {
+  return (
+    <Paper shadow='sm' p='sm' withBorder style={{ position: 'sticky', top: 0, zIndex: 200 }}>
+      <Group justify='space-between' wrap='nowrap'>
+        <Group gap='sm' wrap='nowrap'>
+          <IconBell size={20} />
+          <Text size='sm'>Enable notifications to get alerts for hold cancellations and facility updates.</Text>
+        </Group>
+        <Group gap='xs' wrap='nowrap'>
+          <Button size='xs' onClick={onAllow}>Allow</Button>
+          <CloseButton size='sm' onClick={onDismiss} aria-label='Dismiss notification prompt' />
+        </Group>
+      </Group>
+    </Paper>
+  );
+}
 
 function AppLayout () {
   const [opened, { close, toggle }] = useDisclosure();
   const navigate = useNavigate();
   const { facility, setFacility } = useFacilityContext();
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
+
+  const { promptVisible, requestPermission, dismissPrompt, unsubscribe } = usePushNotifications(user);
 
   async function logout (event) {
     event.preventDefault();
+    await unsubscribe();
     await Api.auth.logout();
     queryClient.setQueryData(['users', 'me'], null);
     close();
@@ -54,6 +78,9 @@ function AppLayout () {
         </AppShell.Header>
       )}
       <AppShell.Main px={0}>
+        {promptVisible && !isHeaderHidden && (
+          <PushPromptBanner onAllow={requestPermission} onDismiss={dismissPrompt} />
+        )}
         <AppRoutes />
       </AppShell.Main>
     </AppShell>

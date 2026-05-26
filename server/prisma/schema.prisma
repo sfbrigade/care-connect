@@ -298,6 +298,8 @@ model User {
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")
   adminSecurityEventsTargeting AdminSecurityEvent[]    @relation("AdminSecurityEventTarget")
 
+  pushSubscriptions                    PushSubscription[]
+
   bedTypesCreated                      BedType[]                     @relation("CreatedBy")
   bedTypesUpdated                      BedType[]                     @relation("UpdatedBy")
   bedTypeUpdatesCreated                BedTypeUpdate[]
@@ -329,6 +331,19 @@ model User {
   propertyPhotosUpdated                PropertyPhoto[]               @relation("UpdatedBy")
   titlesCreated                        Title[]                       @relation("CreatedBy")
   unitsCreated                         Unit[]                        @relation("CreatedBy")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Invite {
