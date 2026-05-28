@@ -218,8 +218,6 @@ function Custody () {
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
-  const surveyIntentDeflectionId = surveyIntent?.deflectionId;
-  const surveyIntentOrganizationId = surveyIntent?.organizationId;
   const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
@@ -339,7 +337,7 @@ function Custody () {
 
   useEffect(() => {
     if (!isSatisfactionSurveyEligible) return;
-    if (!surveyIntentDeflectionId) return;
+    if (!surveyIntent) return;
 
     const timeoutId = window.setTimeout(() => {
       setIsPostNavigationSurveyOpen(true);
@@ -348,7 +346,7 @@ function Custody () {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [surveyIntentDeflectionId, location.key, isSatisfactionSurveyEligible]);
+  }, [surveyIntent, location.key, isSatisfactionSurveyEligible]);
 
   const clearSurveyLocationState = useCallback(() => {
     const current = location.state;
@@ -487,11 +485,9 @@ function Custody () {
           onSuccess={handleScanSuccess}
         />
       )}
-      {surveyIntentDeflectionId != null && (
+      {surveyIntent && (
         <SatisfactionSurveyModal
           opened={isPostNavigationSurveyOpen}
-          deflectionId={surveyIntentDeflectionId}
-          organizationId={surveyIntentOrganizationId}
           onFinished={onPostNavigationSurveyFinished}
         />
       )}

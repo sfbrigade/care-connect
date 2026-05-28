@@ -20,7 +20,6 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
   const [isPostNavigationSurveyOpen, setIsPostNavigationSurveyOpen] = useState(false);
 
   const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
-  const surveyIntentDeflectionId = surveyIntent?.deflectionId;
   const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   useEffect(() => {
@@ -29,7 +28,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
 
   useEffect(() => {
     if (!isSatisfactionSurveyEligible) return;
-    if (!surveyIntentDeflectionId || String(surveyIntentDeflectionId) !== String(id)) return;
+    if (!surveyIntent) return;
 
     const timeoutId = window.setTimeout(() => {
       setIsPostNavigationSurveyOpen(true);
@@ -38,7 +37,7 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [id, surveyIntentDeflectionId, location.key, isSatisfactionSurveyEligible]);
+  }, [id, surveyIntent, location.key, isSatisfactionSurveyEligible]);
 
   const clearSurveyLocationState = useCallback(() => {
     const current = location.state;
@@ -69,11 +68,9 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
         <title>{isCareView ? 'Care Details' : 'Custody Details'}</title>
       </Head>
       <CustodyDetailContent deflection={deflection} backTo={backTo} viewerMode={viewerMode} />
-      {surveyIntentDeflectionId != null && String(surveyIntentDeflectionId) === String(id) && (
+      {surveyIntent && (
         <SatisfactionSurveyModal
           opened={isPostNavigationSurveyOpen}
-          deflectionId={surveyIntentDeflectionId}
-          organizationId={surveyIntent?.organizationId}
           onFinished={onPostNavigationSurveyFinished}
         />
       )}

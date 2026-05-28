@@ -22,9 +22,7 @@ const SATISFACTION_OPTIONS = [
 
 function SatisfactionSurveyModal ({
   opened,
-  deflectionId,
   onFinished,
-  organizationId,
 }) {
   const { showToast } = useToast();
   const { scheduleCooldown } = useSatisfactionSurveyEligibility();
@@ -54,14 +52,13 @@ function SatisfactionSurveyModal ({
   }, [opened]);
 
   const finish = async (didCompleteSurvey) => {
-    if (didCompleteSurvey && deflectionId != null) {
+    if (didCompleteSurvey) {
       if (hasExceededTextLimit) return;
       const improvementTrimmed = surveyAnswers.improvementSuggestions.trim();
       const resetFacilityFeedbackTrimmed = surveyAnswers.resetFacilityFeedback.trim();
       try {
         setSubmitting(true);
-        await Api.deflections.submitSatisfactionSurvey(deflectionId, {
-          organizationId,
+        await Api.users.submitSatisfactionSurvey({
           answers: {
             careConnectRating: surveyAnswers.careConnectRating,
             ...(resetFacilityFeedbackTrimmed ? { resetFacilityFeedback: resetFacilityFeedbackTrimmed } : {}),

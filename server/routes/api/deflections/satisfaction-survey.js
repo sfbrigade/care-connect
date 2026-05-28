@@ -2,15 +2,11 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { canReadDeflection } from '#lib/deflectionVisibility.js';
-
-const BodySchema = z.object({
-  organizationId: z.enum(['sfpd', 'sfso', 'connections']),
-  answers: z.object({
-    careConnectRating: z.enum(['bad', 'neutral', 'good']),
-    improvementSuggestions: z.string().trim().max(5000).optional(),
-    resetFacilityFeedback: z.string().trim().max(5000).optional(),
-  }),
-});
+import {
+  SatisfactionSurveyBodySchema,
+  SatisfactionSurveyCreatedResponseSchema,
+  createSatisfactionSurvey,
+} from '#lib/satisfactionSurvey.js';
 
 export default async function (fastify) {
   fastify.post('/:id/satisfaction-survey',
@@ -21,12 +17,9 @@ export default async function (fastify) {
         params: z.object({
           id: z.coerce.number(),
         }),
-        body: BodySchema,
+        body: SatisfactionSurveyBodySchema,
         response: {
-          [StatusCodes.CREATED]: z.object({
-            id: z.string().uuid(),
-            createdAt: z.string(),
-          }),
+          [StatusCodes.CREATED]: SatisfactionSurveyCreatedResponseSchema,
           [StatusCodes.NOT_FOUND]: z.object({
             error: z.string(),
           }),
@@ -49,18 +42,7 @@ export default async function (fastify) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
 
-      const toNullableText = (value) => {
-        const trimmed = value?.trim();
-        return trimmed || null;
-      };
-      const row = await fastify.prisma.satisfactionSurvey.create({
-        data: {
-          organizationId,
-          careConnectRating: answers.careConnectRating,
-          improvementSuggestions: toNullableText(answers.improvementSuggestions),
-          resetFacilityFeedback: toNullableText(answers.resetFacilityFeedback),
-        },
-      });
+      const row = await createSatisfactionSurvey(fastify.prisma, organizationId, answers);
 
       return reply.code(StatusCodes.CREATED).send({
         id: row.id,

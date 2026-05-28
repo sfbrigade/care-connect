@@ -6,11 +6,10 @@ import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyE
 /** React Router `location.state` key for scheduling the post-navigation satisfaction survey. */
 export const SATISFACTION_SURVEY_NAVIGATION_STATE = 'satisfactionSurveyIntent';
 
-function useSatisfactionSurvey (navigate, deflectionId, { organizationId } = {}) {
+function useSatisfactionSurvey (navigate) {
   const { isEligible: shouldShowSatisfactionSurvey } = useSatisfactionSurveyEligibility();
   const [isSurveyModalOpen, setIsSurveyModalOpen] = useState(false);
   const [staySurveyScheduled, setStaySurveyScheduled] = useState(false);
-  const [activeSurveyContextId, setActiveSurveyContextId] = useState(deflectionId);
 
   useEffect(() => {
     let surveyTimeoutId;
@@ -31,27 +30,20 @@ function useSatisfactionSurvey (navigate, deflectionId, { organizationId } = {})
     if (shouldShowSatisfactionSurvey) {
       navigate(path, {
         state: {
-          [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
-            deflectionId,
-            organizationId,
-          },
+          [SATISFACTION_SURVEY_NAVIGATION_STATE]: true,
         },
       });
       return;
     }
     navigate(path);
-  }, [navigate, shouldShowSatisfactionSurvey, deflectionId, organizationId]);
+  }, [navigate, shouldShowSatisfactionSurvey]);
 
-  /**
-   * Show the delayed survey without navigating afterward (e.g. after "I've left" on Holds).
-   * @param {string} [contextId] - Stored with the response; defaults to hook `deflectionId`.
-   */
-  const scheduleOptionalSurveyWithoutNavigation = useCallback((contextId) => {
+  /** Show the delayed survey without navigating afterward (e.g. after "I've left" on Holds). */
+  const scheduleOptionalSurveyWithoutNavigation = useCallback(() => {
     if (shouldShowSatisfactionSurvey) {
-      setActiveSurveyContextId(contextId ?? deflectionId);
       setStaySurveyScheduled(true);
     }
-  }, [shouldShowSatisfactionSurvey, deflectionId]);
+  }, [shouldShowSatisfactionSurvey]);
 
   const closeSurveyAndContinue = useCallback(() => {
     setIsSurveyModalOpen(false);
@@ -61,8 +53,6 @@ function useSatisfactionSurvey (navigate, deflectionId, { organizationId } = {})
   const satisfactionSurveyModal = (
     <SatisfactionSurveyModal
       opened={isSurveyModalOpen}
-      deflectionId={activeSurveyContextId}
-      organizationId={organizationId}
       onFinished={closeSurveyAndContinue}
     />
   );

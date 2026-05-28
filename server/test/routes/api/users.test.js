@@ -237,6 +237,175 @@ test('/api/users', async (t) => {
     });
   });
 
+  await t.test('POST /me/satisfaction-survey', async (t) => {
+    const tooLongText = 'a'.repeat(5001);
+
+    await t.test('requires authentication', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        payload: {
+          answers: {
+            careConnectRating: 'good',
+          },
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('returns 403 when the user has no survey organization', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: adminHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'good',
+          },
+        },
+      });
+      assert.strictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+
+    await t.test('creates a survey using the authenticated user organization', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: userHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'neutral',
+            resetFacilityFeedback: '  Helpful staff and fast process.  ',
+            improvementSuggestions: '  More evening availability.  ',
+          },
+        },
+      });
+
+      assert.strictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      assert.ok(data.id);
+      assert.ok(data.createdAt);
+
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.ok(row);
+      assert.strictEqual(row.organizationId, 'sfpd');
+      assert.strictEqual(row.careConnectRating, 'neutral');
+      assert.strictEqual(row.resetFacilityFeedback, 'Helpful staff and fast process.');
+      assert.strictEqual(row.improvementSuggestions, 'More evening availability.');
+    });
+
+    await t.test('creates a survey for SFSO and CARE users from their organization', async () => {
+      const sfsoResponse = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: sfsoUserHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: 'Smooth intake.',
+          },
+        },
+      });
+      assert.strictEqual(sfsoResponse.statusCode, StatusCodes.CREATED);
+      const sfsoData = JSON.parse(sfsoResponse.body);
+      const sfsoRow = await prisma.satisfactionSurvey.findUnique({
+        where: { id: sfsoData.id },
+      });
+      assert.strictEqual(sfsoRow.organizationId, 'sfso');
+
+      const careHeaders = await authenticate(app, 'careuser1@test.com', 'test');
+      const careResponse = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: careHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'bad',
+            improvementSuggestions: 'Need clearer handoff steps.',
+          },
+        },
+      });
+      assert.strictEqual(careResponse.statusCode, StatusCodes.CREATED);
+      const careData = JSON.parse(careResponse.body);
+      const careRow = await prisma.satisfactionSurvey.findUnique({
+        where: { id: careData.id },
+      });
+      assert.strictEqual(careRow.organizationId, 'connections');
+    });
+
+    await t.test('coerces whitespace-only optional text fields to null', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: userHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'bad',
+            resetFacilityFeedback: '   ',
+            improvementSuggestions: '   ',
+          },
+        },
+      });
+
+      assert.strictEqual(response.statusCode, StatusCodes.CREATED);
+      const data = JSON.parse(response.body);
+      const row = await prisma.satisfactionSurvey.findUnique({
+        where: { id: data.id },
+      });
+      assert.strictEqual(row.resetFacilityFeedback, null);
+      assert.strictEqual(row.improvementSuggestions, null);
+    });
+
+    await t.test('validates request body', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: userHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'great',
+          },
+        },
+      });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('rejects client-supplied organizationId in payload', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: userHeaders,
+        payload: {
+          organizationId: 'sfso',
+          answers: {
+            careConnectRating: 'good',
+          },
+        },
+      });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('returns 422 when optional text exceeds 5000 characters', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/users/me/satisfaction-survey',
+        headers: userHeaders,
+        payload: {
+          answers: {
+            careConnectRating: 'good',
+            resetFacilityFeedback: tooLongText,
+          },
+        },
+      });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+  });
+
   await t.test('GET /:id', async (t) => {
     await t.test('returns a User by its id', async (t) => {
       const response = await app.inject({

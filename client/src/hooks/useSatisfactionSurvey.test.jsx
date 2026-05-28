@@ -1,3 +1,4 @@
+/* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
@@ -31,7 +32,7 @@ describe('useSatisfactionSurvey', () => {
 
   it('uses eligibility gate for navigation intent', () => {
     mockUseSatisfactionSurveyEligibility.mockReturnValueOnce({ isEligible: false, scheduleCooldown });
-    const { result, rerender } = renderHook(() => useSatisfactionSurvey(navigate, '42', { organizationId: 'sfpd' }));
+    const { result, rerender } = renderHook(() => useSatisfactionSurvey(navigate));
 
     act(() => {
       result.current.navigateWithOptionalSurvey('/custody/42');
@@ -47,10 +48,7 @@ describe('useSatisfactionSurvey', () => {
     });
     expect(navigate).toHaveBeenCalledWith('/custody/42', {
       state: {
-        [SATISFACTION_SURVEY_NAVIGATION_STATE]: {
-          deflectionId: '42',
-          organizationId: 'sfpd',
-        },
+        [SATISFACTION_SURVEY_NAVIGATION_STATE]: true,
       },
     });
   });
@@ -59,23 +57,22 @@ describe('useSatisfactionSurvey', () => {
     vi.useFakeTimers();
 
     mockUseSatisfactionSurveyEligibility.mockReturnValue({ isEligible: false, scheduleCooldown });
-    const { result } = renderHook(() => useSatisfactionSurvey(navigate, '99', { organizationId: 'sfso' }));
+    const { result } = renderHook(() => useSatisfactionSurvey(navigate));
 
     act(() => {
-      result.current.scheduleOptionalSurveyWithoutNavigation('100');
+      result.current.scheduleOptionalSurveyWithoutNavigation();
       vi.advanceTimersByTime(2500);
     });
     expect(result.current.satisfactionSurveyModal.props.opened).toBe(false);
 
     mockUseSatisfactionSurveyEligibility.mockReturnValue({ isEligible: true, scheduleCooldown });
-    const enabledHook = renderHook(() => useSatisfactionSurvey(navigate, '99', { organizationId: 'sfso' }));
+    const enabledHook = renderHook(() => useSatisfactionSurvey(navigate));
     act(() => {
-      enabledHook.result.current.scheduleOptionalSurveyWithoutNavigation('100');
+      enabledHook.result.current.scheduleOptionalSurveyWithoutNavigation();
     });
     act(() => {
       vi.advanceTimersByTime(2500);
     });
     expect(enabledHook.result.current.satisfactionSurveyModal.props.opened).toBe(true);
-    expect(enabledHook.result.current.satisfactionSurveyModal.props.deflectionId).toBe('100');
   });
 });

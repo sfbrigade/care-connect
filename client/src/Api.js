@@ -190,6 +190,9 @@ const Api = {
     scheduleSatisfactionSurveyCooldown () {
       return instance.post('/api/users/me/satisfaction-survey-cooldown');
     },
+    submitSatisfactionSurvey (body) {
+      return instance.post('/api/users/me/satisfaction-survey', body).catch(handleError);
+    },
     get (id) {
       return instance.get(`/api/users/${id}`);
     },
@@ -404,9 +407,6 @@ const Api = {
     },
     reopen (id) {
       return instance.post(`/api/deflections/${id}/reopen`).catch(handleError);
-    },
-    submitSatisfactionSurvey (id, body) {
-      return instance.post(`/api/deflections/${id}/satisfaction-survey`, body).catch(handleError);
     },
     extend (deflectionIds) {
       return instance.patch('/api/deflections/extend', { deflectionIds }).catch(handleError);

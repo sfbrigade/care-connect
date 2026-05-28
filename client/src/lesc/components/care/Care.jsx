@@ -63,9 +63,7 @@ function Care () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate, '', {
-    organizationId: 'connections',
-  });
+  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate);
 
   const { data: inCustodyDeflections = [], dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'care'],
@@ -145,7 +143,7 @@ function Care () {
           'Person moved back. Please review their status before release or exit.'
         );
       }
-      scheduleOptionalSurveyWithoutNavigation(variables.deflectionId);
+      scheduleOptionalSurveyWithoutNavigation();
       setIntakeModalDeflection(null);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'bed-types'] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });

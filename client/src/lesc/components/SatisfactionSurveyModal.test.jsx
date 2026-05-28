@@ -1,3 +1,4 @@
+import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
@@ -19,7 +20,7 @@ vi.mock('@/hooks/useSatisfactionSurveyEligibility', () => ({
 
 vi.mock('@/Api', () => ({
   default: {
-    deflections: {
+    users: {
       submitSatisfactionSurvey: vi.fn(),
     },
   },
@@ -37,9 +38,7 @@ function renderSurveyModal (props = {}) {
     <MantineProvider>
       <SatisfactionSurveyModal
         opened
-        deflectionId={123}
         onFinished={onFinished}
-        organizationId='sfpd'
         {...props}
       />
     </MantineProvider>
@@ -51,8 +50,8 @@ describe('SatisfactionSurveyModal cooldown scheduling', () => {
   beforeEach(() => {
     mockScheduleCooldown.mockReset();
     mockShowToast.mockReset();
-    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockReset();
-    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockResolvedValue({});
+    vi.mocked(Api.users.submitSatisfactionSurvey).mockReset();
+    vi.mocked(Api.users.submitSatisfactionSurvey).mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -70,9 +69,7 @@ describe('SatisfactionSurveyModal cooldown scheduling', () => {
       <MantineProvider>
         <SatisfactionSurveyModal
           opened={false}
-          deflectionId={123}
           onFinished={vi.fn()}
-          organizationId='sfpd'
         />
       </MantineProvider>
     );
@@ -97,14 +94,18 @@ describe('SatisfactionSurveyModal cooldown scheduling', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
 
     await waitFor(() => {
-      expect(Api.deflections.submitSatisfactionSurvey).toHaveBeenCalled();
+      expect(Api.users.submitSatisfactionSurvey).toHaveBeenCalledWith({
+        answers: {
+          careConnectRating: 'bad',
+        },
+      });
       expect(mockScheduleCooldown).toHaveBeenCalledTimes(1);
       expect(onFinished).toHaveBeenCalledTimes(1);
     });
   });
 
   it('does not call scheduleCooldown when saving feedback fails', async () => {
-    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockRejectedValue(new Error('network error'));
+    vi.mocked(Api.users.submitSatisfactionSurvey).mockRejectedValue(new Error('network error'));
     const { onFinished } = renderSurveyModal();
 
     fireEvent.click(screen.getByRole('button', { name: 'Bad' }));
@@ -112,7 +113,7 @@ describe('SatisfactionSurveyModal cooldown scheduling', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
 
     await waitFor(() => {
-      expect(Api.deflections.submitSatisfactionSurvey).toHaveBeenCalled();
+      expect(Api.users.submitSatisfactionSurvey).toHaveBeenCalled();
       expect(mockShowToast).toHaveBeenCalledWith('Feedback could not be saved. You can try again later.', 'error');
     });
     expect(mockScheduleCooldown).not.toHaveBeenCalled();
@@ -124,7 +125,7 @@ describe('SatisfactionSurveyModal character limit validation', () => {
   const maxPlusOneText = 'a'.repeat(5001);
 
   beforeEach(() => {
-    vi.mocked(Api.deflections.submitSatisfactionSurvey).mockReset();
+    vi.mocked(Api.users.submitSatisfactionSurvey).mockReset();
     mockShowToast.mockReset();
     mockScheduleCooldown.mockReset();
   });
@@ -156,7 +157,7 @@ describe('SatisfactionSurveyModal character limit validation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share feedback' }));
 
     await waitFor(() => {
-      expect(Api.deflections.submitSatisfactionSurvey).not.toHaveBeenCalled();
+      expect(Api.users.submitSatisfactionSurvey).not.toHaveBeenCalled();
     });
   });
 });

@@ -122,13 +122,7 @@ function Holds () {
   });
   const historyDeflections = historyDeflectionsData ?? [];
 
-  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(
-    navigate,
-    allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId ?? '',
-    {
-      organizationId: user?.organizationId,
-    }
-  );
+  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate);
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
@@ -261,8 +255,7 @@ function Holds () {
       const facilityName = facility?.name ?? 'RESET';
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(new Date())}`);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
-      const surveyContextId = allActiveDeflections?.[0]?.id ?? myHolds?.activeIncidentId;
-      scheduleOptionalSurveyWithoutNavigation(surveyContextId);
+      scheduleOptionalSurveyWithoutNavigation();
     },
   });
 
