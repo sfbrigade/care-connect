@@ -8,11 +8,6 @@ export const SatisfactionSurveyAnswersSchema = z.object({
   resetFacilityFeedback: z.string().trim().max(5000).optional(),
 });
 
-export const SatisfactionSurveyBodySchema = z.object({
-  organizationId: SatisfactionSurveyOrganizationIdSchema,
-  answers: SatisfactionSurveyAnswersSchema,
-});
-
 export const SatisfactionSurveySubmitBodySchema = z.object({
   answers: SatisfactionSurveyAnswersSchema,
 });
