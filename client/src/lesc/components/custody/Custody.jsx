@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Container, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
 import { Head } from '@unhead/react';
-import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
@@ -25,6 +25,9 @@ import CustodyCard from './CustodyCard';
 
 import ScanTransferCodeModal from './ScanTransferCodeModal';
 import { RELEASE_TOAST_KEY } from './LegalReleaseQuestions';
+import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
+import SatisfactionSurveyModal from '../SatisfactionSurveyModal';
 import classes from './Custody.module.css';
 
 const IN_CUSTODY_STATUSES = 'AWAITING_INTAKE,FAILED_INTAKE,READY_FOR_INTAKE,IN_MEDICAL_INTAKE,IN_CHAIR';
@@ -203,14 +206,19 @@ function TransitCustodyCard ({ deflection, highlighted }) {
 }
 
 function Custody () {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [tab, setTab] = useSessionState('custody', 'transit');
   const [scanModalOpened, setScanModalOpened] = useState(false);
   const [highlightedId, setHighlightedId] = useState(null);
+  const [isPostNavigationSurveyOpen, setIsPostNavigationSurveyOpen] = useState(false);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const seenFailedIntakeIdsRef = useRef(new Set());
   const initializedFailedIntakeRef = useRef(false);
+  const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
+  const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
 
   const { data: inCustodyDeflections, dataUpdatedAt } = useQuery({
     queryKey: ['deflections', facility.id, 'in-custody'],
@@ -326,6 +334,36 @@ function Custody () {
 
     seenFailedIntakeIdsRef.current = new Set(currentFailed.map(d => d.id));
   }, [inCustodyDeflections, showToast]);
+
+  useEffect(() => {
+    if (!isSatisfactionSurveyEligible) return;
+    if (!surveyIntent) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsPostNavigationSurveyOpen(true);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [surveyIntent, location.key, isSatisfactionSurveyEligible]);
+
+  const clearSurveyLocationState = useCallback(() => {
+    const current = location.state;
+    if (!current || !(SATISFACTION_SURVEY_NAVIGATION_STATE in current)) return;
+
+    const nextState = { ...current };
+    delete nextState[SATISFACTION_SURVEY_NAVIGATION_STATE];
+    navigate('.', {
+      replace: true,
+      state: Object.keys(nextState).length ? nextState : null,
+    });
+  }, [navigate, location.state]);
+
+  const onPostNavigationSurveyFinished = useCallback(() => {
+    setIsPostNavigationSurveyOpen(false);
+    clearSurveyLocationState();
+  }, [clearSurveyLocationState]);
 
   const inCustodyGrouped = groupByStatus(inCustodyDeflections);
   const releasedGrouped = groupReleasedByStatus(releasedDeflections);
@@ -445,6 +483,12 @@ function Custody () {
           opened={scanModalOpened}
           onClose={() => setScanModalOpened(false)}
           onSuccess={handleScanSuccess}
+        />
+      )}
+      {surveyIntent && (
+        <SatisfactionSurveyModal
+          opened={isPostNavigationSurveyOpen}
+          onFinished={onPostNavigationSurveyFinished}
         />
       )}
     </>

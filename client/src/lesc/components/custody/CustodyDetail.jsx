@@ -1,15 +1,60 @@
-import { useParams } from 'react-router';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { Head } from '@unhead/react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
+import { SATISFACTION_SURVEY_NAVIGATION_STATE } from '@/hooks/useSatisfactionSurvey';
+import { useSatisfactionSurveyEligibility } from '@/hooks/useSatisfactionSurveyEligibility';
+import SatisfactionSurveyModal from '../SatisfactionSurveyModal';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import CustodyDetailContent from './CustodyDetailContent';
 
 function CustodyDetail ({ viewerMode = 'custody' }) {
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const isCareView = viewerMode === 'care';
   const backTo = isCareView ? '/care' : '/custody';
+
+  const [isPostNavigationSurveyOpen, setIsPostNavigationSurveyOpen] = useState(false);
+
+  const surveyIntent = location.state?.[SATISFACTION_SURVEY_NAVIGATION_STATE];
+  const { isEligible: isSatisfactionSurveyEligible } = useSatisfactionSurveyEligibility();
+
+  useEffect(() => {
+    setIsPostNavigationSurveyOpen(false);
+  }, [id]);
+
+  useEffect(() => {
+    if (!isSatisfactionSurveyEligible) return;
+    if (!surveyIntent) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsPostNavigationSurveyOpen(true);
+    }, 2000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [id, surveyIntent, location.key, isSatisfactionSurveyEligible]);
+
+  const clearSurveyLocationState = useCallback(() => {
+    const current = location.state;
+    if (!current || !(SATISFACTION_SURVEY_NAVIGATION_STATE in current)) return;
+
+    const nextState = { ...current };
+    delete nextState[SATISFACTION_SURVEY_NAVIGATION_STATE];
+    navigate('.', {
+      replace: true,
+      state: Object.keys(nextState).length ? nextState : null,
+    });
+  }, [navigate, location.state]);
+
+  const onPostNavigationSurveyFinished = useCallback(() => {
+    setIsPostNavigationSurveyOpen(false);
+    clearSurveyLocationState();
+  }, [clearSurveyLocationState]);
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -23,6 +68,12 @@ function CustodyDetail ({ viewerMode = 'custody' }) {
         <title>{isCareView ? 'Care Details' : 'Custody Details'}</title>
       </Head>
       <CustodyDetailContent deflection={deflection} backTo={backTo} viewerMode={viewerMode} />
+      {surveyIntent && (
+        <SatisfactionSurveyModal
+          opened={isPostNavigationSurveyOpen}
+          onFinished={onPostNavigationSurveyFinished}
+        />
+      )}
     </>
   );
 }

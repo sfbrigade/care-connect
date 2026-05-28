@@ -187,6 +187,12 @@ const Api = {
     me () {
       return instance.get('/api/users/me');
     },
+    scheduleSatisfactionSurveyCooldown () {
+      return instance.post('/api/users/me/satisfaction-survey-cooldown');
+    },
+    submitSatisfactionSurvey (body) {
+      return instance.post('/api/users/me/satisfaction-survey', body).catch(handleError);
+    },
     get (id) {
       return instance.get(`/api/users/${id}`);
     },

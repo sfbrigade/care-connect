@@ -15,6 +15,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import { facilityLiveQueryOptions } from '@/hooks/facilityLiveQueryOptions';
 import useSessionState from '@/hooks/useSessionState';
+import useSatisfactionSurvey from '@/hooks/useSatisfactionSurvey';
 import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
@@ -120,6 +121,8 @@ function Holds () {
     refetchOnMount: 'always',
   });
   const historyDeflections = historyDeflectionsData ?? [];
+
+  const { scheduleOptionalSurveyWithoutNavigation, satisfactionSurveyModal } = useSatisfactionSurvey(navigate);
 
   const [tab, setTab] = useSessionState('holds', 'active');
   const [autoCancelledNoticeState, setAutoCancelledNoticeState] = useSessionState('holds-auto-cancelled-notice', '');
@@ -252,6 +255,7 @@ function Holds () {
       const facilityName = facility?.name ?? 'RESET';
       showToast(`You've left ${facilityName}`, 'success', 4000, `Departed at ${formatTime(new Date())}`);
       queryClient.invalidateQueries({ queryKey: ['facilities', facility.id, 'my-holds'] });
+      scheduleOptionalSurveyWithoutNavigation();
     },
   });
 
@@ -555,6 +559,7 @@ function Holds () {
           }}
         />
       )}
+      {satisfactionSurveyModal}
     </>
   );
 }

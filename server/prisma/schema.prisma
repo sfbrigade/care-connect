@@ -221,12 +221,13 @@ model Organization {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  deflections Deflection[]
-  incidents   Incident[]
-  invites     Invite[]
-  titles      Title[]
-  units       Unit[]
-  users       User[]
+  deflections         Deflection[]
+  incidents           Incident[]
+  invites             Invite[]
+  titles              Title[]
+  units               Unit[]
+  users               User[]
+  satisfactionSurveys SatisfactionSurvey[]
 }
 
 model Unit {
@@ -291,6 +292,7 @@ model User {
   mfaLastSentAt                DateTime?
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
+  satisfactionSurveyNextEligibleAt DateTime?
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")
@@ -687,6 +689,20 @@ model DeflectionDocument {
   updatedById                  String                  @db.Uuid
 
   @@unique([deflectionId, formId])
+}
+
+model SatisfactionSurvey {
+  id                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organization           Organization @relation(fields: [organizationId], references: [id])
+  organizationId         String
+  careConnectRating      String
+  improvementSuggestions String?
+  resetFacilityFeedback  String?
+  createdAt              DateTime     @default(now())
+
+  @@index([createdAt])
+  @@index([organizationId])
+  @@map("SatisfactionSurvey")
 }
 
 model PropertyPhoto {

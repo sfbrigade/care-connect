@@ -298,6 +298,7 @@ DEPARTURE DEPARTURE
     DateTime mfaLastSentAt "❓"
     String badgeNumber "❓"
     Boolean prop115Certified 
+    DateTime satisfactionSurveyNextEligibleAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }
@@ -585,6 +586,16 @@ DEPARTURE DEPARTURE
     }
   
 
+  "SatisfactionSurvey" {
+    String id "🗝️"
+    String organizationId 
+    String careConnectRating 
+    String improvementSuggestions "❓"
+    String resetFacilityFeedback "❓"
+    DateTime createdAt 
+    }
+  
+
   "PropertyPhoto" {
     String id "🗝️"
     Int deflectionId 
@@ -658,6 +669,7 @@ DEPARTURE DEPARTURE
     "Organization" o{--}o "Title" : ""
     "Organization" o{--}o "Unit" : ""
     "Organization" o{--}o "User" : ""
+    "Organization" o{--}o "SatisfactionSurvey" : ""
     "Unit" o|--|| "Organization" : "organization"
     "Unit" o|--|| "User" : "createdBy"
     "Unit" o{--}o "Deflection" : ""
@@ -798,6 +810,7 @@ DEPARTURE DEPARTURE
     "DeflectionDocument" o|--|| "Deflection" : "deflection"
     "DeflectionDocument" o|--|| "User" : "createdBy"
     "DeflectionDocument" o|--|| "User" : "updatedBy"
+    "SatisfactionSurvey" o|--|| "Organization" : "organization"
     "PropertyPhoto" o|--|| "Deflection" : "deflection"
     "PropertyPhoto" o|--|| "User" : "createdBy"
     "PropertyPhoto" o|--|| "User" : "updatedBy"

@@ -95,6 +95,13 @@ vi.mock('@/hooks/useSessionState', () => ({
   default: (key, defaultValue) => [defaultValue, vi.fn()],
 }));
 
+vi.mock('@/hooks/useSatisfactionSurvey', () => ({
+  default: () => ({
+    scheduleOptionalSurveyWithoutNavigation: vi.fn(),
+    satisfactionSurveyModal: null,
+  }),
+}));
+
 vi.mock('@unhead/react', () => ({
   Head: ({ children }) => <>{children}</>,
 }));
