@@ -8,7 +8,7 @@ export const SatisfactionSurveyAnswersSchema = z.object({
   resetFacilityFeedback: z.string().trim().max(5000).optional(),
 });
 
-export const SatisfactionSurveySubmitBodySchema = z.object({
+export const SatisfactionSurveySubmitBodySchema = z.strictObject({
   answers: SatisfactionSurveyAnswersSchema,
 });
 
