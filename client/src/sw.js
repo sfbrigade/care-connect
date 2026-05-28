@@ -7,15 +7,8 @@ import { NavigationRoute, registerRoute } from 'workbox-routing';
 self.skipWaiting();
 clientsClaim();
 
-// Injected by vite-plugin-pwa at build time
-precacheAndRoute(self.__WB_MANIFEST);
-
-registerRoute(
-  new NavigationRoute(navigateFallback({ fallbackURL: '/index.html' }), {
-    denylist: [/^\/api\//, /^\/static-data\//],
-  })
-);
-
+// Push and notification handlers are registered first so a precaching error
+// can never prevent them from running.
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
   const title = data.title ?? 'Care Connect';
@@ -25,7 +18,6 @@ self.addEventListener('push', (event) => {
     badge: '/icons/icon-192.png',
     data: { url: data.data?.url ?? '/', tag: data.data?.tag },
     tag: data.data?.tag,
-    // Keep notification visible until the user acts on it (desktop only).
     requireInteraction: true,
   };
 
@@ -49,3 +41,13 @@ self.addEventListener('notificationclick', (event) => {
       })
   );
 });
+
+// self.__WB_MANIFEST is injected by vite-plugin-pwa at build time.
+// Fall back to [] in dev mode so a missing injection doesn't crash the SW.
+precacheAndRoute(self.__WB_MANIFEST ?? []);
+
+registerRoute(
+  new NavigationRoute(navigateFallback({ fallbackURL: '/index.html' }), {
+    denylist: [/^\/api\//, /^\/static-data\//],
+  })
+);
