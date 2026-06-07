@@ -167,7 +167,7 @@ export default async function (fastify, opts) {
                 body: count === 1
                   ? `Your hold at ${facility.name} was cancelled because the facility closed.`
                   : `${count} of your holds at ${facility.name} were cancelled because the facility closed.`,
-                url: '/lesc',
+                url: '/holds',
                 tag: `facility-closed-${id}`,
               })
             ),
@@ -208,7 +208,7 @@ export default async function (fastify, opts) {
                 userIds: uniqueOfficers.map((o) => o.id),
                 title: `${facility.name} is open again`,
                 body: 'The facility has reopened and is accepting holds.',
-                url: '/lesc',
+                url: '/holds',
                 tag: `facility-reopened-${id}`,
               }),
             ]);

@@ -304,6 +304,17 @@ DEPARTURE DEPARTURE
     }
   
 
+  "PushSubscription" {
+    String id "🗝️"
+    String userId 
+    String endpoint 
+    String p256dh 
+    String auth 
+    DateTime createdAt 
+    DateTime updatedAt 
+    }
+  
+
   "Invite" {
     String id "🗝️"
     String firstName 
@@ -687,6 +698,7 @@ DEPARTURE DEPARTURE
     "User" o|--|o "Unit" : "unit"
     "User" o{--}o "AdminSecurityEvent" : ""
     "User" o{--}o "AdminSecurityEvent" : ""
+    "User" o{--}o "PushSubscription" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedType" : ""
     "User" o{--}o "BedTypeUpdate" : ""
@@ -715,6 +727,7 @@ DEPARTURE DEPARTURE
     "User" o{--}o "DeflectionDocument" : ""
     "User" o{--}o "PropertyPhoto" : ""
     "User" o{--}o "PropertyPhoto" : ""
+    "PushSubscription" o|--|| "User" : "user"
     "Invite" o|--|o "Organization" : "organization"
     "Invite" o|--|o "Title" : "title"
     "Invite" o|--|| "User" : "createdBy"

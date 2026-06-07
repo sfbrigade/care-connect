@@ -1,5 +1,5 @@
 import { clientsClaim } from 'workbox-core';
-import { precacheAndRoute, navigateFallback } from 'workbox-precaching';
+import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
 // Activate immediately and claim all clients so deploys land quickly
@@ -47,7 +47,7 @@ self.addEventListener('notificationclick', (event) => {
 precacheAndRoute(self.__WB_MANIFEST ?? []);
 
 registerRoute(
-  new NavigationRoute(navigateFallback({ fallbackURL: '/index.html' }), {
+  new NavigationRoute(createHandlerBoundToURL('/index.html'), {
     denylist: [/^\/api\//, /^\/static-data\//],
   })
 );

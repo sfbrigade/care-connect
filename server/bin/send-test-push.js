@@ -44,7 +44,7 @@ console.log(`Sending to ${subscriptions.length} subscription(s)…`);
 const payload = JSON.stringify({
   title,
   body,
-  data: { url: '/lesc', tag: 'test-push' },
+  data: { url: '/holds', tag: 'test-push' },
 });
 
 for (const sub of subscriptions) {

@@ -176,7 +176,7 @@ export default async function (fastify, opts) {
               userIds: [deflection.createdById],
               title: 'Hold cancelled',
               body: `Your hold at ${facility.name} has been cancelled.`,
-              url: `/lesc/holds/${deflection.id}`,
+              url: `/holds/${deflection.id}`,
               tag: `hold-cancelled-${deflection.id}`,
             }),
           ]);

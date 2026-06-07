@@ -73,7 +73,7 @@ export default defineConfig(({ command, ssrBuild, mode }) => {
               description: 'San Francisco law-enforcement processing tool for specialized treatment centers.',
               theme_color: '#4c6ef5',
               background_color: '#ffffff',
-              display: 'minimal-ui',
+              display: 'standalone',
               orientation: 'portrait',
               scope: '/',
               start_url: '/',

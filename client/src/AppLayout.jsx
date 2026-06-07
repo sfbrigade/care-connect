@@ -15,15 +15,15 @@ import { usePushNotifications } from './hooks/usePushNotifications';
 
 function PushPromptBanner ({ onAllow, onDismiss }) {
   return (
-    <Paper shadow='sm' p='sm' withBorder style={{ position: 'sticky', top: 0, zIndex: 200 }}>
+    <Paper shadow='sm' p='md' withBorder style={{ position: 'sticky', top: 0, zIndex: 200 }}>
       <Group justify='space-between' wrap='nowrap'>
         <Group gap='sm' wrap='nowrap'>
-          <IconBell size={20} />
+          <IconBell size={28} />
           <Text size='sm'>Enable notifications to get alerts for hold cancellations and facility updates.</Text>
         </Group>
-        <Group gap='xs' wrap='nowrap'>
-          <Button size='xs' onClick={onAllow}>Allow</Button>
-          <CloseButton size='sm' onClick={onDismiss} aria-label='Dismiss notification prompt' />
+        <Group gap='sm' wrap='nowrap'>
+          <Button size='sm' onClick={onAllow}>Allow</Button>
+          <CloseButton size='lg' onClick={onDismiss} aria-label='Dismiss notification prompt' />
         </Group>
       </Group>
     </Paper>
