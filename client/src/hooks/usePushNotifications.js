@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Api from '../Api';
+import { useFeatureFlag } from './useFeatureFlag';
 
 const DISMISSED_KEY = 'push:dismissed';
 
@@ -34,6 +35,8 @@ async function registerSubscription (registration) {
  *   - dismissPrompt(): hide the banner without granting permission
  */
 export function usePushNotifications (user) {
+  const pushEnabled = useFeatureFlag('push-notifications', { defaultValue: false });
+
   const [permission, setPermission] = useState(() =>
     typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
@@ -47,7 +50,7 @@ export function usePushNotifications (user) {
   // When the user logs in, either silently re-register an existing subscription
   // or surface the opt-in prompt.
   useEffect(() => {
-    if (!user || !supported) return;
+    if (!user || !supported || pushEnabled !== true) return;
 
     navigator.serviceWorker.ready.then(async (registration) => {
       const currentPermission = Notification.permission;
@@ -63,7 +66,7 @@ export function usePushNotifications (user) {
         setPromptVisible(true);
       }
     });
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, pushEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function requestPermission () {
     if (!supported) return;
@@ -91,5 +94,11 @@ export function usePushNotifications (user) {
     }
   }
 
-  return { permission, promptVisible, requestPermission, dismissPrompt, unsubscribe };
+  return {
+    permission,
+    promptVisible: promptVisible && pushEnabled === true,
+    requestPermission,
+    dismissPrompt,
+    unsubscribe,
+  };
 }
