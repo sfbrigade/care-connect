@@ -29,14 +29,12 @@ export function useFeatureFlag (flagName, { defaultValue = false } = {}) {
 
   const posthogConfigured = Boolean(import.meta.env.VITE_POSTHOG_KEY);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [value, setValue] = useState(() => {
     if (!posthogConfigured) return defaultValue;
     const ph = typeof window !== 'undefined' ? window.posthog : null;
     return ph ? (ph.isFeatureEnabled(flagName) ?? null) : null;
   });
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (!posthogConfigured) {
       setValue(defaultValue);

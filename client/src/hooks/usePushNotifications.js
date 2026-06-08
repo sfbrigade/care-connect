@@ -66,7 +66,7 @@ export function usePushNotifications (user) {
         setPromptVisible(true);
       }
     });
-  }, [user?.id, pushEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, pushEnabled]);
 
   async function requestPermission () {
     if (!supported) return;
