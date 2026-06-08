@@ -4,7 +4,7 @@ if (process.env.VAPID_EMAIL && process.env.VAPID_PUBLIC_KEY && process.env.VAPID
   webpush.setVapidDetails(
     process.env.VAPID_EMAIL,
     process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY,
+    process.env.VAPID_PRIVATE_KEY
   );
 }
 

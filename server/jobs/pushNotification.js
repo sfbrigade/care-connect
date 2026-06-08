@@ -27,7 +27,7 @@ export default async function pushNotification ({ userIds, title, body, url, tag
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload,
+          payload
         );
       } catch (err) {
         if (err.statusCode === 410) {
@@ -37,6 +37,6 @@ export default async function pushNotification ({ userIds, title, body, url, tag
           throw err;
         }
       }
-    }),
+    })
   );
 }

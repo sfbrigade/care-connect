@@ -51,7 +51,7 @@ for (const sub of subscriptions) {
   try {
     await webpush.sendNotification(
       { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-      payload,
+      payload
     );
     console.log(`  ✓ ${sub.user.email} (${sub.endpoint.slice(0, 60)}…)`);
   } catch (err) {
