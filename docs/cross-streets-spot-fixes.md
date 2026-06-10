@@ -5,6 +5,36 @@ feature, with diagnosis and fix. Kept so we can spot recurring patterns and
 decide if/when to revise the underlying strategy rather than continue
 whack-a-mole.
 
+## Where we left off — session resume notes
+
+**Branch:** `sa/cross-streets`. Not yet committed at session close — every change above is in the working tree.
+
+**Phases of `docs/cross-streets-implementation-plan.md` completed:**
+- ✅ P1 Data pipeline — vendored DataSF index (now 11,006 intersections with neighborhood), normalization library, 45 unit tests
+- ✅ P2 Schema — `locationType` + `street1`/`street2`/`intersectionId` on `Incident` (applied via `prisma db push`)
+- ✅ P3 Server endpoints — `/api/geocode/intersections` (search + nearest), voice transcribe with `mode=location` and phonetic-fallback pipeline
+- ✅ P4 Client UI — `LocationAutocomplete`, voice mic on collapsed view, confirmation chip (multi-match or no-match only — single match auto-applies per #9), neighborhood hint with manual-edit invalidation
+- ✅ P5 Display sites — `Incident.jsx`, `CustodyDetailContent.jsx`, `facilityAddressLink` map URLs, "between context" component for the detail view
+
+**Phases NOT done:**
+- ❌ P6 Tests — only the lib tests are written (`server/test/lib/{streetNormalization,intersections,phoneticMatch}.test.js`). Route tests and client component tests not written. The integration-test fixture proposed in #6 and #10 (popular base names, 3-way intersections) has not been added.
+- ❌ P7 Rollout — no PostHog instrumentation, no measurement, no decision gate work.
+
+**The session was largely about real-world testing.** The user manually tested voice and dropdown picks and reported issues. We worked through #1–#10 in the spot-fix log over the course of the session.
+
+**Where to start next time, in priority order:**
+1. **Validate that the latest fix (#10) holds up under more 3-way intersection testing.** Spot-test a few more: Market & Castro & 17th, Market & Octavia & 9th, Fell & Stanyan, Embarcadero & Bay & Battery, anywhere with a triangular intersection.
+2. **Commit and PR.** A lot of in-flight work to a single branch with no commits — risk of losing it. See `docs/cross-streets-implementation-plan.md` for the suggested 3-PR split (Data+Schema / Server+Display / Client+Voice).
+3. **Address P6 — at minimum, a route test for `/api/geocode/intersections` and an integration test fixture for known-tricky lookups.** The known patterns of failures we've seen (#6 ranking, #10 dedup) are easy to cover.
+4. **P7 instrumentation** before any FIELD rollout — we need the measurement to enforce the decision rules (Deepgram escalation, alias map growth).
+
+**Things to think about next session:**
+- Should we proactively populate `neighborhood` for all *historical* incidents at load time? Currently only fresh autocomplete picks set it; older records show no hint. Could do a one-time client-side computation on incident load (using lat/lng + nearest-intersection lookup) if it's important.
+- Build-script automation: currently the rebuild is manual. Worth a `npm run build:intersections` script and maybe a quarterly cron on CI.
+- The `LocationAutocomplete` JSX inside `IncidentForm.jsx` is getting busy. Consider extracting the collapsed/expanded location chrome into its own component.
+
+---
+
 Each entry: what was observed → what the root cause was → what we changed →
 optional pattern tag.
 
@@ -160,6 +190,28 @@ Tests added for ordinal expansion (`expandOrdinalWords`) and ordinal-aware `toPr
 
 ---
 
+## #10 — "Baker and Geary" silently lost from the data — 3-way intersection dedup bug
+
+**Observed:** Voice "Baker and Geary" came back as "Couldn't match those streets." Both streets resolve via prefix match individually (Baker → `BAKER ST`, Geary → `GEARY BLVD`), yet the intersection lookup returned nothing.
+
+**Diagnosis:** This is a real intersection in SF and DataSF carries it (cnn `26811000`), but it's also a **3-way node** — Baker St, Geary Blvd, and Saint Josephs Ave all meet there. DataSF's `jfxm-zeee` emits one row per *pair* at the node, so this cnn appears as `BAKER × GEARY`, `BAKER × SAINT JOSEPHS`, *and* `GEARY × SAINT JOSEPHS`. My build script's dedupe logic kept only **one** of these per cnn — and which one survived was order-dependent. For Baker/Geary/St Josephs, we'd kept `GEARY × SAINT JOSEPHS` and dropped the other two pairs. So Baker × Geary was silently missing from our vendored data.
+
+Same bug affects any 3+ way intersection in SF (~hundreds of nodes).
+
+**Fix:** changed the dedupe key in `server/scripts/build-intersection-data.js:buildIntersections` from `cnn` to `(cnn + sorted pair)`. Now each distinct pair at a node survives; only the reverse-ordered duplicates collapse (the cheap form of dedup that's safe). Same cnn and lat/lng across the multiple rows — they all point at the same node.
+
+Rebuilt `sf-intersections.json`: **9,433 → 11,006 intersections** (+1,573 — that's the previously-lost 3+ way pairs). Neighborhood match rate ticked up slightly too (98.8% → 98.9%) because more of the points were inside polygons.
+
+Verified end-to-end: `search('Baker and Geary')` → `Baker St & Geary Blvd (Japantown)`.
+
+**Pattern tag:** `data-shape-assumption` (specifically: I assumed cnn was a unique key for "an intersection" when actually it's a unique key for "a centerline node" — a node may participate in multiple pairs)
+
+**Notes:** This bug was invisible because all the streets *individually* resolve. It only manifests when a user queries the specific lost pair. Hard to catch without exhaustive testing. The Part 9 bench from `cross-streets.md` did 30 intersections, and Fell & Stanyan was the only 3-way in that set — and by luck the surviving pair *was* `FELL ST × STANYAN ST`. So the bench missed this.
+
+**Strategy note (parked):** when validating data correctness in the future, sample test queries should include known 3-way intersections (Market & Castro & 17th; Market & Octavia & 9th; Fell & Stanyan; Baker & Geary & St Josephs; etc.). Worth adding to the integration test fixture proposed in #6.
+
+---
+
 ## #9 — Reverted #4: single-match voice should auto-apply silently
 
 **Observed:** After using the always-show-chip behavior from #4 in practice, the user said:
@@ -182,7 +234,7 @@ The previous chip wording change ("Tap to confirm:" vs "Did you mean:") stays �
 
 ## Pattern summary so far
 
-- **`data-shape-assumption`** (3 occurrences): #1, #2, #3. Each was a code path that assumed address-only and didn't know about the locationType discriminator. **If another shows up, lean on a typed read-side wrapper** (e.g. `getIncidentLocation(incident) → { type: 'address'|'intersection', text, lat, lng }`) and migrate call sites to it rather than continuing inline branching.
+- **`data-shape-assumption`** (4 occurrences): #1, #2, #3, #10. #1–#3 were the same address-vs-intersection discriminator pattern. #10 is a different flavor — assuming `cnn` was a unique key for "an intersection" when it's actually a unique key for "a centerline node" (which may participate in multiple street pairs). The first three pointed at a strategy revision (typed read-side wrapper) that we've still parked — #10 doesn't quite fit that solution because it's a build-time data-modeling assumption, not a downstream-consumer one.
 - **`ranking-bug`** (1 occurrence): #6. Test coverage gap — popular base names with compound siblings need integration tests.
 - **`stt-fusion`** (2 occurrences): #7, #8. Both handled with focused fixes in the normalization/recovery pipeline. **If 3+ more such fixes pile up, escalate the STT strategy** to Deepgram Nova-3 per the implementation plan's Part 7 gate. #8 in particular suggests a more general principle: anywhere a canonical name has a non-phonetic transformation from speech (digits ↔ words, abbreviations, leading "THE"), we need explicit normalization — phonetic match alone won't bridge it.
 - **`ux-feedback`** (3 occurrences): #4, #5, #9. #5 was a genuine miss. #4 + #9 together form one back-and-forth: I built the cautious-by-default UX, the user tried it and preferred the lighter one. Lesson: when defaulting cautious vs. light on a UX call where I'm guessing, prefer light + escalate friction only where ambiguity/failure requires it — and surface the choice early instead of letting it ship and bounce.

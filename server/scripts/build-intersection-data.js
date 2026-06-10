@@ -99,30 +99,31 @@ function toDisplay (rawName) {
 }
 
 function buildIntersections (rows) {
-  // Dedupe by CNN. Each CNN appears twice (A→B, B→A); we keep the alphabetically
-  // earlier (street1, street2) ordering for determinism.
-  const byCnn = new Map();
+  // Each CNN can appear many times: once per (street A, street B) pair at the
+  // node, in both orderings. For a 3-way intersection of streets X/Y/Z, we
+  // get rows for X-Y, X-Z, Y-Z (plus reverses). We dedupe by (cnn + sorted
+  // pair) so all distinct pairs at a node survive, while reverse-ordered
+  // duplicates collapse.
+  const byCnnAndPair = new Map();
   for (const r of rows) {
     if (!r.cnn || !r.street_name_1 || !r.street_name_2 || !r.latitude || !r.longitude) continue;
     const lat = Number(r.latitude);
     const lng = Number(r.longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
     const [s1, s2] = [r.street_name_1, r.street_name_2].sort();
-    const entry = {
+    const key = `${r.cnn}|${s1}|${s2}`;
+    if (byCnnAndPair.has(key)) continue;
+    byCnnAndPair.set(key, {
       cnn: r.cnn,
       street1: s1,
       street2: s2,
       lat,
       lng,
       zip: r.zip_code || null,
-    };
-    const existing = byCnn.get(r.cnn);
-    if (!existing) {
-      byCnn.set(r.cnn, entry);
-    }
+    });
   }
   // Sort by street1 then street2 for stable diffs.
-  return Array.from(byCnn.values()).sort((a, b) => {
+  return Array.from(byCnnAndPair.values()).sort((a, b) => {
     if (a.street1 !== b.street1) return a.street1 < b.street1 ? -1 : 1;
     return a.street2 < b.street2 ? -1 : 1;
   });
