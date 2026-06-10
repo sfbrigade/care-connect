@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft, IconScan, IconX } from '@tabler/icons-react';
-import { Accordion, Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown, IconScan, IconX } from '@tabler/icons-react';
+import { Accordion, Badge, Button, Chip, Container, Divider, Fieldset, Group, Input, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -21,6 +21,7 @@ import { formatInputDob } from '@/utils/format';
 import { normalizeDobInput, validateSubject } from '@/utils/validators';
 
 import { DRUG_TYPE_OPTIONS } from '../constants/drugTypeOptions';
+import { PREFERRED_LANGUAGE_OPTIONS } from '../constants/preferredLanguageOptions';
 import File647fModal from './custody/File647fModal';
 
 const initialValues = {
@@ -31,6 +32,7 @@ const initialValues = {
   sex: '',
   race: '',
   driverLicense: '',
+  preferredLanguage: null,
   localId: '',
   addressLine1: '',
   addressLine2: '',
@@ -334,7 +336,7 @@ function SubjectForm () {
                 <Accordion.Item value='optional'>
                   <Accordion.Control>
                     <Title order={3}>Optional details</Title>
-                    <Text c='gray.5' size='sm'>ID numbers and address</Text>
+                    <Text c='gray.5' size='sm'>ID numbers, address, language</Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap='xl'>
@@ -343,6 +345,18 @@ function SubjectForm () {
                         label="Driver's license number"
                         placeholder='Enter license number'
                         {...form.getInputProps('driverLicense')}
+                      />
+                      <Select
+                        key={form.key('preferredLanguage')}
+                        label='Preferred language (optional)'
+                        placeholder='Enter language'
+                        data={PREFERRED_LANGUAGE_OPTIONS.map((language) => ({
+                          value: language,
+                          label: t(`preferredLanguage.${language}`),
+                        }))}
+                        rightSection={<IconChevronDown size={20} stroke={1.5} />}
+                        searchable
+                        {...form.getInputProps('preferredLanguage')}
                       />
                       <TextInput
                         key={form.key('localId')}

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Head } from '@unhead/react';
-import { IconArrowLeft } from '@tabler/icons-react';
-import { Button, Container, Fieldset, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown } from '@tabler/icons-react';
+import { Button, Container, Fieldset, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
@@ -14,6 +14,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import { formatInputDob } from '@/utils/format';
+import { PREFERRED_LANGUAGE_OPTIONS } from '../../constants/preferredLanguageOptions';
 
 const initialValues = {
   firstName: '',
@@ -23,6 +24,7 @@ const initialValues = {
   sex: '',
   race: '',
   driverLicense: '',
+  preferredLanguage: null,
 };
 
 function normalizeText (value) {
@@ -80,6 +82,7 @@ function CareSubjectForm () {
       sex: subject.sex ?? '',
       race: subject.race ?? '',
       driverLicense: subject.driverLicense ?? '',
+      preferredLanguage: subject.preferredLanguage ?? null,
     });
   }, [deflection, form, form.initialized, isLoading]);
 
@@ -94,6 +97,7 @@ function CareSubjectForm () {
         sex: values.sex || null,
         race: values.race || null,
         driverLicense: normalizeText(values.driverLicense),
+        preferredLanguage: values.preferredLanguage || null,
         narcoticsSubstance: deflection?.narcoticsSubstance ?? null,
         narcoticsParaphernalia: deflection?.narcoticsParaphernalia ?? null,
         drugUseEvidence: deflection?.drugUseEvidence ?? null,
@@ -185,6 +189,18 @@ function CareSubjectForm () {
                   label="Driver's license number (optional)"
                   placeholder='Optional'
                   {...form.getInputProps('driverLicense')}
+                />
+                <Select
+                  key={form.key('preferredLanguage')}
+                  label='Preferred language (optional)'
+                  placeholder='Enter language'
+                  data={PREFERRED_LANGUAGE_OPTIONS.map((language) => ({
+                    value: language,
+                    label: t(`preferredLanguage.${language}`),
+                  }))}
+                  rightSection={<IconChevronDown size={20} stroke={1.5} />}
+                  searchable
+                  {...form.getInputProps('preferredLanguage')}
                 />
                 <Group>
                   <Button variant='destructive' onClick={() => navigate(`/care/${id}`)}>Cancel</Button>

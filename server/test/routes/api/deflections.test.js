@@ -1376,6 +1376,7 @@ test('/api/deflections', async (t) => {
         addressLine1: '123 Main St',
         addressLine2: 'Apt 1',
         driverLicense: 'DL1234',
+        preferredLanguage: 'SPANISH',
         localId: '1234',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
@@ -1394,6 +1395,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.addressLine1, '123 Main St');
       assert.deepStrictEqual(data.subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(data.subject.driverLicense, 'DL1234');
+      assert.deepStrictEqual(data.subject.preferredLanguage, 'SPANISH');
       assert.deepStrictEqual(data.subject.localId, '1234');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
@@ -1413,6 +1415,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.addressLine1, '123 Main St');
       assert.deepStrictEqual(subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(subject.driverLicense, 'DL1234');
+      assert.deepStrictEqual(subject.preferredLanguage, 'SPANISH');
       assert.deepStrictEqual(subject.localId, '1234');
 
       const deflection = await prisma.deflection.findUnique({
