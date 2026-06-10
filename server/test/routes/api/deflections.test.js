@@ -615,6 +615,19 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 5,
+        userId: custodyUser.id,
+        formIds: ['647f'],
+        emailTemplate: 'transfer-form',
+        recipientEmail: [
+          'SFPD.Data.Transfer.Authorized@sfgov.org',
+          'Andrew.bley@sfgov.org',
+        ],
+      });
     });
 
     await t.test('rejects with 422 when incident details are incomplete', async () => {
