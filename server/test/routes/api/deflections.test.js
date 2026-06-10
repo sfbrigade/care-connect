@@ -471,6 +471,46 @@ test('/api/deflections', async (t) => {
     });
   });
 
+  await t.test('POST /:id/cert-email', async (t) => {
+    await t.test('queues live release certificate regeneration and self e-mail for custody user', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'RELEASED',
+          releasedAt: new Date(),
+          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/cert-email')
+        .headers(custodyUserHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      assert.deepStrictEqual(JSON.parse(response.body), {
+        queued: true,
+        email: 'sfsouser1@test.com',
+      });
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['cert'],
+        emailTemplate: 'self-cert',
+        recipientEmail: 'sfsouser1@test.com',
+      });
+    });
+
+    await t.test('forbids non-custody users', async () => {
+      const response = await app.inject()
+        .post('/api/deflections/6/cert-email')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
+    });
+  });
+
   await t.test('POST /:id/5150-email', async (t) => {
     await t.test('queues live 5150 regeneration and self e-mail for behavioral-health-evaluation releases', async () => {
       await prisma.deflection.update({

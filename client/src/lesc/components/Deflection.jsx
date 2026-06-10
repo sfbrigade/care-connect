@@ -20,7 +20,9 @@ import { formatAddress, formatDateTime, formatTimeRemaining } from '@/utils/form
 import { openInBrowser } from '@/utils/openInBrowser';
 import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, isValidBehavior, isValidProperty, isValidCertification, isValidIncident } from '@/utils/validators';
 import DeflectionStatusChip from './DeflectionStatusChip';
+import DocumentsSection from './DocumentsSection.jsx';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
+import { getSfpdDocuments } from './sfpdDocuments';
 
 function Deflection () {
   const { id } = useParams();
@@ -110,14 +112,20 @@ function Deflection () {
     });
   }
 
-  const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
-
   function formatCertificationTimestamp (certifiedAt) {
     const dateTime = DateTime.fromISO(certifiedAt);
     return `${dateTime.toLocaleString(DateTime.TIME_SIMPLE)} on ${dateTime.toLocaleString(DateTime.DATE_SHORT)}`;
   }
 
   function on647fClick () {
+    download647fForm();
+  }
+
+  function view647fForm () {
+    navigate(`/forms/647f/${deflection.id}`);
+  }
+
+  function download647fForm () {
     const url = `/api/forms/647f/pdf/${deflection.id}`;
     const toastId = showToast('Downloading 647(f) form…', 'success', 0, 'This may take a moment.');
     openInBrowser(url, `647f-${deflection.id}.pdf`)
@@ -130,6 +138,9 @@ function Deflection () {
         showToast('Couldn’t download 647(f) form', 'error', 4000, 'Please try again.');
       });
   }
+
+  const sfpdDocuments = getSfpdDocuments({ deflection, view647fForm, download647fForm });
+  const canShow647fDocument = sfpdDocuments.length > 0;
 
   return (
     <>
@@ -159,13 +170,6 @@ function Deflection () {
             </Group>
             <DeflectionStatusChip label={statusChip?.label} tone={statusChip?.tone} />
           </Stack>
-          {!isCustodyTransferred && (doc647f || deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER') && (
-            <>
-              <Group>
-                <Button onClick={on647fClick} variant='outline' size='md'>647(f).pdf</Button>
-              </Group>
-            </>
-          )}
           <Stack gap='sm'>
             <Title order={2}>{name}</Title>
             <Box>
@@ -212,8 +216,9 @@ function Deflection () {
               </Group>
             )}
           </Stack>
-          <Accordion variant='section' defaultValue={['substance', 'drug-use', 'deflection', 'property', 'certification', 'incident']}>
+          <Accordion variant='section' defaultValue={['documents', 'substance', 'drug-use', 'deflection', 'property', 'certification', 'incident']}>
             <Divider />
+            <DocumentsSection documents={sfpdDocuments} />
             <Accordion.Item value='substance'>
               <Accordion.Control>
                 <Title order={3}>Substance details</Title>
@@ -482,12 +487,12 @@ function Deflection () {
           )}
         </ActionFooter>
       )}
-      {isCustodyTransferred && doc647f && (
+      {canShow647fDocument && (
         <ActionFooter>
-          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Print 647(f) form</Button>
+          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Download 647(f) form</Button>
         </ActionFooter>
       )}
-      {(showActionFooter || (isCustodyTransferred && doc647f)) && <Box h='120px' />}
+      {(showActionFooter || canShow647fDocument) && <Box h='120px' />}
       {!!deflection && showCancelModal && (
         <CancelHoldModal
           deflections={[deflection]}

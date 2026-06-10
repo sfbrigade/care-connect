@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ActionIcon, Alert, Button, Container, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconDownload, IconFileTypePdf, IconInfoCircle } from '@tabler/icons-react';
+import { ActionIcon, Alert, Box, Container, Group, Loader, Paper, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconInfoCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import FORM_REGISTRY from './formRegistry';
-
-const isReleased = (deflection) => !!deflection?.releasedAt;
 
 function getSubjectName (deflection) {
   if (!deflection?.subject) return 'Person X';
@@ -30,51 +28,65 @@ export default function FormPage () {
   });
 
   const subjectName = getSubjectName(deflection);
+  const generationCheck = formInfo && deflection ? formInfo.canGenerate(deflection) : false;
+  const canGeneratePdf = generationCheck === true;
+  const generationBlockedMessage = generationCheck?.message || 'This form is not available for the current record status.';
 
-  const generatePdf = async () => {
-    setPdfLoading(true);
-    setPdfError(null);
+  useEffect(() => {
+    if (!canGeneratePdf || !formId || !deflectionId) return undefined;
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    let blobUrl = null;
+    let isCurrent = true;
 
-      const response = await fetch(`/api/forms/${formId}/pdf/${deflectionId}`, {
-        signal: controller.signal,
-      });
+    async function loadPdf () {
+      setPdfLoading(true);
+      setPdfError(null);
+      setPdfUrl(null);
+
+      try {
+        const response = await fetch(`/api/forms/${formId}/pdf/${deflectionId}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.error || `Failed to load PDF: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        blobUrl = URL.createObjectURL(blob);
+
+        if (isCurrent) {
+          setPdfUrl(`${blobUrl}#navpanes=0&zoom=FitH`);
+        }
+      } catch (err) {
+        if (!isCurrent) return;
+
+        if (err.name === 'AbortError') {
+          setPdfError('PDF loading timed out. Please try again.');
+        } else {
+          setPdfError(err.message);
+        }
+      } finally {
+        if (isCurrent) {
+          setPdfLoading(false);
+        }
+      }
+    }
+
+    loadPdf();
+
+    return () => {
+      isCurrent = false;
       clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error || `Failed to generate PDF: ${response.statusText}`);
+      controller.abort();
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
       }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-
-      setPdfUrl(`${url}#navpanes=0&zoom=FitH`);
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        setPdfError('PDF generation timed out. Please try again.');
-      } else {
-        setPdfError(err.message);
-      }
-    } finally {
-      setPdfLoading(false);
-    }
-  };
-
-  const downloadPdf = () => {
-    if (pdfUrl) {
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.download = formInfo.downloadFilename(deflectionId);
-      link.click();
-    }
-  };
+    };
+  }, [canGeneratePdf, deflectionId, formId]);
 
   if (!formInfo) {
     return (
@@ -125,43 +137,15 @@ export default function FormPage () {
       </Group>
 
       <Stack gap='md'>
-        {!isReleased(deflection) && (
-          <Alert icon={<IconInfoCircle size={16} />} color='yellow' title='Subject not yet released'>
-            The {formInfo.title} can only be generated after the subject has been released.
-            The current status is: {deflection?.subjectStatus || 'unknown'}.
+        {!canGeneratePdf && (
+          <Alert icon={<IconInfoCircle size={16} />} color='yellow' title='Document not available'>
+            {generationBlockedMessage}
+            {' '}The current status is: {deflection?.subjectStatus || 'unknown'}.
           </Alert>
         )}
 
-        <Paper shadow='sm' p='md' withBorder>
-          <Group justify='space-between' align='center'>
-            <Group gap='sm'>
-              <IconFileTypePdf size={24} />
-              <Text fw={500}>{formInfo.description(subjectName)}</Text>
-            </Group>
-            <Group>
-              <Button
-                onClick={generatePdf}
-                loading={pdfLoading}
-                disabled={!isReleased(deflection)}
-                leftSection={<IconFileTypePdf size={16} />}
-              >
-                Generate PDF
-              </Button>
-              {pdfUrl && (
-                <Button
-                  variant='outline'
-                  onClick={downloadPdf}
-                  leftSection={<IconDownload size={16} />}
-                >
-                  Download
-                </Button>
-              )}
-            </Group>
-          </Group>
-        </Paper>
-
         {pdfError && (
-          <Alert color='red' title='PDF generation failed'>
+          <Alert color='red' title='PDF preview failed'>
             {pdfError}
           </Alert>
         )}
@@ -169,22 +153,26 @@ export default function FormPage () {
         <Paper shadow='sm' p='md' withBorder>
           {!pdfUrl && !pdfLoading && (
             <Text c='dimmed' ta='center' py='xl'>
-              {isReleased(deflection)
-                ? 'Click "Generate PDF" to preview the form'
-                : 'The form will be available once the subject has been released'}
+              {canGeneratePdf
+                ? 'Loading PDF preview...'
+                : 'The form is not available for this record yet'}
             </Text>
           )}
           {pdfLoading && (
             <Group justify='center' py='xl'>
               <Loader />
-              <Text>Generating PDF...</Text>
+              <Text>Loading PDF...</Text>
             </Group>
           )}
           {pdfUrl && !pdfLoading && (
-            <iframe
+            <Box
+              component='iframe'
               src={pdfUrl}
               title={formInfo.title}
-              style={{ width: '100%', height: '800px', border: 'none', display: 'block' }}
+              w='100%'
+              h={800}
+              bd={0}
+              display='block'
             />
           )}
         </Paper>

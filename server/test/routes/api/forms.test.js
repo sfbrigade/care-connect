@@ -31,23 +31,31 @@ test('/api/forms', async (t) => {
   });
   assert.ok(unreleasedDeflection, 'fixture: an unreleased deflection must exist');
 
+  const transferredDeflection = await app.prisma.deflection.update({
+    where: { id: unreleasedDeflection.id },
+    data: {
+      subjectStatus: 'AWAITING_INTAKE',
+      transferredAt: new Date(),
+    },
+  });
+
   // ---------------------------------------------------------------------------
   // /pdf endpoint tests — Chromium mocked, verifies route wiring only.
   // canGenerate() guards are exercised for each form.
   // ---------------------------------------------------------------------------
 
   await t.test('GET /647f/pdf/:deflectionId', async (t) => {
-    // canGenerate() always returns true for 647f — any deflection qualifies.
+    // canGenerate() requires transferredAt to be set.
 
     await t.test('returns a PDF with correct headers', async () => {
       const response = await app.inject()
-        .get(`/api/forms/647f/pdf/${unreleasedDeflection.id}`)
+        .get(`/api/forms/647f/pdf/${transferredDeflection.id}`)
         .headers(userHeaders);
       assert.strictEqual(response.statusCode, StatusCodes.OK);
       assert.strictEqual(response.headers['content-type'], 'application/pdf');
       assert.match(
         response.headers['content-disposition'],
-        new RegExp(`647f-report-${unreleasedDeflection.id}\\.pdf`)
+        new RegExp(`647f-report-${transferredDeflection.id}\\.pdf`)
       );
     });
 
@@ -60,7 +68,7 @@ test('/api/forms', async (t) => {
 
     await t.test('requires authentication', async () => {
       const response = await app.inject()
-        .get(`/api/forms/647f/pdf/${unreleasedDeflection.id}`);
+        .get(`/api/forms/647f/pdf/${transferredDeflection.id}`);
       assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
     });
   });

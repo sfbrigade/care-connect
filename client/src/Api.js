@@ -399,6 +399,9 @@ const Api = {
     email849b (id) {
       return instance.post(`/api/deflections/${id}/849b-email`).catch(handleError);
     },
+    emailCert (id) {
+      return instance.post(`/api/deflections/${id}/cert-email`).catch(handleError);
+    },
     email5150 (id) {
       return instance.post(`/api/deflections/${id}/5150-email`).catch(handleError);
     },
