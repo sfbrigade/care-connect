@@ -9,7 +9,7 @@ export function formatDocumentUpdatedAt (value, now = DateTime.now()) {
   const dateTime = DateTime.fromISO(value);
   if (!dateTime.isValid) return null;
 
-  const referenceNow = now.toLocal();
+  const referenceNow = now;
   const documentDateTime = dateTime.setZone(referenceNow.zone);
   const today = referenceNow.startOf('day');
   const documentDay = documentDateTime.startOf('day');

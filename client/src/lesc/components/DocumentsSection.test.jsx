@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { formatDocumentUpdatedAt } from './DocumentsSection.jsx';
 
 describe('formatDocumentUpdatedAt', () => {
-  const now = DateTime.fromISO('2026-06-10T12:00:00.000-07:00');
+  const now = DateTime.fromISO('2026-06-10T12:00:00.000-07:00', { setZone: true });
 
   it('formats documents updated today with only the time', () => {
     expect(formatDocumentUpdatedAt('2026-06-10T09:24:00.000-07:00', now)).toBe('9:24 AM');
