@@ -9,14 +9,15 @@ export function formatDocumentUpdatedAt (value, now = DateTime.now()) {
   const dateTime = DateTime.fromISO(value);
   if (!dateTime.isValid) return null;
 
-  const localDateTime = dateTime.toLocal();
-  const today = now.toLocal().startOf('day');
-  const documentDay = localDateTime.startOf('day');
-  const time = localDateTime.toLocaleString(DateTime.TIME_SIMPLE);
+  const referenceNow = now.toLocal();
+  const documentDateTime = dateTime.setZone(referenceNow.zone);
+  const today = referenceNow.startOf('day');
+  const documentDay = documentDateTime.startOf('day');
+  const time = documentDateTime.toLocaleString(DateTime.TIME_SIMPLE);
 
   if (documentDay.equals(today)) return time;
   if (documentDay.equals(today.minus({ days: 1 }))) return `Yesterday, ${time}`;
-  return `${localDateTime.toFormat('LLLL d')}, ${time}`;
+  return `${documentDateTime.toFormat('LLLL d')}, ${time}`;
 }
 
 function DocumentMenuItem ({ icon: Icon, onClick, loading, children }) {
