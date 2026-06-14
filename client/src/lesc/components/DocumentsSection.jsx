@@ -32,19 +32,19 @@ function DocumentMenuItem ({ icon: Icon, onClick, loading, children }) {
   );
 }
 
-function DocumentRow ({ document }) {
-  const actions = document.actions ?? {};
+function DocumentRow ({ doc }) {
+  const actions = doc.actions ?? {};
   const handleView = () => actions.view?.();
   const handleDownload = () => actions.download?.();
   const handleEmail = () => actions.email?.();
-  const updatedAt = formatDocumentUpdatedAt(document.updatedAt);
+  const updatedAt = formatDocumentUpdatedAt(doc.updatedAt);
   const updatedLabel = updatedAt ? `Updated ${updatedAt}` : null;
 
   return (
     <Paper component={Group} bg='white' radius='lg' px='md' py='sm' gap='sm' wrap='nowrap' align='center'>
       <IconFileText size={20} color='var(--mantine-color-gray-7)' />
       <Stack gap={0} flex={1} miw={0}>
-        <Text size='md' truncate>{document.title}</Text>
+        <Text size='md' truncate>{doc.title}</Text>
         {updatedLabel && (
           <Text size='sm' c='dimmed' truncate>{updatedLabel}</Text>
         )}
@@ -55,7 +55,7 @@ function DocumentRow ({ document }) {
             variant='subtle'
             color='gray'
             radius='xl'
-            aria-label={`${document.title} actions`}
+            aria-label={`${doc.title} actions`}
           >
             <IconDots size={20} color='var(--mantine-color-gray-5)' />
           </ActionIcon>
@@ -72,7 +72,7 @@ function DocumentRow ({ document }) {
             </DocumentMenuItem>
           )}
           {actions.email && (
-            <DocumentMenuItem icon={IconMail} onClick={handleEmail} loading={document.emailLoading}>
+            <DocumentMenuItem icon={IconMail} onClick={handleEmail} loading={doc.emailLoading}>
               Email to myself
             </DocumentMenuItem>
           )}
@@ -92,8 +92,8 @@ export default function DocumentsSection ({ documents }) {
       </Accordion.Control>
       <Accordion.Panel>
         <Stack gap={6}>
-          {documents.map(document => (
-            <DocumentRow key={document.id} document={document} />
+          {documents.map(doc => (
+            <DocumentRow key={doc.id} doc={doc} />
           ))}
         </Stack>
       </Accordion.Panel>
