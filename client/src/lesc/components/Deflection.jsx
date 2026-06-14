@@ -22,6 +22,7 @@ import { isValidDeflection, isValidSubject, isValidSubstance, isValidNarcotics, 
 import DeflectionStatusChip from './DeflectionStatusChip';
 import DocumentsSection from './DocumentsSection.jsx';
 import { getSfpdDeflectionStatusChip, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
+import { isCustodyTransferredStatus } from './custodyTransferStatus';
 import { getSfpdDocuments } from './sfpdDocuments';
 
 function Deflection () {
@@ -52,17 +53,7 @@ function Deflection () {
       drugType: deflection.drugType ?? null,
     })
     : false;
-  const isCustodyTransferred = [
-    'AWAITING_INTAKE',
-    'READY_FOR_INTAKE',
-    'FAILED_INTAKE',
-    'IN_MEDICAL_INTAKE',
-    'IN_CHAIR',
-    'RELEASED',
-    'EXITED',
-    'DEATH_IN_FACILITY',
-    'DEATH_IN_CUSTODY',
-  ].includes(deflection?.subjectStatus);
+  const isCustodyTransferred = isCustodyTransferredStatus(deflection?.subjectStatus);
   const isExpiredAutoCancelled = isExpiredBeforeTransfer(deflection, DateTime.now());
   const isOwner = !!deflection && deflection.currentOfficerId === user?.id;
   const isActionableActiveHold = isOwner && !!deflection && deflection.status === 'ACTIVE' && !isExpiredAutoCancelled && !isCustodyTransferred;
