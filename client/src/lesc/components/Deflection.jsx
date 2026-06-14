@@ -108,10 +108,6 @@ function Deflection () {
     return `${dateTime.toLocaleString(DateTime.TIME_SIMPLE)} on ${dateTime.toLocaleString(DateTime.DATE_SHORT)}`;
   }
 
-  function on647fClick () {
-    download647fForm();
-  }
-
   function view647fForm () {
     navigate(`/forms/647f/${deflection.id}`);
   }
@@ -480,7 +476,7 @@ function Deflection () {
       )}
       {canShow647fDocument && (
         <ActionFooter>
-          <Button onClick={on647fClick} leftSection={<IconFileText size={18} />}>Download 647(f) form</Button>
+          <Button onClick={download647fForm} leftSection={<IconFileText size={18} />}>Download 647(f) form</Button>
         </ActionFooter>
       )}
       {(showActionFooter || canShow647fDocument) && <Box h='120px' />}
