@@ -402,9 +402,6 @@ const Api = {
     emailCert (id) {
       return instance.post(`/api/deflections/${id}/cert-email`).catch(handleError);
     },
-    email5150 (id) {
-      return instance.post(`/api/deflections/${id}/5150-email`).catch(handleError);
-    },
     cancel (id, { cancelReason } = {}) {
       return instance.delete(`/api/deflections/${id}${cancelReason ? `?cancelReason=${cancelReason}` : ''}`);
     },

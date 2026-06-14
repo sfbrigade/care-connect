@@ -200,14 +200,6 @@ export default async function formsEmail (data, prismaClient = prisma) {
     return;
   }
 
-  if (template === 'self-5150') {
-    await sendFormsMessage({
-      targetFormIds: ['5150'],
-      to: sendingUser?.email || recipientEmail,
-    });
-    return;
-  }
-
   if (formIds.includes('849b')) {
     await sendFormsMessage({
       targetFormIds: ['849b'],
