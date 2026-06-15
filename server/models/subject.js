@@ -2,7 +2,7 @@ import prismaPkg from '@prisma/client';
 import { z } from 'zod';
 
 import Base from './base.js';
-const { Prisma, DrugTypeEnum, SexEnum, RaceEnum } = prismaPkg;
+const { Prisma, DrugTypeEnum, SexEnum, RaceEnum, PreferredLanguageEnum } = prismaPkg;
 
 export const PII_FIELDS = [
   'firstName',
@@ -12,6 +12,7 @@ export const PII_FIELDS = [
   'sex',
   'race',
   'driverLicense',
+  'preferredLanguage',
   'addressLine1',
   'addressLine2',
   'city',
@@ -28,6 +29,7 @@ const SubjectAttributesSchema = z.object({
   sex: z.enum(Object.values(SexEnum)).catch(null).nullable(),
   race: z.enum(Object.values(RaceEnum)).catch(null).nullable(),
   driverLicense: z.string().nullable(),
+  preferredLanguage: z.enum(Object.values(PreferredLanguageEnum)).catch(null).nullable(),
   addressLine1: z.string().nullable(),
   addressLine2: z.string().nullable(),
   city: z.string().nullable(),
@@ -57,6 +59,7 @@ export class Subject extends Base {
 
   static Sex = SexEnum;
   static Race = RaceEnum;
+  static PreferredLanguage = PreferredLanguageEnum;
 
   constructor (data) {
     super(Prisma.SubjectScalarFieldEnum, data);

@@ -28,6 +28,7 @@ test('anonymizeSubjects job', async (t) => {
         sex: 'MALE',
         race: 'WHITE',
         driverLicense: 'D1234567',
+        preferredLanguage: 'SPANISH',
         addressLine1: '123 Main St',
         addressLine2: 'Apt 4',
         city: 'San Francisco',
