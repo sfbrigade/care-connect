@@ -37,7 +37,8 @@ test('generateForms 647f hash logic', async (t) => {
         createdById: user.id,
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         status: 'ACTIVE',
-        subjectStatus: 'DETAINED',
+        subjectStatus: 'AWAITING_INTAKE',
+        transferredAt: new Date(),
       },
     });
     return { user, deflection };

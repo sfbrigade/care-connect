@@ -177,26 +177,38 @@ async function main () {
     });
   }
 
-  const passAExitCode = await runPass(
-    `Pass A: parallel (concurrency=${concurrency}), no experimental flag`,
-    ['--test', '--test-concurrency', concurrency],
-    regularFiles
-  );
-
-  const passBExitCode = await runPass(
-    'Pass B: serial, --experimental-test-module-mocks',
-    ['--experimental-test-module-mocks', '--test', '--test-concurrency', '1'],
-    mockFiles
-  );
-
-  console.log('Stopping containers...');
-  await storage.stop();
-  await db.stop();
-
+  let passAExitCode = 1;
+  let passBExitCode = 1;
   try {
-    await fs.unlink(CONTAINER_INFO_PATH);
-  } catch {
-    // ignore
+    passAExitCode = await runPass(
+      `Pass A: parallel (concurrency=${concurrency}), no experimental flag`,
+      ['--test', '--test-concurrency', concurrency],
+      regularFiles
+    );
+
+    passBExitCode = await runPass(
+      'Pass B: serial, --experimental-test-module-mocks',
+      ['--experimental-test-module-mocks', '--test', '--test-concurrency', '1'],
+      mockFiles
+    );
+  } finally {
+    console.log('Stopping containers...');
+    await Promise.allSettled([
+      storage?.stop(),
+      db?.stop(),
+    ]).then((results) => {
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          console.warn(`Container cleanup failed: ${result.reason?.message || result.reason}`);
+        }
+      }
+    });
+
+    try {
+      await fs.unlink(CONTAINER_INFO_PATH);
+    } catch {
+      // ignore
+    }
   }
 
   process.exit(passAExitCode || passBExitCode);

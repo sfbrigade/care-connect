@@ -3,8 +3,10 @@ export const metadata = {
   description: (name) => `SFPD 647(f) Report for ${name}`,
   downloadFilename: (id) => `647f-report-${id}.pdf`,
 
-  canGenerate () {
-    return true; // No preconditions — can be generated at any point in the deflection lifecycle
+  canGenerate (deflection) {
+    return deflection.transferredAt
+      ? true
+      : { message: 'This document is not available yet.' };
   },
 
   deflectionInclude: {
