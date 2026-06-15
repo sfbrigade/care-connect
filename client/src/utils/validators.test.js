@@ -65,6 +65,14 @@ describe('SubjectSchema dateOfBirth validation', () => {
     })).toEqual({});
   });
 
+  it('does not require preferred language for subject completion checks', () => {
+    expect(validateSubject({
+      ...baseSubject,
+      dateOfBirth: '01/01/1990',
+      preferredLanguage: null,
+    })).toEqual({});
+  });
+
   it('rejects incomplete input', () => {
     expect(validateSubject({ ...baseSubject, dateOfBirth: '11/11/2' })).toEqual({
       dateOfBirth: 'Enter a valid date as MM/DD/YYYY',

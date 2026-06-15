@@ -189,6 +189,12 @@ function Deflection () {
                 <Text>{deflection.subject.driverLicense}</Text>
               </Box>
             )}
+            {deflection?.subject?.preferredLanguage && (
+              <Box>
+                <Text c='dimmed'>Preferred language</Text>
+                <Text>{t(`preferredLanguage.${deflection.subject.preferredLanguage}`)}</Text>
+              </Box>
+            )}
             {address && (
               <Box>
                 <Text c='dimmed'>Address</Text>

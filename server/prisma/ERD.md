@@ -142,6 +142,46 @@ UNKNOWN UNKNOWN
     
 
 
+        PreferredLanguageEnum {
+            ARABIC ARABIC
+ARMENIAN ARMENIAN
+BASQUE BASQUE
+BOSNIAN BOSNIAN
+CHINESE_CANTONESE CHINESE_CANTONESE
+CHINESE_MANDARIN CHINESE_MANDARIN
+DANISH DANISH
+FIJIAN FIJIAN
+FILIPINO_TAGALOG FILIPINO_TAGALOG
+FRENCH FRENCH
+GAELIC GAELIC
+GERMAN GERMAN
+GREEK GREEK
+GUJARATI GUJARATI
+HINDI HINDI
+IGBO IGBO
+ILONGGO ILONGGO
+ITALIAN ITALIAN
+JAPANESE JAPANESE
+KOREAN KOREAN
+LAOTIAN LAOTIAN
+MANDARIN MANDARIN
+POLISH POLISH
+PORTUGUESE PORTUGUESE
+PUNJABI PUNJABI
+ROMANIAN ROMANIAN
+RUSSIAN RUSSIAN
+SAMOAN SAMOAN
+SERBIAN SERBIAN
+SPANISH SPANISH
+SWEDISH SWEDISH
+THAI THAI
+TOISANESE TOISANESE
+URDU URDU
+VIETNAMESE VIETNAMESE
+        }
+    
+
+
         DeflectionCancelReasonEnum {
             BEHAVIORAL_HEALTH_EVALUATION BEHAVIORAL_HEALTH_EVALUATION
 JAIL JAIL
@@ -475,6 +515,7 @@ DEPARTURE DEPARTURE
     SexEnum sex "❓"
     RaceEnum race "❓"
     String driverLicense "❓"
+    PreferredLanguageEnum preferredLanguage "❓"
     String addressLine1 "❓"
     String addressLine2 "❓"
     String city "❓"
@@ -761,6 +802,7 @@ DEPARTURE DEPARTURE
     "FacilityEligibility" o|--|| "FacilityEligibilityTypeEnum" : "enum:type"
     "Subject" o|--|o "SexEnum" : "enum:sex"
     "Subject" o|--|o "RaceEnum" : "enum:race"
+    "Subject" o|--|o "PreferredLanguageEnum" : "enum:preferredLanguage"
     "Subject" o{--}o "Deflection" : ""
     "Deflection" o|--|| "Facility" : "facility"
     "Deflection" o|--|| "Incident" : "incident"

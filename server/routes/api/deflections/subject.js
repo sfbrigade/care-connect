@@ -16,6 +16,7 @@ const CARE_EDITABLE_SUBJECT_FIELDS = [
   'sex',
   'race',
   'driverLicense',
+  'preferredLanguage',
 ];
 
 export default async function (fastify, opts) {
