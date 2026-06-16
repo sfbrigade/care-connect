@@ -508,6 +508,15 @@ const Api = {
       return instance.delete(`/api/property-photos/${id}`).catch(handleError);
     },
   },
+  push: {
+    subscribe (subscription) {
+      const { endpoint, keys } = subscription;
+      return instance.post('/api/push/subscribe', { endpoint, keys });
+    },
+    unsubscribe (endpoint) {
+      return instance.delete('/api/push/subscribe', { data: { endpoint } });
+    },
+  },
   ai: {
     transcribe (audio, mediaType) {
       return instance.post('/api/ai/transcribe', { audio, mediaType });

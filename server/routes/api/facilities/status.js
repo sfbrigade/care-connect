@@ -6,6 +6,7 @@ import FacilityUpdate from '#models/facilityUpdate.js';
 import Deflection from '#models/deflection.js';
 import BedType from '#models/bedType.js';
 import { sendHoldCancelledEmails, sendFacilityReopenedEmails } from '#lib/holdNotifications.js';
+import { QUEUE_PUSH_NOTIFICATION } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
   fastify.post('/:id/status',
@@ -150,7 +151,27 @@ export default async function (fastify, opts) {
           },
         });
         if (cancelledHolds.length > 0) {
-          await sendHoldCancelledEmails(cancelledHolds, facility.name, userId);
+          // Group by officer for push (one notification per officer covering all their holds)
+          const byOfficer = {};
+          for (const hold of cancelledHolds) {
+            if (hold.createdById !== userId && hold.createdById) {
+              byOfficer[hold.createdById] = (byOfficer[hold.createdById] ?? 0) + 1;
+            }
+          }
+          await Promise.all([
+            sendHoldCancelledEmails(cancelledHolds, facility.name, userId),
+            ...Object.entries(byOfficer).map(([officerId, count]) =>
+              fastify.backgroundJobs.send(QUEUE_PUSH_NOTIFICATION, {
+                userIds: [officerId],
+                title: 'Holds cancelled',
+                body: count === 1
+                  ? `Your hold at ${facility.name} was cancelled because the facility closed.`
+                  : `${count} of your holds at ${facility.name} were cancelled because the facility closed.`,
+                url: '/holds',
+                tag: `facility-closed-${id}`,
+              })
+            ),
+          ]);
         }
       } else if (data.status === Facility.Status.OPEN_ACCEPTING) {
         // Notify officers whose holds were cancelled during the closure
@@ -181,7 +202,16 @@ export default async function (fastify, opts) {
           }
           const uniqueOfficers = Object.values(officerMap);
           if (uniqueOfficers.length > 0) {
-            await sendFacilityReopenedEmails(uniqueOfficers, facility.name);
+            await Promise.all([
+              sendFacilityReopenedEmails(uniqueOfficers, facility.name),
+              fastify.backgroundJobs.send(QUEUE_PUSH_NOTIFICATION, {
+                userIds: uniqueOfficers.map((o) => o.id),
+                title: `${facility.name} is open again`,
+                body: 'The facility has reopened and is accepting holds.',
+                url: '/holds',
+                tag: `facility-reopened-${id}`,
+              }),
+            ]);
           }
         }
       }

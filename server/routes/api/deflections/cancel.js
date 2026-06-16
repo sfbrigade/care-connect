@@ -6,7 +6,7 @@ import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { sendHoldCancelledEmails } from '#lib/holdNotifications.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
-import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
+import { QUEUE_GENERATE_FORMS, QUEUE_PUSH_NOTIFICATION } from '#lib/jobQueue/queueNames.js';
 import {
   hasCompleteHospitalCancellationDetails,
   HOSPITAL_CANCELLATION_INCOMPLETE_DETAILS_ERROR,
@@ -159,18 +159,27 @@ export default async function (fastify, opts) {
         });
       }
 
-      // Send email if cancelled by someone other than the creator
+      // Notify the creating officer if cancelled by someone else
       if (deflection.status === Deflection.HoldStatus.CANCELLED && deflection.createdById !== request.user.id) {
         const [creator, facility] = await Promise.all([
           fastify.prisma.user.findUnique({ where: { id: deflection.createdById } }),
           fastify.prisma.facility.findUnique({ where: { id: deflection.facilityId } }),
         ]);
         if (creator && facility) {
-          await sendHoldCancelledEmails(
-            [{ ...deflection, createdBy: creator }],
-            facility.name,
-            request.user.id
-          );
+          await Promise.all([
+            sendHoldCancelledEmails(
+              [{ ...deflection, createdBy: creator }],
+              facility.name,
+              request.user.id
+            ),
+            fastify.backgroundJobs.send(QUEUE_PUSH_NOTIFICATION, {
+              userIds: [deflection.createdById],
+              title: 'Hold cancelled',
+              body: `Your hold at ${facility.name} has been cancelled.`,
+              url: `/holds/${deflection.id}`,
+              tag: `hold-cancelled-${deflection.id}`,
+            }),
+          ]);
         }
       }
 
