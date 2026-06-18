@@ -9,7 +9,8 @@ import { formatTime, formatTimeRemaining } from '@/utils/format';
 import { isValidDeflection, isValidIncident } from '@/utils/validators';
 import checkerboardEmptyState from '@/assets/icons/checkerboard-empty-state.svg';
 
-import { isCustodyTransferredStatus, isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
+import { isExpiredBeforeTransfer } from './deflectionStatusChipUtils';
+import { isCustodyTransferredStatus } from './custodyTransferStatus';
 
 function Hold ({ incident, deflection, highlighted, onCancelClick, onDetailsClick, isHistory = false, isHandedOff = false }) {
   const { t } = useTranslation();

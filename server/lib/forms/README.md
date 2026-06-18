@@ -7,7 +7,7 @@ This directory contains the server-side form definitions and PDF generation logi
 ```
 lib/forms/
   index.js              # Barrel: exports FORMS map keyed by form ID
-  formEmailJobs.js      # Queue helpers for emailing form sets (release, incident, self-5150)
+  formEmailJobs.js      # Queue helpers for emailing form sets (release, incident)
   liveEmailForms.js     # LIVE_EMAIL_FORM_IDS — forms that trigger real-time emails
   storeFormPdf.js       # Upserts a generated PDF into deflectionDocument via Prisma + DeflectionDocument asset
   README.md
@@ -76,11 +76,10 @@ Each form follows this two-step pattern:
 
 ## Email job helpers
 
-`formEmailJobs.js` exports three queue helpers:
+`formEmailJobs.js` exports two queue helpers:
 
 - **`queueReleaseFormsEmail`** — queues `647f`, `849b`, `cert`, `5150` with the `release-forms` email template.
 - **`queue849bIncidentEmail`** — queues `849b` with the `incident-forms` email template.
-- **`queue5150SelfEmail`** — queues `5150` with the `self-5150` email template.
 
 `liveEmailForms.js` exports `LIVE_EMAIL_FORM_IDS` (currently `849b`), which flags forms whose generated PDFs should trigger real-time email delivery rather than waiting for the release batch.
 

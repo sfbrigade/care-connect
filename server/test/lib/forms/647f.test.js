@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { formatCertifiedAtDisplay, transformData } from '#lib/forms/647f/generate.js';
+import form647f from '#lib/forms/647f/index.js';
 
 const baseDeflection = {
   id: 1,
+  transferredAt: new Date('2026-01-01T12:00:00.000Z'),
   behavior: null,
   narcoticsSubstance: null,
   narcoticsParaphernalia: null,
@@ -16,6 +18,21 @@ const baseDeflection = {
   createdBy: null,
   handoffs: [],
 };
+
+test('647f cannot generate before custody transfer', () => {
+  const check = form647f.canGenerate({
+    ...baseDeflection,
+    transferredAt: null,
+  });
+
+  assert.deepEqual(check, {
+    message: 'This document is not available yet.',
+  });
+});
+
+test('647f can generate after custody transfer', () => {
+  assert.equal(form647f.canGenerate(baseDeflection), true);
+});
 
 test('647f transferOfficer: no handoffs — falls back to incident.createdBy', () => {
   const incidentCreator = { firstName: 'Jane', lastName: 'Smith', badgeNumber: 'B001', title: { name: 'Officer' }, unit: { name: 'Unit 1' } };

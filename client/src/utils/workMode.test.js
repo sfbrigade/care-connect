@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearStoredWorkMode,
   getWorkModeFromPath,
@@ -41,6 +41,8 @@ describe('getWorkModeFromPath', () => {
 });
 
 describe('stored work mode', () => {
+  const originalLocalStorage = globalThis.localStorage;
+
   beforeEach(() => {
     const store = new Map();
     globalThis.localStorage = {
@@ -49,6 +51,10 @@ describe('stored work mode', () => {
       removeItem: (k) => { store.delete(k); },
       clear: () => { store.clear(); },
     };
+  });
+
+  afterEach(() => {
+    globalThis.localStorage = originalLocalStorage;
   });
 
   it('round-trips a FIELD value', () => {

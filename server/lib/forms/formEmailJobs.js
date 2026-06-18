@@ -20,13 +20,3 @@ export async function queue849bIncidentEmail (fastify, { deflectionId, userId, r
     recipientEmail,
   });
 }
-
-export async function queue5150SelfEmail (fastify, { deflectionId, userId, recipientEmail }) {
-  await fastify.backgroundJobs.send(QUEUE_GENERATE_FORMS, {
-    deflectionId,
-    userId,
-    formIds: ['5150'],
-    emailTemplate: 'self-5150',
-    recipientEmail,
-  });
-}

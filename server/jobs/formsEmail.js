@@ -192,9 +192,9 @@ export default async function formsEmail (data, prismaClient = prisma) {
     return;
   }
 
-  if (template === 'self-5150') {
+  if (template === 'self-cert') {
     await sendFormsMessage({
-      targetFormIds: ['5150'],
+      targetFormIds: ['cert'],
       to: sendingUser?.email || recipientEmail,
     });
     return;

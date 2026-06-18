@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Accordion, ActionIcon, Box, Button, Card, Container, Divider, Group, Image, Menu, Stack, Text, Title } from '@mantine/core';
-import { IconAlarm, IconArrowLeft, IconDots, IconDoorExit, IconExternalLink, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
+import { IconAlarm, IconArrowLeft, IconDots, IconDoorExit, IconFileAlert, IconFileCheck, IconBuildingHospital } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ import { releaseTiming } from '@/utils/releaseTiming';
 
 import CompleteIntakeModal from '../care/CompleteIntakeModal';
 import DeflectionStatusChip from '../DeflectionStatusChip';
+import DocumentsSection from '../DocumentsSection.jsx';
 import PersonStatusTimeline from '../PersonStatusTimeline.jsx';
 
 import { getCareDetailFooterState } from './careDetailFooterUtils';
@@ -46,7 +47,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const [safetyCheckResultModalOpened, setSafetyCheckResultModalOpened] = useState(false);
   const [exitToJailModalOpened, setExitToJailModalOpened] = useState(false);
   const [recordDeathModalOpened, setRecordDeathModalOpened] = useState(false);
-  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['substance', 'deflection', 'property', 'incident', 'release-narrative']);
+  const [custodyAccordionValues, setCustodyAccordionValues] = useState(['documents', 'substance', 'deflection', 'property', 'incident', 'release-narrative']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [, setCustodyTab] = useSessionState('custody');
@@ -194,46 +195,93 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   });
 
   const showPostReleaseNarrativeActions = !isCareView && isCustody && isPostRelease;
+  const doc647f = deflection?.deflectionDocuments?.find(d => d.formId === '647f');
+  const canShow647fDocument = !isPreTransfer && !!deflection?.transferredAt && !!doc647f;
 
   const email849bMutation = useMutation({
     mutationFn: () => Api.deflections.email849b(deflection.id),
-    onSuccess: (response) => {
-      showToast('849(b) e-mail sent', 'success', 4000, `We sent the 849(b) PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
+    onSuccess: () => {
+      showToast('849(b) emailed', 'success', 4000, 'The document was sent to the email on your account.');
     },
     onError: () => {
-      showToast('849(b) e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
+      showToast('Couldn’t email 849(b)', 'error', 4000, 'Please check your connection and try again.');
     },
   });
 
-  function open849bPdf () {
-    const toastId = showToast('Downloading 849(b) form…', 'success', 0, 'This may take a moment.');
-    openInBrowser(`/api/forms/849b/pdf/${deflection.id}`, `849b-${deflection.id}.pdf`)
+  const emailCertMutation = useMutation({
+    mutationFn: () => Api.deflections.emailCert(deflection.id),
+    onSuccess: () => {
+      showToast('Release certificate emailed', 'success', 4000, 'The document was sent to the email on your account.');
+    },
+    onError: () => {
+      showToast('Couldn’t email release certificate', 'error', 4000, 'Please check your connection and try again.');
+    },
+  });
+
+  function viewForm (formId) {
+    navigate(`/forms/${formId}/${deflection.id}`);
+  }
+
+  function downloadForm ({ formId, filename, label }) {
+    const toastId = showToast(`Downloading ${label}…`, 'success', 0, 'This may take a moment.');
+    openInBrowser(`/api/forms/${formId}/pdf/${deflection.id}`, filename)
       .then(() => {
         removeToast(toastId);
-        showToast('849(b) form ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
+        showToast(`${label} ready`, 'success', 4000, 'Open your downloads/Files app to view or print.');
       })
       .catch(() => {
         removeToast(toastId);
-        showToast('Couldn’t download 849(b) form', 'error', 4000, 'Please try again.');
+        showToast(`Couldn’t download ${label}`, 'error', 4000, 'Please try again.');
       });
   }
 
   // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
   // releases. Buttons are gated on the same predicate the server enforces.
   const can5150 = deflection?.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION' && !!deflection?.releasedAt;
-  const email5150Mutation = useMutation({
-    mutationFn: () => Api.deflections.email5150(deflection.id),
-    onSuccess: (response) => {
-      showToast('5150 e-mail sent', 'success', 4000, `We sent the 5150 PDF to ${response?.data?.email ?? 'your e-mail address'}.`);
-    },
-    onError: () => {
-      showToast('5150 e-mail not sent', 'error', 4000, 'Please check your connection and try again.');
-    },
-  });
-
-  function open5150Pdf () {
-    window.open(`/api/forms/5150/pdf/${deflection.id}`, '_blank');
-  }
+  const custodyDocuments = !isCareView
+    ? [
+        showPrimaryPrintCertificate && {
+          id: 'cert',
+          title: 'Release certificate',
+          updatedAt: deflection?.deflectionDocuments?.find(d => d.formId === 'cert')?.updatedAt,
+          emailLoading: emailCertMutation.isPending,
+          actions: {
+            view: () => viewForm('cert'),
+            download: () => downloadForm({ formId: 'cert', filename: `cert-${deflection.id}.pdf`, label: 'release certificate' }),
+            email: () => emailCertMutation.mutate(),
+          },
+        },
+        isPostRelease && {
+          id: '849b',
+          title: '849(b)',
+          updatedAt: deflection?.deflectionDocuments?.find(d => d.formId === '849b')?.updatedAt,
+          emailLoading: email849bMutation.isPending,
+          actions: {
+            view: () => viewForm('849b'),
+            download: () => downloadForm({ formId: '849b', filename: `849b-${deflection.id}.pdf`, label: '849(b) form' }),
+            email: () => email849bMutation.mutate(),
+          },
+        },
+        canShow647fDocument && {
+          id: '647f',
+          title: '647(f)',
+          updatedAt: doc647f.updatedAt,
+          actions: {
+            view: () => viewForm('647f'),
+            download: () => downloadForm({ formId: '647f', filename: `647f-${deflection.id}.pdf`, label: '647(f) form' }),
+          },
+        },
+        can5150 && {
+          id: '5150',
+          title: '5150',
+          updatedAt: deflection?.deflectionDocuments?.find(d => d.formId === '5150')?.updatedAt,
+          actions: {
+            view: () => viewForm('5150'),
+            download: () => downloadForm({ formId: '5150', filename: `5150-${deflection.id}.pdf`, label: '5150 form' }),
+          },
+        },
+      ].filter(Boolean)
+    : [];
 
   return (
     <>
@@ -295,42 +343,6 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               )}
             </Stack>
           )}
-          {!isCareView && isPostRelease && (
-            <Group gap='sm' align='center'>
-              <Button
-                onClick={open849bPdf}
-                variant='outline'
-                rightSection={<IconExternalLink size={18} />}
-              >
-                849(b).pdf
-              </Button>
-              <Button
-                onClick={() => email849bMutation.mutate()}
-                loading={email849bMutation.isPending}
-                variant='outline'
-              >
-                E-mail me the 849(b)
-              </Button>
-              {can5150 && (
-                <>
-                  <Button
-                    onClick={open5150Pdf}
-                    variant='outline'
-                    rightSection={<IconExternalLink size={18} />}
-                  >
-                    5150.pdf
-                  </Button>
-                  <Button
-                    onClick={() => email5150Mutation.mutate()}
-                    loading={email5150Mutation.isPending}
-                    variant='outline'
-                  >
-                    E-mail me the 5150
-                  </Button>
-                </>
-              )}
-            </Group>
-          )}
           <Stack gap='sm'>
             <Title order={2}>{isCareView ? careDisplayName : name}</Title>
             {isCareView && (
@@ -367,6 +379,12 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
               <Box>
                 <Text c='dimmed'>Driver's license number</Text>
                 <Text>{deflection.subject.driverLicense}</Text>
+              </Box>
+            )}
+            {deflection?.subject?.preferredLanguage && (
+              <Box>
+                <Text c='dimmed'>Preferred language</Text>
+                <Text>{t(`preferredLanguage.${deflection.subject.preferredLanguage}`)}</Text>
               </Box>
             )}
             {!isCareView && address && (
@@ -413,6 +431,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                 onChange={setCustodyAccordionValues}
               >
                 <Divider />
+                <DocumentsSection documents={custodyDocuments} />
                 <Accordion.Item value='substance'>
                   <Accordion.Control>
                     <Title order={3}>Substance-related details</Title>
@@ -729,17 +748,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                         return;
                       }
                       if (showPrimaryPrintCertificate) {
-                        const url = `/api/forms/cert/pdf/${deflection.id}`;
-                        const toastId = showToast('Downloading release certificate…', 'success', 0, 'This may take a moment.');
-                        openInBrowser(url, `cert-${deflection.id}.pdf`)
-                          .then(() => {
-                            removeToast(toastId);
-                            showToast('Release certificate ready', 'success', 4000, 'Open your downloads/Files app to view or print.');
-                          })
-                          .catch(() => {
-                            removeToast(toastId);
-                            showToast('Couldn’t download release certificate', 'error', 4000, 'Please try again.');
-                          });
+                        downloadForm({ formId: 'cert', filename: `cert-${deflection.id}.pdf`, label: 'release certificate' });
                       }
                     }}
                   >

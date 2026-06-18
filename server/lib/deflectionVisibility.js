@@ -6,6 +6,7 @@ const CARE_ALLOWED_SUBJECT_FIELDS = new Set([
   'sex',
   'race',
   'driverLicense',
+  'preferredLanguage',
   // These are model-required metadata fields; keep them stable for existing response contracts.
   'id',
   'createdAt',

@@ -112,11 +112,14 @@ vi.mock('@tabler/icons-react', () => ({
   IconBuildingHospital: () => null,
   IconChevronDown: () => null,
   IconChevronUp: () => null,
+  IconDownload: () => null,
   IconDoorExit: () => null,
   IconDots: () => null,
   IconExternalLink: () => null,
   IconFileAlert: () => null,
   IconFileCheck: () => null,
+  IconFileText: () => null,
+  IconMail: () => null,
   IconX: () => null,
 }));
 
@@ -169,6 +172,7 @@ vi.mock('@mantine/core', async () => {
     Image: (props) => createElement('img', props),
     Menu,
     Modal: passthrough('div'),
+    Paper: ({ component: Component = 'div', children, ...props }) => createElement(Component, props, children),
     Stack: passthrough('div'),
     Text: ({ children, ...props }) => createElement('p', props, children),
     Textarea: ({ value, ...props }) => createElement('textarea', { value, ...props }),
@@ -309,15 +313,17 @@ describe('CustodyDetailContent', () => {
     expect(html).not.toContain('>Edit<');
   });
 
-  it('shows post-release 849(b) PDF, e-mail, and narrative edit actions', () => {
+  it('shows post-release documents, e-mail action, and narrative edit actions', () => {
     const html = render({
       subjectStatus: 'EXITED',
       releasedAt: '2026-01-01T11:00:00.000Z',
       exitedAt: '2026-01-01T12:00:00.000Z',
     });
 
-    expect(html).toContain('849(b).pdf');
-    expect(html).toContain('E-mail me the 849(b)');
+    expect(html).toContain('Documents');
+    expect(html).toContain('Release certificate');
+    expect(html).toContain('849(b)');
+    expect(html).toContain('Email to myself');
     expect(html).toContain('Edit narrative');
   });
 

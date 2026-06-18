@@ -69,6 +69,7 @@ function buildDeflection (overrides = {}) {
       sex: 'MALE',
       race: 'WHITE',
       driverLicense: 'D3478215',
+      preferredLanguage: 'PORTUGUESE',
     },
     ...overrides,
   };
@@ -118,6 +119,7 @@ describe('CareSubjectForm', () => {
         sex: 'MALE',
         race: 'WHITE',
         driverLicense: 'D000111',
+        preferredLanguage: 'PORTUGUESE',
         narcoticsSubstance: true,
         narcoticsParaphernalia: false,
         drugUseEvidence: true,

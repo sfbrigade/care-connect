@@ -471,20 +471,19 @@ test('/api/deflections', async (t) => {
     });
   });
 
-  await t.test('POST /:id/5150-email', async (t) => {
-    await t.test('queues live 5150 regeneration and self e-mail for behavioral-health-evaluation releases', async () => {
+  await t.test('POST /:id/cert-email', async (t) => {
+    await t.test('queues live release certificate regeneration and self e-mail for custody user', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
-          subjectStatus: 'EXITED',
+          subjectStatus: 'RELEASED',
           releasedAt: new Date(),
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
           releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
         },
       });
 
       const response = await app.inject()
-        .post('/api/deflections/6/5150-email')
+        .post('/api/deflections/6/cert-email')
         .headers(custodyUserHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -497,34 +496,15 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
         deflectionId: 6,
         userId: custodyUser.id,
-        formIds: ['5150'],
-        emailTemplate: 'self-5150',
+        formIds: ['cert'],
+        emailTemplate: 'self-cert',
         recipientEmail: 'sfsouser1@test.com',
       });
     });
 
-    await t.test('rejects releases whose reason is not behavioral health evaluation', async () => {
-      await prisma.deflection.update({
-        where: { id: 6 },
-        data: {
-          subjectStatus: 'EXITED',
-          releasedAt: new Date(),
-          releaseReason: 'SOBERED',
-          releasedById: '49acdf99-536f-49ac-8138-1c77e5087697',
-        },
-      });
-
-      const response = await app.inject()
-        .post('/api/deflections/6/5150-email')
-        .headers(custodyUserHeaders);
-
-      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
-      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
-    });
-
     await t.test('forbids non-custody users', async () => {
       const response = await app.inject()
-        .post('/api/deflections/6/5150-email')
+        .post('/api/deflections/6/cert-email')
         .headers(userHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.FORBIDDEN);
@@ -575,6 +555,19 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.holds, 4);
       assert.deepStrictEqual(bedType.inTransit, 3);
       assert.deepStrictEqual(bedType.available, 4);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 5,
+        userId: custodyUser.id,
+        formIds: ['647f'],
+        emailTemplate: 'transfer-form',
+        recipientEmail: [
+          'SFPD.Data.Transfer.Authorized@sfgov.org',
+          'Andrew.bley@sfgov.org',
+        ],
+      });
     });
 
     await t.test('rejects with 422 when incident details are incomplete', async () => {
@@ -1376,6 +1369,7 @@ test('/api/deflections', async (t) => {
         addressLine1: '123 Main St',
         addressLine2: 'Apt 1',
         driverLicense: 'DL1234',
+        preferredLanguage: 'SPANISH',
         localId: '1234',
         narcoticsSubstance: false,
         narcoticsParaphernalia: true,
@@ -1394,6 +1388,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(data.subject.addressLine1, '123 Main St');
       assert.deepStrictEqual(data.subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(data.subject.driverLicense, 'DL1234');
+      assert.deepStrictEqual(data.subject.preferredLanguage, 'SPANISH');
       assert.deepStrictEqual(data.subject.localId, '1234');
       assert.deepStrictEqual(data.narcoticsSubstance, false);
       assert.deepStrictEqual(data.narcoticsParaphernalia, true);
@@ -1413,6 +1408,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(subject.addressLine1, '123 Main St');
       assert.deepStrictEqual(subject.addressLine2, 'Apt 1');
       assert.deepStrictEqual(subject.driverLicense, 'DL1234');
+      assert.deepStrictEqual(subject.preferredLanguage, 'SPANISH');
       assert.deepStrictEqual(subject.localId, '1234');
 
       const deflection = await prisma.deflection.findUnique({

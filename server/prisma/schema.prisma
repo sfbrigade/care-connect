@@ -133,6 +133,44 @@ enum SexEnum {
   UNKNOWN
 }
 
+enum PreferredLanguageEnum {
+  ARABIC
+  ARMENIAN
+  BASQUE
+  BOSNIAN
+  CHINESE_CANTONESE
+  CHINESE_MANDARIN
+  DANISH
+  FIJIAN
+  FILIPINO_TAGALOG
+  FRENCH
+  GAELIC
+  GERMAN
+  GREEK
+  GUJARATI
+  HINDI
+  IGBO
+  ILONGGO
+  ITALIAN
+  JAPANESE
+  KOREAN
+  LAOTIAN
+  MANDARIN
+  POLISH
+  PORTUGUESE
+  PUNJABI
+  ROMANIAN
+  RUSSIAN
+  SAMOAN
+  SERBIAN
+  SPANISH
+  SWEDISH
+  THAI
+  TOISANESE
+  URDU
+  VIETNAMESE
+}
+
 enum DeflectionCancelReasonEnum {
   BEHAVIORAL_HEALTH_EVALUATION
   JAIL
@@ -544,6 +582,8 @@ model Subject {
   race                         RaceEnum?
   /// @pii
   driverLicense                String?
+  /// @pii
+  preferredLanguage            PreferredLanguageEnum?
   /// @pii
   addressLine1                 String?
   /// @pii
