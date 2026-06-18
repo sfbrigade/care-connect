@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { errorCodes } from 'fastify';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
@@ -33,12 +34,18 @@ export default async function (fastify, opts) {
       attachValidation: true,
     },
     async function (request, reply) {
-      const { email, password } = request.body;
-
       // If user already has a valid session, skip MFA
       if (request.user) {
         return reply.send(request.user);
       }
+
+      const error = request.validationError ?? errorCodes.FST_ERR_VALIDATION();
+      error.validation ||= [];
+      if (error.validation.length) {
+        throw error;
+      }
+
+      const { email, password } = request.body;
 
       const data = await fastify.prisma.user.findUnique({
         where: { email },
