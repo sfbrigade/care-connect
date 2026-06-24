@@ -72,6 +72,8 @@ test('/api/arrests', async (t) => {
     arrivedAt = null,
     transferredAt = null,
     createdByBadgeNumber = null,
+    chargeType = null,
+    drugType = null,
   }) {
     const incident = await prisma.incident.create({
       data: {
@@ -98,6 +100,8 @@ test('/api/arrests', async (t) => {
         subjectId: subjectRecord?.id ?? null,
         arrivedAt,
         transferredAt,
+        chargeType,
+        drugType,
       },
     });
     return { incident, deflection, subject: subjectRecord };
@@ -184,11 +188,14 @@ test('/api/arrests', async (t) => {
         'arrestingOfficerName',
         'arrivedAt',
         'caseNumber',
+        'chargeType',
         'dateOfBirth',
+        'drugType',
         'firstName',
         'lastName',
         'race',
         'sex',
+        'sfNumber',
         'transferredAt',
       ]);
       assert.strictEqual(typeof arrest.arrestedAt, 'string');
@@ -261,12 +268,15 @@ test('/api/arrests', async (t) => {
       caseNumber: 'CS-2026-001',
       arrivedAt,
       transferredAt,
+      chargeType: 'RWS_647F',
+      drugType: 'FENTANYL',
       subject: {
         firstName: 'Jane',
         lastName: 'Doe',
         dateOfBirth: new Date('1990-05-15T00:00:00.000Z'),
         sex: 'FEMALE',
         race: 'WHITE',
+        localId: 'SF-123456',
       },
     });
 
@@ -282,6 +292,9 @@ test('/api/arrests', async (t) => {
     assert.strictEqual(body[0].race, 'WHITE');
     assert.strictEqual(body[0].arrivedAt, arrivedAt.toISOString());
     assert.strictEqual(body[0].transferredAt, transferredAt.toISOString());
+    assert.strictEqual(body[0].chargeType, 'RWS_647F');
+    assert.strictEqual(body[0].drugType, 'FENTANYL');
+    assert.strictEqual(body[0].sfNumber, 'SF-123456');
   });
 
   await t.test('returns null PII fields when subject has been anonymized but keeps incident and deflection fields', async () => {
@@ -293,12 +306,15 @@ test('/api/arrests', async (t) => {
       addressLine1: '100 Market St',
       caseNumber: 'CS-2026-001',
       arrivedAt,
+      chargeType: 'HS_11550',
+      drugType: 'METH',
       subject: {
         firstName: null,
         lastName: null,
         dateOfBirth: null,
         sex: null,
         race: null,
+        localId: null,
         anonymizedAt: new Date(),
       },
     });
@@ -316,6 +332,11 @@ test('/api/arrests', async (t) => {
     assert.strictEqual(body[0].caseNumber, 'CS-2026-001');
     assert.strictEqual(body[0].arrivedAt, arrivedAt.toISOString());
     assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+    // SF Number is subject PII → nulled by anonymization; charge/drug live on
+    // the deflection and survive.
+    assert.strictEqual(body[0].sfNumber, null);
+    assert.strictEqual(body[0].chargeType, 'HS_11550');
+    assert.strictEqual(body[0].drugType, 'METH');
   });
 
   await t.test('returns null subject and timing fields when no subject is attached and deflection has no arrival/transfer', async () => {
@@ -338,6 +359,9 @@ test('/api/arrests', async (t) => {
     assert.strictEqual(body[0].race, null);
     assert.strictEqual(body[0].arrivedAt, null);
     assert.strictEqual(body[0].transferredAt, null);
+    assert.strictEqual(body[0].chargeType, null);
+    assert.strictEqual(body[0].drugType, null);
+    assert.strictEqual(body[0].sfNumber, null);
   });
 
   await t.test('uses the first-created non-cancelled deflection when an incident has multiple', async () => {
