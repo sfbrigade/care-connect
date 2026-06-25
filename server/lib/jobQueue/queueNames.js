@@ -4,4 +4,3 @@ export const QUEUE_EXPIRE_HOLDS = 'expire-holds';
 export const QUEUE_GENERATE_FORMS = 'generate-forms';
 export const QUEUE_FORMS_EMAIL = 'forms-email';
 export const QUEUE_ANONYMIZE_SUBJECTS = 'anonymize-subjects';
-export const QUEUE_CANARY = 'canary';
