@@ -24,6 +24,9 @@ const ArrestSchema = z.object({
   transferredAt: z.string().datetime().nullable(),
   arrestingOfficerName: z.string().nullable(),
   arrestingOfficerBadge: z.string().nullable(),
+  chargeType: z.string().nullable(),
+  drugType: z.string().nullable(),
+  sfNumber: z.string().nullable(),
 });
 
 const ArrestsResponseSchema = z.array(ArrestSchema);
@@ -74,6 +77,8 @@ export default async function (fastify) {
             select: {
               arrivedAt: true,
               transferredAt: true,
+              chargeType: true,
+              drugType: true,
               subject: {
                 select: {
                   firstName: true,
@@ -81,6 +86,7 @@ export default async function (fastify) {
                   dateOfBirth: true,
                   sex: true,
                   race: true,
+                  localId: true,
                 },
               },
             },
@@ -107,6 +113,9 @@ export default async function (fastify) {
           transferredAt: deflection?.transferredAt?.toISOString() ?? null,
           arrestingOfficerName: firstInitialLastName(i.createdBy) || null,
           arrestingOfficerBadge: i.createdByBadgeNumber ?? null,
+          chargeType: deflection?.chargeType ?? null,
+          drugType: deflection?.drugType ?? null,
+          sfNumber: subject?.localId ?? null,
         };
       });
     }
