@@ -5,12 +5,14 @@ import { generateLive5150Pdf, storeLive5150Pdf } from '#lib/forms/5150/livePdf.j
 import DeflectionDocument from '#models/deflectionDocument.js';
 import { captureException } from '#lib/posthog.js';
 
-const EMAIL_RECIPIENT = 'careconnect@sfgov.org';
-const SWAPSUPS_RECIPIENT = 'sfso-swapsups@sfgov.org';
-const TRANSFER_RECIPIENTS = [
-  'SFPD.Data.Transfer.Authorized@sfgov.org',
-  'Andrew.bley@sfgov.org',
-];
+const EMAIL_RECIPIENT = process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE || 'careconnect@sfgov.org';
+const SWAPSUPS_RECIPIENT = process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE || 'sfso-swapsups@sfgov.org';
+const TRANSFER_RECIPIENTS = process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE
+  ? [process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE]
+  : [
+      'SFPD.Data.Transfer.Authorized@sfgov.org',
+      'Andrew.bley@sfgov.org',
+    ];
 
 export default async function formsEmail (data, prismaClient = prisma) {
   const { deflectionId, formIds, template, recipientEmail, userId, regeneratedFormIds = [] } = data;
