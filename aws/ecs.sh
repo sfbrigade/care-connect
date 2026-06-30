@@ -13,6 +13,7 @@ set +a
 
 echo "ARRESTS_API_KEY: $ARRESTS_API_KEY"
 echo "CAPACITY_API_KEY: $CAPACITY_API_KEY"
+echo "EMAIL_FORMS_RECIPIENT_OVERRIDE: $EMAIL_FORMS_RECIPIENT_OVERRIDE"
 echo "EMAIL_FROM_NAME: $EMAIL_FROM_NAME"
 echo "EMAIL_SITE_TITLE: $EMAIL_SITE_TITLE"
 echo "EMAIL_SUBJECT_TITLE: $EMAIL_SUBJECT_TITLE"
@@ -28,4 +29,4 @@ if [[ "$CONT" != "y" ]]; then
     exit 1
 fi
 
-aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name ${BASE_NAME}-ecs --template-body file://./ecs.json --parameters ParameterKey=ArrestsApiKey,ParameterValue=$ARRESTS_API_KEY ParameterKey=BaseName,ParameterValue=$BASE_NAME ParameterKey=CapacityApiKey,ParameterValue=$CAPACITY_API_KEY "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" "ParameterKey=EmailSiteTitle,ParameterValue=$EMAIL_SITE_TITLE" "ParameterKey=EmailSubjectTitle,ParameterValue=$EMAIL_SUBJECT_TITLE" ParameterKey=ImageURL,ParameterValue=$IMAGE_URL ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET ParameterKey=GeocodeRateLimitMs,ParameterValue=$GEOCODE_RATE_LIMIT_MS ParameterKey=SmtpReplyToEmailAddress,ParameterValue=$SMTP_REPLY_TO_EMAIL_ADDRESS ParameterKey=PosthogKey,ParameterValue=$VITE_POSTHOG_KEY ParameterKey=PosthogHost,ParameterValue=$VITE_POSTHOG_HOST "ParameterKey=SiteTitle,ParameterValue=$VITE_SITE_TITLE" --output text
+aws cloudformation create-stack --capabilities CAPABILITY_NAMED_IAM --stack-name ${BASE_NAME}-ecs --template-body file://./ecs.json --parameters ParameterKey=ArrestsApiKey,ParameterValue=$ARRESTS_API_KEY ParameterKey=BaseName,ParameterValue=$BASE_NAME ParameterKey=CapacityApiKey,ParameterValue=$CAPACITY_API_KEY "ParameterKey=EmailFormsRecipientOverride,ParameterValue=$EMAIL_FORMS_RECIPIENT_OVERRIDE" "ParameterKey=EmailFromName,ParameterValue=$EMAIL_FROM_NAME" "ParameterKey=EmailSiteTitle,ParameterValue=$EMAIL_SITE_TITLE" "ParameterKey=EmailSubjectTitle,ParameterValue=$EMAIL_SUBJECT_TITLE" ParameterKey=ImageURL,ParameterValue=$IMAGE_URL ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET ParameterKey=GeocodeRateLimitMs,ParameterValue=$GEOCODE_RATE_LIMIT_MS ParameterKey=SmtpReplyToEmailAddress,ParameterValue=$SMTP_REPLY_TO_EMAIL_ADDRESS ParameterKey=PosthogKey,ParameterValue=$VITE_POSTHOG_KEY ParameterKey=PosthogHost,ParameterValue=$VITE_POSTHOG_HOST "ParameterKey=SiteTitle,ParameterValue=$VITE_SITE_TITLE" --output text

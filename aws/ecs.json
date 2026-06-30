@@ -16,6 +16,10 @@
       "NoEcho": true,
       "Description": "The API key for fetching facility status"
     },
+    "EmailFormsRecipientOverride": {
+      "Type": "String",
+      "Description": "Recipient override for forms emails"
+    },
     "EmailFromName": {
       "Type": "String",
       "Description": "The display name used in email from and reply-to headers"
@@ -431,6 +435,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_FORMS_RECIPIENT_OVERRIDE",
+                "Value": {
+                  "Ref": "EmailFormsRecipientOverride"
                 }
               },
               {
@@ -956,6 +966,12 @@
                       "?sslmode=no-verify"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "EMAIL_FORMS_RECIPIENT_OVERRIDE",
+                "Value": {
+                  "Ref": "EmailFormsRecipientOverride"
                 }
               },
               {
