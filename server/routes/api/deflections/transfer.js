@@ -139,10 +139,12 @@ export default async function (fastify, opts) {
         userId: request.user.id,
         formIds: ['647f'],
         emailTemplate: 'transfer-form',
-        recipientEmail: [
-          'SFPD.Data.Transfer.Authorized@sfgov.org',
-          'Andrew.bley@sfgov.org',
-        ],
+        recipientEmail: process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE
+          ? [process.env.EMAIL_FORMS_RECIPIENT_OVERRIDE]
+          : [
+              'SFPD.Data.Transfer.Authorized@sfgov.org',
+              'Andrew.bley@sfgov.org',
+            ],
       });
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
