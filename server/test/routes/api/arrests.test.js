@@ -74,6 +74,7 @@ test('/api/arrests', async (t) => {
     createdByBadgeNumber = null,
     chargeType = null,
     drugType = null,
+    createdByOrganizationId = 'sfpd',
   }) {
     const incident = await prisma.incident.create({
       data: {
@@ -86,6 +87,7 @@ test('/api/arrests', async (t) => {
         caseNumber,
         createdById: user.id,
         createdByBadgeNumber,
+        createdByOrganizationId,
         updatedById: user.id,
       },
     });
@@ -219,6 +221,34 @@ test('/api/arrests', async (t) => {
     // LESC Facility 1 has its own bedType from the shared fixtures
     const otherBedType = await prisma.bedType.findFirst({ where: { facilityId: otherFacility.id } });
     await seedArrest({ facility: otherFacility, bedTypeId: otherBedType.id, arrestedAt: inDayMorning, addressLine1: '999 Other St' });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+  });
+
+  await t.test('excludes incidents created by another organization (SFSO)', async () => {
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayMorning, addressLine1: '100 Market St' });
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayEvening, addressLine1: '900 Sheriff St', createdByOrganizationId: 'sfso' });
+
+    const response = await app.inject()
+      .get(`/api/arrests?date=${TARGET_DATE}`)
+      .headers({ authorization: `Bearer ${TEST_API_KEY}` });
+    assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+    const body = JSON.parse(response.body);
+    assert.strictEqual(body.length, 1);
+    assert.strictEqual(body[0].address, '100 Market St, San Francisco, CA');
+  });
+
+  await t.test('excludes incidents with no creating organization (null org)', async () => {
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayMorning, addressLine1: '100 Market St' });
+    await seedArrest({ facility: resetFacility, bedTypeId: resetBedType.id, arrestedAt: inDayEvening, addressLine1: '000 No Org Ave', createdByOrganizationId: null });
 
     const response = await app.inject()
       .get(`/api/arrests?date=${TARGET_DATE}`)
@@ -380,6 +410,7 @@ test('/api/arrests', async (t) => {
         arrestedAt: inDayMorning,
         encounteredVia: 'ON_VIEW',
         createdById: user.id,
+        createdByOrganizationId: 'sfpd',
         updatedById: user.id,
       },
     });
