@@ -6,6 +6,7 @@ import { firstInitialLastName, streetCityState } from '#lib/forms/shared/formUti
 
 const TIMEZONE = 'America/Los_Angeles';
 const FACILITY_NAME = 'RESET';
+const SFPD_ORGANIZATION_ID = 'sfpd';
 
 const QuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
@@ -38,8 +39,8 @@ export default async function (fastify) {
       onRequest: [fastify.requireArrestsApiKey],
       schema: {
         description:
-          'List arrests at the RESET facility for the given day (interpreted in Pacific time). ' +
-          'Excludes incidents whose deflections are all cancelled.',
+          'List SFPD-initiated arrests at the RESET facility for the given day (interpreted in Pacific time). ' +
+          'Excludes incidents created by other organizations and incidents whose deflections are all cancelled.',
         querystring: QuerySchema,
         response: {
           [StatusCodes.OK]: ArrestsResponseSchema,
@@ -60,6 +61,7 @@ export default async function (fastify) {
         where: {
           arrestedAt: { gte: start, lt: end },
           facility: { name: FACILITY_NAME },
+          createdByOrganizationId: SFPD_ORGANIZATION_ID,
           deflections: { some: { cancelledAt: null } },
         },
         select: {
