@@ -9,7 +9,7 @@ import { formatUnitName } from '#lib/unitName.js';
 import Organization from '#models/organization.js';
 import Title from '#models/title.js';
 import Unit from '#models/unit.js';
-const { Prisma, RoleEnum } = prismaPkg;
+const { Prisma, RoleEnum, NotifiableEventEnum } = prismaPkg;
 
 const UserAttributesSchema = z.object({
   firstName: z
@@ -27,6 +27,11 @@ const UserAttributesSchema = z.object({
   titleId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
   roles: z.array(z.enum(Object.values(RoleEnum))).optional(),
+  // SMS notification preferences (self-editable). Server-controlled verification
+  // state (phoneVerifiedAt / smsConsentAt / smsOptedOutAt) is intentionally excluded.
+  phoneNumber: z.string().nullable().optional(),
+  notificationsEnabled: z.boolean().optional(),
+  subscribedEvents: z.array(z.enum(Object.values(NotifiableEventEnum))).optional(),
 });
 
 const UserPasswordSchema = z
@@ -54,6 +59,10 @@ const UserResponseSchema = UserAttributesSchema.extend({
     (value) => (value == null || (value instanceof Date && Number.isNaN(value.getTime())) ? null : value),
     z.coerce.date().nullable()
   ),
+  // SMS verification / opt-out state (server-controlled, read-only to the client).
+  phoneVerifiedAt: z.coerce.date().nullable().optional(),
+  smsConsentAt: z.coerce.date().nullable().optional(),
+  smsOptedOutAt: z.coerce.date().nullable().optional(),
 });
 
 const UserNameResponseSchema = z.object({

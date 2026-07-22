@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
 import { queueReleaseFormsEmail } from '#lib/forms/formEmailJobs.js';
@@ -252,6 +253,12 @@ export default async function (fastify, opts) {
         deflectionId: deflection.id,
         userId: request.user.id,
       });
+
+      // Fire-and-forget SMS notification (D8: EXIT). release() only sometimes
+      // reaches EXITED, so this is guarded on the resulting state.
+      smsNotifications
+        .maybeNotifyExit(fastify, deflection)
+        .catch((err) => fastify.log.error({ err }, 'SMS exit notification failed'));
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });

@@ -250,6 +250,13 @@ enum SubjectStatusEnum {
   DEATH_IN_CUSTODY
 }
 
+// Event types a user can subscribe to for SMS notifications (D7/D8).
+enum NotifiableEventEnum {
+  NEW_HOLD
+  ARRIVAL
+  EXIT
+}
+
 model Organization {
   id           String     @id
   name         String
@@ -331,6 +338,15 @@ model User {
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
   satisfactionSurveyNextEligibleAt DateTime?
+  // SMS notifications (D7). phoneVerifiedAt/smsOptedOutAt are server-controlled.
+  phoneNumber                  String?
+  phoneVerifiedAt              DateTime?
+  smsConsentAt                 DateTime?
+  smsOptedOutAt                DateTime?
+  notificationsEnabled         Boolean                 @default(false)
+  subscribedEvents             NotifiableEventEnum[]   @default([])
+  currentFacilityId            String?                 @db.Uuid
+  currentFacility              Facility?               @relation("UsersCurrentFacility", fields: [currentFacilityId], references: [id])
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")
@@ -438,6 +454,7 @@ model Facility {
   facilityCheckIns FacilityCheckIn[]
   incidents        Incident[]
   updates          FacilityUpdate[]
+  usersCurrentlyPresent User[]        @relation("UsersCurrentFacility")
 }
 
 model FacilityUpdate {

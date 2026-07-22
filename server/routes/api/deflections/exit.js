@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
 import { CARE_EXIT_DESTINATIONS } from '#lib/careExitDestinations.js';
@@ -139,6 +140,11 @@ export default async function (fastify, opts) {
       }
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
+
+      // Fire-and-forget SMS notification (D8: EXIT). Keyed off the EXITED state.
+      smsNotifications
+        .maybeNotifyExit(fastify, deflection)
+        .catch((err) => fastify.log.error({ err }, 'SMS exit notification failed'));
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     }
