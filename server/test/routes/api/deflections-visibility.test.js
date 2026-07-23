@@ -5,8 +5,8 @@ import { DateTime } from 'luxon';
 
 import { authenticate, build } from '#test/helper.js';
 
-// Issue #980: EXITED deflections must remain visible in list results for
-// 72 hours after exit (previously 24 hours).
+// EXITED deflections must remain visible in list results for 72 hours
+// after exit.
 test('/api/deflections EXITED visibility window', async (t) => {
   const app = await build(t);
   const { prisma } = app;

@@ -137,9 +137,8 @@ const prisma = new PrismaClient({
         const parsed = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS);
         const hours = Number.isFinite(parsed) ? parsed : 96;
         const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
-        // Stays longer than 24h push exit + 72h past the creation backstop, so
-        // also hold anonymization until every exit's visibility window (issue
-        // #980) has closed. Never-exited subjects still fall to the backstop.
+        // Hold redaction until every exit's visibility window has closed;
+        // never-exited subjects still fall to the createdAt backstop.
         const visibilityCutoff = exitedVisibilityCutoff(now);
         const eligible = await prisma.$queryRaw`
           SELECT s."id"

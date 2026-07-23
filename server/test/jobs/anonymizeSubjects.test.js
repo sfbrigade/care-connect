@@ -132,9 +132,8 @@ test('anonymizeSubjects job', async (t) => {
     assert.strictEqual(updated.firstName, 'Fresh');
   });
 
-  await t.test('defers anonymization until 72 hours after exit (issue #980)', async () => {
+  await t.test('defers anonymization until 72 hours after exit', async () => {
     // A stay longer than 24h pushes exit + 72h past the 96h creation backstop.
-    // The exited record must stay intact until its 72h visibility window ends.
     const { subject } = await createSubjectWithDeflection({
       exitedAt: DateTime.now().minus({ hours: 71 }).toJSDate(),
     });

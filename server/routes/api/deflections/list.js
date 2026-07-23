@@ -64,7 +64,7 @@ export default async function (fastify) {
           { status: Deflection.HoldStatus.ACTIVE },
           { subject: { isNot: null } },
         ]);
-        // Cap visibility of EXITED rows to the retention window (issue #980).
+        // Cap visibility of EXITED rows to the retention window.
         addOrGroup([
           { subjectStatus: { not: Deflection.SubjectStatus.EXITED } },
           { exitedAt: { gte: exitedVisibilityCutoff() } },
