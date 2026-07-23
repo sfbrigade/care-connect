@@ -132,6 +132,73 @@ test('anonymizeSubjects job', async (t) => {
     assert.strictEqual(updated.firstName, 'Fresh');
   });
 
+  await t.test('defers anonymization until 72 hours after exit (issue #980)', async () => {
+    // A stay longer than 24h pushes exit + 72h past the 96h creation backstop.
+    // The exited record must stay intact until its 72h visibility window ends.
+    const { subject } = await createSubjectWithDeflection({
+      exitedAt: DateTime.now().minus({ hours: 71 }).toJSDate(),
+    });
+
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Subject" SET "createdAt" = $1 WHERE "id" = $2::uuid',
+      DateTime.now().minus({ hours: 97 }).toJSDate(),
+      subject.id
+    );
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.strictEqual(updated.anonymizedAt, null, 'subject exited 71h ago should keep PII');
+    assert.strictEqual(updated.firstName, 'John');
+  });
+
+  await t.test('anonymizes once 72 hours have passed since exit', async () => {
+    const { subject } = await createSubjectWithDeflection({
+      exitedAt: DateTime.now().minus({ hours: 73 }).toJSDate(),
+    });
+
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Subject" SET "createdAt" = $1 WHERE "id" = $2::uuid',
+      DateTime.now().minus({ hours: 97 }).toJSDate(),
+      subject.id
+    );
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.ok(updated.anonymizedAt, 'subject exited 73h ago should be anonymized');
+    assert.strictEqual(updated.firstName, null);
+  });
+
+  await t.test('most recent exit governs subjects with multiple deflections', async () => {
+    const { subject, incident, user } = await createSubjectWithDeflection({
+      exitedAt: DateTime.now().minus({ hours: 100 }).toJSDate(),
+    });
+    await prisma.deflection.create({
+      data: {
+        incidentId: incident.id,
+        facilityId,
+        bedTypeId,
+        subjectId: subject.id,
+        createdById: user.id,
+        status: 'ACTIVE',
+        subjectStatus: 'EXITED',
+        exitedAt: DateTime.now().minus({ hours: 10 }).toJSDate(),
+      },
+    });
+
+    await prisma.$executeRawUnsafe(
+      'UPDATE "Subject" SET "createdAt" = $1 WHERE "id" = $2::uuid',
+      DateTime.now().minus({ hours: 200 }).toJSDate(),
+      subject.id
+    );
+
+    await anonymizeSubjects({}, prisma);
+
+    const updated = await prisma.subject.findUnique({ where: { id: subject.id } });
+    assert.strictEqual(updated.anonymizedAt, null, 'a recent exit on any deflection should defer anonymization');
+  });
+
   await t.test('clears file references and deletes S3 objects for anonymized subjects', async () => {
     const { subject, deflection } = await createSubjectWithDeflection();
 
