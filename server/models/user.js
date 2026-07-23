@@ -65,6 +65,10 @@ const UserResponseSchema = UserAttributesSchema.extend({
   phoneVerifiedAt: z.coerce.date().nullable().optional(),
   smsConsentAt: z.coerce.date().nullable().optional(),
   smsOptedOutAt: z.coerce.date().nullable().optional(),
+  // SMS enrollment banner dismissal state (drives banner visibility client-side).
+  smsBannerDismissedAt: z.coerce.date().nullable().optional(),
+  smsBannerRemindAfter: z.coerce.date().nullable().optional(),
+  smsBannerRemindCount: z.number().optional(),
 });
 
 const UserNameResponseSchema = z.object({

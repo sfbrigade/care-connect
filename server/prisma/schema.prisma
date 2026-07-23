@@ -355,6 +355,12 @@ model User {
   smsOtpExpiresAt              DateTime?
   smsOtpAttempts               Int                     @default(0)
   smsOtpLastSentAt             DateTime?
+  // SMS enrollment banner dismissal state (cross-device). Subscribe/X →
+  // dismissedAt (permanent). "Remind me later" → remindAfter=+24h, capped so it
+  // reappears once then is permanent (remindCount).
+  smsBannerDismissedAt         DateTime?
+  smsBannerRemindAfter         DateTime?
+  smsBannerRemindCount         Int                     @default(0)
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")

@@ -358,6 +358,9 @@ DEPARTURE DEPARTURE
     DateTime smsOtpExpiresAt "❓"
     Int smsOtpAttempts 
     DateTime smsOtpLastSentAt "❓"
+    DateTime smsBannerDismissedAt "❓"
+    DateTime smsBannerRemindAfter "❓"
+    Int smsBannerRemindCount 
     DateTime updatedAt 
     DateTime createdAt 
     }

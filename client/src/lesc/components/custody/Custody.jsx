@@ -8,6 +8,7 @@ import { Head } from '@unhead/react';
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
+import SmsSubscriptionBanner from '@/components/SmsSubscriptionBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -386,6 +387,7 @@ function Custody () {
             inTransitCount={inTransitCount}
             occupiedCount={occupiedCount}
           />
+          <SmsSubscriptionBanner />
           <SegmentedControl
             fullWidth
             value={tab}
