@@ -338,7 +338,9 @@ model User {
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
   satisfactionSurveyNextEligibleAt DateTime?
-  // SMS notifications (D7). phoneVerifiedAt/smsOptedOutAt are server-controlled.
+  // SMS notifications (D7). phoneVerifiedAt/smsOptedOutAt are server-controlled;
+  // phoneNumber is managed only via the phone verification flow (not the generic
+  // profile update), so a number can't appear verified without owning it.
   phoneNumber                  String?
   phoneVerifiedAt              DateTime?
   smsConsentAt                 DateTime?
@@ -347,6 +349,12 @@ model User {
   subscribedEvents             NotifiableEventEnum[]   @default([])
   currentFacilityId            String?                 @db.Uuid
   currentFacility              Facility?               @relation("UsersCurrentFacility", fields: [currentFacilityId], references: [id])
+  // Self-managed SMS OTP (D6), mirroring the login-MFA fields. No token: the user
+  // is already authenticated, so we key off the session user.
+  smsOtpCode                   String?
+  smsOtpExpiresAt              DateTime?
+  smsOtpAttempts               Int                     @default(0)
+  smsOtpLastSentAt             DateTime?
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")

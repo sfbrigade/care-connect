@@ -103,34 +103,10 @@ async function sendText ({ to, body }) {
   }
 }
 
-// --- Phone verification / OTP ---------------------------------------------
-//
-// TO BE IMPLEMENTED IN PHASE 4 as SELF-MANAGED OTP over sendText() above.
-//
-// Background (revises D6): AWS *managed* OTP (SendOTPMessage / VerifyOTPMessage)
-// is NOT in End User Messaging / pinpoint-sms-voice-v2 (only SendTextMessage) —
-// it lives in the v1 Amazon Pinpoint API, which is application-scoped and stopped
-// accepting new customers on 2025-05-20. This is a new account, so managed OTP
-// is unavailable to us. Instead: generate a code → store it + expiry + attempts
-// on User → sms.sendText the code → compare on verify. Mirror the existing
-// login-MFA fields/logic (mfaCode / mfaExpiresAt / mfaAttempts / mfaLastSentAt),
-// but with SEPARATE SMS-OTP fields so the phone-verification and login-MFA flows
-// don't collide. Left unimplemented until Phase 4.
-
-async function sendOtp () {
-  throw new Error(
-    'sms.sendOtp not implemented — OTP transport is pending a design decision. ' +
-    'AWS managed OTP is a legacy Pinpoint operation, not available in End User ' +
-    'Messaging v2. See docs/sms-notifications-technical-plan.md.'
-  );
-}
-
-async function verifyOtp () {
-  throw new Error(
-    'sms.verifyOtp not implemented — OTP transport is pending a design decision. ' +
-    'See docs/sms-notifications-technical-plan.md.'
-  );
-}
+// Phone verification (D6) is self-managed over sendText() — see lib/smsOtp.js.
+// (AWS *managed* OTP, SendOTPMessage/VerifyOTPMessage, is NOT in End User
+// Messaging / pinpoint-sms-voice-v2; it's v1 Amazon Pinpoint, which is closed to
+// new accounts — so we roll our own on top of sendText.)
 
 // Reset cached client (used by tests, mirrors lib/s3.js).
 function reset () {
@@ -140,8 +116,6 @@ function reset () {
 
 export default {
   sendText,
-  sendOtp,
-  verifyOtp,
   resolveTransport,
   reset,
 };

@@ -354,6 +354,10 @@ DEPARTURE DEPARTURE
     Boolean notificationsEnabled 
     NotifiableEventEnum subscribedEvents 
     String currentFacilityId "❓"
+    String smsOtpCode "❓"
+    DateTime smsOtpExpiresAt "❓"
+    Int smsOtpAttempts 
+    DateTime smsOtpLastSentAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }
