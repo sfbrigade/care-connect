@@ -28,15 +28,18 @@ export default async function (fastify, opts) {
         description: 'Begin SMS phone verification: store the number (unverified), record consent, and send a code.',
         body: z.object({
           phoneNumber: E164,
-          consent: z.boolean(),
-          acceptedTerms: z.boolean(),
+          consent: z.boolean().optional(),
+          acceptedTerms: z.boolean().optional(),
         }),
         response: { [StatusCodes.OK]: ResendStatusSchema },
       },
     },
     async function (request, reply) {
       const { phoneNumber, consent, acceptedTerms } = request.body;
-      if (!consent || !acceptedTerms) {
+      // Consent is required for first-time enrollment; a user who already consented
+      // (e.g. changing their number from Contact details) need not re-consent.
+      const consentingNow = consent && acceptedTerms;
+      if (!request.user.smsConsentAt && !consentingNow) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'You must consent to SMS and accept the terms.' });
       }
       // Reject a number already verified on another account (designer edge case).
@@ -51,10 +54,10 @@ export default async function (fastify, opts) {
       if (remaining > 0) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: `Please wait ${remaining}s before requesting another code.`, resendAvailableInSeconds: remaining });
       }
-      // Store the (unverified) number + consent, then send the code.
+      // Store the (unverified) number; stamp consent only when consenting now.
       await fastify.prisma.user.update({
         where: { id: request.user.id },
-        data: { phoneNumber, phoneVerifiedAt: null, smsConsentAt: new Date() },
+        data: { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) },
       });
       await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber });
       return reply.send({ phoneNumber, resendAvailableInSeconds: RESEND_COOLDOWN_S });

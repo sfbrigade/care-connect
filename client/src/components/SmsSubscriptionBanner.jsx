@@ -1,12 +1,11 @@
-import { useState } from 'react';
 import { Alert, Anchor, Group, Stack, Text } from '@mantine/core';
 import { IconBell } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
-import SmsEnrollmentModal from '@/components/SmsEnrollmentModal';
 
 // Home-screen prompt inviting eligible users to enroll in SMS notifications.
 // Shown only to CUSTODY-role users (the v1 notification audience — NOT gated on
@@ -18,7 +17,7 @@ function SmsSubscriptionBanner () {
   const { user } = useAuthContext();
   const { isCustody } = useUserRole();
   const queryClient = useQueryClient();
-  const [modalOpened, setModalOpened] = useState(false);
+  const navigate = useNavigate();
 
   const bannerActionMutation = useMutation({
     mutationFn: (action) => Api.users.smsBannerAction(action),
@@ -37,41 +36,36 @@ function SmsSubscriptionBanner () {
     !remindActive
   );
 
+  if (!shouldShow) return null;
+
   function onSubscribe () {
-    // Opens the flow and permanently dismisses the banner (designer notes).
-    setModalOpened(true);
+    // Permanently dismiss (designer notes) and navigate into the enrollment flow.
     bannerActionMutation.mutate('dismiss');
+    navigate('/profile/notifications/enroll');
   }
 
   return (
-    <>
-      {shouldShow && (
-        <Alert
-          icon={<IconBell />}
-          color='indigo'
-          variant='light'
-          withCloseButton
-          closeButtonLabel='Dismiss'
-          onClose={() => bannerActionMutation.mutate('dismiss')}
-          title='Subscribe to SMS notifications'
-        >
-          <Stack gap='xs'>
-            <Text size='sm'>Get notified about CareConnect status updates.</Text>
-            <Group gap='lg'>
-              <Anchor component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
-                Remind me later
-              </Anchor>
-              <Anchor component='button' type='button' fw={600} onClick={onSubscribe}>
-                Subscribe
-              </Anchor>
-            </Group>
-          </Stack>
-        </Alert>
-      )}
-      {/* Rendered outside the shouldShow gate so it survives the banner hiding
-          (clicking Subscribe dismisses the banner while the modal stays open). */}
-      <SmsEnrollmentModal opened={modalOpened} onClose={() => setModalOpened(false)} />
-    </>
+    <Alert
+      icon={<IconBell />}
+      color='indigo'
+      variant='light'
+      withCloseButton
+      closeButtonLabel='Dismiss'
+      onClose={() => bannerActionMutation.mutate('dismiss')}
+      title='Subscribe to SMS notifications'
+    >
+      <Stack gap='xs'>
+        <Text size='sm'>Get notified about CareConnect status updates.</Text>
+        <Group gap='lg'>
+          <Anchor component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
+            Remind me later
+          </Anchor>
+          <Anchor component='button' type='button' fw={600} onClick={onSubscribe}>
+            Subscribe
+          </Anchor>
+        </Group>
+      </Stack>
+    </Alert>
   );
 }
 

@@ -1,14 +1,41 @@
-import { Anchor, Box, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconPencilMinus } from '@tabler/icons-react';
+import { Anchor, Button, Box, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
+import { Link } from 'react-router';
 
 import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { summarizeEvents } from '@/components/NotificationPreferenceToggles';
+import { useUserRole } from '@/hooks/useUserRole';
 import { formatUnitName } from '@/utils/unit';
+import { formatUSPhone } from '@/utils/phone';
+
+function Field ({ label, value }) {
+  return (
+    <Box>
+      <Text size='md' c='gray.6'>{label}</Text>
+      <Text size='md'>{value}</Text>
+    </Box>
+  );
+}
+
+function SectionHeader ({ title, to }) {
+  return (
+    <Group justify='space-between'>
+      <Title order={3}>{title}</Title>
+      <Button component={Link} to={to} variant='default' size='xs'>Edit</Button>
+    </Group>
+  );
+}
 
 function UserProfilePage () {
   const { user } = useAuthContext();
+  const { isCustody } = useUserRole();
+
+  const isSfpdOrSfso = user.organizationId === 'sfpd' || user.organizationId === 'sfso';
+  const isSubscribed = !!user.phoneVerifiedAt && (user.subscribedEvents?.length ?? 0) > 0;
+  const preferencesSummary = summarizeEvents(user.subscribedEvents);
 
   return (
     <>
@@ -22,52 +49,45 @@ function UserProfilePage () {
       </Header>
       <Container>
         <Stack>
-          <Box>
-            <Title order={2}>{user.firstName} {user.lastName}</Title>
-            {user.unit && <Text c='gray.6' size='sm'>{formatUnitName(user.unit?.name)}</Text>}
-          </Box>
-          <Stack gap='sm'>
-            <Title order={3}>Personal Information</Title>
-            <Box>
-              <Text size='md' c='gray.6'>Name</Text>
-              <Text size='md'>{user.firstName} {user.lastName}</Text>
-            </Box>
-            <Box>
-              <Text size='md' c='gray.6'>Email Address</Text>
-              <Text size='md'>{user.email}</Text>
-            </Box>
-          </Stack>
-          {(user.organizationId === 'sfpd' || user.organizationId === 'sfso') && (
+          <Title order={2}>{user.firstName} {user.lastName}</Title>
+
+          {isSfpdOrSfso && (
             <>
-              <Divider />
               <Stack gap='sm'>
-                <Group justify='space-between'>
-                  <Title order={3}>Position details</Title>
-                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' aria-label='Edit position details' />
-                </Group>
-                <Box>
-                  <Text size='md' c='gray.6'>Star number</Text>
-                  <Text size='md'>{user.badgeNumber}</Text>
-                </Box>
-                <Box>
-                  <Text size='md' c='gray.6'>Unit</Text>
-                  <Text size='md'>{formatUnitName(user.unit?.name)}</Text>
-                </Box>
+                <SectionHeader title='Position details' to='/profile/edit' />
+                <Field label='Star number' value={user.badgeNumber} />
+                <Field label='Unit' value={formatUnitName(user.unit?.name)} />
                 {user.organizationId === 'sfso' && (
                   <>
-                    <Box>
-                      <Text size='md' c='gray.6'>Rank</Text>
-                      <Text size='md'>{user.title?.name}</Text>
-                    </Box>
-                    <Box>
-                      <Text size='md' c='gray.6'>Prop 115 certification</Text>
-                      <Text size='md'>{user.prop115Certified ? 'Yes' : 'No'}</Text>
-                    </Box>
+                    <Field label='Rank' value={user.title?.name} />
+                    <Field label='Prop 115 certification' value={user.prop115Certified ? 'Yes' : 'No'} />
                   </>
                 )}
               </Stack>
+              <Divider />
             </>
           )}
+
+          <Stack gap='sm'>
+            <SectionHeader title='Contact details' to='/profile/contact' />
+            <Field label='Email address' value={user.email} />
+            <Field label='Mobile number' value={user.phoneNumber ? formatUSPhone(user.phoneNumber) : 'Not set'} />
+          </Stack>
+
+          {isCustody && (
+            <>
+              <Divider />
+              <Stack gap='sm'>
+                <SectionHeader
+                  title='SMS notifications'
+                  to={user.phoneVerifiedAt ? '/profile/notifications' : '/profile/notifications/enroll'}
+                />
+                <Field label='SMS subscription' value={isSubscribed ? 'On' : 'Off'} />
+                {isSubscribed && <Field label='Preferences' value={preferencesSummary} />}
+              </Stack>
+            </>
+          )}
+
           <Text size='sm' ta='center' c='gray.5'>
             For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>
