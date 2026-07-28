@@ -420,14 +420,6 @@ const Api = {
       return instance.post('/api/service-types', data).catch(handleError);
     },
   },
-  canary: {
-    error () {
-      return instance.post('/api/canary/error');
-    },
-    job () {
-      return instance.post('/api/canary/job');
-    },
-  },
   feedback: {
     create (data) {
       return instance.post('/api/feedback', data).catch(handleError);
