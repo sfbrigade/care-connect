@@ -1,5 +1,5 @@
-import { Alert, Anchor, Group, Stack, Text } from '@mantine/core';
-import { IconBell } from '@tabler/icons-react';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { IconBellRinging } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
@@ -50,23 +50,24 @@ function SmsSubscriptionBanner () {
 
   return (
     <Alert
-      icon={<IconBell />}
-      color='indigo'
+      icon={<IconBellRinging color='var(--mantine-color-indigo-6)' />}
+      color='gray'
       variant='light'
+      radius='lg'
       withCloseButton
       closeButtonLabel='Dismiss'
       onClose={() => bannerActionMutation.mutate('dismiss')}
-      title='Subscribe to SMS notifications'
+      styles={{ root: { backgroundColor: 'var(--mantine-color-gray-1)' } }}
     >
       <Stack gap='xs'>
-        <Text size='sm'>Get notified about CareConnect status updates.</Text>
-        <Group gap='lg'>
+        <Text size='sm'>Subscribe to SMS notifications for CareConnect status updates.</Text>
+        <Group gap='md'>
           <Anchor component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
             Remind me later
           </Anchor>
-          <Anchor component='button' type='button' fw={600} onClick={onSubscribe}>
+          <Button variant='secondary' size='sm' onClick={onSubscribe}>
             Subscribe
-          </Anchor>
+          </Button>
         </Group>
       </Stack>
     </Alert>
