@@ -39,7 +39,7 @@ export async function sendVerificationCode (prisma, user, { startsResendCooldown
   });
   await sms.sendText({
     to: user.phoneNumber,
-    body: `${code} is your CareConnect verification code. Reply STOP to opt out.`,
+    body: `CareConnect: ${code} is your verification code. Do not share this code with anyone.`,
   });
 }
 
