@@ -36,3 +36,9 @@ export function arrivalBody (facility, { count } = {}) {
 export function exitBody (facility, { deflectionId } = {}) {
   return `CareConnect: 1 person exited ${facility.name}. View details: ${linkTo(facility, `/custody/${deflectionId}`)}`;
 }
+
+// WELCOME — sent once, the first time a user successfully subscribes. Links to
+// their SMS preferences screen.
+export function welcomeBody (facility) {
+  return `CareConnect: You're now subscribed to SMS notifications. You can manage your preferences here: ${linkTo(facility, '/profile/notifications')}. Reply STOP to unsubscribe at any time.`;
+}

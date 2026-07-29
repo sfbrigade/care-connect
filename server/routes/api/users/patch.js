@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import slugifyUnitId from '#lib/slugifyUnitId.js';
 import { normalizeUnitName } from '#lib/unitName.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import User from '#models/user.js';
 
 const ORG_ADMIN_ALLOWED_FIELDS = new Set([
@@ -205,6 +206,11 @@ export default async function (fastify, opts) {
       if (lockedForbidden) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
+      // Fire-and-forget: send the one-time welcome SMS if this update just made
+      // the user subscribed for the first time. Never block/fail the response.
+      smsNotifications
+        .maybeSendWelcome(fastify, data)
+        .catch((err) => fastify.log.error({ err }, 'SMS welcome notification failed'));
       return reply.send(new User(data));
     });
 }

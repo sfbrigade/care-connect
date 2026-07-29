@@ -86,7 +86,7 @@ async function enroll (email, phone) {
     data: {
       phoneNumber, phoneVerifiedAt: new Date(), smsConsentAt: new Date(),
       subscribedEvents: ALL_EVENTS, notificationsEnabled: true, smsOptedOutAt: null,
-      currentFacilityId: f.id,
+      currentFacilityId: f.id, smsWelcomedAt: new Date(),
       // Don't touch banner dismissal — being subscribed already hides the banner
       // (isSmsSubscribed), so leaving it clear keeps enroll composable (e.g. enroll
       // then clear subscribedEvents to get a clean "verified-but-unsubscribed" state).
@@ -105,6 +105,7 @@ async function unenroll (email) {
       subscribedEvents: [], notificationsEnabled: false, smsOptedOutAt: null,
       currentFacilityId: f.id,
       smsBannerDismissedAt: null, smsBannerRemindAfter: null, smsBannerRemindCount: 0,
+      smsWelcomedAt: null,
       smsOtpCode: null, smsOtpExpiresAt: null, smsOtpAttempts: 0, smsOtpLastSentAt: null,
     },
   });

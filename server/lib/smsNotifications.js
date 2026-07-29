@@ -1,5 +1,6 @@
 import { QUEUE_SEND_SMS } from '#lib/jobQueue/queueNames.js';
 import Facility from '#models/facility.js';
+import sms from '#lib/sms.js';
 import * as templates from '#lib/smsTemplates.js';
 import { EVENT_AUDIENCE } from '#lib/smsAudience.js';
 
@@ -83,4 +84,21 @@ export async function maybeNotifyExit (fastify, deflection) {
   return notifyExit(fastify, { deflectionId: deflection.id, facilityId: deflection.facilityId });
 }
 
-export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit };
+// Send the one-time "you're subscribed" welcome SMS (Content Matrix) the first
+// time a user reaches the subscribed state (verified phone + ≥1 event) and hasn't
+// been welcomed. Marks smsWelcomedAt so it only ever sends once. Call after a user
+// update, fire-and-forget. Needs a facility (the user's current one) for the deep
+// link's subdomain.
+export async function maybeSendWelcome (fastify, user) {
+  if (!user?.phoneVerifiedAt) return 0;
+  if ((user.subscribedEvents?.length ?? 0) === 0) return 0;
+  if (user.smsWelcomedAt) return 0;
+  const facility = user.currentFacilityId ? await loadFacility(fastify, user.currentFacilityId) : null;
+  if (!facility) return 0;
+  // Mark welcomed before sending so concurrent updates can't double-send.
+  await fastify.prisma.user.update({ where: { id: user.id }, data: { smsWelcomedAt: new Date() } });
+  await sms.sendText({ to: user.phoneNumber, body: templates.welcomeBody(facility) });
+  return 1;
+}
+
+export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit, maybeSendWelcome };

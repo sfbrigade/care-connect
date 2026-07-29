@@ -361,6 +361,7 @@ DEPARTURE DEPARTURE
     DateTime smsBannerDismissedAt "❓"
     DateTime smsBannerRemindAfter "❓"
     Int smsBannerRemindCount 
+    DateTime smsWelcomedAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }
