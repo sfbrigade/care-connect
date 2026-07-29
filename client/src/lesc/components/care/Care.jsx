@@ -116,7 +116,7 @@ function Care () {
     [notInCustodyDeflections]
   );
   const availableChairs = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.available ?? 0), 0);
-  const inTransitCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.inTransit ?? 0), 0);
+  const heldCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.holds ?? 0), 0);
   const occupiedCount = (bedTypes ?? facility.bedTypes ?? []).reduce((sum, bedType) => sum + (bedType.occupied ?? 0), 0);
 
   function handleScanSuccess () {
@@ -162,7 +162,7 @@ function Care () {
         <Stack gap='lg'>
           <ChairAvailabilityCard
             availableChairs={availableChairs}
-            inTransitCount={inTransitCount}
+            heldCount={heldCount}
             occupiedCount={occupiedCount}
             actionLabel={user.roles?.includes('FACILITY_ADMIN') ? 'Manage capacity' : undefined}
             onActionClick={() => navigate('/manage-capacity')}

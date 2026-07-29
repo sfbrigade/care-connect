@@ -502,6 +502,9 @@ model AdminSecurityEvent {
   @@index([targetUserId, createdAt])
 }
 
+// Counters here partition every chair into available / held / occupied / two
+// offline buckets. Conservation invariant and per-transition mutations live in
+// docs/holds-state-machine.md — read before adding fields or wiring new routes.
 model BedType {
   id                    String                    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility              Facility                  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
