@@ -609,6 +609,7 @@ DEPARTURE DEPARTURE
     SFResidentEnum exitSFResident "❓"
     DateTime arrivedAt "❓"
     DateTime handoffReadyAt "❓"
+    DateTime newHoldNotifiedAt "❓"
     DateTime updatedAt 
     }
   

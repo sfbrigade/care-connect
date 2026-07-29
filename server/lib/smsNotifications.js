@@ -1,8 +1,10 @@
 import { QUEUE_SEND_SMS } from '#lib/jobQueue/queueNames.js';
 import Facility from '#models/facility.js';
+import location from '#lib/location.js';
 import sms from '#lib/sms.js';
 import * as templates from '#lib/smsTemplates.js';
 import { EVENT_AUDIENCE } from '#lib/smsAudience.js';
+import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
 // Centralized SMS notifier (D4). One module maps a domain event → event type →
 // recipients (D5) → one pg-boss send-sms job per recipient. Keeping this in a
@@ -51,12 +53,72 @@ async function dispatch (fastify, { facilityId, event, body }) {
   return recipients.length;
 }
 
+// Resolve a drive-time ETA string for a new hold. Nice-to-have: origin comes from
+// the incident (stored coords → geocoded address), destination is the facility.
+// Any missing data, error, or slow response yields null → the message just omits
+// the ETA. Never throws.
+const ETA_OVERALL_TIMEOUT_MS = 5000;
+async function computeNewHoldEta (fastify, deflectionId, facility) {
+  if (facility.latitude == null || facility.longitude == null) return null;
+  const destination = { lat: Number(facility.latitude), lng: Number(facility.longitude) };
+
+  const deflection = await fastify.prisma.deflection.findUnique({
+    where: { id: deflectionId },
+    include: { incident: true },
+  });
+  const incident = deflection?.incident;
+  if (!incident) return null;
+
+  let origin = null;
+  if (incident.latitude != null && incident.longitude != null) {
+    origin = { lat: Number(incident.latitude), lng: Number(incident.longitude) };
+  } else {
+    const address = [incident.addressLine1, incident.city, incident.state, incident.postalCode].filter(Boolean).join(', ');
+    if (address) origin = await location.geocode(address); // { lat, lng } or null
+  }
+  if (!origin) return null;
+
+  return templates.formatEta(await location.calculateRouteDuration(origin, destination));
+}
+
 export async function notifyNewHold (fastify, { deflectionId, facilityId }) {
   const facility = await loadFacility(fastify, facilityId);
   if (!facility) return 0;
-  // ETA (Phase 7) not implemented yet — send without it (tier-3 fallback).
-  const body = templates.newHoldBody(facility, { deflectionId, eta: null });
+  // Bound the whole ETA computation (geocode + route); any failure/timeout → null.
+  const eta = await Promise.race([
+    computeNewHoldEta(fastify, deflectionId, facility).catch(() => null),
+    new Promise((resolve) => setTimeout(() => resolve(null), ETA_OVERALL_TIMEOUT_MS)),
+  ]);
+  const body = templates.newHoldBody(facility, { deflectionId, eta });
   return dispatch(fastify, { facilityId, event: 'NEW_HOLD', body });
+}
+
+// Fire NEW_HOLD ("in transit") for any hold on this incident that has just become
+// ready for transfer — incident + person details complete (D8 / Content Matrix
+// trigger). Once-only per hold via newHoldNotifiedAt. Called after any detail edit
+// (incident/deflection/subject); completing the shared incident can ready several
+// holds at once. Fire-and-forget from the caller.
+export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }) {
+  const deflections = await fastify.prisma.deflection.findMany({
+    where: {
+      facilityId,
+      incidentId,
+      status: 'ACTIVE',
+      subjectStatus: 'DETAINED', // still pre-arrival ("in transit")
+      newHoldNotifiedAt: null,
+    },
+    include: { subject: true, incident: true },
+  });
+  for (const deflection of deflections) {
+    if (!isIncidentDetailsComplete(deflection.incident)) continue;
+    if (!isDeflectionDetailsComplete(deflection)) continue;
+    // Mark first so a burst of concurrent edits can't double-send.
+    await fastify.prisma.deflection.update({
+      where: { id: deflection.id },
+      data: { newHoldNotifiedAt: new Date() },
+    });
+    await notifyNewHold(fastify, { deflectionId: deflection.id, facilityId });
+  }
 }
 
 export async function notifyArrival (fastify, { facilityId, count }) {
@@ -101,4 +163,4 @@ export async function maybeSendWelcome (fastify, user) {
   return 1;
 }
 
-export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit, maybeSendWelcome };
+export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit, maybeNotifyReadyHolds, maybeSendWelcome };

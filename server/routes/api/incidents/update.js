@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
 
 export default async function (fastify, opts) {
@@ -65,6 +66,12 @@ export default async function (fastify, opts) {
           formIds: ['647f'],
         });
       }
+
+      // Fire-and-forget: completing incident details may make holds ready for
+      // transfer → NEW_HOLD ("in transit"). Never block/fail the request.
+      smsNotifications
+        .maybeNotifyReadyHolds(fastify, { facilityId: updated.facilityId, incidentId: id })
+        .catch((err) => fastify.log.error({ err }, 'SMS ready-hold notification failed'));
 
       return reply.send(updated);
     });

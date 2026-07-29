@@ -4,7 +4,6 @@ import { z } from 'zod';
 import Incident from '#models/incident.js';
 import User from '#models/user.js';
 import Facility from '#models/facility.js';
-import smsNotifications from '#lib/smsNotifications.js';
 import { facilityNotAcceptingError, noAvailableBedError } from '#lib/httpErrors.js';
 
 export default async function (fastify, opts) {
@@ -36,9 +35,6 @@ export default async function (fastify, opts) {
       }
 
       let incident;
-      // The initial deflection (first hold), if a bed is reserved with the
-      // incident. Hoisted so we can fire the NEW_HOLD notification after commit.
-      let initialDeflection = null;
       await fastify.prisma.$transaction(async (tx) => {
         const facility = await fastify.prisma.facility.findByIdForUpdate(tx, data.facilityId);
         if (!facility || facility.status !== Facility.Status.OPEN_ACCEPTING) {
@@ -75,7 +71,7 @@ export default async function (fastify, opts) {
         });
         if (bedType) {
           // create the initial deflection/
-          initialDeflection = await tx.deflection.create({
+          await tx.deflection.create({
             data: {
               incidentId: incident.id,
               facilityId: data.facilityId,
@@ -114,15 +110,6 @@ export default async function (fastify, opts) {
 
       incident.createdBy = new User(incident.createdBy);
       incident.updatedBy = new User(incident.updatedBy);
-
-      // Fire-and-forget SMS notification (D8: NEW_HOLD) for the first hold of the
-      // incident. Subsequent holds go through deflections/create.js, which notifies
-      // separately. Never block/fail incident creation on it.
-      if (initialDeflection) {
-        smsNotifications
-          .notifyNewHold(fastify, { deflectionId: initialDeflection.id, facilityId: initialDeflection.facilityId })
-          .catch((err) => fastify.log.error({ err }, 'SMS new-hold notification failed'));
-      }
 
       return reply.code(StatusCodes.CREATED).send(incident);
     });

@@ -1,4 +1,5 @@
 import { GeoPlacesClient, SuggestCommand, ReverseGeocodeCommand, GeocodeCommand } from '@aws-sdk/client-geo-places';
+import { GeoRoutesClient, CalculateRoutesCommand } from '@aws-sdk/client-geo-routes';
 
 // AWS GeoPlaces client for address autocomplete, reverse geocoding, and forward geocoding.
 // Requires an IAM user with "geo-places:Suggest", "geo-places:ReverseGeocode",
@@ -9,16 +10,55 @@ import { GeoPlacesClient, SuggestCommand, ReverseGeocodeCommand, GeocodeCommand 
 const SF_BOUNDING_BOX = [-122.5155, 37.7080, -122.3570, 37.8120];
 
 let client;
+let routeClient;
+
+function credentials () {
+  return {
+    accessKeyId: process.env.AWS_LOCATION_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_LOCATION_SECRET_ACCESS_KEY,
+  };
+}
 
 function init () {
   if (!client) {
     client = new GeoPlacesClient({
-      credentials: {
-        accessKeyId: process.env.AWS_LOCATION_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_LOCATION_SECRET_ACCESS_KEY,
-      },
+      credentials: credentials(),
       region: process.env.AWS_LOCATION_REGION ?? 'us-west-2',
     });
+  }
+}
+
+function initRoutes () {
+  if (!routeClient) {
+    // Reuses the AWS_LOCATION_* creds; the IAM user needs "geo-routes:CalculateRoutes".
+    routeClient = new GeoRoutesClient({
+      credentials: credentials(),
+      region: process.env.AWS_LOCATION_REGION ?? 'us-west-2',
+    });
+  }
+}
+
+// Drive-time in seconds from origin → destination ({ lat, lng } each). Returns
+// null on any failure/timeout — ETA is a nice-to-have and must never block a send.
+const ROUTE_TIMEOUT_MS = 3000;
+async function calculateRouteDuration (origin, destination) {
+  initRoutes();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ROUTE_TIMEOUT_MS);
+  try {
+    const response = await routeClient.send(
+      new CalculateRoutesCommand({
+        Origin: [origin.lng, origin.lat],
+        Destination: [destination.lng, destination.lat],
+        TravelMode: 'Car',
+      }),
+      { abortSignal: controller.signal }
+    );
+    return response?.Routes?.[0]?.Summary?.Duration ?? null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -91,5 +131,6 @@ export default {
   suggest,
   reverseGeocode,
   geocode,
+  calculateRouteDuration,
   buildAddressLine1,
 };

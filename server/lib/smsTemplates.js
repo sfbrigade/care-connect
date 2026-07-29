@@ -16,6 +16,16 @@ function linkTo (facility, pathname, search) {
   return url.toString();
 }
 
+// Format a drive-time (seconds) into the matrix's coarse "N-M minutes away"
+// window. Returns null when there's no duration, so callers omit the ETA clause.
+export function formatEta (durationSeconds) {
+  if (durationSeconds == null) return null;
+  const minutes = Math.round(durationSeconds / 60);
+  const lower = Math.floor(minutes / 5) * 5;
+  if (lower === 0) return 'less than 5 minutes away';
+  return `${lower}-${lower + 5} minutes away`;
+}
+
 // NEW_HOLD — a hold was created; a person is in transit. ETA (Phase 7) is
 // optional; when present it reads e.g. "10-15 minutes away", else it's omitted.
 export function newHoldBody (facility, { deflectionId, eta } = {}) {

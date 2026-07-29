@@ -712,6 +712,9 @@ model Deflection {
   exitSFResident               SFResidentEnum?
   arrivedAt                    DateTime?
   handoffReadyAt               DateTime?
+  // When the NEW_HOLD ("in transit") SMS fired for this hold — set once, when the
+  // hold first becomes ready for transfer (details complete), so it can't re-fire.
+  newHoldNotifiedAt            DateTime?
   updatedAt                    DateTime                @updatedAt
 
   deflectionUpdates   DeflectionUpdate[]

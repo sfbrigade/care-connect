@@ -3,7 +3,6 @@ import { StatusCodes } from 'http-status-codes';
 import Deflection from '#models/deflection.js';
 import Facility from '#models/facility.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
-import smsNotifications from '#lib/smsNotifications.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { facilityNotAcceptingError, noAvailableBedError } from '#lib/httpErrors.js';
 
@@ -76,12 +75,6 @@ export default async function (fastify, opts) {
       });
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
-
-      // Fire-and-forget SMS notification (D8: NEW_HOLD). Never block or fail hold
-      // creation on it.
-      smsNotifications
-        .notifyNewHold(fastify, { deflectionId: deflection.id, facilityId: deflection.facilityId })
-        .catch((err) => fastify.log.error({ err }, 'SMS new-hold notification failed'));
 
       return reply.code(StatusCodes.CREATED).send(redactDeflectionForUser(deflection, request.user));
     });
