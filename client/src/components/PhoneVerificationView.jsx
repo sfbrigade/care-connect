@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Button, PinInput, Stack, Text, Title } from '@mantine/core';
+import { Button, PinInput, Stack, Text } from '@mantine/core';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
+import ScreenHeading from '@/components/ScreenHeading';
 import { formatCountdown, formatUSPhone } from '@/utils/phone';
 
 // Shared "enter the 6-digit code" step, reused by first-time enrollment and by
@@ -42,10 +43,7 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
 
   return (
     <Stack>
-      <div>
-        <Title order={2}>Enter verification code</Title>
-        <Text c='dimmed'>We’ve sent a 6-digit code to {formatUSPhone(phoneNumber)}</Text>
-      </div>
+      <ScreenHeading label='Enter verification code' message={`We’ve sent a 6-digit code to ${formatUSPhone(phoneNumber)}`} />
       <PinInput
         length={6}
         type='number'

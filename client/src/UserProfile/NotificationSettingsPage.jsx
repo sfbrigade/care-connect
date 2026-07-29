@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Alert, Button, Container, Group, Loader, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconBellOff } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -11,6 +11,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
+import ScreenHeading from '@/components/ScreenHeading';
 import { useToast } from '@/components/ToastContext';
 
 function NotificationSettingsPage () {
@@ -68,10 +69,7 @@ function NotificationSettingsPage () {
       </Header>
       <Container>
         <Stack>
-          <div>
-            <Title order={2}>Set your preferences</Title>
-            <Text c='dimmed'>Choose the types of notifications you’d like to receive.</Text>
-          </div>
+          <ScreenHeading label='Set your preferences' message='Choose the types of notifications you’d like to receive.' />
 
           {!isLoading && user?.phoneVerifiedAt && !user?.notificationsEnabled && (
             <Alert icon={<IconBellOff size={18} />} color='gray' variant='light'>

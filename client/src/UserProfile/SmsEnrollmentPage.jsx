@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Anchor, Button, Checkbox, Container, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Anchor, Button, Checkbox, Container, Group, Stack, Text, TextInput } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -12,6 +12,7 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
 import PhoneVerificationView from '@/components/PhoneVerificationView';
+import ScreenHeading from '@/components/ScreenHeading';
 import { useToast } from '@/components/ToastContext';
 import { toE164US } from '@/utils/phone';
 
@@ -83,7 +84,7 @@ function SmsEnrollmentPage () {
   return (
     <>
       <Head>
-        <title>Enable SMS notifications</title>
+        <title>Subscribe to SMS notifications</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -93,10 +94,7 @@ function SmsEnrollmentPage () {
       <Container>
         {step === 'phone' && (
           <Stack>
-            <div>
-              <Title order={2}>Enable SMS notifications</Title>
-              <Text c='dimmed'>Enter your phone number to get notified on important status changes.</Text>
-            </div>
+            <ScreenHeading label='Subscribe to SMS notifications' message='Enter your phone number to get notified on important status changes.' />
             <TextInput
               label='Phone number'
               placeholder='000-000-0000'
@@ -136,10 +134,7 @@ function SmsEnrollmentPage () {
 
         {step === 'prefs' && (
           <Stack>
-            <div>
-              <Title order={2}>Set your preferences</Title>
-              <Text c='dimmed'>Choose the types of notifications you’d like to receive.</Text>
-            </div>
+            <ScreenHeading label='Set your preferences' message='Choose the types of notifications you’d like to receive.' />
             <NotificationPreferenceToggles selected={selected} onToggle={toggleEvent} facilityName={facilityName} />
             <Group>
               <Button
