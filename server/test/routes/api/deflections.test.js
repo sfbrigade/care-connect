@@ -1902,6 +1902,44 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
     });
 
+    await t.test('records partial exit details while the form is in progress', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'RELEASED',
+          exitDestination: null,
+          exitHousingStatus: null,
+          exitSFResident: null,
+          exitConnectedToCare: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit-details')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'HOME',
+          exitHousingStatus: null,
+          exitSFResident: null,
+          exitConnectedToCare: null,
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'RELEASED');
+      assert.strictEqual(data.exitDestination, 'HOME');
+      assert.strictEqual(data.exitHousingStatus, null);
+      assert.strictEqual(data.exitSFResident, null);
+      assert.strictEqual(data.exitConnectedToCare, null);
+
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.exitDestination, 'HOME');
+      assert.strictEqual(dbDeflection.exitHousingStatus, null);
+      assert.strictEqual(dbDeflection.exitSFResident, null);
+      assert.strictEqual(dbDeflection.exitConnectedToCare, null);
+    });
+
     await t.test('requires care user role', async () => {
       const response = await app.inject()
         .post('/api/deflections/6/exit-details')

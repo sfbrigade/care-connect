@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Checkbox, Chip, Container, Divider, Group, Input, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
@@ -12,7 +12,7 @@ import { useToast } from '@/components/ToastContext';
 import { useFacilityContext } from '@/FacilityContext';
 import ConfirmExitModal from './ConfirmExitModal';
 import { hasAssociatedProperty } from '../custody/propertyReturnUtils';
-import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload, getSavedExitDraft, setSavedExitDraft } from './careFlowUtils';
+import { getCareExitBackTo, getCareExitPrimaryActionState, getCareExitSuccessPayload } from './careFlowUtils';
 
 const SF_RESIDENCY_OPTIONS = [
   { value: 'YES', label: 'Yes' },
@@ -36,6 +36,7 @@ function CareExitDetails () {
   const { showToast } = useToast();
   const { t } = useTranslation();
   const [initialized, setInitialized] = useState(false);
+  const lastSavedExitDetailsRef = useRef(null);
 
   const [exitDestination, setExitDestination] = useState(null);
   const [exitSFResident, setExitSFResident] = useState(null);
@@ -63,15 +64,30 @@ function CareExitDetails () {
 
   useEffect(() => {
     if (!deflection || initialized) return;
-    const draft = getSavedExitDraft(id);
-
-    setExitDestination(draft?.exitDestination ?? deflection.exitDestination ?? null);
-    setExitSFResident(draft?.exitSFResident ?? deflection.exitSFResident ?? null);
-    setExitHousingStatus(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
-    setExitConnectedToCare(draft?.exitConnectedToCare ?? deflection.exitConnectedToCare ?? null);
-    setPropertyReturnHandledConfirmed(draft?.propertyReturnHandledConfirmed ?? null);
+    setExitDestination(deflection.exitDestination ?? null);
+    setExitSFResident(deflection.exitSFResident ?? null);
+    setExitHousingStatus(deflection.exitHousingStatus ?? null);
+    setExitConnectedToCare(deflection.exitConnectedToCare ?? null);
+    setPropertyReturnHandledConfirmed(null);
+    lastSavedExitDetailsRef.current = JSON.stringify({
+      exitDestination: deflection.exitDestination ?? null,
+      exitSFResident: deflection.exitSFResident ?? null,
+      exitHousingStatus: deflection.exitHousingStatus ?? null,
+      exitConnectedToCare: deflection.exitConnectedToCare ?? null,
+    });
     setInitialized(true);
   }, [deflection, id, initialized]);
+
+  const { mutate: saveExitDetails } = useMutation({
+    mutationFn: (data) => Api.deflections.saveExitDetails(id, data),
+    onSuccess: (response) => {
+      queryClient.setQueryData(['deflections', id], response.data);
+      queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
+    },
+    onError: () => {
+      showToast('Exit details were not saved. Please try again.', 'error');
+    },
+  });
 
   const completeExitMutation = useMutation({
     mutationFn: () => Api.deflections.exit(id, {
@@ -83,7 +99,6 @@ function CareExitDetails () {
     onSuccess: () => {
       const successPayload = getCareExitSuccessPayload(id);
       setConfirmExitOpened(false);
-      setSavedExitDraft(id, false);
       window.sessionStorage.setItem('careHighlightTarget', successPayload.highlightTarget);
       queryClient.invalidateQueries({ queryKey: ['deflections', id] });
       queryClient.invalidateQueries({ queryKey: ['deflections', facility.id] });
@@ -121,16 +136,17 @@ function CareExitDetails () {
 
   useEffect(() => {
     if (!initialized) return;
-    setSavedExitDraft(id, isExitFormEdited
-      ? {
-          exitDestination,
-          exitSFResident,
-          exitHousingStatus,
-          exitConnectedToCare,
-          propertyReturnHandledConfirmed,
-        }
-      : false
-    );
+    if (!isExitFormEdited) return;
+    const exitDetails = {
+      exitDestination,
+      exitSFResident,
+      exitHousingStatus,
+      exitConnectedToCare,
+    };
+    const serializedExitDetails = JSON.stringify(exitDetails);
+    if (serializedExitDetails === lastSavedExitDetailsRef.current) return;
+    lastSavedExitDetailsRef.current = serializedExitDetails;
+    saveExitDetails(exitDetails);
   }, [
     exitConnectedToCare,
     exitDestination,
@@ -139,7 +155,7 @@ function CareExitDetails () {
     id,
     initialized,
     isExitFormEdited,
-    propertyReturnHandledConfirmed,
+    saveExitDetails,
   ]);
 
   const {

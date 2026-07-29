@@ -26,45 +26,13 @@ export function hasPersistedExitDetails (deflection) {
   );
 }
 
-export const EXIT_DRAFT_STORAGE_KEY = 'careExitDraftByDeflectionId';
-
-export function getSavedExitDraftMap () {
-  if (typeof window === 'undefined') return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(EXIT_DRAFT_STORAGE_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-export function hasSavedExitDraft (deflectionId) {
-  const draft = getSavedExitDraftMap()?.[String(deflectionId)];
-  return Boolean(draft?.exitFormEdited || draft?.exitDetailsSaved);
-}
-
-export function getSavedExitDraft (deflectionId) {
-  return getSavedExitDraftMap()?.[String(deflectionId)] ?? null;
-}
-
-export function setSavedExitDraft (deflectionId, draft) {
-  if (typeof window === 'undefined' || !deflectionId) return;
-  const draftMap = getSavedExitDraftMap();
-  const key = String(deflectionId);
-
-  if (draft) {
-    window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify({
-      ...draftMap,
-      [key]: {
-        ...draftMap[key],
-        ...draft,
-        exitFormEdited: true,
-      },
-    }));
-    return;
-  }
-
-  const { [key]: _removed, ...nextDraftMap } = draftMap;
-  window.localStorage.setItem(EXIT_DRAFT_STORAGE_KEY, JSON.stringify(nextDraftMap));
+export function hasAnyPersistedExitDetails (deflection) {
+  return Boolean(
+    deflection?.exitDestination ||
+    deflection?.exitHousingStatus ||
+    deflection?.exitConnectedToCare ||
+    deflection?.exitSFResident
+  );
 }
 
 export function groupCareNotInCustodySections (deflections = []) {

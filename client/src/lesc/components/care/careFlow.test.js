@@ -1,23 +1,17 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   getCareExitBackTo,
   getCareExitPrimaryActionState,
   getCareExitSuccessPayload,
   groupCareNotInCustodySections,
+  hasAnyPersistedExitDetails,
   hasPersistedExitDetails,
-  getSavedExitDraft,
-  hasSavedExitDraft,
-  setSavedExitDraft,
   shouldShowCareCardViewDetails,
 } from './careFlowUtils';
 import {
   getCareDetailFooterState,
 } from '../custody/careDetailFooterUtils';
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe('Care flow unit tests', () => {
   it('shows Details for pre-release and post-release care records', () => {
@@ -73,6 +67,22 @@ describe('Care flow unit tests', () => {
     })).toBe(false);
   });
 
+  it('detects any persisted exit details for in-progress server drafts', () => {
+    expect(hasAnyPersistedExitDetails({
+      exitDestination: 'HOSPITAL',
+      exitHousingStatus: null,
+      exitConnectedToCare: null,
+      exitSFResident: null,
+    })).toBe(true);
+
+    expect(hasAnyPersistedExitDetails({
+      exitDestination: null,
+      exitHousingStatus: null,
+      exitConnectedToCare: null,
+      exitSFResident: null,
+    })).toBe(false);
+  });
+
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
@@ -109,6 +119,12 @@ describe('Care flow unit tests', () => {
     expect(releasedState.showFooter).toBe(true);
     expect(releasedState.primaryAction).toBe('start-exit');
     expect(releasedState.startExitPath).toBe('/care/99/exit?from=detail');
+
+    const partialExitDetailsState = getCareDetailFooterState({
+      viewerMode: 'care',
+      deflection: { id: 100, subjectStatus: 'RELEASED', exitDestination: 'HOME' },
+    });
+    expect(partialExitDetailsState.primaryLabel).toBe('Finish exit');
 
     const inChairState = getCareDetailFooterState({
       viewerMode: 'care',
@@ -173,40 +189,5 @@ describe('Care flow unit tests', () => {
       label: 'Confirm exit',
       disabled: false,
     });
-  });
-
-  it('tracks edited exit forms in local storage', () => {
-    const storage = {};
-    vi.stubGlobal('window', {
-      localStorage: {
-        getItem: (key) => storage[key] ?? null,
-        setItem: (key, value) => {
-          storage[key] = String(value);
-        },
-      },
-    });
-
-    expect(hasSavedExitDraft(44)).toBe(false);
-
-    setSavedExitDraft(44, {
-      exitDestination: 'HOME',
-      exitSFResident: 'YES',
-      exitHousingStatus: 'TEMPORARY',
-      exitConnectedToCare: 'NO',
-      propertyReturnHandledConfirmed: false,
-    });
-    expect(hasSavedExitDraft(44)).toBe(true);
-    expect(getSavedExitDraft(44)).toMatchObject({
-      exitDestination: 'HOME',
-      exitSFResident: 'YES',
-      exitHousingStatus: 'TEMPORARY',
-      exitConnectedToCare: 'NO',
-      propertyReturnHandledConfirmed: false,
-      exitFormEdited: true,
-    });
-
-    setSavedExitDraft(44, false);
-    expect(hasSavedExitDraft(44)).toBe(false);
-    expect(getSavedExitDraft(44)).toBe(null);
   });
 });
