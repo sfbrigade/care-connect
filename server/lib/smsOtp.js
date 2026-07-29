@@ -23,7 +23,10 @@ export function resendCooldownRemaining (lastSentAt) {
 }
 
 // Generate + persist a code and text it to the user's (pending) phone number.
-export async function sendVerificationCode (prisma, user) {
+// `startsResendCooldown` controls whether this send arms the 30s resend cooldown:
+// the initial send passes false so the user may resend once immediately if the
+// first text doesn't arrive; only an actual resend arms the cooldown.
+export async function sendVerificationCode (prisma, user, { startsResendCooldown = true } = {}) {
   const code = generateCode();
   await prisma.user.update({
     where: { id: user.id },
@@ -31,7 +34,7 @@ export async function sendVerificationCode (prisma, user) {
       smsOtpCode: code,
       smsOtpExpiresAt: new Date(Date.now() + CODE_TTL_MS),
       smsOtpAttempts: 0,
-      smsOtpLastSentAt: new Date(),
+      smsOtpLastSentAt: startsResendCooldown ? new Date() : null,
     },
   });
   await sms.sendText({

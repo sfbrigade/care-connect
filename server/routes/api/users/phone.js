@@ -59,8 +59,9 @@ export default async function (fastify, opts) {
         where: { id: request.user.id },
         data: { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) },
       });
-      await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber });
-      return reply.send({ phoneNumber, resendAvailableInSeconds: RESEND_COOLDOWN_S });
+      // Initial send does not arm the resend cooldown → user may resend once now.
+      await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber }, { startsResendCooldown: false });
+      return reply.send({ phoneNumber, resendAvailableInSeconds: 0 });
     });
 
   // Resend the code to the pending (unverified) number, subject to the cooldown.
