@@ -8,10 +8,11 @@ function pluralPeople (count) {
   return count === 1 ? '1 person' : `${count} people`;
 }
 
-// Build an absolute deep link on the facility's own subdomain.
-function linkTo (facility, pathname) {
+// Build an absolute deep link on the facility's own subdomain (optional query).
+function linkTo (facility, pathname, search) {
   const url = facility.baseURL;
   url.pathname = pathname;
+  if (search) url.search = search;
   return url.toString();
 }
 
@@ -27,7 +28,8 @@ export function newHoldBody (facility, { deflectionId, eta } = {}) {
 export function arrivalBody (facility, { count } = {}) {
   const verb = count === 1 ? 'has' : 'have';
   const state = count === 1 ? 'is' : 'are';
-  return `CareConnect: ${pluralPeople(count)} ${verb} arrived at ${facility.name} and ${state} awaiting transfer. Transfer person: ${linkTo(facility, '/holds')}`;
+  // Link opens the Take-custody QR scanner directly (Custody reads ?scan=1).
+  return `CareConnect: ${pluralPeople(count)} ${verb} arrived at ${facility.name} and ${state} awaiting transfer. Transfer person: ${linkTo(facility, '/custody', 'scan=1')}`;
 }
 
 // EXIT — a person reached the EXITED state (via exit, release, or exit-to-jail).
