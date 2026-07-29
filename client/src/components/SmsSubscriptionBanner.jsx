@@ -5,18 +5,17 @@ import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
-import { isSmsSubscribed } from '@/components/NotificationPreferenceToggles';
 import { useUserRole } from '@/hooks/useUserRole';
 
-// Home-screen prompt inviting eligible users to enroll in SMS notifications.
-// Shown only to CUSTODY-role users (the v1 notification audience — NOT gated on
-// work mode; a pure-FIELD user never receives notifications, so we don't prompt
-// them). Shows while the user is NOT yet subscribed (verified + ≥1 event) and
-// hasn't dismissed it. Dismissal state is persisted server-side (cross-device):
-//   ✕ → permanent; "Remind me later" → 24h, reappears once, then permanent
-//   (enforced by the /me/sms-banner route). Clicking "Subscribe" does NOT dismiss
-//   — the banner simply stops showing once the user actually becomes subscribed,
-//   so abandoning the flow leaves the prompt in place.
+// Home-screen prompt to set up SMS notifications. Shown only to CUSTODY-role users
+// (the v1 audience — NOT gated on work mode; a pure-FIELD user never receives
+// notifications). Keys on whether the user has a VERIFIED NUMBER (not on event
+// subscriptions): the banner's job is "get set up," and once you have a number you
+// manage what you receive — including nothing — from the settings/account pages,
+// so it shouldn't reappear when you disable event types. Dismissal state is
+// persisted server-side (cross-device): ✕ → permanent; "Remind me later" → 24h,
+// reappears once, then permanent (enforced by the /me/sms-banner route). Clicking
+// "Subscribe" does NOT dismiss.
 function SmsSubscriptionBanner () {
   const { user } = useAuthContext();
   const { isCustody } = useUserRole();
@@ -35,7 +34,7 @@ function SmsSubscriptionBanner () {
   const shouldShow = Boolean(
     user &&
     isCustody &&
-    !isSmsSubscribed(user) &&
+    !user.phoneVerifiedAt &&
     !user.smsBannerDismissedAt &&
     !remindActive
   );

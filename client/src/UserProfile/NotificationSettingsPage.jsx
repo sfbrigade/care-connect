@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Container, Group, Loader, Stack, Text } from '@mantine/core';
-import { IconArrowLeft, IconBellOff } from '@tabler/icons-react';
+import { Box, Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
@@ -10,10 +10,13 @@ import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
-import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
-import ScreenHeading from '@/components/ScreenHeading';
+import NotificationPreferenceToggles, { isSmsSubscribed } from '@/components/NotificationPreferenceToggles';
 import { useToast } from '@/components/ToastContext';
 
+// "Notification settings" page (reached from Profile → Edit under SMS
+// notifications). Two states: no verified number → prompt to add one; verified
+// number → the per-event toggles. (The enroll/subscribe wizard has its own
+// "Set your preferences" step; this is the standalone settings version.)
 function NotificationSettingsPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
@@ -22,21 +25,28 @@ function NotificationSettingsPage () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  // Initialize once from the loaded user; don't re-sync on every refetch so
-  // in-progress edits aren't clobbered.
+  const hasNumber = !!user?.phoneVerifiedAt;
+  const subscribed = isSmsSubscribed(user);
+
+  // Initialize once from the loaded user; don't re-sync on every refetch.
   const [selected, setSelected] = useState(null);
   useEffect(() => {
-    if (user && selected === null) {
-      setSelected(new Set(user.subscribedEvents ?? []));
-    }
+    if (user && selected === null) setSelected(new Set(user.subscribedEvents ?? []));
   }, [user, selected]);
 
   const saveMutation = useMutation({
-    mutationFn: (subscribedEvents) => Api.users.update(user.id, { subscribedEvents }),
+    mutationFn: (events) => {
+      const data = { subscribedEvents: events };
+      // Enabling notifications from a not-yet-subscribed state also unmutes, so
+      // they actually start receiving (mirrors the enroll flow's Subscribe).
+      if (!subscribed && events.length > 0) data.notificationsEnabled = true;
+      return Api.users.update(user.id, data);
+    },
     onSuccess: (response) => {
       queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
       showToast('Notification preferences updated', 'success');
+      navigate('/profile');
     },
     onError: () => showToast('Couldn’t save your preferences', 'error', 4000, 'Please try again.'),
   });
@@ -50,12 +60,7 @@ function NotificationSettingsPage () {
     });
   }
 
-  function onSave () {
-    saveMutation.mutate([...selected]);
-  }
-
   const isLoading = selected === null;
-  const noneSelected = !isLoading && selected.size === 0;
 
   return (
     <>
@@ -69,35 +74,43 @@ function NotificationSettingsPage () {
       </Header>
       <Container>
         <Stack>
-          <ScreenHeading label='Set your preferences' message='Choose the types of notifications you’d like to receive.' />
+          <Title order={2}>Notification settings</Title>
 
-          {!isLoading && user?.phoneVerifiedAt && !user?.notificationsEnabled && (
-            <Alert icon={<IconBellOff size={18} />} color='gray' variant='light'>
-              SMS notifications are muted. Unmute from the SMS menu in the header to start receiving them.
-            </Alert>
+          <div>
+            <Group justify='space-between'>
+              <Text fw={500}>SMS subscription</Text>
+              <Text>{subscribed ? 'On' : 'Off'}</Text>
+            </Group>
+            <Text size='sm' c='dimmed'>Receive live updates on a person’s status.</Text>
+          </div>
+
+          {isLoading && <Group justify='center' py='xl'><Loader /></Group>}
+
+          {!isLoading && !hasNumber && (
+            <Box bg='gray.1' p='md' style={{ borderRadius: 16 }}>
+              <Stack gap='sm'>
+                <Text size='sm'>Add a mobile number in your Contact Details to turn on SMS subscription.</Text>
+                <Button variant='secondary' size='sm' style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/profile/notifications/enroll')}>
+                  Add mobile number
+                </Button>
+              </Stack>
+            </Box>
           )}
 
-          {isLoading
-            ? (
-              <Group justify='center' py='xl'><Loader /></Group>
-              )
-            : (
+          {!isLoading && hasNumber && (
+            <>
               <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
-              )}
-
-          <Group>
-            <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
-            <Button
-              variant='secondary'
-              onClick={onSave}
-              disabled={isLoading || noneSelected}
-              loading={saveMutation.isPending}
-            >
-              Save preferences
-            </Button>
-          </Group>
-          {noneSelected && (
-            <Text size='sm' c='dimmed'>Select at least one notification type to save.</Text>
+              <Group>
+                <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
+                <Button
+                  variant='secondary'
+                  onClick={() => saveMutation.mutate([...selected])}
+                  loading={saveMutation.isPending}
+                >
+                  Save preferences
+                </Button>
+              </Group>
+            </>
           )}
         </Stack>
       </Container>

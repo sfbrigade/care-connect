@@ -1,5 +1,6 @@
-import { Anchor, Button, Box, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { useState } from 'react';
+import { ActionIcon, Anchor, Button, Box, Collapse, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 import { Link } from 'react-router';
 
@@ -20,12 +21,33 @@ function Field ({ label, value }) {
   );
 }
 
-function SectionHeader ({ title, to }) {
+// Collapsible profile section: title + caret toggle, with the fields and an
+// "Edit" button (bottom-left) inside the collapsible body.
+function Section ({ title, editTo, children }) {
+  const [open, setOpen] = useState(true);
   return (
-    <Group justify='space-between'>
-      <Title order={3}>{title}</Title>
-      <Button component={Link} to={to} variant='default' size='xs'>Edit</Button>
-    </Group>
+    <Stack gap='sm'>
+      <Group justify='space-between' wrap='nowrap'>
+        <Title order={3}>{title}</Title>
+        <ActionIcon
+          variant='subtle'
+          color='gray'
+          onClick={() => setOpen((o) => !o)}
+          aria-label={`${open ? 'Collapse' : 'Expand'} ${title}`}
+          aria-expanded={open}
+        >
+          {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+        </ActionIcon>
+      </Group>
+      <Collapse in={open}>
+        <Stack gap='sm'>
+          {children}
+          <Button component={Link} to={editTo} variant='secondary' size='xs' style={{ alignSelf: 'flex-start' }}>
+            Edit
+          </Button>
+        </Stack>
+      </Collapse>
+    </Stack>
   );
 }
 
@@ -53,8 +75,7 @@ function UserProfilePage () {
 
           {isSfpdOrSfso && (
             <>
-              <Stack gap='sm'>
-                <SectionHeader title='Position details' to='/profile/edit' />
+              <Section title='Position details' editTo='/profile/edit'>
                 <Field label='Star number' value={user.badgeNumber} />
                 <Field label='Unit' value={formatUnitName(user.unit?.name)} />
                 {user.organizationId === 'sfso' && (
@@ -63,28 +84,23 @@ function UserProfilePage () {
                     <Field label='Prop 115 certification' value={user.prop115Certified ? 'Yes' : 'No'} />
                   </>
                 )}
-              </Stack>
+              </Section>
               <Divider />
             </>
           )}
 
-          <Stack gap='sm'>
-            <SectionHeader title='Contact details' to='/profile/contact' />
+          <Section title='Contact details' editTo='/profile/contact'>
             <Field label='Email address' value={user.email} />
             <Field label='Mobile number' value={user.phoneNumber ? formatUSPhone(user.phoneNumber) : 'Not set'} />
-          </Stack>
+          </Section>
 
           {isCustody && (
             <>
               <Divider />
-              <Stack gap='sm'>
-                <SectionHeader
-                  title='SMS notifications'
-                  to={isSubscribed ? '/profile/notifications' : '/profile/notifications/enroll'}
-                />
+              <Section title='SMS notifications' editTo='/profile/notifications'>
                 <Field label='SMS subscription' value={isSubscribed ? 'On' : 'Off'} />
-                {isSubscribed && <Field label='Preferences' value={preferencesSummary} />}
-              </Stack>
+                <Field label='Preferences' value={preferencesSummary || 'None'} />
+              </Section>
             </>
           )}
 
