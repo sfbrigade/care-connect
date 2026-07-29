@@ -30,6 +30,13 @@ export function summarizeEvents (events) {
   return NOTIFICATION_EVENTS.filter((e) => set.has(e.value)).map((e) => e.shortLabel).join(', ');
 }
 
+// "Enrolled / subscribed" = phone verified AND subscribed to ≥1 event (i.e. set up
+// to actually receive SMS). Shared by the subscription banner and the account page
+// so the two agree.
+export function isSmsSubscribed (user) {
+  return !!user?.phoneVerifiedAt && (user?.subscribedEvents?.length ?? 0) > 0;
+}
+
 // `selected` is a Set of event values; `onToggle(value)` flips one.
 function NotificationPreferenceToggles ({ selected, onToggle, facilityName = 'RESET' }) {
   return (

@@ -5,14 +5,18 @@ import { useNavigate } from 'react-router';
 
 import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
+import { isSmsSubscribed } from '@/components/NotificationPreferenceToggles';
 import { useUserRole } from '@/hooks/useUserRole';
 
 // Home-screen prompt inviting eligible users to enroll in SMS notifications.
 // Shown only to CUSTODY-role users (the v1 notification audience — NOT gated on
 // work mode; a pure-FIELD user never receives notifications, so we don't prompt
-// them). Dismissal state is persisted server-side (cross-device):
-//   Subscribe / ✕ → permanent; "Remind me later" → 24h, reappears once, then
-//   permanent (enforced by the /me/sms-banner route).
+// them). Shows while the user is NOT yet subscribed (verified + ≥1 event) and
+// hasn't dismissed it. Dismissal state is persisted server-side (cross-device):
+//   ✕ → permanent; "Remind me later" → 24h, reappears once, then permanent
+//   (enforced by the /me/sms-banner route). Clicking "Subscribe" does NOT dismiss
+//   — the banner simply stops showing once the user actually becomes subscribed,
+//   so abandoning the flow leaves the prompt in place.
 function SmsSubscriptionBanner () {
   const { user } = useAuthContext();
   const { isCustody } = useUserRole();
@@ -31,7 +35,7 @@ function SmsSubscriptionBanner () {
   const shouldShow = Boolean(
     user &&
     isCustody &&
-    !user.phoneVerifiedAt &&
+    !isSmsSubscribed(user) &&
     !user.smsBannerDismissedAt &&
     !remindActive
   );
@@ -39,8 +43,8 @@ function SmsSubscriptionBanner () {
   if (!shouldShow) return null;
 
   function onSubscribe () {
-    // Permanently dismiss (designer notes) and navigate into the enrollment flow.
-    bannerActionMutation.mutate('dismiss');
+    // Just navigate into the enrollment flow — do NOT dismiss. The banner stops
+    // showing once the user actually becomes subscribed; bailing keeps it around.
     navigate('/profile/notifications/enroll');
   }
 

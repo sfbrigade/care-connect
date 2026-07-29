@@ -26,14 +26,16 @@ function SmsEnrollmentPage () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState('phone');
+  // Already-verified users (e.g. verified but never finished subscribing) skip
+  // straight to preferences — no need to re-verify a number they already own.
+  const [step, setStep] = useState(user?.phoneVerifiedAt ? 'prefs' : 'phone');
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [phoneError, setPhoneError] = useState(null);
   const [e164, setE164] = useState('');
   const [initialResend, setInitialResend] = useState(30);
-  const [selected, setSelected] = useState(new Set());
+  const [selected, setSelected] = useState(new Set(user?.subscribedEvents ?? []));
 
   const startMutation = useMutation({
     mutationFn: (number) => Api.users.startPhoneVerification({ phoneNumber: number, consent, acceptedTerms }),

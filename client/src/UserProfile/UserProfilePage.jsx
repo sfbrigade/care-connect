@@ -6,7 +6,7 @@ import { Link } from 'react-router';
 import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
-import { summarizeEvents } from '@/components/NotificationPreferenceToggles';
+import { isSmsSubscribed, summarizeEvents } from '@/components/NotificationPreferenceToggles';
 import { useUserRole } from '@/hooks/useUserRole';
 import { formatUnitName } from '@/utils/unit';
 import { formatUSPhone } from '@/utils/phone';
@@ -34,7 +34,7 @@ function UserProfilePage () {
   const { isCustody } = useUserRole();
 
   const isSfpdOrSfso = user.organizationId === 'sfpd' || user.organizationId === 'sfso';
-  const isSubscribed = !!user.phoneVerifiedAt && (user.subscribedEvents?.length ?? 0) > 0;
+  const isSubscribed = isSmsSubscribed(user);
   const preferencesSummary = summarizeEvents(user.subscribedEvents);
 
   return (
@@ -80,7 +80,7 @@ function UserProfilePage () {
               <Stack gap='sm'>
                 <SectionHeader
                   title='SMS notifications'
-                  to={user.phoneVerifiedAt ? '/profile/notifications' : '/profile/notifications/enroll'}
+                  to={isSubscribed ? '/profile/notifications' : '/profile/notifications/enroll'}
                 />
                 <Field label='SMS subscription' value={isSubscribed ? 'On' : 'Off'} />
                 {isSubscribed && <Field label='Preferences' value={preferencesSummary} />}
