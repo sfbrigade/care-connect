@@ -17,10 +17,20 @@ import prisma from '#prisma/client.js';
 const ALL_EVENTS = ['NEW_HOLD', 'ARRIVAL', 'EXIT'];
 
 const SMS_SELECT = {
-  email: true, roles: true, deactivatedAt: true, deletedAt: true,
-  phoneNumber: true, phoneVerifiedAt: true, smsConsentAt: true, smsOptedOutAt: true,
-  notificationsEnabled: true, subscribedEvents: true, currentFacilityId: true,
-  smsBannerDismissedAt: true, smsBannerRemindAfter: true, smsBannerRemindCount: true,
+  email: true,
+  roles: true,
+  deactivatedAt: true,
+  deletedAt: true,
+  phoneNumber: true,
+  phoneVerifiedAt: true,
+  smsConsentAt: true,
+  smsOptedOutAt: true,
+  notificationsEnabled: true,
+  subscribedEvents: true,
+  currentFacilityId: true,
+  smsBannerDismissedAt: true,
+  smsBannerRemindAfter: true,
+  smsBannerRemindCount: true,
 };
 
 function usage () {
@@ -66,7 +76,7 @@ async function printState (email) {
     'phone verified': !!u.phoneVerifiedAt,
     'notifications enabled (unmuted)': u.notificationsEnabled === true,
     'not opted out': u.smsOptedOutAt == null,
-    'active': !u.deactivatedAt && !u.deletedAt,
+    active: !u.deactivatedAt && !u.deletedAt,
   };
   const passAll = Object.values(checks).every(Boolean);
   console.log('\n  RECIPIENT GATE:', passAll ? 'PASS' : 'FAIL');
@@ -84,13 +94,21 @@ async function enroll (email, phone) {
   await prisma.user.update({
     where: { email },
     data: {
-      phoneNumber, phoneVerifiedAt: new Date(), smsConsentAt: new Date(),
-      subscribedEvents: ALL_EVENTS, notificationsEnabled: true, smsOptedOutAt: null,
-      currentFacilityId: f.id, smsWelcomedAt: new Date(),
+      phoneNumber,
+      phoneVerifiedAt: new Date(),
+      smsConsentAt: new Date(),
+      subscribedEvents: ALL_EVENTS,
+      notificationsEnabled: true,
+      smsOptedOutAt: null,
+      currentFacilityId: f.id,
+      smsWelcomedAt: new Date(),
       // Don't touch banner dismissal — being subscribed already hides the banner
       // (isSmsSubscribed), so leaving it clear keeps enroll composable (e.g. enroll
       // then clear subscribedEvents to get a clean "verified-but-unsubscribed" state).
-      smsOtpCode: null, smsOtpExpiresAt: null, smsOtpAttempts: 0, smsOtpLastSentAt: null,
+      smsOtpCode: null,
+      smsOtpExpiresAt: null,
+      smsOtpAttempts: 0,
+      smsOtpLastSentAt: null,
     },
   });
   console.log(`Enrolled ${email} as a RESET recipient (phone ${phoneNumber}, all events, unmuted).`);
@@ -101,12 +119,21 @@ async function unenroll (email) {
   await prisma.user.update({
     where: { email },
     data: {
-      phoneNumber: null, phoneVerifiedAt: null, smsConsentAt: null,
-      subscribedEvents: [], notificationsEnabled: false, smsOptedOutAt: null,
+      phoneNumber: null,
+      phoneVerifiedAt: null,
+      smsConsentAt: null,
+      subscribedEvents: [],
+      notificationsEnabled: false,
+      smsOptedOutAt: null,
       currentFacilityId: f.id,
-      smsBannerDismissedAt: null, smsBannerRemindAfter: null, smsBannerRemindCount: 0,
+      smsBannerDismissedAt: null,
+      smsBannerRemindAfter: null,
+      smsBannerRemindCount: 0,
       smsWelcomedAt: null,
-      smsOtpCode: null, smsOtpExpiresAt: null, smsOtpAttempts: 0, smsOtpLastSentAt: null,
+      smsOtpCode: null,
+      smsOtpExpiresAt: null,
+      smsOtpAttempts: 0,
+      smsOtpLastSentAt: null,
     },
   });
   console.log(`Unenrolled ${email} (banner will show; currentFacilityId set to RESET).`);
