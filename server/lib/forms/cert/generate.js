@@ -3,6 +3,7 @@ import { join } from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { firstInitialLastName, formatDateParts, formatTime, formatDateOnly } from '../shared/formUtils.js';
 import { fillCoR } from './fillCoR.js';
+import { generateNarcoticsNotice } from './narcoticsNotice.js';
 import { formatUnitName } from '#lib/unitName.js';
 
 export function transformData (deflection) {
@@ -68,8 +69,6 @@ export async function generatePdf (deflectionData, user) {
   let pdfBytes = await fillCoR(templateBytes, formData);
 
   if (deflectionData.narcoticsSubstance || deflectionData.narcoticsParaphernalia) {
-    const { default: NarcoticsNotice } = await import('#lib/forms/dist/NarcoticsNotice.js');
-    const { renderFormToPdf } = await import('#lib/forms/shared/renderReactForm.js');
     const noticeData = {
       date: deflectionData.releaseDateFormatted,
       caseNumber: deflectionData.caseNumber,
@@ -77,7 +76,7 @@ export async function generatePdf (deflectionData, user) {
       paraphernaliaSeized: deflectionData.narcoticsParaphernalia === true,
     };
 
-    const noticeBytes = await renderFormToPdf(NarcoticsNotice, noticeData, { title: 'Narcotics Notice' });
+    const noticeBytes = await generateNarcoticsNotice(noticeData);
 
     const certDoc = await PDFDocument.load(pdfBytes);
     const noticeDoc = await PDFDocument.load(noticeBytes);
