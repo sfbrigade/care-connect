@@ -24,6 +24,11 @@ const MULTILINE_FLAG = 1 << 12;
  * @param {Function}          [options.customize]  Called with (form, pdfDoc, font) after
  *                                        standard fields are filled but before appearances
  *                                        are baked. Use for one-off logic like signatures.
+ * @param {Function}          [options.finalize]   Called with (form, pdfDoc, font) AFTER
+ *                                        appearances are baked (and DA reset), before save.
+ *                                        Use for custom widget appearance streams that must
+ *                                        survive updateFieldAppearances — e.g. sizing comb
+ *                                        fields, which pdf-lib otherwise auto-fits to the box.
  * @returns {Promise<Uint8Array>}        Filled PDF bytes.
  *
  * ## spec shape
@@ -148,6 +153,11 @@ export async function fillPdf (pdfBytes, data, spec, options = {}) {
     if (field.constructor.name === 'PDFTextField') {
       field.acroField.dict.set(PDFName.of('DA'), autoSizeDA);
     }
+  }
+
+  // ── Post-bake finalize (custom appearances that must outlive the bake) ──
+  if (options.finalize) {
+    await options.finalize(form, pdfDoc, font);
   }
 
   const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'));
