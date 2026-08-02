@@ -108,6 +108,29 @@ async function sendText ({ to, body }) {
 // Messaging / pinpoint-sms-voice-v2; it's v1 Amazon Pinpoint, which is closed to
 // new accounts — so we roll our own on top of sendText.)
 
+// Remove a number from our AWS opt-out list so we can send to it again. AWS
+// auto-adds numbers to the list on an inbound STOP (managed opt-outs) but NEVER
+// auto-removes on START — there's no START keyword and no opt-in keyword action, so
+// the carrier's own "you'll receive messages again" reply does NOT clear AWS's
+// list, and SendTextMessage keeps failing with DESTINATION_PHONE_NUMBER_OPTED_OUT.
+// This is how an inbound START (D3) actually restores delivery. No-op for non-aws
+// transports; a number that isn't on the list is treated as success (idempotent).
+async function optInNumber (phoneNumber) {
+  if (resolveTransport() !== 'aws') return null;
+  await init();
+  const { DeleteOptedOutNumberCommand } = await loadSdk();
+  const OptOutListName = process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
+  try {
+    return await client.send(
+      new DeleteOptedOutNumberCommand({ OptOutListName, OptedOutNumber: phoneNumber })
+    );
+  } catch (err) {
+    // Not on the list = already opted in; nothing to do.
+    if (err.name === 'ResourceNotFoundException') return null;
+    throw err;
+  }
+}
+
 // Reset cached client (used by tests, mirrors lib/s3.js).
 function reset () {
   client = undefined;
@@ -116,6 +139,7 @@ function reset () {
 
 export default {
   sendText,
+  optInNumber,
   resolveTransport,
   reset,
 };

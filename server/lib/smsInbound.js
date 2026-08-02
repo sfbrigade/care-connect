@@ -75,8 +75,16 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     return { action: 'optout' };
   }
   if (OPTIN_WORDS.includes(keyword)) {
-    // Clear the opt-out. The carrier sends its own confirmation, so we don't.
+    // Clear our flag AND remove the number from AWS's opt-out list — AWS doesn't
+    // auto-clear on START, so without the second step our sends keep bouncing with
+    // DESTINATION_PHONE_NUMBER_OPTED_OUT. The carrier sends its own confirmation, so
+    // we don't reply. optInNumber is best-effort: the DB flag is already cleared.
     await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: null } });
+    try {
+      await sms.optInNumber(fromNumber);
+    } catch (err) {
+      console.error('[sms-inbound] optInNumber failed:', err.message);
+    }
     return { action: 'optin' };
   }
   if (HELP_WORDS.includes(keyword)) {

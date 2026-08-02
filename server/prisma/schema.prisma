@@ -340,8 +340,12 @@ model User {
   satisfactionSurveyNextEligibleAt DateTime?
   // SMS notifications (D7). phoneVerifiedAt/smsOptedOutAt are server-controlled;
   // phoneNumber is managed only via the phone verification flow (not the generic
-  // profile update), so a number can't appear verified without owning it.
-  phoneNumber                  String?
+  // profile update), so a number can't appear verified without owning it. @unique:
+  // a number belongs to exactly one account — prevents two accounts verifying the
+  // same number (duplicate texts) and keeps inbound keyword routing unambiguous
+  // (handleInboundSms finds one user). Postgres treats NULLs as distinct, so the
+  // many users without a number are unaffected.
+  phoneNumber                  String?                 @unique
   phoneVerifiedAt              DateTime?
   smsConsentAt                 DateTime?
   smsOptedOutAt                DateTime?

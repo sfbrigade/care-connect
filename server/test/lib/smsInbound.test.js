@@ -16,9 +16,11 @@ import { build } from '#test/helper.js';
 // the singleton captures an empty URL and $connect() fails. build() first, then the
 // dynamic import.
 const sendText = mock.fn(async () => {});
+const optInNumber = mock.fn(async () => {});
 mock.module('#lib/sms.js', {
   defaultExport: {
     sendText,
+    optInNumber,
     resolveTransport: () => 'log',
     reset: () => {},
   },
@@ -96,6 +98,7 @@ test('inbound SMS handling', async (t) => {
     const words = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
     for (const word of words) {
       sendText.mock.resetCalls();
+      optInNumber.mock.resetCalls();
       const u = await makeUser({ smsOptedOutAt: null });
 
       const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: word }, prisma);
@@ -104,6 +107,7 @@ test('inbound SMS handling', async (t) => {
       const after = await prisma.user.findUnique({ where: { id: u.id } });
       assert.ok(after.smsOptedOutAt instanceof Date, `${word} sets smsOptedOutAt`);
       assert.strictEqual(sendText.mock.callCount(), 0, `${word} must not reply`);
+      assert.strictEqual(optInNumber.mock.callCount(), 0, `${word} must not opt the number back in`);
     }
   });
 
@@ -111,6 +115,7 @@ test('inbound SMS handling', async (t) => {
     const words = ['START', 'UNSTOP', 'YES', 'OPTIN'];
     for (const word of words) {
       sendText.mock.resetCalls();
+      optInNumber.mock.resetCalls();
       const u = await makeUser({ smsOptedOutAt: new Date() });
 
       const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: word }, prisma);
@@ -119,6 +124,9 @@ test('inbound SMS handling', async (t) => {
       const after = await prisma.user.findUnique({ where: { id: u.id } });
       assert.strictEqual(after.smsOptedOutAt, null, `${word} clears the opt-out`);
       assert.strictEqual(sendText.mock.callCount(), 0, `${word} must not reply`);
+      // Also removes the number from AWS's opt-out list (AWS never auto-clears on START).
+      assert.strictEqual(optInNumber.mock.callCount(), 1, `${word} opts the number back in at AWS`);
+      assert.strictEqual(optInNumber.mock.calls[0].arguments[0], u.phoneNumber);
     }
   });
 

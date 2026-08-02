@@ -42,26 +42,40 @@ export default async function (fastify, opts) {
       if (!request.user.smsConsentAt && !consentingNow) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'You must consent to SMS and accept the terms.' });
       }
-      // Reject a number already verified on another account (designer edge case).
+      // A phone number belongs to a single account (enforced by the DB unique
+      // constraint on User.phoneNumber). Reject up front — with a friendly error —
+      // if any OTHER account already holds it (verified OR mid-verification), rather
+      // than letting the update below surface a raw constraint error.
       const takenBy = await fastify.prisma.user.findFirst({
-        where: { phoneNumber, phoneVerifiedAt: { not: null }, id: { not: request.user.id } },
+        where: { phoneNumber, id: { not: request.user.id } },
         select: { id: true },
       });
       if (takenBy) {
         return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
       }
+      // Throttle: sendVerificationCode always arms the resend cooldown, so a user can
+      // trigger at most one code send per cooldown window regardless of the number —
+      // this is what bounds OTP sends and prevents flooding arbitrary numbers.
       const remaining = resendCooldownRemaining(request.user.smsOtpLastSentAt);
       if (remaining > 0) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: `Please wait ${remaining}s before requesting another code.`, resendAvailableInSeconds: remaining });
       }
       // Store the (unverified) number; stamp consent only when consenting now.
-      await fastify.prisma.user.update({
-        where: { id: request.user.id },
-        data: { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) },
-      });
-      // Initial send does not arm the resend cooldown → user may resend once now.
-      await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber }, { startsResendCooldown: false });
-      return reply.send({ phoneNumber, resendAvailableInSeconds: 0 });
+      // Catch the narrow race where a concurrent /start claimed the same number
+      // between the check above and this write.
+      try {
+        await fastify.prisma.user.update({
+          where: { id: request.user.id },
+          data: { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) },
+        });
+      } catch (err) {
+        if (err?.code === 'P2002') {
+          return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
+        }
+        throw err;
+      }
+      await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber });
+      return reply.send({ phoneNumber, resendAvailableInSeconds: RESEND_COOLDOWN_S });
     });
 
   // Resend the code to the pending (unverified) number, subject to the cooldown.

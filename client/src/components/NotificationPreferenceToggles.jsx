@@ -45,6 +45,9 @@ function NotificationPreferenceToggles ({ selected, onToggle, facilityName = 'RE
         <Switch
           key={event.value}
           size='md'
+          // Figma wants a plain white knob; Mantine v8 defaults to an inner
+          // track-colored indicator dot, so turn it off.
+          withThumbIndicator={false}
           checked={selected.has(event.value)}
           onChange={() => onToggle(event.value)}
           label={event.label.replaceAll('{facility}', facilityName)}

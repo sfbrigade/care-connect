@@ -155,6 +155,13 @@ export async function maybeSendWelcome (fastify, user) {
   if (!user?.phoneVerifiedAt) return 0;
   if ((user.subscribedEvents?.length ?? 0) === 0) return 0;
   if (user.smsWelcomedAt) return 0;
+  // The welcome is a real outbound SMS, so it must respect the same delivery gates
+  // as every notification: never message a carrier-opted-out number (STOP — TCPA),
+  // a muted user, or an inactive account. This path sends directly (no event
+  // audience), so these checks are enforced here rather than by resolveRecipients.
+  if (user.smsOptedOutAt) return 0;
+  if (!user.notificationsEnabled) return 0;
+  if (user.deactivatedAt || user.deletedAt) return 0;
   const facility = user.currentFacilityId ? await loadFacility(fastify, user.currentFacilityId) : null;
   if (!facility) return 0;
   // Mark welcomed before sending so concurrent updates can't double-send.
