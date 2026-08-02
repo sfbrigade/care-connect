@@ -48,6 +48,15 @@ function NotificationPreferenceToggles ({ selected, onToggle, facilityName = 'RE
           // Figma wants a plain white knob; Mantine v8 defaults to an inner
           // track-colored indicator dot, so turn it off.
           withThumbIndicator={false}
+          // Label/description on the left, toggle pinned to the right edge. The
+          // labelWrapper takes the free space (flex:1) so the toggle sits far right
+          // and the description wraps instead of pushing the toggle off-row.
+          labelPosition='left'
+          styles={{
+            root: { width: '100%' },
+            body: { alignItems: 'center' },
+            labelWrapper: { flex: 1 },
+          }}
           checked={selected.has(event.value)}
           onChange={() => onToggle(event.value)}
           label={event.label.replaceAll('{facility}', facilityName)}
