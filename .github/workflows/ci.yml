@@ -72,8 +72,8 @@ jobs:
           cache: 'npm'
       - name: Install Dependencies
         run: npm ci
-      - name: Generate Prisma client and compile forms
-        run: npm run prisma:generate -w server && npm run build:forms -w server
+      - name: Generate Prisma client
+        run: npm run prisma:generate -w server
       - name: Run ESLint
         run: npm run lint:check
       - name: Run Tests
