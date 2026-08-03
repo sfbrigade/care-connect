@@ -47,6 +47,20 @@
                   "Effect": "Allow",
                   "Action": "sms-voice:*",
                   "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueAttributes"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "SMSInboundSQSQueue",
+                      "Arn"
+                    ]
+                  }
                 }
               ]
             }
@@ -77,6 +91,79 @@
             "SMSUserAccessKey",
             "SecretAccessKey"
           ]
+        }
+      }
+    },
+    "SMSInboundSQSQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Sub": "${BaseName}-sms-inbound"
+        }
+      }
+    },
+    "SMSInboundSNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": {
+          "Fn::Sub": "${BaseName}-sms-inbound"
+        }
+      }
+    },
+    "SMSInboundSQSPolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Id": {
+            "Fn::Sub": "${BaseName}-sms-inbound-sqs-policy"
+          },
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "SMSInboundSQSQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::GetAtt": [
+                      "SMSInboundSNSTopic",
+                      "Arn"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Queues": [
+          {
+            "Ref": "SMSInboundSQSQueue"
+          }
+        ]
+      }
+    },
+    "SMSInboundSNSTopicSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "SMSInboundSQSQueue",
+            "Arn"
+          ]
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": true,
+        "TopicArn": {
+          "Ref": "SMSInboundSNSTopic"
         }
       }
     }
