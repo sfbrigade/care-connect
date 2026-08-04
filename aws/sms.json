@@ -134,10 +134,7 @@
               "Condition": {
                 "ArnEquals": {
                   "aws:SourceArn": {
-                    "Fn::GetAtt": [
-                      "SMSInboundSNSTopic",
-                      "Arn"
-                    ]
+                    "Ref": "SMSInboundSNSTopic"
                   }
                 }
               }
