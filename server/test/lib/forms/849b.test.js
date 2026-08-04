@@ -330,9 +330,10 @@ test('849b PDF leaves prop 115 unchecked but checks post training when reporting
 });
 
 // Read the font size baked into a field's normal appearance (/AP /N) stream.
-function bakedFontSize (doc, fieldName) {
+// widgetIndex selects which widget (0 = page 1, 1 = page 2 for the comb fields).
+function bakedFontSize (doc, fieldName, widgetIndex = 0) {
   const field = doc.getForm().getTextField(fieldName);
-  const widget = field.acroField.getWidgets()[0];
+  const widget = field.acroField.getWidgets()[widgetIndex];
   const ap = doc.context.lookup(widget.dict.get(PDFName.of('AP')));
   const n = doc.context.lookup(ap.get(PDFName.of('N')));
   let raw = Buffer.from(n.getContents());
@@ -367,8 +368,12 @@ test('849b renders the case-number comb boxes at a fixed size, not pdf-lib auto-
   }));
 
   const doc = await PDFDocument.load(pdfBytes);
-  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER'), 14);
-  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER'), 14);
+  // Both the page-1 (widget 0) and page-2 (widget 1) copies of these fields
+  // must get the fixed-size appearance, not just page 1.
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 1), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 1), 14);
 });
 
 test('849b PDF truncates overlong text fields to template max lengths', async () => {

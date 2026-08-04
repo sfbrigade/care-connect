@@ -27,34 +27,40 @@ function setCombFieldAppearance (form, pdfDoc, font, fieldName) {
   const text = field.getText();
   if (!text) return;
 
-  const widget = field.acroField.getWidgets()[0];
-  const { width, height } = widget.getRectangle();
   const cellCount = field.getMaxLength() || text.length;
-  const cellWidth = width / cellCount;
   const size = CASE_NUMBER_BOX_FONT_SIZE;
-  const baselineY = (height - size * HELVETICA_CAP_HEIGHT) / 2;
 
-  let ops = `/Tx BMC\nq\nBT\n/Helv ${size} Tf\n0 g\n`;
-  for (let i = 0; i < text.length && i < cellCount; i++) {
-    const ch = text[i];
-    const charWidth = font.widthOfTextAtSize(ch, size);
-    const x = i * cellWidth + (cellWidth - charWidth) / 2;
-    const escaped = ch.replace(/([\\()])/g, '\\$1');
-    ops += `1 0 0 1 ${x.toFixed(2)} ${baselineY.toFixed(2)} Tm (${escaped}) Tj\n`;
+  // INCIDENT NUMBER / CAD NUMBER each appear on both page 1 and page 2 as
+  // separate widgets of the same field. Render the fixed-size appearance for
+  // every widget, not just the first — otherwise page 2 keeps pdf-lib's
+  // oversized comb auto-fit.
+  for (const widget of field.acroField.getWidgets()) {
+    const { width, height } = widget.getRectangle();
+    const cellWidth = width / cellCount;
+    const baselineY = (height - size * HELVETICA_CAP_HEIGHT) / 2;
+
+    let ops = `/Tx BMC\nq\nBT\n/Helv ${size} Tf\n0 g\n`;
+    for (let i = 0; i < text.length && i < cellCount; i++) {
+      const ch = text[i];
+      const charWidth = font.widthOfTextAtSize(ch, size);
+      const x = i * cellWidth + (cellWidth - charWidth) / 2;
+      const escaped = ch.replace(/([\\()])/g, '\\$1');
+      ops += `1 0 0 1 ${x.toFixed(2)} ${baselineY.toFixed(2)} Tm (${escaped}) Tj\n`;
+    }
+    ops += 'ET\nQ\nEMC';
+
+    const stream = pdfDoc.context.stream(ops, {
+      Type: 'XObject',
+      Subtype: 'Form',
+      FormType: 1,
+      BBox: [0, 0, width, height],
+      Resources: { Font: { Helv: font.ref } },
+    });
+    widget.dict.set(
+      PDFName.of('AP'),
+      pdfDoc.context.obj({ N: pdfDoc.context.register(stream) })
+    );
   }
-  ops += 'ET\nQ\nEMC';
-
-  const stream = pdfDoc.context.stream(ops, {
-    Type: 'XObject',
-    Subtype: 'Form',
-    FormType: 1,
-    BBox: [0, 0, width, height],
-    Resources: { Font: { Helv: font.ref } },
-  });
-  widget.dict.set(
-    PDFName.of('AP'),
-    pdfDoc.context.obj({ N: pdfDoc.context.register(stream) })
-  );
 }
 
 const spec = {
