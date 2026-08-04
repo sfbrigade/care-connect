@@ -72,6 +72,8 @@ jobs:
           cache: 'npm'
       - name: Install Dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
       - name: Generate Prisma client
         run: npm run prisma:generate -w server
       - name: Run ESLint
