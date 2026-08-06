@@ -205,11 +205,11 @@ enum DeflectionExitDestinationEnum {
 }
 
 enum DeflectionExitHousingStatusEnum {
-  PERMANENT
-  SHELTERED
-  TEMPORARY
+  PERMANENTLY_HOUSED
+  TEMPORARY_SHELTER
   UNKNOWN
   DECLINED_CONSENT
+  NO_SHELTER_STREET
 }
 
 enum FacilityStatusReasonEnum {

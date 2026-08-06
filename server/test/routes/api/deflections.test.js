@@ -1867,7 +1867,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'DECLINED_CONSENT',
           exitConnectedToCare: 'YES',
         });
@@ -1877,7 +1877,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(data.exitDestination, 'HOME');
-      assert.strictEqual(data.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(data.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(data.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       // Should not set exitedAt/exitedById
@@ -1888,7 +1888,7 @@ test('/api/deflections', async (t) => {
       const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
       assert.strictEqual(dbDeflection.exitDestination, 'HOME');
-      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(dbDeflection.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
 
@@ -1897,7 +1897,7 @@ test('/api/deflections', async (t) => {
       const lastUpdate = updates[updates.length - 1];
       assert.strictEqual(lastUpdate.subjectStatus, null); // Hasn't changed
       assert.strictEqual(lastUpdate.exitDestination, 'HOME');
-      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(lastUpdate.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
     });
@@ -1908,7 +1908,7 @@ test('/api/deflections', async (t) => {
         .headers(userHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1927,7 +1927,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1941,7 +1941,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1963,7 +1963,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'YES',
           exitConnectedToCare: 'YES',
         });
@@ -1974,7 +1974,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.exitDestination, 'HOME');
-      assert.strictEqual(data.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(data.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(data.exitSFResident, 'YES');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       assert.ok(data.completedAt);
@@ -1986,7 +1986,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.strictEqual(dbDeflection.exitDestination, 'HOME');
-      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(dbDeflection.exitSFResident, 'YES');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
       assert.ok(dbDeflection.completedAt);
@@ -1999,7 +1999,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(lastUpdate.status, 'COMPLETED');
       assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
       assert.strictEqual(lastUpdate.exitDestination, 'HOME');
-      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(lastUpdate.exitSFResident, 'YES');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
 
@@ -2024,7 +2024,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'JAIL',
-          exitHousingStatus: 'TEMPORARY',
+          exitHousingStatus: 'TEMPORARY_SHELTER',
           exitSFResident: 'UNKNOWN',
           exitConnectedToCare: 'NO',
         });
@@ -2042,7 +2042,7 @@ test('/api/deflections', async (t) => {
         .headers(userHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -2061,7 +2061,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -2075,7 +2075,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'UNKNOWN',
           exitConnectedToCare: 'UNKNOWN',
         });

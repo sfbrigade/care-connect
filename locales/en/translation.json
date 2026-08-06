@@ -124,9 +124,9 @@
     "OTHER": "Other"
   },
   "deflectionExitHousingStatus": {
-    "PERMANENT": "Permanent",
-    "SHELTERED": "Sheltered",
-    "TEMPORARY": "Temporary",
+    "PERMANENTLY_HOUSED": "Permanently housed",
+    "TEMPORARY_SHELTER": "Temporary shelter",
+    "NO_SHELTER_STREET": "No shelter/street",
     "UNKNOWN": "Unknown",
     "DECLINED_CONSENT": "Did not share"
   },

@@ -260,15 +260,14 @@ export default async function main (prisma) {
   const exitDestJail = 'JAIL';
   const exitDestOther = 'OTHER';
 
-  const housingStatusPermanent = 'PERMANENT';
-  const housingStatusSheltered = 'SHELTERED';
-  const housingStatusTemporary = 'TEMPORARY';
+  const housingStatusPermanent = 'PERMANENTLY_HOUSED';
+  const housingStatusSheltered = 'TEMPORARY_SHELTER';
   const housingStatusUnknown = 'UNKNOWN';
   const housingStatusDeclined = 'DECLINED_CONSENT';
 
   // All full-spectrum exit dests and housing statuses for varied coverage
   const allExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined, exitDestOther];
-  const allHousingStatuses = [housingStatusPermanent, housingStatusSheltered, housingStatusTemporary, housingStatusUnknown, housingStatusDeclined];
+  const allHousingStatuses = [housingStatusPermanent, housingStatusSheltered, housingStatusUnknown, housingStatusDeclined];
   const housingStatuses = allHousingStatuses;
   const commonExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined];
 

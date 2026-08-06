@@ -60,7 +60,7 @@ describe('Care flow unit tests', () => {
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
       exitDestination: 'HOSPITAL',
-      exitHousingStatus: 'TEMPORARY',
+      exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
@@ -191,7 +191,7 @@ describe('Care flow unit tests', () => {
     setSavedExitDraft(44, {
       exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatus: 'TEMPORARY',
+      exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
     });
@@ -199,7 +199,7 @@ describe('Care flow unit tests', () => {
     expect(getSavedExitDraft(44)).toMatchObject({
       exitDestination: 'HOME',
       exitSFResident: 'YES',
-      exitHousingStatus: 'TEMPORARY',
+      exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'NO',
       propertyReturnHandledConfirmed: false,
       exitFormEdited: true,

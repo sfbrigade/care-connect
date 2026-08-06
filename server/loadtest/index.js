@@ -382,7 +382,7 @@ async function createContext (options) {
       exitDestinationHome: 'HOME',
       exitDestinationHospital: 'HOSPITAL',
       exitDestinationJail: 'JAIL',
-      exitHousingStatus: 'PERMANENT',
+      exitHousingStatus: 'PERMANENTLY_HOUSED',
       releaseReasonSobered: 'SOBERED',
       releaseReasonMedical: 'MEDICAL_ISSUE',
     },
