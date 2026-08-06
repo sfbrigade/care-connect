@@ -130,20 +130,20 @@ test('inbound SMS handling', async (t) => {
     }
   });
 
-  await t.test('HELP replies with info and changes no state', async () => {
+  await t.test('HELP is left to the AWS keyword auto-response — we do not reply or change state', async () => {
     sendText.mock.resetCalls();
     const u = await makeUser({ notificationsEnabled: true, smsOptedOutAt: null });
 
     const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: 'HELP' }, prisma);
 
     assert.strictEqual(res.action, 'help');
-    assert.strictEqual(sendText.mock.callCount(), 1);
+    assert.strictEqual(sendText.mock.callCount(), 0); // AWS owns HELP; no double reply
     const after = await prisma.user.findUnique({ where: { id: u.id } });
     assert.strictEqual(after.notificationsEnabled, true);
     assert.strictEqual(after.smsOptedOutAt, null);
   });
 
-  await t.test('an unrecognized keyword is ignored (no state change, no reply)', async () => {
+  await t.test('an unrecognized message from a known user gets the fallback reply (no state change)', async () => {
     sendText.mock.resetCalls();
     const u = await makeUser({ notificationsEnabled: true });
 
@@ -151,7 +151,8 @@ test('inbound SMS handling', async (t) => {
 
     assert.strictEqual(res.action, 'ignored');
     assert.strictEqual(res.keyword, 'HELLO');
-    assert.strictEqual(sendText.mock.callCount(), 0);
+    assert.strictEqual(sendText.mock.callCount(), 1);
+    assert.match(sendText.mock.calls[0].arguments[0].body, /Reply MUTE to pause notifications/);
     const after = await prisma.user.findUnique({ where: { id: u.id } });
     assert.strictEqual(after.notificationsEnabled, true);
   });

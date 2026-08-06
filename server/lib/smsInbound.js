@@ -14,6 +14,10 @@ const UNMUTE_WORDS = ['UNMUTE'];
 const OPTOUT_WORDS = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
 const OPTIN_WORDS = ['START', 'UNSTOP', 'YES', 'OPTIN'];
 const HELP_WORDS = ['HELP', 'INFO'];
+// Reply sent to a known user for any message we can't otherwise handle. Keep this in
+// sync with the AWS HELP keyword auto-response (which answers the reserved HELP
+// keyword), so both paths return identical copy.
+const FALLBACK_MESSAGE = 'CareConnect: Reply MUTE to pause notifications, UNMUTE to resume. For assistance, email careconnect@sfgov.org.';
 
 // SQS body → { fromNumber, body }, or null if not a usable inbound SMS event.
 // Handles both raw-message-delivery (the End User Messaging event directly) and
@@ -88,10 +92,15 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     return { action: 'optin' };
   }
   if (HELP_WORDS.includes(keyword)) {
-    await reply(fromNumber, 'CareConnect alerts: reply MUTE to pause, UNMUTE to resume, STOP to unsubscribe.');
+    // HELP is a reserved compliance keyword answered by the AWS keyword
+    // auto-response; we must NOT also reply, or the user gets two texts.
     return { action: 'help' };
   }
 
+  // Any other message from a known user: reply with the fallback so a mistyped
+  // command still points them to MUTE/UNMUTE/support. Unknown numbers returned
+  // above, so we never text strangers.
   console.log('[sms-inbound] unrecognized keyword from', fromNumber, ':', keyword);
+  await reply(fromNumber, FALLBACK_MESSAGE);
   return { action: 'ignored', keyword };
 }
