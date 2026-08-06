@@ -207,6 +207,7 @@ enum DeflectionExitDestinationEnum {
 enum DeflectionExitHousingStatusEnum {
   PERMANENTLY_HOUSED
   TEMPORARY_SHELTER
+  TEMPORARY
   UNKNOWN
   DECLINED_CONSENT
   NO_SHELTER_STREET
