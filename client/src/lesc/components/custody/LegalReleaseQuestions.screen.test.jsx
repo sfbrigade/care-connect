@@ -152,7 +152,8 @@ describe('LegalReleaseQuestions', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
 
     expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Behavioral health evaluation' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'BH Emergency/5150' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Elopement' })).toBeInTheDocument();
   });
 
   it('requires and submits an exit destination for behavioral health evaluation', async () => {

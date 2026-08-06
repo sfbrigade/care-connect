@@ -2434,7 +2434,7 @@ test('/api/deflections', async (t) => {
       });
     });
 
-    await t.test('marks a subject as legally released and exited (behavioral health evaluation)', async () => {
+    await t.test('marks a subject as legally released and exited (BH Emergency/5150)', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {

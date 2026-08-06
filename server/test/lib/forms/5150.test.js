@@ -19,7 +19,7 @@ test('5150 form generation eligibility', async (t) => {
       releasedAt: new Date('2026-04-29T12:34:56.000Z'),
     });
     assert.deepStrictEqual(check, {
-      message: 'The 5150 Application can only be generated for releases with reason "Behavioral Health Evaluation".',
+      message: 'The 5150 Application can only be generated for releases with reason "BH Emergency/5150".',
     });
   });
 

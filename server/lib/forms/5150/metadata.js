@@ -9,7 +9,7 @@ export const metadata = {
   // actions can never produce a 5150-eligible deflection (issue #875).
   canGenerate (deflection) {
     if (deflection.releaseReason !== 'BH_EMERGENCY_5150') {
-      return { message: 'The 5150 Application can only be generated for releases with reason "Behavioral Health Evaluation".' };
+      return { message: 'The 5150 Application can only be generated for releases with reason "BH Emergency/5150".' };
     }
     if (!deflection.releasedAt) {
       return { message: 'The 5150 Application can only be generated after legal release.' };

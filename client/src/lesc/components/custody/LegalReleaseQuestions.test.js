@@ -28,7 +28,7 @@ describe('getPrefilledLegalReleaseState', () => {
     });
   });
 
-  it('accepts behavioral health evaluation as a valid preset with an exit destination', () => {
+  it('accepts BH Emergency/5150 as a valid preset with an exit destination', () => {
     const params = new URLSearchParams({
       releaseReason: 'BH_EMERGENCY_5150',
       exitDestination: 'HOSPITAL_EMS',
