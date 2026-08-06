@@ -102,6 +102,22 @@ test('maybeNotifyReadyHolds — NEW_HOLD fires once per hold when it becomes rea
     assert.strictEqual(newHoldJobs().length, 0);
   });
 
+  await t.test('two concurrent calls send each hold exactly once (atomic claim, no double-send)', async () => {
+    await makeRecipient();
+    await nullFacilityCoords();
+    await makeFixturePreTransferDetailsComplete(prisma);
+
+    app.backgroundJobs.reset();
+    // Both invocations read the holds as unclaimed before either writes; the atomic
+    // claim must still let exactly one win per hold. Without the guard this enqueues 4.
+    await Promise.all([
+      smsNotifications.maybeNotifyReadyHolds(app, { facilityId: LESC1, incidentId: INCIDENT_ID }),
+      smsNotifications.maybeNotifyReadyHolds(app, { facilityId: LESC1, incidentId: INCIDENT_ID }),
+    ]);
+
+    assert.strictEqual(newHoldJobs().length, 2); // holds 4 & 5, once each
+  });
+
   await t.test('leaves non-DETAINED holds on the incident untouched (READY_FOR_INTAKE, RELEASED)', async () => {
     await makeRecipient();
     await nullFacilityCoords();

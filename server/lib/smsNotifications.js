@@ -112,11 +112,15 @@ export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }
   for (const deflection of deflections) {
     if (!isIncidentDetailsComplete(deflection.incident)) continue;
     if (!isDeflectionDetailsComplete(deflection)) continue;
-    // Mark first so a burst of concurrent edits can't double-send.
-    await fastify.prisma.deflection.update({
-      where: { id: deflection.id },
+    // Atomically claim the hold: the update only matches while newHoldNotifiedAt is
+    // still null, and the DB row-locks it, so of two concurrent fire-and-forget calls
+    // for the same incident exactly one gets count === 1 — the other matches 0 rows
+    // and skips. Prevents double-sending the NEW_HOLD text.
+    const claimed = await fastify.prisma.deflection.updateMany({
+      where: { id: deflection.id, newHoldNotifiedAt: null },
       data: { newHoldNotifiedAt: new Date() },
     });
+    if (claimed.count !== 1) continue;
     await notifyNewHold(fastify, { deflectionId: deflection.id, facilityId });
   }
 }
