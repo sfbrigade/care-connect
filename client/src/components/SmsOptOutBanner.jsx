@@ -27,7 +27,7 @@ function SmsOptOutBanner () {
   const registeredNumber = formatUSPhone(user.phoneNumber) || 'your number';
 
   return (
-    <Alert icon={<IconBellOff />} color='yellow' variant='light' title='SMS notifications are blocked'>
+    <Alert icon={<IconBellOff />} color='yellow' variant='light' radius='lg' title='SMS notifications are blocked'>
       <Text size='sm'>
         CareConnect is currently blocked from sending text messages to{' '}
         <Text span fw={600}>{registeredNumber}</Text>. To re-enable notifications, text <Text span ff='monospace' fw={600}>START</Text> to
