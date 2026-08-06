@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 
@@ -15,8 +15,9 @@ import { useToast } from '@/components/ToastContext';
 
 // "Notification settings" page (reached from Profile → Edit under SMS
 // notifications). Two states: no verified number → prompt to add one; verified
-// number → the per-event toggles. (The enroll/subscribe wizard has its own
-// "Set your preferences" step; this is the standalone settings version.)
+// number → the per-event toggles. Changes apply immediately on toggle — there's no
+// Save; the user just goes Back when done. (The enroll/subscribe wizard keeps its
+// own deliberate "Subscribe" commit; auto-apply is only for this standalone page.)
 function NotificationSettingsPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
@@ -30,34 +31,75 @@ function NotificationSettingsPage () {
 
   // Initialize once from the loaded user; don't re-sync on every refetch.
   const [selected, setSelected] = useState(null);
+  const lastSavedRef = useRef([]);
   useEffect(() => {
-    if (user && selected === null) setSelected(new Set(user.subscribedEvents ?? []));
+    if (user && selected === null) {
+      setSelected(new Set(user.subscribedEvents ?? []));
+      lastSavedRef.current = user.subscribedEvents ?? [];
+    }
   }, [user, selected]);
 
-  const saveMutation = useMutation({
-    mutationFn: (events) => {
-      const data = { subscribedEvents: events };
-      // Enabling notifications from a not-yet-subscribed state also unmutes, so
-      // they actually start receiving (mirrors the enroll flow's Subscribe).
-      if (!subscribed && events.length > 0) data.notificationsEnabled = true;
-      return Api.users.update(user.id, data);
-    },
-    onSuccess: (response) => {
-      queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
-      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-      showToast('Notification preferences updated', 'success');
-      navigate('/profile');
-    },
-    onError: () => showToast('Couldn’t save your preferences', 'error', 4000, 'Please try again.'),
-  });
+  // Auto-apply: each toggle persists the full subscribedEvents set immediately.
+  // Saves are serialized (at most one PATCH in flight; a mid-flight change coalesces
+  // into a single trailing save) so rapid toggling can't land out of order — every
+  // request carries the complete set, so the last one reconciles server to UI.
+  const savingRef = useRef(false);
+  const pendingRef = useRef(null);
+  const userIdRef = useRef(user?.id);
+  userIdRef.current = user?.id;
+
+  function buildData (events) {
+    const data = { subscribedEvents: events };
+    // Enabling from a not-yet-subscribed state also unmutes (mirrors Subscribe).
+    const cached = queryClient.getQueryData(['users', 'me']) ?? user;
+    if (cached && !isSmsSubscribed(cached) && events.length > 0) data.notificationsEnabled = true;
+    return data;
+  }
+
+  function persist (events) {
+    if (savingRef.current) {
+      pendingRef.current = events;
+      return;
+    }
+    savingRef.current = true;
+    Api.users.update(userIdRef.current, buildData(events))
+      .then((response) => {
+        lastSavedRef.current = events;
+        queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
+      })
+      .catch(() => {
+        pendingRef.current = null;
+        setSelected(new Set(lastSavedRef.current)); // revert the optimistic toggle
+        showToast('Couldn’t save your preferences', 'error', 4000, 'Please try again.');
+      })
+      .finally(() => {
+        savingRef.current = false;
+        if (pendingRef.current !== null) {
+          const next = pendingRef.current;
+          pendingRef.current = null;
+          persist(next);
+        }
+      });
+  }
+
+  // Flush a pending trailing save on unmount so a last-moment toggle isn't lost if
+  // the user hits Back immediately after a rapid change.
+  useEffect(() => () => {
+    if (pendingRef.current === null) return;
+    const events = pendingRef.current;
+    pendingRef.current = null;
+    const cached = queryClient.getQueryData(['users', 'me']);
+    const data = { subscribedEvents: events };
+    if (cached && !isSmsSubscribed(cached) && events.length > 0) data.notificationsEnabled = true;
+    Api.users.update(userIdRef.current, data).catch(() => {});
+  }, [queryClient]);
 
   function toggle (value) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
-      return next;
-    });
+    const next = new Set(selected);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    setSelected(next);
+    persist([...next]);
   }
 
   const isLoading = selected === null;
@@ -98,19 +140,7 @@ function NotificationSettingsPage () {
           )}
 
           {!isLoading && hasNumber && (
-            <>
-              <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
-              <Group>
-                <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
-                <Button
-                  variant='secondary'
-                  onClick={() => saveMutation.mutate([...selected])}
-                  loading={saveMutation.isPending}
-                >
-                  Save preferences
-                </Button>
-              </Group>
-            </>
+            <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
           )}
         </Stack>
       </Container>
