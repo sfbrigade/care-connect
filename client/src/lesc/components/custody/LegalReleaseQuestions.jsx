@@ -38,7 +38,7 @@ function LegalReleaseQuestions () {
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
   const isBehavioralHealthRelease = releaseReason === 'BH_EMERGENCY_5150';
-  const isElopementRelease = releaseReason == 'ELOPEMENT';
+  const isElopementRelease = releaseReason === 'ELOPEMENT';
   const isOtherRelease = releaseReason === 'OTHER';
   const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isElopementRelease || isOtherRelease;
 
