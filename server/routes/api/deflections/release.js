@@ -86,7 +86,7 @@ export default async function (fastify, opts) {
       const isOtherRelease = releaseReason === 'OTHER';
       const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isElopementRelease || isOtherRelease;
 
-      const exitDestination = isElopementRelease ? 'STREET' : (request.body?.exitDestination || null);
+      const exitDestination = isElopementRelease ? 'UNKNOWN' : (request.body?.exitDestination || null);
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
 

@@ -2516,7 +2516,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReason, 'ELOPEMENT');
-      assert.strictEqual(data.exitDestination, 'STREET');
+      assert.strictEqual(data.exitDestination, 'UNKNOWN');
       assert.ok(data.releasedAt);
       assert.ok(data.completedAt);
       assert.ok(data.exitedAt);
@@ -2525,7 +2525,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.strictEqual(dbDeflection.releaseReason, 'ELOPEMENT');
-      assert.strictEqual(dbDeflection.exitDestination, 'STREET');
+      assert.strictEqual(dbDeflection.exitDestination, 'UNKNOWN');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
 

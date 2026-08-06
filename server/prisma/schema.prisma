@@ -203,6 +203,7 @@ enum DeflectionExitDestinationEnum {
   SERVICES_NON_HOSPITAL
   DECLINED_CONSENT
   OTHER
+  UNKNOWN
 }
 
 enum DeflectionExitHousingStatusEnum {
