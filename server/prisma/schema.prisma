@@ -183,10 +183,11 @@ enum DeflectionCancelReasonEnum {
 enum DeflectionReleaseReasonEnum {
   SOBERED
   MEDICAL_ISSUE
-  BEHAVIORAL_HEALTH_EVALUATION
+  BH_EMERGENCY_5150
   OTHER
   DEATH_IN_FACILITY
   DEATH_IN_CUSTODY
+  ELOPEMENT
 }
 
 enum DeflectionRefusalReasonEnum {

@@ -2454,7 +2454,7 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
         .payload({
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           exitDestination: 'OTHER',
         });
 
@@ -2463,7 +2463,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
-      assert.strictEqual(data.releaseReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.strictEqual(data.releaseReason, 'BH_EMERGENCY_5150');
       assert.strictEqual(data.exitDestination, 'OTHER');
       assert.ok(data.releasedAt);
       assert.ok(data.completedAt);
@@ -2472,7 +2472,7 @@ test('/api/deflections', async (t) => {
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
-      assert.strictEqual(dbDeflection.releaseReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.strictEqual(dbDeflection.releaseReason, 'BH_EMERGENCY_5150');
       assert.strictEqual(dbDeflection.exitDestination, 'OTHER');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);

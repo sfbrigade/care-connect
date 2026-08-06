@@ -7,7 +7,7 @@ import form5150 from '#lib/forms/5150/index.js';
 test('5150 form generation eligibility', async (t) => {
   await t.test('allows BHE-reason releases that have a release timestamp', () => {
     const check = form5150.canGenerate({
-      releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+      releaseReason: 'BH_EMERGENCY_5150',
       releasedAt: new Date('2026-04-29T12:34:56.000Z'),
     });
     assert.strictEqual(check, true);
@@ -25,7 +25,7 @@ test('5150 form generation eligibility', async (t) => {
 
   await t.test('rejects BHE deflections that have not yet been released', () => {
     const check = form5150.canGenerate({
-      releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+      releaseReason: 'BH_EMERGENCY_5150',
       releasedAt: null,
     });
     assert.deepStrictEqual(check, {
@@ -36,7 +36,7 @@ test('5150 form generation eligibility', async (t) => {
 
 test('5150 form transformData', async (t) => {
   const sampleDeflection = {
-    releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+    releaseReason: 'BH_EMERGENCY_5150',
     releasedAt: new Date('2026-04-29T20:34:56.000Z'),
     subject: {
       firstName: 'Jane',
@@ -104,7 +104,7 @@ test('5150 form generatePdf', async () => {
   // Smoke test: round-trip the actual template through fill5150 and confirm
   // pdf-lib produces a valid PDF whose populated fields contain our values.
   const sampleDeflection = {
-    releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+    releaseReason: 'BH_EMERGENCY_5150',
     releasedAt: new Date('2026-04-29T20:34:56.000Z'),
     subject: {
       firstName: 'Jane',

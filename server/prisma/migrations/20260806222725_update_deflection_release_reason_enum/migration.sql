@@ -1,0 +1,5 @@
+-- AlterEnum
+BEGIN;
+ALTER TYPE "public"."DeflectionReleaseReasonEnum" RENAME VALUE 'BEHAVIORAL_HEALTH_EVALUATION' TO 'BH_EMERGENCY_5150';
+ALTER TYPE "public"."DeflectionReleaseReasonEnum" ADD VALUE 'ELOPEMENT';
+COMMIT;

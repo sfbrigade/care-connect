@@ -286,7 +286,7 @@ test('formsEmail job handler', async (t) => {
       deflection: {
         findUnique: async () => ({
           ...mockDeflection,
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           subject: { ...mockDeflection.subject, dateOfBirth: new Date('1985-06-15') },
         }),
       },
@@ -318,7 +318,7 @@ test('formsEmail job handler', async (t) => {
       deflection: {
         findUnique: async () => ({
           ...mockDeflection,
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           subject: { ...mockDeflection.subject, dateOfBirth: new Date('1985-06-15') },
           deflectionDocuments: [
             ...mockDeflection.deflectionDocuments,

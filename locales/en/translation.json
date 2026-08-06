@@ -105,10 +105,11 @@
   "deflectionReleaseReason": {
     "SOBERED": "Can care for themselves",
     "MEDICAL_ISSUE": "Medical issue (physical)",
-    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "BH_EMERGENCY_5150": "BH Emergency/5150",
     "OTHER": "Other",
     "DEATH_IN_FACILITY": "Death in facility",
-    "DEATH_IN_CUSTODY": "Death in custody"
+    "DEATH_IN_CUSTODY": "Death in custody",
+    "ELOPEMENT": "Elopement"
   },
   "deflectionRefusalReason": {
     "AGGRESSIVE_BEHAVIOR": "Aggressive behavior",
