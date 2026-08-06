@@ -170,7 +170,7 @@ describe('LegalReleaseQuestions', () => {
 
     await waitFor(() => {
       expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
-        releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+        releaseReason: 'BH_EMERGENCY_5150',
         exitDestination: 'OTHER',
       });
     });

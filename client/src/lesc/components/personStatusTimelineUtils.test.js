@@ -237,7 +237,7 @@ describe('buildPersonStatusTimeline', () => {
       ],
       releasedAt: '2026-05-08T10:58:00.000-07:00',
       releasedBy: user('Alice', 'Johnson'),
-      releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+      releaseReason: 'BH_EMERGENCY_5150',
       exitedAt: '2026-05-08T11:02:00.000-07:00',
       exitedBy: user('Rocky', 'Balboa'),
       exitDestination: 'OTHER',

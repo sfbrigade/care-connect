@@ -37,7 +37,7 @@ function LegalReleaseQuestions () {
   const { navigateWithOptionalSurvey } = useSatisfactionSurvey(navigate);
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
-  const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
+  const isBehavioralHealthRelease = releaseReason === 'BH_EMERGENCY_5150';
   const isOtherRelease = releaseReason === 'OTHER';
   const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
@@ -244,7 +244,7 @@ function LegalReleaseQuestions () {
                                 <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
                               )}
                               <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
-                              <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
+                              <Chip value='BH_EMERGENCY_5150'>BH Emergency/5150</Chip>
                               <Chip value='OTHER'>Other (please specify)</Chip>
                             </Stack>
                           </Chip.Group>
@@ -322,11 +322,11 @@ function LegalReleaseQuestions () {
                   disabled={
                     !releaseReason ||
                     (releaseReason === 'SOBERED' && !canReleaseAsSobered) ||
-                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') && !exitDestination) ||
+                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BH_EMERGENCY_5150') && !exitDestination) ||
                     (releaseReason === 'OTHER' && (!otherReason.trim() || !otherDestination.trim())) ||
                     (releaseReason !== 'SOBERED' &&
                       releaseReason !== 'MEDICAL_ISSUE' &&
-                      releaseReason !== 'BEHAVIORAL_HEALTH_EVALUATION' &&
+                      releaseReason !== 'BH_EMERGENCY_5150' &&
                       releaseReason !== 'OTHER')
                   }
                 >
