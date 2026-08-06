@@ -115,7 +115,7 @@ function SmsEnrollmentPage () {
               onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
               label={
                 <Text size='sm'>
-                  By checking, I accept <Anchor href='#'>Terms of Service</Anchor> & <Anchor href='#'>Privacy Policy</Anchor>.
+                  By checking, I accept the CareConnect SMS <Anchor href='/sms-terms' target='_blank' rel='noopener noreferrer'>Terms</Anchor> & <Anchor href='https://www.sf.gov/information/privacy-policy-sfgov' target='_blank' rel='noopener noreferrer'>Privacy Policy</Anchor>.
                 </Text>
               }
             />
