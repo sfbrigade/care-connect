@@ -81,7 +81,7 @@ test('maybeNotifyReadyHolds — NEW_HOLD fires once per hold when it becomes rea
     assert.strictEqual(jobs.length, 2); // holds 4 & 5
     for (const j of jobs) {
       assert.strictEqual(j.data.userId, rec.id);
-      assert.match(j.data.body, /^CareConnect: 1 person in transit\. View hold:/);
+      assert.match(j.data.body, /^CareConnect: Hold \d+ is in transit\. View hold:/);
       assert.doesNotMatch(j.data.body, /minutes away/); // no ETA clause (no coords)
     }
     const holds = await prisma.deflection.findMany({ where: { id: { in: [4, 5] } } });

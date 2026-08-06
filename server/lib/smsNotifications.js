@@ -121,10 +121,10 @@ export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }
   }
 }
 
-export async function notifyArrival (fastify, { facilityId, count }) {
+export async function notifyArrival (fastify, { facilityId, deflectionIds }) {
   const facility = await loadFacility(fastify, facilityId);
   if (!facility) return 0;
-  const body = templates.arrivalBody(facility, { count });
+  const body = templates.arrivalBody(facility, { deflectionIds });
   return dispatch(fastify, { facilityId, event: 'ARRIVAL', body });
 }
 

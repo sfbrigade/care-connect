@@ -75,7 +75,7 @@ test('SMS recipient gate (resolveRecipients)', async (t) => {
     excluded.push(await makeUser({ deletedAt: new Date() })); // soft-deleted
 
     app.backgroundJobs.reset();
-    const count = await smsNotifications.notifyArrival(app, { facilityId: LESC1, count: 2 });
+    const count = await smsNotifications.notifyArrival(app, { facilityId: LESC1, deflectionIds: [1, 2] });
 
     const ids = enqueuedUserIds();
     assert.deepStrictEqual(ids, new Set(included.map((u) => u.id)));
@@ -89,7 +89,7 @@ test('SMS recipient gate (resolveRecipients)', async (t) => {
     const u = await makeUser();
 
     app.backgroundJobs.reset();
-    await smsNotifications.notifyArrival(app, { facilityId: LESC1, count: 3 });
+    await smsNotifications.notifyArrival(app, { facilityId: LESC1, deflectionIds: [151, 152, 153] });
 
     const jobs = app.backgroundJobs._sent.filter((j) => j.name === QUEUE_SEND_SMS);
     assert.strictEqual(jobs.length, 1);
@@ -98,7 +98,8 @@ test('SMS recipient gate (resolveRecipients)', async (t) => {
     assert.strictEqual(data.event, 'ARRIVAL');
     assert.strictEqual(data.facilityId, LESC1);
     assert.match(data.body, /^CareConnect:/);
-    assert.match(data.body, /3 people have arrived/);
+    assert.match(data.body, /Holds 151, 152, 153 have arrived/);
+    assert.match(data.body, /and are awaiting transfer\. Transfer custody:/);
     assert.match(data.body, /\/custody\?scan=1/);
   });
 

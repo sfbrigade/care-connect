@@ -183,12 +183,13 @@ export default async function (fastify) {
         throw error;
       }
 
-      // Fire-and-forget SMS notification (D8: ARRIVAL) — one grouped "N arrived"
-      // message. Count = the check-in group size (open Q5: could instead count
-      // only newly-transitioned holds). Never block/fail the request on it.
+      // Fire-and-forget SMS notification (D8: ARRIVAL) — one grouped message listing
+      // the arrived hold numbers. These are always the just-arrived holds: arrival
+      // requires !atFacility and you can't leave with pre-transfer holds, so no stale
+      // ONSITE holds are ever in the batch. Never block/fail the request on it.
       if (arrivedHoldIds.length > 0) {
         smsNotifications
-          .notifyArrival(fastify, { facilityId, count: arrivedHoldIds.length })
+          .notifyArrival(fastify, { facilityId, deflectionIds: arrivedHoldIds })
           .catch((err) => fastify.log.error({ err }, 'SMS arrival notification failed'));
       }
 
