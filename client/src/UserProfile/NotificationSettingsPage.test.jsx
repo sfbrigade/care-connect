@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router';
 
 import NotificationSettingsPage from './NotificationSettingsPage';
+
+// jsdom doesn't implement scrollIntoView, which Mantine's Combobox calls on open.
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 const { mockUsersUpdate, mockShowToast, mockNavigate, mockUserRef } = vi.hoisted(() => ({
   mockUsersUpdate: vi.fn(),
@@ -137,15 +141,16 @@ describe('NotificationSettingsPage (auto-apply)', () => {
 
     expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
     expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.getByRole('radio', { name: 'Mute' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Unmute' })).not.toBeChecked();
+    expect(screen.getByDisplayValue('Mute')).toBeInTheDocument(); // dropdown shows Mute
   });
 
   it('muting persists notificationsEnabled:false and hides the toggles', async () => {
+    const user = userEvent.setup();
     renderPage(); // beforeEach user is unmuted, toggles visible
     await screen.findByRole('switch', { name: /Person in transit/i });
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Mute' }));
+    await user.click(screen.getByDisplayValue('Unmute')); // open the dropdown
+    await user.click(await screen.findByText('Mute'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: false }));
     expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
@@ -153,6 +158,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
   });
 
   it('unmuting persists notificationsEnabled:true and reveals the toggles', async () => {
+    const user = userEvent.setup();
     mockUserRef.current = {
       id: 'user-1',
       phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
@@ -162,7 +168,8 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     renderPage();
     await screen.findByText(/SMS notifications are paused/i);
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Unmute' }));
+    await user.click(screen.getByDisplayValue('Mute')); // open the dropdown
+    await user.click(await screen.findByText('Unmute'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: true }));
     expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeInTheDocument();

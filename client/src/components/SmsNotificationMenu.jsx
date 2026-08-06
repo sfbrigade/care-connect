@@ -1,5 +1,5 @@
 import { Button, Menu } from '@mantine/core';
-import { IconBell, IconBellOff, IconCheck } from '@tabler/icons-react';
+import { IconBellRinging, IconBellOff, IconCheck } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
@@ -41,7 +41,7 @@ function SmsNotificationMenu () {
           variant='default'
           radius='xl'
           size='xs'
-          leftSection={muted ? <IconBellOff size={18} /> : <IconBell size={18} />}
+          leftSection={muted ? <IconBellOff size={18} /> : <IconBellRinging size={18} />}
           aria-label={muted ? 'SMS notifications muted' : 'SMS notifications on'}
         >
           SMS
@@ -49,7 +49,7 @@ function SmsNotificationMenu () {
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Item
-          leftSection={<IconBell size={18} color='var(--mantine-color-gray-6)' />}
+          leftSection={<IconBellRinging size={18} color='var(--mantine-color-gray-6)' />}
           rightSection={!muted ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
           onClick={() => setEnabled(true)}
         >

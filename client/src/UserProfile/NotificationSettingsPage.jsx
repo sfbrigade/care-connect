@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Container, Group, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { Button, Container, Group, Loader, Select, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconBellRinging, IconBellOff, IconCheck } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
@@ -142,14 +142,26 @@ function NotificationSettingsPage () {
                 <Text fw={500}>SMS notifications</Text>
                 <Text size='sm' c='dimmed'>Temporarily pause live text updates without losing your saved preferences.</Text>
               </div>
-              <SegmentedControl
-                color='indigo.6'
+              <Select
                 value={notifEnabled ? 'unmute' : 'mute'}
-                onChange={handleMuteChange}
-                data={[{ label: 'Unmute', value: 'unmute' }, { label: 'Mute', value: 'mute' }]}
-                style={{ alignSelf: 'flex-start' }}
-                // Match Figma label type (16px / 400 / 24px) while keeping the lg pill shape.
-                styles={{ label: { fontSize: 16, fontWeight: 400, lineHeight: '24px' } }}
+                onChange={(value) => { if (value) handleMuteChange(value); }}
+                data={[{ value: 'unmute', label: 'Unmute' }, { value: 'mute', label: 'Mute' }]}
+                allowDeselect={false}
+                // Same bell icons as the main-app mute control (SmsNotificationMenu).
+                // Force the text color so the selected-value icon matches the darker
+                // dropdown-option icons (Mantine dims the input section by default).
+                leftSection={notifEnabled
+                  ? <IconBellRinging size={20} color='var(--mantine-color-text)' />
+                  : <IconBellOff size={20} color='var(--mantine-color-text)' />}
+                renderOption={({ option, checked }) => (
+                  <Group flex={1} gap='sm' justify='space-between' wrap='nowrap'>
+                    <Group gap='sm' wrap='nowrap'>
+                      {option.value === 'unmute' ? <IconBellRinging size={20} /> : <IconBellOff size={20} />}
+                      <span>{option.label}</span>
+                    </Group>
+                    {checked && <IconCheck size={18} color='var(--mantine-color-indigo-6)' />}
+                  </Group>
+                )}
               />
               {notifEnabled
                 ? <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
