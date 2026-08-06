@@ -156,11 +156,11 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.getByRole('radio', { name: 'Elopement' })).toBeInTheDocument();
   });
 
-  it('requires and submits an exit destination for behavioral health evaluation', async () => {
+  it('requires and submits an exit destination for BH Emergency/5150', async () => {
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'BH Emergency/5150' }));
     expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
     expect(screen.getByText('This will also mark the person as exited from RESET.')).toBeInTheDocument();
     expect(screen.getByText('Exit destination')).toBeInTheDocument();
