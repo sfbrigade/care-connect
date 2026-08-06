@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { redactDeflectionsForUser } from '#lib/deflectionVisibility.js';
+import { exitedVisibilityCutoff } from '#lib/retention.js';
 
 export default async function (fastify) {
   fastify.get('/',
@@ -63,11 +64,10 @@ export default async function (fastify) {
           { status: Deflection.HoldStatus.ACTIVE },
           { subject: { isNot: null } },
         ]);
-        // Preserve the existing 24-hour cap on EXITED rows.
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // Cap visibility of EXITED rows to the retention window.
         addOrGroup([
           { subjectStatus: { not: Deflection.SubjectStatus.EXITED } },
-          { exitedAt: { gte: twentyFourHoursAgo } },
+          { exitedAt: { gte: exitedVisibilityCutoff() } },
         ]);
       } else if (handedOff === 'true') {
         // Holds the user created but no longer controls (handed off to another officer)
@@ -104,17 +104,17 @@ export default async function (fastify) {
         const hasExited = statuses.includes('EXITED');
 
         if (hasExited) {
-          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const visibilityCutoff = exitedVisibilityCutoff();
           const otherStatuses = statuses.filter(s => s !== 'EXITED');
 
           if (otherStatuses.length > 0) {
             addOrGroup([
               { subjectStatus: otherStatuses.length > 1 ? { in: otherStatuses } : otherStatuses[0] },
-              { subjectStatus: 'EXITED', exitedAt: { gte: twentyFourHoursAgo } },
+              { subjectStatus: 'EXITED', exitedAt: { gte: visibilityCutoff } },
             ]);
           } else {
             where.subjectStatus = 'EXITED';
-            where.exitedAt = { gte: twentyFourHoursAgo };
+            where.exitedAt = { gte: visibilityCutoff };
           }
         } else {
           where.subjectStatus = statuses.length > 1 ? { in: statuses } : statuses[0];
