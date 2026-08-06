@@ -38,8 +38,9 @@ function LegalReleaseQuestions () {
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
   const isBehavioralHealthRelease = releaseReason === 'BH_EMERGENCY_5150';
+  const isElopementRelease = releaseReason == 'ELOPEMENT';
   const isOtherRelease = releaseReason === 'OTHER';
-  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
+  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isElopementRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -92,11 +93,9 @@ function LegalReleaseQuestions () {
       };
       if (isMedicalRelease) {
         payload.exitDestination = exitDestination;
-      }
-      if (isBehavioralHealthRelease) {
+      } else if (isBehavioralHealthRelease) {
         payload.exitDestination = exitDestination;
-      }
-      if (isOtherRelease) {
+      } else if (isOtherRelease) {
         payload.otherReleaseReason = otherReason.trim();
         payload.otherReleaseDestination = otherDestination.trim();
       }
@@ -245,14 +244,14 @@ function LegalReleaseQuestions () {
                               )}
                               <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
                               <Chip value='BH_EMERGENCY_5150'>BH Emergency/5150</Chip>
-                              <Chip value='OTHER'>Other (please specify)</Chip>
+                              <Chip value='ELOPEMENT'>Elopement</Chip>
                             </Stack>
                           </Chip.Group>
                         </Box>
                       </Input.Wrapper>
                     </>
                     )}
-                {(isMedicalRelease || isBehavioralHealthRelease) && (
+                {(isMedicalRelease || isBehavioralHealthRelease || isElopementRelease) && (
                   <>
                     <Text size='md' c='dimmed'>
                       This will also mark the person as exited from RESET.
@@ -327,6 +326,7 @@ function LegalReleaseQuestions () {
                     (releaseReason !== 'SOBERED' &&
                       releaseReason !== 'MEDICAL_ISSUE' &&
                       releaseReason !== 'BH_EMERGENCY_5150' &&
+                      releaseReason !== 'ELOPEMENT' &&
                       releaseReason !== 'OTHER')
                   }
                 >

@@ -2391,7 +2391,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 4);
     });
 
-    await t.test('marks a subject as legally released (medical issue)', async () => {
+    await t.test('marks a subject as legally released and exited (medical issue)', async () => {
       // Setup: reset deflection 6 status
       await prisma.deflection.update({
         where: { id: 6 },
@@ -2474,6 +2474,58 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
       assert.strictEqual(dbDeflection.releaseReason, 'BH_EMERGENCY_5150');
       assert.strictEqual(dbDeflection.exitDestination, 'OTHER');
+      assert.ok(dbDeflection.completedAt);
+      assert.ok(dbDeflection.exitedAt);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert', '5150'],
+        emailTemplate: 'release-forms',
+      });
+    });
+
+    await t.test('marks a subject as legally released and exited (elopement)', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_MEDICAL_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'ELOPEMENT',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReason, 'ELOPEMENT');
+      assert.strictEqual(data.exitDestination, 'STREET');
+      assert.ok(data.releasedAt);
+      assert.ok(data.completedAt);
+      assert.ok(data.exitedAt);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.releaseReason, 'ELOPEMENT');
+      assert.strictEqual(dbDeflection.exitDestination, 'STREET');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
 
