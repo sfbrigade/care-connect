@@ -11,6 +11,7 @@ import { useFacilityContext } from '@/FacilityContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
+import SmsOptOutBanner from '@/components/SmsOptOutBanner';
 import { useToast } from '@/components/ToastContext';
 
 // "Notification settings" page (reached from Profile → Edit under SMS
@@ -121,6 +122,9 @@ function NotificationSettingsPage () {
       <Container>
         <Stack>
           <Title order={2}>Notification settings</Title>
+
+          {/* Self-gates: shows only when the user is carrier-opted-out (replied STOP). */}
+          <SmsOptOutBanner />
 
           {isLoading && <Group justify='center' py='xl'><Loader /></Group>}
 

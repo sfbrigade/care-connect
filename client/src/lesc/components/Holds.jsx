@@ -20,7 +20,6 @@ import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import SmsSubscriptionBanner from '@/components/SmsSubscriptionBanner';
-import SmsOptOutBanner from '@/components/SmsOptOutBanner';
 import CancelHoldModal from './CancelHoldModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import ScanHandoffCodeModal from './ScanHandoffCodeModal';
@@ -452,7 +451,6 @@ function Holds () {
             transferCodeStatus={transferCodeStatus}
           />
           <SmsSubscriptionBanner />
-          <SmsOptOutBanner />
           <SegmentedControl
             fullWidth
             value={tab}

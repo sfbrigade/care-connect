@@ -9,7 +9,6 @@ import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
 import SmsSubscriptionBanner from '@/components/SmsSubscriptionBanner';
-import SmsOptOutBanner from '@/components/SmsOptOutBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -401,7 +400,6 @@ function Custody () {
             occupiedCount={occupiedCount}
           />
           <SmsSubscriptionBanner />
-          <SmsOptOutBanner />
           <SegmentedControl
             fullWidth
             value={tab}

@@ -175,6 +175,27 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeInTheDocument();
   });
 
+  it('shows the opt-out banner when the user is carrier-opted-out (STOP)', async () => {
+    mockUserRef.current = {
+      id: 'user-1',
+      roles: ['CUSTODY'],
+      phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+      subscribedEvents: ['NEW_HOLD'],
+      notificationsEnabled: true,
+      smsOptedOutAt: '2026-01-02T00:00:00.000Z',
+    };
+    renderPage();
+
+    expect(await screen.findByText('SMS notifications are blocked')).toBeInTheDocument();
+  });
+
+  it('does not show the opt-out banner when the user has not opted out', async () => {
+    renderPage(); // beforeEach user is not opted out
+    await screen.findByRole('switch', { name: /Person in transit/i });
+
+    expect(screen.queryByText('SMS notifications are blocked')).toBeNull();
+  });
+
   it('coalesces rapid toggles into a single trailing save carrying the final set', async () => {
     let resolveFirst;
     mockUsersUpdate
