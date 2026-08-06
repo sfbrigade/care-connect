@@ -24,5 +24,8 @@
     "foreman": "^3.0.1",
     "prisma": "6.16.2",
     "prisma-erd-generator": "^2.3.0"
+  },
+  "overrides": {
+    "@mermaid-js/mermaid-cli": "file:./stubs/mermaid-cli-stub"
   }
 }

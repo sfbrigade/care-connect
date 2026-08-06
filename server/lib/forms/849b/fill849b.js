@@ -10,7 +10,58 @@
  *   const filledBytes = await fill849b(templatePdfBytes, data);
  */
 
+import { PDFName } from 'pdf-lib';
 import { fillPdf } from '#lib/forms/shared/fillPdf.js';
+
+// The INCIDENT NUMBER / CAD NUMBER header fields are comb (one-char-per-box)
+// fields. pdf-lib auto-fits comb fields to the box (~23pt) and ignores the DA
+// font size, so the digits print too large. We render our own appearance for
+// these fields at a fixed size, one glyph centered per box, in a post-bake
+// finalize hook (updateFieldAppearances would otherwise overwrite it).
+const CASE_NUMBER_BOX_FONT_SIZE = 14;
+const HELVETICA_CAP_HEIGHT = 0.717; // cap height as a fraction of the font size
+const COMB_FIELDS = ['INCIDENT NUMBER', 'CAD NUMBER'];
+
+function setCombFieldAppearance (form, pdfDoc, font, fieldName) {
+  const field = form.getTextField(fieldName);
+  const text = field.getText();
+  if (!text) return;
+
+  const cellCount = field.getMaxLength() || text.length;
+  const size = CASE_NUMBER_BOX_FONT_SIZE;
+
+  // INCIDENT NUMBER / CAD NUMBER each appear on both page 1 and page 2 as
+  // separate widgets of the same field. Render the fixed-size appearance for
+  // every widget, not just the first — otherwise page 2 keeps pdf-lib's
+  // oversized comb auto-fit.
+  for (const widget of field.acroField.getWidgets()) {
+    const { width, height } = widget.getRectangle();
+    const cellWidth = width / cellCount;
+    const baselineY = (height - size * HELVETICA_CAP_HEIGHT) / 2;
+
+    let ops = `/Tx BMC\nq\nBT\n/Helv ${size} Tf\n0 g\n`;
+    for (let i = 0; i < text.length && i < cellCount; i++) {
+      const ch = text[i];
+      const charWidth = font.widthOfTextAtSize(ch, size);
+      const x = i * cellWidth + (cellWidth - charWidth) / 2;
+      const escaped = ch.replace(/([\\()])/g, '\\$1');
+      ops += `1 0 0 1 ${x.toFixed(2)} ${baselineY.toFixed(2)} Tm (${escaped}) Tj\n`;
+    }
+    ops += 'ET\nQ\nEMC';
+
+    const stream = pdfDoc.context.stream(ops, {
+      Type: 'XObject',
+      Subtype: 'Form',
+      FormType: 1,
+      BBox: [0, 0, width, height],
+      Resources: { Font: { Helv: font.ref } },
+    });
+    widget.dict.set(
+      PDFName.of('AP'),
+      pdfDoc.context.obj({ N: pdfDoc.context.register(stream) })
+    );
+  }
+}
 
 const spec = {
   text: {
@@ -194,6 +245,11 @@ export async function fill849b (pdfBytes, data) {
       form.getTextField('Text1_2').setText('2');
       if (data.totalPages == null) {
         form.getTextField('Text2').setText('2');
+      }
+    },
+    finalize (form, pdfDoc, font) {
+      for (const name of COMB_FIELDS) {
+        setCombFieldAppearance(form, pdfDoc, font, name);
       }
     },
   });

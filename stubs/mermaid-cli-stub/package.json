@@ -1,0 +1,5 @@
+{
+  "name": "@mermaid-js/mermaid-cli",
+  "version": "0.0.0-stub",
+  "description": "Empty stub replacing @mermaid-js/mermaid-cli via an npm override. Strips puppeteer/Chromium from the dependency graph. prisma-erd-generator's .md (ERD.md) output writes a Mermaid text fence and never spawns the mmdc binary, so no rasterizer is needed. See notes/plans/stub-mermaid-cli-remove-puppeteer.md."
+}

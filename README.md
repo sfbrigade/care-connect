@@ -223,19 +223,6 @@ npm test
 
 To test the client as it will be deployed to the server (rather than running in the Vite dev server), log in to a running server container and run a build (`npm run build`), then access the client through the server at: http://localhost:3000
 
-### Server-side form components
-
-PDF generation for forms (647(f), 849(b), Certificate of Release) uses React components that are
-compiled ahead of time by esbuild into `server/lib/forms/dist/`. This directory is gitignored.
-**The server will not start if this directory is empty.**
-
-`docker compose up` and `npm run dev` both build it automatically. If you ever start the server
-manually outside of those commands, run this first (from inside the container):
-
-```bash
-npm run build:forms -w server
-```
-
 ### Accessibility Testing
 
 Two Playwright scripts run [axe-core](https://github.com/dequelabs/axe-core) against the app and fail on any WCAG 2.1 A/AA violation. Run them from the repo root (outside the server container):

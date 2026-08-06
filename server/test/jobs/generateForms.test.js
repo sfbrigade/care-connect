@@ -1,15 +1,7 @@
-import { test, mock } from 'node:test';
+import { test } from 'node:test';
 import * as assert from 'node:assert';
 
 import { build } from '#test/helper.js';
-
-// Mock PDF generation to avoid needing Chromium locally
-mock.module('#lib/forms/shared/renderReactForm.js', {
-  namedExports: {
-    renderFormToHtml: async () => '<html/>',
-    renderFormToPdf: async () => Buffer.from('%PDF-mock'),
-  },
-});
 
 test('generateForms 647f hash logic', async (t) => {
   const app = await build(t);

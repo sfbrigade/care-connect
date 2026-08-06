@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
+import { inflateSync } from 'node:zlib';
 import { PDFDocument, PDFName } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
@@ -326,6 +327,53 @@ test('849b PDF leaves prop 115 unchecked but checks post training when reporting
     false
   );
   assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
+});
+
+// Read the font size baked into a field's normal appearance (/AP /N) stream.
+// widgetIndex selects which widget (0 = page 1, 1 = page 2 for the comb fields).
+function bakedFontSize (doc, fieldName, widgetIndex = 0) {
+  const field = doc.getForm().getTextField(fieldName);
+  const widget = field.acroField.getWidgets()[widgetIndex];
+  const ap = doc.context.lookup(widget.dict.get(PDFName.of('AP')));
+  const n = doc.context.lookup(ap.get(PDFName.of('N')));
+  let raw = Buffer.from(n.getContents());
+  const filter = n.dict.get(PDFName.of('Filter'));
+  if (filter && filter.toString().includes('FlateDecode')) raw = inflateSync(raw);
+  const match = raw.toString('latin1').match(/\/[^\s]+\s+([\d.]+)\s+Tf/);
+  return match ? Number(match[1]) : null;
+}
+
+test('849b renders the case-number comb boxes at a fixed size, not pdf-lib auto-fit', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: { firstName: 'Test', lastName: 'SFSO', badgeNumber: '5678', prop115Certified: true },
+    exitedBy: null,
+    incident: {
+      cadNumber: '123456789',
+      caseNumber: '240123456',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  // Both the page-1 (widget 0) and page-2 (widget 1) copies of these fields
+  // must get the fixed-size appearance, not just page 1.
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 1), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 1), 14);
 });
 
 test('849b PDF truncates overlong text fields to template max lengths', async () => {
