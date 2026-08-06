@@ -3,7 +3,7 @@ import Facility from '#models/facility.js';
 import location from '#lib/location.js';
 import sms from '#lib/sms.js';
 import * as templates from '#lib/smsTemplates.js';
-import { EVENT_AUDIENCE } from '#lib/smsAudience.js';
+import { EVENT_AUDIENCE, smsRecipientWhere } from '#lib/smsAudience.js';
 import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
 // Centralized SMS notifier (D4). One module maps a domain event → event type →
@@ -19,19 +19,9 @@ import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/inc
 // active. The send-sms job re-checks this same gate at send time in case state
 // changes between enqueue and send.
 async function resolveRecipients (fastify, { facilityId, event }) {
-  const roles = EVENT_AUDIENCE[event] ?? [];
-  if (roles.length === 0) return [];
+  if ((EVENT_AUDIENCE[event] ?? []).length === 0) return [];
   return fastify.prisma.user.findMany({
-    where: {
-      currentFacilityId: facilityId,
-      roles: { hasSome: roles },
-      phoneVerifiedAt: { not: null },
-      notificationsEnabled: true,
-      smsOptedOutAt: null,
-      subscribedEvents: { has: event },
-      deactivatedAt: null,
-      deletedAt: null,
-    },
+    where: smsRecipientWhere({ event, facilityId }),
     select: { id: true },
   });
 }
