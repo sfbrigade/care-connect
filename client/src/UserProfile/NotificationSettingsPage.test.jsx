@@ -74,7 +74,8 @@ describe('NotificationSettingsPage (auto-apply)', () => {
 
     expect(await screen.findByText('No phone number on file.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add phone number/i })).toBeInTheDocument();
-    expect(screen.queryByText('SMS subscription')).toBeNull();
+    expect(screen.queryByText('SMS notifications')).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull(); // no mute control
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
@@ -123,6 +124,48 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     await waitFor(() =>
       expect(screen.getByRole('switch', { name: /Person has arrived/i })).not.toBeChecked()
     );
+  });
+
+  it('when muted, hides the toggles and shows the paused message with Mute selected', async () => {
+    mockUserRef.current = {
+      id: 'user-1',
+      phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+      subscribedEvents: ['NEW_HOLD'],
+      notificationsEnabled: false,
+    };
+    renderPage();
+
+    expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Mute' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Unmute' })).not.toBeChecked();
+  });
+
+  it('muting persists notificationsEnabled:false and hides the toggles', async () => {
+    renderPage(); // beforeEach user is unmuted, toggles visible
+    await screen.findByRole('switch', { name: /Person in transit/i });
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Mute' }));
+
+    await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: false }));
+    expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('unmuting persists notificationsEnabled:true and reveals the toggles', async () => {
+    mockUserRef.current = {
+      id: 'user-1',
+      phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+      subscribedEvents: ['NEW_HOLD'],
+      notificationsEnabled: false,
+    };
+    renderPage();
+    await screen.findByText(/SMS notifications are paused/i);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Unmute' }));
+
+    await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: true }));
+    expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeInTheDocument();
   });
 
   it('coalesces rapid toggles into a single trailing save carrying the final set', async () => {

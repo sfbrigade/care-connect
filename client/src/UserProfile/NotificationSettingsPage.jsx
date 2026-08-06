@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Button, Container, Group, Loader, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -10,15 +10,15 @@ import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
-import NotificationPreferenceToggles, { isSmsSubscribed } from '@/components/NotificationPreferenceToggles';
+import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
 import { useToast } from '@/components/ToastContext';
 
 // "Notification settings" page (reached from Profile → Edit under SMS
-// notifications). Two states: no verified number → an empty state prompting the
-// user to add one; verified number → the per-event toggles. Changes apply
-// immediately on toggle — there's no Save; the user just goes Back when done. (The
-// enroll/subscribe wizard keeps its own deliberate "Subscribe" commit; auto-apply
-// is only for this standalone page.)
+// notifications). No verified number → an empty state prompting the user to add
+// one. Verified number → a Mute/Unmute segmented control plus, when unmuted, the
+// per-event toggles (hidden while muted, replaced by a "paused" message). Muting
+// preserves subscribedEvents. Every change applies immediately — no Save; the user
+// just goes Back when done. (The enroll wizard keeps its own "Subscribe" commit.)
 function NotificationSettingsPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
@@ -28,34 +28,27 @@ function NotificationSettingsPage () {
   const { showToast } = useToast();
 
   const hasNumber = !!user?.phoneVerifiedAt;
-  const subscribed = isSmsSubscribed(user);
 
   // Initialize once from the loaded user; don't re-sync on every refetch.
   const [selected, setSelected] = useState(null);
+  const [notifEnabled, setNotifEnabled] = useState(true);
   const lastSavedRef = useRef([]);
+  const userIdRef = useRef(user?.id);
+  userIdRef.current = user?.id;
   useEffect(() => {
     if (user && selected === null) {
       setSelected(new Set(user.subscribedEvents ?? []));
+      setNotifEnabled(!!user.notificationsEnabled);
       lastSavedRef.current = user.subscribedEvents ?? [];
     }
   }, [user, selected]);
 
-  // Auto-apply: each toggle persists the full subscribedEvents set immediately.
-  // Saves are serialized (at most one PATCH in flight; a mid-flight change coalesces
-  // into a single trailing save) so rapid toggling can't land out of order — every
-  // request carries the complete set, so the last one reconciles server to UI.
+  // Auto-apply (event toggles): each toggle persists the full subscribedEvents set
+  // immediately. Saves are serialized (at most one PATCH in flight; a mid-flight
+  // change coalesces into a single trailing save) so rapid toggling can't land out
+  // of order — every request carries the complete set, so the last one wins.
   const savingRef = useRef(false);
   const pendingRef = useRef(null);
-  const userIdRef = useRef(user?.id);
-  userIdRef.current = user?.id;
-
-  function buildData (events) {
-    const data = { subscribedEvents: events };
-    // Enabling from a not-yet-subscribed state also unmutes (mirrors Subscribe).
-    const cached = queryClient.getQueryData(['users', 'me']) ?? user;
-    if (cached && !isSmsSubscribed(cached) && events.length > 0) data.notificationsEnabled = true;
-    return data;
-  }
 
   function persist (events) {
     if (savingRef.current) {
@@ -63,7 +56,7 @@ function NotificationSettingsPage () {
       return;
     }
     savingRef.current = true;
-    Api.users.update(userIdRef.current, buildData(events))
+    Api.users.update(userIdRef.current, { subscribedEvents: events })
       .then((response) => {
         lastSavedRef.current = events;
         queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
@@ -83,17 +76,13 @@ function NotificationSettingsPage () {
       });
   }
 
-  // Flush a pending trailing save on unmount so a last-moment toggle isn't lost if
-  // the user hits Back immediately after a rapid change.
+  // Flush a pending trailing save on unmount so a last-moment toggle isn't lost.
   useEffect(() => () => {
     if (pendingRef.current === null) return;
     const events = pendingRef.current;
     pendingRef.current = null;
-    const cached = queryClient.getQueryData(['users', 'me']);
-    const data = { subscribedEvents: events };
-    if (cached && !isSmsSubscribed(cached) && events.length > 0) data.notificationsEnabled = true;
-    Api.users.update(userIdRef.current, data).catch(() => {});
-  }, [queryClient]);
+    Api.users.update(userIdRef.current, { subscribedEvents: events }).catch(() => {});
+  }, []);
 
   function toggle (value) {
     const next = new Set(selected);
@@ -101,6 +90,20 @@ function NotificationSettingsPage () {
     else next.add(value);
     setSelected(next);
     persist([...next]);
+  }
+
+  // Mute/unmute (notificationsEnabled): a single deliberate control, so a simple
+  // optimistic save + revert-on-error is enough (no rapid-fire serialization).
+  function handleMuteChange (value) {
+    const enabled = value === 'unmute';
+    const prev = notifEnabled;
+    setNotifEnabled(enabled);
+    Api.users.update(userIdRef.current, { notificationsEnabled: enabled })
+      .then((response) => queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data })))
+      .catch(() => {
+        setNotifEnabled(prev);
+        showToast('Couldn’t update notifications', 'error', 4000, 'Please try again.');
+      });
   }
 
   const isLoading = selected === null;
@@ -136,13 +139,21 @@ function NotificationSettingsPage () {
           {!isLoading && hasNumber && (
             <>
               <div>
-                <Group justify='space-between'>
-                  <Text fw={500}>SMS subscription</Text>
-                  <Text>{subscribed ? 'On' : 'Off'}</Text>
-                </Group>
-                <Text size='sm' c='dimmed'>Receive live updates on a person’s status.</Text>
+                <Text fw={500}>SMS notifications</Text>
+                <Text size='sm' c='dimmed'>Temporarily pause live text updates without losing your saved preferences.</Text>
               </div>
-              <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
+              <SegmentedControl
+                color='indigo.6'
+                value={notifEnabled ? 'unmute' : 'mute'}
+                onChange={handleMuteChange}
+                data={[{ label: 'Unmute', value: 'unmute' }, { label: 'Mute', value: 'mute' }]}
+                style={{ alignSelf: 'flex-start' }}
+                // Match Figma label type (16px / 400 / 24px) while keeping the lg pill shape.
+                styles={{ label: { fontSize: 16, fontWeight: 400, lineHeight: '24px' } }}
+              />
+              {notifEnabled
+                ? <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
+                : <Text size='sm' c='dimmed'>SMS notifications are paused. Unmute to start receiving live text updates again.</Text>}
             </>
           )}
         </Stack>
