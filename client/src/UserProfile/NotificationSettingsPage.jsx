@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Button, Container, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -14,10 +14,11 @@ import NotificationPreferenceToggles, { isSmsSubscribed } from '@/components/Not
 import { useToast } from '@/components/ToastContext';
 
 // "Notification settings" page (reached from Profile → Edit under SMS
-// notifications). Two states: no verified number → prompt to add one; verified
-// number → the per-event toggles. Changes apply immediately on toggle — there's no
-// Save; the user just goes Back when done. (The enroll/subscribe wizard keeps its
-// own deliberate "Subscribe" commit; auto-apply is only for this standalone page.)
+// notifications). Two states: no verified number → an empty state prompting the
+// user to add one; verified number → the per-event toggles. Changes apply
+// immediately on toggle — there's no Save; the user just goes Back when done. (The
+// enroll/subscribe wizard keeps its own deliberate "Subscribe" commit; auto-apply
+// is only for this standalone page.)
 function NotificationSettingsPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
@@ -118,29 +119,31 @@ function NotificationSettingsPage () {
         <Stack>
           <Title order={2}>Notification settings</Title>
 
-          <div>
-            <Group justify='space-between'>
-              <Text fw={500}>SMS subscription</Text>
-              <Text>{subscribed ? 'On' : 'Off'}</Text>
-            </Group>
-            <Text size='sm' c='dimmed'>Receive live updates on a person’s status.</Text>
-          </div>
-
           {isLoading && <Group justify='center' py='xl'><Loader /></Group>}
 
           {!isLoading && !hasNumber && (
-            <Box bg='gray.1' p='md' style={{ borderRadius: 16 }}>
-              <Stack gap='sm'>
-                <Text size='sm'>Add a mobile number in your Contact Details to turn on SMS subscription.</Text>
-                <Button variant='secondary' size='sm' style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/profile/notifications/enroll')}>
-                  Add mobile number
-                </Button>
-              </Stack>
-            </Box>
+            <Stack align='center' gap='xs' mt='xl'>
+              <Text ta='center' size='lg'>No phone number on file.</Text>
+              <Text ta='center' size='sm' c='dimmed'>
+                Add a phone number to start receiving live text updates on a person’s status.
+              </Text>
+              <Button mt='md' onClick={() => navigate('/profile/notifications/enroll')}>
+                Add phone number
+              </Button>
+            </Stack>
           )}
 
           {!isLoading && hasNumber && (
-            <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
+            <>
+              <div>
+                <Group justify='space-between'>
+                  <Text fw={500}>SMS subscription</Text>
+                  <Text>{subscribed ? 'On' : 'Off'}</Text>
+                </Group>
+                <Text size='sm' c='dimmed'>Receive live updates on a person’s status.</Text>
+              </div>
+              <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
+            </>
           )}
         </Stack>
       </Container>

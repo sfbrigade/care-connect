@@ -68,6 +68,25 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NotificationSettingsPage (auto-apply)', () => {
+  it('shows the empty state (no SMS subscription row, no toggles) when there is no verified number', async () => {
+    mockUserRef.current = { id: 'user-1', phoneVerifiedAt: null, subscribedEvents: [], notificationsEnabled: false };
+    renderPage();
+
+    expect(await screen.findByText('No phone number on file.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add phone number/i })).toBeInTheDocument();
+    expect(screen.queryByText('SMS subscription')).toBeNull();
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('navigates to the enrollment flow when Add phone number is clicked', async () => {
+    mockUserRef.current = { id: 'user-1', phoneVerifiedAt: null, subscribedEvents: [] };
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: /add phone number/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/profile/notifications/enroll');
+  });
+
   it('shows no Save or Cancel buttons — changes apply automatically', async () => {
     renderPage();
     await screen.findByRole('switch', { name: /Person in transit/i });
