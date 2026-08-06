@@ -10,6 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import useSatisfactionSurvey from '../../../hooks/useSatisfactionSurvey';
+import { useTranslation } from 'react-i18next';
 import { IconAlertCircle, IconArrowBackUp, IconArrowLeft, IconCheck } from '@tabler/icons-react';
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
@@ -25,6 +26,7 @@ function LegalReleaseQuestions () {
   const backTo = searchParams.get('from') === 'detail'
     ? `/custody/${id}`
     : '/custody';
+  const { t } = useTranslation();
 
   const [releaseReason, setReleaseReason] = useState(prefilledState.releaseReason);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
@@ -240,11 +242,11 @@ function LegalReleaseQuestions () {
                           <Chip.Group value={releaseReason} onChange={setReleaseReason}>
                             <Stack gap='sm' align='flex-start'>
                               {canReleaseAsSobered && (
-                                <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
+                                <Chip data-testid='release-reason-sobered' value='SOBERED'>{t('deflectionReleaseReason.SOBERED')}</Chip>
                               )}
-                              <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
-                              <Chip value='BH_EMERGENCY_5150'>BH Emergency/5150</Chip>
-                              <Chip value='ELOPEMENT'>Elopement</Chip>
+                              <Chip value='MEDICAL_ISSUE'>{t('deflectionReleaseReason.MEDICAL_ISSUE')}</Chip>
+                              <Chip value='BH_EMERGENCY_5150'>{t('deflectionReleaseReason.BH_EMERGENCY_5150')}</Chip>
+                              <Chip value='ELOPEMENT'>{t('deflectionReleaseReason.ELOPEMENT')}</Chip>
                             </Stack>
                           </Chip.Group>
                         </Box>
