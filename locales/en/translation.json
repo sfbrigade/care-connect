@@ -116,9 +116,9 @@
   },
   "deflectionExitDestination": {
     "JAIL": "Jail",
-    "HOSPITAL": "Hospital",
+    "HOSPITAL_EMS": "Hospital/EMS",
     "STREET": "Street",
-    "HOME": "Home",
+    "RESIDENCE": "Residence",
     "SERVICES_NON_HOSPITAL": "Services (non-hospital)",
     "DECLINED_CONSENT": "Did not share",
     "OTHER": "Other"

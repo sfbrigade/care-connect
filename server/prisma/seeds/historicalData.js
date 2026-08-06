@@ -253,9 +253,9 @@ export default async function main (prisma) {
   const refusalReasonAggressive = 'AGGRESSIVE_BEHAVIOR';
 
   const exitDestStreet = 'STREET';
-  const exitDestHome = 'HOME';
+  const exitDestHome = 'RESIDENCE';
   const exitDestServices = 'SERVICES_NON_HOSPITAL';
-  const exitDestHospital = 'HOSPITAL';
+  const exitDestHospital = 'HOSPITAL_EMS';
   const exitDestDeclined = 'DECLINED_CONSENT';
   const exitDestJail = 'JAIL';
   const exitDestOther = 'OTHER';

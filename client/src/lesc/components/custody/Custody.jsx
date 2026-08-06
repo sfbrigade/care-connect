@@ -70,7 +70,7 @@ function groupReleasedByStatus (deflections) {
   function isTransferredToHospital (deflection) {
     return (
       deflection?.subjectStatus === 'EXITED' &&
-      deflection?.exitDestination === 'HOSPITAL' &&
+      deflection?.exitDestination === 'HOSPITAL_EMS' &&
       !deflection?.releasedAt
     );
   }

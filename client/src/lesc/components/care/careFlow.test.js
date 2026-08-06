@@ -50,7 +50,7 @@ describe('Care flow unit tests', () => {
     expect(
       shouldShowCareCardViewDetails({
         subjectStatus: 'EXITED',
-        exitDestination: 'HOSPITAL',
+        exitDestination: 'HOSPITAL_EMS',
         releasedAt: '2026-05-05T12:00:00.000Z',
         exitedAt: '2026-05-05T18:00:00.000Z',
       })
@@ -59,14 +59,14 @@ describe('Care flow unit tests', () => {
 
   it('detects persisted exit details only when all required fields exist', () => {
     expect(hasPersistedExitDetails({
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
       exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
     })).toBe(true);
 
     expect(hasPersistedExitDetails({
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
       exitHousingStatus: null,
       exitConnectedToCare: 'YES',
       exitSFResident: 'YES',
@@ -76,7 +76,7 @@ describe('Care flow unit tests', () => {
   it('groups jail exits into Transferred to jail even when the person was legally released first', () => {
     const grouped = groupCareNotInCustodySections([
       { id: 1, subjectStatus: 'RELEASED' },
-      { id: 2, subjectStatus: 'EXITED', exitDestination: 'HOSPITAL', releasedAt: '2026-01-01T00:00:00.000Z' },
+      { id: 2, subjectStatus: 'EXITED', exitDestination: 'HOSPITAL_EMS', releasedAt: '2026-01-01T00:00:00.000Z' },
       { id: 3, subjectStatus: 'EXITED', exitDestination: 'JAIL', releasedAt: '2026-01-01T00:00:00.000Z' },
     ]);
 
@@ -189,7 +189,7 @@ describe('Care flow unit tests', () => {
     expect(hasSavedExitDraft(44)).toBe(false);
 
     setSavedExitDraft(44, {
-      exitDestination: 'HOME',
+      exitDestination: 'RESIDENCE',
       exitSFResident: 'YES',
       exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'NO',
@@ -197,7 +197,7 @@ describe('Care flow unit tests', () => {
     });
     expect(hasSavedExitDraft(44)).toBe(true);
     expect(getSavedExitDraft(44)).toMatchObject({
-      exitDestination: 'HOME',
+      exitDestination: 'RESIDENCE',
       exitSFResident: 'YES',
       exitHousingStatus: 'TEMPORARY_SHELTER',
       exitConnectedToCare: 'NO',

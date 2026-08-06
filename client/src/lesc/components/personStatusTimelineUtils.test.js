@@ -196,7 +196,7 @@ describe('buildPersonStatusTimeline', () => {
       releaseReason: 'MEDICAL_ISSUE',
       exitedAt: '2026-05-08T11:02:00.000-07:00',
       exitedBy: user('Rocky', 'Balboa'),
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     }, { viewerMode: 'custody', now });
 
     expect(timeline.map(item => item.status)).toEqual([
@@ -298,7 +298,7 @@ describe('buildPersonStatusTimeline', () => {
       releaseReason: 'SOBERED',
       exitedAt: '2026-05-08T11:02:00.000-07:00',
       exitedBy: user('Rocky', 'Balboa'),
-      exitDestination: 'HOME',
+      exitDestination: 'RESIDENCE',
     }, { viewerMode: 'custody', now });
 
     expect(timeline.map(item => item.status)).toEqual([

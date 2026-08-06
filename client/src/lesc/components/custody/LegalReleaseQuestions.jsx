@@ -261,7 +261,7 @@ function LegalReleaseQuestions () {
                       <Input.Wrapper label='Exit destination' required>
                         <Chip.Group value={exitDestination} onChange={setExitDestination}>
                           <Group gap='sm'>
-                            <Chip value='HOSPITAL'>Hospital</Chip>
+                            <Chip value='HOSPITAL_EMS'>Hospital/EMS</Chip>
                             <Chip value='OTHER'>Other</Chip>
                           </Group>
                         </Chip.Group>

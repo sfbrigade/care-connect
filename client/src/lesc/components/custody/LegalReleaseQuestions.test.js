@@ -7,19 +7,19 @@ describe('getPrefilledLegalReleaseState', () => {
     const params = new URLSearchParams({
       from: 'detail',
       releaseReason: 'MEDICAL_ISSUE',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
       releaseReason: 'MEDICAL_ISSUE',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
   });
 
   it('ignores exit destination presets for non-medical releases', () => {
     const params = new URLSearchParams({
       releaseReason: 'SOBERED',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
@@ -31,19 +31,19 @@ describe('getPrefilledLegalReleaseState', () => {
   it('accepts behavioral health evaluation as a valid preset with an exit destination', () => {
     const params = new URLSearchParams({
       releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
       releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
   });
 
   it('drops invalid preset values', () => {
     const params = new URLSearchParams({
       releaseReason: 'NOT_REAL',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({
@@ -55,7 +55,7 @@ describe('getPrefilledLegalReleaseState', () => {
   it('prefills other release without an exit destination', () => {
     const params = new URLSearchParams({
       releaseReason: 'OTHER',
-      exitDestination: 'HOSPITAL',
+      exitDestination: 'HOSPITAL_EMS',
     });
 
     expect(getPrefilledLegalReleaseState(params)).toEqual({

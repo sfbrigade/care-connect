@@ -196,9 +196,9 @@ enum DeflectionRefusalReasonEnum {
 
 enum DeflectionExitDestinationEnum {
   JAIL
-  HOSPITAL
+  HOSPITAL_EMS
   STREET
-  HOME
+  RESIDENCE
   SERVICES_NON_HOSPITAL
   DECLINED_CONSENT
   OTHER
