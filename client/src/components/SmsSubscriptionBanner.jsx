@@ -7,15 +7,8 @@ import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 
-// Home-screen prompt to set up SMS notifications. Shown only to CUSTODY-role users
-// (the v1 audience — NOT gated on work mode; a pure-FIELD user never receives
-// notifications). Keys on whether the user has a VERIFIED NUMBER (not on event
-// subscriptions): the banner's job is "get set up," and once you have a number you
-// manage what you receive — including nothing — from the settings/account pages,
-// so it shouldn't reappear when you disable event types. Dismissal state is
-// persisted server-side (cross-device): ✕ → permanent; "Remind me later" → 24h,
-// reappears once, then permanent (enforced by the /me/sms-banner route). Clicking
-// "Subscribe" does NOT dismiss.
+// Banner on home screen that nudges users to enroll in SMS notifications.
+
 function SmsSubscriptionBanner () {
   const { user } = useAuthContext();
   const { isCustody } = useUserRole();
@@ -42,8 +35,6 @@ function SmsSubscriptionBanner () {
   if (!shouldShow) return null;
 
   function onSubscribe () {
-    // Just navigate into the enrollment flow — do NOT dismiss. The banner stops
-    // showing once the user actually becomes subscribed; bailing keeps it around.
     navigate('/profile/notifications/enroll');
   }
 

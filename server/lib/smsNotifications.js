@@ -6,18 +6,6 @@ import * as templates from '#lib/smsTemplates.js';
 import { EVENT_AUDIENCE, smsRecipientWhere } from '#lib/smsAudience.js';
 import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
-// Centralized SMS notifier (D4). One module maps a domain event → event type →
-// recipients (D5) → one pg-boss send-sms job per recipient. Keeping this in a
-// single place means the notification surface can't silently drift from the
-// state machine as transitions are added. Analogous to lib/holdNotifications.js.
-//
-// Invoked from the routes as fire-and-forget (`.catch(...)`), so a slow recipient
-// query or a failed enqueue never blocks or fails the triggering request.
-
-// Recipients gated on: current facility, event audience role (D5), verified
-// phone, master switch on, not carrier-opted-out, subscribed to the event, and
-// active. The send-sms job re-checks this same gate at send time in case state
-// changes between enqueue and send.
 async function resolveRecipients (fastify, { facilityId, event }) {
   if ((EVENT_AUDIENCE[event] ?? []).length === 0) return [];
   return fastify.prisma.user.findMany({
@@ -31,8 +19,8 @@ async function loadFacility (fastify, facilityId) {
   return data ? new Facility(data) : null;
 }
 
-// The body is identical for every recipient (no PII, no per-user data), so we
-// template it once and enqueue one job per recipient carrying that body.
+// The body is identical for every recipient, so we template it
+// once and enqueue one job per recipient carrying that body.
 async function dispatch (fastify, { facilityId, event, body }) {
   const recipients = await resolveRecipients(fastify, { facilityId, event });
   await Promise.all(
@@ -43,10 +31,8 @@ async function dispatch (fastify, { facilityId, event, body }) {
   return recipients.length;
 }
 
-// Resolve a drive-time ETA string for a new hold. Nice-to-have: origin comes from
-// the incident (stored coords → geocoded address), destination is the facility.
-// Any missing data, error, or slow response yields null → the message just omits
-// the ETA. Never throws.
+// Attempt to compute drive-time ETA from incident location to facility. 
+// Otherwise return null (the notif will omit the ETA).
 const ETA_OVERALL_TIMEOUT_MS = 5000;
 async function computeNewHoldEta (fastify, deflectionId, facility) {
   if (facility.latitude == null || facility.longitude == null) return null;
@@ -83,11 +69,9 @@ export async function notifyNewHold (fastify, { deflectionId, facilityId }) {
   return dispatch(fastify, { facilityId, event: 'NEW_HOLD', body });
 }
 
-// Fire NEW_HOLD ("in transit") for any hold on this incident that has just become
-// ready for transfer — incident + person details complete (D8 / Content Matrix
-// trigger). Once-only per hold via newHoldNotifiedAt. Called after any detail edit
-// (incident/deflection/subject); completing the shared incident can ready several
-// holds at once. Fire-and-forget from the caller.
+// Fire NEW_HOLD ("in transit") notif for any hold on this incident
+// which is ready for transfer (details complete) and for which we
+// have NOT already fired a New Hold notif.
 export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }) {
   const deflections = await fastify.prisma.deflection.findMany({
     where: {
@@ -102,10 +86,8 @@ export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }
   for (const deflection of deflections) {
     if (!isIncidentDetailsComplete(deflection.incident)) continue;
     if (!isDeflectionDetailsComplete(deflection)) continue;
-    // Atomically claim the hold: the update only matches while newHoldNotifiedAt is
-    // still null, and the DB row-locks it, so of two concurrent fire-and-forget calls
-    // for the same incident exactly one gets count === 1 — the other matches 0 rows
-    // and skips. Prevents double-sending the NEW_HOLD text.
+    
+    // Claim prevents double-sending the NEW_HOLD text
     const claimed = await fastify.prisma.deflection.updateMany({
       where: { id: deflection.id, newHoldNotifiedAt: null },
       data: { newHoldNotifiedAt: new Date() },
@@ -129,30 +111,16 @@ export async function notifyExit (fastify, { deflectionId, facilityId }) {
   return dispatch(fastify, { facilityId, event: 'EXIT', body });
 }
 
-// EXIT is keyed off the state change, not a specific route (D4/Phase 6): exit,
-// release (conditionally), and exit-to-jail can all land on EXITED. Each of those
-// routes calls this with its post-commit deflection; we notify only if it
-// actually reached EXITED. This keys off state so no route can silently miss it,
-// and excludes ONSITE_AWAITING_TRANSFER (arrival is handled by the check-in
-// anchor) so we never double-send.
 export async function maybeNotifyExit (fastify, deflection) {
   if (deflection?.subjectStatus !== 'EXITED') return 0;
   return notifyExit(fastify, { deflectionId: deflection.id, facilityId: deflection.facilityId });
 }
 
-// Send the one-time "you're subscribed" welcome SMS (Content Matrix) the first
-// time a user reaches the subscribed state (verified phone + ≥1 event) and hasn't
-// been welcomed. Marks smsWelcomedAt so it only ever sends once. Call after a user
-// update, fire-and-forget. Needs a facility (the user's current one) for the deep
-// link's subdomain.
+// Send the one-time "you're subscribed" welcome message
 export async function maybeSendWelcome (fastify, user) {
   if (!user?.phoneVerifiedAt) return 0;
   if ((user.subscribedEvents?.length ?? 0) === 0) return 0;
   if (user.smsWelcomedAt) return 0;
-  // The welcome is a real outbound SMS, so it must respect the same delivery gates
-  // as every notification: never message a carrier-opted-out number (STOP — TCPA),
-  // a muted user, or an inactive account. This path sends directly (no event
-  // audience), so these checks are enforced here rather than by resolveRecipients.
   if (user.smsOptedOutAt) return 0;
   if (!user.notificationsEnabled) return 0;
   if (user.deactivatedAt || user.deletedAt) return 0;

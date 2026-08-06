@@ -5,16 +5,10 @@ import { useAuthContext } from '@/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { formatUSPhone } from '@/utils/phone';
 
-// Recovery banner (D3): shown when the user has opted out of SMS at the carrier
-// level (replied STOP). A carrier opt-out can't be undone from the app — only the
-// user texting START clears it — so this explains how to resume. `smsOptedOutAt`
-// is set/cleared by the inbound handler (Phase 8). Persistent (no dismiss): it
-// stays until the opt-out is actually resolved (texting START clears the flag).
+// Warning banner shown when the user has opted out of SMS at the carrier level
+// usually by typing STOP). The only way to re-enable is for the user to text
+// START or UNSTOP.
 
-// CareConnect's inbound toll-free number (E.164, for the sms: link) and support
-// address, shown so an opted-out user knows where to text START / get help. Kept as
-// literals: the TFN is the single leased number, and the support address matches the
-// rest of the app (e.g. UserProfilePage). Move to shared config/env if either varies.
 const CARECONNECT_TFN = '+18337225979';
 const SUPPORT_EMAIL = 'careconnect@sfgov.org';
 
