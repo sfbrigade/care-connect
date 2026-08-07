@@ -205,9 +205,6 @@ const Api = {
     getMfaCode (id) {
       return instance.get(`/api/users/${id}/mfa-code`);
     },
-    // SMS phone verification (self-managed OTP). No handleError wrapper so callers
-    // can read inline error responses ({ error, resendAvailableInSeconds }) and
-    // status codes (409 duplicate, 422 wrong code, 410 expired, 429 cooldown).
     startPhoneVerification (data) {
       return instance.post('/api/users/me/phone/start', data);
     },

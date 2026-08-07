@@ -20,11 +20,7 @@ export function resendCooldownRemaining (lastSentAt) {
 }
 
 // Text a code to the user's (pending) number, persisting it only AFTER a successful
-// send — so a failed send never leaves a code (or, via `extraPersist`, a number change)
-// for a message that never arrived. A failed send still stamps smsOtpLastSentAt (the
-// attempt counts against the resend cooldown — anti-flooding), then throws a tagged
-// SMS_SEND_FAILED error for the route to map to a 4xx. `extraPersist` lets /start fold
-// the number change into the same success-only write.
+// send
 export async function sendVerificationCode (prisma, user, extraPersist = {}) {
   const code = generateCode();
   try {

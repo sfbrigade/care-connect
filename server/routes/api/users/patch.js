@@ -206,8 +206,8 @@ export default async function (fastify, opts) {
       if (lockedForbidden) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      // Fire-and-forget: send the one-time welcome SMS if this update just made
-      // the user subscribed for the first time. Never block/fail the response.
+      // Send the one-time welcome SMS if this user just subscribed
+      // for the first time.
       smsNotifications
         .maybeSendWelcome(fastify, data)
         .catch((err) => fastify.log.error({ err }, 'SMS welcome notification failed'));

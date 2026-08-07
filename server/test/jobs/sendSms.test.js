@@ -3,11 +3,6 @@ import * as assert from 'node:assert';
 
 import { build } from '#test/helper.js';
 
-// The send-sms job (server/jobs/sendSms.js) re-checks the recipient gate at send
-// time, because state can change between enqueue and send (the user may toggle off,
-// text STOP, switch facility, lose verification, ...). This is the compliance
-// backstop: "opted out after enqueue ⇒ never sent". We stub the transport so we can
-// assert whether a real send would have happened.
 const sendText = mock.fn(async () => {});
 mock.module('#lib/sms.js', {
   defaultExport: {

@@ -14,12 +14,8 @@ import NotificationPreferenceToggles from '@/components/NotificationPreferenceTo
 import SmsOptOutBanner from '@/components/SmsOptOutBanner';
 import { useToast } from '@/components/ToastContext';
 
-// "Notification settings" page (reached from Profile → Edit under SMS
-// notifications). No verified number → an empty state prompting the user to add
-// one. Verified number → a Mute/Unmute segmented control plus, when unmuted, the
-// per-event toggles (hidden while muted, replaced by a "paused" message). Muting
-// preserves subscribedEvents. Every change applies immediately — no Save; the user
-// just goes Back when done. (The enroll wizard keeps its own "Subscribe" commit.)
+// "Notification settings" page (reached from Profile → SMS Notifications → Edit
+// No save/cancel; edits applied immediately
 function NotificationSettingsPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();
@@ -93,8 +89,6 @@ function NotificationSettingsPage () {
     persist([...next]);
   }
 
-  // Mute/unmute (notificationsEnabled): a single deliberate control, so a simple
-  // optimistic save + revert-on-error is enough (no rapid-fire serialization).
   function handleMuteChange (value) {
     const enabled = value === 'unmute';
     const prev = notifEnabled;
@@ -151,9 +145,6 @@ function NotificationSettingsPage () {
                 onChange={(value) => { if (value) handleMuteChange(value); }}
                 data={[{ value: 'unmute', label: 'Unmute' }, { value: 'mute', label: 'Mute' }]}
                 allowDeselect={false}
-                // Same bell icons as the main-app mute control (SmsNotificationMenu).
-                // Force the text color so the selected-value icon matches the darker
-                // dropdown-option icons (Mantine dims the input section by default).
                 leftSection={notifEnabled
                   ? <IconBellRinging size={20} color='var(--mantine-color-text)' />
                   : <IconBellOff size={20} color='var(--mantine-color-text)' />}

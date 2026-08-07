@@ -26,7 +26,7 @@ function SmsSubscriptionBanner () {
   const remindActive = user?.smsBannerRemindAfter && Date.now() < new Date(user.smsBannerRemindAfter).getTime();
   const shouldShow = Boolean(
     user &&
-    isCustody &&
+    isCustody &&  // Update this if we enable SMS notifs for other roles in future
     !user.phoneVerifiedAt &&
     !user.smsBannerDismissedAt &&
     !remindActive

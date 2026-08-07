@@ -4,7 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Api from '@/Api';
 import ScreenHeading from '@/components/ScreenHeading';
-import { formatCountdown, formatUSPhone } from '@/utils/phone';
+import { formatUSPhone } from '@/utils/phone';
+import { formatCountdown } from '@/utils/format';
 
 // Shared "enter the 6-digit code" step, reused by first-time enrollment and by
 // changing a number from Contact details. Assumes a code was already sent (the

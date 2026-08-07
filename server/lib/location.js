@@ -38,8 +38,7 @@ function initRoutes () {
   }
 }
 
-// Drive-time in seconds from origin → destination ({ lat, lng } each). Returns
-// null on any failure/timeout — ETA is a nice-to-have and must never block a send.
+// Calculate drive-time in seconds from origin → destination
 const ROUTE_TIMEOUT_MS = 3000;
 async function calculateRouteDuration (origin, destination) {
   initRoutes();

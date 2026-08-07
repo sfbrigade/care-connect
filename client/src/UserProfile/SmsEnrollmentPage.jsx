@@ -17,7 +17,7 @@ import { useToast } from '@/components/ToastContext';
 import { toE164US } from '@/utils/phone';
 
 // First-time SMS enrollment as a full-page flow: phone + consent → verify
-// → preferences → subscribe. The verify step is shared with contact-detail edits.
+// → preferences → subscribe.
 function SmsEnrollmentPage () {
   const { user } = useAuthContext();
   const { facility } = useFacilityContext();

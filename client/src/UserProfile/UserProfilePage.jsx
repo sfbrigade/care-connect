@@ -72,10 +72,6 @@ function UserProfilePage () {
 
   const isSfpdOrSfso = user.organizationId === 'sfpd' || user.organizationId === 'sfso';
 
-  // SMS notifications state (Custody only). Config surfaces only once there's a VERIFIED
-  // number — an unverified/pending number is treated as "no number" (shown as a Set-up
-  // CTA), since there's nothing to deliver to. When verified: the mute state +
-  // subscriptions, with a warning banner if the number is carrier opted-out.
   const smsVerified = !!user.phoneVerifiedAt;
   const smsOptedOut = !!user.smsOptedOutAt;
   const smsUnmuted = !!user.notificationsEnabled;
@@ -113,8 +109,6 @@ function UserProfilePage () {
 
           <Section title='Contact details' editTo='/profile/contact'>
             <Field label='Email address' value={user.email} />
-            {/* Only a VERIFIED number counts as on-file; an unverified/pending number
-                reads as "Not set" (Approach A), consistent with the SMS section. */}
             <Field label='Mobile number' value={user.phoneVerifiedAt ? formatUSPhone(user.phoneNumber) : 'Not set'} />
           </Section>
 

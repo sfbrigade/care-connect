@@ -56,8 +56,7 @@ export default async function (fastify, opts) {
 
       // Send the code FIRST, then persist the number change only on success — a failed
       // send (opted-out / unreachable number, AWS blip) must not clobber the user's
-      // existing verified number. P2002 covers the rare race with a concurrent claim
-      // between the pre-check above and this write.
+      // existing verified number.
       try {
         await sendVerificationCode(
           fastify.prisma,

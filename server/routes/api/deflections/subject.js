@@ -150,8 +150,7 @@ export default async function (fastify, opts) {
         });
       }
 
-      // Fire-and-forget: completing person details may make this hold ready for
-      // transfer → NEW_HOLD ("in transit").
+      // If hold is newly detail-complete, fire the NEW_HOLD notification
       smsNotifications
         .maybeNotifyReadyHolds(fastify, { facilityId: deflection.facilityId, incidentId: deflection.incidentId })
         .catch((err) => fastify.log.error({ err }, 'SMS ready-hold notification failed'));

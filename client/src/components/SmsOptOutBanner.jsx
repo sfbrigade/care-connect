@@ -6,7 +6,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { formatUSPhone } from '@/utils/phone';
 
 // Warning banner shown when the user has opted out of SMS at the carrier level
-// usually by typing STOP). The only way to re-enable is for the user to text
+// (usually by typing STOP). The only way to re-enable is for the user to text
 // START or UNSTOP.
 
 const CARECONNECT_TFN = '+18337225979';

@@ -27,9 +27,6 @@ const UserAttributesSchema = z.object({
   titleId: z.string().nullable().optional(),
   unitId: z.string().nullable().optional(),
   roles: z.array(z.enum(Object.values(RoleEnum))).optional(),
-  // SMS notification preferences (self-editable). phoneNumber is intentionally
-  // NOT here — it's managed only via the phone verification flow. Server-controlled
-  // verification state (phoneVerifiedAt / smsConsentAt / smsOptedOutAt) is excluded too.
   notificationsEnabled: z.boolean().optional(),
   subscribedEvents: z.array(z.enum(Object.values(NotifiableEventEnum))).optional(),
 });
@@ -59,13 +56,10 @@ const UserResponseSchema = UserAttributesSchema.extend({
     (value) => (value == null || (value instanceof Date && Number.isNaN(value.getTime())) ? null : value),
     z.coerce.date().nullable()
   ),
-  // SMS phone + verification/opt-out state (server-controlled, read-only to the
-  // client). phoneNumber is set via the verification flow, not the generic update.
   phoneNumber: z.string().nullable().optional(),
   phoneVerifiedAt: z.coerce.date().nullable().optional(),
   smsConsentAt: z.coerce.date().nullable().optional(),
   smsOptedOutAt: z.coerce.date().nullable().optional(),
-  // SMS enrollment banner dismissal state (drives banner visibility client-side).
   smsBannerDismissedAt: z.coerce.date().nullable().optional(),
   smsBannerRemindAfter: z.coerce.date().nullable().optional(),
   smsBannerRemindCount: z.number().optional(),

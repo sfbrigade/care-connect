@@ -1,8 +1,7 @@
 import { Stack, Text, Title } from '@mantine/core';
 
-// Screen intro heading used across the SMS enrollment / verify / preferences
-// screens: a small, gray secondary `label` above the larger, black primary
-// `message` (per the Figma text hierarchy).
+// Screen intro heading component: a small, gray secondary `label`
+// above the larger, black primary `message`
 function ScreenHeading ({ label, message }) {
   return (
     <Stack gap={4}>

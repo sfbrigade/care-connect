@@ -14,10 +14,3 @@ export function formatUSPhone (e164) {
   if (national.length !== 10) return e164 || '';
   return `${national.slice(0, 3)}-${national.slice(3, 6)}-${national.slice(6)}`;
 }
-
-// Seconds → mm:ss.
-export function formatCountdown (s) {
-  const mm = String(Math.floor(s / 60)).padStart(2, '0');
-  const ss = String(s % 60).padStart(2, '0');
-  return `${mm}:${ss}`;
-}

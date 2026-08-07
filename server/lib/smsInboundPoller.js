@@ -3,7 +3,7 @@ import { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } from '@aws-sdk
 import { parseInboundSqsBody, handleInboundSms } from '#lib/smsInbound.js';
 
 // Long-polls the inbound SMS SQS queue (fed by SNS ← two-way toll-free number) and
-// dispatches each message to handleInboundSms. Started from worker.js. Returns a stop() function.
+// dispatches each message to handleInboundSms.
 export function startInboundSmsPoller () {
   const QueueUrl = process.env.AWS_SMS_INBOUND_QUEUE_URL;
   if (!QueueUrl) {
