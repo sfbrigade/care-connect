@@ -19,8 +19,8 @@ const ResendStatusSchema = z.object({
 });
 
 export default async function (fastify, opts) {
-  // Start (or restart) phone verification: capture consent, store the number as
-  // unverified, and text an OTP code
+  // Start (or restart) phone verification: capture consent, text an OTP code, and
+  // store the number (unverified) once the code has actually been sent.
   fastify.post('/me/phone/start',
     {
       onRequest: fastify.requireUser,
@@ -54,18 +54,26 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: `Please wait ${remaining}s before requesting another code.`, resendAvailableInSeconds: remaining });
       }
 
+      // Send the code FIRST, then persist the number change only on success — a failed
+      // send (opted-out / unreachable number, AWS blip) must not clobber the user's
+      // existing verified number. P2002 covers the rare race with a concurrent claim
+      // between the pre-check above and this write.
       try {
-        await fastify.prisma.user.update({
-          where: { id: request.user.id },
-          data: { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) },
-        });
+        await sendVerificationCode(
+          fastify.prisma,
+          { id: request.user.id, phoneNumber },
+          { phoneNumber, phoneVerifiedAt: null, ...(consentingNow ? { smsConsentAt: new Date() } : {}) }
+        );
       } catch (err) {
+        if (err?.code === 'SMS_SEND_FAILED') {
+          request.log.error({ err: err.cause }, 'OTP send failed on /me/phone/start');
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: 'We couldn’t send a verification code to that number. Check that it’s correct and try again.' });
+        }
         if (err?.code === 'P2002') {
           return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
         }
         throw err;
       }
-      await sendVerificationCode(fastify.prisma, { id: request.user.id, phoneNumber });
       return reply.send({ phoneNumber, resendAvailableInSeconds: RESEND_COOLDOWN_S });
     });
 
@@ -89,7 +97,15 @@ export default async function (fastify, opts) {
       if (remaining > 0) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: `Please wait ${remaining}s before requesting another code.`, resendAvailableInSeconds: remaining });
       }
-      await sendVerificationCode(fastify.prisma, request.user);
+      try {
+        await sendVerificationCode(fastify.prisma, request.user);
+      } catch (err) {
+        if (err?.code === 'SMS_SEND_FAILED') {
+          request.log.error({ err: err.cause }, 'OTP resend failed on /me/phone/resend');
+          return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: 'We couldn’t resend the code right now. Please try again in a moment.' });
+        }
+        throw err;
+      }
       return reply.send({ phoneNumber: request.user.phoneNumber, resendAvailableInSeconds: RESEND_COOLDOWN_S });
     });
 

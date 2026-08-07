@@ -19,21 +19,35 @@ export function resendCooldownRemaining (lastSentAt) {
   return Math.max(0, Math.ceil(RESEND_COOLDOWN_S - elapsed));
 }
 
-// Generate + persist a code and text it to the user's (pending) phone number.
-export async function sendVerificationCode (prisma, user) {
+// Text a code to the user's (pending) number, persisting it only AFTER a successful
+// send — so a failed send never leaves a code (or, via `extraPersist`, a number change)
+// for a message that never arrived. A failed send still stamps smsOtpLastSentAt (the
+// attempt counts against the resend cooldown — anti-flooding), then throws a tagged
+// SMS_SEND_FAILED error for the route to map to a 4xx. `extraPersist` lets /start fold
+// the number change into the same success-only write.
+export async function sendVerificationCode (prisma, user, extraPersist = {}) {
   const code = generateCode();
+  try {
+    await sms.sendText({
+      to: user.phoneNumber,
+      body: `CareConnect: ${code} is your verification code. Do not share this code with anyone.`,
+    });
+  } catch (err) {
+    await prisma.user.update({ where: { id: user.id }, data: { smsOtpLastSentAt: new Date() } });
+    const failure = new Error('Could not send the verification code');
+    failure.code = 'SMS_SEND_FAILED';
+    failure.cause = err;
+    throw failure;
+  }
   await prisma.user.update({
     where: { id: user.id },
     data: {
+      ...extraPersist,
       smsOtpCode: code,
       smsOtpExpiresAt: new Date(Date.now() + CODE_TTL_MS),
       smsOtpAttempts: 0,
       smsOtpLastSentAt: new Date(),
     },
-  });
-  await sms.sendText({
-    to: user.phoneNumber,
-    body: `CareConnect: ${code} is your verification code. Do not share this code with anyone.`,
   });
 }
 

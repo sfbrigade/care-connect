@@ -105,4 +105,30 @@ test('POST /api/users/me/phone', async (t) => {
     assert.ok(after.phoneVerifiedAt instanceof Date);
     assert.strictEqual(after.smsOtpCode, null); // OTP cleared on success
   });
+
+  await t.test('a failing OTP send keeps the existing verified number and returns 422 (no clobber)', async () => {
+    // Existing VERIFIED number, then try to change to a new one whose OTP send fails
+    // (e.g. the destination is opted-out at AWS). The change must be rejected WITHOUT
+    // wiping the old verified number — and must not 500.
+    await prisma.user.update({
+      where: { email: 'sfsouser1@test.com' },
+      data: { phoneNumber: '+14155550000', phoneVerifiedAt: new Date(), smsConsentAt: new Date(), smsOtpLastSentAt: null, smsOtpCode: null },
+    });
+    sendText.mock.resetCalls();
+    sendText.mock.mockImplementationOnce(async () => { throw new Error('DESTINATION_PHONE_NUMBER_OPTED_OUT'); });
+    const headers = await authAs('sfsouser1@test.com');
+
+    const res = await app.inject().post('/api/users/me/phone/start').headers(headers).payload({
+      phoneNumber: '+14155554444',
+    });
+
+    assert.strictEqual(res.statusCode, StatusCodes.UNPROCESSABLE_ENTITY); // friendly 4xx, not 500
+    assert.strictEqual(sendText.mock.callCount(), 1);
+
+    const after = await prisma.user.findUnique({ where: { email: 'sfsouser1@test.com' } });
+    assert.strictEqual(after.phoneNumber, '+14155550000'); // old number retained
+    assert.ok(after.phoneVerifiedAt instanceof Date); // still verified — not clobbered
+    assert.strictEqual(after.smsOtpCode, null); // no code stored for an undelivered message
+    assert.ok(after.smsOtpLastSentAt instanceof Date); // failed attempt still throttled (anti-flood)
+  });
 });
