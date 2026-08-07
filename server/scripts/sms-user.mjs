@@ -3,16 +3,6 @@ import prisma from '#prisma/client.js';
 
 // Dev helper to inspect / enroll / unenroll a user's SMS notification state.
 // Intended to be run inside the server container (see scripts/sms-user.sh).
-//
-//   check     <email>          Print SMS state + whether they'd receive a RESET
-//                              notification right now (the recipient gate).
-//   enroll    <email> [phone]  Make them a full RESET recipient (verified,
-//                              subscribed to all events, unmuted). Skips the UI.
-//                              Default phone +15551110001.
-//   unenroll  <email>          Clear all SMS state so the enrollment banner shows
-//                              again; leaves currentFacilityId=RESET so they can
-//                              become a recipient once re-enrolled (localhost
-//                              gotcha — currentFacilityId doesn't auto-stamp in dev).
 
 const ALL_EVENTS = ['NEW_HOLD', 'ARRIVAL', 'EXIT'];
 
@@ -102,9 +92,6 @@ async function enroll (email, phone) {
       smsOptedOutAt: null,
       currentFacilityId: f.id,
       smsWelcomedAt: new Date(),
-      // Don't touch banner dismissal — being subscribed already hides the banner
-      // (isSmsSubscribed), so leaving it clear keeps enroll composable (e.g. enroll
-      // then clear subscribedEvents to get a clean "verified-but-unsubscribed" state).
       smsOtpCode: null,
       smsOtpExpiresAt: null,
       smsOtpAttempts: 0,
