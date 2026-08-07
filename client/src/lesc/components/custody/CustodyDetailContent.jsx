@@ -100,7 +100,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   }
 
   function navigateToOtherExitReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=OTHER`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail`);
   }
 
   useEffect(() => {
