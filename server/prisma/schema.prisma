@@ -338,7 +338,7 @@ model User {
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
   satisfactionSurveyNextEligibleAt DateTime?
-  // Phone numbers must be unique because an inbound SMS must identify 
+  // Phone numbers must be unique because an inbound SMS must identify
   // a user.
   phoneNumber                  String?                 @unique
   phoneVerifiedAt              DateTime?
