@@ -22,7 +22,9 @@ function EditContactDetailsPage () {
   const { showToast } = useToast();
 
   const [step, setStep] = useState('form');
-  const [phone, setPhone] = useState(formatUSPhone(user?.phoneNumber) || '');
+  // Pre-fill only a VERIFIED number; an unverified/pending number is treated as "no
+  // number on file" (Approach A), so the field starts empty for a fresh entry.
+  const [phone, setPhone] = useState(user?.phoneVerifiedAt ? (formatUSPhone(user.phoneNumber) || '') : '');
   const [phoneError, setPhoneError] = useState(null);
   const [e164, setE164] = useState('');
   const [initialResend, setInitialResend] = useState(30);
