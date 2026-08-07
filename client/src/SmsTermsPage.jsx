@@ -1,10 +1,9 @@
 import { Anchor, Container, List, Stack, Text, Title } from '@mantine/core';
 import { Head } from '@unhead/react';
 
-// Public SMS-program terms for the CareConnect text-notification service (D6/D9).
-// Linked from the enrollment consent step. Deliberately reachable without auth so
-// carrier / toll-free verification reviewers can view it (it's not in any
-// AUTH/ROLE-protected path list, so AppRedirects leaves it public).
+// Public-facing Terms page for the SMS-program. Linked from the 
+// SMS enrollment flow. Required by AWS in order to register a 
+// toll-free number that sends SMS.
 const SUPPORT_EMAIL = 'careconnect@sfgov.org';
 const SF_PRIVACY_URL = 'https://www.sf.gov/information/privacy-policy-sfgov';
 

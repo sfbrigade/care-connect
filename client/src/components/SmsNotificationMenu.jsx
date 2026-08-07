@@ -6,9 +6,8 @@ import Api from '@/Api';
 import { useAuthContext } from '@/AuthContext';
 import { useToast } from '@/components/ToastContext';
 
-// Header control for the SMS master switch (D3). Shown only for users with a
-// verified phone (the mute/unmute is meaningless otherwise). Muted =
-// notificationsEnabled false; the bell icon reflects the state.
+// SMS Mute/Unmute control in app header. Displayed only
+// if user has enrolled a verified phone.
 function SmsNotificationMenu () {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
@@ -24,7 +23,6 @@ function SmsNotificationMenu () {
     onError: () => showToast('Couldn’t update SMS notifications', 'error', 4000, 'Please try again.'),
   });
 
-  // Only meaningful once a phone is verified.
   if (!user?.phoneVerifiedAt) return null;
 
   const muted = !user.notificationsEnabled;

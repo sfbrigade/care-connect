@@ -130,6 +130,26 @@ test('inbound SMS handling', async (t) => {
     }
   });
 
+  await t.test('a failed AWS opt-in leaves the opt-out record set (no false "delivery restored")', async () => {
+    // If DeleteOptedOutNumber is rejected (e.g. AWS's once-per-30-days opt-in limit),
+    // the number is still blocked at AWS, so we must NOT clear smsOptedOutAt — else
+    // the user looks deliverable to us while every send bounces.
+    sendText.mock.resetCalls();
+    optInNumber.mock.resetCalls();
+    optInNumber.mock.mockImplementationOnce(async () => { throw new Error('PHONE_NUMBER_CANNOT_BE_OPTED_IN'); });
+    const optedOutAt = new Date();
+    const u = await makeUser({ smsOptedOutAt: optedOutAt });
+
+    const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: 'START' }, prisma);
+
+    assert.strictEqual(res.action, 'optin');
+    assert.strictEqual(res.ok, false);
+    assert.strictEqual(optInNumber.mock.callCount(), 1);
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    assert.ok(after.smsOptedOutAt instanceof Date, 'opt-out stays set when AWS opt-in fails');
+    assert.strictEqual(sendText.mock.callCount(), 0);
+  });
+
   await t.test('HELP is left to the AWS keyword auto-response — we do not reply or change state', async () => {
     sendText.mock.resetCalls();
     const u = await makeUser({ notificationsEnabled: true, smsOptedOutAt: null });

@@ -1,9 +1,8 @@
 import prisma from '#prisma/client.js';
 import sms from '#lib/sms.js';
 
-// Handles inbound SMS replies (D3 / Phase 8). The transport (SQS poller) feeds us
-// { fromNumber, body }; this module maps the number to a user and applies the
-// keyword. MUTE/UNMUTE toggle our app's notificationsEnabled (SMS→app sync);
+// Handles inbound SMS replies
+// MUTE/UNMUTE toggles user's in-app Mute status
 // STOP/START sync the carrier opt-out into smsOptedOutAt so we stop trying to send
 // to opted-out numbers; HELP gets an info reply.
 
@@ -79,17 +78,20 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     return { action: 'optout' };
   }
   if (OPTIN_WORDS.includes(keyword)) {
-    // Clear our flag AND remove the number from AWS's opt-out list — AWS doesn't
-    // auto-clear on START, so without the second step our sends keep bouncing with
-    // DESTINATION_PHONE_NUMBER_OPTED_OUT. The carrier sends its own confirmation, so
-    // we don't reply. optInNumber is best-effort: the DB flag is already cleared.
-    await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: null } });
+    // Remove the number from AWS's opt-out list FIRST (AWS doesn't auto-clear on
+    // START), and only clear our own smsOptedOutAt if AWS accepts it. If the opt-in
+    // fails — e.g. AWS's once-per-30-days opt-in limit — the number is still blocked
+    // at AWS, so clearing our flag would falsely mark the user deliverable (dropping
+    // the recovery banner and re-enqueuing sends that only bounce). The carrier sends
+    // its own confirmation, so we don't reply either way.
     try {
       await sms.optInNumber(fromNumber);
+      await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: null } });
+      return { action: 'optin' };
     } catch (err) {
       console.error('[sms-inbound] optInNumber failed:', err.message);
+      return { action: 'optin', ok: false };
     }
-    return { action: 'optin' };
   }
   if (HELP_WORDS.includes(keyword)) {
     // HELP is a reserved compliance keyword answered by the AWS keyword

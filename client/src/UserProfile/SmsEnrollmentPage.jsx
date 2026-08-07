@@ -16,7 +16,7 @@ import ScreenHeading from '@/components/ScreenHeading';
 import { useToast } from '@/components/ToastContext';
 import { toE164US } from '@/utils/phone';
 
-// First-time SMS enrollment as a full-page flow (D6/D8): phone + consent → verify
+// First-time SMS enrollment as a full-page flow: phone + consent → verify
 // → preferences → subscribe. The verify step is shared with contact-detail edits.
 function SmsEnrollmentPage () {
   const { user } = useAuthContext();
@@ -26,8 +26,7 @@ function SmsEnrollmentPage () {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  // Already-verified users (e.g. verified but never finished subscribing) skip
-  // straight to preferences — no need to re-verify a number they already own.
+  // If user phone is already verified, skip straight to preferences.
   const [step, setStep] = useState(user?.phoneVerifiedAt ? 'prefs' : 'phone');
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(false);

@@ -1,8 +1,5 @@
 import { Stack, Switch } from '@mantine/core';
 
-// Subscribable SMS events (D8) with the Figma copy. `{facility}` is interpolated.
-// Shared by the enrollment wizard, the settings page, and the account page so the
-// options + copy stay in one place.
 export const NOTIFICATION_EVENTS = [
   {
     value: 'NEW_HOLD',
@@ -24,20 +21,17 @@ export const NOTIFICATION_EVENTS = [
   },
 ];
 
-// Summarize a set/array of subscribed event values into short labels for display.
 export function summarizeEvents (events) {
   const set = new Set(events ?? []);
   return NOTIFICATION_EVENTS.filter((e) => set.has(e.value)).map((e) => e.shortLabel).join(', ');
 }
 
 // "Enrolled / subscribed" = phone verified AND subscribed to ≥1 event (i.e. set up
-// to actually receive SMS). Shared by the subscription banner and the account page
-// so the two agree.
+// to actually receive SMS).
 export function isSmsSubscribed (user) {
   return !!user?.phoneVerifiedAt && (user?.subscribedEvents?.length ?? 0) > 0;
 }
 
-// `selected` is a Set of event values; `onToggle(value)` flips one.
 function NotificationPreferenceToggles ({ selected, onToggle, facilityName = 'RESET' }) {
   return (
     <Stack gap='lg'>
@@ -45,12 +39,7 @@ function NotificationPreferenceToggles ({ selected, onToggle, facilityName = 'RE
         <Switch
           key={event.value}
           size='md'
-          // Figma wants a plain white knob; Mantine v8 defaults to an inner
-          // track-colored indicator dot, so turn it off.
           withThumbIndicator={false}
-          // Label/description on the left, toggle pinned to the right edge. The
-          // labelWrapper takes the free space (flex:1) so the toggle sits far right
-          // and the description wraps instead of pushing the toggle off-row.
           labelPosition='left'
           styles={{
             root: { width: '100%' },
