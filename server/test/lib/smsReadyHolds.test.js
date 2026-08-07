@@ -5,13 +5,6 @@ import { build, makeFixturePreTransferDetailsComplete } from '#test/helper.js';
 import smsNotifications from '#lib/smsNotifications.js';
 import { QUEUE_SEND_SMS } from '#lib/jobQueue/queueNames.js';
 
-// maybeNotifyReadyHolds (server/lib/smsNotifications.js) is the biggest behavioral
-// change in the feature: NEW_HOLD ("in transit") now fires when a hold becomes ready
-// for transfer (incident + person details complete), not at hold-creation, and only
-// ONCE per hold (guarded by `newHoldNotifiedAt`). The once-only guard is the
-// anti-spam property — every detail edit calls this, so a missing guard would text
-// on every keystroke-save.
-//
 // Fixtures: incident 1 at the RESET facility has DETAINED holds 4 & 5 (with subjects),
 // plus a READY_FOR_INTAKE hold (6) and a RELEASED hold (7) that must be ignored.
 // `makeFixturePreTransferDetailsComplete` fills the remaining required fields on
