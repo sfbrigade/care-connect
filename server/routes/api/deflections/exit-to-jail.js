@@ -179,8 +179,6 @@ export default async function (fastify, opts) {
         recipientEmail: request.user.email,
       });
 
-      // Fire-and-forget SMS notification (D8: EXIT). Same "exited" message as the
-      // other exit routes (confirmed 2026-07-22).
       smsNotifications
         .maybeNotifyExit(fastify, deflection)
         .catch((err) => fastify.log.error({ err }, 'SMS exit notification failed'));

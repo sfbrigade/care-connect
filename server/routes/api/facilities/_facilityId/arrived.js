@@ -183,10 +183,6 @@ export default async function (fastify) {
         throw error;
       }
 
-      // Fire-and-forget SMS notification (D8: ARRIVAL) — one grouped message listing
-      // the arrived hold numbers. These are always the just-arrived holds: arrival
-      // requires !atFacility and you can't leave with pre-transfer holds, so no stale
-      // ONSITE holds are ever in the batch. Never block/fail the request on it.
       if (arrivedHoldIds.length > 0) {
         smsNotifications
           .notifyArrival(fastify, { facilityId, deflectionIds: arrivedHoldIds })

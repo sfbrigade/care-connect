@@ -254,8 +254,6 @@ export default async function (fastify, opts) {
         userId: request.user.id,
       });
 
-      // Fire-and-forget SMS notification (D8: EXIT). release() only sometimes
-      // reaches EXITED, so this is guarded on the resulting state.
       smsNotifications
         .maybeNotifyExit(fastify, deflection)
         .catch((err) => fastify.log.error({ err }, 'SMS exit notification failed'));

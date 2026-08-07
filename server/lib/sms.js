@@ -1,7 +1,7 @@
 import mailer from '#lib/mailer.js';
 
-// Wrapper for sending SMS via AWS End User Messaging SMS (pinpoint-sms-voice-v2 API) 
-// Requires IAM user with "sms-voice:SendTextMessage". 
+// Wrapper for sending SMS via AWS End User Messaging SMS (pinpoint-sms-voice-v2 API)
+// Requires IAM user with "sms-voice:SendTextMessage".
 
 // In production, set SMS_TRANSPORT="aws".
 // To facilitate local testing, set SMS_TRANSPORT="email", which will render

@@ -31,7 +31,7 @@ async function dispatch (fastify, { facilityId, event, body }) {
   return recipients.length;
 }
 
-// Attempt to compute drive-time ETA from incident location to facility. 
+// Attempt to compute drive-time ETA from incident location to facility.
 // Otherwise return null (the notif will omit the ETA).
 const ETA_OVERALL_TIMEOUT_MS = 5000;
 async function computeNewHoldEta (fastify, deflectionId, facility) {
@@ -86,7 +86,7 @@ export async function maybeNotifyReadyHolds (fastify, { facilityId, incidentId }
   for (const deflection of deflections) {
     if (!isIncidentDetailsComplete(deflection.incident)) continue;
     if (!isDeflectionDetailsComplete(deflection)) continue;
-    
+
     // Claim prevents double-sending the NEW_HOLD text
     const claimed = await fastify.prisma.deflection.updateMany({
       where: { id: deflection.id, newHoldNotifiedAt: null },

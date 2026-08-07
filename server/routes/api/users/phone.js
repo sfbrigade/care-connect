@@ -20,7 +20,7 @@ const ResendStatusSchema = z.object({
 
 export default async function (fastify, opts) {
   // Start (or restart) phone verification: capture consent, store the number as
-  // unverified, and text a code. Self-managed OTP (D6).
+  // unverified, and text an OTP code
   fastify.post('/me/phone/start',
     {
       onRequest: fastify.requireUser,
@@ -36,16 +36,12 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { phoneNumber, consent, acceptedTerms } = request.body;
-      // Consent is required for first-time enrollment; a user who already consented
-      // (e.g. changing their number from Contact details) need not re-consent.
+      
       const consentingNow = consent && acceptedTerms;
       if (!request.user.smsConsentAt && !consentingNow) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'You must consent to SMS and accept the terms.' });
       }
-      // A phone number belongs to a single account (enforced by the DB unique
-      // constraint on User.phoneNumber). Reject up front — with a friendly error —
-      // if any OTHER account already holds it (verified OR mid-verification), rather
-      // than letting the update below surface a raw constraint error.
+      // If phone number is already taken, show error.
       const takenBy = await fastify.prisma.user.findFirst({
         where: { phoneNumber, id: { not: request.user.id } },
         select: { id: true },
@@ -53,16 +49,12 @@ export default async function (fastify, opts) {
       if (takenBy) {
         return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
       }
-      // Throttle: sendVerificationCode always arms the resend cooldown, so a user can
-      // trigger at most one code send per cooldown window regardless of the number —
-      // this is what bounds OTP sends and prevents flooding arbitrary numbers.
+
       const remaining = resendCooldownRemaining(request.user.smsOtpLastSentAt);
       if (remaining > 0) {
         return reply.code(StatusCodes.TOO_MANY_REQUESTS).send({ error: `Please wait ${remaining}s before requesting another code.`, resendAvailableInSeconds: remaining });
       }
-      // Store the (unverified) number; stamp consent only when consenting now.
-      // Catch the narrow race where a concurrent /start claimed the same number
-      // between the check above and this write.
+
       try {
         await fastify.prisma.user.update({
           where: { id: request.user.id },

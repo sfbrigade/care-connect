@@ -19,12 +19,7 @@ export default fp(async function (fastify) {
     if (data) {
       request.facility = new Facility(data);
     }
-    // Stamp the user's current facility for SMS notification routing (D5). This
-    // is the SOLE writer of User.currentFacilityId; the notification worker only
-    // reads it. request.user is populated by the auth plugin's onRequest hook,
-    // which runs before this one (autoload registers plugins alphabetically:
-    // auth < facility). We write only when the facility actually changes, so this
-    // is a rare conditional update, not a per-request write.
+    // Stamp the user's current facility for SMS notification routing
     if (request.user && request.facility && request.user.currentFacilityId !== request.facility.id) {
       try {
         await fastify.prisma.user.update({

@@ -2,10 +2,7 @@ import crypto from 'node:crypto';
 
 import sms from '#lib/sms.js';
 
-// Self-managed SMS OTP (D6). AWS managed OTP is unavailable to us (see lib/sms.js),
-// so we generate/store/send/verify ourselves — mirroring the login-MFA logic in
-// routes/api/auth/*, but keyed off the already-authenticated session user (no
-// mfaToken indirection). Codes are stored on the User (smsOtp* fields).
+// Self-managed OTP generation and verification for SMS phone verification
 
 export const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 export const RESEND_COOLDOWN_S = 30;
@@ -23,10 +20,6 @@ export function resendCooldownRemaining (lastSentAt) {
 }
 
 // Generate + persist a code and text it to the user's (pending) phone number.
-// Always stamps smsOtpLastSentAt so BOTH /start and /resend are throttled by the
-// resend cooldown. If the initial send left this null, repeated /start calls would
-// pass the cooldown check every time and could send unbounded codes to arbitrary
-// numbers (SMS flooding / toll fraud / TCPA exposure).
 export async function sendVerificationCode (prisma, user) {
   const code = generateCode();
   await prisma.user.update({
@@ -44,10 +37,7 @@ export async function sendVerificationCode (prisma, user) {
   });
 }
 
-// Validate a submitted code against the stored one. Returns { ok: true } on
-// success, or { status, error } on failure (mirrors the login-MFA responses).
-// Increments the attempt counter on a wrong code. Does NOT mutate verified state
-// — the caller stamps phoneVerifiedAt and clears the OTP fields on success.
+// Validate a submitted code against the stored one.
 export async function checkVerificationCode (prisma, user, code) {
   if (!user.smsOtpCode) {
     return { status: 400, error: 'No verification in progress. Request a code first.' };

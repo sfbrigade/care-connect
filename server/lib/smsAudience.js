@@ -1,4 +1,4 @@
-// Which roles receive each SMS event type. 
+// Which roles receive each SMS event type.
 // Currently only CUSTODY users are in an audience.
 export const EVENT_AUDIENCE = {
   NEW_HOLD: ['CUSTODY'],

@@ -250,7 +250,7 @@ enum SubjectStatusEnum {
   DEATH_IN_CUSTODY
 }
 
-// Event types a user can subscribe to for SMS notifications (D7/D8).
+// Event types a user can subscribe to for SMS notifications
 enum NotifiableEventEnum {
   NEW_HOLD
   ARRIVAL
@@ -348,8 +348,6 @@ model User {
   subscribedEvents             NotifiableEventEnum[]   @default([])
   currentFacilityId            String?                 @db.Uuid
   currentFacility              Facility?               @relation("UsersCurrentFacility", fields: [currentFacilityId], references: [id])
-  // Self-managed SMS OTP (D6), mirroring the login-MFA fields. No token: the user
-  // is already authenticated, so we key off the session user.
   smsOtpCode                   String?
   smsOtpExpiresAt              DateTime?
   smsOtpAttempts               Int                     @default(0)

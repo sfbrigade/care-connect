@@ -1,26 +1,25 @@
 import prisma from '#prisma/client.js';
 import sms from '#lib/sms.js';
 
-// Handles inbound SMS replies
-// MUTE/UNMUTE toggles user's in-app Mute status
-// STOP/START sync the carrier opt-out into smsOptedOutAt so we stop trying to send
-// to opted-out numbers; HELP gets an info reply.
+// Handles inbound SMS replies:
+// - MUTE/UNMUTE toggles user's in-app Mute status
+// - STOP/START are carrier-level opt-in/out keywords; we record those to 
+//   User.smsOptedOutAt (so that we don't send messages that will bounce)
+// - HELP (or any other message) gets a standard help reply
 
 const MUTE_WORDS = ['MUTE'];
 const UNMUTE_WORDS = ['UNMUTE'];
-// Reserved opt-out/opt-in keywords: the carrier enforces the actual block; we just
-// mirror it into smsOptedOutAt.
+
+// Reserved opt-out/opt-in keywords enforced by the carrier
 const OPTOUT_WORDS = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
 const OPTIN_WORDS = ['START', 'UNSTOP', 'YES', 'OPTIN'];
 const HELP_WORDS = ['HELP', 'INFO'];
-// Reply sent to a known user for any message we can't otherwise handle. Keep this in
-// sync with the AWS HELP keyword auto-response (which answers the reserved HELP
+
+// Reply sent to a known user for any message we can't otherwise handle. 
+// Keep this in sync with the AWS HELP keyword auto-response (which answers the reserved HELP
 // keyword), so both paths return identical copy.
 const FALLBACK_MESSAGE = 'CareConnect: Reply MUTE to pause notifications, UNMUTE to resume. For assistance, email careconnect@sfgov.org.';
 
-// SQS body → { fromNumber, body }, or null if not a usable inbound SMS event.
-// Handles both raw-message-delivery (the End User Messaging event directly) and
-// the SNS envelope (event JSON nested under `Message`).
 export function parseInboundSqsBody (raw) {
   let obj;
   try {
@@ -51,8 +50,6 @@ async function reply (to, body) {
   }
 }
 
-// Apply an inbound keyword for the user with this phone number. Returns a small
-// result object (handy for logging/tests). `prismaClient` overridable for tests.
 export async function handleInboundSms ({ fromNumber, body }, prismaClient = prisma) {
   const keyword = (body ?? '').trim().split(/\s+/)[0]?.toUpperCase() ?? '';
   const user = await prismaClient.user.findFirst({ where: { phoneNumber: fromNumber } });
@@ -72,18 +69,11 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     return { action: 'unmute' };
   }
   if (OPTOUT_WORDS.includes(keyword)) {
-    // Record the opt-out so we stop sending. NO reply — the carrier sends the
-    // mandatory confirmation, and we must not message an opted-out number.
     await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: new Date() } });
     return { action: 'optout' };
   }
   if (OPTIN_WORDS.includes(keyword)) {
-    // Remove the number from AWS's opt-out list FIRST (AWS doesn't auto-clear on
-    // START), and only clear our own smsOptedOutAt if AWS accepts it. If the opt-in
-    // fails — e.g. AWS's once-per-30-days opt-in limit — the number is still blocked
-    // at AWS, so clearing our flag would falsely mark the user deliverable (dropping
-    // the recovery banner and re-enqueuing sends that only bounce). The carrier sends
-    // its own confirmation, so we don't reply either way.
+    // Remove the number from AWS's opt-out list, THEN clear local opt-out record
     try {
       await sms.optInNumber(fromNumber);
       await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: null } });
@@ -94,14 +84,12 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     }
   }
   if (HELP_WORDS.includes(keyword)) {
-    // HELP is a reserved compliance keyword answered by the AWS keyword
-    // auto-response; we must NOT also reply, or the user gets two texts.
+    // HELP is a reserved keyword answered automatically by AWS; we
+    // explicitly do NOT respond here (users would get two texts)
     return { action: 'help' };
   }
 
-  // Any other message from a known user: reply with the fallback so a mistyped
-  // command still points them to MUTE/UNMUTE/support. Unknown numbers returned
-  // above, so we never text strangers.
+  // Else return the standard fallback message
   console.log('[sms-inbound] unrecognized keyword from', fromNumber, ':', keyword);
   await reply(fromNumber, FALLBACK_MESSAGE);
   return { action: 'ignored', keyword };

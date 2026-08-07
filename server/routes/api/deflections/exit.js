@@ -141,7 +141,6 @@ export default async function (fastify, opts) {
 
       deflection.propertyPhotos = deflection.propertyPhotos.map(photo => new PropertyPhoto(photo));
 
-      // Fire-and-forget SMS notification (D8: EXIT). Keyed off the EXITED state.
       smsNotifications
         .maybeNotifyExit(fastify, deflection)
         .catch((err) => fastify.log.error({ err }, 'SMS exit notification failed'));
