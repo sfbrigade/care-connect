@@ -468,7 +468,7 @@ function Custody () {
                 : (
                   <EmptyState
                     title='No persons in Released'
-                    description="Released persons appear here, but those who exit the facility will disappear from view after 24 hours. They're retained in legal records."
+                    description="Released persons appear here, but those who exit the facility will disappear from view after 72 hours. They're retained in legal records."
                     updatedAt={releasedDataUpdatedAt}
                   />
                   )}

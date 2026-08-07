@@ -5,6 +5,7 @@ import Deflection from '#models/deflection.js';
 import DeflectionDocument from '#models/deflectionDocument.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import { PII_FIELDS } from '#models/subject.js';
+import { exitedVisibilityCutoff } from '#lib/retention.js';
 import User from '#models/user.js';
 const { Prisma, PrismaClient } = prismaPkg;
 
@@ -132,15 +133,24 @@ const prisma = new PrismaClient({
     },
     subject: {
       async anonymize (now = new Date()) {
-        // 96h = 24h max stay at RESET + 72h buffer for slippage
+        // 96h = 24h max stay at RESET + 72h post-exit visibility window
         const parsed = parseFloat(process.env.ANONYMIZE_CUTOFF_HOURS);
         const hours = Number.isFinite(parsed) ? parsed : 96;
         const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+        // Hold redaction until every exit's visibility window has closed;
+        // never-exited subjects still fall to the createdAt backstop.
+        const visibilityCutoff = exitedVisibilityCutoff(now);
         const eligible = await prisma.$queryRaw`
           SELECT s."id"
           FROM "Subject" s
           WHERE s."anonymizedAt" IS NULL
             AND s."createdAt" <= ${cutoff}
+            AND NOT EXISTS (
+              SELECT 1
+              FROM "Deflection" d
+              WHERE d."subjectId" = s."id"
+                AND d."exitedAt" > ${visibilityCutoff}
+            )
         `;
         if (eligible.length === 0) return;
         const ids = eligible.map((row) => row.id);
