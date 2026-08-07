@@ -36,7 +36,6 @@ export default async function (fastify, opts) {
     },
     async function (request, reply) {
       const { phoneNumber, consent, acceptedTerms } = request.body;
-      
       const consentingNow = consent && acceptedTerms;
       if (!request.user.smsConsentAt && !consentingNow) {
         return reply.code(StatusCodes.BAD_REQUEST).send({ error: 'You must consent to SMS and accept the terms.' });

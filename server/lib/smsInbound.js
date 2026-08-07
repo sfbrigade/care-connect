@@ -3,7 +3,7 @@ import sms from '#lib/sms.js';
 
 // Handles inbound SMS replies:
 // - MUTE/UNMUTE toggles user's in-app Mute status
-// - STOP/START are carrier-level opt-in/out keywords; we record those to 
+// - STOP/START are carrier-level opt-in/out keywords; we record those to
 //   User.smsOptedOutAt (so that we don't send messages that will bounce)
 // - HELP (or any other message) gets a standard help reply
 
@@ -15,7 +15,7 @@ const OPTOUT_WORDS = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
 const OPTIN_WORDS = ['START', 'UNSTOP', 'YES', 'OPTIN'];
 const HELP_WORDS = ['HELP', 'INFO'];
 
-// Reply sent to a known user for any message we can't otherwise handle. 
+// Reply sent to a known user for any message we can't otherwise handle.
 // Keep this in sync with the AWS HELP keyword auto-response (which answers the reserved HELP
 // keyword), so both paths return identical copy.
 const FALLBACK_MESSAGE = 'CareConnect: Reply MUTE to pause notifications, UNMUTE to resume. For assistance, email careconnect@sfgov.org.';
