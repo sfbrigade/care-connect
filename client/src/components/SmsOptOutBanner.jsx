@@ -24,8 +24,8 @@ function SmsOptOutBanner () {
     <Alert icon={<IconAlertCircle />} color='yellow' variant='light' radius='lg' title='' styles={{ root: { backgroundColor: 'var(--mantine-color-yellow-1)' } }}>
       <Text size='sm'>
         CareConnect is currently blocked from sending text messages to{' '}
-        <Text span fw={600}>{registeredNumber}</Text>. To re-enable notifications, text <Text span ff='monospace' fw={600}>START</Text> to
-        CareConnect at <Anchor href={`sms:${CARECONNECT_TFN}`}>{formatUSPhone(CARECONNECT_TFN)}</Anchor>,
+        <Text span fw={600}>{registeredNumber}</Text>. To re-enable notifications, text <Text span ff='monospace' fw={600}>START</Text> to{' '}
+        <Anchor href={`sms:${CARECONNECT_TFN}`}>{formatUSPhone(CARECONNECT_TFN)}</Anchor>,
         or contact <Anchor href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</Anchor> for further assistance.
       </Text>
     </Alert>

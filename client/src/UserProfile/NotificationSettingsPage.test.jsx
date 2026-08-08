@@ -78,7 +78,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
 
     expect(await screen.findByText('No phone number on file.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add phone number/i })).toBeInTheDocument();
-    expect(screen.queryByText('SMS notifications')).toBeNull();
+    expect(screen.queryByText('Status')).toBeNull(); // mute row (label 'Status') not shown
     expect(screen.queryByRole('radio')).toBeNull(); // no mute control
     expect(screen.queryByRole('switch')).toBeNull();
   });
@@ -186,7 +186,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     };
     renderPage();
 
-    expect(await screen.findByText('SMS notifications are blocked')).toBeInTheDocument();
+    expect(await screen.findByText(/currently blocked from sending text messages/i)).toBeInTheDocument();
   });
 
   it('does not show the opt-out banner when the user has not opted out', async () => {
