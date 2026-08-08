@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ActionIcon, Alert, Anchor, Button, Box, Collapse, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconAlertCircle, IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { ActionIcon, Anchor, Button, Box, Collapse, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 import { Link } from 'react-router';
 
@@ -8,6 +8,7 @@ import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { summarizeEvents } from '@/components/NotificationPreferenceToggles';
+import SmsOptOutBanner from '@/components/SmsOptOutBanner';
 import { useUserRole } from '@/hooks/useUserRole';
 import { formatUnitName } from '@/utils/unit';
 import { formatUSPhone } from '@/utils/phone';
@@ -48,27 +49,6 @@ function Section ({ title, editTo, editLabel = 'Edit', children }) {
         </Stack>
       </Collapse>
     </Stack>
-  );
-}
-
-// Slim inline warning for the SMS section: flags an external blocker (no verified
-// number, or a carrier opt-out) without the full Settings-page banner.
-function SlimWarning ({ children }) {
-  return (
-    <Alert
-      color='yellow'
-      variant='light'
-      radius='lg'
-      w='fit-content'
-      px='md'
-      py='xs'
-      styles={{ root: { backgroundColor: 'var(--mantine-color-yellow-1)' } }}
-    >
-      <Group gap='xs' wrap='nowrap' align='center'>
-        <IconAlertCircle size={18} color='var(--mantine-color-yellow-7)' style={{ flexShrink: 0 }} />
-        <Text size='sm'>{children}</Text>
-      </Group>
-    </Alert>
   );
 }
 
@@ -128,9 +108,7 @@ function UserProfilePage () {
               >
                 {smsVerified && (
                   <>
-                    {smsOptedOut && (
-                      <SlimWarning>SMS notifications to {formatUSPhone(user.phoneNumber) || 'your number'} are blocked.</SlimWarning>
-                    )}
+                    {smsOptedOut && <SmsOptOutBanner />}
                     <Field label='Status' value={smsUnmuted ? 'Unmuted' : 'Muted'} />
                     {smsUnmuted && <Field label='Subscriptions' value={subscriptionsSummary || 'None'} />}
                   </>
