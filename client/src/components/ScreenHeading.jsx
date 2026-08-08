@@ -5,7 +5,7 @@ import { Stack, Text, Title } from '@mantine/core';
 function ScreenHeading ({ label, message }) {
   return (
     <Stack gap={4}>
-      <Text size='sm' c='dimmed'>{label}</Text>
+      <Text size='xl' c='dimmed'>{label}</Text>
       <Title order={3}>{message}</Title>
     </Stack>
   );

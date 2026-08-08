@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Anchor, Button, Checkbox, Container, Group, Stack, Text, TextInput } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -23,6 +23,7 @@ function SmsEnrollmentPage () {
   const { facility } = useFacilityContext();
   const facilityName = facility?.name ?? 'RESET';
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
@@ -75,9 +76,12 @@ function SmsEnrollmentPage () {
     });
   }
 
-  function handleBack () {
-    if (step === 'verify') setStep('phone');
-    else navigate('/');
+  // X (quit): return to wherever enrollment was launched from (Home banner / Profile /
+  // Settings). Steps advance via setState, so they add no history — navigate(-1) lands
+  // on the true origin. Fall back to /profile on a direct load (no history to pop).
+  function handleQuit () {
+    if (location.key === 'default') navigate('/profile');
+    else navigate(-1);
   }
 
   const canContinue = !!toE164US(phone) && consent && acceptedTerms;
@@ -89,7 +93,12 @@ function SmsEnrollmentPage () {
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
-          <IconButtonLink icon={IconArrowLeft} onClick={handleBack} aria-label='Go back' />
+          {/* Back arrow only on the verify step (→ phone, to fix a mistyped number);
+              the X quits the flow on every step. */}
+          {step === 'verify'
+            ? <IconButtonLink icon={IconArrowLeft} onClick={() => setStep('phone')} aria-label='Go back' />
+            : <span />}
+          <IconButtonLink icon={IconX} onClick={handleQuit} aria-label='Close' />
         </Group>
       </Header>
       <Container>
@@ -123,7 +132,6 @@ function SmsEnrollmentPage () {
               }
             />
             <Group>
-              <Button variant='light' color='red' onClick={() => navigate('/')}>Cancel</Button>
               <Button variant='secondary' onClick={onContinue} disabled={!canContinue} loading={startMutation.isPending}>Continue</Button>
             </Group>
           </Stack>

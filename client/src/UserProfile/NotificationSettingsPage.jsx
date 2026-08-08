@@ -106,7 +106,7 @@ function NotificationSettingsPage () {
   return (
     <>
       <Head>
-        <title>Notification settings</title>
+        <title>SMS notifications</title>
       </Head>
       <Header>
         <Group w='100%' justify='space-between'>
@@ -115,7 +115,7 @@ function NotificationSettingsPage () {
       </Header>
       <Container>
         <Stack>
-          <Title order={2}>Notification settings</Title>
+          <Title order={2}>SMS notifications</Title>
 
           {/* Self-gates: shows only when the user is carrier-opted-out (replied STOP). */}
           <SmsOptOutBanner />
@@ -137,7 +137,7 @@ function NotificationSettingsPage () {
           {!isLoading && hasNumber && (
             <>
               <div>
-                <Text fw={500}>SMS notifications</Text>
+                <Text fw={500}>Status</Text>
                 <Text size='sm' c='dimmed'>Temporarily pause live text updates without losing your saved preferences.</Text>
               </div>
               <Select

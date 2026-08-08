@@ -52,6 +52,7 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
         value={code}
         onChange={(v) => { setCode(v); setCodeError(null); }}
         onComplete={(v) => verifyMutation.mutate(v)}
+        placeholder=''
         error={!!codeError}
         aria-label='Verification code'
       />
