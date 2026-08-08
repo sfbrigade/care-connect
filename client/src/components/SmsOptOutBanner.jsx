@@ -1,5 +1,5 @@
 import { Alert, Anchor, Text } from '@mantine/core';
-import { IconAlertCircle, IconBellOff } from '@tabler/icons-react';
+import { IconAlertCircle } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
