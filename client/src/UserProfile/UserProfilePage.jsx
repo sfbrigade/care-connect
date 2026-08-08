@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActionIcon, Alert, Anchor, Button, Box, Collapse, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconAlertTriangle, IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
 import { Link } from 'react-router';
 
@@ -55,11 +55,17 @@ function Section ({ title, editTo, editLabel = 'Edit', children }) {
 // number, or a carrier opt-out) without the full Settings-page banner.
 function SlimWarning ({ children }) {
   return (
-    <Alert color='yellow' variant='light' radius='lg' w='fit-content' px='md' py='xs'>
-      {/* Lay out the icon + text ourselves in a centered row — Alert's own icon
-          slot top-aligns and can't be reliably re-centered. */}
+    <Alert
+      color='yellow'
+      variant='light'
+      radius='lg'
+      w='fit-content'
+      px='md'
+      py='xs'
+      styles={{ root: { backgroundColor: 'var(--mantine-color-yellow-1)' } }}
+    >
       <Group gap='xs' wrap='nowrap' align='center'>
-        <IconAlertTriangle size={18} color='var(--mantine-color-yellow-7)' style={{ flexShrink: 0 }} />
+        <IconAlertCircle size={18} color='var(--mantine-color-yellow-7)' style={{ flexShrink: 0 }} />
         <Text size='sm'>{children}</Text>
       </Group>
     </Alert>

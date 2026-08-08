@@ -1,5 +1,5 @@
 import { Alert, Anchor, Text } from '@mantine/core';
-import { IconBellOff } from '@tabler/icons-react';
+import { IconAlertCircle, IconBellOff } from '@tabler/icons-react';
 
 import { useAuthContext } from '@/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -21,7 +21,7 @@ function SmsOptOutBanner () {
   const registeredNumber = formatUSPhone(user.phoneNumber) || 'your number';
 
   return (
-    <Alert icon={<IconBellOff />} color='yellow' variant='light' radius='lg' title='SMS notifications are blocked'>
+    <Alert icon={<IconAlertCircle />} color='yellow' variant='light' radius='lg' title='' styles={{ root: { backgroundColor: 'var(--mantine-color-yellow-1)' } }}>
       <Text size='sm'>
         CareConnect is currently blocked from sending text messages to{' '}
         <Text span fw={600}>{registeredNumber}</Text>. To re-enable notifications, text <Text span ff='monospace' fw={600}>START</Text> to
