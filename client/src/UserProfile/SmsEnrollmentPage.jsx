@@ -118,7 +118,7 @@ function SmsEnrollmentPage () {
               onChange={(e) => setConsent(e.currentTarget.checked)}
               label={
                 <Text size='md'>
-                  By checking, you consent to receive arrival notifications and facility status updates from the City and County of San Francisco: CareConnect. Message may vary. Message and data rates may apply. Reply HELP for help or STOP to opt-out.
+                  By checking, I consent to receive arrival notifications and facility status updates from the City and County of San Francisco: CareConnect. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to opt-out.
                 </Text>
               }
             />
