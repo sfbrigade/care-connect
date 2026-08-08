@@ -95,9 +95,9 @@ function SmsEnrollmentPage () {
       <Container>
         {step === 'phone' && (
           <Stack>
-            <ScreenHeading label='Subscribe to SMS notifications' message='Enter your phone number to get notified on important status changes.' />
+            <ScreenHeading label='Subscribe to SMS notifications' message='Enter your mobile number to get notified on important status changes.' />
             <TextInput
-              label='Phone number'
+              label='Mobile number'
               placeholder='000-000-0000'
               value={phone}
               onChange={(e) => { setPhone(e.currentTarget.value); setPhoneError(null); }}

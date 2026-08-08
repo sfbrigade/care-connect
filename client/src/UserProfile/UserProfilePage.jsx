@@ -118,7 +118,7 @@ function UserProfilePage () {
               <Section
                 title='SMS notifications'
                 editTo={smsVerified ? '/profile/notifications' : '/profile/notifications/enroll'}
-                editLabel={smsVerified ? 'Edit' : 'Set up SMS notifications'}
+                editLabel={smsVerified ? 'Edit' : 'Subscribe to SMS notifications'}
               >
                 {smsVerified && (
                   <>
