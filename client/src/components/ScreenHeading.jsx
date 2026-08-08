@@ -6,7 +6,7 @@ function ScreenHeading ({ label, message }) {
   return (
     <Stack gap={4}>
       <Text size='sm' c='dimmed'>{label}</Text>
-      <Title order={4}>{message}</Title>
+      <Title order={3}>{message}</Title>
     </Stack>
   );
 }
