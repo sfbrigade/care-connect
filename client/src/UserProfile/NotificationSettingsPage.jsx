@@ -137,7 +137,7 @@ function NotificationSettingsPage () {
           {!isLoading && hasNumber && (
             <>
               <div>
-                <Text fw={500} size ='lg'>Status</Text>
+                <Text fw={500} size='lg'>Status</Text>
                 <Text size='sm' c='dimmed'>Temporarily pause live text updates without losing your saved preferences.</Text>
               </div>
               <Select
