@@ -130,7 +130,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     );
   });
 
-  it('when muted, hides the toggles and shows the paused message with Mute selected', async () => {
+  it('when muted, hides the toggles and shows the paused message with Paused selected', async () => {
     mockUserRef.current = {
       id: 'user-1',
       phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
@@ -141,7 +141,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
 
     expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
     expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.getByDisplayValue('Mute')).toBeInTheDocument(); // dropdown shows Mute
+    expect(screen.getByDisplayValue('Paused')).toBeInTheDocument(); // dropdown shows Paused
   });
 
   it('muting persists notificationsEnabled:false and hides the toggles', async () => {
@@ -149,8 +149,8 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     renderPage(); // beforeEach user is unmuted, toggles visible
     await screen.findByRole('switch', { name: /Person in transit/i });
 
-    await user.click(screen.getByDisplayValue('Unmute')); // open the dropdown
-    await user.click(await screen.findByText('Mute'));
+    await user.click(screen.getByDisplayValue('Active')); // open the dropdown
+    await user.click(await screen.findByText('Paused'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: false }));
     expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
@@ -168,8 +168,8 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     renderPage();
     await screen.findByText(/SMS notifications are paused/i);
 
-    await user.click(screen.getByDisplayValue('Mute')); // open the dropdown
-    await user.click(await screen.findByText('Unmute'));
+    await user.click(screen.getByDisplayValue('Paused')); // open the dropdown
+    await user.click(await screen.findByText('Active'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: true }));
     expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeInTheDocument();

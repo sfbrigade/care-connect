@@ -6,7 +6,7 @@ import { build } from '#test/helper.js';
 // Inbound SMS handling (server/lib/smsInbound.js) is compliance-critical: STOP must
 // record the opt-out and send NO reply (the carrier sends the mandatory
 // confirmation, and we must never message an opted-out number), while START clears
-// it. MUTE/UNMUTE sync the in-app master switch, HELP replies with info, and
+// it. PAUSE/RESUME (and legacy MUTE/UNMUTE) sync the in-app master switch, HELP replies with info, and
 // anything else is ignored. We stub the transport so we can assert exactly when a
 // reply is (or is not) sent.
 //
@@ -94,6 +94,32 @@ test('inbound SMS handling', async (t) => {
     assert.strictEqual(sendText.mock.callCount(), 1);
   });
 
+  await t.test('PAUSE turns notifications off and replies (primary keyword)', async () => {
+    sendText.mock.resetCalls();
+    const u = await makeUser({ notificationsEnabled: true });
+
+    const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: 'PAUSE' }, prisma);
+
+    assert.strictEqual(res.action, 'mute');
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    assert.strictEqual(after.notificationsEnabled, false);
+    assert.strictEqual(sendText.mock.callCount(), 1);
+    assert.match(sendText.mock.calls[0].arguments[0].body, /paused\. Reply RESUME/i);
+  });
+
+  await t.test('RESUME turns notifications back on and replies (primary keyword, case-insensitive)', async () => {
+    sendText.mock.resetCalls();
+    const u = await makeUser({ notificationsEnabled: false });
+
+    const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: 'resume' }, prisma);
+
+    assert.strictEqual(res.action, 'unmute');
+    const after = await prisma.user.findUnique({ where: { id: u.id } });
+    assert.strictEqual(after.notificationsEnabled, true);
+    assert.strictEqual(sendText.mock.callCount(), 1);
+    assert.match(sendText.mock.calls[0].arguments[0].body, /resumed\. Reply PAUSE/i);
+  });
+
   await t.test('every opt-out keyword records the opt-out and sends NO reply', async () => {
     const words = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
     for (const word of words) {
@@ -172,7 +198,7 @@ test('inbound SMS handling', async (t) => {
     assert.strictEqual(res.action, 'ignored');
     assert.strictEqual(res.keyword, 'HELLO');
     assert.strictEqual(sendText.mock.callCount(), 1);
-    assert.match(sendText.mock.calls[0].arguments[0].body, /Reply MUTE to pause notifications/);
+    assert.match(sendText.mock.calls[0].arguments[0].body, /Reply PAUSE to pause notifications/);
     const after = await prisma.user.findUnique({ where: { id: u.id } });
     assert.strictEqual(after.notificationsEnabled, true);
   });

@@ -18,7 +18,7 @@ function SmsNotificationMenu () {
     onSuccess: (response, notificationsEnabled) => {
       queryClient.setQueryData(['users', 'me'], (old) => ({ ...(old ?? {}), ...response.data }));
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
-      showToast(notificationsEnabled ? 'SMS notifications unmuted' : 'SMS notifications muted', 'success');
+      showToast(notificationsEnabled ? 'SMS notifications resumed' : 'SMS notifications paused', 'success');
     },
     onError: () => showToast('Couldn’t update SMS notifications', 'error', 4000, 'Please try again.'),
   });
@@ -40,7 +40,7 @@ function SmsNotificationMenu () {
           radius='xl'
           size='xs'
           leftSection={muted ? <IconBellOff size={18} /> : <IconBellRinging size={18} />}
-          aria-label={muted ? 'SMS notifications muted' : 'SMS notifications on'}
+          aria-label={muted ? 'SMS notifications paused' : 'SMS notifications active'}
         >
           SMS
         </Button>
@@ -51,14 +51,14 @@ function SmsNotificationMenu () {
           rightSection={!muted ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
           onClick={() => setEnabled(true)}
         >
-          SMS unmute
+          Enable SMS
         </Menu.Item>
         <Menu.Item
           leftSection={<IconBellOff size={18} color='var(--mantine-color-gray-6)' />}
           rightSection={muted ? <IconCheck size={16} color='var(--mantine-color-blue-6)' /> : null}
           onClick={() => setEnabled(false)}
         >
-          SMS mute
+          Pause SMS
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>

@@ -143,7 +143,7 @@ function NotificationSettingsPage () {
               <Select
                 value={notifEnabled ? 'unmute' : 'mute'}
                 onChange={(value) => { if (value) handleMuteChange(value); }}
-                data={[{ value: 'unmute', label: 'Unmute' }, { value: 'mute', label: 'Mute' }]}
+                data={[{ value: 'unmute', label: 'Active' }, { value: 'mute', label: 'Paused' }]}
                 allowDeselect={false}
                 leftSection={notifEnabled
                   ? <IconBellRinging size={20} color='var(--mantine-color-text)' />
@@ -160,7 +160,7 @@ function NotificationSettingsPage () {
               />
               {notifEnabled
                 ? <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
-                : <Text size='sm' c='dimmed'>SMS notifications are paused. Unmute to start receiving live text updates again.</Text>}
+                : <Text size='sm' c='dimmed'>SMS notifications are paused. Set them to Active to start receiving live text updates again.</Text>}
             </>
           )}
         </Stack>

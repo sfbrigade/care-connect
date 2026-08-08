@@ -109,7 +109,7 @@ function UserProfilePage () {
                 {smsVerified && (
                   <>
                     {smsOptedOut && <SmsOptOutBanner />}
-                    <Field label='Status' value={smsUnmuted ? 'Unmuted' : 'Muted'} />
+                    <Field label='Status' value={smsUnmuted ? 'Active' : 'Paused'} />
                     {smsUnmuted && <Field label='Subscriptions' value={subscriptionsSummary || 'None'} />}
                   </>
                 )}

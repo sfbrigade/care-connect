@@ -2,13 +2,14 @@ import prisma from '#prisma/client.js';
 import sms from '#lib/sms.js';
 
 // Handles inbound SMS replies:
-// - MUTE/UNMUTE toggles user's in-app Mute status
+// - PAUSE/RESUME toggle the user's in-app notifications (MUTE/UNMUTE also accepted)
 // - STOP/START are carrier-level opt-in/out keywords; we record those to
 //   User.smsOptedOutAt (so that we don't send messages that will bounce)
 // - HELP (or any other message) gets a standard help reply
 
-const MUTE_WORDS = ['MUTE'];
-const UNMUTE_WORDS = ['UNMUTE'];
+// PAUSE/RESUME are the current keywords; MUTE/UNMUTE kept as aliases.
+const MUTE_WORDS = ['PAUSE', 'MUTE'];
+const UNMUTE_WORDS = ['RESUME', 'UNMUTE'];
 
 // Reserved opt-out/opt-in keywords enforced by the carrier
 const OPTOUT_WORDS = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
@@ -18,7 +19,7 @@ const HELP_WORDS = ['HELP', 'INFO'];
 // Reply sent to a known user for any message we can't otherwise handle.
 // Keep this in sync with the AWS HELP keyword auto-response (which answers the reserved HELP
 // keyword), so both paths return identical copy.
-const FALLBACK_MESSAGE = 'CareConnect: Reply MUTE to pause notifications, UNMUTE to resume. For assistance, email careconnect@sfgov.org.';
+const FALLBACK_MESSAGE = 'CareConnect: Reply PAUSE to pause notifications, RESUME to resume. For assistance, email careconnect@sfgov.org.';
 
 export function parseInboundSqsBody (raw) {
   let obj;
@@ -60,12 +61,12 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
 
   if (MUTE_WORDS.includes(keyword)) {
     await prismaClient.user.update({ where: { id: user.id }, data: { notificationsEnabled: false } });
-    await reply(fromNumber, 'CareConnect: SMS notifications muted. Reply UNMUTE to resume.');
+    await reply(fromNumber, 'CareConnect: SMS notifications paused. Reply RESUME to receive live updates again.');
     return { action: 'mute' };
   }
   if (UNMUTE_WORDS.includes(keyword)) {
     await prismaClient.user.update({ where: { id: user.id }, data: { notificationsEnabled: true } });
-    await reply(fromNumber, 'CareConnect: SMS notifications unmuted.');
+    await reply(fromNumber, 'CareConnect: SMS notifications resumed. Reply PAUSE to pause live updates.');
     return { action: 'unmute' };
   }
   if (OPTOUT_WORDS.includes(keyword)) {
