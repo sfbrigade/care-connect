@@ -107,13 +107,17 @@ function SmsEnrollmentPage () {
             <Checkbox
               checked={consent}
               onChange={(e) => setConsent(e.currentTarget.checked)}
-              label='By checking, you consent to receive arrival notifications and facility status updates from the City and County of San Francisco: CareConnect. Message may vary. Message and data rates may apply. Reply HELP for help or STOP to opt-out.'
+              label={
+                <Text size='md'>
+                  By checking, you consent to receive arrival notifications and facility status updates from the City and County of San Francisco: CareConnect. Message may vary. Message and data rates may apply. Reply HELP for help or STOP to opt-out.
+                </Text>
+              }
             />
             <Checkbox
               checked={acceptedTerms}
               onChange={(e) => setAcceptedTerms(e.currentTarget.checked)}
               label={
-                <Text size='sm'>
+                <Text size='md'>
                   By checking, I accept the CareConnect SMS <Anchor href='/sms-terms' target='_blank' rel='noopener noreferrer'>Terms</Anchor> & <Anchor href='https://www.sf.gov/information/privacy-policy-sfgov' target='_blank' rel='noopener noreferrer'>Privacy Policy</Anchor>.
                 </Text>
               }
