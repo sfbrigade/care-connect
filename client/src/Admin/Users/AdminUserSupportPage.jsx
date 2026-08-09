@@ -99,7 +99,7 @@ function GateSection ({ gate }) {
                     <Table.Td key={e.event} ta='center'>
                       {e.passed
                         ? <Badge color='green' variant='light'>Yes</Badge>
-                        : <Badge color='gray' variant='light'>No</Badge>}
+                        : <Badge color='red' variant='light'>No</Badge>}
                     </Table.Td>
                   ))}
                 </Table.Tr>
