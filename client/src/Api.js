@@ -205,6 +205,10 @@ const Api = {
     getMfaCode (id) {
       return instance.get(`/api/users/${id}/mfa-code`);
     },
+    // Admin SMS diagnostic: enrollment state, per-event gate results, live AWS opt-out.
+    getSmsState (id) {
+      return instance.get(`/api/users/${id}/sms-state`);
+    },
     startPhoneVerification (data) {
       return instance.post('/api/users/me/phone/start', data);
     },

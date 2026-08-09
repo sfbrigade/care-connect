@@ -15,6 +15,7 @@ const apiMocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   setPassword: vi.fn(),
   getMfaCode: vi.fn(),
+  getSmsState: vi.fn(),
 }));
 
 vi.mock('@/Api', () => ({
@@ -23,6 +24,7 @@ vi.mock('@/Api', () => ({
       get: apiMocks.getUser,
       setPassword: apiMocks.setPassword,
       getMfaCode: apiMocks.getMfaCode,
+      getSmsState: apiMocks.getSmsState,
     },
   },
 }));
@@ -91,6 +93,31 @@ beforeEach(() => {
       lastSentAt: null,
     },
   });
+  apiMocks.getSmsState.mockResolvedValue({
+    status: 200,
+    data: {
+      state: {
+        phoneNumber: '+14155550100',
+        phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+        smsConsentAt: '2026-01-01T00:00:00.000Z',
+        smsOptedOutAt: null,
+        notificationsEnabled: true,
+        subscribedEvents: ['NEW_HOLD'],
+        currentFacilityId: 'fac-1',
+        currentFacilityName: 'RESET',
+        smsWelcomedAt: null,
+        roles: ['CUSTODY'],
+        deactivatedAt: null,
+        deletedAt: null,
+      },
+      otp: { lastSentAt: null, attempts: 0, expiresAt: null },
+      gate: [
+        { event: 'NEW_HOLD', passed: true, checks: [] },
+        { event: 'ARRIVAL', passed: false, checks: [{ key: 'subscribed', label: 'Subscribed to this event', passed: false }] },
+      ],
+      awsOptOut: { available: true, optedOut: false },
+    },
+  });
 });
 
 afterEach(() => {
@@ -140,5 +167,55 @@ describe('AdminUserSupportPage', () => {
     });
     expect(await screen.findByText('123456')).toBeInTheDocument();
     expect(screen.getByText('Attempts remaining: 4')).toBeInTheDocument();
+  });
+
+  it('loads and shows SMS notification state, including the per-event gate', async () => {
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS notification state' }));
+
+    await waitFor(() => {
+      expect(apiMocks.getSmsState).toHaveBeenCalledWith('user-1');
+    });
+    expect(await screen.findByText('+14155550100')).toBeInTheDocument();
+    expect(screen.getByText('RESET')).toBeInTheDocument();
+    // Per-event gate: one event passes (Yes badge), ARRIVAL fails with the reason.
+    expect(screen.getByText('Yes')).toBeInTheDocument();
+    expect(screen.getByText(/No — Subscribed to this event/)).toBeInTheDocument();
+    // AWS opt-out surfaced.
+    expect(screen.getByText('Not opted out')).toBeInTheDocument();
+  });
+
+  it('flags a mismatch when AWS says opted out but our record is clear', async () => {
+    apiMocks.getSmsState.mockResolvedValue({
+      status: 200,
+      data: {
+        state: {
+          phoneNumber: '+14155550100',
+          phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+          smsConsentAt: null,
+          smsOptedOutAt: null,
+          notificationsEnabled: true,
+          subscribedEvents: ['NEW_HOLD'],
+          currentFacilityId: 'fac-1',
+          currentFacilityName: 'RESET',
+          smsWelcomedAt: null,
+          roles: ['CUSTODY'],
+          deactivatedAt: null,
+          deletedAt: null,
+        },
+        otp: { lastSentAt: null, attempts: 0, expiresAt: null },
+        // AWS opt-out folds into the gate: the event does NOT pass, blocked by AWS.
+        gate: [{ event: 'NEW_HOLD', passed: false, checks: [{ key: 'awsNotOptedOut', label: 'Not opted out at carrier (AWS)', passed: false }] }],
+        awsOptOut: { available: true, optedOut: true, optedOutTimestamp: '2026-02-01T00:00:00.000Z', endUserOptedOut: true },
+      },
+    });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS notification state' }));
+
+    expect(await screen.findByText(/Mismatch:/)).toBeInTheDocument();
+    // The verdict reflects reality: would NOT receive, blocked by AWS.
+    expect(screen.getByText(/No — Not opted out at carrier \(AWS\)/)).toBeInTheDocument();
   });
 });

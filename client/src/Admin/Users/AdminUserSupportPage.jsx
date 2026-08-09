@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Alert, Button, Code, Container, Divider, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Button, Code, Container, Divider, Group, Stack, Text, TextInput, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -12,10 +12,46 @@ import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 
+const fmtDate = (v) => (v ? new Date(v).toLocaleString() : '—');
+
+function StateRow ({ label, children }) {
+  return (
+    <Group gap='xs' wrap='nowrap' align='baseline'>
+      <Text size='sm' c='dimmed' style={{ minWidth: 160 }}>{label}</Text>
+      <Text size='sm'>{children}</Text>
+    </Group>
+  );
+}
+
+// Live AWS opt-out status, plus a drift warning when it disagrees with our own
+// smsOptedOutAt mirror (the main thing this diagnostic exists to catch).
+function AwsOptOutSummary ({ awsOptOut, dbOptedOut }) {
+  if (!awsOptOut.available) {
+    return <Text size='sm' c='dimmed'>AWS opt-out status unavailable ({awsOptOut.reason}).</Text>;
+  }
+  const drift = awsOptOut.optedOut !== dbOptedOut;
+  return (
+    <Stack gap='xs'>
+      <StateRow label='AWS opt-out list'>
+        {awsOptOut.optedOut
+          ? <Badge color='red' variant='light'>Opted out{awsOptOut.optedOutTimestamp ? ` — ${fmtDate(awsOptOut.optedOutTimestamp)}` : ''}</Badge>
+          : <Badge color='green' variant='light'>Not opted out</Badge>}
+      </StateRow>
+      {drift && (
+        <Alert color='orange' variant='light'>
+          Mismatch: AWS says <strong>{awsOptOut.optedOut ? 'opted out' : 'not opted out'}</strong>, but our record says{' '}
+          <strong>{dbOptedOut ? 'opted out' : 'not opted out'}</strong>. Sends may silently succeed or bounce until this is reconciled.
+        </Alert>
+      )}
+    </Stack>
+  );
+}
+
 function AdminUserSupportPage () {
   const { userId } = useParams();
   const { showToast } = useToast();
   const [mfaCode, setMfaCode] = useState(null);
+  const [smsState, setSmsState] = useState(null);
   const [passwordValues, setPasswordValues] = useState({
     password: '',
     passwordConfirmation: '',
@@ -64,6 +100,15 @@ function AdminUserSupportPage () {
     onError: () => {
       setMfaCode(null);
       showToast('Unable to load MFA code', 'error');
+    },
+  });
+
+  const getSmsStateMutation = useMutation({
+    mutationFn: () => Api.users.getSmsState(userId),
+    onSuccess: (response) => setSmsState(response.data),
+    onError: () => {
+      setSmsState(null);
+      showToast('Unable to load SMS state', 'error');
     },
   });
 
@@ -153,6 +198,58 @@ function AdminUserSupportPage () {
                 <Text size='sm'>Active code: <Code>{mfaCode.code}</Code></Text>
                 <Text size='sm' c='dimmed'>Expires at {new Date(mfaCode.expiresAt).toLocaleString()}</Text>
                 <Text size='sm' c='dimmed'>Attempts remaining: {mfaCode.attemptsRemaining}</Text>
+              </Stack>
+            )}
+          </Stack>
+          <Divider />
+          <Stack>
+            <Title order={3}>SMS notifications</Title>
+            <Group>
+              <Button
+                loading={getSmsStateMutation.isPending}
+                onClick={() => getSmsStateMutation.mutate()}
+                type='button'
+              >
+                Show SMS notification state
+              </Button>
+            </Group>
+            {smsState && (
+              <Stack gap='lg'>
+                <Stack gap='xs'>
+                  <Text fw={600} size='sm'>Enrollment</Text>
+                  <StateRow label='Phone number'>{smsState.state.phoneNumber ? <Code>{smsState.state.phoneNumber}</Code> : '—'}</StateRow>
+                  <StateRow label='Verified'>{fmtDate(smsState.state.phoneVerifiedAt)}</StateRow>
+                  <StateRow label='Consented'>{fmtDate(smsState.state.smsConsentAt)}</StateRow>
+                  <StateRow label='Notifications'>{smsState.state.notificationsEnabled ? 'Active' : 'Paused'}</StateRow>
+                  <StateRow label='Subscribed events'>{smsState.state.subscribedEvents.length ? smsState.state.subscribedEvents.join(', ') : 'None'}</StateRow>
+                  <StateRow label='Current facility'>{smsState.state.currentFacilityName ?? '—'}</StateRow>
+                  <StateRow label='Welcomed'>{fmtDate(smsState.state.smsWelcomedAt)}</StateRow>
+                  <StateRow label='Opted out (our record)'>{fmtDate(smsState.state.smsOptedOutAt)}</StateRow>
+                </Stack>
+
+                <Stack gap='xs'>
+                  <Text fw={600} size='sm'>Carrier opt-out (AWS)</Text>
+                  <AwsOptOutSummary awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
+                </Stack>
+
+                <Stack gap='xs'>
+                  <Text fw={600} size='sm'>Would receive notifications</Text>
+                  {smsState.gate.map((g) => (
+                    <Group key={g.event} gap='xs' wrap='nowrap' align='baseline'>
+                      <Text size='sm' style={{ minWidth: 100 }}>{g.event}</Text>
+                      {g.passed
+                        ? <Badge color='green' variant='light'>Yes</Badge>
+                        : <Badge color='gray' variant='light'>No — {g.checks.filter((c) => !c.passed).map((c) => c.label).join(', ')}</Badge>}
+                    </Group>
+                  ))}
+                </Stack>
+
+                <Stack gap='xs'>
+                  <Text fw={600} size='sm'>Verification (OTP)</Text>
+                  <StateRow label='Last code sent'>{fmtDate(smsState.otp.lastSentAt)}</StateRow>
+                  <StateRow label='Attempts'>{smsState.otp.attempts}</StateRow>
+                  <StateRow label='Code expires'>{fmtDate(smsState.otp.expiresAt)}</StateRow>
+                </Stack>
               </Stack>
             )}
           </Stack>

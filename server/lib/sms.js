@@ -107,6 +107,38 @@ async function optInNumber (phoneNumber) {
   }
 }
 
+// Look up a number's current status on our AWS opt-out list (read-only; for the
+// admin SMS diagnostic). Our own smsOptedOutAt is only a MIRROR of this list and can
+// drift from it, so surfacing AWS's own truth is the point. Returns:
+//   { available: true, optedOut: false }
+//   { available: true, optedOut: true, optedOutTimestamp, endUserOptedOut }
+//   { available: false, reason }  — not the 'aws' transport, no number, or an API error.
+// Querying a single number that isn't on the list throws ResourceNotFoundException,
+// which we treat as "not opted out" (matches AWS's DescribeOptedOutNumbers behavior).
+async function describeOptOutStatus (phoneNumber) {
+  if (resolveTransport() !== 'aws') return { available: false, reason: 'not-aws-transport' };
+  if (!phoneNumber) return { available: false, reason: 'no-number' };
+  await init();
+  const { DescribeOptedOutNumbersCommand } = await loadSdk();
+  const OptOutListName = process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
+  try {
+    const response = await client.send(
+      new DescribeOptedOutNumbersCommand({ OptOutListName, OptedOutNumbers: [phoneNumber] })
+    );
+    const entry = (response.OptedOutNumbers ?? [])[0];
+    if (!entry) return { available: true, optedOut: false };
+    return {
+      available: true,
+      optedOut: true,
+      optedOutTimestamp: entry.OptedOutTimestamp ?? null,
+      endUserOptedOut: entry.EndUserOptedOut ?? null,
+    };
+  } catch (err) {
+    if (err.name === 'ResourceNotFoundException') return { available: true, optedOut: false };
+    return { available: false, reason: err.name || 'error' };
+  }
+}
+
 // Reset cached client (used by tests)
 function reset () {
   client = undefined;
@@ -116,6 +148,7 @@ function reset () {
 export default {
   sendText,
   optInNumber,
+  describeOptOutStatus,
   resolveTransport,
   reset,
 };
