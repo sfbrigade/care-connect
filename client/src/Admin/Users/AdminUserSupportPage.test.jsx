@@ -111,27 +111,35 @@ beforeEach(() => {
         deletedAt: null,
       },
       otp: { lastSentAt: null, attempts: 0, expiresAt: null },
-      gate: [
-        { event: 'NEW_HOLD', passed: true, checks: fullChecks({ subscribed: true }) },
-        { event: 'ARRIVAL', passed: false, checks: fullChecks({ subscribed: false }) },
-      ],
+      gate: {
+        global: globalChecks(),
+        events: [
+          { event: 'NEW_HOLD', passed: true, checks: eventChecks({ subscribed: true }) },
+          { event: 'ARRIVAL', passed: false, checks: eventChecks({ subscribed: false }) },
+        ],
+      },
       awsOptOut: { available: true, optedOut: false },
     },
   });
 });
 
-// The full recipient-gate check set for one event, mirroring the server response
-// (order + labels, including the AWS opt-out row inserted after the internal-DB one).
-function fullChecks ({ subscribed = true, awsOptedOut = false } = {}) {
+// Global prerequisites (identical across events), mirroring the server response order.
+function globalChecks ({ awsOptedOut = false } = {}) {
   return [
     { key: 'active', label: 'Account active', passed: true },
     { key: 'atFacility', label: 'Currently assigned to a facility', passed: true },
-    { key: 'audienceRole', label: 'In the audience for this event', passed: true },
     { key: 'hasPhoneNumber', label: 'Has a phone number', passed: true },
     { key: 'phoneVerified', label: 'Phone number verified', passed: true },
     { key: 'notificationsEnabled', label: 'Notifications active (not paused)', passed: true },
     { key: 'notOptedOut', label: 'Not opted out (internal DB)', passed: true },
     { key: 'awsNotOptedOut', label: 'Not opted out (AWS)', passed: !awsOptedOut },
+  ];
+}
+
+// Event-specific conditions (audience, subscription).
+function eventChecks ({ subscribed = true } = {}) {
+  return [
+    { key: 'audienceRole', label: 'In the audience for this event', passed: true },
     { key: 'subscribed', label: 'Subscribed to this event', passed: subscribed },
   ];
 }
@@ -195,13 +203,16 @@ describe('AdminUserSupportPage', () => {
     });
     expect(await screen.findByText('+14155550100')).toBeInTheDocument();
     expect(screen.getByText('RESET')).toBeInTheDocument();
-    // Gate matrix: condition rows + a Would-receive verdict (NEW_HOLD Yes, ARRIVAL No).
-    expect(screen.getByText('Would receive')).toBeInTheDocument();
+    // Global checklist + a per-event verdict (NEW_HOLD Yes, ARRIVAL No).
+    expect(screen.getByText(/Global requirements/)).toBeInTheDocument();
+    expect(screen.getByText('Account active')).toBeInTheDocument();
+    expect(screen.getByText('Per-event requirements')).toBeInTheDocument();
+    expect(screen.getByText('Meets all requirements?')).toBeInTheDocument();
     expect(screen.getByText('Subscribed to this event')).toBeInTheDocument();
     expect(screen.getByText('Yes')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
-    // AWS opt-out surfaced (the summary badge, distinct from the matrix row).
-    expect(screen.getByText('Not opted out')).toBeInTheDocument();
+    // AWS opt-out surfaced as an Enrollment row.
+    expect(screen.getByText('Opted out (AWS)')).toBeInTheDocument();
   });
 
   it('flags a mismatch when AWS says opted out but our record is clear', async () => {
@@ -223,8 +234,11 @@ describe('AdminUserSupportPage', () => {
           deletedAt: null,
         },
         otp: { lastSentAt: null, attempts: 0, expiresAt: null },
-        // AWS opt-out folds into the gate: the event does NOT pass, blocked by AWS.
-        gate: [{ event: 'NEW_HOLD', passed: false, checks: fullChecks({ awsOptedOut: true }) }],
+        // AWS opt-out is a global check; it fails, so the event's verdict is No.
+        gate: {
+          global: globalChecks({ awsOptedOut: true }),
+          events: [{ event: 'NEW_HOLD', passed: false, checks: eventChecks({ subscribed: true }) }],
+        },
         awsOptOut: { available: true, optedOut: true, optedOutTimestamp: '2026-02-01T00:00:00.000Z', endUserOptedOut: true },
       },
     });
@@ -233,7 +247,7 @@ describe('AdminUserSupportPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
 
     expect(await screen.findByText(/Mismatch:/)).toBeInTheDocument();
-    // The gate matrix shows the AWS requirement as a row, and the verdict is No.
+    // The global checklist shows the AWS requirement, and the verdict is No.
     expect(screen.getByText('Not opted out (AWS)')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
   });

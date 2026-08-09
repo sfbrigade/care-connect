@@ -24,27 +24,25 @@ function StateRow ({ label, children }) {
   );
 }
 
-// Live AWS opt-out status, plus a drift warning when it disagrees with our own
-// smsOptedOutAt mirror (the main thing this diagnostic exists to catch).
-function AwsOptOutSummary ({ awsOptOut, dbOptedOut }) {
-  if (!awsOptOut.available) {
-    return <Text size='sm' c='dimmed'>AWS opt-out status unavailable ({awsOptOut.reason}).</Text>;
-  }
-  const drift = awsOptOut.optedOut !== dbOptedOut;
+// Live AWS opt-out status as an Enrollment row, plus a drift warning when it disagrees
+// with our own smsOptedOutAt mirror (the main thing this diagnostic exists to catch).
+function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
+  const drift = awsOptOut.available && Boolean(awsOptOut.optedOut) !== dbOptedOut;
+  let value;
+  if (!awsOptOut.available) value = <Text span c='dimmed'>Unavailable ({awsOptOut.reason})</Text>;
+  else if (awsOptOut.optedOut) value = awsOptOut.optedOutTimestamp ? fmtDate(awsOptOut.optedOutTimestamp) : 'Yes';
+  else value = '—';
+
   return (
-    <Stack gap='xs'>
-      <StateRow label='Status'>
-        {awsOptOut.optedOut
-          ? <Badge color='red' variant='light'>Opted out{awsOptOut.optedOutTimestamp ? ` — ${fmtDate(awsOptOut.optedOutTimestamp)}` : ''}</Badge>
-          : <Badge color='green' variant='light'>Not opted out</Badge>}
-      </StateRow>
+    <>
+      <StateRow label='Opted out (AWS)'>{value}</StateRow>
       {drift && (
         <Alert color='orange' variant='light'>
           Mismatch: AWS says <strong>{awsOptOut.optedOut ? 'opted out' : 'not opted out'}</strong>, but our record says{' '}
           <strong>{dbOptedOut ? 'opted out' : 'not opted out'}</strong>. Sends may silently succeed or bounce until this is reconciled.
         </Alert>
       )}
-    </Stack>
+    </>
   );
 }
 
@@ -55,53 +53,62 @@ function GateCell ({ passed }) {
     : <IconX size={18} color='var(--mantine-color-red-6)' aria-label='not met' />;
 }
 
-// Matrix of the recipient-gate conditions: one column per event type, one row per
-// condition, a ✓/✗ in each cell, and a final "Would receive" verdict row. Reads far
-// more clearly than a per-event "No — <requirement>" sentence. Rows are the ordered
-// union of condition keys across events (all events share the same set in practice).
-function GateMatrix ({ gate }) {
-  if (!gate?.length) return null;
-
-  const seen = new Set();
-  const rows = [];
-  for (const g of gate) {
-    for (const c of g.checks) {
-      if (!seen.has(c.key)) { seen.add(c.key); rows.push({ key: c.key, label: c.label }); }
-    }
-  }
-  const passedFor = (g, key) => g.checks.find((c) => c.key === key)?.passed;
+// The recipient gate has two parts. GLOBAL prerequisites apply to every notification
+// (a single failure blocks all SMS), so they render once as a checklist. EVENT-specific
+// conditions (audience, subscription) vary by event, so they render as a compact matrix
+// with the "Would receive" verdict — which also reflects any global failure.
+function GateSection ({ gate }) {
+  if (!gate) return null;
+  const { global = [], events = [] } = gate;
 
   return (
-    <Table.ScrollContainer minWidth={360}>
-      <Table withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Requirement</Table.Th>
-            {gate.map((g) => <Table.Th key={g.event} ta='center'>{g.event}</Table.Th>)}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row) => (
-            <Table.Tr key={row.key}>
-              <Table.Td><Text size='sm'>{row.label}</Text></Table.Td>
-              {gate.map((g) => (
-                <Table.Td key={g.event} ta='center'><GateCell passed={passedFor(g, row.key)} /></Table.Td>
-              ))}
-            </Table.Tr>
-          ))}
-          <Table.Tr>
-            <Table.Td><Text size='sm' fw={600}>Would receive</Text></Table.Td>
-            {gate.map((g) => (
-              <Table.Td key={g.event} ta='center'>
-                {g.passed
-                  ? <Badge color='green' variant='light'>Yes</Badge>
-                  : <Badge color='gray' variant='light'>No</Badge>}
-              </Table.Td>
-            ))}
-          </Table.Tr>
-        </Table.Tbody>
-      </Table>
-    </Table.ScrollContainer>
+    <>
+      <Stack gap={6}>
+        <Text fw={600} size='sm'>Global requirements <Text span size='xs' c='dimmed' fw={400}>— all must pass to receive any SMS</Text></Text>
+        {global.map((c) => (
+          <Group key={c.key} gap='xs' wrap='nowrap' align='center'>
+            <GateCell passed={c.passed} />
+            <Text size='sm'>{c.label}</Text>
+          </Group>
+        ))}
+      </Stack>
+
+      {events.length > 0 && (
+        <Stack gap='xs'>
+          <Text fw={600} size='sm'>Per-event requirements</Text>
+          <Table.ScrollContainer minWidth={360}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Requirement</Table.Th>
+                  {events.map((e) => <Table.Th key={e.event} ta='center'>{e.event}</Table.Th>)}
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {events[0].checks.map((row, i) => (
+                  <Table.Tr key={row.key}>
+                    <Table.Td><Text size='sm'>{row.label}</Text></Table.Td>
+                    {events.map((e) => (
+                      <Table.Td key={e.event} ta='center'><GateCell passed={e.checks[i]?.passed} /></Table.Td>
+                    ))}
+                  </Table.Tr>
+                ))}
+                <Table.Tr>
+                  <Table.Td><Text size='sm' fw={600}>Meets all requirements?</Text></Table.Td>
+                  {events.map((e) => (
+                    <Table.Td key={e.event} ta='center'>
+                      {e.passed
+                        ? <Badge color='green' variant='light'>Yes</Badge>
+                        : <Badge color='gray' variant='light'>No</Badge>}
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </Stack>
+      )}
+    </>
   );
 }
 
@@ -283,17 +290,10 @@ function AdminUserSupportPage () {
                   <StateRow label='Current facility'>{smsState.state.currentFacilityName ?? '—'}</StateRow>
                   <StateRow label='Welcomed'>{fmtDate(smsState.state.smsWelcomedAt)}</StateRow>
                   <StateRow label='Opted out (internal DB)'>{fmtDate(smsState.state.smsOptedOutAt)}</StateRow>
+                  <AwsOptOutRows awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
                 </Stack>
 
-                <Stack gap='xs'>
-                  <Text fw={600} size='sm'>AWS opt-out list</Text>
-                  <AwsOptOutSummary awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
-                </Stack>
-
-                <Stack gap='xs'>
-                  <Text fw={600} size='sm'>Would receive notifications</Text>
-                  <GateMatrix gate={smsState.gate} />
-                </Stack>
+                <GateSection gate={smsState.gate} />
 
                 <Stack gap='xs'>
                   <Text fw={600} size='sm'>Verification (OTP)</Text>

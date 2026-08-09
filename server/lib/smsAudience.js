@@ -32,12 +32,12 @@ export function smsGateChecks ({ event, facilityId }) {
     // null-guarded so a no-facility user fails rather than matching null === null; the
     // `where` is only ever built for real events, where facilityId is never null.
     { key: 'atFacility', label: 'Currently assigned to a facility', where: { currentFacilityId: facilityId }, test: (u) => facilityId != null && u.currentFacilityId === facilityId },
-    { key: 'audienceRole', label: 'In the audience for this event', where: { roles: { hasSome: audience } }, test: (u) => (u.roles ?? []).some((r) => audience.includes(r)) },
+    { key: 'audienceRole', label: 'In the audience for this event', eventSpecific: true, where: { roles: { hasSome: audience } }, test: (u) => (u.roles ?? []).some((r) => audience.includes(r)) },
     { key: 'hasPhoneNumber', label: 'Has a phone number', where: { phoneNumber: { not: null } }, test: (u) => u.phoneNumber != null },
     { key: 'phoneVerified', label: 'Phone number verified', where: { phoneVerifiedAt: { not: null } }, test: (u) => u.phoneVerifiedAt != null },
     { key: 'notificationsEnabled', label: 'Notifications active (not paused)', where: { notificationsEnabled: true }, test: (u) => u.notificationsEnabled === true },
     { key: 'notOptedOut', label: 'Not opted out (internal DB)', where: { smsOptedOutAt: null }, test: (u) => u.smsOptedOutAt == null },
-    { key: 'subscribed', label: 'Subscribed to this event', where: { subscribedEvents: { has: event } }, test: (u) => (u.subscribedEvents ?? []).includes(event) },
+    { key: 'subscribed', label: 'Subscribed to this event', eventSpecific: true, where: { subscribedEvents: { has: event } }, test: (u) => (u.subscribedEvents ?? []).includes(event) },
   ];
 }
 

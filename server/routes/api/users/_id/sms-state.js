@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import User from '#models/user.js';
 import sms from '#lib/sms.js';
-import { EVENT_AUDIENCE, smsGateResult } from '#lib/smsAudience.js';
+import { EVENT_AUDIENCE, smsGateChecks, smsGateResult } from '#lib/smsAudience.js';
 
 // Admin SMS diagnostic (read-only). Surfaces a user's full SMS enrollment state, the
 // recipient-gate result per event (WHY they would/wouldn't receive notifications),
@@ -46,11 +46,17 @@ export default async function (fastify) {
               attempts: z.number(),
               expiresAt: z.coerce.date().nullable(),
             }),
-            gate: z.array(z.object({
-              event: z.string(),
-              passed: z.boolean(),
-              checks: z.array(GateCheckSchema),
-            })),
+            // Split so the UI needn't repeat identical global rows per event: `global`
+            // conditions apply to every notification; `events` carries only the
+            // event-specific conditions plus each event's overall verdict.
+            gate: z.object({
+              global: z.array(GateCheckSchema),
+              events: z.array(z.object({
+                event: z.string(),
+                passed: z.boolean(),
+                checks: z.array(GateCheckSchema),
+              })),
+            }),
             awsOptOut: z.object({
               available: z.boolean(),
               optedOut: z.boolean().optional(),
@@ -107,13 +113,23 @@ export default async function (fastify) {
       // check AWS — include it as its own gate condition. Omitted only when the AWS
       // status is unavailable (non-aws transport / API error), since we can't assert it.
       const awsAvailable = awsOptOut.available === true;
-      const gate = events.map((event) => {
+
+      // Event-specific condition keys (audience, subscription); everything else is a
+      // GLOBAL prerequisite whose value is identical across events — so we render it
+      // once. The AWS opt-out (key 'awsNotOptedOut', added below) is global too.
+      const eventSpecificKeys = new Set(
+        smsGateChecks({ event: events[0], facilityId: data.currentFacilityId })
+          .filter((c) => c.eventSpecific)
+          .map((c) => c.key)
+      );
+
+      const perEvent = events.map((event) => {
         const result = smsGateResult(data, { event, facilityId: data.currentFacilityId });
         let checks = result.checks;
         let passed = result.passed;
         if (awsAvailable) {
-          // Insert right after the internal-DB opt-out check so the two opt-out rows sit
-          // adjacent in the diagnostic matrix.
+          // Insert right after the internal-DB opt-out check so the two opt-out rows
+          // sit adjacent in the global list.
           const awsCheck = { key: 'awsNotOptedOut', label: 'Not opted out (AWS)', passed: !awsOptOut.optedOut };
           const i = checks.findIndex((c) => c.key === 'notOptedOut');
           checks = i === -1
@@ -123,6 +139,16 @@ export default async function (fastify) {
         }
         return { event, passed, checks };
       });
+
+      const gate = {
+        // Global rows are identical across events, so take them from the first.
+        global: perEvent[0].checks.filter((c) => !eventSpecificKeys.has(c.key)),
+        events: perEvent.map((e) => ({
+          event: e.event,
+          passed: e.passed,
+          checks: e.checks.filter((c) => eventSpecificKeys.has(c.key)),
+        })),
+      };
 
       await fastify.prisma.adminSecurityEvent.create({
         data: {

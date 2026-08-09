@@ -80,10 +80,15 @@ test('GET /api/users/:id/sms-state', async (t) => {
     assert.strictEqual(body.state.notificationsEnabled, true);
     assert.deepStrictEqual(body.state.subscribedEvents.sort(), ['ARRIVAL', 'EXIT', 'NEW_HOLD']);
 
-    // Every event passes the gate for a fully-enrolled recipient.
-    for (const g of body.gate) {
-      assert.strictEqual(g.passed, true, `${g.event} should pass`);
+    // Global prerequisites all pass, and every event's verdict passes.
+    for (const c of body.gate.global) {
+      assert.strictEqual(c.passed, true, `global ${c.key} should pass`);
     }
+    for (const e of body.gate.events) {
+      assert.strictEqual(e.passed, true, `${e.event} should pass`);
+    }
+    // Per-event checks carry only the event-specific conditions.
+    assert.deepStrictEqual(body.gate.events[0].checks.map((c) => c.key).sort(), ['audienceRole', 'subscribed']);
     assert.strictEqual(body.awsOptOut.optedOut, false);
     assert.strictEqual(describeOptOutStatus.mock.callCount(), 1);
 
@@ -99,10 +104,11 @@ test('GET /api/users/:id/sms-state', async (t) => {
     const res = await app.inject().get(`/api/users/${u.id}/sms-state`).headers(adminHeaders);
     const body = JSON.parse(res.body);
 
-    for (const g of body.gate) {
-      assert.strictEqual(g.passed, false);
-      const failing = g.checks.filter((c) => !c.passed).map((c) => c.key);
-      assert.ok(failing.includes('notificationsEnabled'), 'notificationsEnabled is the failing check');
+    // notificationsEnabled is a GLOBAL prerequisite — failing it blocks every event.
+    const globalFailing = body.gate.global.filter((c) => !c.passed).map((c) => c.key);
+    assert.ok(globalFailing.includes('notificationsEnabled'), 'notificationsEnabled is the failing global check');
+    for (const e of body.gate.events) {
+      assert.strictEqual(e.passed, false, `${e.event} verdict blocked by the global failure`);
     }
   });
 
@@ -118,15 +124,14 @@ test('GET /api/users/:id/sms-state', async (t) => {
     assert.strictEqual(body.state.smsOptedOutAt, null); // our record: not opted out
     assert.strictEqual(body.awsOptOut.optedOut, true); // AWS: opted out
 
-    // Every event's verdict must be "would NOT receive" — the send would bounce at AWS —
-    // with the AWS opt-out named as the blocker, even though our DB notOptedOut passes.
-    for (const g of body.gate) {
-      assert.strictEqual(g.passed, false, `${g.event} must not pass while AWS-opted-out`);
-      const failing = g.checks.filter((c) => !c.passed).map((c) => c.key);
-      assert.ok(failing.includes('awsNotOptedOut'), 'awsNotOptedOut is the blocker');
-      // Our DB mirror still individually "passes" — the drift is visible in the checks.
-      const dbOptOutCheck = g.checks.find((c) => c.key === 'notOptedOut');
-      assert.strictEqual(dbOptOutCheck.passed, true);
+    // The AWS opt-out and our DB mirror are both GLOBAL checks. AWS blocks delivery,
+    // while our DB mirror still "passes" — the drift is visible side-by-side — and
+    // every event's verdict is "would NOT receive" because the send would bounce.
+    const globalByKey = Object.fromEntries(body.gate.global.map((c) => [c.key, c]));
+    assert.strictEqual(globalByKey.awsNotOptedOut.passed, false, 'awsNotOptedOut is the blocker');
+    assert.strictEqual(globalByKey.notOptedOut.passed, true, 'our DB mirror still passes (drift)');
+    for (const e of body.gate.events) {
+      assert.strictEqual(e.passed, false, `${e.event} must not pass while AWS-opted-out`);
     }
   });
 });
