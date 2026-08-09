@@ -17,9 +17,9 @@ const fmtDate = (v) => (v ? new Date(v).toLocaleString() : '—');
 function StateRow ({ label, children }) {
   return (
     <Group gap='xs' wrap='nowrap' align='baseline'>
-      <Text size='sm' c='dimmed' style={{ minWidth: 160 }}>{label}</Text>
+      <Text size='md' c='dimmed' style={{ minWidth: 180 }}>{label}</Text>
       {/* span, not the default <p>: some values render a Badge (<div>). */}
-      <Text span size='sm'>{children}</Text>
+      <Text span size='md'>{children}</Text>
     </Group>
   );
 }
@@ -47,7 +47,7 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
 }
 
 function GateCell ({ passed }) {
-  if (passed == null) return <Text size='sm' c='dimmed'>—</Text>;
+  if (passed == null) return <Text size='md' c='dimmed'>—</Text>;
   return passed
     ? <IconCheck size={18} color='var(--mantine-color-green-6)' aria-label='met' />
     : <IconX size={18} color='var(--mantine-color-red-6)' aria-label='not met' />;
@@ -64,18 +64,19 @@ function GateSection ({ gate }) {
   return (
     <>
       <Stack gap={6}>
-        <Text fw={600} size='sm'>Global requirements <Text span size='xs' c='dimmed' fw={400}>— all must pass to receive any SMS</Text></Text>
+        <Title order={4}>Global requirements</Title>
+        <Text size='sm' c='dimmed'>All must pass to receive any SMS.</Text>
         {global.map((c) => (
           <Group key={c.key} gap='xs' wrap='nowrap' align='center'>
             <GateCell passed={c.passed} />
-            <Text size='sm'>{c.label}</Text>
+            <Text size='md'>{c.label}</Text>
           </Group>
         ))}
       </Stack>
 
       {events.length > 0 && (
         <Stack gap='xs'>
-          <Text fw={600} size='sm'>Per-event requirements</Text>
+          <Title order={4}>Per-event requirements</Title>
           <Table.ScrollContainer minWidth={360}>
             <Table withTableBorder withColumnBorders>
               <Table.Thead>
@@ -87,14 +88,14 @@ function GateSection ({ gate }) {
               <Table.Tbody>
                 {events[0].checks.map((row, i) => (
                   <Table.Tr key={row.key}>
-                    <Table.Td><Text size='sm'>{row.label}</Text></Table.Td>
+                    <Table.Td><Text size='md'>{row.label}</Text></Table.Td>
                     {events.map((e) => (
                       <Table.Td key={e.event} ta='center'><GateCell passed={e.checks[i]?.passed} /></Table.Td>
                     ))}
                   </Table.Tr>
                 ))}
                 <Table.Tr>
-                  <Table.Td><Text size='sm' fw={600}>Meets all requirements?</Text></Table.Td>
+                  <Table.Td><Text size='md' fw={600}>Meets all requirements?</Text></Table.Td>
                   {events.map((e) => (
                     <Table.Td key={e.event} ta='center'>
                       {e.passed
@@ -281,7 +282,7 @@ function AdminUserSupportPage () {
             {smsState && (
               <Stack gap='lg'>
                 <Stack gap='xs'>
-                  <Text fw={600} size='sm'>Enrollment</Text>
+                  <Title order={4}>Enrollment</Title>
                   <StateRow label='Phone number'>{smsState.state.phoneNumber ? <Code>{smsState.state.phoneNumber}</Code> : '—'}</StateRow>
                   <StateRow label='Verified'>{fmtDate(smsState.state.phoneVerifiedAt)}</StateRow>
                   <StateRow label='Consented'>{fmtDate(smsState.state.smsConsentAt)}</StateRow>
@@ -296,7 +297,7 @@ function AdminUserSupportPage () {
                 <GateSection gate={smsState.gate} />
 
                 <Stack gap='xs'>
-                  <Text fw={600} size='sm'>Verification (OTP)</Text>
+                  <Title order={4}>Verification (OTP)</Title>
                   <StateRow label='Last code sent'>{fmtDate(smsState.otp.lastSentAt)}</StateRow>
                   <StateRow label='Attempts'>{smsState.otp.attempts}</StateRow>
                   <StateRow label='Code expires'>{fmtDate(smsState.otp.expiresAt)}</StateRow>
