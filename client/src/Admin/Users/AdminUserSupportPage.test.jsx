@@ -112,13 +112,29 @@ beforeEach(() => {
       },
       otp: { lastSentAt: null, attempts: 0, expiresAt: null },
       gate: [
-        { event: 'NEW_HOLD', passed: true, checks: [] },
-        { event: 'ARRIVAL', passed: false, checks: [{ key: 'subscribed', label: 'Subscribed to this event', passed: false }] },
+        { event: 'NEW_HOLD', passed: true, checks: fullChecks({ subscribed: true }) },
+        { event: 'ARRIVAL', passed: false, checks: fullChecks({ subscribed: false }) },
       ],
       awsOptOut: { available: true, optedOut: false },
     },
   });
 });
+
+// The full recipient-gate check set for one event, mirroring the server response
+// (order + labels, including the AWS opt-out row inserted after the internal-DB one).
+function fullChecks ({ subscribed = true, awsOptedOut = false } = {}) {
+  return [
+    { key: 'active', label: 'Account active', passed: true },
+    { key: 'atFacility', label: 'Currently assigned to a facility', passed: true },
+    { key: 'audienceRole', label: 'In the audience for this event', passed: true },
+    { key: 'hasPhoneNumber', label: 'Has a phone number', passed: true },
+    { key: 'phoneVerified', label: 'Phone number verified', passed: true },
+    { key: 'notificationsEnabled', label: 'Notifications active (not paused)', passed: true },
+    { key: 'notOptedOut', label: 'Not opted out (internal DB)', passed: true },
+    { key: 'awsNotOptedOut', label: 'Not opted out (AWS)', passed: !awsOptedOut },
+    { key: 'subscribed', label: 'Subscribed to this event', passed: subscribed },
+  ];
+}
 
 afterEach(() => {
   cleanup();
@@ -172,17 +188,19 @@ describe('AdminUserSupportPage', () => {
   it('loads and shows SMS notification state, including the per-event gate', async () => {
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS notification state' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
 
     await waitFor(() => {
       expect(apiMocks.getSmsState).toHaveBeenCalledWith('user-1');
     });
     expect(await screen.findByText('+14155550100')).toBeInTheDocument();
     expect(screen.getByText('RESET')).toBeInTheDocument();
-    // Per-event gate: one event passes (Yes badge), ARRIVAL fails with the reason.
+    // Gate matrix: condition rows + a Would-receive verdict (NEW_HOLD Yes, ARRIVAL No).
+    expect(screen.getByText('Would receive')).toBeInTheDocument();
+    expect(screen.getByText('Subscribed to this event')).toBeInTheDocument();
     expect(screen.getByText('Yes')).toBeInTheDocument();
-    expect(screen.getByText(/No — Subscribed to this event/)).toBeInTheDocument();
-    // AWS opt-out surfaced.
+    expect(screen.getByText('No')).toBeInTheDocument();
+    // AWS opt-out surfaced (the summary badge, distinct from the matrix row).
     expect(screen.getByText('Not opted out')).toBeInTheDocument();
   });
 
@@ -206,16 +224,17 @@ describe('AdminUserSupportPage', () => {
         },
         otp: { lastSentAt: null, attempts: 0, expiresAt: null },
         // AWS opt-out folds into the gate: the event does NOT pass, blocked by AWS.
-        gate: [{ event: 'NEW_HOLD', passed: false, checks: [{ key: 'awsNotOptedOut', label: 'Not opted out at carrier (AWS)', passed: false }] }],
+        gate: [{ event: 'NEW_HOLD', passed: false, checks: fullChecks({ awsOptedOut: true }) }],
         awsOptOut: { available: true, optedOut: true, optedOutTimestamp: '2026-02-01T00:00:00.000Z', endUserOptedOut: true },
       },
     });
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS notification state' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
 
     expect(await screen.findByText(/Mismatch:/)).toBeInTheDocument();
-    // The verdict reflects reality: would NOT receive, blocked by AWS.
-    expect(screen.getByText(/No — Not opted out at carrier \(AWS\)/)).toBeInTheDocument();
+    // The gate matrix shows the AWS requirement as a row, and the verdict is No.
+    expect(screen.getByText('Not opted out (AWS)')).toBeInTheDocument();
+    expect(screen.getByText('No')).toBeInTheDocument();
   });
 });

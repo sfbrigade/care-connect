@@ -102,17 +102,24 @@ export default async function (fastify) {
 
       // Per-event gate: a user receives events at their OWN current facility (the
       // atFacility check null-guards a no-facility user, so every event fails outright).
-      // A live AWS opt-out is authoritative and blocks delivery even when our own
-      // smsOptedOutAt mirror is clear (the send would bounce), so fold it in as an
-      // extra failing check — otherwise the verdict would falsely read "would receive".
-      const awsBlocked = awsOptOut.available && awsOptOut.optedOut === true;
+      // The live AWS opt-out is authoritative and blocks delivery even when our own
+      // smsOptedOutAt mirror is clear (the send would bounce), so — whenever we could
+      // check AWS — include it as its own gate condition. Omitted only when the AWS
+      // status is unavailable (non-aws transport / API error), since we can't assert it.
+      const awsAvailable = awsOptOut.available === true;
       const gate = events.map((event) => {
         const result = smsGateResult(data, { event, facilityId: data.currentFacilityId });
-        const checks = [...result.checks];
+        let checks = result.checks;
         let passed = result.passed;
-        if (awsBlocked) {
-          checks.push({ key: 'awsNotOptedOut', label: 'Not opted out at carrier (AWS)', passed: false });
-          passed = false;
+        if (awsAvailable) {
+          // Insert right after the internal-DB opt-out check so the two opt-out rows sit
+          // adjacent in the diagnostic matrix.
+          const awsCheck = { key: 'awsNotOptedOut', label: 'Not opted out (AWS)', passed: !awsOptOut.optedOut };
+          const i = checks.findIndex((c) => c.key === 'notOptedOut');
+          checks = i === -1
+            ? [...checks, awsCheck]
+            : [...checks.slice(0, i + 1), awsCheck, ...checks.slice(i + 1)];
+          if (awsOptOut.optedOut) passed = false;
         }
         return { event, passed, checks };
       });

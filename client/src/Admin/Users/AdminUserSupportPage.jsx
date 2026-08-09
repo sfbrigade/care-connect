@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Alert, Badge, Button, Code, Container, Divider, Group, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Button, Code, Container, Divider, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { StatusCodes } from 'http-status-codes';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -18,7 +18,8 @@ function StateRow ({ label, children }) {
   return (
     <Group gap='xs' wrap='nowrap' align='baseline'>
       <Text size='sm' c='dimmed' style={{ minWidth: 160 }}>{label}</Text>
-      <Text size='sm'>{children}</Text>
+      {/* span, not the default <p>: some values render a Badge (<div>). */}
+      <Text span size='sm'>{children}</Text>
     </Group>
   );
 }
@@ -32,7 +33,7 @@ function AwsOptOutSummary ({ awsOptOut, dbOptedOut }) {
   const drift = awsOptOut.optedOut !== dbOptedOut;
   return (
     <Stack gap='xs'>
-      <StateRow label='AWS opt-out list'>
+      <StateRow label='Status'>
         {awsOptOut.optedOut
           ? <Badge color='red' variant='light'>Opted out{awsOptOut.optedOutTimestamp ? ` — ${fmtDate(awsOptOut.optedOutTimestamp)}` : ''}</Badge>
           : <Badge color='green' variant='light'>Not opted out</Badge>}
@@ -44,6 +45,63 @@ function AwsOptOutSummary ({ awsOptOut, dbOptedOut }) {
         </Alert>
       )}
     </Stack>
+  );
+}
+
+function GateCell ({ passed }) {
+  if (passed == null) return <Text size='sm' c='dimmed'>—</Text>;
+  return passed
+    ? <IconCheck size={18} color='var(--mantine-color-green-6)' aria-label='met' />
+    : <IconX size={18} color='var(--mantine-color-red-6)' aria-label='not met' />;
+}
+
+// Matrix of the recipient-gate conditions: one column per event type, one row per
+// condition, a ✓/✗ in each cell, and a final "Would receive" verdict row. Reads far
+// more clearly than a per-event "No — <requirement>" sentence. Rows are the ordered
+// union of condition keys across events (all events share the same set in practice).
+function GateMatrix ({ gate }) {
+  if (!gate?.length) return null;
+
+  const seen = new Set();
+  const rows = [];
+  for (const g of gate) {
+    for (const c of g.checks) {
+      if (!seen.has(c.key)) { seen.add(c.key); rows.push({ key: c.key, label: c.label }); }
+    }
+  }
+  const passedFor = (g, key) => g.checks.find((c) => c.key === key)?.passed;
+
+  return (
+    <Table.ScrollContainer minWidth={360}>
+      <Table withTableBorder withColumnBorders>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Requirement</Table.Th>
+            {gate.map((g) => <Table.Th key={g.event} ta='center'>{g.event}</Table.Th>)}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row) => (
+            <Table.Tr key={row.key}>
+              <Table.Td><Text size='sm'>{row.label}</Text></Table.Td>
+              {gate.map((g) => (
+                <Table.Td key={g.event} ta='center'><GateCell passed={passedFor(g, row.key)} /></Table.Td>
+              ))}
+            </Table.Tr>
+          ))}
+          <Table.Tr>
+            <Table.Td><Text size='sm' fw={600}>Would receive</Text></Table.Td>
+            {gate.map((g) => (
+              <Table.Td key={g.event} ta='center'>
+                {g.passed
+                  ? <Badge color='green' variant='light'>Yes</Badge>
+                  : <Badge color='gray' variant='light'>No</Badge>}
+              </Table.Td>
+            ))}
+          </Table.Tr>
+        </Table.Tbody>
+      </Table>
+    </Table.ScrollContainer>
   );
 }
 
@@ -210,7 +268,7 @@ function AdminUserSupportPage () {
                 onClick={() => getSmsStateMutation.mutate()}
                 type='button'
               >
-                Show SMS notification state
+                Show SMS diagnostic
               </Button>
             </Group>
             {smsState && (
@@ -224,24 +282,17 @@ function AdminUserSupportPage () {
                   <StateRow label='Subscribed events'>{smsState.state.subscribedEvents.length ? smsState.state.subscribedEvents.join(', ') : 'None'}</StateRow>
                   <StateRow label='Current facility'>{smsState.state.currentFacilityName ?? '—'}</StateRow>
                   <StateRow label='Welcomed'>{fmtDate(smsState.state.smsWelcomedAt)}</StateRow>
-                  <StateRow label='Opted out (our record)'>{fmtDate(smsState.state.smsOptedOutAt)}</StateRow>
+                  <StateRow label='Opted out (internal DB)'>{fmtDate(smsState.state.smsOptedOutAt)}</StateRow>
                 </Stack>
 
                 <Stack gap='xs'>
-                  <Text fw={600} size='sm'>Carrier opt-out (AWS)</Text>
+                  <Text fw={600} size='sm'>AWS opt-out list</Text>
                   <AwsOptOutSummary awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
                 </Stack>
 
                 <Stack gap='xs'>
                   <Text fw={600} size='sm'>Would receive notifications</Text>
-                  {smsState.gate.map((g) => (
-                    <Group key={g.event} gap='xs' wrap='nowrap' align='baseline'>
-                      <Text size='sm' style={{ minWidth: 100 }}>{g.event}</Text>
-                      {g.passed
-                        ? <Badge color='green' variant='light'>Yes</Badge>
-                        : <Badge color='gray' variant='light'>No — {g.checks.filter((c) => !c.passed).map((c) => c.label).join(', ')}</Badge>}
-                    </Group>
-                  ))}
+                  <GateMatrix gate={smsState.gate} />
                 </Stack>
 
                 <Stack gap='xs'>
