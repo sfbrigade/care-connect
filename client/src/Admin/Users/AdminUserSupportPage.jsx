@@ -5,7 +5,7 @@ import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { StatusCodes } from 'http-status-codes';
-import { IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -38,12 +38,8 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
     <>
       <StateRow label='Opted out (AWS)'>{value}</StateRow>
       {drift && (
-        <Alert color='orange' variant='light' title='Opt-out mismatch'>
-          {awsOut
-            // We only gate on our own record, so a clear record means we attempt the send.
-            ? 'This number is on AWS’s opt-out list, but our record is clear — so we attempt to send and AWS rejects every message.'
-            // Our record blocks the send before it's ever attempted.
-            : 'Our record marks this number opted out, but it isn’t on AWS’s opt-out list — so we never attempt a send, even though AWS would accept it.'}
+        <Alert color='orange' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out mismatch'>
+          Our internal opt-out record disagrees with AWS. This should not happen; developers should investigate.
         </Alert>
       )}
     </>
@@ -67,6 +63,7 @@ function GateSection ({ gate }) {
 
   return (
     <>
+      <Divider color='gray.2' />
       <Stack gap={6}>
         <Title order={4}>Global requirements</Title>
         <Text size='sm' c='dimmed'>All must pass to receive any SMS.</Text>
@@ -79,39 +76,42 @@ function GateSection ({ gate }) {
       </Stack>
 
       {events.length > 0 && (
-        <Stack gap='xs'>
-          <Title order={4}>Per-event requirements</Title>
-          <Table.ScrollContainer minWidth={360}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Requirement</Table.Th>
-                  {events.map((e) => <Table.Th key={e.event} ta='center'>{e.event}</Table.Th>)}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {events[0].checks.map((row, i) => (
-                  <Table.Tr key={row.key}>
-                    <Table.Td><Text size='md'>{row.label}</Text></Table.Td>
+        <>
+          <Divider color='gray.2' />
+          <Stack gap='xs'>
+            <Title order={4}>Per-event requirements</Title>
+            <Table.ScrollContainer minWidth={360}>
+              <Table withTableBorder withColumnBorders>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Requirement</Table.Th>
+                    {events.map((e) => <Table.Th key={e.event} ta='center'>{e.event}</Table.Th>)}
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {events[0].checks.map((row, i) => (
+                    <Table.Tr key={row.key}>
+                      <Table.Td><Text size='md'>{row.label}</Text></Table.Td>
+                      {events.map((e) => (
+                        <Table.Td key={e.event} ta='center'><GateCell passed={e.checks[i]?.passed} /></Table.Td>
+                      ))}
+                    </Table.Tr>
+                  ))}
+                  <Table.Tr>
+                    <Table.Td><Text size='md' fw={600}>Meets all requirements?</Text></Table.Td>
                     {events.map((e) => (
-                      <Table.Td key={e.event} ta='center'><GateCell passed={e.checks[i]?.passed} /></Table.Td>
+                      <Table.Td key={e.event} ta='center'>
+                        {e.passed
+                          ? <Badge color='green' variant='light'>Yes</Badge>
+                          : <Badge color='red' variant='light'>No</Badge>}
+                      </Table.Td>
                     ))}
                   </Table.Tr>
-                ))}
-                <Table.Tr>
-                  <Table.Td><Text size='md' fw={600}>Meets all requirements?</Text></Table.Td>
-                  {events.map((e) => (
-                    <Table.Td key={e.event} ta='center'>
-                      {e.passed
-                        ? <Badge color='green' variant='light'>Yes</Badge>
-                        : <Badge color='red' variant='light'>No</Badge>}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </Stack>
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          </Stack>
+        </>
       )}
     </>
   );
@@ -300,6 +300,7 @@ function AdminUserSupportPage () {
 
                 <GateSection gate={smsState.gate} />
 
+                <Divider color='gray.2' />
                 <Stack gap='xs'>
                   <Title order={4}>Verification (OTP)</Title>
                   <StateRow label='Last code sent'>{fmtDate(smsState.otp.lastSentAt)}</StateRow>
