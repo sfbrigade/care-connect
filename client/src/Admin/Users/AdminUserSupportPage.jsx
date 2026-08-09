@@ -27,7 +27,8 @@ function StateRow ({ label, children }) {
 // Live AWS opt-out status as an Enrollment row, plus a drift warning when it disagrees
 // with our own smsOptedOutAt mirror (the main thing this diagnostic exists to catch).
 function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
-  const drift = awsOptOut.available && Boolean(awsOptOut.optedOut) !== dbOptedOut;
+  const awsOut = Boolean(awsOptOut.optedOut);
+  const drift = awsOptOut.available && awsOut !== dbOptedOut;
   let value;
   if (!awsOptOut.available) value = <Text span c='dimmed'>Unavailable ({awsOptOut.reason})</Text>;
   else if (awsOptOut.optedOut) value = awsOptOut.optedOutTimestamp ? fmtDate(awsOptOut.optedOutTimestamp) : 'Yes';
@@ -37,9 +38,12 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
     <>
       <StateRow label='Opted out (AWS)'>{value}</StateRow>
       {drift && (
-        <Alert color='orange' variant='light'>
-          Mismatch: AWS says <strong>{awsOptOut.optedOut ? 'opted out' : 'not opted out'}</strong>, but our record says{' '}
-          <strong>{dbOptedOut ? 'opted out' : 'not opted out'}</strong>. Sends may silently succeed or bounce until this is reconciled.
+        <Alert color='orange' variant='light' title='Opt-out mismatch'>
+          {awsOut
+            // We only gate on our own record, so a clear record means we attempt the send.
+            ? 'This number is on AWS’s opt-out list, but our record is clear — so we attempt to send and AWS rejects every message.'
+            // Our record blocks the send before it's ever attempted.
+            : 'Our record marks this number opted out, but it isn’t on AWS’s opt-out list — so we never attempt a send, even though AWS would accept it.'}
         </Alert>
       )}
     </>
@@ -191,14 +195,14 @@ function AdminUserSupportPage () {
   return (
     <>
       <Head>
-        <title>Login Support</title>
+        <title>User Support</title>
       </Head>
       <Header>
         <IconButtonLink icon={IconArrowLeft} to='/admin/users' aria-label='Go back' />
       </Header>
       <Container>
         <Stack>
-          <Title>Login support</Title>
+          <Title>User support</Title>
           {user && (
             <Text c='dimmed'>
               {user.firstName} {user.lastName} &lt;{user.email}&gt;

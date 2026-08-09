@@ -246,7 +246,9 @@ describe('AdminUserSupportPage', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
 
-    expect(await screen.findByText(/Mismatch:/)).toBeInTheDocument();
+    // Directional mismatch callout: AWS opted out + our record clear → we send, AWS rejects.
+    expect(await screen.findByText('Opt-out mismatch')).toBeInTheDocument();
+    expect(screen.getByText(/AWS rejects every message/)).toBeInTheDocument();
     // The global checklist shows the AWS requirement, and the verdict is No.
     expect(screen.getByText('Not opted out (AWS)')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
