@@ -311,7 +311,7 @@ describe('AdminUserSupportPage', () => {
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Override SMS Opt-out' }));
 
-    expect(await screen.findByText(/only be opted back in once every/i)).toBeInTheDocument();
+    expect(await screen.findByText(/reset only once every/i)).toBeInTheDocument();
   });
 
   it('opt-out history: renders opt-out and opt-in events plus a next-allowed estimate', async () => {
@@ -329,8 +329,11 @@ describe('AdminUserSupportPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
 
     expect(await screen.findByText('Opt-out history')).toBeInTheDocument();
-    expect(screen.getByText('Opted out')).toBeInTheDocument();
-    expect(screen.getByText('Opted in')).toBeInTheDocument();
+    // Action column distinguishes the two directions; Result shows the outcome.
+    expect(screen.getByText('Opt-out')).toBeInTheDocument();
+    expect(screen.getByText('Opt-in')).toBeInTheDocument();
+    expect(screen.getByText('Recorded')).toBeInTheDocument(); // opt-out result
+    expect(screen.getByText('Succeeded')).toBeInTheDocument(); // opt-in result
     expect(screen.getByText(/Earliest next opt-in/)).toBeInTheDocument();
   });
 });

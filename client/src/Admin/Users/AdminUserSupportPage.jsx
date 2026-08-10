@@ -46,15 +46,20 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
   );
 }
 
-// Label + color for one opt event. Opt-outs are uniform; opt-ins vary by outcome.
-function eventBadge (e) {
-  if (e.action === 'opt_out') return { label: 'Opted out', color: 'red' };
-  if (e.outcome === 'restored') return { label: 'Opted in', color: 'green' };
-  if (e.outcome === 'blocked_30_day') return { label: 'Opt-in blocked (30-day limit)', color: 'yellow' };
-  return { label: 'Opt-in failed', color: 'red' };
+// What was attempted (direction).
+function actionLabel (e) {
+  return e.action === 'opt_out' ? 'Opt-out' : 'Opt-in';
 }
 
-// How the event happened, for the trailing "· <who>".
+// What happened (outcome) — a colored badge. Opt-outs always just record; opt-ins vary.
+function resultBadge (e) {
+  if (e.action === 'opt_out') return { label: 'Recorded', color: 'gray' };
+  if (e.outcome === 'restored') return { label: 'Succeeded', color: 'green' };
+  if (e.outcome === 'blocked_30_day') return { label: 'Blocked', color: 'yellow' };
+  return { label: 'Failed', color: 'red' };
+}
+
+// Who / how it happened.
 function eventSource (e) {
   if (e.source === 'admin') return `admin override (${e.actor ?? 'admin'})`;
   if (e.source === 'inbound_stop') return 'user (STOP)';
@@ -63,28 +68,46 @@ function eventSource (e) {
 }
 
 // Recent opt-out / opt-in events for this number (inbound STOP/START + admin override),
-// plus an estimated earliest next opt-in.
+// as a table, plus an estimated earliest next opt-in.
 function OptHistory ({ optHistory }) {
   const events = optHistory?.events ?? [];
-  if (events.length === 0) return <Text size='sm' c='dimmed'>No opt-out or opt-in events recorded.</Text>;
   return (
     <Stack gap='xs'>
-      {optHistory.nextAllowedAfter && (
+      {optHistory?.nextAllowedAfter && (
         <Text size='sm' c='dimmed'>
           Earliest next opt-in ≈ {fmtDate(optHistory.nextAllowedAfter)} (30 days after the last successful
           opt-in).
         </Text>
       )}
-      {events.map((e, i) => {
-        const badge = eventBadge(e);
-        return (
-          <Group key={i} gap='xs' wrap='nowrap' align='center'>
-            <Badge color={badge.color} variant='light'>{badge.label}</Badge>
-            <Text size='sm'>{fmtDate(e.at)}</Text>
-            <Text size='sm' c='dimmed'>· {eventSource(e)}</Text>
-          </Group>
-        );
-      })}
+      {events.length === 0
+        ? <Text size='sm' c='dimmed'>No opt-out or opt-in events recorded.</Text>
+        : (
+          <Table.ScrollContainer minWidth={480}>
+            <Table withTableBorder>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Action</Table.Th>
+                  <Table.Th>Result</Table.Th>
+                  <Table.Th>When</Table.Th>
+                  <Table.Th>By</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {events.map((e, i) => {
+                  const result = resultBadge(e);
+                  return (
+                    <Table.Tr key={i}>
+                      <Table.Td><Text size='sm'>{actionLabel(e)}</Text></Table.Td>
+                      <Table.Td><Badge color={result.color} variant='light'>{result.label}</Badge></Table.Td>
+                      <Table.Td><Text size='sm'>{fmtDate(e.at)}</Text></Table.Td>
+                      <Table.Td><Text size='sm'>{eventSource(e)}</Text></Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+          )}
     </Stack>
   );
 }
