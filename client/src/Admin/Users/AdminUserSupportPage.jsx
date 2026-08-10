@@ -5,7 +5,7 @@ import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 import { StatusCodes } from 'http-status-codes';
-import { IconAlertCircle, IconArrowLeft, IconCheck, IconX } from '@tabler/icons-react';
+import { IconAlertCircle, IconArrowLeft, IconCheck, IconRefresh, IconX } from '@tabler/icons-react';
 
 import Api from '@/Api';
 import Header from '@/components/Header';
@@ -338,10 +338,13 @@ function AdminUserSupportPage () {
             <Group>
               <Button
                 loading={getSmsStateMutation.isPending}
-                onClick={() => getSmsStateMutation.mutate()}
+                // Clear the transient restore-result banner on a MANUAL reload only (not in
+                // the mutation — a restore attempt also refetches, and would wipe its own result).
+                onClick={() => { setRestoreResult(null); getSmsStateMutation.mutate(); }}
                 type='button'
+                leftSection={smsState ? <IconRefresh size={16} /> : undefined}
               >
-                Show SMS diagnostic
+                {smsState ? 'Reload SMS diagnostic' : 'Run SMS diagnostic'}
               </Button>
             </Group>
             {smsState && (
@@ -365,13 +368,13 @@ function AdminUserSupportPage () {
                     </Group>
                   )}
                   {restoreResult === 'blocked_30_day' && (
-                    <Alert color='yellow' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
-                      AWS declined to opt this number back in. A number can only be opted back in once every
+                    <Alert color='yellow' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out override failed'>
+                      AWS refused our request to remove this number from the opt-out list. A phone number's opt-out may be reset only once every
                       ~30 days. The user can try enrolling a different number, or wait until the 30-day window elapses.
                     </Alert>
                   )}
                   {restoreResult === 'error' && (
-                    <Alert color='red' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
+                    <Alert color='red' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out override failed'>
                       Something went wrong reaching AWS. Please try again.
                     </Alert>
                   )}

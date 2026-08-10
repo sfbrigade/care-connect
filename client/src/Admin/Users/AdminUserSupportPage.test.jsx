@@ -227,7 +227,7 @@ describe('AdminUserSupportPage', () => {
   it('loads and shows SMS notification state, including the per-event gate', async () => {
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
 
     await waitFor(() => {
       expect(apiMocks.getSmsState).toHaveBeenCalledWith('user-1');
@@ -275,7 +275,7 @@ describe('AdminUserSupportPage', () => {
     });
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
 
     // Mismatch callout: AWS opted out + our record clear.
     expect(await screen.findByText('Opt-out mismatch')).toBeInTheDocument();
@@ -289,7 +289,7 @@ describe('AdminUserSupportPage', () => {
     apiMocks.getSmsState.mockResolvedValue(optedOutSmsState());
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
     // Trigger button (only one on screen until the modal opens).
     await userEvent.click(await screen.findByRole('button', { name: 'Override SMS Opt-out' }));
     // Confirm inside the modal dialog.
@@ -306,7 +306,7 @@ describe('AdminUserSupportPage', () => {
     apiMocks.restoreSmsDelivery.mockResolvedValue({ data: { outcome: 'blocked_30_day', awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' } });
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Override SMS Opt-out' }));
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Override SMS Opt-out' }));
@@ -326,7 +326,7 @@ describe('AdminUserSupportPage', () => {
     apiMocks.getSmsState.mockResolvedValue(state);
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));
 
     expect(await screen.findByText('Opt-out history')).toBeInTheDocument();
     expect(screen.getByText('Opted out')).toBeInTheDocument();
