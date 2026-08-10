@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { build, authenticate } from '#test/helper.js';
 
-// Admin "restore delivery" (POST /api/users/:id/sms-opt-in). Attempts the AWS opt-in and,
+// Admin "override opt-out" (POST /api/users/:id/sms-override-optout). Attempts the AWS opt-in and,
 // on success, clears our smsOptedOutAt mirror — logging every attempt to SmsOptEvent
 // (+ an AdminSecurityEvent). sms.js is stubbed so attemptOptIn returns a controllable
 // outcome (no real AWS call). OPT_IN_OUTCOME is provided since smsOptIn.js imports it.
@@ -21,7 +21,7 @@ mock.module('#lib/sms.js', {
   namedExports: { OPT_IN_OUTCOME },
 });
 
-test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
+test('POST /api/users/:id/sms-override-optout (override opt-out)', async (t) => {
   const app = await build(t);
   const { prisma } = app;
   const adminHeaders = await authenticate(app, 'admin.user@test.com', 'test');
@@ -42,12 +42,12 @@ test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
   await t.test('requires admin', async () => {
     const u = await makeOptedOutUser();
     const userHeaders = await authenticate(app, 'sfsouser1@test.com', 'test');
-    const res = await app.inject().post(`/api/users/${u.id}/sms-opt-in`).headers(userHeaders);
+    const res = await app.inject().post(`/api/users/${u.id}/sms-override-optout`).headers(userHeaders);
     assert.strictEqual(res.statusCode, StatusCodes.FORBIDDEN);
   });
 
   await t.test('404 for an unknown user', async () => {
-    const res = await app.inject().post('/api/users/11111111-1111-4111-8111-111111111111/sms-opt-in').headers(adminHeaders);
+    const res = await app.inject().post('/api/users/11111111-1111-4111-8111-111111111111/sms-override-optout').headers(adminHeaders);
     assert.strictEqual(res.statusCode, StatusCodes.NOT_FOUND);
   });
 
@@ -55,7 +55,7 @@ test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
     const u = await prisma.user.create({
       data: { email: `nophone-${Math.floor(Math.random() * 1e9)}@test.com`, firstName: 'No', lastName: 'Phone', hashedPassword: 'x' },
     });
-    const res = await app.inject().post(`/api/users/${u.id}/sms-opt-in`).headers(adminHeaders);
+    const res = await app.inject().post(`/api/users/${u.id}/sms-override-optout`).headers(adminHeaders);
     assert.strictEqual(res.statusCode, StatusCodes.BAD_REQUEST);
   });
 
@@ -64,7 +64,7 @@ test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
     attemptOptIn.mock.mockImplementationOnce(async () => ({ outcome: OPT_IN_OUTCOME.RESTORED }));
     const u = await makeOptedOutUser();
 
-    const res = await app.inject().post(`/api/users/${u.id}/sms-opt-in`).headers(adminHeaders);
+    const res = await app.inject().post(`/api/users/${u.id}/sms-override-optout`).headers(adminHeaders);
     assert.strictEqual(res.statusCode, StatusCodes.OK);
     assert.strictEqual(JSON.parse(res.body).outcome, 'restored');
 
@@ -86,7 +86,7 @@ test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
     attemptOptIn.mock.mockImplementationOnce(async () => ({ outcome: OPT_IN_OUTCOME.BLOCKED_30_DAY, awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' }));
     const u = await makeOptedOutUser();
 
-    const res = await app.inject().post(`/api/users/${u.id}/sms-opt-in`).headers(adminHeaders);
+    const res = await app.inject().post(`/api/users/${u.id}/sms-override-optout`).headers(adminHeaders);
     assert.strictEqual(res.statusCode, StatusCodes.OK);
     assert.strictEqual(JSON.parse(res.body).outcome, 'blocked_30_day');
 
@@ -100,7 +100,7 @@ test('POST /api/users/:id/sms-opt-in (restore delivery)', async (t) => {
   await t.test('the attempt appears in the sms-state diagnostic history with a next-allowed estimate', async () => {
     attemptOptIn.mock.mockImplementationOnce(async () => ({ outcome: OPT_IN_OUTCOME.RESTORED }));
     const u = await makeOptedOutUser();
-    await app.inject().post(`/api/users/${u.id}/sms-opt-in`).headers(adminHeaders);
+    await app.inject().post(`/api/users/${u.id}/sms-override-optout`).headers(adminHeaders);
 
     const res = await app.inject().get(`/api/users/${u.id}/sms-state`).headers(adminHeaders);
     const body = JSON.parse(res.body);

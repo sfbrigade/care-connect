@@ -66,7 +66,7 @@ test('GET /api/users/:id/sms-state', async (t) => {
     assert.strictEqual(res.statusCode, StatusCodes.FORBIDDEN);
   });
 
-  await t.test('returns full state, a passing gate, AWS status, and writes an audit event', async () => {
+  await t.test('returns full state, a passing gate, and AWS status (a read — no audit row)', async () => {
     describeOptOutStatus.mock.resetCalls();
     describeOptOutStatus.mock.mockImplementationOnce(async () => ({ available: true, optedOut: false }));
     const u = await makeEnrolledUser();
@@ -92,10 +92,11 @@ test('GET /api/users/:id/sms-state', async (t) => {
     assert.strictEqual(body.awsOptOut.optedOut, false);
     assert.strictEqual(describeOptOutStatus.mock.callCount(), 1);
 
+    // Viewing state is a non-sensitive read — it must NOT write an audit row.
     const audit = await prisma.adminSecurityEvent.findFirst({
       where: { action: 'USER_SMS_STATE_VIEWED', targetUserId: u.id },
     });
-    assert.ok(audit, 'an audit event was written');
+    assert.strictEqual(audit, null, 'viewing state writes no audit event');
   });
 
   await t.test('gate fails with the specific reason when the user is paused (muted)', async () => {

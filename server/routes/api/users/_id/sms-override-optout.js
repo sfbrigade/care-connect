@@ -4,14 +4,15 @@ import { z } from 'zod';
 import User from '#models/user.js';
 import { restoreDelivery } from '#lib/smsOptIn.js';
 
-// Admin "restore delivery" (write). Attempts to clear the number's AWS opt-out and, on
-// success, our own smsOptedOutAt mirror — the fix for a user who opted out (STOP) and
-// wants back in, or for a DB/AWS opt-out drift. TCPA-sensitive: only for users who have
-// asked to resume (the client confirms this). Every attempt is logged (SmsOptEvent +
-// AdminSecurityEvent) inside restoreDelivery. Returns the outcome so the UI can react —
-// notably the 30-day-limit case, which is a hard AWS limit we can't override.
+// Admin "override SMS opt-out" (write). Clears the number's AWS opt-out and, on success,
+// our own smsOptedOutAt mirror — the fix for a user who opted out (STOP) and wants back
+// in, or for a DB/AWS opt-out drift. Runs the shared restoreDelivery op (source='admin';
+// the inbound START path runs the same op as a user self-restore). TCPA-sensitive: only
+// for users who have asked to resume (the client confirms this). Every attempt is logged
+// (SmsOptEvent + AdminSecurityEvent) inside restoreDelivery. Returns the outcome so the UI
+// can react — notably the 30-day-limit case, a hard AWS limit we can't override.
 export default async function (fastify) {
-  fastify.post('/sms-opt-in',
+  fastify.post('/sms-override-optout',
     {
       onRequest: fastify.requireAdmin,
       schema: {

@@ -16,7 +16,7 @@ const apiMocks = vi.hoisted(() => ({
   setPassword: vi.fn(),
   getMfaCode: vi.fn(),
   getSmsState: vi.fn(),
-  restoreSmsDelivery: vi.fn(),
+  overrideSmsOptOut: vi.fn(),
 }));
 
 vi.mock('@/Api', () => ({
@@ -26,7 +26,7 @@ vi.mock('@/Api', () => ({
       setPassword: apiMocks.setPassword,
       getMfaCode: apiMocks.getMfaCode,
       getSmsState: apiMocks.getSmsState,
-      restoreSmsDelivery: apiMocks.restoreSmsDelivery,
+      overrideSmsOptOut: apiMocks.overrideSmsOptOut,
     },
   },
 }));
@@ -124,7 +124,7 @@ beforeEach(() => {
       optHistory: { events: [], nextAllowedAfter: null },
     },
   });
-  apiMocks.restoreSmsDelivery.mockResolvedValue({ data: { outcome: 'restored', awsReason: null } });
+  apiMocks.overrideSmsOptOut.mockResolvedValue({ data: { outcome: 'restored', awsReason: null } });
 });
 
 // Global prerequisites (identical across events), mirroring the server response order.
@@ -285,7 +285,7 @@ describe('AdminUserSupportPage', () => {
     expect(screen.getByText('No')).toBeInTheDocument();
   });
 
-  it('restore delivery: an opted-out user can be restored, calling the API and refreshing', async () => {
+  it('override opt-out: an opted-out user can be restored, calling the API and refreshing', async () => {
     apiMocks.getSmsState.mockResolvedValue(optedOutSmsState());
     renderPage();
 
@@ -296,14 +296,14 @@ describe('AdminUserSupportPage', () => {
     const dialog = await screen.findByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Override SMS Opt-out' }));
 
-    await waitFor(() => expect(apiMocks.restoreSmsDelivery).toHaveBeenCalledWith('user-1'));
+    await waitFor(() => expect(apiMocks.overrideSmsOptOut).toHaveBeenCalledWith('user-1'));
     // Diagnostic is refetched afterward (initial load + post-restore refresh).
     await waitFor(() => expect(apiMocks.getSmsState).toHaveBeenCalledTimes(2));
   });
 
-  it('restore delivery: a 30-day block shows the limit explanation', async () => {
+  it('override opt-out: a 30-day block shows the limit explanation', async () => {
     apiMocks.getSmsState.mockResolvedValue(optedOutSmsState());
-    apiMocks.restoreSmsDelivery.mockResolvedValue({ data: { outcome: 'blocked_30_day', awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' } });
+    apiMocks.overrideSmsOptOut.mockResolvedValue({ data: { outcome: 'blocked_30_day', awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' } });
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Run SMS diagnostic' }));

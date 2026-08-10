@@ -12,6 +12,10 @@ export const OPT_IN_OUTCOME = { RESTORED: 'restored', BLOCKED_30_DAY: 'blocked_3
 // one transaction (from a single computed outcome), so the two audit rows and the flag
 // clear can't diverge. Returns { outcome, awsReason }.
 export async function restoreDelivery (prisma, { phoneNumber, userId = null, source, actorUserId = null }) {
+  // The AWS call is outside the transaction below (it's an external API). If AWS succeeds
+  // but the DB transaction then fails, we're left AWS-clear / DB-still-opted-out — the
+  // reverse drift. That's self-healing: the next attempt returns ResourceNotFound →
+  // 'restored' → clears our flag. So the window is transient, not corrupting.
   const { outcome, awsReason = null } = await sms.attemptOptIn(phoneNumber);
   const restored = outcome === OPT_IN_OUTCOME.RESTORED;
 

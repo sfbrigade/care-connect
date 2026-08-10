@@ -248,21 +248,21 @@ function AdminUserSupportPage () {
     },
   });
 
-  const [restoreOpen, setRestoreOpen] = useState(false);
-  const [restoreResult, setRestoreResult] = useState(null); // 'blocked_30_day' | 'error' | null
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideResult, setOverrideResult] = useState(null); // 'blocked_30_day' | 'error' | null
 
-  const restoreMutation = useMutation({
-    mutationFn: () => Api.users.restoreSmsDelivery(userId),
+  const overrideMutation = useMutation({
+    mutationFn: () => Api.users.overrideSmsOptOut(userId),
     onSuccess: (response) => {
       const { outcome } = response.data;
-      setRestoreOpen(false);
-      setRestoreResult(outcome === 'restored' ? null : outcome);
+      setOverrideOpen(false);
+      setOverrideResult(outcome === 'restored' ? null : outcome);
       if (outcome === 'restored') showToast('SMS delivery restored', 'success');
       getSmsStateMutation.mutate(); // refresh state + history
     },
     onError: () => {
-      setRestoreOpen(false);
-      setRestoreResult('error');
+      setOverrideOpen(false);
+      setOverrideResult('error');
     },
   });
 
@@ -363,7 +363,7 @@ function AdminUserSupportPage () {
                 loading={getSmsStateMutation.isPending}
                 // Clear the transient restore-result banner on a MANUAL reload only (not in
                 // the mutation — a restore attempt also refetches, and would wipe its own result).
-                onClick={() => { setRestoreResult(null); getSmsStateMutation.mutate(); }}
+                onClick={() => { setOverrideResult(null); getSmsStateMutation.mutate(); }}
                 type='button'
                 leftSection={smsState ? <IconRefresh size={16} /> : undefined}
               >
@@ -385,18 +385,18 @@ function AdminUserSupportPage () {
                   <AwsOptOutRows awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
                   {(smsState.state.smsOptedOutAt || smsState.awsOptOut.optedOut) && (
                     <Group>
-                      <Button size='xs' variant='light' color='red' onClick={() => setRestoreOpen(true)} loading={restoreMutation.isPending}>
+                      <Button size='xs' variant='light' color='red' onClick={() => setOverrideOpen(true)} loading={overrideMutation.isPending}>
                         Override SMS Opt-out
                       </Button>
                     </Group>
                   )}
-                  {restoreResult === 'blocked_30_day' && (
+                  {overrideResult === 'blocked_30_day' && (
                     <Alert color='yellow' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out override failed'>
                       AWS refused our request to remove this number from the opt-out list. A phone number's opt-out may be reset only once every
                       ~30 days. The user can try enrolling a different number, or wait until the 30-day window elapses.
                     </Alert>
                   )}
-                  {restoreResult === 'error' && (
+                  {overrideResult === 'error' && (
                     <Alert color='red' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out override failed'>
                       Something went wrong reaching AWS. Please try again.
                     </Alert>
@@ -419,7 +419,7 @@ function AdminUserSupportPage () {
                   <OptHistory optHistory={smsState.optHistory} />
                 </Stack>
 
-                <Modal opened={restoreOpen} onClose={() => setRestoreOpen(false)} title='Override SMS opt-out' centered>
+                <Modal opened={overrideOpen} onClose={() => setOverrideOpen(false)} title='Override SMS opt-out' centered>
                   <Stack>
                     <Text size='sm'>
                       This clears the opt-out record for{' '}
@@ -431,8 +431,8 @@ function AdminUserSupportPage () {
                       messages without the user's consent may violate TCPA.
                     </Alert>
                     <Group justify='flex-end'>
-                      <Button variant='default' onClick={() => setRestoreOpen(false)}>Cancel</Button>
-                      <Button color='red' loading={restoreMutation.isPending} onClick={() => restoreMutation.mutate()}>
+                      <Button variant='default' onClick={() => setOverrideOpen(false)}>Cancel</Button>
+                      <Button color='red' loading={overrideMutation.isPending} onClick={() => overrideMutation.mutate()}>
                         Override SMS Opt-out
                       </Button>
                     </Group>

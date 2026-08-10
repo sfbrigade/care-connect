@@ -30,6 +30,11 @@ async function init () {
   }
 }
 
+// The opt-out list our number uses (resolved at call time so tests can vary the env).
+function optOutListName () {
+  return process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
+}
+
 function hasAwsSms () {
   return Boolean(
     process.env.AWS_SMS_ACCESS_KEY_ID &&
@@ -99,9 +104,8 @@ async function attemptOptIn (phoneNumber) {
   if (resolveTransport() !== 'aws') return { outcome: 'restored' };
   await init();
   const { DeleteOptedOutNumberCommand } = await loadSdk();
-  const OptOutListName = process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
   try {
-    await client.send(new DeleteOptedOutNumberCommand({ OptOutListName, OptedOutNumber: phoneNumber }));
+    await client.send(new DeleteOptedOutNumberCommand({ OptOutListName: optOutListName(), OptedOutNumber: phoneNumber }));
     return { outcome: 'restored' };
   } catch (err) {
     // Not on the list = already opted in; the desired end state, so treat as restored.
@@ -127,10 +131,9 @@ async function describeOptOutStatus (phoneNumber) {
   if (!phoneNumber) return { available: false, reason: 'no-number' };
   await init();
   const { DescribeOptedOutNumbersCommand } = await loadSdk();
-  const OptOutListName = process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
   try {
     const response = await client.send(
-      new DescribeOptedOutNumbersCommand({ OptOutListName, OptedOutNumbers: [phoneNumber] })
+      new DescribeOptedOutNumbersCommand({ OptOutListName: optOutListName(), OptedOutNumbers: [phoneNumber] })
     );
     const entry = (response.OptedOutNumbers ?? [])[0];
     if (!entry) return { available: true, optedOut: false };

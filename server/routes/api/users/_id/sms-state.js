@@ -191,14 +191,8 @@ export default async function (fastify) {
       const lastRestored = rawEvents.find((e) => e.action === 'opt_in' && e.outcome === 'restored');
       const nextAllowedAfter = lastRestored ? new Date(lastRestored.createdAt.getTime() + OPT_IN_WINDOW_MS) : null;
 
-      await fastify.prisma.adminSecurityEvent.create({
-        data: {
-          action: 'USER_SMS_STATE_VIEWED',
-          actorUserId: request.user.id,
-          targetUserId: id,
-        },
-      });
-
+      // No audit row: this is a read of non-sensitive state, so auditing every view (incl.
+      // reloads / the post-override refetch) would just add noise. The write actions are audited.
       reply.header('Cache-Control', 'no-store');
 
       return reply.send({
