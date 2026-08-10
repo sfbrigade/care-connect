@@ -12,7 +12,7 @@ mock.module('#lib/sms.js', {
   defaultExport: {
     describeOptOutStatus,
     sendText: async () => {},
-    optInNumber: async () => {},
+    attemptOptIn: async () => ({ outcome: 'restored' }),
     resolveTransport: () => 'log',
     reset: () => {},
   },

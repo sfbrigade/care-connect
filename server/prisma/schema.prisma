@@ -529,6 +529,26 @@ model AdminSecurityEvent {
   @@index([targetUserId, createdAt])
 }
 
+// Append-only log of SMS opt-out / opt-in events for a number, from the inbound handler
+// (STOP / START) and the admin "override opt-out" action. Keyed by phoneNumber because
+// AWS's once-per-30-days opt-in limit is per NUMBER — the last opt_in with outcome
+// 'restored' + 30 days estimates when the next opt-in would be allowed. actorUserId is
+// the admin for source='admin', null for the inbound (user-initiated) sources. IDs are
+// plain columns (not relations) since this is a log we never join hard on.
+model SmsOptEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phoneNumber  String
+  action       String   // 'opt_in' | 'opt_out'
+  source       String   // 'admin' | 'inbound_start' | 'inbound_stop'
+  outcome      String?  // opt_in: 'restored' | 'blocked_30_day' | 'error'; opt_out: 'recorded'
+  awsReason    String?
+  actorUserId  String?  @db.Uuid
+  targetUserId String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([phoneNumber, createdAt])
+}
+
 model BedType {
   id                    String                    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   facility              Facility                  @relation(fields: [facilityId], references: [id], onDelete: Cascade)

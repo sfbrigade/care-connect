@@ -209,6 +209,11 @@ const Api = {
     getSmsState (id) {
       return instance.get(`/api/users/${id}/sms-state`);
     },
+    // Admin action: attempt to restore SMS delivery (clear AWS opt-out + our record).
+    // Returns { outcome, awsReason }; no handleError wrapper so callers read the outcome.
+    restoreSmsDelivery (id) {
+      return instance.post(`/api/users/${id}/sms-opt-in`);
+    },
     startPhoneVerification (data) {
       return instance.post('/api/users/me/phone/start', data);
     },

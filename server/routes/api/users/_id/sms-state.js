@@ -64,6 +64,19 @@ export default async function (fastify) {
               endUserOptedOut: z.boolean().nullable().optional(),
               reason: z.string().optional(),
             }),
+            // Recent opt-out / opt-in events for this number (inbound STOP/START + admin
+            // override), plus an estimated earliest next opt-in (last success + 30 days).
+            optHistory: z.object({
+              events: z.array(z.object({
+                at: z.coerce.date(),
+                action: z.string(),
+                source: z.string(),
+                outcome: z.string().nullable(),
+                awsReason: z.string().nullable(),
+                actor: z.string().nullable(),
+              })),
+              nextAllowedAfter: z.coerce.date().nullable(),
+            }),
           }),
           [StatusCodes.FORBIDDEN]: z.null(),
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -150,6 +163,34 @@ export default async function (fastify) {
         })),
       };
 
+      // Opt-out / opt-in history for this number, most recent first. The last opt_in with
+      // outcome 'restored' + 30 days estimates the earliest next opt-in AWS would allow — a
+      // lower bound only (STOP/START or console opt-ins we didn't record also consume the
+      // window; see the UI copy).
+      const OPT_IN_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+      const rawEvents = data.phoneNumber
+        ? await fastify.prisma.smsOptEvent.findMany({
+          where: { phoneNumber: data.phoneNumber },
+          orderBy: { createdAt: 'desc' },
+          take: 15,
+        })
+        : [];
+      const actorIds = [...new Set(rawEvents.map((e) => e.actorUserId).filter(Boolean))];
+      const actors = actorIds.length
+        ? await fastify.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, firstName: true, lastName: true } })
+        : [];
+      const actorName = Object.fromEntries(actors.map((u) => [u.id, `${u.firstName} ${u.lastName}`.trim()]));
+      const historyEvents = rawEvents.map((e) => ({
+        at: e.createdAt,
+        action: e.action,
+        source: e.source,
+        outcome: e.outcome,
+        awsReason: e.awsReason,
+        actor: e.actorUserId ? (actorName[e.actorUserId] ?? null) : null,
+      }));
+      const lastRestored = rawEvents.find((e) => e.action === 'opt_in' && e.outcome === 'restored');
+      const nextAllowedAfter = lastRestored ? new Date(lastRestored.createdAt.getTime() + OPT_IN_WINDOW_MS) : null;
+
       await fastify.prisma.adminSecurityEvent.create({
         data: {
           action: 'USER_SMS_STATE_VIEWED',
@@ -182,6 +223,7 @@ export default async function (fastify) {
         },
         gate,
         awsOptOut,
+        optHistory: { events: historyEvents, nextAllowedAfter },
       });
     });
 }

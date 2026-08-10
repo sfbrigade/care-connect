@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { Alert, Badge, Button, Code, Container, Divider, Group, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Badge, Button, Code, Container, Divider, Group, Modal, Stack, Table, Text, TextInput, Title } from '@mantine/core';
 import { hasLength, useForm } from '@mantine/form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
@@ -25,7 +25,7 @@ function StateRow ({ label, children }) {
 }
 
 // Live AWS opt-out status as an Enrollment row, plus a drift warning when it disagrees
-// with our own smsOptedOutAt mirror (the main thing this diagnostic exists to catch).
+// with our own smsOptedOutAt mirror
 function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
   const awsOut = Boolean(awsOptOut.optedOut);
   const drift = awsOptOut.available && awsOut !== dbOptedOut;
@@ -43,6 +43,49 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
         </Alert>
       )}
     </>
+  );
+}
+
+// Label + color for one opt event. Opt-outs are uniform; opt-ins vary by outcome.
+function eventBadge (e) {
+  if (e.action === 'opt_out') return { label: 'Opted out', color: 'red' };
+  if (e.outcome === 'restored') return { label: 'Opted in', color: 'green' };
+  if (e.outcome === 'blocked_30_day') return { label: 'Opt-in blocked (30-day limit)', color: 'orange' };
+  return { label: 'Opt-in failed', color: 'red' };
+}
+
+// How the event happened, for the trailing "· <who>".
+function eventSource (e) {
+  if (e.source === 'admin') return `admin override (${e.actor ?? 'admin'})`;
+  if (e.source === 'inbound_stop') return 'user (STOP)';
+  if (e.source === 'inbound_start') return 'user (START)';
+  return e.source;
+}
+
+// Recent opt-out / opt-in events for this number (inbound STOP/START + admin override),
+// plus an estimated earliest next opt-in.
+function OptHistory ({ optHistory }) {
+  const events = optHistory?.events ?? [];
+  if (events.length === 0) return <Text size='sm' c='dimmed'>No opt-out or opt-in events recorded.</Text>;
+  return (
+    <Stack gap='xs'>
+      {optHistory.nextAllowedAfter && (
+        <Text size='sm' c='dimmed'>
+          Earliest next opt-in ≈ {fmtDate(optHistory.nextAllowedAfter)} (30 days after the last successful
+          opt-in).
+        </Text>
+      )}
+      {events.map((e, i) => {
+        const badge = eventBadge(e);
+        return (
+          <Group key={i} gap='xs' wrap='nowrap' align='center'>
+            <Badge color={badge.color} variant='light'>{badge.label}</Badge>
+            <Text size='sm'>{fmtDate(e.at)}</Text>
+            <Text size='sm' c='dimmed'>· {eventSource(e)}</Text>
+          </Group>
+        );
+      })}
+    </Stack>
   );
 }
 
@@ -182,6 +225,24 @@ function AdminUserSupportPage () {
     },
   });
 
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreResult, setRestoreResult] = useState(null); // 'blocked_30_day' | 'error' | null
+
+  const restoreMutation = useMutation({
+    mutationFn: () => Api.users.restoreSmsDelivery(userId),
+    onSuccess: (response) => {
+      const { outcome } = response.data;
+      setRestoreOpen(false);
+      setRestoreResult(outcome === 'restored' ? null : outcome);
+      if (outcome === 'restored') showToast('SMS delivery restored', 'success');
+      getSmsStateMutation.mutate(); // refresh state + history
+    },
+    onError: () => {
+      setRestoreOpen(false);
+      setRestoreResult('error');
+    },
+  });
+
   const passwordInputProps = passwordForm.getInputProps('password');
   const passwordConfirmationInputProps = passwordForm.getInputProps('passwordConfirmation');
   const canSetPassword = !!passwordValues.password &&
@@ -287,7 +348,7 @@ function AdminUserSupportPage () {
               <Stack gap='lg'>
                 <Stack gap='xs'>
                   <Title order={4}>Enrollment</Title>
-                  <StateRow label='Phone number'>{smsState.state.phoneNumber ? <Code>{smsState.state.phoneNumber}</Code> : '—'}</StateRow>
+                  <StateRow label='Phone number'>{smsState.state.phoneNumber ?? '—'}</StateRow>
                   <StateRow label='Verified'>{fmtDate(smsState.state.phoneVerifiedAt)}</StateRow>
                   <StateRow label='Consented'>{fmtDate(smsState.state.smsConsentAt)}</StateRow>
                   <StateRow label='Notifications'>{smsState.state.notificationsEnabled ? 'Active' : 'Paused'}</StateRow>
@@ -296,6 +357,24 @@ function AdminUserSupportPage () {
                   <StateRow label='Welcomed'>{fmtDate(smsState.state.smsWelcomedAt)}</StateRow>
                   <StateRow label='Opted out (internal DB)'>{fmtDate(smsState.state.smsOptedOutAt)}</StateRow>
                   <AwsOptOutRows awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
+                  {(smsState.state.smsOptedOutAt || smsState.awsOptOut.optedOut) && (
+                    <Group>
+                      <Button size='xs' variant='light' color='orange' onClick={() => setRestoreOpen(true)} loading={restoreMutation.isPending}>
+                        Override SMS Opt-out
+                      </Button>
+                    </Group>
+                  )}
+                  {restoreResult === 'blocked_30_day' && (
+                    <Alert color='orange' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
+                      AWS declined to opt this number back in. A number can only be opted back in once every
+                      ~30 days. The user can try enrolling a different number, or wait until the 30-day window elapses.
+                    </Alert>
+                  )}
+                  {restoreResult === 'error' && (
+                    <Alert color='red' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
+                      Something went wrong reaching AWS. Please try again.
+                    </Alert>
+                  )}
                 </Stack>
 
                 <GateSection gate={smsState.gate} />
@@ -307,6 +386,32 @@ function AdminUserSupportPage () {
                   <StateRow label='Attempts'>{smsState.otp.attempts}</StateRow>
                   <StateRow label='Code expires'>{fmtDate(smsState.otp.expiresAt)}</StateRow>
                 </Stack>
+
+                <Divider color='gray.2' />
+                <Stack gap='xs'>
+                  <Title order={4}>Opt-out history</Title>
+                  <OptHistory optHistory={smsState.optHistory} />
+                </Stack>
+
+                <Modal opened={restoreOpen} onClose={() => setRestoreOpen(false)} title='Override SMS opt-out' centered>
+                  <Stack>
+                    <Text size='sm'>
+                      This clears the opt-out record for{' '}
+                      <Text span fw={600}>{smsState.state.phoneNumber}</Text> at AWS and in our record, so the user
+                      will start receiving texts again.
+                    </Text>
+                    <Alert color='yellow' variant='light' radius='lg'>
+                      Only do this if the user has <strong>asked to resume</strong> notifications. Re-enabling
+                      messages without the user's consent may violate TCPA.
+                    </Alert>
+                    <Group justify='flex-end'>
+                      <Button variant='default' onClick={() => setRestoreOpen(false)}>Cancel</Button>
+                      <Button color='orange' loading={restoreMutation.isPending} onClick={() => restoreMutation.mutate()}>
+                        Override SMS Opt-out
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Modal>
               </Stack>
             )}
           </Stack>

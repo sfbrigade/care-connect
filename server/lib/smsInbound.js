@@ -1,5 +1,6 @@
 import prisma from '#prisma/client.js';
 import sms from '#lib/sms.js';
+import { restoreDelivery, recordOptOut, OPT_IN_OUTCOME } from '#lib/smsOptIn.js';
 
 // Handles inbound SMS replies:
 // - PAUSE/RESUME toggle the user's in-app notifications (MUTE/UNMUTE also accepted)
@@ -70,19 +71,19 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
     return { action: 'unmute' };
   }
   if (OPTOUT_WORDS.includes(keyword)) {
-    await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: new Date() } });
+    // Mirror the carrier opt-out into smsOptedOutAt and log it to the opt-out history.
+    await recordOptOut(prismaClient, { phoneNumber: fromNumber, userId: user.id, source: 'inbound_stop' });
     return { action: 'optout' };
   }
   if (OPTIN_WORDS.includes(keyword)) {
-    // Remove the number from AWS's opt-out list, THEN clear local opt-out record
-    try {
-      await sms.optInNumber(fromNumber);
-      await prismaClient.user.update({ where: { id: user.id }, data: { smsOptedOutAt: null } });
-      return { action: 'optin' };
-    } catch (err) {
-      console.error('[sms-inbound] optInNumber failed:', err.message);
-      return { action: 'optin', ok: false };
-    }
+    // Clear the AWS opt-out (and, on success, our local record); logs the attempt to
+    // SmsOptEvent. If AWS refuses (30-day limit), our record stays set — no drift.
+    const { outcome } = await restoreDelivery(prismaClient, {
+      phoneNumber: fromNumber,
+      userId: user.id,
+      source: 'inbound_start',
+    });
+    return { action: 'optin', ok: outcome === OPT_IN_OUTCOME.RESTORED };
   }
   if (HELP_WORDS.includes(keyword)) {
     // HELP is a reserved keyword answered automatically by AWS; we

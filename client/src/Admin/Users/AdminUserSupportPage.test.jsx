@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -16,6 +16,7 @@ const apiMocks = vi.hoisted(() => ({
   setPassword: vi.fn(),
   getMfaCode: vi.fn(),
   getSmsState: vi.fn(),
+  restoreSmsDelivery: vi.fn(),
 }));
 
 vi.mock('@/Api', () => ({
@@ -25,6 +26,7 @@ vi.mock('@/Api', () => ({
       setPassword: apiMocks.setPassword,
       getMfaCode: apiMocks.getMfaCode,
       getSmsState: apiMocks.getSmsState,
+      restoreSmsDelivery: apiMocks.restoreSmsDelivery,
     },
   },
 }));
@@ -119,8 +121,10 @@ beforeEach(() => {
         ],
       },
       awsOptOut: { available: true, optedOut: false },
+      optHistory: { events: [], nextAllowedAfter: null },
     },
   });
+  apiMocks.restoreSmsDelivery.mockResolvedValue({ data: { outcome: 'restored', awsReason: null } });
 });
 
 // Global prerequisites (identical across events), mirroring the server response order.
@@ -142,6 +146,33 @@ function eventChecks ({ subscribed = true } = {}) {
     { key: 'audienceRole', label: 'In the audience for this event', passed: true },
     { key: 'subscribed', label: 'Subscribed to this event', passed: subscribed },
   ];
+}
+
+// An opted-out user (both DB + AWS) — so the "Override SMS Opt-out" action is offered.
+function optedOutSmsState () {
+  return {
+    status: 200,
+    data: {
+      state: {
+        phoneNumber: '+14155550100',
+        phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+        smsConsentAt: null,
+        smsOptedOutAt: '2026-02-01T00:00:00.000Z',
+        notificationsEnabled: true,
+        subscribedEvents: ['NEW_HOLD'],
+        currentFacilityId: 'fac-1',
+        currentFacilityName: 'RESET',
+        smsWelcomedAt: null,
+        roles: ['CUSTODY'],
+        deactivatedAt: null,
+        deletedAt: null,
+      },
+      otp: { lastSentAt: null, attempts: 0, expiresAt: null },
+      gate: { global: globalChecks({ awsOptedOut: true }), events: [{ event: 'NEW_HOLD', passed: false, checks: eventChecks() }] },
+      awsOptOut: { available: true, optedOut: true, optedOutTimestamp: '2026-02-01T00:00:00.000Z', endUserOptedOut: true },
+      optHistory: { events: [], nextAllowedAfter: null },
+    },
+  };
 }
 
 afterEach(() => {
@@ -246,11 +277,60 @@ describe('AdminUserSupportPage', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
 
-    // Directional mismatch callout: AWS opted out + our record clear → we send, AWS rejects.
+    // Mismatch callout: AWS opted out + our record clear.
     expect(await screen.findByText('Opt-out mismatch')).toBeInTheDocument();
-    expect(screen.getByText(/AWS rejects every message/)).toBeInTheDocument();
+    expect(screen.getByText(/disagrees with AWS/i)).toBeInTheDocument();
     // The global checklist shows the AWS requirement, and the verdict is No.
     expect(screen.getByText('Not opted out (AWS)')).toBeInTheDocument();
     expect(screen.getByText('No')).toBeInTheDocument();
+  });
+
+  it('restore delivery: an opted-out user can be restored, calling the API and refreshing', async () => {
+    apiMocks.getSmsState.mockResolvedValue(optedOutSmsState());
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    // Trigger button (only one on screen until the modal opens).
+    await userEvent.click(await screen.findByRole('button', { name: 'Override SMS Opt-out' }));
+    // Confirm inside the modal dialog.
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Override SMS Opt-out' }));
+
+    await waitFor(() => expect(apiMocks.restoreSmsDelivery).toHaveBeenCalledWith('user-1'));
+    // Diagnostic is refetched afterward (initial load + post-restore refresh).
+    await waitFor(() => expect(apiMocks.getSmsState).toHaveBeenCalledTimes(2));
+  });
+
+  it('restore delivery: a 30-day block shows the limit explanation', async () => {
+    apiMocks.getSmsState.mockResolvedValue(optedOutSmsState());
+    apiMocks.restoreSmsDelivery.mockResolvedValue({ data: { outcome: 'blocked_30_day', awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' } });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Override SMS Opt-out' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Override SMS Opt-out' }));
+
+    expect(await screen.findByText(/only be opted back in once every/i)).toBeInTheDocument();
+  });
+
+  it('opt-out history: renders opt-out and opt-in events plus a next-allowed estimate', async () => {
+    const state = optedOutSmsState();
+    state.data.optHistory = {
+      events: [
+        { at: '2026-02-03T00:00:00.000Z', action: 'opt_in', source: 'admin', outcome: 'restored', awsReason: null, actor: 'Admin User' },
+        { at: '2026-02-01T00:00:00.000Z', action: 'opt_out', source: 'inbound_stop', outcome: 'recorded', awsReason: null, actor: null },
+      ],
+      nextAllowedAfter: '2026-03-05T00:00:00.000Z',
+    };
+    apiMocks.getSmsState.mockResolvedValue(state);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show SMS diagnostic' }));
+
+    expect(await screen.findByText('Opt-out history')).toBeInTheDocument();
+    expect(screen.getByText('Opted out')).toBeInTheDocument();
+    expect(screen.getByText('Opted in')).toBeInTheDocument();
+    expect(screen.getByText(/Earliest next opt-in/)).toBeInTheDocument();
   });
 });
