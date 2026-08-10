@@ -38,7 +38,7 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
     <>
       <StateRow label='Opted out (AWS)'>{value}</StateRow>
       {drift && (
-        <Alert color='orange' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out mismatch'>
+        <Alert color='yellow' variant='light' radius='lg' icon={<IconAlertCircle />} title='Opt-out mismatch'>
           Our internal opt-out record disagrees with AWS. This should not happen; developers should investigate.
         </Alert>
       )}
@@ -50,7 +50,7 @@ function AwsOptOutRows ({ awsOptOut, dbOptedOut }) {
 function eventBadge (e) {
   if (e.action === 'opt_out') return { label: 'Opted out', color: 'red' };
   if (e.outcome === 'restored') return { label: 'Opted in', color: 'green' };
-  if (e.outcome === 'blocked_30_day') return { label: 'Opt-in blocked (30-day limit)', color: 'orange' };
+  if (e.outcome === 'blocked_30_day') return { label: 'Opt-in blocked (30-day limit)', color: 'yellow' };
   return { label: 'Opt-in failed', color: 'red' };
 }
 
@@ -359,13 +359,13 @@ function AdminUserSupportPage () {
                   <AwsOptOutRows awsOptOut={smsState.awsOptOut} dbOptedOut={!!smsState.state.smsOptedOutAt} />
                   {(smsState.state.smsOptedOutAt || smsState.awsOptOut.optedOut) && (
                     <Group>
-                      <Button size='xs' variant='light' color='orange' onClick={() => setRestoreOpen(true)} loading={restoreMutation.isPending}>
+                      <Button size='xs' variant='light' color='red' onClick={() => setRestoreOpen(true)} loading={restoreMutation.isPending}>
                         Override SMS Opt-out
                       </Button>
                     </Group>
                   )}
                   {restoreResult === 'blocked_30_day' && (
-                    <Alert color='orange' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
+                    <Alert color='yellow' variant='light' radius='lg' icon={<IconAlertCircle />} title='Couldn’t restore delivery'>
                       AWS declined to opt this number back in. A number can only be opted back in once every
                       ~30 days. The user can try enrolling a different number, or wait until the 30-day window elapses.
                     </Alert>
@@ -406,7 +406,7 @@ function AdminUserSupportPage () {
                     </Alert>
                     <Group justify='flex-end'>
                       <Button variant='default' onClick={() => setRestoreOpen(false)}>Cancel</Button>
-                      <Button color='orange' loading={restoreMutation.isPending} onClick={() => restoreMutation.mutate()}>
+                      <Button color='red' loading={restoreMutation.isPending} onClick={() => restoreMutation.mutate()}>
                         Override SMS Opt-out
                       </Button>
                     </Group>
