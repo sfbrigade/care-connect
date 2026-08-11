@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Container, Group, SegmentedControl, Stack, Text, Title } from '@mantine/core';
 import { DateTime } from 'luxon';
@@ -8,6 +8,7 @@ import { Head } from '@unhead/react';
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
+import SmsSubscriptionBanner from '@/components/SmsSubscriptionBanner';
 import ScanTransferCodeIcon from '@/components/ScanTransferCodeIcon';
 import { useFacilityContext } from '@/FacilityContext';
 import { useToast } from '@/components/ToastContext';
@@ -210,7 +211,19 @@ function Custody () {
   const navigate = useNavigate();
   const [tab, setTab] = useSessionState('custody', 'transit');
   const [scanModalOpened, setScanModalOpened] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [highlightedId, setHighlightedId] = useState(null);
+
+  // Deep-link support: opening `/custody?scan=1` (e.g. from the arrival SMS's
+  // "Transfer person" link) auto-opens the Take-custody QR scanner. Strip the
+  // param afterward so a refresh/back doesn't re-open it.
+  useEffect(() => {
+    if (searchParams.get('scan') === '1') {
+      setScanModalOpened(true);
+      searchParams.delete('scan');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [isPostNavigationSurveyOpen, setIsPostNavigationSurveyOpen] = useState(false);
   const { facility } = useFacilityContext();
   const queryClient = useQueryClient();
@@ -386,6 +399,7 @@ function Custody () {
             inTransitCount={inTransitCount}
             occupiedCount={occupiedCount}
           />
+          <SmsSubscriptionBanner />
           <SegmentedControl
             fullWidth
             value={tab}

@@ -1,14 +1,67 @@
-import { Anchor, Box, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
-import { IconArrowLeft, IconPencilMinus } from '@tabler/icons-react';
+import { useState } from 'react';
+import { ActionIcon, Anchor, Button, Box, Collapse, Container, Divider, Group, Stack, Text, Title } from '@mantine/core';
+import { IconArrowLeft, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { Head } from '@unhead/react';
+import { Link } from 'react-router';
 
 import { useAuthContext } from '@/AuthContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
+import { summarizeEvents } from '@/components/NotificationPreferenceToggles';
+import SmsOptOutBanner from '@/components/SmsOptOutBanner';
+import { useUserRole } from '@/hooks/useUserRole';
 import { formatUnitName } from '@/utils/unit';
+import { formatUSPhone } from '@/utils/phone';
+
+function Field ({ label, value }) {
+  return (
+    <Box>
+      <Text size='md' c='gray.6'>{label}</Text>
+      <Text size='md'>{value}</Text>
+    </Box>
+  );
+}
+
+// Collapsible profile section: title + caret toggle, with the fields and an
+// "Edit" button (bottom-left) inside the collapsible body.
+function Section ({ title, editTo, editLabel = 'Edit', children }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <Stack gap='sm'>
+      <Group justify='space-between' wrap='nowrap'>
+        <Title order={3}>{title}</Title>
+        <ActionIcon
+          variant='subtle'
+          color='gray'
+          onClick={() => setOpen((o) => !o)}
+          aria-label={`${open ? 'Collapse' : 'Expand'} ${title}`}
+          aria-expanded={open}
+        >
+          {open ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+        </ActionIcon>
+      </Group>
+      <Collapse in={open}>
+        <Stack gap='sm'>
+          {children}
+          <Button component={Link} to={editTo} variant='secondary' size='xs' style={{ alignSelf: 'flex-start' }}>
+            {editLabel}
+          </Button>
+        </Stack>
+      </Collapse>
+    </Stack>
+  );
+}
 
 function UserProfilePage () {
   const { user } = useAuthContext();
+  const { isCustody } = useUserRole();
+
+  const isSfpdOrSfso = user.organizationId === 'sfpd' || user.organizationId === 'sfso';
+
+  const smsVerified = !!user.phoneVerifiedAt;
+  const smsOptedOut = !!user.smsOptedOutAt;
+  const smsUnmuted = !!user.notificationsEnabled;
+  const subscriptionsSummary = summarizeEvents(user.subscribedEvents);
 
   return (
     <>
@@ -22,52 +75,48 @@ function UserProfilePage () {
       </Header>
       <Container>
         <Stack>
-          <Box>
-            <Title order={2}>{user.firstName} {user.lastName}</Title>
-            {user.unit && <Text c='gray.6' size='sm'>{formatUnitName(user.unit?.name)}</Text>}
-          </Box>
-          <Stack gap='sm'>
-            <Title order={3}>Personal Information</Title>
-            <Box>
-              <Text size='md' c='gray.6'>Name</Text>
-              <Text size='md'>{user.firstName} {user.lastName}</Text>
-            </Box>
-            <Box>
-              <Text size='md' c='gray.6'>Email Address</Text>
-              <Text size='md'>{user.email}</Text>
-            </Box>
-          </Stack>
-          {(user.organizationId === 'sfpd' || user.organizationId === 'sfso') && (
+          <Title order={2}>{user.firstName} {user.lastName}</Title>
+
+          {isSfpdOrSfso && (
             <>
-              <Divider />
-              <Stack gap='sm'>
-                <Group justify='space-between'>
-                  <Title order={3}>Position details</Title>
-                  <IconButtonLink icon={IconPencilMinus} to='/profile/edit' aria-label='Edit position details' />
-                </Group>
-                <Box>
-                  <Text size='md' c='gray.6'>Star number</Text>
-                  <Text size='md'>{user.badgeNumber}</Text>
-                </Box>
-                <Box>
-                  <Text size='md' c='gray.6'>Unit</Text>
-                  <Text size='md'>{formatUnitName(user.unit?.name)}</Text>
-                </Box>
+              <Section title='Position details' editTo='/profile/edit'>
+                <Field label='Star number' value={user.badgeNumber} />
+                <Field label='Unit' value={formatUnitName(user.unit?.name)} />
                 {user.organizationId === 'sfso' && (
                   <>
-                    <Box>
-                      <Text size='md' c='gray.6'>Rank</Text>
-                      <Text size='md'>{user.title?.name}</Text>
-                    </Box>
-                    <Box>
-                      <Text size='md' c='gray.6'>Prop 115 certification</Text>
-                      <Text size='md'>{user.prop115Certified ? 'Yes' : 'No'}</Text>
-                    </Box>
+                    <Field label='Rank' value={user.title?.name} />
+                    <Field label='Prop 115 certification' value={user.prop115Certified ? 'Yes' : 'No'} />
                   </>
                 )}
-              </Stack>
+              </Section>
+              <Divider />
             </>
           )}
+
+          <Section title='Contact details' editTo='/profile/contact'>
+            <Field label='Email address' value={user.email} />
+            <Field label='Mobile number' value={user.phoneVerifiedAt ? formatUSPhone(user.phoneNumber) : 'Not set'} />
+          </Section>
+
+          {isCustody && (
+            <>
+              <Divider />
+              <Section
+                title='SMS notifications'
+                editTo={smsVerified ? '/profile/notifications' : '/profile/notifications/enroll'}
+                editLabel={smsVerified ? 'Edit' : 'Subscribe to SMS notifications'}
+              >
+                {smsVerified && (
+                  <>
+                    {smsOptedOut && <SmsOptOutBanner />}
+                    <Field label='Status' value={smsUnmuted ? 'Active' : 'Paused'} />
+                    {smsUnmuted && <Field label='Subscriptions' value={subscriptionsSummary || 'None'} />}
+                  </>
+                )}
+              </Section>
+            </>
+          )}
+
           <Text size='sm' ta='center' c='gray.5'>
             For assistance with profile updates, please contact <Anchor href='mailto:careconnect@sfgov.org' underline='always'>careconnect@sfgov.org</Anchor>
           </Text>

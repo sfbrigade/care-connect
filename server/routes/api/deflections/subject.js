@@ -4,6 +4,7 @@ import { z } from 'zod';
 import Deflection from '#models/deflection.js';
 import PropertyPhoto from '#models/propertyPhoto.js';
 import Subject from '#models/subject.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { canModifyDeflection } from '#lib/incidentPermissions.js';
 import { QUEUE_GENERATE_FORMS } from '#lib/jobQueue/queueNames.js';
@@ -148,6 +149,11 @@ export default async function (fastify, opts) {
           formIds: ['647f'],
         });
       }
+
+      // If hold is newly detail-complete, fire the NEW_HOLD notification
+      smsNotifications
+        .maybeNotifyReadyHolds(fastify, { facilityId: deflection.facilityId, incidentId: deflection.incidentId })
+        .catch((err) => fastify.log.error({ err }, 'SMS ready-hold notification failed'));
 
       return reply.send(redactDeflectionForUser(deflection, request.user));
     });
