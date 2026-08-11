@@ -476,6 +476,19 @@ DEPARTURE DEPARTURE
     }
   
 
+  "SmsOptEvent" {
+    String id "🗝️"
+    String phoneNumber 
+    String action 
+    String source 
+    String outcome "❓"
+    String awsReason "❓"
+    String actorUserId "❓"
+    String targetUserId "❓"
+    DateTime createdAt 
+    }
+  
+
   "BedType" {
     String id "🗝️"
     String facilityId "🗝️"

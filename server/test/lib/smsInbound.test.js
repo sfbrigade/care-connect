@@ -15,15 +15,18 @@ import { build } from '#test/helper.js';
 // time), so it must be imported only AFTER build() has set DATABASE_URL — otherwise
 // the singleton captures an empty URL and $connect() fails. build() first, then the
 // dynamic import.
+const OPT_IN_OUTCOME = { RESTORED: 'restored', BLOCKED_30_DAY: 'blocked_30_day', ERROR: 'error' };
 const sendText = mock.fn(async () => {});
-const optInNumber = mock.fn(async () => {});
+// attemptOptIn returns a classified outcome (restored by default); tests override it.
+const attemptOptIn = mock.fn(async () => ({ outcome: OPT_IN_OUTCOME.RESTORED }));
 mock.module('#lib/sms.js', {
   defaultExport: {
     sendText,
-    optInNumber,
+    attemptOptIn,
     resolveTransport: () => 'log',
     reset: () => {},
   },
+  namedExports: { OPT_IN_OUTCOME },
 });
 
 test('inbound SMS handling', async (t) => {
@@ -124,7 +127,7 @@ test('inbound SMS handling', async (t) => {
     const words = ['STOP', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT', 'OPTOUT'];
     for (const word of words) {
       sendText.mock.resetCalls();
-      optInNumber.mock.resetCalls();
+      attemptOptIn.mock.resetCalls();
       const u = await makeUser({ smsOptedOutAt: null });
 
       const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: word }, prisma);
@@ -133,47 +136,59 @@ test('inbound SMS handling', async (t) => {
       const after = await prisma.user.findUnique({ where: { id: u.id } });
       assert.ok(after.smsOptedOutAt instanceof Date, `${word} sets smsOptedOutAt`);
       assert.strictEqual(sendText.mock.callCount(), 0, `${word} must not reply`);
-      assert.strictEqual(optInNumber.mock.callCount(), 0, `${word} must not opt the number back in`);
+      assert.strictEqual(attemptOptIn.mock.callCount(), 0, `${word} must not opt the number back in`);
+      // Logs an opt-out event to the shared opt-out history.
+      const event = await prisma.smsOptEvent.findFirst({ where: { phoneNumber: u.phoneNumber, action: 'opt_out' } });
+      assert.ok(event, `${word} logs an opt_out SmsOptEvent`);
+      assert.strictEqual(event.source, 'inbound_stop');
     }
   });
 
-  await t.test('every opt-in keyword clears the opt-out and sends no reply', async () => {
+  await t.test('every opt-in keyword clears the opt-out, opts in at AWS, and logs the attempt', async () => {
     const words = ['START', 'UNSTOP', 'YES', 'OPTIN'];
     for (const word of words) {
       sendText.mock.resetCalls();
-      optInNumber.mock.resetCalls();
+      attemptOptIn.mock.resetCalls();
       const u = await makeUser({ smsOptedOutAt: new Date() });
 
       const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: word }, prisma);
 
       assert.strictEqual(res.action, 'optin', word);
+      assert.strictEqual(res.ok, true, word);
       const after = await prisma.user.findUnique({ where: { id: u.id } });
       assert.strictEqual(after.smsOptedOutAt, null, `${word} clears the opt-out`);
       assert.strictEqual(sendText.mock.callCount(), 0, `${word} must not reply`);
-      // Also removes the number from AWS's opt-out list (AWS never auto-clears on START).
-      assert.strictEqual(optInNumber.mock.callCount(), 1, `${word} opts the number back in at AWS`);
-      assert.strictEqual(optInNumber.mock.calls[0].arguments[0], u.phoneNumber);
+      // Attempts the AWS opt-in (AWS never auto-clears on START).
+      assert.strictEqual(attemptOptIn.mock.callCount(), 1, `${word} opts the number back in at AWS`);
+      assert.strictEqual(attemptOptIn.mock.calls[0].arguments[0], u.phoneNumber);
+      // Logs an opt_in event from the inbound source.
+      const event = await prisma.smsOptEvent.findFirst({ where: { phoneNumber: u.phoneNumber, source: 'inbound_start' } });
+      assert.ok(event, `${word} logs an opt_in SmsOptEvent`);
+      assert.strictEqual(event.action, 'opt_in');
+      assert.strictEqual(event.outcome, 'restored');
+      assert.strictEqual(event.actorUserId, null, 'inbound has no admin actor');
     }
   });
 
-  await t.test('a failed AWS opt-in leaves the opt-out record set (no false "delivery restored")', async () => {
-    // If DeleteOptedOutNumber is rejected (e.g. AWS's once-per-30-days opt-in limit),
-    // the number is still blocked at AWS, so we must NOT clear smsOptedOutAt — else
-    // the user looks deliverable to us while every send bounces.
+  await t.test('a blocked AWS opt-in leaves the opt-out record set (no false "delivery restored")', async () => {
+    // If AWS refuses (once-per-30-days limit), the number is still blocked at AWS, so we
+    // must NOT clear smsOptedOutAt — else the user looks deliverable while every send bounces.
     sendText.mock.resetCalls();
-    optInNumber.mock.resetCalls();
-    optInNumber.mock.mockImplementationOnce(async () => { throw new Error('PHONE_NUMBER_CANNOT_BE_OPTED_IN'); });
-    const optedOutAt = new Date();
-    const u = await makeUser({ smsOptedOutAt: optedOutAt });
+    attemptOptIn.mock.resetCalls();
+    attemptOptIn.mock.mockImplementationOnce(async () => ({ outcome: OPT_IN_OUTCOME.BLOCKED_30_DAY, awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' }));
+    const u = await makeUser({ smsOptedOutAt: new Date() });
 
     const res = await handleInboundSms({ fromNumber: u.phoneNumber, body: 'START' }, prisma);
 
     assert.strictEqual(res.action, 'optin');
     assert.strictEqual(res.ok, false);
-    assert.strictEqual(optInNumber.mock.callCount(), 1);
+    assert.strictEqual(attemptOptIn.mock.callCount(), 1);
     const after = await prisma.user.findUnique({ where: { id: u.id } });
-    assert.ok(after.smsOptedOutAt instanceof Date, 'opt-out stays set when AWS opt-in fails');
+    assert.ok(after.smsOptedOutAt instanceof Date, 'opt-out stays set when AWS opt-in is blocked');
     assert.strictEqual(sendText.mock.callCount(), 0);
+    // The blocked attempt is still logged (feeds the 30-day-limit history).
+    const attempt = await prisma.smsOptEvent.findFirst({ where: { phoneNumber: u.phoneNumber, source: 'inbound_start' } });
+    assert.strictEqual(attempt.outcome, 'blocked_30_day');
   });
 
   await t.test('HELP is left to the AWS keyword auto-response — we do not reply or change state', async () => {

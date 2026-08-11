@@ -30,6 +30,11 @@ async function init () {
   }
 }
 
+// The opt-out list our number uses (resolved at call time so tests can vary the env).
+function optOutListName () {
+  return process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
+}
+
 function hasAwsSms () {
   return Boolean(
     process.env.AWS_SMS_ACCESS_KEY_ID &&
@@ -88,22 +93,59 @@ async function sendText ({ to, body }) {
   }
 }
 
-// Remove a number from our AWS opt-out list so we can send to it again.
-// We must run this when an opted-out user sends the text START or UNSTOP.
-// Otherwise, AWS continues to block outbound messages, even if the carrier does not.
-async function optInNumber (phoneNumber) {
-  if (resolveTransport() !== 'aws') return null;
+// Try to remove a number from our AWS opt-out list so we can send to it again (run on
+// an inbound START/UNSTOP, or an admin "restore delivery"). Returns a CLASSIFIED outcome
+// (the string values of smsOptIn.js's OPT_IN_OUTCOME) rather than throwing, so callers
+// can log it and react:
+//   { outcome: 'restored' }        — removed, already absent, or non-aws transport (no list).
+//   { outcome: 'blocked_30_day' }  — AWS refused: number opted in within the last ~30 days.
+//   { outcome: 'error', awsReason } — any other AWS/API failure.
+async function attemptOptIn (phoneNumber) {
+  if (resolveTransport() !== 'aws') return { outcome: 'restored' };
   await init();
   const { DeleteOptedOutNumberCommand } = await loadSdk();
-  const OptOutListName = process.env.AWS_SMS_OPT_OUT_LIST_NAME || 'Default';
   try {
-    return await client.send(
-      new DeleteOptedOutNumberCommand({ OptOutListName, OptedOutNumber: phoneNumber })
-    );
+    await client.send(new DeleteOptedOutNumberCommand({ OptOutListName: optOutListName(), OptedOutNumber: phoneNumber }));
+    return { outcome: 'restored' };
   } catch (err) {
-    // Not on the list = already opted in; nothing to do.
-    if (err.name === 'ResourceNotFoundException') return null;
-    throw err;
+    // Not on the list = already opted in; the desired end state, so treat as restored.
+    if (err.name === 'ResourceNotFoundException') return { outcome: 'restored' };
+    const reason = err.Reason || err.message || '';
+    if (/PHONE_NUMBER_CANNOT_BE_OPTED_IN/.test(reason)) {
+      return { outcome: 'blocked_30_day', awsReason: 'PHONE_NUMBER_CANNOT_BE_OPTED_IN' };
+    }
+    return { outcome: 'error', awsReason: err.name || 'error' };
+  }
+}
+
+// Look up a number's current status on our AWS opt-out list (read-only; for the
+// admin SMS diagnostic). Our own smsOptedOutAt is only a MIRROR of this list and can
+// drift from it, so surfacing AWS's own truth is the point. Returns:
+//   { available: true, optedOut: false }
+//   { available: true, optedOut: true, optedOutTimestamp, endUserOptedOut }
+//   { available: false, reason }  — not the 'aws' transport, no number, or an API error.
+// Querying a single number that isn't on the list throws ResourceNotFoundException,
+// which we treat as "not opted out" (matches AWS's DescribeOptedOutNumbers behavior).
+async function describeOptOutStatus (phoneNumber) {
+  if (resolveTransport() !== 'aws') return { available: false, reason: 'not-aws-transport' };
+  if (!phoneNumber) return { available: false, reason: 'no-number' };
+  await init();
+  const { DescribeOptedOutNumbersCommand } = await loadSdk();
+  try {
+    const response = await client.send(
+      new DescribeOptedOutNumbersCommand({ OptOutListName: optOutListName(), OptedOutNumbers: [phoneNumber] })
+    );
+    const entry = (response.OptedOutNumbers ?? [])[0];
+    if (!entry) return { available: true, optedOut: false };
+    return {
+      available: true,
+      optedOut: true,
+      optedOutTimestamp: entry.OptedOutTimestamp ?? null,
+      endUserOptedOut: entry.EndUserOptedOut ?? null,
+    };
+  } catch (err) {
+    if (err.name === 'ResourceNotFoundException') return { available: true, optedOut: false };
+    return { available: false, reason: err.name || 'error' };
   }
 }
 
@@ -115,7 +157,8 @@ function reset () {
 
 export default {
   sendText,
-  optInNumber,
+  attemptOptIn,
+  describeOptOutStatus,
   resolveTransport,
   reset,
 };
