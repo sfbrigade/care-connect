@@ -900,6 +900,51 @@
                 }
               },
               {
+                "Name": "AWS_SMS_ORIGINATION_NUMBER",
+                "Value": {
+                  "Ref": "SmsOriginationNumber"
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_QUEUE_URL",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sqs-queue-url"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-sms-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_SMS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
+                }
+              },
+              {
                 "Name": "AWS_TRANSCRIBE_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
