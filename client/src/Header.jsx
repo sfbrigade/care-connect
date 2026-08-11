@@ -14,6 +14,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Api from './Api';
+import SmsNotificationMenu from '@/components/SmsNotificationMenu';
 import {
   getWorkModeFromPath,
   readStoredWorkMode,
@@ -149,6 +150,7 @@ function Header ({ opened, close, toggle, logout }) {
           )}
         </Box>
         <Group wrap='nowrap' style={{ flexShrink: 0 }}>
+          {user && facility && <SmsNotificationMenu />}
           {user &&
             <Menu position='bottom-end' width={280} onOpen={handleMenuOpen} onClose={close}>
               <Menu.Target>

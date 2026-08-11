@@ -279,6 +279,14 @@ DEATH_IN_CUSTODY DEATH_IN_CUSTODY
     
 
 
+        NotifiableEventEnum {
+            NEW_HOLD NEW_HOLD
+ARRIVAL ARRIVAL
+EXIT EXIT
+        }
+    
+
+
         FacilityCheckInEventEnum {
             ARRIVAL ARRIVAL
 DEPARTURE DEPARTURE
@@ -339,6 +347,21 @@ DEPARTURE DEPARTURE
     String badgeNumber "❓"
     Boolean prop115Certified 
     DateTime satisfactionSurveyNextEligibleAt "❓"
+    String phoneNumber "❓"
+    DateTime phoneVerifiedAt "❓"
+    DateTime smsConsentAt "❓"
+    DateTime smsOptedOutAt "❓"
+    Boolean notificationsEnabled 
+    NotifiableEventEnum subscribedEvents 
+    String currentFacilityId "❓"
+    String smsOtpCode "❓"
+    DateTime smsOtpExpiresAt "❓"
+    Int smsOtpAttempts 
+    DateTime smsOtpLastSentAt "❓"
+    DateTime smsBannerDismissedAt "❓"
+    DateTime smsBannerRemindAfter "❓"
+    Int smsBannerRemindCount 
+    DateTime smsWelcomedAt "❓"
     DateTime updatedAt 
     DateTime createdAt 
     }
@@ -449,6 +472,19 @@ DEPARTURE DEPARTURE
     Json metadata "❓"
     String actorUserId 
     String targetUserId 
+    DateTime createdAt 
+    }
+  
+
+  "SmsOptEvent" {
+    String id "🗝️"
+    String phoneNumber 
+    String action 
+    String source 
+    String outcome "❓"
+    String awsReason "❓"
+    String actorUserId "❓"
+    String targetUserId "❓"
     DateTime createdAt 
     }
   
@@ -586,6 +622,7 @@ DEPARTURE DEPARTURE
     SFResidentEnum exitSFResident "❓"
     DateTime arrivedAt "❓"
     DateTime handoffReadyAt "❓"
+    DateTime newHoldNotifiedAt "❓"
     DateTime updatedAt 
     }
   
@@ -726,6 +763,8 @@ DEPARTURE DEPARTURE
     "User" o|--|o "Organization" : "organization"
     "User" o|--|o "Title" : "title"
     "User" o|--|o "Unit" : "unit"
+    "User" o|--}o "NotifiableEventEnum" : "enum:subscribedEvents"
+    "User" o|--|o "Facility" : "currentFacility"
     "User" o{--}o "AdminSecurityEvent" : ""
     "User" o{--}o "AdminSecurityEvent" : ""
     "User" o{--}o "BedType" : ""
