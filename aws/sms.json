@@ -8,6 +8,17 @@
     }
   },
   "Outputs": {
+    "SMSInboundSQSQueueUrl": {
+      "Description": "URL for inbound SMS SQS queue",
+      "Value": {
+        "Ref": "SMSInboundSQSQueue"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-sms-inbound-sqs-queue-url"
+        }
+      }
+    },
     "SMSUserAccessKeyId": {
       "Description": "Access Key ID for the user",
       "Value": {
