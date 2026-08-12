@@ -24,7 +24,7 @@ function EditContactDetailsPage () {
 
   const [step, setStep] = useState('form');
   // Pre-fill only a VERIFIED number; UI ignores an unverified number. Frozen at
-  // mount so it can double as the baseline for the "has anything changed?" check.
+  // mount so we can check for user edits.
   const [initialPhone] = useState(() => (user?.phoneVerifiedAt ? (formatUSPhone(user.phoneNumber) || '') : ''));
   const [phone, setPhone] = useState(initialPhone);
   const [phoneError, setPhoneError] = useState(null);
@@ -56,8 +56,7 @@ function EditContactDetailsPage () {
     startMutation.mutate(number);
   }
 
-  // Save is only offered once the number both differs from what was there and is a
-  // complete 10-digit US number — mid-typing is a normal state, not an error.
+  // Only enable save button when there's a meaningful (and valid) change
   const canSave = phone !== initialPhone && !!toE164US(phone);
 
   function handleBack () {
