@@ -130,7 +130,7 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     );
   });
 
-  it('when muted, hides the toggles and shows the paused message with Paused selected', async () => {
+  it('when muted, still shows the toggles (with Paused selected and no paused message)', async () => {
     mockUserRef.current = {
       id: 'user-1',
       phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
@@ -139,12 +139,28 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     };
     renderPage();
 
-    expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
-    expect(screen.queryByRole('switch')).toBeNull();
+    expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeChecked();
+    expect(screen.getAllByRole('switch')).toHaveLength(3);
+    expect(screen.queryByText(/SMS notifications are paused/i)).toBeNull();
     expect(screen.getByDisplayValue('Paused')).toBeInTheDocument(); // dropdown shows Paused
   });
 
-  it('muting persists notificationsEnabled:false and hides the toggles', async () => {
+  it('keeps subscriptions editable while muted', async () => {
+    const user = userEvent.setup();
+    mockUserRef.current = {
+      id: 'user-1',
+      phoneVerifiedAt: '2026-01-01T00:00:00.000Z',
+      subscribedEvents: ['NEW_HOLD'],
+      notificationsEnabled: false,
+    };
+    renderPage();
+
+    await user.click(await screen.findByRole('switch', { name: /Person has arrived/i }));
+
+    await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { subscribedEvents: ['NEW_HOLD', 'ARRIVAL'] }));
+  });
+
+  it('muting persists notificationsEnabled:false and keeps the toggles visible', async () => {
     const user = userEvent.setup();
     renderPage(); // beforeEach user is unmuted, toggles visible
     await screen.findByRole('switch', { name: /Person in transit/i });
@@ -153,11 +169,11 @@ describe('NotificationSettingsPage (auto-apply)', () => {
     await user.click(await screen.findByText('Paused'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: false }));
-    expect(await screen.findByText(/SMS notifications are paused/i)).toBeInTheDocument();
-    expect(screen.queryByRole('switch')).toBeNull();
+    expect(screen.getAllByRole('switch')).toHaveLength(3);
+    expect(screen.queryByText(/SMS notifications are paused/i)).toBeNull();
   });
 
-  it('unmuting persists notificationsEnabled:true and reveals the toggles', async () => {
+  it('unmuting persists notificationsEnabled:true', async () => {
     const user = userEvent.setup();
     mockUserRef.current = {
       id: 'user-1',
@@ -166,13 +182,13 @@ describe('NotificationSettingsPage (auto-apply)', () => {
       notificationsEnabled: false,
     };
     renderPage();
-    await screen.findByText(/SMS notifications are paused/i);
+    await screen.findByRole('switch', { name: /Person in transit/i });
 
     await user.click(screen.getByDisplayValue('Paused')); // open the dropdown
     await user.click(await screen.findByText('Active'));
 
     await waitFor(() => expect(mockUsersUpdate).toHaveBeenCalledWith('user-1', { notificationsEnabled: true }));
-    expect(await screen.findByRole('switch', { name: /Person in transit/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('switch')).toHaveLength(3);
   });
 
   it('shows the opt-out banner when the user is carrier-opted-out (STOP)', async () => {

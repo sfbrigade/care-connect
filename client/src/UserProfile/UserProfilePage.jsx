@@ -110,7 +110,8 @@ function UserProfilePage () {
                   <>
                     {smsOptedOut && <SmsOptOutBanner />}
                     <Field label='Status' value={smsUnmuted ? 'Active' : 'Paused'} />
-                    {smsUnmuted && <Field label='Subscriptions' value={subscriptionsSummary || 'None'} />}
+                    {/* Shown whether Active or Paused — pausing only stops delivery. */}
+                    <Field label='Subscriptions' value={subscriptionsSummary || 'None'} />
                   </>
                 )}
               </Section>

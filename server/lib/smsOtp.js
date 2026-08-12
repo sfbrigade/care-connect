@@ -63,7 +63,7 @@ export async function checkVerificationCode (prisma, user, code) {
       where: { id: user.id },
       data: { smsOtpAttempts: { increment: 1 } },
     });
-    return { status: 422, error: 'That code is incorrect. Try again.' };
+    return { status: 422, error: 'Invalid code. Check the code and try again.' };
   }
   return { ok: true };
 }
