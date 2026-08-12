@@ -55,6 +55,19 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
         placeholder=''
         error={!!codeError}
         aria-label='Verification code'
+        // Spec: 48x48 cells with Text/lg (18/28). Mantine's size scale has
+        // no 48px step (sm 36 / md 42 / lg 50), so the cell is sized explicitly.
+        // Each cell is a wrapper (`pinInput`, sets the box width) around the
+        // bordered `input` (sets its own height/type), so both need setting.
+        styles={{
+          pinInput: { width: '48px', height: '48px' },
+          input: {
+            height: '48px',
+            minHeight: '48px',
+            fontSize: 'var(--mantine-font-size-lg)',
+            lineHeight: 'var(--mantine-line-height-lg)',
+          },
+        }}
       />
       {codeError && <Text c='red' size='sm'>{codeError}</Text>}
       <Stack gap='sm' align='flex-start'>
