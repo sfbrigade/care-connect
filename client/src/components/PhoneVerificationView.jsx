@@ -59,7 +59,7 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
       {codeError && <Text c='red' size='sm'>{codeError}</Text>}
       <Stack gap='sm' align='flex-start'>
         <Button
-          variant='secondary'
+          variant='primary'
           onClick={() => verifyMutation.mutate(code)}
           disabled={code.length !== 6}
           loading={verifyMutation.isPending}
