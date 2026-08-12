@@ -132,7 +132,7 @@ function SmsEnrollmentPage () {
               }
             />
             <Group>
-              <Button variant='secondary' onClick={onContinue} disabled={!canContinue} loading={startMutation.isPending}>Continue</Button>
+              <Button variant='primary' onClick={onContinue} disabled={!canContinue} loading={startMutation.isPending}>Continue</Button>
             </Group>
           </Stack>
         )}
