@@ -42,6 +42,15 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
     onError: (err) => setCodeError(err.response?.data?.error || 'Could not resend the code.'),
   });
 
+  // Submitting is explicit (button or Enter) — never on the 6th keystroke, so a
+  // mistyped digit doesn't burn a verification attempt.
+  const canSubmit = code.length === 6 && !verifyMutation.isPending;
+
+  function submitCode () {
+    if (!canSubmit) return;
+    verifyMutation.mutate(code);
+  }
+
   return (
     <Stack>
       <ScreenHeading label='Enter verification code' message={`We’ve sent a 6-digit code to ${formatUSPhone(phoneNumber)}`} />
@@ -49,9 +58,12 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
         length={6}
         type='number'
         oneTimeCode
+        autoFocus
         value={code}
         onChange={(v) => { setCode(v); setCodeError(null); }}
-        onComplete={(v) => verifyMutation.mutate(v)}
+        // PinInput preventDefaults Enter on the cells (non-digit key), so implicit
+        // form submission can't work here — but the event still bubbles to the root.
+        onKeyDown={(e) => { if (e.key === 'Enter') submitCode(); }}
         placeholder=''
         error={!!codeError}
         aria-label='Verification code'
@@ -73,8 +85,8 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
       <Stack gap='sm' align='flex-start'>
         <Button
           variant='primary'
-          onClick={() => verifyMutation.mutate(code)}
-          disabled={code.length !== 6}
+          onClick={submitCode}
+          disabled={!canSubmit}
           loading={verifyMutation.isPending}
         >
           Verify and continue
