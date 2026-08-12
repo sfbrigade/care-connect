@@ -36,9 +36,6 @@ function SmsEnrollmentPage () {
   const [phoneError, setPhoneError] = useState(null);
   const [e164, setE164] = useState('');
   const [initialResend, setInitialResend] = useState(30);
-  // First-time enrollment opts into everything by default. A user who already has
-  // subscriptions (they land straight on this step with a verified phone) keeps
-  // their existing choices rather than having them reset to all-on.
   const [selected, setSelected] = useState(() => new Set(
     user?.subscribedEvents?.length ? user.subscribedEvents : NOTIFICATION_EVENTS.map((e) => e.value)
   ));

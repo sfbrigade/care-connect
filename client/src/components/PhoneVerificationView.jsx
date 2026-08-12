@@ -42,8 +42,6 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
     onError: (err) => setCodeError(err.response?.data?.error || 'Could not resend the code.'),
   });
 
-  // Submitting is explicit (button or Enter) — never on the 6th keystroke, so a
-  // mistyped digit doesn't burn a verification attempt.
   const canSubmit = code.length === 6 && !verifyMutation.isPending;
 
   function submitCode () {

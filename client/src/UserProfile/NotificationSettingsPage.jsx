@@ -158,8 +158,6 @@ function NotificationSettingsPage () {
                   </Group>
                 )}
               />
-              {/* Preferences stay visible and editable while paused — pausing only
-                  stops delivery, it doesn't discard the saved event selection. */}
               <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
             </>
           )}
