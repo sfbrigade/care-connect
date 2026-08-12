@@ -158,9 +158,9 @@ function NotificationSettingsPage () {
                   </Group>
                 )}
               />
-              {notifEnabled
-                ? <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
-                : <Text size='sm' c='dimmed'>SMS notifications are paused. Set them to Active to start receiving live text updates again.</Text>}
+              {/* Preferences stay visible and editable while paused — pausing only
+                  stops delivery, it doesn't discard the saved event selection. */}
+              <NotificationPreferenceToggles selected={selected} onToggle={toggle} facilityName={facilityName} />
             </>
           )}
         </Stack>
