@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Anchor, Button, Checkbox, Container, Group, Stack, Text, TextInput } from '@mantine/core';
+import { Anchor, Button, Checkbox, Container, Group, InputBase, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
+import { IMaskInput } from 'react-imask';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -10,7 +11,7 @@ import { useAuthContext } from '@/AuthContext';
 import { useFacilityContext } from '@/FacilityContext';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
-import NotificationPreferenceToggles from '@/components/NotificationPreferenceToggles';
+import NotificationPreferenceToggles, { NOTIFICATION_EVENTS } from '@/components/NotificationPreferenceToggles';
 import PhoneVerificationView from '@/components/PhoneVerificationView';
 import ScreenHeading from '@/components/ScreenHeading';
 import { useToast } from '@/components/ToastContext';
@@ -35,7 +36,9 @@ function SmsEnrollmentPage () {
   const [phoneError, setPhoneError] = useState(null);
   const [e164, setE164] = useState('');
   const [initialResend, setInitialResend] = useState(30);
-  const [selected, setSelected] = useState(new Set(user?.subscribedEvents ?? []));
+  const [selected, setSelected] = useState(() => new Set(
+    user?.subscribedEvents?.length ? user.subscribedEvents : NOTIFICATION_EVENTS.map((e) => e.value)
+  ));
 
   const startMutation = useMutation({
     mutationFn: (number) => Api.users.startPhoneVerification({ phoneNumber: number, consent, acceptedTerms }),
@@ -105,13 +108,16 @@ function SmsEnrollmentPage () {
         {step === 'phone' && (
           <Stack>
             <ScreenHeading label='Subscribe to SMS notifications' message='Enter your mobile number to get notified on important status changes.' />
-            <TextInput
+            <InputBase
               label='Mobile number'
               placeholder='000-000-0000'
+              component={IMaskInput}
+              mask='000-000-0000'
               value={phone}
-              onChange={(e) => { setPhone(e.currentTarget.value); setPhoneError(null); }}
+              onAccept={(value) => { setPhone(value); setPhoneError(null); }}
               error={phoneError}
               inputMode='tel'
+              size='lg'
             />
             <Checkbox
               checked={consent}
@@ -132,7 +138,7 @@ function SmsEnrollmentPage () {
               }
             />
             <Group>
-              <Button variant='secondary' onClick={onContinue} disabled={!canContinue} loading={startMutation.isPending}>Continue</Button>
+              <Button variant='primary' onClick={onContinue} disabled={!canContinue} loading={startMutation.isPending}>Continue</Button>
             </Group>
           </Stack>
         )}
@@ -151,7 +157,7 @@ function SmsEnrollmentPage () {
             <NotificationPreferenceToggles selected={selected} onToggle={toggleEvent} facilityName={facilityName} />
             <Group>
               <Button
-                variant='secondary'
+                variant='primary'
                 onClick={() => subscribeMutation.mutate()}
                 disabled={selected.size === 0}
                 loading={subscribeMutation.isPending}

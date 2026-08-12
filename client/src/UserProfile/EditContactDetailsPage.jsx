@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Button, Container, Group, Stack, TextInput, Title } from '@mantine/core';
+import { Button, Container, Group, InputBase, Stack, TextInput, Title } from '@mantine/core';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
+import { IMaskInput } from 'react-imask';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -73,11 +74,13 @@ function EditContactDetailsPage () {
           <Stack>
             <Title order={2}>Edit contact details</Title>
             <TextInput label='Email address' value={user?.email ?? ''} disabled />
-            <TextInput
+            <InputBase
               label='Mobile number'
               placeholder='000-000-0000'
+              component={IMaskInput}
+              mask='000-000-0000'
               value={phone}
-              onChange={(e) => { setPhone(e.currentTarget.value); setPhoneError(null); }}
+              onAccept={(value) => { setPhone(value); setPhoneError(null); }}
               error={phoneError}
               inputMode='tel'
             />

@@ -30,7 +30,7 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
       onVerified?.();
     },
-    onError: (err) => setCodeError(err.response?.data?.error || 'That code is incorrect. Try again.'),
+    onError: (err) => setCodeError(err.response?.data?.error || 'Invalid code. Check the code and try again.'),
   });
 
   const resendMutation = useMutation({
@@ -42,6 +42,13 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
     onError: (err) => setCodeError(err.response?.data?.error || 'Could not resend the code.'),
   });
 
+  const canSubmit = code.length === 6 && !verifyMutation.isPending;
+
+  function submitCode () {
+    if (!canSubmit) return;
+    verifyMutation.mutate(code);
+  }
+
   return (
     <Stack>
       <ScreenHeading label='Enter verification code' message={`We’ve sent a 6-digit code to ${formatUSPhone(phoneNumber)}`} />
@@ -49,19 +56,35 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
         length={6}
         type='number'
         oneTimeCode
+        autoFocus
         value={code}
         onChange={(v) => { setCode(v); setCodeError(null); }}
-        onComplete={(v) => verifyMutation.mutate(v)}
+        // PinInput preventDefaults Enter on the cells (non-digit key), so implicit
+        // form submission can't work here — but the event still bubbles to the root.
+        onKeyDown={(e) => { if (e.key === 'Enter') submitCode(); }}
         placeholder=''
         error={!!codeError}
         aria-label='Verification code'
+        // Spec: 48x48 cells with Text/lg (18/28). Mantine's size scale has
+        // no 48px step (sm 36 / md 42 / lg 50), so the cell is sized explicitly.
+        // Each cell is a wrapper (`pinInput`, sets the box width) around the
+        // bordered `input` (sets its own height/type), so both need setting.
+        styles={{
+          pinInput: { width: '48px', height: '48px' },
+          input: {
+            height: '48px',
+            minHeight: '48px',
+            fontSize: 'var(--mantine-font-size-lg)',
+            lineHeight: 'var(--mantine-line-height-lg)',
+          },
+        }}
       />
       {codeError && <Text c='red' size='sm'>{codeError}</Text>}
       <Stack gap='sm' align='flex-start'>
         <Button
-          variant='secondary'
-          onClick={() => verifyMutation.mutate(code)}
-          disabled={code.length !== 6}
+          variant='primary'
+          onClick={submitCode}
+          disabled={!canSubmit}
           loading={verifyMutation.isPending}
         >
           Verify and continue
