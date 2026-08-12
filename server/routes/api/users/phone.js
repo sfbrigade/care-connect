@@ -46,7 +46,7 @@ export default async function (fastify, opts) {
         select: { id: true },
       });
       if (takenBy) {
-        return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
+        return reply.code(StatusCodes.CONFLICT).send({ error: 'This mobile number is already in use with another account. Enter a different mobile number.' });
       }
 
       const remaining = resendCooldownRemaining(request.user.smsOtpLastSentAt);
@@ -69,7 +69,7 @@ export default async function (fastify, opts) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: 'We couldn’t send a verification code to that number. Check that it’s correct and try again.' });
         }
         if (err?.code === 'P2002') {
-          return reply.code(StatusCodes.CONFLICT).send({ error: 'That number is already in use on another account. Please enter a different number.' });
+          return reply.code(StatusCodes.CONFLICT).send({ error: 'This mobile number is already in use with another account. Enter a different mobile number.' });
         }
         throw err;
       }

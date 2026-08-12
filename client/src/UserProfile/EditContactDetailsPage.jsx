@@ -23,8 +23,10 @@ function EditContactDetailsPage () {
   const { showToast } = useToast();
 
   const [step, setStep] = useState('form');
-  // Pre-fill only a VERIFIED number; UI ignores an unverified number
-  const [phone, setPhone] = useState(user?.phoneVerifiedAt ? (formatUSPhone(user.phoneNumber) || '') : '');
+  // Pre-fill only a VERIFIED number; UI ignores an unverified number. Frozen at
+  // mount so it can double as the baseline for the "has anything changed?" check.
+  const [initialPhone] = useState(() => (user?.phoneVerifiedAt ? (formatUSPhone(user.phoneNumber) || '') : ''));
+  const [phone, setPhone] = useState(initialPhone);
   const [phoneError, setPhoneError] = useState(null);
   const [e164, setE164] = useState('');
   const [initialResend, setInitialResend] = useState(30);
@@ -53,6 +55,10 @@ function EditContactDetailsPage () {
     setE164(number);
     startMutation.mutate(number);
   }
+
+  // Save is only offered once the number both differs from what was there and is a
+  // complete 10-digit US number — mid-typing is a normal state, not an error.
+  const canSave = phone !== initialPhone && !!toE164US(phone);
 
   function handleBack () {
     if (step === 'verify') setStep('form');
@@ -85,8 +91,8 @@ function EditContactDetailsPage () {
               inputMode='tel'
             />
             <Group>
-              <Button variant='light' color='red' onClick={() => navigate('/profile')}>Cancel</Button>
-              <Button variant='secondary' onClick={onSave} loading={startMutation.isPending}>Save changes</Button>
+              <Button variant='light' onClick={() => navigate('/profile')}>Cancel</Button>
+              <Button variant='primary' onClick={onSave} disabled={!canSave} loading={startMutation.isPending}>Save changes</Button>
             </Group>
           </Stack>
         )}
