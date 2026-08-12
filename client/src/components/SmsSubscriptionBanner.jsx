@@ -50,9 +50,9 @@ function SmsSubscriptionBanner () {
       styles={{ root: { backgroundColor: 'var(--mantine-color-gray-1)' } }}
     >
       <Stack gap='xs'>
-        <Text size='sm'>Subscribe to SMS notifications for CareConnect status updates.</Text>
+        <Text size='md'>Subscribe to SMS notifications for CareConnect status updates.</Text>
         <Group gap='md'>
-          <Anchor component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
+          <Anchor size = 'sm' component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
             Remind me later
           </Anchor>
           <Button variant='secondary' size='sm' onClick={onSubscribe}>
