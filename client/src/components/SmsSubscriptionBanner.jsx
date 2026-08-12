@@ -52,7 +52,7 @@ function SmsSubscriptionBanner () {
       <Stack gap='xs'>
         <Text size='md'>Subscribe to SMS notifications for CareConnect status updates.</Text>
         <Group gap='md'>
-          <Anchor size = 'sm' component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
+          <Anchor size='sm' component='button' type='button' onClick={() => bannerActionMutation.mutate('remind')}>
             Remind me later
           </Anchor>
           <Button variant='secondary' size='sm' onClick={onSubscribe}>
