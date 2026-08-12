@@ -30,7 +30,7 @@ function PhoneVerificationView ({ phoneNumber, initialResendSeconds = 0, onVerif
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
       onVerified?.();
     },
-    onError: (err) => setCodeError(err.response?.data?.error || 'That code is incorrect. Try again.'),
+    onError: (err) => setCodeError(err.response?.data?.error || 'Invalid code. Check the code and try again.'),
   });
 
   const resendMutation = useMutation({
