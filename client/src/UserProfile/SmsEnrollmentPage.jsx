@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Anchor, Button, Checkbox, Container, Group, Stack, Text, TextInput } from '@mantine/core';
+import { Anchor, Button, Checkbox, Container, Group, InputBase, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router';
+import { IMaskInput } from 'react-imask';
 import { Head } from '@unhead/react';
 
 import Api from '@/Api';
@@ -105,11 +106,13 @@ function SmsEnrollmentPage () {
         {step === 'phone' && (
           <Stack>
             <ScreenHeading label='Subscribe to SMS notifications' message='Enter your mobile number to get notified on important status changes.' />
-            <TextInput
+            <InputBase
               label='Mobile number'
               placeholder='000-000-0000'
+              component={IMaskInput}
+              mask='000-000-0000'
               value={phone}
-              onChange={(e) => { setPhone(e.currentTarget.value); setPhoneError(null); }}
+              onAccept={(value) => { setPhone(value); setPhoneError(null); }}
               error={phoneError}
               inputMode='tel'
             />
