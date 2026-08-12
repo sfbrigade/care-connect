@@ -132,4 +132,17 @@ export async function maybeSendWelcome (fastify, user) {
   return 1;
 }
 
-export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit, maybeNotifyReadyHolds, maybeSendWelcome };
+// Confirm an in-app pause/resume over SMS, so a change made in the UI lands on the
+// phone exactly as one made by replying PAUSE/RESUME. Call only when
+// notificationsEnabled actually changed. Skipped for users we can't text: no
+// verified number, or carrier opt-out (AWS blocks those sends anyway).
+export async function maybeConfirmNotificationState (fastify, user) {
+  if (!user?.phoneVerifiedAt) return 0;
+  if (user.smsOptedOutAt) return 0;
+  if (user.deactivatedAt || user.deletedAt) return 0;
+  const body = user.notificationsEnabled ? templates.resumedBody() : templates.pausedBody();
+  await sms.sendText({ to: user.phoneNumber, body });
+  return 1;
+}
+
+export default { notifyNewHold, notifyArrival, notifyExit, maybeNotifyExit, maybeNotifyReadyHolds, maybeSendWelcome, maybeConfirmNotificationState };
