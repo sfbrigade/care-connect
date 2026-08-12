@@ -115,6 +115,7 @@ function SmsEnrollmentPage () {
               onAccept={(value) => { setPhone(value); setPhoneError(null); }}
               error={phoneError}
               inputMode='tel'
+              size='lg'
             />
             <Checkbox
               checked={consent}
