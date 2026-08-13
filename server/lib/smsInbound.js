@@ -1,5 +1,6 @@
 import prisma from '#prisma/client.js';
 import sms from '#lib/sms.js';
+import * as templates from '#lib/smsTemplates.js';
 import { restoreDelivery, recordOptOut, OPT_IN_OUTCOME } from '#lib/smsOptIn.js';
 
 // Handles inbound SMS replies:
@@ -62,12 +63,12 @@ export async function handleInboundSms ({ fromNumber, body }, prismaClient = pri
 
   if (MUTE_WORDS.includes(keyword)) {
     await prismaClient.user.update({ where: { id: user.id }, data: { notificationsEnabled: false } });
-    await reply(fromNumber, 'CareConnect: SMS notifications paused. Reply RESUME to receive live updates again.');
+    await reply(fromNumber, templates.pausedBody());
     return { action: 'mute' };
   }
   if (UNMUTE_WORDS.includes(keyword)) {
     await prismaClient.user.update({ where: { id: user.id }, data: { notificationsEnabled: true } });
-    await reply(fromNumber, 'CareConnect: SMS notifications resumed. Reply PAUSE to pause live updates.');
+    await reply(fromNumber, templates.resumedBody());
     return { action: 'unmute' };
   }
   if (OPTOUT_WORDS.includes(keyword)) {

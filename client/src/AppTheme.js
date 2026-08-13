@@ -1,4 +1,4 @@
-import { createTheme, Accordion, Alert, Anchor, Autocomplete, Badge, Burger, Button, Card, Checkbox, Chip, Container, FileInput, Input, Menu, Modal, Notification, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
+import { createTheme, Accordion, Alert, Anchor, Autocomplete, Badge, Burger, Button, Card, Checkbox, Chip, Container, FileInput, Input, InputBase, Menu, Modal, Notification, SegmentedControl, Stack, Select, Textarea, TextInput } from '@mantine/core';
 
 import { IconCheck } from '@tabler/icons-react';
 
@@ -162,6 +162,15 @@ const AppTheme = createTheme({
       }
     }),
     FileInput: FileInput.extend({
+      defaultProps: {
+        size: 'lg',
+        radius: 'md'
+      },
+      classNames: inputClasses
+    }),
+    // Matches the other input-family components so a masked InputBase sits flush
+    // beside a TextInput (same type size, height, radius and label treatment).
+    InputBase: InputBase.extend({
       defaultProps: {
         size: 'lg',
         radius: 'md'

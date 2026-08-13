@@ -39,6 +39,16 @@ export function exitBody (facility, { deflectionId } = {}) {
   return `CareConnect: Hold ${deflectionId} exited ${facility.name}. View details: ${linkTo(facility, `/custody/${deflectionId}`)}`;
 }
 
+// Pause/resume confirmations. Shared by the inbound keyword handler and the
+// in-app toggle so a change made either way reads identically on the phone.
+export function pausedBody () {
+  return 'CareConnect: SMS notifications paused. Reply RESUME to receive live updates again.';
+}
+
+export function resumedBody () {
+  return 'CareConnect: SMS notifications resumed. Reply PAUSE to pause live updates.';
+}
+
 // First-time enrollment welcome message
 export function welcomeBody (facility) {
   return `CareConnect: You're now subscribed to SMS notifications. You can manage your preferences here: ${linkTo(facility, '/profile/notifications')}. Reply STOP to unsubscribe at any time.`;
