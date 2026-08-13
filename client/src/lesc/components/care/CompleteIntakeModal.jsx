@@ -61,12 +61,14 @@ function CompleteIntakeModal ({
               </Text>
             </Stack>
 
-            <Stack gap='sm'>
+            <Stack gap='sm' align='flex-start'>
               <Button
                 data-testid='intake-confirm-btn'
                 color='indigo'
                 size='lg'
                 radius='xl'
+                h={48}
+                px={24}
                 onClick={onConfirmCompleted}
                 loading={loading}
               >
@@ -77,6 +79,8 @@ function CompleteIntakeModal ({
                 color='red'
                 size='lg'
                 radius='xl'
+                h={48}
+                px={24}
                 onClick={() => setStep('returnToDeputy')}
                 disabled={loading}
               >
@@ -97,12 +101,14 @@ function CompleteIntakeModal ({
               </Text>
             </Stack>
 
-            <Stack gap='sm'>
+            <Stack gap='sm' align='flex-start'>
               <Button
                 variant='outline'
                 color='indigo'
                 size='lg'
                 radius='xl'
+                h={48}
+                px={24}
                 onClick={onClose}
                 disabled={loading}
               >
@@ -113,6 +119,8 @@ function CompleteIntakeModal ({
                 color='red'
                 size='lg'
                 radius='xl'
+                h={48}
+                px={24}
                 onClick={onConfirmNotCompleted}
                 loading={loading}
               >
