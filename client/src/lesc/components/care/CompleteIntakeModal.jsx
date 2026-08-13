@@ -4,10 +4,8 @@ import { IconX } from '@tabler/icons-react';
 
 // Two-step confirmation for the intake decision. Step 1 asks whether the medical
 // intake was completed. Answering "No" advances to step 2 — a second confirmation —
-// before the destructive "return to Deputy" action fires, since that move is
-// irreversible. The external API is unchanged (a single opened/onClose modal with
-// onConfirmCompleted / onConfirmNotCompleted callbacks); the parent closes the modal
-// on mutation success, so this component only tracks which step is showing.
+// before the destructive "return to Deputy" action fires, since that action is
+// irreversible.
 function CompleteIntakeModal ({
   opened,
   onClose,
