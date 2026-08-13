@@ -116,7 +116,7 @@ export class User extends Base {
   }
 
   get isOrgAdmin () {
-    return this.roles.includes('ORG_ADMIN');
+    return this.roles.includes(User.Role.ORG_ADMIN);
   }
 
   get isFacilityAdmin () {
