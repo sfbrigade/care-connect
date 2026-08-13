@@ -91,13 +91,9 @@ export class User extends Base {
   static Role = RoleEnum;
 
   constructor (data) {
-    // Unwrap an already-wrapped model. The spread below only copies own enumerable
-    // keys, and a Base proxy exposes its fields through a get trap rather than as
-    // own keys — so spreading one would silently drop every field. The guard can't
-    // live in Base: this runs before super().
-    if (data instanceof User) {
-      data = data.toJSON();
-    }
+    // NB: `data` must be a plain record, never another User. The spread below only
+    // copies own enumerable keys, and a Base proxy serves its fields from a get
+    // trap — so wrapping a model would silently drop every field.
     if (data?.unit?.name) {
       data = {
         ...data,
@@ -123,7 +119,7 @@ export class User extends Base {
   }
 
   get isOrgAdmin () {
-    return this.roles?.includes(User.Role.ORG_ADMIN) ?? false;
+    return this.roles.includes(User.Role.ORG_ADMIN);
   }
 
   get isFacilityAdmin () {
