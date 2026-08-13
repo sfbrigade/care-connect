@@ -118,7 +118,6 @@ export default async function (fastify, opts) {
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
-      const requestUser = new User(request.user);
       const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
 
       let data;
@@ -143,7 +142,7 @@ export default async function (fastify, opts) {
         // acting within their own org. Org admins are additionally limited to
         // ORG_ADMIN_ALLOWED_FIELDS.
         if (data.id !== request.user.id && !request.user.isAdmin) {
-          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          const inSameOrg = request.user.isOrgAdmin && data.organizationId === request.user.organizationId;
           if (!inSameOrg || bodyFields.some((f) => !ORG_ADMIN_ALLOWED_FIELDS.has(f))) {
             lockedForbidden = true;
             return;
@@ -170,7 +169,7 @@ export default async function (fastify, opts) {
           user.changes.intersection(new Set(['isAdmin', 'roles', 'deactivatedAt', 'deletedAt'])).size &&
           !request.user.isAdmin
         ) {
-          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          const inSameOrg = request.user.isOrgAdmin && data.organizationId === request.user.organizationId;
           if (!inSameOrg || user.changes.has('isAdmin') || user.changes.has('roles')) {
             lockedForbidden = true;
             return;

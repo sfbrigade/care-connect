@@ -28,6 +28,11 @@ export class Unit extends Base {
   static ResponseSchema = UnitResponseSchema;
 
   constructor (data) {
+    // Same guard as User: the spread below would drop every field of an
+    // already-wrapped model, since a Base proxy has no own enumerable keys.
+    if (data instanceof Unit) {
+      data = data.toJSON();
+    }
     if (data?.name) {
       data = {
         ...data,
