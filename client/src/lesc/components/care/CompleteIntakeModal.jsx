@@ -52,7 +52,7 @@ function CompleteIntakeModal ({
         ? (
           <Stack gap='2xl'>
             <Stack gap='sm'>
-              <Group justify='space-between' align='flex-start' wrap='nowrap'>
+              <Group justify='space-between' align='center' wrap='nowrap'>
                 <Title order={4}>Confirm medical intake</Title>
                 {closeButton}
               </Group>
@@ -88,7 +88,7 @@ function CompleteIntakeModal ({
         : (
           <Stack gap='2xl'>
             <Stack gap='sm'>
-              <Group justify='space-between' align='flex-start' wrap='nowrap'>
+              <Group justify='space-between' align='center' wrap='nowrap'>
                 <Title order={4}>Confirm return to Deputy</Title>
                 {closeButton}
               </Group>
