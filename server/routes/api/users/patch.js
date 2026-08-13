@@ -123,6 +123,7 @@ export default async function (fastify, opts) {
       let data;
       let lockedMissing = false;
       let lockedForbidden = false;
+      let notificationStateChanged = false;
       await fastify.prisma.$transaction(async (tx) => {
         data = await tx.user.findByIdForUpdate(tx, id);
         if (!data) {
@@ -176,6 +177,10 @@ export default async function (fastify, opts) {
           }
         }
 
+        // Recorded only when the value actually differs from what's stored, so a
+        // no-op PATCH doesn't trigger a confirmation text.
+        notificationStateChanged = user.changes.has('notificationsEnabled');
+
         const pictureHandler = user.setAsset('picture', picture);
 
         if (request.body.unitName && data.organizationId) {
@@ -205,11 +210,16 @@ export default async function (fastify, opts) {
       if (lockedForbidden) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
-      // Send the one-time welcome SMS if this user just subscribed
-      // for the first time.
+      // Send the one-time welcome SMS if this user just subscribed for the first
+      // time; otherwise confirm a pause/resume they just made in the app. The
+      // welcome wins — enrolling flips notificationsEnabled to true, and a new
+      // subscriber shouldn't get "notifications resumed" on top of the welcome.
       smsNotifications
         .maybeSendWelcome(fastify, data)
-        .catch((err) => fastify.log.error({ err }, 'SMS welcome notification failed'));
+        .then((sent) => (sent || !notificationStateChanged
+          ? 0
+          : smsNotifications.maybeConfirmNotificationState(fastify, data)))
+        .catch((err) => fastify.log.error({ err }, 'SMS state notification failed'));
       return reply.send(new User(data));
     });
 }
