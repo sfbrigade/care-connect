@@ -91,9 +91,6 @@ export class User extends Base {
   static Role = RoleEnum;
 
   constructor (data) {
-    // NB: `data` must be a plain record, never another User. The spread below only
-    // copies own enumerable keys, and a Base proxy serves its fields from a get
-    // trap — so wrapping a model would silently drop every field.
     if (data?.unit?.name) {
       data = {
         ...data,

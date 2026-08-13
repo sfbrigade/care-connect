@@ -37,8 +37,6 @@ export default async function (fastify, opts) {
         return reply.code(StatusCodes.NOT_FOUND).send();
       }
       if (data.id !== request.user.id && !request.user.isAdmin) {
-        // request.user is already a User model (plugins/auth.js) — read the getter
-        // off it directly; re-wrapping a model discards its data.
         if (!request.user.isOrgAdmin || data.organizationId !== request.user.organizationId) {
           return reply.code(StatusCodes.FORBIDDEN).send();
         }
