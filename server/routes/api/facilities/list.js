@@ -9,9 +9,7 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
         querystring: z.object({
-          // Clients (e.g. the facility selector) send `type=` with no value to mean
-          // "no filter", so treat an empty string as absent; any other non-enum value
-          // is rejected as a 422 rather than reaching Prisma.
+          // Treat an empty type value as undefined; otherwise type must be in FacilityType enum
           type: z.preprocess((v) => (v === '' ? undefined : v), z.enum(Object.values(Facility.Type)).optional()),
           include: z.string().optional(),
           page: z.coerce.number().optional(),
