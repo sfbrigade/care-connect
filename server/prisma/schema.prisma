@@ -253,6 +253,13 @@ enum SubjectStatusEnum {
   DEATH_IN_CUSTODY
 }
 
+// Event types a user can subscribe to for SMS notifications
+enum NotifiableEventEnum {
+  NEW_HOLD
+  ARRIVAL
+  EXIT
+}
+
 model Organization {
   id           String     @id
   name         String
@@ -334,6 +341,25 @@ model User {
   badgeNumber                  String?
   prop115Certified             Boolean                 @default(false)
   satisfactionSurveyNextEligibleAt DateTime?
+  // Phone numbers must be unique because an inbound SMS must identify
+  // a user.
+  phoneNumber                  String?                 @unique
+  phoneVerifiedAt              DateTime?
+  smsConsentAt                 DateTime?
+  smsOptedOutAt                DateTime?
+  notificationsEnabled         Boolean                 @default(false)
+  subscribedEvents             NotifiableEventEnum[]   @default([])
+  currentFacilityId            String?                 @db.Uuid
+  currentFacility              Facility?               @relation("UsersCurrentFacility", fields: [currentFacilityId], references: [id])
+  smsOtpCode                   String?
+  smsOtpExpiresAt              DateTime?
+  smsOtpAttempts               Int                     @default(0)
+  smsOtpLastSentAt             DateTime?
+  smsBannerDismissedAt         DateTime?
+  smsBannerRemindAfter         DateTime?
+  smsBannerRemindCount         Int                     @default(0)
+  // When the one-time "you're subscribed" welcome SMS was sent (null = never).
+  smsWelcomedAt                DateTime?
   updatedAt                    DateTime                @updatedAt
   createdAt                    DateTime                @default(now())
   adminSecurityEventsPerformed AdminSecurityEvent[]    @relation("AdminSecurityEventActor")
@@ -441,6 +467,7 @@ model Facility {
   facilityCheckIns FacilityCheckIn[]
   incidents        Incident[]
   updates          FacilityUpdate[]
+  usersCurrentlyPresent User[]        @relation("UsersCurrentFacility")
 }
 
 model FacilityUpdate {
@@ -503,6 +530,26 @@ model AdminSecurityEvent {
 
   @@index([actorUserId, createdAt])
   @@index([targetUserId, createdAt])
+}
+
+// Append-only log of SMS opt-out / opt-in events for a number, from the inbound handler
+// (STOP / START) and the admin "override opt-out" action. Keyed by phoneNumber because
+// AWS's once-per-30-days opt-in limit is per NUMBER — the last opt_in with outcome
+// 'restored' + 30 days estimates when the next opt-in would be allowed. actorUserId is
+// the admin for source='admin', null for the inbound (user-initiated) sources. IDs are
+// plain columns (not relations) since this is a log we never join hard on.
+model SmsOptEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phoneNumber  String
+  action       String   // 'opt_in' | 'opt_out'
+  source       String   // 'admin' | 'inbound_start' | 'inbound_stop'
+  outcome      String?  // opt_in: 'restored' | 'blocked_30_day' | 'error'; opt_out: 'recorded'
+  awsReason    String?
+  actorUserId  String?  @db.Uuid
+  targetUserId String?  @db.Uuid
+  createdAt    DateTime @default(now())
+
+  @@index([phoneNumber, createdAt])
 }
 
 model BedType {
@@ -682,6 +729,9 @@ model Deflection {
   exitSFResident               SFResidentEnum?
   arrivedAt                    DateTime?
   handoffReadyAt               DateTime?
+  // When the NEW_HOLD ("in transit") SMS fired for this hold — set once, when the
+  // hold first becomes ready for transfer (details complete), so it can't re-fire.
+  newHoldNotifiedAt            DateTime?
   updatedAt                    DateTime                @updatedAt
 
   deflectionUpdates   DeflectionUpdate[]

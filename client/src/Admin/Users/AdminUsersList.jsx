@@ -65,7 +65,7 @@ function AdminUsersList () {
                   <Table.Td>
                     <Group gap='md'>
                       <Anchor component={Link} to={`${user.id}`}>Edit&nbsp;profile</Anchor>
-                      <Anchor component={Link} to={`${user.id}/support`}>Login&nbsp;support</Anchor>
+                      <Anchor component={Link} to={`${user.id}/support`}>User&nbsp;support</Anchor>
                     </Group>
                   </Table.Td>
                 </Table.Tr>

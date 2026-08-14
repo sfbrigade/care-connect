@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import slugifyUnitId from '#lib/slugifyUnitId.js';
 import { normalizeUnitName } from '#lib/unitName.js';
+import smsNotifications from '#lib/smsNotifications.js';
 import User from '#models/user.js';
 
 const ORG_ADMIN_ALLOWED_FIELDS = new Set([
@@ -117,12 +118,12 @@ export default async function (fastify, opts) {
       if (updateData.badgeNumber === '') updateData.badgeNumber = null;
       if (updateData.titleId === '') updateData.titleId = null;
       if (updateData.unitId === '') updateData.unitId = null;
-      const requestUser = new User(request.user);
       const bodyFields = Object.keys(_.omit(request.body, ['password', 'picture']));
 
       let data;
       let lockedMissing = false;
       let lockedForbidden = false;
+      let notificationStateChanged = false;
       await fastify.prisma.$transaction(async (tx) => {
         data = await tx.user.findByIdForUpdate(tx, id);
         if (!data) {
@@ -142,7 +143,7 @@ export default async function (fastify, opts) {
         // acting within their own org. Org admins are additionally limited to
         // ORG_ADMIN_ALLOWED_FIELDS.
         if (data.id !== request.user.id && !request.user.isAdmin) {
-          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          const inSameOrg = request.user.isOrgAdmin && data.organizationId === request.user.organizationId;
           if (!inSameOrg || bodyFields.some((f) => !ORG_ADMIN_ALLOWED_FIELDS.has(f))) {
             lockedForbidden = true;
             return;
@@ -169,12 +170,16 @@ export default async function (fastify, opts) {
           user.changes.intersection(new Set(['isAdmin', 'roles', 'deactivatedAt', 'deletedAt'])).size &&
           !request.user.isAdmin
         ) {
-          const inSameOrg = requestUser.isOrgAdmin && data.organizationId === request.user.organizationId;
+          const inSameOrg = request.user.isOrgAdmin && data.organizationId === request.user.organizationId;
           if (!inSameOrg || user.changes.has('isAdmin') || user.changes.has('roles')) {
             lockedForbidden = true;
             return;
           }
         }
+
+        // Recorded only when the value actually differs from what's stored, so a
+        // no-op PATCH doesn't trigger a confirmation text.
+        notificationStateChanged = user.changes.has('notificationsEnabled');
 
         const pictureHandler = user.setAsset('picture', picture);
 
@@ -205,6 +210,16 @@ export default async function (fastify, opts) {
       if (lockedForbidden) {
         return reply.code(StatusCodes.FORBIDDEN).send();
       }
+      // Send the one-time welcome SMS if this user just subscribed for the first
+      // time; otherwise confirm a pause/resume they just made in the app. The
+      // welcome wins — enrolling flips notificationsEnabled to true, and a new
+      // subscriber shouldn't get "notifications resumed" on top of the welcome.
+      smsNotifications
+        .maybeSendWelcome(fastify, data)
+        .then((sent) => (sent || !notificationStateChanged
+          ? 0
+          : smsNotifications.maybeConfirmNotificationState(fastify, data)))
+        .catch((err) => fastify.log.error({ err }, 'SMS state notification failed'));
       return reply.send(new User(data));
     });
 }

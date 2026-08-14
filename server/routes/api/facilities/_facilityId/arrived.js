@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
+import smsNotifications from '#lib/smsNotifications.js';
 import { notFoundError } from '#lib/httpErrors.js';
 import { isIncidentDetailsComplete, isDeflectionDetailsComplete } from '#lib/incidentPermissions.js';
 
@@ -29,6 +30,9 @@ export default async function (fastify) {
     async function (request, reply) {
       const { facilityId } = request.params;
       const officerId = request.user.id;
+      // Holds included in the ARRIVAL check-in group, hoisted so we can send one
+      // grouped SMS after the transaction commits.
+      let arrivedHoldIds = [];
 
       try {
         await fastify.prisma.$transaction(async (tx) => {
@@ -169,12 +173,20 @@ export default async function (fastify) {
               arrivedWithDeflectionIds: holdIds,
             },
           });
+
+          arrivedHoldIds = holdIds;
         });
       } catch (error) {
         if (error.statusCode === StatusCodes.BAD_REQUEST) {
           return reply.code(StatusCodes.BAD_REQUEST).send({ error: error.message });
         }
         throw error;
+      }
+
+      if (arrivedHoldIds.length > 0) {
+        smsNotifications
+          .notifyArrival(fastify, { facilityId, deflectionIds: arrivedHoldIds })
+          .catch((err) => fastify.log.error({ err }, 'SMS arrival notification failed'));
       }
 
       return reply.send({ ok: true });
