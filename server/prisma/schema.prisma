@@ -206,6 +206,17 @@ enum DeflectionExitDestinationEnum {
   UNKNOWN
 }
 
+enum DeflectionExitTransportation {
+  SELF_TRANSPORT
+  OUTREACH_TRANSPORT_TEAM
+  TRANSIT_MUNI
+  TRANSIT_BART
+  TRANSIT_OTHER
+  FRIEND_FAMILY_TRANSPORT
+  COMMUNITY_FORWARD_VAN
+  TAXI_UBER_LYFT
+}
+
 enum DeflectionExitHousingStatusEnum {
   PERMANENTLY_HOUSED
   TEMPORARY_SHELTER
@@ -724,6 +735,7 @@ model Deflection {
   exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
   exitedById                   String?                 @db.Uuid
   exitDestination              DeflectionExitDestinationEnum?
+  exitTransportation           DeflectionExitTransportation?
   exitHousingStatus            DeflectionExitHousingStatusEnum?
   exitConnectedToCare          TernaryEnum?
   exitSFResident               SFResidentEnum?
@@ -755,14 +767,15 @@ model DeflectionUpdate {
   propertyReturned               Boolean?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
-  refusalReason                DeflectionRefusalReasonEnum?
-  exitDestination              DeflectionExitDestinationEnum?
-  exitHousingStatus            DeflectionExitHousingStatusEnum?
-  exitConnectedToCare          TernaryEnum?
-  exitSFResident               SFResidentEnum?
-  updatedAt                    DateTime                @default(now())
-  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  refusalReason                  DeflectionRefusalReasonEnum?
+  exitDestination                DeflectionExitDestinationEnum?
+  exitTransportation             DeflectionExitTransportation?
+  exitHousingStatus              DeflectionExitHousingStatusEnum?
+  exitConnectedToCare            TernaryEnum?
+  exitSFResident                 SFResidentEnum?
+  updatedAt                      DateTime                @default(now())
+  updatedBy                      User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                    String                  @db.Uuid
 }
 
 

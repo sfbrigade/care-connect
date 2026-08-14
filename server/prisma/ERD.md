@@ -225,6 +225,19 @@ UNKNOWN UNKNOWN
     
 
 
+        DeflectionExitTransportation {
+            SELF_TRANSPORT SELF_TRANSPORT
+OUTREACH_TRANSPORT_TEAM OUTREACH_TRANSPORT_TEAM
+TRANSIT_MUNI TRANSIT_MUNI
+TRANSIT_BART TRANSIT_BART
+TRANSIT_OTHER TRANSIT_OTHER
+FRIEND_FAMILY_TRANSPORT FRIEND_FAMILY_TRANSPORT
+COMMUNITY_FORWARD_VAN COMMUNITY_FORWARD_VAN
+TAXI_UBER_LYFT TAXI_UBER_LYFT
+        }
+    
+
+
         DeflectionExitHousingStatusEnum {
             PERMANENTLY_HOUSED PERMANENTLY_HOUSED
 TEMPORARY_SHELTER TEMPORARY_SHELTER
@@ -620,6 +633,7 @@ DEPARTURE DEPARTURE
     DateTime exitedAt "❓"
     String exitedById "❓"
     DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitTransportation exitTransportation "❓"
     DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
@@ -646,6 +660,7 @@ DEPARTURE DEPARTURE
     String propertyNotReturnedOtherReason "❓"
     DeflectionRefusalReasonEnum refusalReason "❓"
     DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitTransportation exitTransportation "❓"
     DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
@@ -872,6 +887,7 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
     "Deflection" o|--|o "User" : "exitedBy"
     "Deflection" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "Deflection" o|--|o "DeflectionExitTransportation" : "enum:exitTransportation"
     "Deflection" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "Deflection" o|--|o "SFResidentEnum" : "enum:exitSFResident"
@@ -887,6 +903,7 @@ DEPARTURE DEPARTURE
     "DeflectionUpdate" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "DeflectionUpdate" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
     "DeflectionUpdate" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "DeflectionUpdate" o|--|o "DeflectionExitTransportation" : "enum:exitTransportation"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "DeflectionUpdate" o|--|o "SFResidentEnum" : "enum:exitSFResident"
