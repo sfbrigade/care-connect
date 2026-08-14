@@ -95,9 +95,9 @@
     "UNKNOWN": "Unknown"
   },
   "deflectionCancelReason": {
-    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "BH_EMERGENCY_5150": "BH Emergency/5150",
     "JAIL": "Jail",
-    "HOSPITAL": "Hospital",
+    "HOSPITAL_EMS": "Hospital/EMS",
     "RELEASE_ON_SCENE": "Released on scene",
     "NO_CHAIRS_AVAILABLE": "No chairs available",
     "STAFFING_SHORTAGE": "Staffing shortage"

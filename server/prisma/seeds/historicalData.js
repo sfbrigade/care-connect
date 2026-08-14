@@ -243,7 +243,7 @@ export default async function main (prisma) {
   const sfsoUnit = await prisma.unit.findFirst({ where: { organizationId: 'sfso' } });
 
   // Enum values (no longer from DB)
-  const cancelReasons = ['BEHAVIORAL_HEALTH_EVALUATION', 'JAIL', 'HOSPITAL', 'RELEASE_ON_SCENE', 'NO_CHAIRS_AVAILABLE', 'STAFFING_SHORTAGE'];
+  const cancelReasons = ['BH_EMERGENCY_5150', 'JAIL', 'HOSPITAL_EMS', 'RELEASE_ON_SCENE', 'NO_CHAIRS_AVAILABLE', 'STAFFING_SHORTAGE'];
   const releaseReasonSobered = 'SOBERED';
   const releaseReasonMedical = 'MEDICAL_ISSUE';
   const releaseReasonOther = 'OTHER';

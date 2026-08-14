@@ -1635,7 +1635,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('blocks hospital cancellation when hold details are incomplete', async () => {
-      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL').headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL_EMS').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
 
       const data = JSON.parse(response.body);
@@ -1668,12 +1668,12 @@ test('/api/deflections', async (t) => {
         },
       });
 
-      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL').headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL_EMS').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, 'CANCELLED');
-      assert.deepStrictEqual(data.cancelReason, 'HOSPITAL');
+      assert.deepStrictEqual(data.cancelReason, 'HOSPITAL_EMS');
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
@@ -1692,12 +1692,12 @@ test('/api/deflections', async (t) => {
     await t.test('cancels the deflection', async () => {
       await prisma.deflection.expire();
 
-      let response = await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      let response = await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, 'CANCELLED');
-      assert.deepStrictEqual(data.cancelReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.deepStrictEqual(data.cancelReason, 'BH_EMERGENCY_5150');
       assert.ok(data.cancelledAt);
       assert.ok(data.cancelledById);
 
@@ -1706,7 +1706,7 @@ test('/api/deflections', async (t) => {
         where: { id: 4 },
       });
       assert.deepStrictEqual(deflection.status, 'CANCELLED');
-      assert.deepStrictEqual(deflection.cancelReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.deepStrictEqual(deflection.cancelReason, 'BH_EMERGENCY_5150');
       assert.ok(deflection.cancelledAt);
       assert.ok(deflection.cancelledById);
 
@@ -1717,7 +1717,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 2);
       assert.deepStrictEqual(bedType.available, 5);
 
-      response = await app.inject().delete('/api/deflections/5?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      response = await app.inject().delete('/api/deflections/5?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       bedType = await prisma.bedType.findUnique({
@@ -1727,7 +1727,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 1);
       assert.deepStrictEqual(bedType.available, 6);
 
-      response = await app.inject().delete('/api/deflections/6?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      response = await app.inject().delete('/api/deflections/6?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       bedType = await prisma.bedType.findUnique({
@@ -1742,7 +1742,7 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.expire();
 
       const response = await app.inject()
-        .delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
+        .delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150')
         .headers(facilityAdminHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -1768,7 +1768,7 @@ test('/api/deflections', async (t) => {
   await t.test('POST /:id/reopen', async (t) => {
     await t.test('reopens a cancelled deflection', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
 
       let deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
       const bedTypeBefore = await prisma.bedType.findUnique({ where: { id: deflection.bedTypeId } });
@@ -1799,7 +1799,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if no available beds', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
 
       const deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
       await prisma.bedType.update({
@@ -1815,7 +1815,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if facility is open but not accepting', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       await app.inject()
         .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
         .headers(facilityAdminHeaders)
@@ -1833,7 +1833,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if facility is closed', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       await app.inject()
         .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
         .headers(facilityAdminHeaders)

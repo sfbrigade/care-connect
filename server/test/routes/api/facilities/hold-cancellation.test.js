@@ -354,7 +354,7 @@ test('Hold cancellation edge cases', async (t) => {
 
   await t.test('concurrent facility close vs reopen never leaves closed facility with an active reopened hold', async () => {
     await app.prisma.deflection.expire();
-    await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+    await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
 
     const deflectionBefore = await app.prisma.deflection.findUnique({
       where: { id: 4 },
