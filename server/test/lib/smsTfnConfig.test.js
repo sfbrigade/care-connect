@@ -1,7 +1,16 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 
-import { KEYWORDS, desiredPhoneNumberSettings, planSettingChanges, planKeywordChanges } from '#lib/smsTfnConfig.js';
+import {
+  KEYWORDS,
+  ENV_VARS,
+  desiredPhoneNumberSettings,
+  planSettingChanges,
+  planKeywordChanges,
+  missingRequiredEnv,
+  isSmsConfigured,
+  formatEnvHelp,
+} from '#lib/smsTfnConfig.js';
 
 // The sync script (bin/sync-sms-config.js) is diff-first and idempotent; these tests pin
 // the pure planning logic that decides what (if anything) to write, so re-running the sync
@@ -79,5 +88,49 @@ test('planKeywordChanges', async (t) => {
   await t.test('the shipped KEYWORDS map has HELP + STOP with the expected actions', () => {
     assert.strictEqual(KEYWORDS.HELP.action, 'AUTOMATIC_RESPONSE');
     assert.strictEqual(KEYWORDS.STOP.action, 'OPT_OUT');
+  });
+});
+
+// The environment contract is what the operator sees in --help and in the preflight
+// failure. Both read from ENV_VARS, so these pin that they stay in agreement.
+test('environment contract', async (t) => {
+  const complete = {
+    AWS_SMS_ACCESS_KEY_ID: 'AKIA...',
+    AWS_SMS_SECRET_ACCESS_KEY: 'secret',
+    AWS_SMS_ORIGINATION_NUMBER: '+18337225979',
+  };
+
+  await t.test('a complete environment is missing nothing', () => {
+    assert.deepStrictEqual(missingRequiredEnv(complete), []);
+  });
+
+  await t.test('names every missing required var, and ignores optional ones', () => {
+    assert.deepStrictEqual(missingRequiredEnv({}), [
+      'AWS_SMS_ACCESS_KEY_ID',
+      'AWS_SMS_SECRET_ACCESS_KEY',
+      'AWS_SMS_ORIGINATION_NUMBER',
+    ]);
+    // Optional vars alone never satisfy the check...
+    assert.deepStrictEqual(
+      missingRequiredEnv({ AWS_SMS_REGION: 'us-west-2', AWS_SMS_OPT_OUT_LIST_NAME: 'CareConnectDev' }),
+      ['AWS_SMS_ACCESS_KEY_ID', 'AWS_SMS_SECRET_ACCESS_KEY', 'AWS_SMS_ORIGINATION_NUMBER']
+    );
+    // ...and omitting them from a complete environment is still fine.
+    assert.deepStrictEqual(missingRequiredEnv({ ...complete }), []);
+  });
+
+  await t.test('distinguishes "no SMS here" from "half-configured"', () => {
+    // Nothing set: the deploy hook is allowed to skip.
+    assert.strictEqual(isSmsConfigured({}), false);
+    // Something set but incomplete: a mistake, never skipped.
+    assert.strictEqual(isSmsConfigured({ AWS_SMS_ORIGINATION_NUMBER: '+18337225979' }), true);
+    assert.ok(missingRequiredEnv({ AWS_SMS_ORIGINATION_NUMBER: '+18337225979' }).length);
+  });
+
+  await t.test('help text lists every var and shows which are set', () => {
+    const help = formatEnvHelp(complete);
+    for (const { name } of ENV_VARS) assert.ok(help.includes(name), `missing ${name}`);
+    assert.match(help, /AWS_SMS_ACCESS_KEY_ID {2}\(required, currently set\)/);
+    assert.match(help, /AWS_SMS_REGION {2}\(optional, currently NOT SET\)/);
   });
 });

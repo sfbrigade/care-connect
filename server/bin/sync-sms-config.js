@@ -11,7 +11,15 @@ import {
   UpdatePhoneNumberCommand,
 } from '@aws-sdk/client-pinpoint-sms-voice-v2';
 
-import { KEYWORDS, desiredPhoneNumberSettings, planSettingChanges, planKeywordChanges } from '#lib/smsTfnConfig.js';
+import {
+  KEYWORDS,
+  desiredPhoneNumberSettings,
+  planSettingChanges,
+  planKeywordChanges,
+  formatEnvHelp,
+  missingRequiredEnv,
+  isSmsConfigured,
+} from '#lib/smsTfnConfig.js';
 
 const log = (message) => console.log(`[sms-config] ${message}`);
 const logError = (message) => console.error(`[sms-config] ${message}`);
@@ -19,23 +27,60 @@ const logError = (message) => console.error(`[sms-config] ${message}`);
 // Bring our toll-free number's AWS config (keyword auto-responses + phone-number settings)
 // in line with the desired state declared in lib/smsTfnConfig.js. Idempotent and diff-first:
 // only writes what actually differs, so it's safe to run on every deploy. Targets the number
-// in AWS_SMS_ORIGINATION_NUMBER (per-environment). Pass --dry-run to preview without writing.
+// in AWS_SMS_ORIGINATION_NUMBER (per-environment).
 //
-//   node bin/sync-sms-config.js            # apply
-//   node bin/sync-sms-config.js --dry-run  # preview only
+//   node bin/sync-sms-config.js                        # apply
+//   node bin/sync-sms-config.js --dry-run              # preview only
+//   node bin/sync-sms-config.js --help                 # what to set before running
+//   node bin/sync-sms-config.js --skip-if-unconfigured # no-op when SMS isn't set up (deploys)
+
+const USAGE = `sync-sms-config — apply CareConnect's SMS config to the toll-free number in AWS.
+
+Usage:
+  node bin/sync-sms-config.js [options]
+
+Options:
+  --dry-run               Show what would change; write nothing.
+  --skip-if-unconfigured  Exit 0 instead of failing when no SMS environment is
+                          set at all. Use this for the deploy hook, so
+                          environments without SMS don't fail the deploy.
+  --help                  Show this message.
+
+Also required, but not environment variables:
+  - The opt-out list named by AWS_SMS_OPT_OUT_LIST_NAME must already exist.
+  - The SNS topic named by AWS_SMS_INBOUND_TOPIC_ARN must already exist, and
+    allow sms-voice.amazonaws.com to publish to it.
+`;
 
 const dryRun = process.argv.includes('--dry-run');
-const tfn = process.env.AWS_SMS_ORIGINATION_NUMBER;
+const skipIfUnconfigured = process.argv.includes('--skip-if-unconfigured');
 
-// Skip if SMS not configured in environment
-if (!tfn) {
-  log('AWS_SMS_ORIGINATION_NUMBER not set — nothing to sync.');
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log(USAGE);
+  console.log(formatEnvHelp());
   process.exit(0);
 }
-if (!process.env.AWS_SMS_ACCESS_KEY_ID || !process.env.AWS_SMS_SECRET_ACCESS_KEY) {
-  log('AWS SMS credentials not set — skipping.');
-  process.exit(0);
+
+// Preflight. Fail loudly and say exactly what's missing — this script is usually run
+// by hand in an unfamiliar environment, and a silent no-op reads like success.
+const missing = missingRequiredEnv();
+if (missing.length) {
+  if (!isSmsConfigured() && skipIfUnconfigured) {
+    log('no SMS environment set — nothing to sync.');
+    process.exit(0);
+  }
+  logError(`missing required environment variable(s): ${missing.join(', ')}`);
+  if (isSmsConfigured()) {
+    logError('SMS is partially configured in this environment — this is probably a mistake.');
+  }
+  logError('');
+  console.error(formatEnvHelp());
+  console.error('');
+  logError('Run with --help for full usage.');
+  process.exit(1);
 }
+
+const tfn = process.env.AWS_SMS_ORIGINATION_NUMBER;
 
 const client = new PinpointSMSVoiceV2Client({
   credentials: {
@@ -82,6 +127,14 @@ try {
       logError(`Create it once for this environment, then re-run:  aws pinpoint-sms-voice-v2 create-opt-out-list --opt-out-list-name ${settingChanges.OptOutListName}`);
       process.exit(1);
     }
+  }
+
+  // Guard: AWS rejects TwoWayEnabled without a channel ARN. Catch that here with the
+  // fix, rather than letting it surface as a raw ValidationException.
+  if (settingChanges.TwoWayEnabled && !settingChanges.TwoWayChannelArn && !number.TwoWayChannelArn) {
+    logError('Cannot enable two-way SMS: no SNS topic configured for this number.');
+    logError('Set AWS_SMS_INBOUND_TOPIC_ARN to the environment\'s inbound SNS topic ARN, then re-run.');
+    process.exit(1);
   }
 
   if (Object.keys(settingChanges).length) {
