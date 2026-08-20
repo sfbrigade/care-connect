@@ -88,9 +88,9 @@ export const ENV_VARS = [
   },
   {
     name: 'AWS_SMS_INBOUND_TOPIC_ARN',
-    required: false,
+    required: true,
     summary: 'SNS topic ARN for two-way (inbound) SMS, provisioned as infra per environment.',
-    detail: 'Effectively required unless the number already has two-way enabled: this script turns two-way on, and AWS rejects that without a channel ARN.',
+    detail: 'The topic must already exist. This script enables two-way messaging, which AWS rejects without a channel ARN.',
   },
   {
     name: 'AWS_SMS_REGION',

@@ -98,6 +98,7 @@ test('environment contract', async (t) => {
     AWS_SMS_ACCESS_KEY_ID: 'AKIA...',
     AWS_SMS_SECRET_ACCESS_KEY: 'secret',
     AWS_SMS_ORIGINATION_NUMBER: '+18337225979',
+    AWS_SMS_INBOUND_TOPIC_ARN: 'arn:aws:sns:us-west-2:1:careconnect-inbound',
   };
 
   await t.test('a complete environment is missing nothing', () => {
@@ -109,11 +110,12 @@ test('environment contract', async (t) => {
       'AWS_SMS_ACCESS_KEY_ID',
       'AWS_SMS_SECRET_ACCESS_KEY',
       'AWS_SMS_ORIGINATION_NUMBER',
+      'AWS_SMS_INBOUND_TOPIC_ARN',
     ]);
     // Optional vars alone never satisfy the check...
     assert.deepStrictEqual(
       missingRequiredEnv({ AWS_SMS_REGION: 'us-west-2', AWS_SMS_OPT_OUT_LIST_NAME: 'CareConnectDev' }),
-      ['AWS_SMS_ACCESS_KEY_ID', 'AWS_SMS_SECRET_ACCESS_KEY', 'AWS_SMS_ORIGINATION_NUMBER']
+      ['AWS_SMS_ACCESS_KEY_ID', 'AWS_SMS_SECRET_ACCESS_KEY', 'AWS_SMS_ORIGINATION_NUMBER', 'AWS_SMS_INBOUND_TOPIC_ARN']
     );
     // ...and omitting them from a complete environment is still fine.
     assert.deepStrictEqual(missingRequiredEnv({ ...complete }), []);

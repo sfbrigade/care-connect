@@ -129,14 +129,6 @@ try {
     }
   }
 
-  // Guard: AWS rejects TwoWayEnabled without a channel ARN. Catch that here with the
-  // fix, rather than letting it surface as a raw ValidationException.
-  if (settingChanges.TwoWayEnabled && !settingChanges.TwoWayChannelArn && !number.TwoWayChannelArn) {
-    logError('Cannot enable two-way SMS: no SNS topic configured for this number.');
-    logError('Set AWS_SMS_INBOUND_TOPIC_ARN to the environment\'s inbound SNS topic ARN, then re-run.');
-    process.exit(1);
-  }
-
   if (Object.keys(settingChanges).length) {
     for (const [key, value] of Object.entries(settingChanges)) {
       log(`setting ${key}: ${JSON.stringify(number[key])} -> ${JSON.stringify(value)}`);
