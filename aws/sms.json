@@ -19,6 +19,17 @@
         }
       }
     },
+    "SMSInboundSNSTopicARN": {
+      "Description": "ARN for inbound SNS topic",
+      "Value": {
+        "Ref": "SMSInboundSNSTopic"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-sms-inbound-sns-topic-arn"
+        }
+      }
+    },
     "SMSUserAccessKeyId": {
       "Description": "Access Key ID for the user",
       "Value": {
@@ -38,6 +49,17 @@
       "Export": {
         "Name": {
           "Fn::Sub": "${BaseName}-sms-user-secret-access-key-arn"
+        }
+      }
+    },
+    "SMSOptOutListName": {
+      "Description": "Name for the SMS opt-out list",
+      "Value": {
+        "Ref": "SMSOptOutList"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${BaseName}-sms-opt-out-list-name"
         }
       }
     }
@@ -172,6 +194,14 @@
         "RawMessageDelivery": true,
         "TopicArn": {
           "Ref": "SMSInboundSNSTopic"
+        }
+      }
+    },
+    "SMSOptOutList": {
+      "Type": "AWS::SMSVOICE::OptOutList",
+      "Properties": {
+        "OptOutListName": {
+          "Fn::Sub": "${BaseName}-sms-opt-out-list"
         }
       }
     }
