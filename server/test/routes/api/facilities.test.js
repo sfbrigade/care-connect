@@ -63,6 +63,29 @@ test('/api/facilities', async (t) => {
       assert.ok(facilityNames.includes('General Facility 1'));
       assert.ok(facilityNames.includes('General Facility 2'));
     });
+
+    await t.test('rejects a type outside the enum with a validation error, not a 500', async () => {
+      // A value not in FacilityTypeEnum must fail schema validation up front (422 via the
+      // error handler), rather than reaching Prisma and throwing a PrismaClientValidationError (500).
+      const response = await app.inject()
+        .get('/api/facilities?type=INVALID')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('treats an empty type= as no filter (returns all facilities, not a 422)', async () => {
+      // The facility selector sends `type=` with no value; that must be accepted as
+      // "no filter" rather than failing enum validation.
+      const response = await app.inject()
+        .get('/api/facilities?type=')
+        .headers(userHeaders);
+
+      assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
+      const facilities = JSON.parse(response.body);
+      assert.ok(Array.isArray(facilities));
+      assert.ok(facilities.length >= 4); // all facilities, unfiltered
+    });
   });
 
   await t.test('GET /:id', async (t) => {
