@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import Api from '@/Api';
 import ActionFooter from '@/components/ActionFooter';
+import BetweenIntersectionsHint from '@/components/BetweenIntersectionsHint';
 import Header from '@/components/Header';
 import IconButtonLink from '@/components/IconButtonLink';
 import LockedQRCode from '@/components/LockedQRCode';
@@ -17,7 +18,7 @@ import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative'
 import useNow from '../../../hooks/useNow';
 import useSessionState from '../../../hooks/useSessionState';
 import { useUserRole } from '../../../hooks/useUserRole';
-import { formatAddress, formatDateTime, formatIntakeStartedAt, formatTimeRemaining } from '@/utils/format';
+import { formatAddress, formatDateTime, formatIntakeStartedAt, formatLocation, formatTimeRemaining } from '@/utils/format';
 import { openInBrowser } from '@/utils/openInBrowser';
 import { releaseTiming } from '@/utils/releaseTiming';
 
@@ -187,7 +188,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
     enabled: !!deflection?.incidentId,
   });
   const incident = incidentQuery.data;
-  const incidentAddress = formatAddress(incident ?? {});
+  const incidentAddress = formatLocation(incident ?? {});
   const resolvedReleaseNarrative = useEnsureReleaseNarrative({
     deflection,
     incident,
@@ -539,8 +540,9 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
                     <Stack gap='sm'>
                       {incidentAddress && (
                         <Box>
-                          <Text c='dimmed'>Address</Text>
+                          <Text c='dimmed'>{incident?.locationType === 'INTERSECTION' ? 'Cross-streets' : 'Address'}</Text>
                           <Text>{incidentAddress}</Text>
+                          <BetweenIntersectionsHint record={incident} />
                         </Box>
                       )}
                       {incident?.arrestedAt && (

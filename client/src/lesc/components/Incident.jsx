@@ -1,11 +1,15 @@
 import { ActionIcon, Box, Group, Menu, Text } from '@mantine/core';
 import { IconDots, IconFileExport, IconPencilMinus, IconTrash } from '@tabler/icons-react';
-import { formatSmartDateTime } from '@/utils/format';
+import { formatLocation, formatSmartDateTime } from '@/utils/format';
 import { isValidIncident } from '@/utils/validators';
 
 function Incident ({ incident, incidentId, onEditClick, onHandoffClick, onCancelClick }) {
   const isIncomplete = incident ? !isValidIncident(incident) : false;
-  const address = `${incident?.addressLine1 ?? ''}${incident?.addressLine2 ? `, ${incident.addressLine2}` : ''}`;
+  const address = incident
+    ? (incident.locationType === 'INTERSECTION'
+        ? formatLocation(incident)
+        : `${incident.addressLine1 ?? ''}${incident.addressLine2 ? `, ${incident.addressLine2}` : ''}`)
+    : '';
   const displayId = incident?.id ?? incidentId ?? '';
   const cancelLabel = (incident?.deflections?.length ?? 0) > 1 ? 'Cancel holds' : 'Cancel hold';
 

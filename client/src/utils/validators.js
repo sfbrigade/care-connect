@@ -37,17 +37,32 @@ function isValidDobValue (value) {
   );
 }
 
-const IncidentSchema = z.object({
-  addressLine1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
-  addressLine2: z.optional(z.nullable(z.string())),
-  city: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
-  state: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+const IncidentCommonShape = {
   arrestedAt: z.iso.datetime(ERROR_REQUIRED),
   encounteredVia: z.enum(['ON_VIEW', 'DISPATCHED'], ERROR_SELECT_ONE),
   cadNumber: z.string(ERROR_REQUIRED).check(z.refine((value) => hasMinimumAlphanumericChars(value, 2), ERROR_MIN_ALPHANUMERIC)),
   caseNumber: z.string(ERROR_REQUIRED).check(z.refine((value) => hasMinimumAlphanumericChars(value, 2), ERROR_MIN_ALPHANUMERIC)),
   supervisorBadgeNumber: z.string(ERROR_REQUIRED).check(z.minLength(1, ERROR_REQUIRED), z.maxLength(4, ERROR_REQUIRED)),
-});
+};
+
+const IncidentSchema = z.discriminatedUnion('locationType', [
+  z.object({
+    locationType: z.literal('ADDRESS'),
+    addressLine1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+    addressLine2: z.optional(z.nullable(z.string())),
+    city: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+    state: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+    ...IncidentCommonShape,
+  }),
+  z.object({
+    locationType: z.literal('INTERSECTION'),
+    street1: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+    street2: z.string(ERROR_REQUIRED).check(z.minLength(2, ERROR_REQUIRED)),
+    city: z.optional(z.nullable(z.string())),
+    intersectionId: z.optional(z.nullable(z.string())),
+    ...IncidentCommonShape,
+  }),
+], ERROR_SELECT_ONE);
 
 const SEX_OPTIONS = ['MALE', 'FEMALE', 'OTHER', 'UNKNOWN'];
 const RACE_OPTIONS = ['WHITE', 'BLACK', 'HISPANIC', 'ASIAN', 'OTHER', 'UNKNOWN'];
@@ -112,10 +127,17 @@ const DeflectionSchema = z.discriminatedUnion('drugUseEvidence', [
   }),
 ], ERROR_SELECT_ONE);
 
+// Records from the API or older fixtures may lack locationType; default it
+// to ADDRESS so the discriminated union can branch.
+function withLocationTypeDefault (obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  return obj.locationType ? obj : { ...obj, locationType: 'ADDRESS' };
+}
+
 export const validateIncident = zod4Resolver(IncidentSchema);
 
 export const isValidIncident = (obj) => {
-  return !!IncidentSchema.safeParse(obj)?.success;
+  return !!IncidentSchema.safeParse(withLocationTypeDefault(obj))?.success;
 };
 
 export const validateSubject = zod4Resolver(SubjectSchema);

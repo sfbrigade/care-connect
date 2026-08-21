@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import prismaPkg from '@prisma/client';
-import { FORM_TIMEZONE, firstInitialLastName, formatDateTime24 } from '../shared/formUtils.js';
+import { FORM_TIMEZONE, firstInitialLastName, formatDateTime24, incidentLocationText } from '../shared/formUtils.js';
 import { fill849b } from './fill849b.js';
 import { build849bReleaseNarrative } from './releaseNarrative.js';
 import i18n from '#lib/i18n.js';
@@ -59,9 +59,7 @@ export function transformData (deflection) {
   const officerName = firstInitialLastName(incidentCreator);
   const officerBadge = incident?.createdByBadgeNumber || incidentCreator?.badgeNumber || '';
   const reportingDeputy = deflection.releasedBy || (deflection.exitDestination === 'JAIL' ? deflection.exitedBy : null);
-  const arrestLocation = [incident?.addressLine1, incident?.city, incident?.state]
-    .filter(Boolean)
-    .join(', ');
+  const arrestLocation = incidentLocationText(incident);
 
   const subjectAddress = [subject?.addressLine1, subject?.city, subject?.state]
     .filter(Boolean)

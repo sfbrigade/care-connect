@@ -236,6 +236,11 @@ enum RoleEnum {
   FACILITY_ADMIN
 }
 
+enum IncidentLocationType {
+  ADDRESS
+  INTERSECTION
+}
+
 enum SubjectStatusEnum {
   DETAINED
   ONSITE_AWAITING_TRANSFER
@@ -813,11 +818,15 @@ model Incident {
   id                      Int                 @unique @default(autoincrement())
   facilityId              String              @db.Uuid
   facility                Facility            @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  locationType            IncidentLocationType @default(ADDRESS)
   addressLine1            String?
   addressLine2            String?
   city                    String?
   state                   String?
   postalCode              String?
+  street1                 String?
+  street2                 String?
+  intersectionId          String?
   latitude                Decimal?            @db.Decimal(9, 6)
   longitude               Decimal?            @db.Decimal(9, 6)
   arrestedAt              DateTime?

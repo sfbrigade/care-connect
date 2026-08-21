@@ -1,11 +1,24 @@
 export function buildAddressQuery ({
+  locationType,
   addressLine1,
   addressLine2,
   city,
   state,
   postalCode,
   zip,
+  street1,
+  street2,
 } = {}) {
+  if (locationType === 'INTERSECTION' && (street1 || street2)) {
+    const s1 = (street1 ?? '').toString().trim();
+    const s2 = (street2 ?? '').toString().trim();
+    const intersection = [s1, s2].filter(Boolean).join(' & ');
+    const cityValue = (city ?? 'San Francisco').toString().trim();
+    const stateValue = (state ?? 'CA').toString().trim();
+    const locality = [cityValue, stateValue].filter(Boolean).join(', ');
+    return [intersection, locality].filter(Boolean).join(', ') || null;
+  }
+
   const hasLocalityInAddress = (value) => {
     const normalized = (value ?? '').toString().trim();
 

@@ -41,7 +41,7 @@ function formatTimer (seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-function AudioRecorder ({ onResult, onBusyChange, disabled }) {
+function AudioRecorder ({ onResult, onBusyChange, disabled, mode = 'narrative', recordLabel }) {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -118,13 +118,17 @@ function AudioRecorder ({ onResult, onBusyChange, disabled }) {
       const pcmData = downsampleToInt16(audioBuffer);
       const base64 = int16ToBase64(pcmData);
 
-      const response = await Api.ai.transcribe(base64, 'audio/pcm');
+      const response = await Api.ai.transcribe(base64, 'audio/pcm', { mode });
       const text = (response.data.text || '').trim();
       if (!text) {
         setError('No speech detected. Try again.');
         return;
       }
-      onResult(text);
+      if (mode === 'location') {
+        onResult(response.data);
+      } else {
+        onResult(text);
+      }
       setError(null);
     } catch {
       setError('Transcription failed. Try again.');
@@ -189,7 +193,7 @@ function AudioRecorder ({ onResult, onBusyChange, disabled }) {
               onClick={startRecording}
               disabled={disabled}
             >
-              Record voice
+              {recordLabel ?? 'Record voice'}
             </Button>
             )}
       </Group>

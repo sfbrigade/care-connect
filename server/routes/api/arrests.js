@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { DateTime } from 'luxon';
 import { z } from 'zod';
 
-import { firstInitialLastName, streetCityState } from '#lib/forms/shared/formUtils.js';
+import { firstInitialLastName, incidentLocationText } from '#lib/forms/shared/formUtils.js';
 
 const TIMEZONE = 'America/Los_Angeles';
 const FACILITY_NAME = 'RESET';
@@ -66,9 +66,12 @@ export default async function (fastify) {
         },
         select: {
           arrestedAt: true,
+          locationType: true,
           addressLine1: true,
           city: true,
           state: true,
+          street1: true,
+          street2: true,
           caseNumber: true,
           createdByBadgeNumber: true,
           createdBy: { select: { firstName: true, lastName: true } },
@@ -102,7 +105,7 @@ export default async function (fastify) {
         const subject = deflection?.subject ?? null;
         return {
           arrestedAt: i.arrestedAt.toISOString(),
-          address: streetCityState(i),
+          address: incidentLocationText(i),
           caseNumber: i.caseNumber ?? null,
           firstName: subject?.firstName ?? null,
           lastName: subject?.lastName ?? null,

@@ -17,13 +17,24 @@ const CUSTODY_PROPERTY_EDIT_STATUSES = [
 ];
 
 /**
+ * Is the incident's location filled in? Handles both an address-style
+ * location (addressLine1 + city + state) and an intersection-style location
+ * (street1 + street2). Pre-migration rows without locationType default to
+ * the address shape.
+ */
+export function isIncidentLocationComplete (incident) {
+  if (incident?.locationType === 'INTERSECTION') {
+    return !!(incident.street1 && incident.street2);
+  }
+  return !!(incident?.addressLine1 && incident?.city && incident?.state);
+}
+
+/**
  * Are all required incident fields filled in?
  */
 export function isIncidentDetailsComplete (incident) {
   return !!(
-    incident.addressLine1 &&
-    incident.city &&
-    incident.state &&
+    isIncidentLocationComplete(incident) &&
     incident.arrestedAt &&
     incident.encounteredVia &&
     incident.cadNumber &&

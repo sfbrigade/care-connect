@@ -65,3 +65,33 @@ export function streetCityState (obj) {
 export function streetCityStateZip (obj) {
   return [streetCityState(obj), obj?.postalCode].filter(Boolean).join(' ');
 }
+
+/**
+ * Human-readable rendering of an incident's location. Branches on
+ * locationType to render "Street1 & Street2" for intersection mode while
+ * falling back to the address shape (addressLine1, city, state) otherwise.
+ *
+ * Title-cases the DataSF-uppercase street names (e.g. "16TH ST" → "16th St"),
+ * stripping the zero-pad on numbered streets.
+ */
+export function incidentLocationText (incident) {
+  if (incident?.locationType === 'INTERSECTION') {
+    const s1 = formatDataSfStreet(incident.street1);
+    const s2 = formatDataSfStreet(incident.street2);
+    const cross = [s1, s2].filter(Boolean).join(' & ');
+    const cityState = [incident.city, incident.state].filter(Boolean).join(', ');
+    return [cross, cityState].filter(Boolean).join(', ');
+  }
+  return streetCityState(incident);
+}
+
+function formatDataSfStreet (raw) {
+  if (!raw) return '';
+  // Already title-cased input (e.g. "16th St") — leave untouched.
+  if (/[a-z]/.test(raw)) return raw;
+  const stripped = String(raw).replace(/\b0(\d(ST|ND|RD|TH))\b/gi, '$1');
+  return stripped
+    .split(/\s+/)
+    .map(w => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(' ');
+}

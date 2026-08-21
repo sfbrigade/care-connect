@@ -59,6 +59,9 @@ vi.mock('@/FacilityContext', () => ({
 
 vi.mock('@/utils/format', () => ({
   formatAddress: (obj = {}) => [obj.addressLine1, obj.city].filter(Boolean).join(', '),
+  formatLocation: (obj = {}) => (obj.locationType === 'INTERSECTION'
+    ? [obj.street1, obj.street2].filter(Boolean).join(' & ')
+    : [obj.addressLine1, obj.city].filter(Boolean).join(', ')),
   formatDateTime: () => 'formatted-date-time',
   formatIntakeStartedAt: (date) => (date ? 'Apr 29, 11:24 AM' : null),
   formatTimelineTimestamp: (date) => (date ? 'timeline-timestamp' : null),
@@ -103,6 +106,10 @@ vi.mock('@/components/IconButtonLink', () => ({
 
 vi.mock('@/components/LockedQRCode', () => ({
   default: () => h('div', null, 'qr-code'),
+}));
+
+vi.mock('@/components/BetweenIntersectionsHint', () => ({
+  default: () => null,
 }));
 
 vi.mock('@tabler/icons-react', () => ({
