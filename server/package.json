@@ -24,7 +24,8 @@
     "loadtest:list": "node loadtest/index.js --list",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",
-    "worker:dev": "npm run prisma:generate && node --watch worker.js"
+    "worker:dev": "npm run prisma:generate && node --watch worker.js",
+    "sms:sync-config": "node bin/sync-sms-config.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
