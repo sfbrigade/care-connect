@@ -338,6 +338,22 @@
                 }
               },
               {
+                "Name": "AWS_SMS_INBOUND_TOPIC_ARN",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sns-topic-arn"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_OPT_OUT_LIST_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-opt-out-list-name"
+                  }
+                }
+              },
+              {
                 "Name": "AWS_SMS_ACCESS_KEY_ID",
                 "Value": {
                   "Fn::ImportValue": {
@@ -910,6 +926,22 @@
                 "Value": {
                   "Fn::ImportValue": {
                     "Fn::Sub": "${BaseName}-sms-inbound-sqs-queue-url"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_TOPIC_ARN",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sns-topic-arn"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_OPT_OUT_LIST_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-opt-out-list-name"
                   }
                 }
               },
