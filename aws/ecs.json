@@ -688,6 +688,25 @@
         ]
       }
     },
+    "WebServiceSecurityGroupDatabaseIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-db-sg-id"
+          }
+        }
+      }
+    },
     "WebServiceScalableTarget": {
       "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
       "Properties": {
@@ -1220,7 +1239,45 @@
                   "Fn::Sub": "${BaseName}-private-subnet-az1-id"
                 }
               }
+            ],
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WorkerServiceSecurityGroup",
+                  "GroupId"
+                ]
+              }
             ]
+          }
+        }
+      }
+    },
+    "WorkerServiceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ECS worker service",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      }
+    },
+    "WorkerServiceSecurityGroupDatabaseIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-db-sg-id"
           }
         }
       }
