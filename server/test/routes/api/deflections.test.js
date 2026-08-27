@@ -2006,6 +2006,98 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
 
+    await t.test('requires transportation if exit destination is SERVICES_NON_HOSPITAL', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'SERVICES_NON_HOSPITAL',
+          exitTransportation: null,
+          exitHousingStatus: 'TEMPORARY_SHELTER',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('records transportation when exit destination is SERVICES_NON_HOSPITAL', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'SERVICES_NON_HOSPITAL',
+          exitTransportation: 'SELF_TRANSPORT',
+          exitHousingStatus: 'TEMPORARY_SHELTER',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(data.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(data.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(data.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(data.exitConnectedToCare, 'NO');
+      assert.ok(data.completedAt);
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      // Verify DB state
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(dbDeflection.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(dbDeflection.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(dbDeflection.exitConnectedToCare, 'NO');
+      assert.ok(dbDeflection.completedAt);
+      assert.ok(dbDeflection.exitedAt);
+      assert.ok(dbDeflection.exitedById);
+
+      // Verify deflection update history
+      const updates = await app.prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
+      const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
+      assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
+      assert.strictEqual(lastUpdate.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(lastUpdate.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(lastUpdate.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(lastUpdate.exitConnectedToCare, 'NO');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
     await t.test('rejects JAIL as exit destination — care users record jail outcomes via custody', async () => {
       await app.prisma.deflection.update({
         where: { id: 6 },

@@ -8,13 +8,15 @@ import smsNotifications from '#lib/smsNotifications.js';
 import { redactDeflectionForUser } from '#lib/deflectionVisibility.js';
 import { conflictError } from '#lib/httpErrors.js';
 import { CARE_EXIT_DESTINATIONS } from '#lib/careExitDestinations.js';
-const { SFResidentEnum, TernaryEnum } = prismaPkg;
+const { DeflectionExitDestinationEnum, DeflectionExitTransportationEnum, SFResidentEnum, TernaryEnum } = prismaPkg;
 
 const ResidencyEnum = z.enum(Object.values(SFResidentEnum));
 
 const ConnectionToCareEnum = z.enum(Object.values(TernaryEnum));
 
-const CareExitDestinationEnum = z.enum(CARE_EXIT_DESTINATIONS);
+const CareExitDestinationEnum = z.enum(CARE_EXIT_DESTINATIONS.filter((id) => id !== DeflectionExitDestinationEnum.SERVICES_NON_HOSPITAL));
+
+const CareExitTransportEnum = z.enum(Object.values(DeflectionExitTransportationEnum));
 
 const EXITABLE_STATUSES = [
   Deflection.SubjectStatus.IN_CHAIR,
@@ -30,12 +32,22 @@ export default async function (fastify, opts) {
         params: z.object({
           id: z.coerce.number(),
         }),
-        body: z.object({
-          exitDestination: CareExitDestinationEnum,
-          exitHousingStatus: z.string(),
-          exitSFResident: ResidencyEnum,
-          exitConnectedToCare: ConnectionToCareEnum,
-        }),
+        body: z.discriminatedUnion('exitDestination', [
+          z.object({
+            exitDestination: z.literal(DeflectionExitDestinationEnum.SERVICES_NON_HOSPITAL),
+            exitTransportation: CareExitTransportEnum,
+            exitHousingStatus: z.string(),
+            exitSFResident: ResidencyEnum,
+            exitConnectedToCare: ConnectionToCareEnum,
+          }),
+          z.object({
+            exitDestination: CareExitDestinationEnum,
+            exitTransportation: z.null().optional(),
+            exitHousingStatus: z.string(),
+            exitSFResident: ResidencyEnum,
+            exitConnectedToCare: ConnectionToCareEnum,
+          })
+        ]),
         response: {
           [StatusCodes.OK]: Deflection.ResponseSchema,
           [StatusCodes.NOT_FOUND]: z.null(),
@@ -47,6 +59,7 @@ export default async function (fastify, opts) {
       const { id } = request.params;
       const {
         exitDestination,
+        exitTransportation,
         exitHousingStatus,
         exitSFResident,
         exitConnectedToCare,
@@ -79,6 +92,7 @@ export default async function (fastify, opts) {
               status: Deflection.HoldStatus.COMPLETED,
               subjectStatus: Deflection.SubjectStatus.EXITED,
               exitDestination,
+              exitTransportation: exitDestination === DeflectionExitDestinationEnum.SERVICES_NON_HOSPITAL ? exitTransportation : null,
               exitHousingStatus,
               exitConnectedToCare,
               exitSFResident,
@@ -96,6 +110,7 @@ export default async function (fastify, opts) {
               exitedAt: now,
               exitedById: request.user.id,
               exitDestination,
+              exitTransportation: exitDestination === DeflectionExitDestinationEnum.SERVICES_NON_HOSPITAL ? exitTransportation : null,
               exitHousingStatus,
               exitConnectedToCare,
               exitSFResident,

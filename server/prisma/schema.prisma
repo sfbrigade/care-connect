@@ -206,7 +206,7 @@ enum DeflectionExitDestinationEnum {
   UNKNOWN
 }
 
-enum DeflectionExitTransportation {
+enum DeflectionExitTransportationEnum {
   SELF_TRANSPORT
   OUTREACH_TRANSPORT_TEAM
   TRANSIT_MUNI
@@ -734,7 +734,7 @@ model Deflection {
   exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
   exitedById                   String?                 @db.Uuid
   exitDestination              DeflectionExitDestinationEnum?
-  exitTransportation           DeflectionExitTransportation?
+  exitTransportation           DeflectionExitTransportationEnum?
   exitHousingStatus            DeflectionExitHousingStatusEnum?
   exitConnectedToCare          TernaryEnum?
   exitSFResident               SFResidentEnum?
@@ -768,7 +768,7 @@ model DeflectionUpdate {
   propertyNotReturnedOtherReason String?
   refusalReason                  DeflectionRefusalReasonEnum?
   exitDestination                DeflectionExitDestinationEnum?
-  exitTransportation             DeflectionExitTransportation?
+  exitTransportation             DeflectionExitTransportationEnum?
   exitHousingStatus              DeflectionExitHousingStatusEnum?
   exitConnectedToCare            TernaryEnum?
   exitSFResident                 SFResidentEnum?

@@ -131,6 +131,16 @@
     "UNKNOWN": "Unknown",
     "DECLINED_CONSENT": "Did not share"
   },
+  "deflectionExitTransportation": {
+    "SELF_TRANSPORT": "Self-transport",
+    "OUTREACH_TRANSPORT_TEAM": "Outreach/transport team",
+    "TRANSIT_MUNI": "Public transit - Muni",
+    "TRANSIT_BART": "Public transit - BART",
+    "TRANSIT_OTHER": "Public transit - Other",
+    "FRIEND_FAMILY_TRANSPORT": "Friend/family transport",
+    "COMMUNITY_FORWARD_VAN": "Community Forward van",
+    "TAXI_UBER_LYFT": "Taxi/Uber/Lyft"
+  },
   "facilityStatusReason": {
     "BUILDING_ISSUE": "Building Issue",
     "SAFETY_LOCKDOWN": "Safety Lock-down",
