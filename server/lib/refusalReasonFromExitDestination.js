@@ -1,6 +1,6 @@
 const REFUSAL_REASON_BY_EXIT_DESTINATION = {
   JAIL: 'AGGRESSIVE_BEHAVIOR',
-  HOSPITAL: 'MEDICAL_ISSUE',
+  HOSPITAL_EMS: 'MEDICAL_ISSUE',
 };
 
 export function refusalReasonFromExitDestination (exitDestination) {

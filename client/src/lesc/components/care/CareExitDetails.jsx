@@ -38,6 +38,7 @@ function CareExitDetails () {
   const [initialized, setInitialized] = useState(false);
 
   const [exitDestination, setExitDestination] = useState(null);
+  const [exitTransportation, setExitTransportation] = useState(null);
   const [exitSFResident, setExitSFResident] = useState(null);
   const [exitHousingStatus, setExitHousingStatus] = useState(null);
   const [exitConnectedToCare, setExitConnectedToCare] = useState(null);
@@ -55,6 +56,8 @@ function CareExitDetails () {
     .map(([id, name]) => ({ id, name }));
   const exitHousingStatuses = Object.entries(t('deflectionExitHousingStatus', { returnObjects: true }))
     .map(([id, name]) => ({ id, name }));
+  const exitTransportations = Object.entries(t('deflectionExitTransportation', { returnObjects: true }))
+    .map(([id, name]) => ({ id, name }));
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -66,6 +69,7 @@ function CareExitDetails () {
     const draft = getSavedExitDraft(id);
 
     setExitDestination(draft?.exitDestination ?? deflection.exitDestination ?? null);
+    setExitTransportation(draft?.exitTransportation ?? deflection.exitTransportation ?? null);
     setExitSFResident(draft?.exitSFResident ?? deflection.exitSFResident ?? null);
     setExitHousingStatus(draft?.exitHousingStatus ?? deflection.exitHousingStatus ?? null);
     setExitConnectedToCare(draft?.exitConnectedToCare ?? deflection.exitConnectedToCare ?? null);
@@ -73,9 +77,16 @@ function CareExitDetails () {
     setInitialized(true);
   }, [deflection, id, initialized]);
 
+  useEffect(() => {
+    if (exitDestination !== 'SERVICES_NON_HOSPITAL') {
+      setExitTransportation(null);
+    }
+  }, [exitDestination]);
+
   const completeExitMutation = useMutation({
     mutationFn: () => Api.deflections.exit(id, {
       exitDestination,
+      exitTransportation: exitDestination === 'SERVICES_NON_HOSPITAL' ? exitTransportation : null,
       exitSFResident,
       exitHousingStatus,
       exitConnectedToCare,
@@ -99,20 +110,22 @@ function CareExitDetails () {
   const isSectionTwoComplete = useMemo(
     () => (
       !!exitDestination &&
+      (exitDestination === 'SERVICES_NON_HOSPITAL' ? !!exitTransportation : true) &&
       !!exitSFResident &&
       !!exitHousingStatus &&
       !!exitConnectedToCare
     ),
-    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
+    [exitDestination, exitTransportation, exitSFResident, exitHousingStatus, exitConnectedToCare]
   );
   const isExitFormEdited = useMemo(
     () => (
       !!exitDestination ||
+      !!exitTransportation ||
       !!exitSFResident ||
       !!exitHousingStatus ||
       !!exitConnectedToCare
     ),
-    [exitDestination, exitSFResident, exitHousingStatus, exitConnectedToCare]
+    [exitDestination, exitTransportation, exitSFResident, exitHousingStatus, exitConnectedToCare]
   );
   const personHasAssociatedProperty = useMemo(
     () => hasAssociatedProperty(deflection),
@@ -124,6 +137,7 @@ function CareExitDetails () {
     setSavedExitDraft(id, isExitFormEdited
       ? {
           exitDestination,
+          exitTransportation,
           exitSFResident,
           exitHousingStatus,
           exitConnectedToCare,
@@ -134,6 +148,7 @@ function CareExitDetails () {
   }, [
     exitConnectedToCare,
     exitDestination,
+    exitTransportation,
     exitHousingStatus,
     exitSFResident,
     id,
@@ -179,6 +194,24 @@ function CareExitDetails () {
               </Group>
             </Chip.Group>
           </Input.Wrapper>
+
+          {exitDestination === 'SERVICES_NON_HOSPITAL' && (
+            <Input.Wrapper label='Transportation' required>
+              <Chip.Group value={exitTransportation} onChange={setExitTransportation}>
+                <Group gap='xs'>
+                  {exitTransportations.map((option) => (
+                    <Chip
+                      key={option.id}
+                      value={option.id}
+                      size='md'
+                    >
+                      {option.name}
+                    </Chip>
+                  ))}
+                </Group>
+              </Chip.Group>
+            </Input.Wrapper>
+          )}
 
           <Input.Wrapper label='SF residency status' required>
             <Chip.Group value={exitSFResident} onChange={setExitSFResident}>

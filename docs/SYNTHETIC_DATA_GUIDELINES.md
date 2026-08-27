@@ -352,7 +352,7 @@ Effects:
 - Sets `exitDestination = JAIL`
 - Derives `refusalReason = MEDICAL_ISSUE` internally via destination mapping
 
-Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReason = MEDICAL_ISSUE` and `exitDestination = HOSPITAL`.
+Note: there is no dedicated `/exit-to-hospital` route in the current API. Hospital exits happen via `/release` with `releaseReason = MEDICAL_ISSUE` and `exitDestination = HOSPITAL_EMS`.
 
 ### Record Death (`/record-death`)
 - No additional fields beyond identifying the deflection
@@ -447,7 +447,7 @@ Subjects can be created standalone or inline during deflection creation.
 #### Scenario D: Direct Hospital Exit
 ```
 1–5. Same as Scenario A steps 1–5 (up to READY_FOR_INTAKE)
-6. POST deflection /release with releaseReason="MEDICAL_ISSUE" and exitDestination="HOSPITAL"
+6. POST deflection /release with releaseReason="MEDICAL_ISSUE" and exitDestination="HOSPITAL_EMS"
    → subjectStatus: EXITED, holds-1, available+1
    → hold status typically remains ACTIVE in the current codebase
 ```

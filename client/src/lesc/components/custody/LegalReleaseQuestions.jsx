@@ -10,6 +10,7 @@ import IconButtonLink from '@/components/IconButtonLink';
 import { useToast } from '@/components/ToastContext';
 import useEnsureReleaseNarrative from '../../../hooks/useEnsureReleaseNarrative';
 import useSatisfactionSurvey from '../../../hooks/useSatisfactionSurvey';
+import { useTranslation } from 'react-i18next';
 import { IconAlertCircle, IconArrowBackUp, IconArrowLeft, IconCheck } from '@tabler/icons-react';
 import { getPrefilledLegalReleaseState } from './legalReleasePresets';
 
@@ -25,6 +26,7 @@ function LegalReleaseQuestions () {
   const backTo = searchParams.get('from') === 'detail'
     ? `/custody/${id}`
     : '/custody';
+  const { t } = useTranslation();
 
   const [releaseReason, setReleaseReason] = useState(prefilledState.releaseReason);
   const [isEditingNarrative, setIsEditingNarrative] = useState(false);
@@ -37,9 +39,10 @@ function LegalReleaseQuestions () {
   const { navigateWithOptionalSurvey } = useSatisfactionSurvey(navigate);
 
   const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
-  const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
+  const isBehavioralHealthRelease = releaseReason === 'BH_EMERGENCY_5150';
+  const isElopementRelease = releaseReason === 'ELOPEMENT';
   const isOtherRelease = releaseReason === 'OTHER';
-  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
+  const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isElopementRelease || isOtherRelease;
 
   const { data: deflection } = useQuery({
     queryKey: ['deflections', id],
@@ -92,11 +95,9 @@ function LegalReleaseQuestions () {
       };
       if (isMedicalRelease) {
         payload.exitDestination = exitDestination;
-      }
-      if (isBehavioralHealthRelease) {
+      } else if (isBehavioralHealthRelease) {
         payload.exitDestination = exitDestination;
-      }
-      if (isOtherRelease) {
+      } else if (isOtherRelease) {
         payload.otherReleaseReason = otherReason.trim();
         payload.otherReleaseDestination = otherDestination.trim();
       }
@@ -241,18 +242,18 @@ function LegalReleaseQuestions () {
                           <Chip.Group value={releaseReason} onChange={setReleaseReason}>
                             <Stack gap='sm' align='flex-start'>
                               {canReleaseAsSobered && (
-                                <Chip data-testid='release-reason-sobered' value='SOBERED'>Can care for themselves</Chip>
+                                <Chip data-testid='release-reason-sobered' value='SOBERED'>{t('deflectionReleaseReason.SOBERED')}</Chip>
                               )}
-                              <Chip value='MEDICAL_ISSUE'>Medical issue (physical)</Chip>
-                              <Chip value='BEHAVIORAL_HEALTH_EVALUATION'>Behavioral health evaluation</Chip>
-                              <Chip value='OTHER'>Other (please specify)</Chip>
+                              <Chip value='MEDICAL_ISSUE'>{t('deflectionReleaseReason.MEDICAL_ISSUE')}</Chip>
+                              <Chip value='BH_EMERGENCY_5150'>{t('deflectionReleaseReason.BH_EMERGENCY_5150')}</Chip>
+                              <Chip value='ELOPEMENT'>{t('deflectionReleaseReason.ELOPEMENT')}</Chip>
                             </Stack>
                           </Chip.Group>
                         </Box>
                       </Input.Wrapper>
                     </>
                     )}
-                {(isMedicalRelease || isBehavioralHealthRelease) && (
+                {(isMedicalRelease || isBehavioralHealthRelease || isElopementRelease) && (
                   <>
                     <Text size='md' c='dimmed'>
                       This will also mark the person as exited from RESET.
@@ -261,7 +262,7 @@ function LegalReleaseQuestions () {
                       <Input.Wrapper label='Exit destination' required>
                         <Chip.Group value={exitDestination} onChange={setExitDestination}>
                           <Group gap='sm'>
-                            <Chip value='HOSPITAL'>Hospital</Chip>
+                            <Chip value='HOSPITAL_EMS'>Hospital/EMS</Chip>
                             <Chip value='OTHER'>Other</Chip>
                           </Group>
                         </Chip.Group>
@@ -322,11 +323,12 @@ function LegalReleaseQuestions () {
                   disabled={
                     !releaseReason ||
                     (releaseReason === 'SOBERED' && !canReleaseAsSobered) ||
-                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') && !exitDestination) ||
+                    ((releaseReason === 'MEDICAL_ISSUE' || releaseReason === 'BH_EMERGENCY_5150') && !exitDestination) ||
                     (releaseReason === 'OTHER' && (!otherReason.trim() || !otherDestination.trim())) ||
                     (releaseReason !== 'SOBERED' &&
                       releaseReason !== 'MEDICAL_ISSUE' &&
-                      releaseReason !== 'BEHAVIORAL_HEALTH_EVALUATION' &&
+                      releaseReason !== 'BH_EMERGENCY_5150' &&
+                      releaseReason !== 'ELOPEMENT' &&
                       releaseReason !== 'OTHER')
                   }
                 >

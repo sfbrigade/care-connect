@@ -263,7 +263,7 @@ test('formsEmail job handler', async (t) => {
     assert.strictEqual(regeneratedAttachment849b.path, undefined);
   });
 
-  await t.test('silently skips 5150 in the release packet when release reason is not behavioral health evaluation', async () => {
+  await t.test('silently skips 5150 in the release packet when release reason is not BH Emergency/5150', async () => {
     // 5150 is unconditionally included in the release-forms packet, but only
     // applies to BHE releases. Any other release should produce no 5150
     // attachment and no error.
@@ -280,13 +280,13 @@ test('formsEmail job handler', async (t) => {
     assert.ok(!filenames.some(f => f.startsWith('5150-application-')), 'no 5150 attachment expected for non-BHE releases');
   });
 
-  await t.test('attaches a live 5150 to the release packet when release reason is behavioral health evaluation', async () => {
+  await t.test('attaches a live 5150 to the release packet when release reason is BH Emergency/5150', async () => {
     const bheDeflectionPrisma = {
       ...mockPrisma,
       deflection: {
         findUnique: async () => ({
           ...mockDeflection,
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           subject: { ...mockDeflection.subject, dateOfBirth: new Date('1985-06-15') },
         }),
       },
@@ -318,7 +318,7 @@ test('formsEmail job handler', async (t) => {
       deflection: {
         findUnique: async () => ({
           ...mockDeflection,
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           subject: { ...mockDeflection.subject, dateOfBirth: new Date('1985-06-15') },
           deflectionDocuments: [
             ...mockDeflection.deflectionDocuments,

@@ -96,11 +96,11 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
   const hasDrugUseEvidence = deflection?.drugUseEvidence !== null && deflection?.drugUseEvidence !== undefined;
 
   function navigateToHospitalReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=MEDICAL_ISSUE&exitDestination=HOSPITAL_EMS`);
   }
 
   function navigateToOtherExitReleaseFlow () {
-    navigate(`/custody/${deflection.id}/legal-release?from=detail&releaseReason=OTHER`);
+    navigate(`/custody/${deflection.id}/legal-release?from=detail`);
   }
 
   useEffect(() => {
@@ -237,7 +237,7 @@ function CustodyDetailContent ({ deflection, backTo = '/custody', viewerMode = '
 
   // 5150 (DHCS-1801) is only generated for behavioral-health-evaluation
   // releases. Buttons are gated on the same predicate the server enforces.
-  const can5150 = deflection?.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION' && !!deflection?.releasedAt;
+  const can5150 = deflection?.releaseReason === 'BH_EMERGENCY_5150' && !!deflection?.releasedAt;
   const custodyDocuments = !isCareView
     ? [
         showPrimaryPrintCertificate && {

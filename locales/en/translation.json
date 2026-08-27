@@ -95,9 +95,9 @@
     "UNKNOWN": "Unknown"
   },
   "deflectionCancelReason": {
-    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "BH_EMERGENCY_5150": "BH Emergency/5150",
     "JAIL": "Jail",
-    "HOSPITAL": "Hospital",
+    "HOSPITAL_EMS": "Hospital/EMS",
     "RELEASE_ON_SCENE": "Released on scene",
     "NO_CHAIRS_AVAILABLE": "No chairs available",
     "STAFFING_SHORTAGE": "Staffing shortage"
@@ -105,10 +105,11 @@
   "deflectionReleaseReason": {
     "SOBERED": "Can care for themselves",
     "MEDICAL_ISSUE": "Medical issue (physical)",
-    "BEHAVIORAL_HEALTH_EVALUATION": "Behavioral health evaluation",
+    "BH_EMERGENCY_5150": "BH Emergency/5150",
     "OTHER": "Other",
     "DEATH_IN_FACILITY": "Death in facility",
-    "DEATH_IN_CUSTODY": "Death in custody"
+    "DEATH_IN_CUSTODY": "Death in custody",
+    "ELOPEMENT": "Elopement"
   },
   "deflectionRefusalReason": {
     "AGGRESSIVE_BEHAVIOR": "Aggressive behavior",
@@ -116,19 +117,29 @@
   },
   "deflectionExitDestination": {
     "JAIL": "Jail",
-    "HOSPITAL": "Hospital",
+    "HOSPITAL_EMS": "Hospital/EMS",
     "STREET": "Street",
-    "HOME": "Home",
+    "RESIDENCE": "Residence",
     "SERVICES_NON_HOSPITAL": "Services (non-hospital)",
     "DECLINED_CONSENT": "Did not share",
     "OTHER": "Other"
   },
   "deflectionExitHousingStatus": {
-    "PERMANENT": "Permanent",
-    "SHELTERED": "Sheltered",
-    "TEMPORARY": "Temporary",
+    "PERMANENTLY_HOUSED": "Permanently housed",
+    "TEMPORARY_SHELTER": "Temporary shelter",
+    "NO_SHELTER_STREET": "No shelter/street",
     "UNKNOWN": "Unknown",
     "DECLINED_CONSENT": "Did not share"
+  },
+  "deflectionExitTransportation": {
+    "SELF_TRANSPORT": "Self-transport",
+    "OUTREACH_TRANSPORT_TEAM": "Outreach/transport team",
+    "TRANSIT_MUNI": "Public transit - Muni",
+    "TRANSIT_BART": "Public transit - BART",
+    "TRANSIT_OTHER": "Public transit - Other",
+    "FRIEND_FAMILY_TRANSPORT": "Friend/family transport",
+    "COMMUNITY_FORWARD_VAN": "Community Forward van",
+    "TAXI_UBER_LYFT": "Taxi/Uber/Lyft"
   },
   "facilityStatusReason": {
     "BUILDING_ISSUE": "Building Issue",

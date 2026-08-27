@@ -86,7 +86,7 @@ test('647f hospital cancellation appends the release narrative', () => {
     behavior: 'Subject was unable to care for themself.',
     narcoticsSubstance: false,
     narcoticsParaphernalia: true,
-    cancelReason: 'HOSPITAL',
+    cancelReason: 'HOSPITAL_EMS',
     cancelledAt: new Date('2025-04-15T17:35:00.000Z'),
     subject: {
       firstName: 'Test',

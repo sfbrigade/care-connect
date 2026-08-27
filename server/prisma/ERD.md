@@ -183,9 +183,9 @@ VIETNAMESE VIETNAMESE
 
 
         DeflectionCancelReasonEnum {
-            BEHAVIORAL_HEALTH_EVALUATION BEHAVIORAL_HEALTH_EVALUATION
+            BH_EMERGENCY_5150 BH_EMERGENCY_5150
 JAIL JAIL
-HOSPITAL HOSPITAL
+HOSPITAL_EMS HOSPITAL_EMS
 RELEASE_ON_SCENE RELEASE_ON_SCENE
 NO_CHAIRS_AVAILABLE NO_CHAIRS_AVAILABLE
 STAFFING_SHORTAGE STAFFING_SHORTAGE
@@ -196,10 +196,11 @@ STAFFING_SHORTAGE STAFFING_SHORTAGE
         DeflectionReleaseReasonEnum {
             SOBERED SOBERED
 MEDICAL_ISSUE MEDICAL_ISSUE
-BEHAVIORAL_HEALTH_EVALUATION BEHAVIORAL_HEALTH_EVALUATION
+BH_EMERGENCY_5150 BH_EMERGENCY_5150
 OTHER OTHER
 DEATH_IN_FACILITY DEATH_IN_FACILITY
 DEATH_IN_CUSTODY DEATH_IN_CUSTODY
+ELOPEMENT ELOPEMENT
         }
     
 
@@ -213,22 +214,36 @@ MEDICAL_ISSUE MEDICAL_ISSUE
 
         DeflectionExitDestinationEnum {
             JAIL JAIL
-HOSPITAL HOSPITAL
+HOSPITAL_EMS HOSPITAL_EMS
 STREET STREET
-HOME HOME
+RESIDENCE RESIDENCE
 SERVICES_NON_HOSPITAL SERVICES_NON_HOSPITAL
 DECLINED_CONSENT DECLINED_CONSENT
 OTHER OTHER
+UNKNOWN UNKNOWN
+        }
+    
+
+
+        DeflectionExitTransportationEnum {
+            SELF_TRANSPORT SELF_TRANSPORT
+OUTREACH_TRANSPORT_TEAM OUTREACH_TRANSPORT_TEAM
+TRANSIT_MUNI TRANSIT_MUNI
+TRANSIT_BART TRANSIT_BART
+TRANSIT_OTHER TRANSIT_OTHER
+FRIEND_FAMILY_TRANSPORT FRIEND_FAMILY_TRANSPORT
+COMMUNITY_FORWARD_VAN COMMUNITY_FORWARD_VAN
+TAXI_UBER_LYFT TAXI_UBER_LYFT
         }
     
 
 
         DeflectionExitHousingStatusEnum {
-            PERMANENT PERMANENT
-SHELTERED SHELTERED
-TEMPORARY TEMPORARY
+            PERMANENTLY_HOUSED PERMANENTLY_HOUSED
+TEMPORARY_SHELTER TEMPORARY_SHELTER
 UNKNOWN UNKNOWN
 DECLINED_CONSENT DECLINED_CONSENT
+NO_SHELTER_STREET NO_SHELTER_STREET
         }
     
 
@@ -617,6 +632,7 @@ DEPARTURE DEPARTURE
     DateTime exitedAt "❓"
     String exitedById "❓"
     DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitTransportationEnum exitTransportation "❓"
     DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
@@ -643,6 +659,7 @@ DEPARTURE DEPARTURE
     String propertyNotReturnedOtherReason "❓"
     DeflectionRefusalReasonEnum refusalReason "❓"
     DeflectionExitDestinationEnum exitDestination "❓"
+    DeflectionExitTransportationEnum exitTransportation "❓"
     DeflectionExitHousingStatusEnum exitHousingStatus "❓"
     TernaryEnum exitConnectedToCare "❓"
     SFResidentEnum exitSFResident "❓"
@@ -869,6 +886,7 @@ DEPARTURE DEPARTURE
     "Deflection" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
     "Deflection" o|--|o "User" : "exitedBy"
     "Deflection" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "Deflection" o|--|o "DeflectionExitTransportationEnum" : "enum:exitTransportation"
     "Deflection" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "Deflection" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "Deflection" o|--|o "SFResidentEnum" : "enum:exitSFResident"
@@ -884,6 +902,7 @@ DEPARTURE DEPARTURE
     "DeflectionUpdate" o|--|o "PropertyNotReturnedReasonEnum" : "enum:propertyNotReturnedReason"
     "DeflectionUpdate" o|--|o "DeflectionRefusalReasonEnum" : "enum:refusalReason"
     "DeflectionUpdate" o|--|o "DeflectionExitDestinationEnum" : "enum:exitDestination"
+    "DeflectionUpdate" o|--|o "DeflectionExitTransportationEnum" : "enum:exitTransportation"
     "DeflectionUpdate" o|--|o "DeflectionExitHousingStatusEnum" : "enum:exitHousingStatus"
     "DeflectionUpdate" o|--|o "TernaryEnum" : "enum:exitConnectedToCare"
     "DeflectionUpdate" o|--|o "SFResidentEnum" : "enum:exitSFResident"

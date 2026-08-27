@@ -81,13 +81,15 @@ export default async function (fastify, opts) {
     async function (request, reply) {
       const { id } = request.params;
       const releaseReason = request.body?.releaseReason || 'SOBERED';
-      const exitDestination = request.body?.exitDestination || null;
+      const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
+      const isBehavioralHealthRelease = releaseReason === 'BH_EMERGENCY_5150';
+      const isElopementRelease = releaseReason === 'ELOPEMENT';
+      const isOtherRelease = releaseReason === 'OTHER';
+      const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isElopementRelease || isOtherRelease;
+
+      const exitDestination = isElopementRelease ? 'UNKNOWN' : (request.body?.exitDestination || null);
       const otherReleaseReason = request.body?.otherReleaseReason?.trim() || null;
       const otherReleaseDestination = request.body?.otherReleaseDestination?.trim() || null;
-      const isMedicalRelease = releaseReason === 'MEDICAL_ISSUE';
-      const isBehavioralHealthRelease = releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION';
-      const isOtherRelease = releaseReason === 'OTHER';
-      const isExitRelease = isMedicalRelease || isBehavioralHealthRelease || isOtherRelease;
 
       if ((isMedicalRelease || isBehavioralHealthRelease) && !exitDestination) {
         return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({

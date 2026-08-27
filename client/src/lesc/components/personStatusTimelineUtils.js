@@ -88,7 +88,7 @@ function isUnhappyTerminalExit (deflection, milestones) {
 function getUnhappyExitLabel (deflection) {
   if (deflection.exitDestination === 'JAIL') return 'Exited (jail)';
   if (deflection.releaseReason === 'MEDICAL_ISSUE') return 'Exited (medical)';
-  if (deflection.releaseReason === 'BEHAVIORAL_HEALTH_EVALUATION') return 'Exited (behavioral)';
+  if (deflection.releaseReason === 'BH_EMERGENCY_5150') return 'Exited (behavioral)';
   if (deflection.releaseReason === 'OTHER') return 'Exited (other)';
 
   return STATUS_LABELS.EXITED;

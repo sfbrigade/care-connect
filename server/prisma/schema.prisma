@@ -172,9 +172,9 @@ enum PreferredLanguageEnum {
 }
 
 enum DeflectionCancelReasonEnum {
-  BEHAVIORAL_HEALTH_EVALUATION
+  BH_EMERGENCY_5150
   JAIL
-  HOSPITAL
+  HOSPITAL_EMS
   RELEASE_ON_SCENE
   NO_CHAIRS_AVAILABLE
   STAFFING_SHORTAGE
@@ -183,10 +183,11 @@ enum DeflectionCancelReasonEnum {
 enum DeflectionReleaseReasonEnum {
   SOBERED
   MEDICAL_ISSUE
-  BEHAVIORAL_HEALTH_EVALUATION
+  BH_EMERGENCY_5150
   OTHER
   DEATH_IN_FACILITY
   DEATH_IN_CUSTODY
+  ELOPEMENT
 }
 
 enum DeflectionRefusalReasonEnum {
@@ -196,20 +197,32 @@ enum DeflectionRefusalReasonEnum {
 
 enum DeflectionExitDestinationEnum {
   JAIL
-  HOSPITAL
+  HOSPITAL_EMS
   STREET
-  HOME
+  RESIDENCE
   SERVICES_NON_HOSPITAL
   DECLINED_CONSENT
   OTHER
+  UNKNOWN
+}
+
+enum DeflectionExitTransportationEnum {
+  SELF_TRANSPORT
+  OUTREACH_TRANSPORT_TEAM
+  TRANSIT_MUNI
+  TRANSIT_BART
+  TRANSIT_OTHER
+  FRIEND_FAMILY_TRANSPORT
+  COMMUNITY_FORWARD_VAN
+  TAXI_UBER_LYFT
 }
 
 enum DeflectionExitHousingStatusEnum {
-  PERMANENT
-  SHELTERED
-  TEMPORARY
+  PERMANENTLY_HOUSED
+  TEMPORARY_SHELTER
   UNKNOWN
   DECLINED_CONSENT
+  NO_SHELTER_STREET
 }
 
 enum FacilityStatusReasonEnum {
@@ -721,6 +734,7 @@ model Deflection {
   exitedBy                     User?                   @relation("ExitedBy", fields: [exitedById], references: [id])
   exitedById                   String?                 @db.Uuid
   exitDestination              DeflectionExitDestinationEnum?
+  exitTransportation           DeflectionExitTransportationEnum?
   exitHousingStatus            DeflectionExitHousingStatusEnum?
   exitConnectedToCare          TernaryEnum?
   exitSFResident               SFResidentEnum?
@@ -752,14 +766,15 @@ model DeflectionUpdate {
   propertyReturned               Boolean?
   propertyNotReturnedReason      PropertyNotReturnedReasonEnum?
   propertyNotReturnedOtherReason String?
-  refusalReason                DeflectionRefusalReasonEnum?
-  exitDestination              DeflectionExitDestinationEnum?
-  exitHousingStatus            DeflectionExitHousingStatusEnum?
-  exitConnectedToCare          TernaryEnum?
-  exitSFResident               SFResidentEnum?
-  updatedAt                    DateTime                @default(now())
-  updatedBy                    User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
-  updatedById                  String                  @db.Uuid
+  refusalReason                  DeflectionRefusalReasonEnum?
+  exitDestination                DeflectionExitDestinationEnum?
+  exitTransportation             DeflectionExitTransportationEnum?
+  exitHousingStatus              DeflectionExitHousingStatusEnum?
+  exitConnectedToCare            TernaryEnum?
+  exitSFResident                 SFResidentEnum?
+  updatedAt                      DateTime                @default(now())
+  updatedBy                      User                    @relation(fields: [updatedById], references: [id], onDelete: Cascade)
+  updatedById                    String                  @db.Uuid
 }
 
 

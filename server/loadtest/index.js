@@ -379,10 +379,10 @@ async function createContext (options) {
     ids: {
       unavailableReason: 'OTHER',
       facilityClosedReason: 'OTHER',
-      exitDestinationHome: 'HOME',
-      exitDestinationHospital: 'HOSPITAL',
+      exitDestinationHome: 'RESIDENCE',
+      exitDestinationHospital: 'HOSPITAL_EMS',
       exitDestinationJail: 'JAIL',
-      exitHousingStatus: 'PERMANENT',
+      exitHousingStatus: 'PERMANENTLY_HOUSED',
       releaseReasonSobered: 'SOBERED',
       releaseReasonMedical: 'MEDICAL_ISSUE',
     },

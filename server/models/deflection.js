@@ -23,6 +23,7 @@ const {
   DeflectionReleaseReasonEnum,
   DeflectionRefusalReasonEnum,
   DeflectionExitDestinationEnum,
+  DeflectionExitTransportationEnum,
   DeflectionExitHousingStatusEnum,
 } = prismaPkg;
 
@@ -129,6 +130,7 @@ const DeflectionResponseSchema = DeflectionCreateSchema.extend({
   exitedById: z.string().uuid().nullable(),
   exitedBy: User.NameResponseSchema.nullable().optional(),
   exitDestination: z.enum(Object.values(DeflectionExitDestinationEnum)).nullable(),
+  exitTransportation: z.enum(Object.values(DeflectionExitTransportationEnum)).nullable(),
   exitHousingStatus: z.enum(Object.values(DeflectionExitHousingStatusEnum)).nullable(),
   exitConnectedToCare: z.enum(Object.values(TernaryEnum)).nullable(),
   exitSFResident: z.enum(Object.values(SFResidentEnum)).nullable(),
