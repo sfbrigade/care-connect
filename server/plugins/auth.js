@@ -8,6 +8,13 @@ const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
 
 export default fp(async function (fastify) {
   // set up secure encrypted cookie-based sessions
+
+  await fastify.register(import('@fastify/rate-limit'),{
+    max:10,
+    timeWindow:'1 minute'
+  })
+
+
   await fastify.register(import('@fastify/secure-session'), {
     key: Buffer.from(process.env.SESSION_SECRET, 'hex'),
     expiry: SESSION_DURATION_SECONDS,
