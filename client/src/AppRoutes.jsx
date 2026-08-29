@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router';
 import { Container, Loader } from '@mantine/core';
 
 import AppRedirects from './AppRedirects';
+import ChunkErrorBoundary from './components/ChunkErrorBoundary';
 import { useFacilityContext } from './FacilityContext';
 import { useStaticContext } from './StaticContext';
 
@@ -31,23 +32,25 @@ function AppRoutes () {
         path='*'
         element={
           <AppRedirects>
-            <Suspense fallback={<Container ta='center'><Loader /></Container>}>
-              <Routes>
-                <Route path='/login' element={<Login />} />
-                <Route path='/units' element={<UnitSelector />} />
-                <Route path='/passwords/*' element={<PasswordsRoutes />} />
-                <Route path='/invites/*' element={<InvitesRoutes />} />
-                {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
-                <Route path='/feedback' element={<FeedbackViewer />} />
-                <Route path='/feedback/list' element={<FeedbackList />} />
-                <Route path='/profile/*' element={<UserProfileRoutes />} />
-                <Route path='/manage-users/*' element={<ManageUsersRoutes />} />
-                <Route path='/admin/*' element={<AdminRoutes />} />
-                {!facility && <Route path='/*' element={<DIDORoutes />} />}
-                {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
-                <Route path='/*' element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <ChunkErrorBoundary>
+              <Suspense fallback={<Container ta='center'><Loader /></Container>}>
+                <Routes>
+                  <Route path='/login' element={<Login />} />
+                  <Route path='/units' element={<UnitSelector />} />
+                  <Route path='/passwords/*' element={<PasswordsRoutes />} />
+                  <Route path='/invites/*' element={<InvitesRoutes />} />
+                  {staticContext?.env?.VITE_FEATURE_REGISTRATION === 'true' && <Route path='/register' element={<Register />} />}
+                  <Route path='/feedback' element={<FeedbackViewer />} />
+                  <Route path='/feedback/list' element={<FeedbackList />} />
+                  <Route path='/profile/*' element={<UserProfileRoutes />} />
+                  <Route path='/manage-users/*' element={<ManageUsersRoutes />} />
+                  <Route path='/admin/*' element={<AdminRoutes />} />
+                  {!facility && <Route path='/*' element={<DIDORoutes />} />}
+                  {facility?.type === 'LESC' && <Route path='/*' element={<LESCRoutes />} />}
+                  <Route path='/*' element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </ChunkErrorBoundary>
           </AppRedirects>
         }
       />

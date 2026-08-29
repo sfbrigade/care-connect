@@ -12,6 +12,16 @@ import './i18n';
 import App from './App';
 import { defaultValue } from './StaticContext';
 import StaticContextProvider from './StaticContextProvider';
+import { reloadOnceForStaleChunk } from './utils/chunkReload';
+
+// Recover from stale code-split chunks after a deploy: when a dynamic import() for a
+// lazy route fails (its hashed file no longer exists on the server), Vite fires this
+// event. Reload once to the current build; the guard prevents a reload loop. This is
+// the early catch; ChunkErrorBoundary is the render-time backstop. See utils/chunkReload.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault(); // don't let it surface as an unhandled rejection
+  reloadOnceForStaleChunk();
+});
 
 // PostHog's exception auto-capture calls preventDefault on unhandledrejection
 // and error events, which suppresses the browser's default console log. In
