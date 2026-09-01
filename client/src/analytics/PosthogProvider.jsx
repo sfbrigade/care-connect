@@ -32,6 +32,7 @@ function PosthogProvider () {
   const env = staticContext?.env ?? {};
   const apiKey = env?.VITE_POSTHOG_KEY ?? import.meta?.env?.VITE_POSTHOG_KEY;
   const apiHost = env?.VITE_POSTHOG_HOST ?? import.meta?.env?.VITE_POSTHOG_HOST ?? DEFAULT_API_HOST;
+  const gitSha = env?.VITE_GIT_SHA ?? import.meta?.env?.VITE_GIT_SHA ?? null;
 
   useEffect(() => {
     if (!apiKey) {
@@ -56,6 +57,9 @@ function PosthogProvider () {
         disable_session_recording: true,
         before_send: (event) => (isNoiseException(event) ? null : event),
       });
+      if (gitSha) {
+        posthog.register({ $git_commit: gitSha, release: gitSha });
+      }
       posthogRef.current = posthog;
 
       if (user) {
@@ -81,7 +85,7 @@ function PosthogProvider () {
         delete window.posthog;
       }
     };
-  }, [apiKey, apiHost]);
+  }, [apiKey, apiHost, gitSha]);
 
   useEffect(() => {
     if (!posthogRef.current) {
