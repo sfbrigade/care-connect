@@ -9,6 +9,8 @@ export const defaultValue = {
     VITE_FEATURE_REGISTRATION: import.meta.env.VITE_FEATURE_REGISTRATION,
     VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
     VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
+    VITE_ENVIRONMENT_LABEL: import.meta.env.VITE_ENVIRONMENT_LABEL,
+    VITE_PRODUCTION_URL_OVERRIDE: import.meta.env.VITE_PRODUCTION_URL_OVERRIDE,
   },
   facility: {},
 };

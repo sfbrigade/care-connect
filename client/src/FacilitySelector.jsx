@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Head } from '@unhead/react';
 
 import Api from './Api';
+import EnvironmentBanner from './components/EnvironmentBanner';
 import { useFacilityContext } from './FacilityContext';
 
 function FacilitySelector ({ children }) {
@@ -28,6 +29,9 @@ function FacilitySelector ({ children }) {
         <Head>
           <title>Facility Selector</title>
         </Head>
+        {/* This branch bypasses AppLayout, so we have to mount the env banner
+            ourselves to cover real users who land here on a non-prod env. */}
+        <EnvironmentBanner />
         <Container py='xl'>
           <Stack align='center' gap='xl'>
             <Stack align='center' gap='md'>
