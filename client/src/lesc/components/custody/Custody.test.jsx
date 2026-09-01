@@ -303,10 +303,10 @@ describe('Custody', () => {
     renderCustody();
 
     await screen.findByText('Onsite Person');
-    // Hold 8 has arrivedAt → "Arrived at HH:MM"; Hold 5 has no arrivedAt → plain "Arrived" (defensive fallback).
+    // Hold 8 has arrivedAt → "Arrived HH:MM AM/PM"; Hold 5 has no arrivedAt → plain "Arrived" (defensive fallback).
     // Implementation gates the inline label and the expiry Title as mutually-exclusive,
     // so label presence implies timer suppression on those cards.
-    expect(screen.getByText(/^Arrived at \d{1,2}:\d{2} (AM|PM)$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Arrived \d{1,2}:\d{2} (AM|PM)$/)).toBeInTheDocument();
     expect(screen.getByText('Arrived')).toBeInTheDocument();
   });
 
@@ -339,5 +339,32 @@ describe('Custody', () => {
       status: 'ACTIVE',
       includeCurrentOfficer: true,
     }));
+  });
+
+  it('renders the incident address as a tappable map link, omitting the city', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Onsite Person');
+    // Hold 4's incident address (addressLine1 only, city omitted).
+    const addressLink = screen.getByRole('link', { name: '1 Main St' });
+    expect(addressLink.getAttribute('href')).toMatch(/^(https:\/\/www\.google\.com\/maps|https:\/\/maps\.apple\.com|geo:)/);
+    // Hold 8's incident address.
+    expect(screen.getByRole('link', { name: '2 Main St' })).toBeInTheDocument();
+    // Hold 5's incident is empty — no address link rendered for it.
+    expect(screen.queryByRole('link', { name: /Incomplete Person/i })).not.toBeInTheDocument();
+  });
+
+  it('shows a Detained inline label with arrest time on DETAINED holds', async () => {
+    mockSessionStateValue.current = 'transit';
+
+    renderCustody();
+
+    await screen.findByText('Complete Person');
+    // Hold 4 is DETAINED with an arrestedAt → "Detained HH:MM AM/PM" inline next to the Hold ID.
+    // Holds 5 and 8 are ONSITE_AWAITING_TRANSFER → render "Arrived ..." instead, not "Detained".
+    expect(screen.getByText(/^Detained \d{1,2}:\d{2} (AM|PM)$/)).toBeInTheDocument();
+    expect(screen.queryAllByText(/^Detained /)).toHaveLength(1);
   });
 });

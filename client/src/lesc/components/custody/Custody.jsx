@@ -21,6 +21,7 @@ import { isValidDeflection, isValidIncident } from '@/utils/validators';
 
 import ChairAvailabilityCard from '../ChairAvailabilityCard';
 import EmptyState from '../EmptyState';
+import FacilityAddressLinkFromParts from '@/components/facilityAddressLink/FacilityAddressLinkFromParts';
 import StatusAccordion from '@/components/StatusAccordion';
 import CustodyCard from './CustodyCard';
 
@@ -147,6 +148,7 @@ function TransitCustodyCard ({ deflection, highlighted }) {
   const detailsComplete = isValidDeflection(deflection) && isValidIncident(deflection?.incident);
   const isArrived = deflection?.subjectStatus === 'ONSITE_AWAITING_TRANSFER';
   const now = useNow(1000, !isArrived && !!deflection?.expiresAt && detailsComplete);
+  const incidentAddressDisplay = [deflection?.incident?.addressLine1, deflection?.incident?.addressLine2].filter(Boolean).join(', ');
 
   return (
     <Card
@@ -170,7 +172,15 @@ function TransitCustodyCard ({ deflection, highlighted }) {
               <>
                 <Text size='md' c='gray.4'>•</Text>
                 <Text size='md' c='indigo.6' truncate>
-                  {deflection.arrivedAt ? `Arrived at ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                  {deflection.arrivedAt ? `Arrived ${formatTime(deflection.arrivedAt)}` : 'Arrived'}
+                </Text>
+              </>
+            )}
+            {!isArrived && deflection.incident?.arrestedAt && (
+              <>
+                <Text size='md' c='gray.4'>•</Text>
+                <Text size='md' c='gray.6' truncate>
+                  Detained {formatTime(deflection.incident.arrestedAt)}
                 </Text>
               </>
             )}
@@ -181,6 +191,22 @@ function TransitCustodyCard ({ deflection, highlighted }) {
               <Text size='md'>{subjectDetails.join(', ')}</Text>
             )}
           </Stack>
+          {incidentAddressDisplay && (
+            <FacilityAddressLinkFromParts
+              addressLine1={deflection.incident?.addressLine1}
+              addressLine2={deflection.incident?.addressLine2}
+              city={deflection.incident?.city}
+              state={deflection.incident?.state}
+              postalCode={deflection.incident?.postalCode}
+              style={{
+                color: 'var(--mantine-color-gray-6)',
+                textDecoration: 'none',
+                fontSize: 'var(--mantine-font-size-md)',
+              }}
+            >
+              {incidentAddressDisplay}
+            </FacilityAddressLinkFromParts>
+          )}
         </Stack>
         {detailsComplete && (
           <Group gap='md' wrap='nowrap' justify={isArrived ? 'flex-end' : 'space-between'}>
