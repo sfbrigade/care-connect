@@ -1,0 +1,98 @@
+# Manual deploy to AWS prod (no DB migrations).
+#
+# Mirrors the admin's current console-based deploy: just updates the ECS stack
+# via CFN to point at a new image. DB migrations remain out-of-band per the
+# existing prod process — run them manually before triggering this workflow if
+# the SHA you're deploying carries new migrations.
+#
+# Trigger: Actions tab → "Deploy to AWS" → Run workflow → enter the commit SHA.
+# Image must already be pushed to Docker Hub by ci.yml (tagged sha-<commit_sha>)
+# before triggering.
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: 'Commit SHA to deploy (full hex, no `sha-` prefix)'
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+# Prevent two deploys from racing each other. Queue, don't cancel.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  CFN_STACK_NAME: careconnect-ecs
+  IMAGE_REGISTRY: sfcivictech/care-connect
+  HEALTHCHECK_URL: https://careconnect.sf.gov/login
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate image_sha is a 40-char hex SHA
+        env:
+          IMAGE_SHA: ${{ inputs.image_sha }}
+        run: |
+          if [[ ! "$IMAGE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "❌ image_sha must be a full 40-char hex commit SHA (got: $IMAGE_SHA)"
+            exit 1
+          fi
+
+      - name: Checkout at deploying SHA (for CFN templates)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.image_sha }}
+
+      - name: Mask role unique ID in logs
+        # configure-aws-credentials prints "assumedRoleId AROA…" after the OIDC handshake.
+        # Refresh AWS_ROLE_UNIQUE_ID if the role is ever recreated.
+        run: echo "::add-mask::${{ vars.AWS_ROLE_UNIQUE_ID }}"
+
+      - uses: aws-actions/configure-aws-credentials@d979d5b3a71173a29b74b5b88418bfda9437d885 # v6.1.1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/careconnect-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Resolve image URL
+        id: image
+        env:
+          IMAGE_SHA: ${{ inputs.image_sha }}
+        run: |
+          echo "url=${IMAGE_REGISTRY}:sha-${IMAGE_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Deploy ECS stack (rolling update to new image)
+        env:
+          IMAGE_URL: ${{ steps.image.outputs.url }}
+        run: |
+          aws cloudformation deploy \
+            --stack-name "$CFN_STACK_NAME" \
+            --template-file aws/ecs.json \
+            --parameter-overrides "ImageURL=${IMAGE_URL}" \
+            --role-arn "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/careconnect-cfn-service-role" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS -o /dev/null "$HEALTHCHECK_URL"; then
+              echo "Smoke test passed: $HEALTHCHECK_URL responded with 2xx"
+              exit 0
+            fi
+            echo "Attempt $i: $HEALTHCHECK_URL not responding; retrying in 15s..."
+            sleep 15
+          done
+
+          echo "Smoke test failed after 3 minutes; cancelling stack update for rollback"
+          aws cloudformation cancel-update-stack \
+            --stack-name "$CFN_STACK_NAME" \
+            --role-arn "arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/careconnect-cfn-service-role" || true
+          exit 1
