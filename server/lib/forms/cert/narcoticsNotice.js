@@ -73,6 +73,22 @@ function wrapLines (text, font, size, maxWidth) {
   return lines;
 }
 
+/**
+ * Make a dynamic value safe to draw with a standard (WinAnsi) font. pdf-lib
+ * throws on any character the font cannot encode, which would fail the whole
+ * certificate. Whitespace (newlines, tabs, non-breaking spaces) collapses to a
+ * single space, Unicode hyphens become '-', and anything else the font lacks
+ * becomes '?' so the loss is visible rather than silent.
+ */
+function toDrawable (value, font) {
+  const supported = new Set(font.getCharacterSet());
+  const text = String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .replace(/[‐‑−]/g, '-')
+    .trim();
+  return Array.from(text, ch => (supported.has(ch.codePointAt(0)) ? ch : '?')).join('');
+}
+
 export async function generateNarcoticsNotice (data = {}) {
   const {
     date = '',
@@ -110,7 +126,8 @@ export async function generateNarcoticsNotice (data = {}) {
   };
 
   // Right-aligned labelled field with an underlined value box (Date / Case #).
-  const writeField = (label, value) => {
+  const writeField = (label, rawValue) => {
+    const value = toDrawable(rawValue, times);
     const size = BODY_SIZE;
     const underlineGap = 4; // padding between the value baseline and its underline
     const rowGap = 8; // extra space below the underline before the next row
