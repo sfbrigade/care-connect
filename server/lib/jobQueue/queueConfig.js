@@ -4,9 +4,10 @@ import generateForms from '../../jobs/generateForms.js';
 import formsEmail from '../../jobs/formsEmail.js';
 import anonymizeSubjects from '../../jobs/anonymizeSubjects.js';
 import canary from '../../jobs/canary.js';
+import sendSms from '../../jobs/sendSms.js';
 import { LIVE_EMAIL_FORM_IDS } from '#lib/forms/liveEmailForms.js';
 import { captureException } from '#lib/posthog.js';
-import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS, QUEUE_CANARY } from './queueNames.js';
+import { QUEUE_INVITE_EMAIL, QUEUE_EXPIRE_HOLDS, QUEUE_GENERATE_FORMS, QUEUE_FORMS_EMAIL, QUEUE_ANONYMIZE_SUBJECTS, QUEUE_CANARY, QUEUE_SEND_SMS } from './queueNames.js';
 
 function normalizeGenerateFormsResult (result) {
   if (Array.isArray(result)) {
@@ -109,6 +110,12 @@ const queues = [
     name: QUEUE_CANARY,
     options: { retryLimit: 0 },
     handler: async ([job]) => canary(job.data),
+  },
+  {
+    name: QUEUE_SEND_SMS,
+    options: { retryLimit: 3, retryBackoff: true },
+    handler: async ([job]) => sendSms(job.data),
+    deadLetterData: (data) => ({ userId: data?.userId, event: data?.event }),
   },
 ];
 export default queues;

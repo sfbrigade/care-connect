@@ -202,7 +202,7 @@ test('POST /api/facilities/:facilityId/arrived', async (t) => {
         .post(`/api/facilities/${OTHER_FACILITY_ID}/arrived`)
         .headers(userHeaders),
       app.inject()
-        .delete(`/api/deflections/${deflection.id}?cancelReason=BEHAVIORAL_HEALTH_EVALUATION`)
+        .delete(`/api/deflections/${deflection.id}?cancelReason=BH_EMERGENCY_5150`)
         .headers(userHeaders),
     ]);
 

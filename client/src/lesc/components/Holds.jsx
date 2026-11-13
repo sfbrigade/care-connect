@@ -19,6 +19,7 @@ import useSatisfactionSurvey from '@/hooks/useSatisfactionSurvey';
 import { formatTime } from '@/utils/format';
 
 import FacilityStatusBanner from '@/components/FacilityStatusBanner';
+import SmsSubscriptionBanner from '@/components/SmsSubscriptionBanner';
 import CancelHoldModal from './CancelHoldModal';
 import ArrivalConfirmationModal from './ArrivalConfirmationModal';
 import ScanHandoffCodeModal from './ScanHandoffCodeModal';
@@ -449,6 +450,7 @@ function Holds () {
             isArrivalPending={isArrivalPending}
             transferCodeStatus={transferCodeStatus}
           />
+          <SmsSubscriptionBanner />
           <SegmentedControl
             fullWidth
             value={tab}

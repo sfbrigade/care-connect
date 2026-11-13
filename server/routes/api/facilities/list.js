@@ -9,7 +9,8 @@ export default async function (fastify, opts) {
       schema: {
         description: 'Returns a list of facilities with detailed metadata.',
         querystring: z.object({
-          type: z.string().optional(),
+          // Treat an empty type value as undefined; otherwise type must be in FacilityType enum
+          type: z.preprocess((v) => (v === '' ? undefined : v), z.enum(Object.values(Facility.Type)).optional()),
           include: z.string().optional(),
           page: z.coerce.number().optional(),
           perPage: z.coerce.number().optional(),

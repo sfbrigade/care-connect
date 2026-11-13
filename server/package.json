@@ -22,13 +22,17 @@
     "loadtest:list": "node loadtest/index.js --list",
     "geocode:facilities": "node bin/geocode-facilities.js",
     "worker": "node worker.js",
-    "worker:dev": "npm run prisma:generate && node --watch worker.js"
+    "worker:dev": "npm run prisma:generate && node --watch worker.js",
+    "sms:sync-config": "node bin/sync-sms-config.js"
   },
   "license": "AGPL-3.0-only",
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.893.0",
     "@aws-sdk/client-geo-places": "^3.1000.0",
+    "@aws-sdk/client-geo-routes": "^3.1097.0",
+    "@aws-sdk/client-pinpoint-sms-voice-v2": "^3.1000.0",
     "@aws-sdk/client-s3": "^3.893.0",
+    "@aws-sdk/client-sqs": "^3.1098.0",
     "@aws-sdk/client-transcribe-streaming": "^3.893.0",
     "@aws-sdk/cloudfront-signer": "^3.893.0",
     "@aws-sdk/s3-request-presigner": "^3.893.0",

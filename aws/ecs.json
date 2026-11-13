@@ -57,6 +57,10 @@
       "Type": "String",
       "Description": "The title of the site"
     },
+    "SmsOriginationNumber": {
+      "Type": "String",
+      "Description": "The origination phone number for SMS notifications"
+    },
     "SmtpReplyToEmailAddress": {
       "Type": "String",
       "Description": "Default reply-to email address"
@@ -317,6 +321,67 @@
                       "}}"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "AWS_SMS_ORIGINATION_NUMBER",
+                "Value": {
+                  "Ref": "SmsOriginationNumber"
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_QUEUE_URL",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sqs-queue-url"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_TOPIC_ARN",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sns-topic-arn"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_OPT_OUT_LIST_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-opt-out-list-name"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-sms-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_SMS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
                 }
               },
               {
@@ -623,6 +688,25 @@
         ]
       }
     },
+    "WebServiceSecurityGroupDatabaseIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-db-sg-id"
+          }
+        }
+      }
+    },
     "WebServiceScalableTarget": {
       "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
       "Properties": {
@@ -848,6 +932,67 @@
                       "}}"
                     ]
                   ]
+                }
+              },
+              {
+                "Name": "AWS_SMS_ORIGINATION_NUMBER",
+                "Value": {
+                  "Ref": "SmsOriginationNumber"
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_QUEUE_URL",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sqs-queue-url"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_INBOUND_TOPIC_ARN",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-inbound-sns-topic-arn"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_OPT_OUT_LIST_NAME",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-opt-out-list-name"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_ACCESS_KEY_ID",
+                "Value": {
+                  "Fn::ImportValue": {
+                    "Fn::Sub": "${BaseName}-sms-user-access-key-id"
+                  }
+                }
+              },
+              {
+                "Name": "AWS_SMS_SECRET_ACCESS_KEY",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{{resolve:secretsmanager:",
+                      {
+                        "Fn::ImportValue": {
+                          "Fn::Sub": "${BaseName}-sms-user-secret-access-key-arn"
+                        }
+                      },
+                      "}}"
+                    ]
+                  ]
+                }
+              },
+              {
+                "Name": "AWS_SMS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region"
                 }
               },
               {
@@ -1094,7 +1239,45 @@
                   "Fn::Sub": "${BaseName}-private-subnet-az1-id"
                 }
               }
+            ],
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WorkerServiceSecurityGroup",
+                  "GroupId"
+                ]
+              }
             ]
+          }
+        }
+      }
+    },
+    "WorkerServiceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for ECS worker service",
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-vpc-id"
+          }
+        }
+      }
+    },
+    "WorkerServiceSecurityGroupDatabaseIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup",
+            "GroupId"
+          ]
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "GroupId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${BaseName}-db-sg-id"
           }
         }
       }

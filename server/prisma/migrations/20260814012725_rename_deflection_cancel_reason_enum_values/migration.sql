@@ -1,0 +1,5 @@
+-- AlterEnum
+BEGIN;
+ALTER TYPE "public"."DeflectionCancelReasonEnum" RENAME VALUE 'BEHAVIORAL_HEALTH_EVALUATION' TO 'BH_EMERGENCY_5150';
+ALTER TYPE "public"."DeflectionCancelReasonEnum" RENAME VALUE 'HOSPITAL' TO 'HOSPITAL_EMS';
+COMMIT;

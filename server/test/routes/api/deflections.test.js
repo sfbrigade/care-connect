@@ -1635,7 +1635,7 @@ test('/api/deflections', async (t) => {
 
   await t.test('DELETE /:id', async (t) => {
     await t.test('blocks hospital cancellation when hold details are incomplete', async () => {
-      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL').headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL_EMS').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
 
       const data = JSON.parse(response.body);
@@ -1668,12 +1668,12 @@ test('/api/deflections', async (t) => {
         },
       });
 
-      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL').headers(userHeaders);
+      const response = await app.inject().delete('/api/deflections/4?cancelReason=HOSPITAL_EMS').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, 'CANCELLED');
-      assert.deepStrictEqual(data.cancelReason, 'HOSPITAL');
+      assert.deepStrictEqual(data.cancelReason, 'HOSPITAL_EMS');
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
       assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
@@ -1692,12 +1692,12 @@ test('/api/deflections', async (t) => {
     await t.test('cancels the deflection', async () => {
       await prisma.deflection.expire();
 
-      let response = await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      let response = await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       const data = JSON.parse(response.body);
       assert.deepStrictEqual(data.status, 'CANCELLED');
-      assert.deepStrictEqual(data.cancelReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.deepStrictEqual(data.cancelReason, 'BH_EMERGENCY_5150');
       assert.ok(data.cancelledAt);
       assert.ok(data.cancelledById);
 
@@ -1706,7 +1706,7 @@ test('/api/deflections', async (t) => {
         where: { id: 4 },
       });
       assert.deepStrictEqual(deflection.status, 'CANCELLED');
-      assert.deepStrictEqual(deflection.cancelReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.deepStrictEqual(deflection.cancelReason, 'BH_EMERGENCY_5150');
       assert.ok(deflection.cancelledAt);
       assert.ok(deflection.cancelledById);
 
@@ -1717,7 +1717,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 2);
       assert.deepStrictEqual(bedType.available, 5);
 
-      response = await app.inject().delete('/api/deflections/5?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      response = await app.inject().delete('/api/deflections/5?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       bedType = await prisma.bedType.findUnique({
@@ -1727,7 +1727,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.inTransit, 1);
       assert.deepStrictEqual(bedType.available, 6);
 
-      response = await app.inject().delete('/api/deflections/6?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      response = await app.inject().delete('/api/deflections/6?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
 
       bedType = await prisma.bedType.findUnique({
@@ -1742,7 +1742,7 @@ test('/api/deflections', async (t) => {
       await prisma.deflection.expire();
 
       const response = await app.inject()
-        .delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION')
+        .delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150')
         .headers(facilityAdminHeaders);
 
       assert.deepStrictEqual(response.statusCode, StatusCodes.OK);
@@ -1768,7 +1768,7 @@ test('/api/deflections', async (t) => {
   await t.test('POST /:id/reopen', async (t) => {
     await t.test('reopens a cancelled deflection', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
 
       let deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
       const bedTypeBefore = await prisma.bedType.findUnique({ where: { id: deflection.bedTypeId } });
@@ -1799,7 +1799,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if no available beds', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
 
       const deflection = await prisma.deflection.findUnique({ where: { id: 4 } });
       await prisma.bedType.update({
@@ -1815,7 +1815,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if facility is open but not accepting', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       await app.inject()
         .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
         .headers(facilityAdminHeaders)
@@ -1833,7 +1833,7 @@ test('/api/deflections', async (t) => {
 
     await t.test('returns 409 if facility is closed', async () => {
       await prisma.deflection.expire();
-      await app.inject().delete('/api/deflections/4?cancelReason=BEHAVIORAL_HEALTH_EVALUATION').headers(userHeaders);
+      await app.inject().delete('/api/deflections/4?cancelReason=BH_EMERGENCY_5150').headers(userHeaders);
       await app.inject()
         .post('/api/facilities/6d123d8f-edd5-4d14-9220-0508eb30b47b/status')
         .headers(facilityAdminHeaders)
@@ -1866,8 +1866,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/exit-details')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'DECLINED_CONSENT',
           exitConnectedToCare: 'YES',
         });
@@ -1876,8 +1876,8 @@ test('/api/deflections', async (t) => {
       const data = JSON.parse(response.body);
 
       assert.strictEqual(data.subjectStatus, 'IN_CHAIR');
-      assert.strictEqual(data.exitDestination, 'HOME');
-      assert.strictEqual(data.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(data.exitDestination, 'RESIDENCE');
+      assert.strictEqual(data.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(data.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       // Should not set exitedAt/exitedById
@@ -1887,8 +1887,8 @@ test('/api/deflections', async (t) => {
       // Verify DB state
       const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'IN_CHAIR');
-      assert.strictEqual(dbDeflection.exitDestination, 'HOME');
-      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(dbDeflection.exitDestination, 'RESIDENCE');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(dbDeflection.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
 
@@ -1896,8 +1896,8 @@ test('/api/deflections', async (t) => {
       const updates = await app.prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
       const lastUpdate = updates[updates.length - 1];
       assert.strictEqual(lastUpdate.subjectStatus, null); // Hasn't changed
-      assert.strictEqual(lastUpdate.exitDestination, 'HOME');
-      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(lastUpdate.exitDestination, 'RESIDENCE');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(lastUpdate.exitSFResident, 'DECLINED_CONSENT');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
     });
@@ -1907,8 +1907,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/exit-details')
         .headers(userHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1926,8 +1926,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/5/exit-details')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1940,8 +1940,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/99999/exit-details')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -1962,8 +1962,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/exit')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'YES',
           exitConnectedToCare: 'YES',
         });
@@ -1973,8 +1973,8 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
-      assert.strictEqual(data.exitDestination, 'HOME');
-      assert.strictEqual(data.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(data.exitDestination, 'RESIDENCE');
+      assert.strictEqual(data.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(data.exitSFResident, 'YES');
       assert.strictEqual(data.exitConnectedToCare, 'YES');
       assert.ok(data.completedAt);
@@ -1985,8 +1985,8 @@ test('/api/deflections', async (t) => {
       const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
-      assert.strictEqual(dbDeflection.exitDestination, 'HOME');
-      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(dbDeflection.exitDestination, 'RESIDENCE');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(dbDeflection.exitSFResident, 'YES');
       assert.strictEqual(dbDeflection.exitConnectedToCare, 'YES');
       assert.ok(dbDeflection.completedAt);
@@ -1998,10 +1998,102 @@ test('/api/deflections', async (t) => {
       const lastUpdate = updates[updates.length - 1];
       assert.strictEqual(lastUpdate.status, 'COMPLETED');
       assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
-      assert.strictEqual(lastUpdate.exitDestination, 'HOME');
-      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENT');
+      assert.strictEqual(lastUpdate.exitDestination, 'RESIDENCE');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'PERMANENTLY_HOUSED');
       assert.strictEqual(lastUpdate.exitSFResident, 'YES');
       assert.strictEqual(lastUpdate.exitConnectedToCare, 'YES');
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
+    });
+
+    await t.test('requires transportation if exit destination is SERVICES_NON_HOSPITAL', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'SERVICES_NON_HOSPITAL',
+          exitTransportation: null,
+          exitHousingStatus: 'TEMPORARY_SHELTER',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    await t.test('records transportation when exit destination is SERVICES_NON_HOSPITAL', async () => {
+      await app.prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_CHAIR',
+          status: 'ACTIVE',
+          completedAt: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/exit')
+        .headers(careUserHeaders)
+        .payload({
+          exitDestination: 'SERVICES_NON_HOSPITAL',
+          exitTransportation: 'SELF_TRANSPORT',
+          exitHousingStatus: 'TEMPORARY_SHELTER',
+          exitSFResident: 'UNKNOWN',
+          exitConnectedToCare: 'NO',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(data.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(data.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(data.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(data.exitConnectedToCare, 'NO');
+      assert.ok(data.completedAt);
+      assert.ok(data.exitedAt);
+      assert.ok(data.exitedById);
+
+      // Verify DB state
+      const dbDeflection = await app.prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(dbDeflection.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(dbDeflection.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(dbDeflection.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(dbDeflection.exitConnectedToCare, 'NO');
+      assert.ok(dbDeflection.completedAt);
+      assert.ok(dbDeflection.exitedAt);
+      assert.ok(dbDeflection.exitedById);
+
+      // Verify deflection update history
+      const updates = await app.prisma.deflectionUpdate.findMany({ where: { deflectionId: 6 } });
+      const lastUpdate = updates[updates.length - 1];
+      assert.strictEqual(lastUpdate.status, 'COMPLETED');
+      assert.strictEqual(lastUpdate.subjectStatus, 'EXITED');
+      assert.strictEqual(lastUpdate.exitDestination, 'SERVICES_NON_HOSPITAL');
+      assert.strictEqual(lastUpdate.exitTransportation, 'SELF_TRANSPORT');
+      assert.strictEqual(lastUpdate.exitHousingStatus, 'TEMPORARY_SHELTER');
+      assert.strictEqual(lastUpdate.exitSFResident, 'UNKNOWN');
+      assert.strictEqual(lastUpdate.exitConnectedToCare, 'NO');
 
       assert.deepStrictEqual(app.backgroundJobs._sent.length, 0);
     });
@@ -2024,7 +2116,7 @@ test('/api/deflections', async (t) => {
         .headers(careUserHeaders)
         .payload({
           exitDestination: 'JAIL',
-          exitHousingStatus: 'TEMPORARY',
+          exitHousingStatus: 'TEMPORARY_SHELTER',
           exitSFResident: 'UNKNOWN',
           exitConnectedToCare: 'NO',
         });
@@ -2041,8 +2133,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/exit')
         .headers(userHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -2060,8 +2152,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/5/exit')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'NO',
           exitConnectedToCare: 'NO',
         });
@@ -2074,8 +2166,8 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/99999/exit')
         .headers(careUserHeaders)
         .payload({
-          exitDestination: 'HOME',
-          exitHousingStatus: 'PERMANENT',
+          exitDestination: 'RESIDENCE',
+          exitHousingStatus: 'PERMANENTLY_HOUSED',
           exitSFResident: 'UNKNOWN',
           exitConnectedToCare: 'UNKNOWN',
         });
@@ -2109,7 +2201,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReason: 'MEDICAL_ISSUE',
-          exitDestination: 'HOSPITAL',
+          exitDestination: 'HOSPITAL_EMS',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
@@ -2117,7 +2209,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReason, 'MEDICAL_ISSUE');
-      assert.strictEqual(data.exitDestination, 'HOSPITAL');
+      assert.strictEqual(data.exitDestination, 'HOSPITAL_EMS');
       assert.ok(data.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
@@ -2153,7 +2245,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReason: 'MEDICAL_ISSUE',
-          exitDestination: 'HOSPITAL',
+          exitDestination: 'HOSPITAL_EMS',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
@@ -2161,7 +2253,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReason, 'MEDICAL_ISSUE');
-      assert.strictEqual(data.exitDestination, 'HOSPITAL');
+      assert.strictEqual(data.exitDestination, 'HOSPITAL_EMS');
       assert.ok(data.completedAt);
 
       const bedType = await prisma.bedType.findUnique({
@@ -2391,7 +2483,7 @@ test('/api/deflections', async (t) => {
       assert.deepStrictEqual(bedType.available, 4);
     });
 
-    await t.test('marks a subject as legally released (medical issue)', async () => {
+    await t.test('marks a subject as legally released and exited (medical issue)', async () => {
       // Setup: reset deflection 6 status
       await prisma.deflection.update({
         where: { id: 6 },
@@ -2403,7 +2495,7 @@ test('/api/deflections', async (t) => {
         .headers(custodyUserHeaders)
         .payload({
           releaseReason: 'MEDICAL_ISSUE',
-          exitDestination: 'HOSPITAL',
+          exitDestination: 'HOSPITAL_EMS',
         });
 
       assert.strictEqual(response.statusCode, StatusCodes.OK);
@@ -2412,7 +2504,7 @@ test('/api/deflections', async (t) => {
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
       assert.strictEqual(data.releaseReason, 'MEDICAL_ISSUE');
-      assert.strictEqual(data.exitDestination, 'HOSPITAL');
+      assert.strictEqual(data.exitDestination, 'HOSPITAL_EMS');
       assert.ok(data.completedAt);
       assert.ok(data.releasedAt);
       assert.ok(data.exitedAt);
@@ -2434,7 +2526,7 @@ test('/api/deflections', async (t) => {
       });
     });
 
-    await t.test('marks a subject as legally released and exited (behavioral health evaluation)', async () => {
+    await t.test('marks a subject as legally released and exited (BH Emergency/5150)', async () => {
       await prisma.deflection.update({
         where: { id: 6 },
         data: {
@@ -2454,7 +2546,7 @@ test('/api/deflections', async (t) => {
         .post('/api/deflections/6/release')
         .headers(custodyUserHeaders)
         .payload({
-          releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+          releaseReason: 'BH_EMERGENCY_5150',
           exitDestination: 'OTHER',
         });
 
@@ -2463,7 +2555,7 @@ test('/api/deflections', async (t) => {
 
       assert.strictEqual(data.subjectStatus, 'EXITED');
       assert.strictEqual(data.status, 'COMPLETED');
-      assert.strictEqual(data.releaseReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.strictEqual(data.releaseReason, 'BH_EMERGENCY_5150');
       assert.strictEqual(data.exitDestination, 'OTHER');
       assert.ok(data.releasedAt);
       assert.ok(data.completedAt);
@@ -2472,8 +2564,60 @@ test('/api/deflections', async (t) => {
       const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
       assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
       assert.strictEqual(dbDeflection.status, 'COMPLETED');
-      assert.strictEqual(dbDeflection.releaseReason, 'BEHAVIORAL_HEALTH_EVALUATION');
+      assert.strictEqual(dbDeflection.releaseReason, 'BH_EMERGENCY_5150');
       assert.strictEqual(dbDeflection.exitDestination, 'OTHER');
+      assert.ok(dbDeflection.completedAt);
+      assert.ok(dbDeflection.exitedAt);
+
+      assert.deepStrictEqual(app.backgroundJobs._sent.length, 1);
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].name, 'generate-forms');
+      assert.deepStrictEqual(app.backgroundJobs._sent[0].data, {
+        deflectionId: 6,
+        userId: custodyUser.id,
+        formIds: ['647f', '849b', 'cert', '5150'],
+        emailTemplate: 'release-forms',
+      });
+    });
+
+    await t.test('marks a subject as legally released and exited (elopement)', async () => {
+      await prisma.deflection.update({
+        where: { id: 6 },
+        data: {
+          subjectStatus: 'IN_MEDICAL_INTAKE',
+          status: 'ACTIVE',
+          completedAt: null,
+          releasedAt: null,
+          releasedById: null,
+          releaseReason: null,
+          exitedAt: null,
+          exitedById: null,
+          exitDestination: null,
+        },
+      });
+
+      const response = await app.inject()
+        .post('/api/deflections/6/release')
+        .headers(custodyUserHeaders)
+        .payload({
+          releaseReason: 'ELOPEMENT',
+        });
+
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+      const data = JSON.parse(response.body);
+
+      assert.strictEqual(data.subjectStatus, 'EXITED');
+      assert.strictEqual(data.status, 'COMPLETED');
+      assert.strictEqual(data.releaseReason, 'ELOPEMENT');
+      assert.strictEqual(data.exitDestination, 'UNKNOWN');
+      assert.ok(data.releasedAt);
+      assert.ok(data.completedAt);
+      assert.ok(data.exitedAt);
+
+      const dbDeflection = await prisma.deflection.findUnique({ where: { id: 6 } });
+      assert.strictEqual(dbDeflection.subjectStatus, 'EXITED');
+      assert.strictEqual(dbDeflection.status, 'COMPLETED');
+      assert.strictEqual(dbDeflection.releaseReason, 'ELOPEMENT');
+      assert.strictEqual(dbDeflection.exitDestination, 'UNKNOWN');
       assert.ok(dbDeflection.completedAt);
       assert.ok(dbDeflection.exitedAt);
 

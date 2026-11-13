@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import LegalReleaseQuestions from './LegalReleaseQuestions';
 
+import '@/i18n';
+
 const {
   mockNavigate,
   mockShowToast,
@@ -152,14 +154,15 @@ describe('LegalReleaseQuestions', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
 
     expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Behavioral health evaluation' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'BH Emergency/5150' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Elopement' })).toBeInTheDocument();
   });
 
-  it('requires and submits an exit destination for behavioral health evaluation', async () => {
+  it('requires and submits an exit destination for BH Emergency/5150', async () => {
     renderPage();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Behavioral health evaluation' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'BH Emergency/5150' }));
     expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
     expect(screen.getByText('This will also mark the person as exited from RESET.')).toBeInTheDocument();
     expect(screen.getByText('Exit destination')).toBeInTheDocument();
@@ -170,27 +173,10 @@ describe('LegalReleaseQuestions', () => {
 
     await waitFor(() => {
       expect(mockDeflectionRelease).toHaveBeenCalledWith('123', {
-        releaseReason: 'BEHAVIORAL_HEALTH_EVALUATION',
+        releaseReason: 'BH_EMERGENCY_5150',
         exitDestination: 'OTHER',
       });
     });
-  });
-
-  it('preselects other release and shows supplemental fields from search params', async () => {
-    mockSearchParams.value = new URLSearchParams({
-      from: 'detail',
-      releaseReason: 'OTHER',
-    });
-    renderPage();
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Mark as reviewed' }));
-
-    expect(screen.getByText('Confirm legal release and exit')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Other (please specify)' })).toBeChecked();
-    expect(screen.getByText('Other release reason')).toBeInTheDocument();
-    expect(screen.getByText('Other release destination')).toBeInTheDocument();
-    expect(screen.getByText('When you confirm release and exit, the 849(b) will be sent to SFSO records and your e-mail.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirm release and exit' })).toBeDisabled();
   });
 
   it('hides can care for themselves when the person is not in chair', async () => {
@@ -200,7 +186,8 @@ describe('LegalReleaseQuestions', () => {
 
     expect(screen.queryByRole('radio', { name: 'Can care for themselves' })).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Medical issue (physical)' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Other (please specify)' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'BH Emergency/5150' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Elopement' })).toBeInTheDocument();
   });
 
   it('uses release-and-exit copy for failed intake', async () => {
@@ -239,6 +226,8 @@ describe('LegalReleaseQuestions', () => {
     expect(screen.queryByText('Release reason')).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Can care for themselves' })).not.toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Medical issue (physical)' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'BH Emergency/5150' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Elopement' })).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Confirm release' })).not.toBeDisabled();
     });

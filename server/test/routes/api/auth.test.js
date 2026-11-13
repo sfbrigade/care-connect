@@ -45,6 +45,15 @@ test('/api/auth', async (t) => {
         deactivatedAt: null,
         deletedAt: null,
         satisfactionSurveyNextEligibleAt: null,
+        notificationsEnabled: false,
+        subscribedEvents: [],
+        phoneNumber: null,
+        phoneVerifiedAt: null,
+        smsConsentAt: null,
+        smsOptedOutAt: null,
+        smsBannerDismissedAt: null,
+        smsBannerRemindAfter: null,
+        smsBannerRemindCount: 0,
       });
     });
 
@@ -232,6 +241,15 @@ test('/api/auth', async (t) => {
         deactivatedAt: null,
         deletedAt: null,
         satisfactionSurveyNextEligibleAt: null,
+        notificationsEnabled: false,
+        subscribedEvents: [],
+        phoneNumber: null,
+        phoneVerifiedAt: null,
+        smsConsentAt: null,
+        smsOptedOutAt: null,
+        smsBannerDismissedAt: null,
+        smsBannerRemindAfter: null,
+        smsBannerRemindCount: 0,
       });
     });
   });

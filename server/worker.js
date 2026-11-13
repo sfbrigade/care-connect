@@ -2,6 +2,7 @@ import './config.js';
 
 import { createBoss } from '#lib/jobQueue/pgBoss.js';
 import queues from '#lib/jobQueue/queueConfig.js';
+import { startInboundSmsPoller } from '#lib/smsInboundPoller.js';
 import { captureEvent, captureException, shutdown as shutdownPosthog } from '#lib/posthog.js';
 
 const boss = createBoss();
@@ -54,8 +55,13 @@ for (const queue of queues) {
   }
 }
 
+// Inbound SMS consumer (two-way SMS replies via SQS). No-op until the queue URL
+// is configured.
+const stopInboundSmsPoller = startInboundSmsPoller();
+
 async function shutdown () {
   console.log('Worker shutting down...');
+  stopInboundSmsPoller();
   try {
     await boss.stop();
   } catch (err) {

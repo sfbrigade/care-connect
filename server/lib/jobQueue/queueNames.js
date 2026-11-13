@@ -5,3 +5,4 @@ export const QUEUE_GENERATE_FORMS = 'generate-forms';
 export const QUEUE_FORMS_EMAIL = 'forms-email';
 export const QUEUE_ANONYMIZE_SUBJECTS = 'anonymize-subjects';
 export const QUEUE_CANARY = 'canary';
+export const QUEUE_SEND_SMS = 'send-sms';

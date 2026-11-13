@@ -1,0 +1,19 @@
+<%- include('../_header.html.ejs') %>
+
+<p style="color: #b45309; font-weight: bold;">SMS DEBUG — development stand-in for a text message</p>
+
+<p>In production this body would be delivered as an SMS via AWS End User Messaging.
+  It is shown here as an email so it can be read in the local mailcatcher.</p>
+
+<table style="width: 100%; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 8px; font-weight: bold; vertical-align: top; width: 60px;">To</td>
+    <td style="padding: 8px;"><%= to %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold; vertical-align: top;">Body</td>
+    <td style="padding: 8px; font-family: monospace; white-space: pre-wrap;"><%= body %></td>
+  </tr>
+</table>
+
+<%- include('../_footer.html.ejs') %>

@@ -243,7 +243,7 @@ export default async function main (prisma) {
   const sfsoUnit = await prisma.unit.findFirst({ where: { organizationId: 'sfso' } });
 
   // Enum values (no longer from DB)
-  const cancelReasons = ['BEHAVIORAL_HEALTH_EVALUATION', 'JAIL', 'HOSPITAL', 'RELEASE_ON_SCENE', 'NO_CHAIRS_AVAILABLE', 'STAFFING_SHORTAGE'];
+  const cancelReasons = ['BH_EMERGENCY_5150', 'JAIL', 'HOSPITAL_EMS', 'RELEASE_ON_SCENE', 'NO_CHAIRS_AVAILABLE', 'STAFFING_SHORTAGE'];
   const releaseReasonSobered = 'SOBERED';
   const releaseReasonMedical = 'MEDICAL_ISSUE';
   const releaseReasonOther = 'OTHER';
@@ -253,22 +253,21 @@ export default async function main (prisma) {
   const refusalReasonAggressive = 'AGGRESSIVE_BEHAVIOR';
 
   const exitDestStreet = 'STREET';
-  const exitDestHome = 'HOME';
+  const exitDestHome = 'RESIDENCE';
   const exitDestServices = 'SERVICES_NON_HOSPITAL';
-  const exitDestHospital = 'HOSPITAL';
+  const exitDestHospital = 'HOSPITAL_EMS';
   const exitDestDeclined = 'DECLINED_CONSENT';
   const exitDestJail = 'JAIL';
   const exitDestOther = 'OTHER';
 
-  const housingStatusPermanent = 'PERMANENT';
-  const housingStatusSheltered = 'SHELTERED';
-  const housingStatusTemporary = 'TEMPORARY';
+  const housingStatusPermanent = 'PERMANENTLY_HOUSED';
+  const housingStatusSheltered = 'TEMPORARY_SHELTER';
   const housingStatusUnknown = 'UNKNOWN';
   const housingStatusDeclined = 'DECLINED_CONSENT';
 
   // All full-spectrum exit dests and housing statuses for varied coverage
   const allExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined, exitDestOther];
-  const allHousingStatuses = [housingStatusPermanent, housingStatusSheltered, housingStatusTemporary, housingStatusUnknown, housingStatusDeclined];
+  const allHousingStatuses = [housingStatusPermanent, housingStatusSheltered, housingStatusUnknown, housingStatusDeclined];
   const housingStatuses = allHousingStatuses;
   const commonExitDests = [exitDestStreet, exitDestHome, exitDestServices, exitDestDeclined];
 

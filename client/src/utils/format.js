@@ -141,3 +141,10 @@ export function formatTimelineTimestamp (date, now = DateTime.now()) {
   if (dt.hasSame(now.minus({ days: 1 }), 'day')) return `Yesterday, ${time}`;
   return `${dt.toFormat('MMM d')}, ${time}`;
 }
+
+// Seconds \u2192 mm:ss (e.g. a resend countdown).
+export function formatCountdown (s) {
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
