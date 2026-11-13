@@ -27,7 +27,7 @@ ADD . $APP_HOME
 WORKDIR $APP_HOME
 
 # Install dependencies, build client app, build server (Prisma client + forms dist)
-RUN PUPPETEER_SKIP_DOWNLOAD=true npm install && \
+RUN npm install && \
     npm run build -w client && \
     npm run build -w server
 
