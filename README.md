@@ -20,7 +20,7 @@ Please read CONTRIBUTING.md for information on how to contribute to this project
 3. Open a command-line shell, change into your repo directory, and execute these commands:
 
    ```
-   docker compose pull
+   docker compose pull --ignore-buildable
    docker compose up
    ```
 

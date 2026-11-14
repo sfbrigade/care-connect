@@ -44,8 +44,11 @@ function setCombFieldAppearance (form, pdfDoc, font, fieldName) {
       const ch = text[i];
       const charWidth = font.widthOfTextAtSize(ch, size);
       const x = i * cellWidth + (cellWidth - charWidth) / 2;
-      const escaped = ch.replace(/([\\()])/g, '\\$1');
-      ops += `1 0 0 1 ${x.toFixed(2)} ${baselineY.toFixed(2)} Tm (${escaped}) Tj\n`;
+      // Emit the glyph as a hex string in the font's own (WinAnsi) encoding.
+      // A literal string would be written one byte per UTF-16 code unit, so
+      // characters like an en dash (U+2013) would print as the wrong glyph.
+      const encoded = font.encodeText(ch).toString();
+      ops += `1 0 0 1 ${x.toFixed(2)} ${baselineY.toFixed(2)} Tm ${encoded} Tj\n`;
     }
     ops += 'ET\nQ\nEMC';
 
