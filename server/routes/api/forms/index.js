@@ -63,8 +63,8 @@ export default async function (fastify, _opts) {
           return reply.code(StatusCodes.UNPROCESSABLE_ENTITY).send({ error: check.message });
         }
 
-        // note: on timeout the generatePdf promise (and any Chromium process it
-        // launched) continues running in the background until it resolves or rejects.
+        // note: on timeout the generatePdf promise continues running in the
+        // background until it resolves or rejects.
         const pdfBuffer = await Promise.race([
           form.generatePdf(form.transformData(result.deflection), request.user),
           new Promise((_resolve, reject) =>

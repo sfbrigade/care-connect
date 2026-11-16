@@ -23,6 +23,7 @@ import {
 } from '@getbigger-io/prisma-fixtures-cli';
 import prismaPkg from '@prisma/client';
 import s3 from '#lib/s3.js';
+import { createStorageContainer } from './storage-image.js';
 import { configureMailer } from '#lib/mailer.js';
 const { PrismaClient } = prismaPkg;
 
@@ -99,7 +100,7 @@ async function buildPostgres (t) {
     dbUsername = startedDbContainer.getUsername();
     dbPassword = startedDbContainer.getPassword();
 
-    startedStorageContainer = await startStorageContainer(compose.services.storage.image, testcontainersNetworkMode);
+    startedStorageContainer = await startStorageContainer(compose.services.storage, testcontainersNetworkMode);
     storageHost = startedStorageContainer.getHost();
     storagePort = startedStorageContainer.getPort();
   }
@@ -307,10 +308,10 @@ async function startDbContainer (image, networkMode) {
   });
 }
 
-async function startStorageContainer (image, networkMode) {
+async function startStorageContainer (service, networkMode) {
   if (!networkMode) {
     return new StartedTestStorageContainer(
-      await new GenericContainer(image)
+      await (await createStorageContainer(service))
         .withEnvironment({
           MINIO_ROOT_USER,
           MINIO_ROOT_PASSWORD,
@@ -324,7 +325,7 @@ async function startStorageContainer (image, networkMode) {
   }
 
   const networkAlias = testContainerAlias('care-connect-test-storage');
-  const container = await new GenericContainer(image)
+  const container = await (await createStorageContainer(service))
     .withEnvironment({
       MINIO_ROOT_USER,
       MINIO_ROOT_PASSWORD,

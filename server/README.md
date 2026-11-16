@@ -86,19 +86,6 @@ npm run loadtest -- --scenario facility-close-vs-deflection-create --vus 8 --ite
 npm run loadtest -- --scenario all --iterations 3
 ```
 
-### `npm run build:forms`
-
-Compiles the server-side React form components (`server/lib/forms/*.jsx`) into CommonJS bundles
-under `server/lib/forms/dist/`. This directory is gitignored.
-
-**The server will not start without this step.** The forms route plugin imports the compiled
-bundles at startup (`server/routes/api/forms/index.js`), so if `dist/` is empty the process will
-crash before accepting any requests.
-
-`npm run dev` and `npm run build` both run this automatically. You only need to run it manually
-if you start the server directly (e.g. `fastify start`) or after editing a form source file
-without restarting via `dev`.
-
 ## Learn More
 
 To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).

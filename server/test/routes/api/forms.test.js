@@ -1,17 +1,8 @@
-import { test, mock } from 'node:test';
+import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { StatusCodes } from 'http-status-codes';
 
 import { authenticate, build } from '#test/helper.js';
-
-// Mock PDF generation before any imports reach the real renderReactForm.js —
-// avoids needing Chromium in CI and keeps assertions focused on route wiring.
-// The actual renderFormToPdf rendering is an E2E / deployment smoke-test concern.
-mock.module('#lib/forms/shared/renderReactForm.js', {
-  namedExports: {
-    renderFormToPdf: async () => Buffer.from('%PDF-mock'),
-  },
-});
 
 test('/api/forms', async (t) => {
   const app = await build(t);
@@ -40,7 +31,7 @@ test('/api/forms', async (t) => {
   });
 
   // ---------------------------------------------------------------------------
-  // /pdf endpoint tests — Chromium mocked, verifies route wiring only.
+  // /pdf endpoint tests — pure pdf-lib generation, no browser.
   // canGenerate() guards are exercised for each form.
   // ---------------------------------------------------------------------------
 
@@ -99,6 +90,23 @@ test('/api/forms', async (t) => {
       const response = await app.inject()
         .get(`/api/forms/cert/pdf/${releasedDeflection.id}`);
       assert.strictEqual(response.statusCode, StatusCodes.UNAUTHORIZED);
+    });
+
+    await t.test('appends the narcotics notice page when contraband was seized', async () => {
+      await app.prisma.deflection.update({
+        where: { id: releasedDeflection.id },
+        data: { narcoticsSubstance: true, narcoticsParaphernalia: false },
+      });
+
+      const response = await app.inject()
+        .get(`/api/forms/cert/pdf/${releasedDeflection.id}`)
+        .headers(userHeaders);
+      assert.strictEqual(response.statusCode, StatusCodes.OK);
+
+      // The base certificate is one page; the pdf-lib notice appends a second.
+      const { PDFDocument } = await import('pdf-lib');
+      const doc = await PDFDocument.load(response.rawPayload);
+      assert.strictEqual(doc.getPageCount(), 2, 'notice page should be appended');
     });
   });
 

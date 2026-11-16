@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { createStorageContainer } from './storage-image.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONTAINER_INFO_PATH = '/tmp/care-connect-test-containers.json';
@@ -66,9 +67,9 @@ async function startSharedDbContainer (image, networkMode) {
   };
 }
 
-async function startSharedStorageContainer (image, networkMode) {
+async function startSharedStorageContainer (service, networkMode) {
   if (!networkMode) {
-    const started = await new GenericContainer(image)
+    const started = await (await createStorageContainer(service))
       .withEntrypoint(['minio', 'server', '/data'])
       .withExposedPorts(MINIO_PORT)
       .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
@@ -83,7 +84,7 @@ async function startSharedStorageContainer (image, networkMode) {
   }
 
   const networkAlias = testContainerAlias('care-connect-test-storage');
-  const started = await new GenericContainer(image)
+  const started = await (await createStorageContainer(service))
     .withEntrypoint(['minio', 'server', '/data'])
     .withWaitStrategy(Wait.forLogMessage('API:'))
     .withStartupTimeout(TEST_CONTAINER_STARTUP_TIMEOUT_MS)
@@ -109,7 +110,7 @@ async function main () {
   const db = await startSharedDbContainer(compose.services.db.image, networkMode);
 
   console.log('Starting shared MinIO container...');
-  const storage = await startSharedStorageContainer(compose.services.storage.image, networkMode);
+  const storage = await startSharedStorageContainer(compose.services.storage, networkMode);
 
   const containerInfo = { db: db.info, storage: storage.info };
   await fs.writeFile(CONTAINER_INFO_PATH, JSON.stringify(containerInfo));
