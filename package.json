@@ -23,6 +23,6 @@
     "@prisma/client": "6.16.2",
     "foreman": "^3.0.1",
     "prisma": "6.16.2",
-    "prisma-erd-generator": "^2.3.0"
+    "prisma-erd-generator": "^3.2.1"
   }
 }

@@ -12,7 +12,7 @@ lib/forms/
   storeFormPdf.js       # Upserts a generated PDF into deflectionDocument via Prisma + DeflectionDocument asset
   README.md
 
-  cert/                 # Certificate of Release (fillable PDF + optional React narcotics-notice page)
+  cert/                 # Certificate of Release (fillable PDF + optional pdf-lib narcotics-notice page)
   849b/                 # SFSO 849(b) Report (fillable PDF)
   647f/                 # SFPD 647(f) Report (fillable PDF)
   5150/                 # DHCS-1801 5150 Application (fillable PDF)
@@ -25,23 +25,15 @@ lib/forms/
 
   shared/
     fillPdf.js          # Core pdf-lib utility: loads template, fills all field types, bakes appearances
-    FormContainer.jsx   # React document shell (standalone HTML or embedded <div>)
-    formComponents.jsx  # Shared React primitives
     formUtils.js        # Date/time formatting utilities and name helpers
-    pdf-forms.css       # Shared print stylesheet included by FormContainer
     fonts/              # Shared font files (e.g. MeowScript for signatures)
-    renderReactForm.js  # Chromium-based rendering pipeline (React → HTML → PDF via puppeteer-core)
-
-  dist/                 # esbuild output — compiled JS from JSX sources (gitignored)
-    FormContainer.js
-    NarcoticsNotice.js
 ```
 
 ## Form types
 
 All four forms are **fillable PDF** forms: `generate.js` reads `template.pdf`, fills fields via `shared/fillPdf.js`, and returns a `Buffer`.
 
-`cert` additionally appends a React-rendered narcotics notice page (compiled to `dist/NarcoticsNotice.js`) when the deflection has narcotics or paraphernalia recorded. The notice is rendered to a PDF by headless Chromium and merged with `pdf-lib`.
+`cert` additionally appends a narcotics notice page ([`cert/narcoticsNotice.js`](cert/narcoticsNotice.js), drawn directly with `pdf-lib`) when the deflection has narcotics or paraphernalia recorded.
 
 ## Form object shape
 
@@ -91,7 +83,6 @@ Each form follows this two-step pattern:
 4. Add `generate.js` exporting:
    - `transformData(deflection)` — maps Prisma data to the camelCase keys in your spec.
    - `generatePdf(data)` — reads `template.pdf`, calls `fill<id>`, returns a `Buffer`.
-   - For a React form: write a JSX component, add it as an esbuild entry point in `server/esbuild.forms.js`, then call `renderFormToPdf` from `shared/renderReactForm.js`.
 5. Add `index.js`:
    ```js
    import { metadata } from './metadata.js';
@@ -99,23 +90,10 @@ Each form follows this two-step pattern:
    export default { ...metadata, generatePdf, transformData };
    ```
 6. Register the form in `lib/forms/index.js` under its form ID.
-7. Register the form in `client/src/forms/formRegistry.js` (import metadata, add a `component` if it has a React preview).
-
-## React form rendering pipeline
-
-JSX form components cannot run directly in Node — they must first be compiled to plain JS by esbuild (`server/esbuild.forms.js`), which outputs into `lib/forms/dist/`.
-
-Currently only two JSX files are compiled: `shared/FormContainer.jsx` and `cert/NarcoticsNotice.jsx`.
-
-At runtime, `renderReactForm.js` dynamically imports `dist/FormContainer.js` (with a cache-busting timestamp so `--watch` builds are picked up without a server restart), wraps the form component in `FormContainer` in standalone mode, renders it to a static HTML string via `react-dom/server`, then prints it to PDF using headless Chromium via `puppeteer-core`.
-
-To rebuild the dist files:
-```sh
-node server/esbuild.forms.js
-# or, during development:
-node server/esbuild.forms.js --watch
-```
+7. Register the form in `client/src/forms/formRegistry.js` (import its metadata).
 
 ## Client-side previews
 
-The client imports metadata directly from each form's `metadata.js` file and, for React forms, the raw JSX component. Vite handles JSX compilation on the client side so no separate build step is needed for previews.
+The client imports metadata directly from each form's `metadata.js` file. All forms are
+fillable-PDF forms, so previews are driven by that metadata — no client-side JSX compilation
+or separate build step is needed.

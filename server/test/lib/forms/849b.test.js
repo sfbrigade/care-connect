@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
+import { inflateSync } from 'node:zlib';
 import { PDFDocument, PDFName } from 'pdf-lib';
 
 import form849b from '#lib/forms/849b/index.js';
@@ -326,6 +327,106 @@ test('849b PDF leaves prop 115 unchecked but checks post training when reporting
     false
   );
   assert.strictEqual(pdfForm.getCheckBox('POST TRAINING').isChecked(), true);
+});
+
+// Read a field's baked normal appearance (/AP /N) content stream as latin1 text.
+// widgetIndex selects which widget (0 = page 1, 1 = page 2 for the comb fields).
+function bakedAppearance (doc, fieldName, widgetIndex = 0) {
+  const field = doc.getForm().getTextField(fieldName);
+  const widget = field.acroField.getWidgets()[widgetIndex];
+  const ap = doc.context.lookup(widget.dict.get(PDFName.of('AP')));
+  const n = doc.context.lookup(ap.get(PDFName.of('N')));
+  let raw = Buffer.from(n.getContents());
+  const filter = n.dict.get(PDFName.of('Filter'));
+  if (filter && filter.toString().includes('FlateDecode')) raw = inflateSync(raw);
+  return raw.toString('latin1');
+}
+
+// Read the font size baked into a field's normal appearance stream.
+function bakedFontSize (doc, fieldName, widgetIndex = 0) {
+  const match = bakedAppearance(doc, fieldName, widgetIndex).match(/\/[^\s]+\s+([\d.]+)\s+Tf/);
+  return match ? Number(match[1]) : null;
+}
+
+// The glyph bytes drawn in a comb field's appearance, one hex string per box.
+function bakedCombGlyphs (doc, fieldName, widgetIndex = 0) {
+  return Array.from(
+    bakedAppearance(doc, fieldName, widgetIndex).matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g),
+    m => m[1].toUpperCase()
+  );
+}
+
+test('849b comb boxes print non-ASCII characters in the font encoding', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: { firstName: 'Test', lastName: 'SFSO', badgeNumber: '5678', prop115Certified: true },
+    exitedBy: null,
+    incident: {
+      cadNumber: '12(4)5\\6',
+      caseNumber: '26–12345', // en dash, e.g. pasted from a document
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  assert.strictEqual(doc.getForm().getTextField('INCIDENT NUMBER').getText(), '26–12345');
+
+  // The en dash is WinAnsi byte 0x96; the printed glyphs must match the value
+  // on both the page-1 and page-2 widgets.
+  const expectedCase = ['32', '36', '96', '31', '32', '33', '34', '35'];
+  assert.deepStrictEqual(bakedCombGlyphs(doc, 'INCIDENT NUMBER', 0), expectedCase);
+  assert.deepStrictEqual(bakedCombGlyphs(doc, 'INCIDENT NUMBER', 1), expectedCase);
+
+  // PDF string delimiters need no escaping in hex form.
+  assert.deepStrictEqual(
+    bakedCombGlyphs(doc, 'CAD NUMBER', 0),
+    ['31', '32', '28', '34', '29', '35', '5C', '36']
+  );
+});
+
+test('849b renders the case-number comb boxes at a fixed size, not pdf-lib auto-fit', async () => {
+  const releasedAt = new Date('2026-05-05T20:00:00.000Z');
+  const pdfBytes = await form849b.generatePdf(form849b.transformData({
+    releasedAt,
+    exitedAt: null,
+    releaseReason: 'SOBERED',
+    releasedBy: { firstName: 'Test', lastName: 'SFSO', badgeNumber: '5678', prop115Certified: true },
+    exitedBy: null,
+    incident: {
+      cadNumber: '123456789',
+      caseNumber: '240123456',
+      arrestedAt: releasedAt,
+      addressLine1: '100 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      encounteredVia: 'ON_VIEW',
+      createdBy: null,
+    },
+    subject: null,
+    drugType: 'FENTANYL',
+    behavior: null,
+    releaseNarrative: 'Release narrative.',
+  }));
+
+  const doc = await PDFDocument.load(pdfBytes);
+  // Both the page-1 (widget 0) and page-2 (widget 1) copies of these fields
+  // must get the fixed-size appearance, not just page 1.
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'INCIDENT NUMBER', 1), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 0), 14);
+  assert.strictEqual(bakedFontSize(doc, 'CAD NUMBER', 1), 14);
 });
 
 test('849b PDF truncates overlong text fields to template max lengths', async () => {

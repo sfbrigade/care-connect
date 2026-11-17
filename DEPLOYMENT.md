@@ -53,10 +53,13 @@ Should show Docker is running (may be empty, that's fine).
 ### 2.1 Pull Docker Images
 
 ```bash
-docker compose pull
+docker compose pull --ignore-buildable
+docker compose build storage
 ```
 
-This downloads the required Docker images (PostgreSQL, Mailcatcher, Minio).
+This downloads the required Docker images (PostgreSQL, Mailcatcher) and builds the local Minio
+image. MinIO no longer publishes images to Docker Hub, so it is built from the official release
+binaries by `docker/minio/Dockerfile`.
 
 ### 2.2 Start All Services
 

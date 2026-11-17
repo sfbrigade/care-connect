@@ -1,7 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { PDFDocument } from 'pdf-lib';
+
 import { transformData } from '#lib/forms/cert/generate.js';
+import { generateNarcoticsNotice } from '#lib/forms/cert/narcoticsNotice.js';
 
 const baseDeflection = {
   subject: null,
@@ -60,4 +63,17 @@ test('cert deputyName falls back to createdBy and uses first initial', () => {
   });
 
   assert.equal(data.deputyName, 'R. Johnson');
+});
+
+test('narcotics notice does not throw on characters the PDF font cannot encode', async () => {
+  for (const caseNumber of ['24‑0123 №5 \u{1F600}', '24\n0123\t45', '24 0123', null, undefined]) {
+    const bytes = await generateNarcoticsNotice({
+      date: '05/05/2026',
+      caseNumber,
+      substanceSeized: true,
+      paraphernaliaSeized: false,
+    });
+    const doc = await PDFDocument.load(bytes);
+    assert.equal(doc.getPageCount(), 1);
+  }
 });
