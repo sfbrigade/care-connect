@@ -24,6 +24,11 @@ class Base {
     };
 
     return new Proxy(this, {
+      has (target, property) {
+        // Validators check property presence as well as reading values. Expose
+        // loaded data here while preserving prototype methods and getters.
+        return Object.hasOwn(data, property) || Reflect.has(target, property);
+      },
       get (target, property, receiver) {
         // if the property is in the schema/data, return it from the data object
         if (Object.hasOwn(fields, property) || Object.hasOwn(data, property) || Object.hasOwn(data, `${property.toString()}Id`)) {
